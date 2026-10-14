@@ -285,7 +285,6 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
             testID="pledge-state"
           />
           {pledge.isAnonymous ? <Tag label={t('account.pledges.anonymous')} icon={Glyphs.EyeSlash} /> : null}
-          {pledge.latePledge ? <Tag label={t('account.pledges.latePledge')} icon={Glyphs.Timer1} /> : null}
         </View>
 
         {pledge.confirmedAt == null ? null : (

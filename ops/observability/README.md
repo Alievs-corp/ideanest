@@ -27,9 +27,6 @@ The short version:
 
 - **`ideanest_ledger_reconciliation_*`** — whether the books balance, and when
   anybody last checked
-- **`ideanest_payment_collection_attempts_total{outcome}`** — every collection
-  attempt, by what came of it. A rate is not published; `alerts.yml` divides
-  these, because the window is an operational decision
 - **`ideanest_provider_available{provider}`** — the circuit breaker's own view.
   A provider that is not configured publishes no series at all
 - **`ideanest_queue_waiting` / `ideanest_queue_dead`** — every queue on the

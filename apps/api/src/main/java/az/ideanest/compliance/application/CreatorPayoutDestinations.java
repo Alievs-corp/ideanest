@@ -76,9 +76,8 @@ import org.springframework.transaction.annotation.Transactional;
  * used, so a row verified by a person is never mistaken later for one a bank verified.
  *
  * <p>The tokenisation itself is the other half that waits. A creator supplies a provider
- * token; no adapter exists to issue one, exactly as none exists to issue a
- * {@code StoredCard#token()}. This is the same inert-behind-the-interface shape §9.2 chose
- * deliberately, and the gate below is real whether or not anything can yet get through it.
+ * token; no adapter exists to issue one. The gate below is real whether or not anything can
+ * yet get through it.
  *
  * <h2>A bank account, since epic #392</h2>
  *

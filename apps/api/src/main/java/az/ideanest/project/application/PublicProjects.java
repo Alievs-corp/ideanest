@@ -73,8 +73,6 @@ public class PublicProjects {
             ProjectState.CANCELED,
             ProjectState.SUCCESSFUL,
             ProjectState.UNSUCCESSFUL,
-            ProjectState.COLLECTING,
-            ProjectState.LATE_PLEDGE,
             ProjectState.FULFILLING,
             ProjectState.COMPLETED,
             // IDN-EXT-01 (#32).

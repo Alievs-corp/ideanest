@@ -26,8 +26,6 @@ export const CAMPAIGN_STATES = [
   'SUCCESSFUL',
   'UNSUCCESSFUL',
   'WITHDRAWN',
-  'COLLECTING',
-  'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
 ] as const;

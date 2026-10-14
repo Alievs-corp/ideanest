@@ -146,7 +146,7 @@ VALUES
  'Sərt üzlüklü, 140 səhifə.',
  70, 'AZN', NULL, NULL, 0, 0, 'DOMESTIC', false, false, false, NULL, false, 1, NULL, NULL, now() - interval '160 days'),
 
--- Kür albom (music, COLLECTING)
+-- Kür albom (music, WITHDRAWN)
 (seed_id('tier:albom:reqemsal'), seed_id('project:albom'), 'Rəqəmsal albom',
  'Buraxılışdan bir həftə əvvəl yüklənə bilər.',
  20, 'AZN', (now() + interval '2 months')::date, NULL, 0, 0, 'DIGITAL', false, true, false, NULL, false, 0, NULL, NULL, now() - interval '46 days'),
@@ -176,7 +176,7 @@ VALUES
  'İki lampa, fərqli naxışlarla.',
  220, 'AZN', (now() - interval '200 days')::date, 200, 0, 0, 'DOMESTIC', false, false, false, NULL, false, 1, NULL, NULL, now() - interval '300 days'),
 
--- Novruz (games, LATE_PLEDGE)
+-- Novruz (games, FULFILLING)
 (seed_id('tier:masa:oyun'), seed_id('project:masa'), 'Bir oyun',
  'Qutu, kartlar və qaydalar kitabçası.',
  78, 'AZN', (now() + interval '3 months')::date, NULL, 0, 0, 'INTERNATIONAL', false, true, false, NULL, false, 0, NULL, NULL, now() - interval '70 days'),

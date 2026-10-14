@@ -70,48 +70,6 @@ public final class Campaigns {
     }
 
     /**
-     * Takes a campaign to {@code COLLECTING}: closed above goal, cards being charged.
-     *
-     * <p><strong>Written rather than driven, and there is no honest way to drive
-     * it.</strong> {@code SUCCESSFUL → COLLECTING} is the batched collection of epic
-     * #59, which is blocked on choosing a payment provider (#60), so nothing in the
-     * service performs that edge yet. A suite about what happens <em>after</em>
-     * collection — late pledges (#81), and eventually fulfilment — would otherwise have
-     * no way to reach its own starting state.
-     *
-     * <p>What is written is what the two transitions would leave behind: the deadline
-     * in the past, the outcome frozen as §5.1 freezes it, and the state a collection
-     * run would have set. What is not written is the two rows in
-     * {@code project_state_transitions}, so a test that reads a campaign's history must
-     * not use this.
-     */
-    public static void collecting(DataSource dataSource, UUID projectId) {
-        launch(dataSource, projectId);
-        int updated = new JdbcTemplate(dataSource)
-                .update(
-                        """
-                        UPDATE projects
-                           SET state = 'COLLECTING',
-                               -- Moved back with the deadline, because
-                               -- projects_deadline_follows_launch is a constraint
-                               -- rather than a convention: a campaign that closed
-                               -- yesterday launched before that.
-                               launched_at = now() - make_interval(days => COALESCE(duration_days, 30) + 1),
-                               deadline = now() - interval '1 day',
-                               finalized_at = now() - interval '1 day',
-                               outcome_goal_amount = goal_amount,
-                               outcome_pledged_amount = goal_amount,
-                               outcome_backers_count = backers_count
-                         WHERE id = ?
-                        """,
-                        projectId);
-
-        if (updated != 1) {
-            throw new IllegalStateException("No campaign " + projectId + " to collect");
-        }
-    }
-
-    /**
      * The one patch that takes a fresh draft to a campaign §5.3 will accept for
      * submission.
      *
@@ -292,8 +250,7 @@ public final class Campaigns {
 
         /** Everything from LIVE onwards; §6.1 and projects_public_states_are_fully_specified. */
         private static final List<String> LAUNCHED_STATES = List.of(
-                "LIVE", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL",
-                "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED",
+                "LIVE", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "FULFILLING", "COMPLETED",
                 // IDN-EXT-01 (#32): past LIVE, so V74 holds them to the same four columns.
                 "CLOSING_WINDOW", "EXTENDED", "WITHDRAWN");
 

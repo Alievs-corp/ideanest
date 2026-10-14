@@ -425,39 +425,6 @@ public class ProjectTransitionService {
     }
 
     /**
-     * §4.5's PL-16 and §4.8's PM-23: opens the late-pledge window.
-     * {@code COLLECTING} → {@code LATE_PLEDGE}.
-     *
-     * <p><strong>The creator alone</strong>, through the two-argument
-     * {@code requireTransitionable} that {@link #launch} and {@link #cancel} use rather
-     * than a capability. It is the same kind of decision as those two: it takes money
-     * from people, and it commits the campaign to manufacturing and posting more of
-     * something than it has counted.
-     *
-     * <p><strong>Two preconditions beyond the edge, and they are different
-     * questions.</strong> The campaign must have <em>enabled</em> late pledges — the
-     * editor's switch, which is the creator saying they offer them at all — and the
-     * window must end in the future and within
-     * {@code late-pledges.max-window} (removed by #36). Enabling
-     * is a standing decision and the window is this one; keeping them apart is what
-     * lets a creator who runs out of stock switch the feature off and stop taking
-     * pledges on the next request, without a transition they cannot reverse.
-     *
-     * <p><strong>What is not checked is the campaign's stock</strong>, deliberately. A
-     * limited tier holds its own places and refuses the pledge that would oversell it
-     * — §4.5's PL-13, which does not care whether the campaign is live or late — and a
-     * check here would be a second, weaker copy of that rule evaluated once at the
-     * moment the window opened.
-     *
-     * @param endsAt when the window closes. Required: a late-pledge window with no end
-     *     is a campaign that never stops taking money, and the state machine has no
-     *     edge that would close it automatically
-     * @throws LatePledgesNotEnabledException when the creator has not switched the
-     *     feature on for this campaign
-     * @throws ProjectFieldRejectedException when the window is in the past or beyond
-     *     the platform's bound
-     */
-    /**
      * Extends a campaign's deadline, once — IDN-EXT-01 (#34), §5.1: {@code LIVE} or
      * {@code CLOSING_WINDOW} → {@code EXTENDED}.
      *
@@ -607,38 +574,6 @@ public class ProjectTransitionService {
         return withdrawn;
     }
 
-    @Transactional
-    public Project openLatePledges(UUID projectId, UUID accountId, Instant endsAt) {
-        // IDN-EXT-01 (#36): late pledges are switched off. No state has an edge into
-        // LATE_PLEDGE any more, so this refuses every campaign with
-        // PROJECT_TRANSITION_NOT_ALLOWED — after the same access check as before, so a
-        // stranger is still answered 404 rather than told what state the campaign is in.
-        // The route stays until stage 4 (#45) removes it.
-        Project project = access.requireTransitionable(projectId, accountId);
-        requireEdge(project.getState(), ProjectState.LATE_PLEDGE);
-        throw new IllegalStateException("The state machine has an edge into LATE_PLEDGE again");
-    }
-
-    /**
-     * Stops taking late pledges and starts delivering: {@code LATE_PLEDGE} →
-     * {@code FULFILLING}.
-     *
-     * <p>The window is left where it is rather than cleared. It is a true statement
-     * about the period this campaign accepted late pledges in, the state is what
-     * decides whether one is accepted now, and clearing it would also mean clearing
-     * {@code latePledgeEnabled} — {@code projects_late_pledge_window_needs_the_feature}
-     * ties the two — which would erase the fact that this campaign ever offered them.
-     *
-     * <p>Terminal in the direction that matters: §6.1 has no edge back, because
-     * reopening late pledges after fulfilment has begun means shipping a second batch
-     * of something the creator has already counted, packed, and posted.
-     */
-    @Transactional
-    public Project closeLatePledges(UUID projectId, UUID accountId) {
-        Project project = access.requireTransitionable(projectId, accountId);
-        return apply(project, ProjectState.FULFILLING, access.roleOf(project, accountId), accountId, null);
-    }
-
     /**
      * Applies §5.1 as IDN-EXT-01 (#33) times it: a {@code LIVE} campaign past its deadline
      * enters {@code CLOSING_WINDOW}; a campaign whose window or extension has ended is decided
@@ -749,48 +684,6 @@ public class ProjectTransitionService {
                 project.getOutcomePledgedAmount(),
                 project.getOutcomeGoalAmount(),
                 project.getOutcomeBackersCount());
-        return Optional.of(project);
-    }
-
-    /**
-     * §6.1's {@code SUCCESSFUL → COLLECTING}: the campaign's cards start being charged
-     * (#64).
-     *
-     * <p><strong>Two states and not one, and this method is why they are worth
-     * having.</strong> §5.1's successful branch says "collect every confirmed pledge",
-     * and a platform that decided and charged in one transaction could not tell you,
-     * after a crash, which of the two it had done. {@code CampaignFinalizer} writes the
-     * decision and stops; this reads it and starts the money moving, and the durable
-     * record between them is the state itself.
-     *
-     * <p>Claimed the way {@link #finalise} claims: the row is locked and the state
-     * re-read under the lock, so a second replica arriving mid-pass finds
-     * {@code COLLECTING} and does nothing. That matters as much here as it does there —
-     * opening a collection twice would queue a campaign's pledges twice, and the second
-     * queuing would reset every backer's attempt count to zero and hand them four fresh
-     * attempts at a card that had already been refused four times.
-     *
-     * <p><strong>It does not queue the pledges.</strong> Those are the pledge module's
-     * rows and §16.1 forbids reaching for them from here; {@code CampaignCollection}
-     * composes the two inside one transaction, which is where the requirement that they
-     * commit together is stated.
-     *
-     * @param projectId a campaign {@link ProjectRepository#findAwaitingCollection} selected
-     * @param now the pass's instant, stamped on the transition row
-     * @return the campaign, or empty when it was no longer this pass's to open
-     */
-    @Transactional
-    public Optional<Project> beginCollection(UUID projectId, Instant now) {
-        Project project =
-                projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
-
-        if (project.getState() != ProjectState.SUCCESSFUL) {
-            log.debug("Campaign {} is in {} and is not this pass's to collect.", projectId, project.getState());
-            return Optional.empty();
-        }
-
-        apply(project, ProjectState.COLLECTING, ActorRole.SYSTEM, null, "Collection opened at " + now + ".");
-        log.info("Campaign {} moved to COLLECTING.", projectId);
         return Optional.of(project);
     }
 

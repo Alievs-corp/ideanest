@@ -77,7 +77,6 @@ function project(extra: Partial<ProjectEdit> = {}): ProjectEdit {
     subcategoryId: 's1',
     goal: { amount: '5000.00', currency: 'AZN' },
     durationDays: 30,
-    latePledgeEnabled: false,
     lockedFields: [],
     createdAt: '2026-10-01T10:00:00.000Z',
     updatedAt: '2026-10-01T10:00:00.000Z',
@@ -268,13 +267,6 @@ describe('BasicsPanel', () => {
     await settle();
     expect(patches()).toEqual([{ title: 'Taken' }, { title: 'Taken' }]);
     expect(screen.queryByTestId('basics-not-saved')).toBeNull();
-  });
-
-  it('turns late pledges on at once, without waiting for a blur', async () => {
-    await show();
-    await fireEvent(screen.getByTestId('basics-late-pledges'), 'valueChange', true);
-    await settle();
-    expect(patches()).toEqual([{ latePledgeEnabled: true }]);
   });
 
   it('clears the scheduled launch with its own button, sending null', async () => {

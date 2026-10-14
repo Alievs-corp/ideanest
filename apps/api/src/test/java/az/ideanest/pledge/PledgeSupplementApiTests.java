@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.Pledges;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
@@ -367,18 +368,18 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         return UUID.fromString((String) created.getBody().get("id"));
     }
 
+    /** A pledge confirmed the stored-card way, as one made before IDN-EXT-01 is; no route does it since #45. */
     private UUID confirmedPledge(UUID project, Account backer, UUID rewardTierId, String contribution) {
         UUID pledge = draftPledge(project, backer, rewardTierId, contribution);
-        post("/v1/pledges/" + pledge + "/confirm", backer, UUID.randomUUID().toString(), Map.of());
+        Pledges.confirmDraft(dataSource, pledge);
         return pledge;
     }
 
     /**
      * Closes the campaign the way its deadline would.
      *
-     * <p>{@code Campaigns.collecting} would do as well and takes the campaign further
-     * than these tests need: what the pledge manager asks is whether the campaign is
-     * still taking pledges, and a successful campaign past its deadline is already not.
+     * <p>What the pledge manager asks is whether the campaign is still taking pledges, and a
+     * successful campaign past its deadline is already not.
      */
     private void closeTheCampaign(UUID project) {
         new JdbcTemplate(dataSource)

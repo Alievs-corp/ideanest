@@ -25,7 +25,7 @@ import type { StoryDocument } from '@ideanest/campaign/story';
 export type { Money };
 
 /*
- * The nineteen states of docs/architecture.md §6.1 live in `@ideanest/campaign/states` since
+ * The seventeen states of docs/architecture.md §6.1 live in `@ideanest/campaign/states` since
  * #155, so the app's campaign screen reads the same vocabulary. Re-exported under the same name.
  */
 export type { ProjectState };
@@ -122,7 +122,6 @@ export interface ProjectEdit {
   coverImage?: CoverImage | null;
   /** At most one, of at most sixty seconds. Absent or null for a campaign without one. */
   video?: CampaignVideo | null;
-  latePledgeEnabled: boolean;
   /**
    * Field names the server will refuse to change, by name — `"goal"`, `"durationDays"`.
    *
@@ -169,7 +168,6 @@ export interface ProjectPatch {
    * deleted once the edit commits, so a replaced clip does not go on costing storage.
    */
   videoMediaId?: string | null;
-  latePledgeEnabled?: boolean;
 }
 
 /* -------------------------------------------------------------------------

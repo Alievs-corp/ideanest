@@ -281,22 +281,19 @@ class EpointPaymentProviderTests {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("it does not claim stored-card collection, takes AZN only, and refuses the retired calls")
-    void notTheStoredCardModel() {
+    @DisplayName("it takes AZN only and refunds in part")
+    void whatItClaims() {
         EpointPaymentProvider epoint = adapter();
 
-        assertThat(epoint.capabilities().supportsStoredCardCollection()).isFalse();
         assertThat(epoint.capabilities().currencies()).containsExactly("AZN");
         assertThat(epoint.capabilities().partialRefund()).isTrue();
-        assertThatThrownBy(() -> epoint.chargeStoredCard(null)).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> epoint.beginTokenization(null)).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     @DisplayName("naming EPOINT without its keys is a start-up failure, and the private key is never printed")
     void configuration() {
         PaymentProperties incomplete = new PaymentProperties(
-                new PaymentProperties.Provider("EPOINT"), null, null, null, null,
+                new PaymentProperties.Provider("EPOINT"), null, null, null,
                 new PaymentProperties.Epoint(BASE, PUBLIC, "", "az"),
                 null, null, null);
         assertThatThrownBy(() -> new EpointPaymentProvider(RestClient.builder(), incomplete, JSON))
@@ -311,7 +308,7 @@ class EpointPaymentProviderTests {
 
     private static PaymentProperties properties() {
         return new PaymentProperties(
-                new PaymentProperties.Provider("EPOINT"), null, null, null, null,
+                new PaymentProperties.Provider("EPOINT"), null, null, null,
                 new PaymentProperties.Epoint(BASE, PUBLIC, PRIVATE, "az"),
                 null, null, null);
     }

@@ -420,7 +420,6 @@
         "CHARGEBACK": "Charged back",
         "FULFILLED": "Delivered"
       },
-      "latePledge": "Late pledge",
       "anonymous": "Anonymous",
       "list": {
         "loading": "Loading your pledges",
@@ -2667,8 +2666,6 @@
           "APPROVED": "Approved",
           "SCHEDULED": "Scheduled",
           "LIVE": "Live",
-          "COLLECTING": "Collecting",
-          "LATE_PLEDGE": "Late pledges",
           "SUCCESSFUL": "Funded",
           "UNSUCCESSFUL": "Not funded",
           "FULFILLING": "Fulfilling",
@@ -3174,8 +3171,6 @@
         "SUCCESSFUL": "Successful",
         "UNSUCCESSFUL": "Unsuccessful",
         "WITHDRAWN": "Withdrawn",
-        "COLLECTING": "Collecting",
-        "LATE_PLEDGE": "Late pledges",
         "FULFILLING": "Fulfilling",
         "COMPLETED": "Completed"
       },
@@ -4250,8 +4245,6 @@
       "PRELAUNCH": "Coming soon",
       "LIVE": "Live",
       "SUCCESSFUL": "Funded",
-      "COLLECTING": "Funded",
-      "LATE_PLEDGE": "Late pledges open",
       "FULFILLING": "Fulfilling",
       "COMPLETED": "Completed",
       "UNSUCCESSFUL": "Did not fund",
@@ -4519,8 +4512,6 @@
       "CANCELED": "Canceled",
       "SUCCESSFUL": "Funded",
       "UNSUCCESSFUL": "Not funded",
-      "COLLECTING": "Collecting",
-      "LATE_PLEDGE": "Late pledges",
       "FULFILLING": "Fulfilling",
       "COMPLETED": "Completed",
       "CLOSING_WINDOW": "Closing soon",
@@ -4555,8 +4546,6 @@
       "durationHintLocked": "The deadline cannot change once the campaign has launched.",
       "scheduledLaunch": "Scheduled launch",
       "scheduledLaunchHint": "Optional. Leave it empty to launch by hand once the review is complete.",
-      "latePledges": "Accept late pledges",
-      "latePledgesHint": "Keeps the project open to pledges after the deadline, once it has been funded. It can be turned off again at any time.",
       "validation": {
         "titleRequired": "A project needs a title.",
         "titleTooLong": "A title is {max} characters or fewer. Remove {over}.",
@@ -5384,8 +5373,6 @@
         "LIVE": "Live",
         "SUCCESSFUL": "Funded",
         "UNSUCCESSFUL": "Not funded",
-        "COLLECTING": "Collecting",
-        "LATE_PLEDGE": "Late pledges",
         "FULFILLING": "Fulfilling",
         "COMPLETED": "Completed"
       }

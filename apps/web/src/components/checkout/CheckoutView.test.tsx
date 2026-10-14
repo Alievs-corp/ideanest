@@ -207,15 +207,8 @@ function draft(overrides: Partial<PledgeResponse> = {}): PledgeResponse {
     isAnonymous: false,
     // Well into the future, so the countdown is running rather than expired.
     reservationExpiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-    // What the service sends on every pledge this build can make: no payment
-    // method, and no card verified. Both are overridden in the two cases that
-    // exist to prove the screen reads them rather than asserting them.
-    paymentMethodId: null,
-    cardVerified: false,
-    // Both always present on the wire — `latePledge` is a primitive on the record and
-    // `supplements` is a list — and both added to the type by #287, which reads them on the
-    // pledge manager. False and empty is what the service sends for a pledge made at checkout.
-    latePledge: false,
+    // Always present on the wire — a list — and added to the type by #287, which reads it on
+    // the pledge manager. Empty is what the service sends for a pledge made at checkout.
     supplements: [],
     ...overrides,
   };

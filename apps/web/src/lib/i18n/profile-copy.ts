@@ -14,7 +14,7 @@ import type { ImageUploadCopy } from '../media/useImageUpload';
  * same enum on purpose rather than by accident. That one is written for somebody deciding
  * whether to back a campaign — `PRELAUNCH` reads "Coming soon" — while a profile's archive is
  * a list of statuses and reads "Pre-launch". The two lists also do not cover the same states:
- * an archive shows `SCHEDULED` and `COLLECTING`, and a campaign page shows `CANCELED`.
+ * an archive shows `SCHEDULED`, and a campaign page shows `CANCELED`.
  *
  * Reconciling the wording would be a copy decision about what a badge should say, not a
  * translation, so this change keeps both and says so here rather than quietly changing English
@@ -25,7 +25,7 @@ import type { ImageUploadCopy } from '../media/useImageUpload';
  * The progress bar's name, the completion figure, the goal under it and the backer count are
  * word for word what `components/discovery/ProjectCard` draws, so they live in `common.card`
  * and both cards read them — `lib/i18n/card-copy.ts` carries that decision. What is left in
- * `profile.card` is the nine status words of an archive.
+ * `profile.card` is the seven status words of an archive.
  *
  * <p>The count is `PluralForms` rather than an ICU string for the reason that file gives:
  * `campaign.backers` is ICU because the campaign page resolves it on the server, and a

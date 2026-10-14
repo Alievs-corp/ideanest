@@ -23,7 +23,7 @@ import { readProjectCardPage } from '../profiles/wire';
  */
 
 /**
- * §6.1's nine public states, for deciding where a row points.
+ * §6.1's public states, for deciding where a row points.
  *
  * <p><strong>A presentation decision and not a copy of the server's filter.</strong> The
  * service already decided what is on this list; this only decides whether a creator pressing
@@ -37,8 +37,6 @@ const PUBLIC_STATES: ReadonlySet<string> = new Set([
   'CANCELED',
   'SUCCESSFUL',
   'UNSUCCESSFUL',
-  'COLLECTING',
-  'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
   // IDN-EXT-01 (#32): still taking pledges, and closed by withdrawal.

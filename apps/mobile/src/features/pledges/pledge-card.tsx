@@ -59,7 +59,6 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
         stateLabel,
         total,
         pledge.isAnonymous === true ? t('anonymous') : null,
-        pledge.latePledge === true ? t('latePledge') : null,
         refundPending ? t('list.refundPending') : null,
         note === null ? null : t(`list.${note}`),
         pledge.rewardTitle ?? t('list.noReward'),
@@ -89,7 +88,6 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
         <View style={styles.tags}>
           <Tag label={stateLabel} variant={tone} icon={STATE_ICON[tone]} />
           {pledge.isAnonymous === true ? <Tag label={t('anonymous')} icon={Glyphs.EyeSlash} /> : null}
-          {pledge.latePledge === true ? <Tag label={t('latePledge')} icon={Glyphs.Timer1} /> : null}
           {refundPending ? (
             <Tag label={t('list.refundPending')} variant="warning" icon={Glyphs.MoneyRecive} />
           ) : null}

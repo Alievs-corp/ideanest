@@ -451,8 +451,6 @@ class MaintenanceApiTests extends AbstractIntegrationTest {
     void theJobsThatPause() {
         assertThat(jobs.stream().filter(ScheduledJob::pausesDuringMaintenance).map(ScheduledJob::name))
                 .containsExactlyInAnyOrder(
-                        "charge-processor",
-                        "charge-retry",
                         "campaign-refunds",
                         "hosted-charge-sweep",
                         "ledger-reconciliation",

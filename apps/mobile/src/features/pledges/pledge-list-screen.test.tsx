@@ -46,7 +46,6 @@ function summary(id: string, extra: Partial<BackerPledgeSummary> = {}): BackerPl
     },
     rewardTitle: 'Early bird',
     isAnonymous: false,
-    latePledge: false,
     confirmedAt: '2026-09-30T10:00:00Z',
     project: { id: 'p1', title: `Campaign ${id}`, slug: 'camp', creatorSlug: 'maker', state: 'LIVE' },
     ...extra,
@@ -133,7 +132,7 @@ describe('PledgeListScreen', () => {
   it('labels every one of the twelve states from the catalogue, with its tags', async () => {
     api.listMyPledges.mockResolvedValueOnce({
       items: STATES.map((state, index) =>
-        summary(state, { state, isAnonymous: index === 0, latePledge: index === 1 }),
+        summary(state, { state, isAnonymous: index === 0 }),
       ),
       nextCursor: null,
     });
@@ -145,7 +144,6 @@ describe('PledgeListScreen', () => {
       expect(screen.getAllByText(en.account.pledges.states[state]).length).toBeGreaterThan(0);
     }
     expect(screen.getAllByText(en.account.pledges.anonymous)).toHaveLength(1);
-    expect(screen.getAllByText(en.account.pledges.latePledge)).toHaveLength(1);
   });
 
   it('pairs each state with an icon, so the tone is never colour alone', async () => {

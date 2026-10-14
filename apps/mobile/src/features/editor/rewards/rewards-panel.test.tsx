@@ -53,7 +53,6 @@ const PROJECT: ProjectEdit = {
   state: 'DRAFT',
   title: 'Solar Lamp',
   goal: { amount: '5000.00', currency: 'AZN' },
-  latePledgeEnabled: false,
   lockedFields: [],
   createdAt: '2026-10-01T10:00:00.000Z',
   updatedAt: '2026-10-01T10:00:00.000Z',

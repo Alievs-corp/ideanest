@@ -61,8 +61,6 @@ class ProjectEditLocksTests {
             SUCCESSFUL        -> GOAL, DURATION_DAYS, SCHEDULED_LAUNCH_AT, REWARD_PRICE, REWARD_QUANTITY_DECREASE
             UNSUCCESSFUL      -> GOAL, DURATION_DAYS, SCHEDULED_LAUNCH_AT, REWARD_PRICE, REWARD_QUANTITY_DECREASE
             WITHDRAWN         -> GOAL, DURATION_DAYS, SCHEDULED_LAUNCH_AT, REWARD_PRICE, REWARD_QUANTITY_DECREASE
-            COLLECTING        -> GOAL, DURATION_DAYS, SCHEDULED_LAUNCH_AT, REWARD_PRICE, REWARD_QUANTITY_DECREASE
-            LATE_PLEDGE       -> GOAL, DURATION_DAYS, SCHEDULED_LAUNCH_AT, REWARD_PRICE, REWARD_QUANTITY_DECREASE
             FULFILLING        -> GOAL, DURATION_DAYS, SCHEDULED_LAUNCH_AT, REWARD_PRICE, REWARD_QUANTITY_DECREASE
             COMPLETED         -> GOAL, DURATION_DAYS, SCHEDULED_LAUNCH_AT, REWARD_PRICE, REWARD_QUANTITY_DECREASE
             """;
@@ -83,8 +81,8 @@ class ProjectEditLocksTests {
             ProjectState.CANCELED,
             ProjectState.SUCCESSFUL,
             ProjectState.UNSUCCESSFUL,
-            ProjectState.COLLECTING,
-            ProjectState.LATE_PLEDGE,
+            // COLLECTING and LATE_PLEDGE are still in V74's list; #45 removed the states, and
+            // no row can be in either (V106).
             ProjectState.FULFILLING,
             ProjectState.COMPLETED,
             // IDN-EXT-01 (#32), added to V12's, V13's and V16's predicates by V74.

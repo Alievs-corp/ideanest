@@ -7,6 +7,7 @@ import az.ideanest.fx.application.ExchangeRateRefreshJob;
 import az.ideanest.fx.infrastructure.ExchangeRateRepository;
 import az.ideanest.pledge.application.DraftPledge;
 import az.ideanest.pledge.application.PledgeDetail;
+import az.ideanest.pledge.application.PledgePayments;
 import az.ideanest.pledge.application.PledgeService;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.shared.money.Money;
@@ -37,6 +38,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * §4.2's P-10, currency half, over HTTP — issue #327.
@@ -71,6 +74,12 @@ class DisplayCurrencyApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private PledgeService pledges;
+
+    @Autowired
+    private PledgePayments payments;
+
+    @Autowired
+    private PlatformTransactionManager transactions;
 
     @Autowired
     private UserRepository users;
@@ -321,11 +330,12 @@ class DisplayCurrencyApiTests extends AbstractIntegrationTest {
     }
 
     /**
-     * A pledge drafted and confirmed through the service.
+     * A pledge drafted through the service and paid for as the provider's callback settles it.
      *
      * <p>Driven rather than written, unlike {@code Pledges.confirmed}: what is under test is
-     * what confirmation stamps on the row, so a fixture that wrote the row would assert
-     * against itself.
+     * what the payment stamps on the row, so a fixture that wrote the row would assert
+     * against itself. Until #45 this went through the stored-card model's {@code confirm},
+     * which stamped the same rate.
      */
     private UUID confirmAPledge(UUID backerId, String amount) {
         UUID creatorId = Campaigns.creator(dataSource, handle + "-creator");
@@ -345,7 +355,10 @@ class DisplayCurrencyApiTests extends AbstractIntegrationTest {
                 null,
                 "fx-" + UUID.randomUUID()));
 
-        return pledges.confirm(draft.pledge().getId(), backerId, null, null).pledge().getId();
+        UUID pledgeId = draft.pledge().getId();
+        new TransactionTemplate(transactions)
+                .executeWithoutResult(status -> payments.recordPaid(pledgeId, Instant.now()));
+        return pledgeId;
     }
 
     /** The pledge as its own screen reads it — `GET /v1/pledges/{id}`. */

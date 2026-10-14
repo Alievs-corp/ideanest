@@ -728,24 +728,17 @@ ideanest:
       # backup for the same connections is slow for a reason nobody will find.
       schedule: ${LEDGER_RECONCILIATION_SCHEDULE:0 30 2 * * *}
     provider:
-      # Which adapter the platform charges through, and it is deliberately empty.
+      # Which adapter the platform charges through: EPOINT, PAYRIFF or SANDBOX.
       #
-      # #60 -- choose the payment provider and confirm §9.3's fourteen capabilities
-      # in writing -- has not been answered, so no adapter exists. §9.2 says why no
-      # stub ships in the meantime: one that returned an approval "would be worse
-      # than nothing", because it would make the collection path look finished.
-      #
-      # Empty is what makes `CollectionRun` refuse to collect at all rather than
-      # fail once per pledge, and a value naming a provider with no adapter on the
-      # classpath is a start-up failure rather than a warning -- a deployment that
-      # thinks it can collect and cannot is discovered on the one day it must not
-      # be.
+      # Empty means no payment is taken, and a value naming a provider with no
+      # adapter on the classpath is a start-up failure rather than a warning -- a
+      # deployment that thinks it can take payments and cannot is discovered by a
+      # backer.
       primary: ${PAYMENT_PROVIDER:}
     # IDN-EXT-01 (#38): the Epoint.az adapter, API v1.0.3, used when `provider.primary` is
     # EPOINT -- spelled so. The owner chose Epoint; it stays unset by default because the
     # keys are per merchant, and naming EPOINT without the base URL and both keys is a
-    # start-up failure rather than a first payment that cannot be signed. Epoint cannot
-    # collect stored cards, so the retired collection jobs stay inert behind it (#39).
+    # start-up failure rather than a first payment that cannot be signed.
     epoint:
       base-url: ${EPOINT_BASE_URL:https://epoint.az/api/1}
       public-key: ${EPOINT_PUBLIC_KEY:}
@@ -840,51 +833,6 @@ ideanest:
       # A page abandoned unpaid stays pending at some providers for ever; after this it is no
       # longer asked about.
       asked-for: P7D
-    collection:
-      # §8.4: charge-processor, every minute. The pass that opens the collection of
-      # campaigns that closed above goal and makes §9.6's first attempt against
-      # their pledges -- so a creator watching their campaign close sees the money
-      # start moving within a minute of the finaliser.
-      schedule: "0 * * * * *"
-      # §8.4: charge-retry, every six hours. §9.6's slots are at +24h, +72h and
-      # +5 days, so nobody can tell an attempt made at 24:00 from one made at
-      # 27:00, and a sweep every minute would be fifteen hundred passes a day
-      # finding nothing.
-      retry-schedule: "0 0 0/6 * * *"
-      # How many campaigns one pass may open. Bounded because campaigns cluster at
-      # midnight and at the ends of months.
-      campaigns-per-pass: 20
-      # §9.3's R-09, expressed as a rate. This IS the rate limit: a hundred charges
-      # a minute is roughly 1.7 requests a second, which is a figure that can be
-      # agreed with a provider in advance rather than discovered by being throttled
-      # during a campaign's close. A campaign with four thousand backers therefore
-      # takes about forty minutes, which is well inside §9.6's first day.
-      charges-per-pass: 100
-      drops-per-pass: 200
-      # §9.6's last row: seven days after the close, a pledge that could not be
-      # charged is dropped. Frozen onto each pledge when it is queued, so changing
-      # this does not move a window already promised -- see V42.
-      retry-window: P7D
-      # §9.6's four attempts, as delays from the campaign's close. Measured from the
-      # close and not from the previous attempt: the table says "+24 hours",
-      # "+72 hours", "+5 days", which are positions rather than intervals.
-      #
-      # The length of this list is the whole of "how many attempts does a backer
-      # get", so a fifth attempt is an entry here rather than a code change.
-      attempt-delays:
-        - PT0S
-        - PT24H
-        - PT72H
-        - P5D
-      # How long to wait before asking the provider again about a charge it
-      # accepted and has not decided. Not one of §9.6's attempts -- the platform is
-      # waiting on an answer rather than on a backer to change their card -- and the
-      # same attempt number, and therefore the same idempotency key, is used.
-      unresolved-recheck: PT1H
-      # What a backer sees on their statement. A charge thirty to sixty days after
-      # a pledge is exactly the charge somebody disputes because they did not
-      # recognise it.
-      statement-descriptor: ${STATEMENT_DESCRIPTOR:IdeyaNest}
     circuit-breaker:
       # §9.3: "if the primary is unavailable on the day a large campaign closes, the
       # entire business stops." The breaker is not the answer to that -- only a
@@ -894,9 +842,8 @@ ideanest:
       # Declines never count towards it. §9.6 puts them at 5-15% of a campaign, so a
       # breaker that counted them would open on a perfectly healthy Tuesday.
       failure-threshold: 5
-      # One pass of charge-processor, so the next tick tries again: long enough that
-      # the pass which found the outage stops, short enough that recovery needs
-      # nobody.
+      # A minute: long enough that the work which found the outage stops, short
+      # enough that recovery needs nobody.
       cooldown: PT1M
     webhooks:
       # §17.2's replay window. A signature does not expire, so this is the only

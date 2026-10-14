@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.Pledges;
 import tools.jackson.databind.ObjectMapper;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -321,17 +322,18 @@ class PublicBackerApiTests extends AbstractIntegrationTest {
     }
 
     /**
-     * A backer, all the way through §4.5: draft, then confirm.
+     * A backer, through §4.5's draft and then confirmed.
      *
-     * <p>Through HTTP rather than by writing the row, because the property under test
-     * is that the flag a client sends to {@code POST /v1/pledges/draft} is the flag
+     * <p>The draft through HTTP rather than by writing the row, because the property under
+     * test is that the flag a client sends to {@code POST /v1/pledges/draft} is the flag
      * these counts are taken over — a fixture that wrote {@code is_anonymous} itself
-     * would prove the count works on data the application never produced.
+     * would prove the count works on data the application never produced. The confirmation
+     * is the stored-card model's, which no route performs since #45; a pledge made before
+     * IDN-EXT-01 can still be in that state and is counted.
      */
     private UUID back(Account backer, UUID projectId, UUID rewardTierId, String contribution, boolean anonymous) {
         UUID pledgeId = draft(backer, projectId, rewardTierId, contribution, anonymous);
-        ResponseEntity<String> confirmed = post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of());
-        assertThat(confirmed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Pledges.confirmDraft(dataSource, pledgeId);
         return pledgeId;
     }
 

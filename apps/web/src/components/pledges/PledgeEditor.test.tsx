@@ -56,9 +56,6 @@ function pledge(overrides: Partial<PledgeResponse> = {}): PledgeResponse {
     reservationExpiresAt: null,
     confirmedAt: '2026-01-01T00:00:00Z',
     canceledAt: null,
-    paymentMethodId: null,
-    cardVerified: false,
-    latePledge: false,
     supplements: [],
     ...overrides,
   };

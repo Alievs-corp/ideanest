@@ -140,7 +140,6 @@ describe('rewardProductNodes', () => {
       'SUCCESSFUL',
       'CANCELED',
       'COMPLETED',
-      'LATE_PLEDGE',
     ]) {
       expect(nodes({ campaignState: state })).toEqual([]);
     }

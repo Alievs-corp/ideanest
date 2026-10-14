@@ -45,8 +45,6 @@ export const DIRECTORY_STATES: readonly ProjectState[] = [
   'LIVE',
   'CLOSING_WINDOW',
   'EXTENDED',
-  'COLLECTING',
-  'LATE_PLEDGE',
   'SUCCESSFUL',
   'WITHDRAWN',
   'UNSUCCESSFUL',

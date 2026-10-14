@@ -30,6 +30,12 @@ import org.hibernate.generator.EventType;
  *
  * <p>The actor is an identifier rather than an association, for the reason given
  * on {@link Project}: {@code users} belongs to another module.
+ *
+ * <p><strong>History may name two states {@link ProjectState} no longer has</strong>:
+ * {@code COLLECTING} and {@code LATE_PLEDGE}, retired by #45. The table's check still
+ * allows them, because an audit row is not rewritten. No production read loads such a row
+ * as this entity — the creator's checklist loads staff decisions only, and the console and
+ * dashboard read the history as text — so a new reader of a whole history must do the same.
  */
 @Entity
 @Table(name = "project_state_transitions")

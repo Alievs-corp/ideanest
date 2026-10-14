@@ -25,8 +25,8 @@ import java.util.UUID;
  *
  * <h2>Two kinds of destination, since epic #392</h2>
  *
- * <p><strong>A provider token</strong>, which is what #432 built: the reference is the same
- * class of thing as {@code StoredCard#token()}, and the provider holds the bank details.
+ * <p><strong>A provider token</strong>, which is what #432 built: the reference is an opaque
+ * provider token, and the provider holds the bank details.
  *
  * <p><strong>A bank account</strong> (#394), which reverses #432's "the platform never stores
  * an IBAN". The owner decided on 2026-10-12 that creators are paid by bank transfer from

@@ -3,15 +3,12 @@ package az.ideanest.payment.domain;
 import java.util.Objects;
 
 /**
- * What the provider said about a {@link StoredCardChargeRequest}.
+ * What the provider said about a charge: a payment page that settled, or a raise.
  *
  * <p><strong>A decline is a result and not an exception</strong>, and that is the
- * single most important thing about this type. §9.6 puts collection failure at 5–15%
- * of pledges at a campaign's close, so on a campaign with four thousand backers
- * several hundred declines are the expected Tuesday; modelling them as thrown
- * exceptions would make the ordinary path the exceptional one and would put the
- * decline code — the thing §9.6's whole schedule is driven from — into a message
- * string.
+ * single most important thing about this type. Declines are an ordinary share of card
+ * payments; modelling them as thrown exceptions would make the ordinary path the
+ * exceptional one and would put the decline code into a message string.
  *
  * <p>What <em>is</em> an exception is not being able to ask: a timeout, a connection
  * refused, an answer nobody can parse. Those are {@link ProviderUnavailableException},

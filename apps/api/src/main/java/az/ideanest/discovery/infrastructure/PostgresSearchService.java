@@ -1751,8 +1751,8 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
      * A {@code VALUES} list of one row per (grouping, state) pair.
      *
      * <p>A pair rather than a grouping with a list, so that a state belonging to two
-     * groupings — {@code LATE_PLEDGE} is both late-pledging and successful — is
-     * counted in both without the query having to know that it is.
+     * groupings — {@code EXTENDED} is both extended and live — is counted in both
+     * without the query having to know that it is.
      *
      * <p>Bound rather than interpolated even though every value comes from an enum in
      * this package. A literal built by concatenation is a habit, and the next person

@@ -65,9 +65,9 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  * component checks the first and deliberately does not check the second.
  *
  * The reason is that the client cannot check it correctly. `PledgeAcceptance` accepts a `LIVE`
- * campaign before its deadline and also a `LATE_PLEDGE` one inside a window it opened (PL-16),
- * and the summary above carries a state and a deadline but not the late-pledge window. A
- * client-side approximation of that rule would be a second rule, free to drift from the
+ * campaign before its first deadline, a `CLOSING_WINDOW` one before the seven days end and an
+ * `EXTENDED` one before its extension ends, and the summary above carries a state and the first
+ * deadline but not the extension. A client-side approximation of that rule would be a second rule, free to drift from the
  * service's, and its failure mode is the bad one: hiding the edit controls from somebody who is
  * still entitled to raise their pledge.
  *
@@ -289,7 +289,6 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
             <div className="mt-3 flex flex-wrap gap-2">
               <Tag>{pledgeStateLabel(pledge.state, pledges.states)}</Tag>
               {pledge.isAnonymous && <Tag>{pledges.anonymous}</Tag>}
-              {pledge.latePledge && <Tag>{pledges.latePledge}</Tag>}
             </div>
 
             {pledge.confirmedAt != null && (

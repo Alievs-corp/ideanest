@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAccessToken } from '../api/access-token';
 import { ApiError } from '../api/problem';
 import {
-  confirmPledge,
   createPledgeDraft,
   getPublicRewards,
   isShipped,
@@ -199,33 +198,6 @@ describe('createPledgeDraft', () => {
     // The header describes the response that actually arrived; the body is a
     // convenience copy of what the origin meant to say.
     expect(thrown.problem?.retryAfterSeconds).toBe(4);
-  });
-});
-
-describe('confirmPledge', () => {
-  it('sends its own key, and a null payment method', async () => {
-    fetchMock.mockResolvedValueOnce(json({ id: 'pledge-1', state: 'CONFIRMED' }));
-
-    await confirmPledge(
-      'pledge-1',
-      { paymentMethodId: null, acknowledgedAgreementVersion: null },
-      'key-2',
-    );
-
-    expect(requestOf(0).url).toBe('/v1/pledges/pledge-1/confirm');
-    expect(headerOf(0, 'Idempotency-Key')).toBe('key-2');
-    // Null and not omitted: #55 owns the card and is blocked on #60, and the
-    // column is nullable precisely because `payment_methods` does not exist yet.
-    expect(JSON.parse(String(requestOf(0).init?.body))).toEqual({
-      paymentMethodId: null,
-      /*
-       * Null and not omitted, for the same reason and a second one: #427 makes this the
-       * version of the backer agreement the checkout showed, and null is what a build with
-       * nothing published sends — which the service reads as "no acknowledgement is asked
-       * for" rather than as a missing field.
-       */
-      acknowledgedAgreementVersion: null,
-    });
   });
 });
 

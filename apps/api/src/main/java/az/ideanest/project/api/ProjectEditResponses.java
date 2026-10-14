@@ -55,13 +55,6 @@ public class ProjectEditResponses {
                 project.getRisks(),
                 CoverImageBody.of(project.getCoverImage()),
                 videoOf(project),
-                project.isLatePledgeEnabled(),
-                // Null until the creator opens the window (#81), and the pair is why
-                // both are on this response: the switch is the creator's standing
-                // decision and the instant is the one window it is currently open for,
-                // and a screen that showed only the first would say a campaign takes
-                // late pledges when nothing is accepting them.
-                project.getLatePledgeEndsAt(),
                 // §5.3, read off the one table rather than recomputed here, and
                 // filtered to the fields this response's own PATCH body has: a
                 // reward's price is frozen by the same rule and is not on this

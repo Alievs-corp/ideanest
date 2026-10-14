@@ -100,7 +100,6 @@ const PROJECT: ProjectEdit = {
   durationDays: 30,
   scheduledLaunchAt: null,
   coverImage: null,
-  latePledgeEnabled: false,
   lockedFields: [],
   createdAt: '2026-08-15T09:00:00.000Z',
   updatedAt: '2026-08-15T09:00:00.000Z',
@@ -241,7 +240,6 @@ describe('BasicsPanel', () => {
     expect(screen.getByRole('combobox', { name: 'Subcategory' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Currency' })).toBeInTheDocument();
     expect(screen.getByLabelText('Scheduled launch')).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'Accept late pledges' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Cover image address' })).toBeInTheDocument();
     // Every button says what it does, including the two that only differ by it.
     expect(screen.getByRole('button', { name: 'Use this address' })).toBeInTheDocument();
@@ -1007,19 +1005,6 @@ describe('BasicsPanel', () => {
 
       expect(lastPatch()).toEqual({ categoryId: 'category-music', subcategoryId: null });
     });
-  });
-
-  it('turns late pledges on through a switch, which announces on and off', async () => {
-    const user = await openBasics();
-
-    const toggle = screen.getByRole('switch', { name: 'Accept late pledges' });
-    expect(toggle).toHaveAttribute('aria-checked', 'false');
-
-    await user.click(toggle);
-    await tick(DEBOUNCE);
-
-    expect(toggle).toHaveAttribute('aria-checked', 'true');
-    expect(lastPatch()).toEqual({ latePledgeEnabled: true });
   });
 
   describe('when the project cannot be loaded', () => {

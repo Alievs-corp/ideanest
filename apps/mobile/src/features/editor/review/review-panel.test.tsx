@@ -56,7 +56,6 @@ function project(extra: Partial<ProjectEdit> = {}): ProjectEdit {
     slug: 'solar-lamp',
     state: 'DRAFT',
     title: 'Solar Lamp',
-    latePledgeEnabled: false,
     lockedFields: [],
     createdAt: '2026-10-01T10:00:00.000Z',
     updatedAt: '2026-10-01T10:00:00.000Z',

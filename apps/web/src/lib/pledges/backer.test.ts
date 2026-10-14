@@ -37,7 +37,6 @@ function summary(pledgeId: string) {
     rewardTierId: 'tier-1',
     rewardTitle: 'Enamel mug',
     isAnonymous: false,
-    latePledge: false,
     confirmedAt: '2026-01-01T00:00:00Z',
     canceledAt: null,
     project: {

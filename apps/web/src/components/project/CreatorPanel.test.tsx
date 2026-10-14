@@ -271,21 +271,6 @@ describe('the creator tab', () => {
     expect(screen.getByText(translatorFor('campaign.state')('SUCCESSFUL'))).toBeInTheDocument();
   });
 
-  it('calls a campaign that is collecting funded, as the header does', async () => {
-    render(
-      await resolveServerTree(
-        <CreatorPanel
-          returnTo={RETURN_TO}
-          campaign={campaign()}
-          profile={PROFILE}
-          projects={[{ ...OTHER, state: 'COLLECTING' }]}
-        />,
-      ),
-    );
-
-    expect(screen.getByText(translatorFor('campaign.state')('COLLECTING'))).toBeInTheDocument();
-  });
-
   it('omits a state it has no word for rather than printing the enum', async () => {
     const { container } = render(
       await resolveServerTree(

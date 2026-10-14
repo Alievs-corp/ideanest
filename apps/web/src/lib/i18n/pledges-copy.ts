@@ -93,7 +93,6 @@ export interface PledgeListCopy {
   readonly loadingMore: string;
   readonly showMore: string;
   readonly nextPageFailed: string;
-  readonly latePledge: string;
   readonly anonymous: string;
   readonly states: PledgeStatesCopy;
 }
@@ -115,7 +114,6 @@ export function pledgeListCopyFrom(t: PledgesTranslator): PledgeListCopy {
     loadingMore: t('list.loadingMore'),
     showMore: t('list.showMore'),
     nextPageFailed: t('list.nextPageFailed'),
-    latePledge: t('latePledge'),
     anonymous: t('anonymous'),
     states: statesFrom(t),
   };
@@ -202,7 +200,6 @@ export interface PledgeManagerCopy {
   readonly lockedTitle: string;
   /** Carries `{state}`, which is one of {@link PledgeStatesCopy} in the reader's language. */
   readonly lockedBody: string;
-  readonly latePledge: string;
   readonly anonymous: string;
   readonly states: PledgeStatesCopy;
   readonly editor: PledgeEditorCopy;
@@ -249,7 +246,6 @@ export function pledgeManagerCopyFrom(t: PledgesTranslator): PledgeManagerCopy {
     supplementsNote: t('manager.supplementsNote'),
     lockedTitle: t('manager.lockedTitle'),
     lockedBody: String(t.raw('manager.lockedBody')),
-    latePledge: t('latePledge'),
     anonymous: t('anonymous'),
     states: statesFrom(t),
     editor: editorCopyFrom(t),

@@ -64,56 +64,6 @@ groups:
             than 36 hours, or has never completed since the fleet last restarted. The
             books are unverified rather than known to be wrong.
 
-  - name: ideanest-collections
-    interval: 1m
-    rules:
-      # §8.4's second condition. A rate rather than a count, because ten declines out
-      # of ten thousand collections is a Tuesday and ten out of twelve is an incident
-      # — CollectionMetrics publishes every outcome for exactly this denominator.
-      #
-      # `declined` and `failed` and not `provider_unavailable`: that one has its own
-      # rule below and is a fact about the provider rather than about the cards.
-      # `nothing_due` and `no_provider` are excluded from both sides — they are the
-      # job finding nothing to do, and counting them in the denominator would make a
-      # quiet hour look like a healthy one.
-      - alert: CollectionFailureRate
-        expr: >-
-          (
-            sum(rate(ideanest_payment_collection_attempts_total{outcome=~"declined|failed"}[15m]))
-            /
-            sum(rate(ideanest_payment_collection_attempts_total{outcome=~"declined|failed|collected"}[15m]))
-          ) > 0.25
-        for: 15m
-        labels:
-          severity: page
-        annotations:
-          summary: More than a quarter of collections are failing
-          description: >-
-            {{ $value | humanizePercentage }} of collection attempts over the last
-            fifteen minutes ended in a decline or a failure. §9.6 retries a declined
-            charge, so a rate this high is a provider or a configuration problem rather
-            than a run of expired cards.
-
-      # The one that fires when nothing is happening at all. A collection run that
-      # has stopped produces no failures, so the rate above goes to zero — which is
-      # indistinguishable from a perfect afternoon.
-      #
-      # Only during a collection window: `charge-processor` runs every minute and has
-      # nothing to do most of the time, so this is a ticket rather than a page and is
-      # deliberately generous. It catches a job that has been dead for hours, not one
-      # that had a quiet ten minutes.
-      - alert: NoCollectionsAttempted
-        expr: absent(ideanest_payment_collection_attempts_total)
-        for: 1h
-        labels:
-          severity: ticket
-        annotations:
-          summary: The collection job is publishing no attempts at all
-          description: >-
-            No collection attempt of any outcome has been recorded for an hour. The
-            counters are registered at start-up, so an absent series means the metrics
-            binding is broken rather than that the platform is quiet.
-
   - name: ideanest-providers
     interval: 1m
     rules:

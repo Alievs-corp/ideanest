@@ -16,6 +16,14 @@ import java.util.Set;
  * column in the schema: adding a value to an enum type is a migration that cannot
  * run inside a transaction on older servers, and the check constraint gives the
  * same refusal without that.
+ *
+ * <p><strong>Four of these are the retired stored-card model's</strong> — {@link #CONFIRMED},
+ * {@link #CHARGE_PENDING}, {@link #CHARGE_FAILED} and {@link #DROPPED}. IDN-EXT-01 charges a
+ * pledge when it is made ({@code DRAFT → COLLECTED}), and #45 removed everything that moved a
+ * pledge into them: the {@code confirm} route and the collection at close. They stay here
+ * because a pledge confirmed before IDN-EXT-01 may still be {@code CONFIRMED}, and a row whose
+ * state this enum cannot name cannot be read at all. Retiring them is a data decision about
+ * those backers, not a code cleanup.
  */
 public enum PledgeState {
 
@@ -25,7 +33,7 @@ public enum PledgeState {
      */
     DRAFT,
 
-    /** The card was verified and voided (§4.5). The backer is committed; no money has moved. */
+    /** The stored-card model's commitment: no money has moved. Nothing enters it since #45. */
     CONFIRMED,
 
     /** The reservation TTL elapsed before the backer confirmed. The place was released. */
@@ -35,14 +43,14 @@ public enum PledgeState {
 
     CANCELED_BY_PROJECT,
 
-    /** The campaign succeeded and this pledge is queued for collection (§5.1). */
+    /** The stored-card model's queue for collection at close. Nothing enters it since #45. */
     CHARGE_PENDING,
 
     COLLECTED,
 
     CHARGE_FAILED,
 
-    /** The seven-day retry window of §5.1 elapsed without a successful charge. */
+    /** The stored-card model's end for a card never charged. Nothing enters it since #45. */
     DROPPED,
 
     REFUNDED,

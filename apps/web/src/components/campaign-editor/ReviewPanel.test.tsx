@@ -63,7 +63,6 @@ const PROJECT: ProjectEdit = {
   durationDays: 30,
   scheduledLaunchAt: null,
   coverImage: null,
-  latePledgeEnabled: false,
   lockedFields: [],
   createdAt: '2026-08-15T09:00:00.000Z',
   updatedAt: '2026-08-15T09:00:00.000Z',

@@ -26,8 +26,6 @@ function pledge(overrides: Partial<PledgeResponse> = {}): PledgeResponse {
     },
     shippingCountry: 'AZ',
     isAnonymous: false,
-    cardVerified: false,
-    latePledge: false,
     supplements: [],
     ...overrides,
   };

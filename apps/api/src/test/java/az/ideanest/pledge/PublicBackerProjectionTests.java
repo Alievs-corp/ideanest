@@ -210,9 +210,8 @@ class PublicBackerProjectionTests {
                 anonymous,
                 null,
                 null,
-                CONFIRMED_AT.minus(Duration.ofMinutes(5)),
-                false));
-        pledge.confirm(CONFIRMED_AT, null);
+                CONFIRMED_AT.minus(Duration.ofMinutes(5))));
+        pledge.paid(CONFIRMED_AT);
         return pledge;
     }
 

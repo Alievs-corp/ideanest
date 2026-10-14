@@ -229,11 +229,6 @@ const CASES: readonly [string, ProjectPage, Expectation][] = [
     page('CANCELED', { deadline: PAST, outcome: OUTCOME }),
     { tag: C.state.CANCELED, chip: null, back: false, countdown: false, remind: false, trust: 'closed', outcome: 'notFunded' },
   ],
-  [
-    'LATE_PLEDGE',
-    page('LATE_PLEDGE', { deadline: PAST, outcome: OUTCOME }),
-    { tag: C.state.LATE_PLEDGE, chip: null, back: false, countdown: false, remind: false, trust: 'closed', outcome: 'funded' },
-  ],
 ];
 
 describe('the campaign page, state by state', () => {

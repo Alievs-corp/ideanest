@@ -10,6 +10,7 @@ import az.ideanest.shared.idempotency.IdempotencyProperties;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.AdjustableClock;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.Pledges;
 import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -829,168 +830,6 @@ class PledgeApiTests extends AbstractIntegrationTest {
     }
 
     // -----------------------------------------------------------------------
-    // Confirming
-    // -----------------------------------------------------------------------
-
-    @Test
-    @DisplayName("confirming moves the held place to a claimed one, in one statement")
-    void confirmingMovesTheHeldPlaceToAClaimedOne() {
-        Account creator = account("creator");
-        UUID projectId = project(creator);
-        UUID rewardId = reward(creator, projectId, "A boxed set", "45.00", tier -> tier.put("limitQuantity", 3));
-        Campaigns.launch(dataSource, projectId);
-
-        Account backer = account("backer");
-        UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, rewardId, "45.00"))));
-        assertThat(reservedQuantity(rewardId)).isEqualTo(1);
-        assertThat(claimedQuantity(rewardId)).isZero();
-
-        UUID paymentMethodId = UUID.randomUUID();
-        ResponseEntity<String> confirmed = post(
-                "/v1/pledges/" + pledgeId + "/confirm",
-                backer,
-                newKey(),
-                Map.of("paymentMethodId", paymentMethodId.toString()));
-
-        assertThat(confirmed.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> pledge = parse(confirmed);
-        assertThat(pledge.get("state")).isEqualTo("CONFIRMED");
-        assertThat(pledge.get("confirmedAt")).isNotNull();
-        // Null once it is not a draft. The column keeps its value -- it is a true
-        // statement about the window the backer had -- but a confirmed pledge holds no
-        // reservation, and a countdown on that screen has nothing to count down to.
-        assertThat(pledge.get("reservationExpiresAt")).isNull();
-        // Accepted and stored so the shape does not change when #55 lands. Nothing
-        // resolves it.
-        assertThat(pledge.get("paymentMethodId")).isEqualTo(paymentMethodId.toString());
-        // **No card was verified and nothing was charged.** §9.2's phase 1 is #55,
-        // blocked on #60, and §9.2 is explicit that no money moves here in any case.
-        assertThat(pledge.get("cardVerified")).isEqualTo(false);
-
-        // One place, moved. The sum never changes, which is what stops another checkout
-        // from taking a place that has already been sold and stops V7's constraint from
-        // refusing a legitimate confirmation of the last one.
-        assertThat(reservedQuantity(rewardId)).isZero();
-        assertThat(claimedQuantity(rewardId)).isEqualTo(1);
-        assertThat(committedQuantity(rewardId)).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("confirming moves the add-on's places too, all of them in one statement")
-    void confirmingMovesTheAddonPlacesAsWell() {
-        Account creator = account("creator");
-        UUID projectId = project(creator);
-        UUID rewardId = reward(creator, projectId, "A boxed set", "45.00", tier -> tier.put("limitQuantity", 3));
-        UUID addonId = reward(creator, projectId, "An enamel mug", "15.00", tier -> {
-            tier.put("isAddon", true);
-            tier.put("limitQuantity", 4);
-        });
-        Campaigns.launch(dataSource, projectId);
-
-        Account backer = account("backer");
-        Map<String, Object> body = draftBody(projectId, rewardId, "45.00");
-        body.put("addons", List.of(Map.of("rewardTierId", addonId.toString(), "quantity", 3)));
-        UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), body)));
-        assertThat(reservedQuantity(addonId)).isEqualTo(3);
-        assertThat(claimedQuantity(addonId)).isZero();
-
-        assertThat(post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of())
-                        .getStatusCode())
-                .isEqualTo(HttpStatus.OK);
-
-        // Three places, moved together. A confirmation that committed the reward and
-        // left the add-on reserved would leave a reservation against a pledge that is
-        // not a draft -- the row §8.4's sweep hunts for -- and the sweep would then
-        // hand three mugs somebody has committed to buying to the next person.
-        assertThat(reservedQuantity(rewardId)).isZero();
-        assertThat(claimedQuantity(rewardId)).isEqualTo(1);
-        assertThat(reservedQuantity(addonId)).isZero();
-        assertThat(claimedQuantity(addonId)).isEqualTo(3);
-        // And the sum never moved, which is what stops another checkout taking a place
-        // that is already sold.
-        assertThat(committedQuantity(addonId)).isEqualTo(3);
-    }
-
-    @Test
-    @DisplayName("a replayed confirmation returns the original response and commits one place")
-    void aReplayedConfirmationCommitsOnce() {
-        Account creator = account("creator");
-        UUID projectId = project(creator);
-        UUID rewardId = reward(creator, projectId, "A boxed set", "45.00", tier -> tier.put("limitQuantity", 3));
-        Campaigns.launch(dataSource, projectId);
-
-        Account backer = account("backer");
-        UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, rewardId, "45.00"))));
-
-        String key = newKey();
-        ResponseEntity<String> first = post("/v1/pledges/" + pledgeId + "/confirm", backer, key, Map.of());
-        ResponseEntity<String> replay = post("/v1/pledges/" + pledgeId + "/confirm", backer, key, Map.of());
-
-        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(replay.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(replay.getBody()).isEqualTo(first.getBody());
-
-        // The replay is not a second transition, which is what the count proves: a
-        // re-execution would have tried to commit a place the tier no longer holds.
-        assertThat(claimedQuantity(rewardId)).isEqualTo(1);
-        assertThat(reservedQuantity(rewardId)).isZero();
-
-        // A *different* request asking for the same transition is a different matter:
-        // §6.2 has no edge out of CONFIRMED for a backer, and answering it with a
-        // success would say a transition happened when it did not.
-        ResponseEntity<String> again = post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of());
-        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(code(again)).isEqualTo("PLEDGE_NOT_DRAFT");
-        assertThat(meta(again).get("state")).isEqualTo("CONFIRMED");
-    }
-
-    @Test
-    @DisplayName("a draft whose five minutes ran out cannot be confirmed")
-    void confirmingAfterTheReservationLapsedIsRefused() {
-        Account creator = account("creator");
-        UUID projectId = project(creator);
-        UUID rewardId = reward(creator, projectId, "A boxed set", "45.00", tier -> tier.put("limitQuantity", 3));
-        Campaigns.launch(dataSource, projectId);
-
-        clock.freeze();
-        Account backer = account("backer");
-        UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, rewardId, "45.00"))));
-
-        // Without the sweep having run: the clock decides, not the state. A draft whose
-        // window closed forty seconds ago is still DRAFT in the table, and confirming it
-        // would commit a place the tier has already promised to give back.
-        clock.advance(properties.reservation().ttl().plusSeconds(1));
-
-        ResponseEntity<String> refused = post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of());
-
-        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(code(refused)).isEqualTo("RESERVATION_EXPIRED");
-        assertThat(claimedQuantity(rewardId)).isZero();
-        // Still held, and still a draft: the sweep releases it within the minute, and
-        // doing it here would be a write rolled back by the refusal that caused it.
-        assertThat(reservedQuantity(rewardId)).isEqualTo(1);
-        assertThat(state(pledgeId)).isEqualTo("DRAFT");
-    }
-
-    @Test
-    @DisplayName("confirming somebody else's pledge is a 404")
-    void confirmingAStrangersPledgeIsRefused() {
-        Account creator = account("creator");
-        UUID projectId = project(creator);
-        Campaigns.launch(dataSource, projectId);
-
-        UUID pledgeId = id(parse(
-                post("/v1/pledges/draft", account("backer"), newKey(), draftBody(projectId, null, "25.00"))));
-
-        ResponseEntity<String> refused =
-                post("/v1/pledges/" + pledgeId + "/confirm", account("backer"), newKey(), Map.of());
-
-        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(code(refused)).isEqualTo("PLEDGE_NOT_FOUND");
-        assertThat(state(pledgeId)).isEqualTo("DRAFT");
-    }
-
-    // -----------------------------------------------------------------------
     // Editing (#56)
     // -----------------------------------------------------------------------
 
@@ -1248,9 +1087,7 @@ class PledgeApiTests extends AbstractIntegrationTest {
 
         Account backer = account("backer");
         UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, chosen, "45.00"))));
-        assertThat(post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of())
-                        .getStatusCode())
-                .isEqualTo(HttpStatus.OK);
+        Pledges.confirmDraft(dataSource, pledgeId);
         assertThat(claimedQuantity(chosen)).isEqualTo(1);
         assertThat(reservedQuantity(chosen)).isZero();
 
@@ -1281,9 +1118,7 @@ class PledgeApiTests extends AbstractIntegrationTest {
 
         Account backer = account("backer");
         UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, null, "25.00"))));
-        assertThat(post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of())
-                        .getStatusCode())
-                .isEqualTo(HttpStatus.OK);
+        Pledges.confirmDraft(dataSource, pledgeId);
 
         Map<String, Object> more = new LinkedHashMap<>();
         more.put("contribution", Map.of("amount", "40.00", "currency", "AZN"));
@@ -1305,9 +1140,7 @@ class PledgeApiTests extends AbstractIntegrationTest {
 
         Account backer = account("backer");
         UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, deluxe, "70.00"))));
-        assertThat(post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of())
-                        .getStatusCode())
-                .isEqualTo(HttpStatus.OK);
+        Pledges.confirmDraft(dataSource, pledgeId);
 
         Map<String, Object> down = new LinkedHashMap<>();
         down.put("rewardTierId", cheaper.toString());
@@ -1637,9 +1470,7 @@ class PledgeApiTests extends AbstractIntegrationTest {
 
         Account backer = account("backer");
         UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, rewardId, "45.00"))));
-        assertThat(post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of())
-                        .getStatusCode())
-                .isEqualTo(HttpStatus.OK);
+        Pledges.confirmDraft(dataSource, pledgeId);
         assertThat(claimedQuantity(rewardId)).isEqualTo(1);
         assertThat(reservedQuantity(rewardId)).isZero();
 
@@ -1687,9 +1518,7 @@ class PledgeApiTests extends AbstractIntegrationTest {
         // add-on places stay exactly where they are.
         Account second = account("backer");
         UUID confirmed = id(parse(post("/v1/pledges/draft", second, newKey(), body)));
-        assertThat(post("/v1/pledges/" + confirmed + "/confirm", second, newKey(), Map.of())
-                        .getStatusCode())
-                .isEqualTo(HttpStatus.OK);
+        Pledges.confirmDraft(dataSource, confirmed);
         assertThat(claimedQuantity(addonId)).isEqualTo(2);
 
         ResponseEntity<String> refused = delete("/v1/pledges/" + confirmed, second, newKey());
@@ -2027,10 +1856,6 @@ class PledgeApiTests extends AbstractIntegrationTest {
 
     private int claimedQuantity(UUID rewardTierId) {
         return count("SELECT claimed_quantity FROM reward_tiers WHERE id = ?", rewardTierId);
-    }
-
-    private int committedQuantity(UUID rewardTierId) {
-        return count("SELECT claimed_quantity + reserved_quantity FROM reward_tiers WHERE id = ?", rewardTierId);
     }
 
     private int count(String sql, UUID id) {

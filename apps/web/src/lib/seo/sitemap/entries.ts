@@ -147,11 +147,9 @@ function changeFrequencyFor(state: string): ChangeFrequency {
     case 'LIVE':
     case 'CLOSING_WINDOW':
     case 'EXTENDED':
-    case 'LATE_PLEDGE':
       return 'daily';
     case 'SUCCESSFUL':
     case 'WITHDRAWN':
-    case 'COLLECTING':
     case 'FULFILLING':
       return 'monthly';
     default:

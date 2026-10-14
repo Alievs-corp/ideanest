@@ -1,7 +1,6 @@
 package az.ideanest.payment.infrastructure;
 
 import az.ideanest.payment.PaymentProperties;
-import az.ideanest.payment.domain.ChargeResult;
 import az.ideanest.payment.domain.HostedPaymentRequest;
 import az.ideanest.payment.domain.HostedPaymentSession;
 import az.ideanest.payment.domain.PaymentEvent;
@@ -19,10 +18,6 @@ import az.ideanest.payment.domain.ProviderOutcome;
 import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.domain.RefundRequest;
 import az.ideanest.payment.domain.RefundResult;
-import az.ideanest.payment.domain.StoredCardChargeRequest;
-import az.ideanest.payment.domain.TokenizationRequest;
-import az.ideanest.payment.domain.TokenizationResult;
-import az.ideanest.payment.domain.TokenizationSession;
 import az.ideanest.payment.domain.WebhookVerificationException;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
@@ -79,9 +74,8 @@ import tools.jackson.databind.node.ObjectNode;
  * </ul>
  *
  * <p><strong>Not the stored-card model.</strong> Tokenisation and the merchant-initiated charge
- * at close are retired by IDN-EXT-01 (#39), and Epoint has not confirmed §9.3's R-02 and R-03, so
- * {@link #capabilities()} does not claim them and {@code PaymentProviders} never hands this
- * adapter to {@code CollectionRun}. The three calls refuse rather than pretend.
+ * at close were retired by IDN-EXT-01 (#39) and removed from the port by #45, and Epoint has not
+ * confirmed §9.3's R-02 and R-03, so {@link #capabilities()} does not claim them.
  *
  * <h2>Money</h2>
  *
@@ -331,29 +325,10 @@ public class EpointPaymentProvider implements PaymentProvider {
         return new PaymentEvent(NAME, eventId, type, transaction, amountOf(decoded), null, redacted(decoded), payoutCard);
     }
 
-    @Override
-    public TokenizationSession beginTokenization(TokenizationRequest request) {
-        throw storedCardsRetired();
-    }
-
-    @Override
-    public TokenizationResult resolveTokenization(String sessionId) {
-        throw storedCardsRetired();
-    }
-
-    @Override
-    public ChargeResult chargeStoredCard(StoredCardChargeRequest request) {
-        throw storedCardsRetired();
-    }
-
-    /**
-     * Payments on its page, refunds in part, split payments; AZN only. Card-on-file exists at
-     * Epoint, but merchant-initiated charges and scheme chaining are unconfirmed — and unused under
-     * IDN-EXT-01 — so the stored-card collection this platform no longer does is not claimed.
-     */
+    /** Payments on its page, refunds in part, split payments; AZN only. */
     @Override
     public ProviderCapabilities capabilities() {
-        return new ProviderCapabilities(true, false, null, false, true, true, Set.of(), Set.of(CURRENCY));
+        return new ProviderCapabilities(true, true, Set.of(), Set.of(CURRENCY));
     }
 
     // ------------------------------------------------------------------
@@ -514,10 +489,5 @@ public class EpointPaymentProvider implements PaymentProvider {
 
     private static ProviderUnavailableException unavailable(String message) {
         return new ProviderUnavailableException(NAME, message);
-    }
-
-    private static UnsupportedOperationException storedCardsRetired() {
-        return new UnsupportedOperationException(
-                "Epoint takes payments on its own page under IDN-EXT-01; stored-card collection is retired (#39).");
     }
 }

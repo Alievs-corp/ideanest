@@ -405,7 +405,7 @@ describe('backing the campaign', () => {
   /**
    * IDN-EXT-01 (#36): the seven days after the first deadline and an extension are the same
    * funding as the campaign, and are offered in the same words — even though the first deadline
-   * has passed. Late pledges are switched off, so a LATE_PLEDGE campaign is offered nothing.
+   * has passed.
    */
   it.each(['CLOSING_WINDOW', 'EXTENDED'] as const)(
     'offers backing to a %s campaign past its first deadline',
@@ -415,12 +415,6 @@ describe('backing the campaign', () => {
       expect(screen.getByRole('link', { name: 'Back this campaign' })).toBeInTheDocument();
     },
   );
-
-  it('offers nothing on a campaign left in LATE_PLEDGE', async () => {
-    await renderSummary(campaign({ state: 'LATE_PLEDGE' }));
-
-    expect(screen.queryByRole('link', { name: /back this campaign|late pledge/iu })).toBeNull();
-  });
 
   it('offers nothing on a campaign that has finished', async () => {
     await renderSummary(campaign({ state: 'SUCCESSFUL' }));

@@ -56,10 +56,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
  *   <li>{@link #onlyStaffMayReadTheConsole()} — the default case, asserted for all three.
  * </ul>
  *
- * <p><strong>Rows are written with SQL rather than driven through a collection run.</strong>
+ * <p><strong>Rows are written with SQL rather than driven through a payment.</strong>
  * These are read endpoints over two append-only tables; driving a real charge would make a
  * suite about paging depend on the whole payment provider configuration, and
- * {@code CollectionTests} already owns that path. What is <em>not</em> faked is the
+ * {@code HostedPaymentApiTests} already owns that path. What is <em>not</em> faked is the
  * identifier: {@link Identifiers#newIdentifier()} rather than {@link UUID#randomUUID()},
  * because both endpoints page by the primary key on the strength of it being a UUID v7, and
  * a fixture using version 4 would order at random and pass anyway.
@@ -624,7 +624,7 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
         String unique = handle + SEQUENCE.incrementAndGet();
         UUID creatorId = Campaigns.creator(dataSource, unique);
         UUID projectId = Campaigns.seed(dataSource, creatorId, unique)
-                .state("COLLECTING")
+                .state("FULFILLING")
                 .goal("100.00")
                 .insert();
         return new Fixture(projectId, Pledges.confirmed(dataSource, projectId, unique + "-backer", "100.00"));

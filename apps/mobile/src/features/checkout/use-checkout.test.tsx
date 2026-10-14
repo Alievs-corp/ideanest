@@ -57,8 +57,6 @@ function draft(id = 'pl-1', expiresAt = '2030-01-01T00:05:00Z'): PledgeResponse 
     },
     isAnonymous: false,
     reservationExpiresAt: expiresAt,
-    cardVerified: false,
-    latePledge: false,
     supplements: [],
   };
 }

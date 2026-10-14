@@ -55,8 +55,7 @@ public record EditPledge(
         Patched<List<DraftPledge.AddonSelection>> addons,
         Patched<Money> contribution,
         Patched<String> shippingCountry,
-        Patched<Boolean> anonymous,
-        Patched<UUID> paymentMethodId) {
+        Patched<Boolean> anonymous) {
 
     public EditPledge {
         Objects.requireNonNull(pledgeId, "An edit names the pledge it changes");
@@ -69,7 +68,6 @@ public record EditPledge(
         contribution = Patched.orAbsent(contribution);
         shippingCountry = Patched.orAbsent(shippingCountry);
         anonymous = Patched.orAbsent(anonymous);
-        paymentMethodId = Patched.orAbsent(paymentMethodId);
 
         // **Two fields cannot be cleared, because there is nothing for them to mean
         // when empty.** A pledge is an amount somebody chose to give, so
@@ -78,10 +76,9 @@ public record EditPledge(
         // than read as false or as zero, either of which would change what somebody
         // is charged or who can see them on the strength of a client's null.
         //
-        // `rewardTierId`, `shippingCountry`, `addons` and `paymentMethodId` are
-        // deliberately not in this list: clearing each of them is a real edit —
-        // giving up the reward, having nothing left to post, removing every extra,
-        // and unnaming a card.
+        // `rewardTierId`, `shippingCountry` and `addons` are deliberately not in this
+        // list: clearing each of them is a real edit — giving up the reward, having
+        // nothing left to post, and removing every extra.
         if (contribution.isPresent() && contribution.value() == null) {
             throw new IllegalArgumentException("A pledge is an amount somebody chose to give");
         }

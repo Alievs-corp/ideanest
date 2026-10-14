@@ -203,17 +203,16 @@ class ReconciliationApiTests extends AbstractIntegrationTest {
     /**
      * A charge the platform believes settled, with nothing posted against it.
      *
-     * <p>Written as SQL rather than driven through a collection run, because what is under
-     * test is the comparison and not the collection — {@code CollectionTests} owns that
-     * path. It is also the only way to produce this state at all: {@code CollectionRun}
-     * records and posts in one commit, so the application cannot make the row this test
-     * needs.
+     * <p>Written as SQL rather than driven through a payment, because what is under test is
+     * the comparison and not the payment. It is also the only way to produce this state at
+     * all: a payment is recorded and posted in one commit, so the application cannot make
+     * the row this test needs.
      */
     private void chargeWithoutAPosting(String amount) {
         String handle = "recon-" + SEQUENCE.incrementAndGet();
         UUID creatorId = Campaigns.creator(dataSource, handle);
         UUID projectId = Campaigns.seed(dataSource, creatorId, handle + "-campaign")
-                .state("COLLECTING")
+                .state("FULFILLING")
                 .goal("100.00")
                 .insert();
         UUID pledgeId = Pledges.confirmed(dataSource, projectId, handle + "-backer", amount);

@@ -7,9 +7,12 @@ import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.PaymentRows;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,10 +39,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * {@code wording.test.ts} pins it in four languages. What did not exist was the record that
  * anybody saw it, and this suite is about the record.
  *
- * <p><strong>The confirmation and the acceptance are one transaction, and
- * {@link #aRefusalRecordsNothing()} is what checks it.</strong> A pledge confirmed without
- * its acknowledgement recorded and an acknowledgement recorded against a confirmation that
- * failed are both rows that say something untrue about what a person did.
+ * <p><strong>Opening the payment and the acceptance are one transaction, and
+ * {@link #aRefusalRecordsNothing()} is what checks it.</strong> A pledge sent to pay without
+ * its acknowledgement recorded and an acknowledgement recorded against a refused request are
+ * both rows that say something untrue about what a person did.
+ *
+ * <p>The acknowledgement is asked for on {@code POST /v1/pledges/{id}/payment}, where the backer
+ * commits. Until #45 it was asked on the stored-card model's {@code confirm}, which carried the
+ * same gate; the rules below did not change with the route.
  */
 class BackerAgreementApiTests extends AbstractIntegrationTest {
 
@@ -48,6 +55,9 @@ class BackerAgreementApiTests extends AbstractIntegrationTest {
     private static final String ADMIN_EMAIL = "moderator@ideanest.test";
 
     private Account admin;
+
+    /** Every pledge sent to the payment page, whose pending charge has to go before the pledge can. */
+    private final List<UUID> paying = new ArrayList<>();
 
     @Autowired
     private TestRestTemplate rest;
@@ -67,10 +77,13 @@ class BackerAgreementApiTests extends AbstractIntegrationTest {
     @AfterEach
     void clear() {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-        // The outbox first, and it is not a cascade: a confirmation records
-        // `pledge.confirmed`, and V19 gives that table no foreign key to the aggregate it
-        // describes. A suite that left rows behind fails OutboxTests, which counts them all.
+        // The outbox first, and it is not a cascade: V19 gives that table no foreign key to
+        // the aggregate it describes. A suite that left rows behind fails OutboxTests, which
+        // counts them all. Then the pending charges the payment page recorded, which V41
+        // makes append-only and which would otherwise refuse the pledges' deletion.
         jdbc.update("DELETE FROM outbox_events");
+        PaymentRows.clearPledges(dataSource, paying);
+        paying.clear();
         jdbc.update("DELETE FROM pledge_addons");
         jdbc.update("DELETE FROM pledges");
         jdbc.update("DELETE FROM project_state_transitions");
@@ -83,27 +96,27 @@ class BackerAgreementApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("with no backer agreement published, a confirmation carries on as before")
+    @DisplayName("with no backer agreement published, a payment opens as before")
     void anUnpublishedAgreementIsNotARequirement() {
         UUID project = liveCampaign();
         Account backer = account();
         UUID pledge = draft(project, backer);
 
         // The fail-open case. Until #439 seeds the text there is nothing to acknowledge, and
-        // a platform that refused every confirmation until somebody wrote a document would
-        // be worse than one that starts asking the day the document exists.
-        assertThat(confirm(pledge, backer, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        // a platform that refused every payment until somebody wrote a document would be
+        // worse than one that starts asking the day the document exists.
+        assertThat(pay(pledge, backer, null).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
-    @DisplayName("once it is published, a confirmation that acknowledges nothing is refused")
-    void anUnacknowledgedConfirmationIsRefused() {
+    @DisplayName("once it is published, a payment that acknowledges nothing is refused")
+    void anUnacknowledgedPaymentIsRefused() {
         publishBackerAgreement("Dəstək hazır məhsulu almaq deyil.");
         UUID project = liveCampaign();
         Account backer = account();
         UUID pledge = draft(project, backer);
 
-        ResponseEntity<Map<String, Object>> refused = confirm(pledge, backer, null);
+        ResponseEntity<Map<String, Object>> refused = pay(pledge, backer, null);
 
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(refused.getBody().get("code")).isEqualTo("AGREEMENT_REQUIRED");
@@ -114,17 +127,19 @@ class BackerAgreementApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("acknowledging the version in force confirms the pledge and records the acceptance")
-    void anAcknowledgedConfirmationIsRecorded() {
+    @DisplayName("acknowledging the version in force opens the payment and records the acceptance")
+    void anAcknowledgedPaymentIsRecorded() {
         publishBackerAgreement("Dəstək hazır məhsulu almaq deyil.");
         UUID project = liveCampaign();
         Account backer = account();
         UUID pledge = draft(project, backer);
 
-        ResponseEntity<Map<String, Object>> confirmed = confirm(pledge, backer, 1);
+        ResponseEntity<Map<String, Object>> opened = pay(pledge, backer, 1);
 
-        assertThat(confirmed.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(confirmed.getBody().get("state")).isEqualTo("CONFIRMED");
+        assertThat(opened.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(opened.getBody().get("redirectUrl")).isNotNull();
+        // Still a draft: the provider's word that the backer paid is what collects it.
+        assertThat(stateOf(pledge)).isEqualTo("DRAFT");
         assertThat(acceptanceCountFor(backer)).isEqualTo(1);
     }
 
@@ -140,28 +155,28 @@ class BackerAgreementApiTests extends AbstractIntegrationTest {
 
         // The client acknowledged a sentence that is no longer the one in force. Recording
         // it would put an acknowledgement of version 2 against somebody who read version 1.
-        ResponseEntity<Map<String, Object>> refused = confirm(pledge, backer, 1);
+        ResponseEntity<Map<String, Object>> refused = pay(pledge, backer, 1);
 
         assertThat(refused.getBody().get("code")).isEqualTo("AGREEMENT_REQUIRED");
         assertThat(metaOf(refused)).containsEntry("version", 2).containsEntry("acknowledged", 1);
 
-        assertThat(confirm(pledge, backer, 2).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(pay(pledge, backer, 2).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
-    @DisplayName("a refusal leaves neither a confirmation nor an acceptance behind")
+    @DisplayName("a refusal leaves neither a held payment nor an acceptance behind")
     void aRefusalRecordsNothing() {
         publishBackerAgreement("Mətn.");
         UUID project = liveCampaign();
         Account backer = account();
         UUID pledge = draft(project, backer);
 
-        confirm(pledge, backer, null);
+        pay(pledge, backer, null);
 
         assertThat(stateOf(pledge)).isEqualTo("DRAFT");
         assertThat(acceptanceCountFor(backer)).isZero();
-        // And nothing was announced. The event and the acceptance are in the same
-        // transaction as the transition, so a refusal takes all three with it.
+        assertThat(pendingChargesFor(pledge)).isZero();
+        // And nothing was announced.
         assertThat(outboxCountFor(pledge)).isZero();
     }
 
@@ -171,11 +186,11 @@ class BackerAgreementApiTests extends AbstractIntegrationTest {
         publishBackerAgreement("Mətn.");
         Account backer = account();
 
-        confirm(draft(liveCampaign(), backer), backer, 1);
-        confirm(draft(liveCampaign(), backer), backer, 1);
+        pay(draft(liveCampaign(), backer), backer, 1);
+        pay(draft(liveCampaign(), backer), backer, 1);
 
         // An acceptance is a thing that happened once. V65's unique index is what makes the
-        // second confirmation find the first row rather than write a second.
+        // second payment find the first row rather than write a second.
         assertThat(acceptanceCountFor(backer)).isEqualTo(1);
     }
 
@@ -240,15 +255,22 @@ class BackerAgreementApiTests extends AbstractIntegrationTest {
         return UUID.fromString((String) drafted.getBody().get("id"));
     }
 
-    private ResponseEntity<Map<String, Object>> confirm(UUID pledgeId, Account backer, Integer version) {
+    private ResponseEntity<Map<String, Object>> pay(UUID pledgeId, Account backer, Integer version) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("acknowledgedAgreementVersion", version);
+        body.put("language", "az");
 
         HttpHeaders headers = authorised(backer.accessToken());
         headers.set("Idempotency-Key", UUID.randomUUID().toString());
 
+        paying.add(pledgeId);
         return rest.exchange(
-                "/v1/pledges/" + pledgeId + "/confirm", HttpMethod.POST, new HttpEntity<>(body, headers), mapType());
+                "/v1/pledges/" + pledgeId + "/payment", HttpMethod.POST, new HttpEntity<>(body, headers), mapType());
+    }
+
+    private int pendingChargesFor(UUID pledgeId) {
+        return new JdbcTemplate(dataSource)
+                .queryForObject("SELECT count(*) FROM transactions WHERE pledge_id = ?", Integer.class, pledgeId);
     }
 
     private String stateOf(UUID pledgeId) {

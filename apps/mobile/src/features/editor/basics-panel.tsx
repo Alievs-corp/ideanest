@@ -33,7 +33,6 @@ import {
   Select,
   Skeleton,
   SkeletonGroup,
-  Switch,
   TextInput,
   Textarea,
 } from '../../components/ui';
@@ -50,8 +49,8 @@ import { VideoField } from './video-field';
 
 /**
  * The Basics tab — the web's `BasicsPanel` (#162): title, summary, category and subcategory,
- * goal, currency, duration, scheduled launch, late pledges, the cover image and the campaign
- * video (#331), in one column.
+ * goal, currency, duration, scheduled launch, the cover image and the campaign video (#331), in
+ * one column.
  *
  * <p>There is no save button. Every change queues exactly ONE field's patch (`patchForField`) on
  * the editor's shared autosave — sent 800ms after the last change, or at once when the field
@@ -119,7 +118,6 @@ const DRAFT_KEYS: Readonly<Record<BasicsField, readonly (keyof BasicsDraft)[]>> 
   goal: ['goalAmount', 'currency'],
   durationDays: ['durationDays'],
   scheduledLaunchAt: ['scheduledLaunchAt'],
-  latePledgeEnabled: ['latePledgeEnabled'],
   coverImage: ['coverImage', 'coverImageUrl'],
   videoMediaId: ['video'],
 };
@@ -374,19 +372,6 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
           />
         </Field>
 
-        <View style={styles.card}>
-          <Switch
-            label={basics.latePledges}
-            description={basics.latePledgesHint}
-            value={draft.latePledgeEnabled}
-            disabled={readOnly}
-            onValueChange={(latePledgeEnabled) =>
-              change('latePledgeEnabled', { ...draft, latePledgeEnabled }, true)
-            }
-            testID="basics-late-pledges"
-          />
-        </View>
-
         <CoverImageField
           copy={basics.cover}
           cover={draft.coverImage}
@@ -418,12 +403,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[4],
     borderRadius: radius.lg,
     backgroundColor: colors.surface2,
-  },
-  card: {
-    padding: spacing[5],
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
 });

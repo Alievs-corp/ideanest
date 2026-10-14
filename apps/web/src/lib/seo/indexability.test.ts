@@ -11,11 +11,11 @@ import {
 } from './indexability';
 
 /**
- * The one predicate, and the sixteen states of docs/architecture.md §6.1 it is
+ * The one predicate, and the seventeen states of docs/architecture.md §6.1 it is
  * an answer about.
  *
  * These are the tests that stop a draft campaign becoming a search result, so
- * they name every state rather than sampling. A seventeenth state added to §6.1
+ * they name every state rather than sampling. An eighteenth state added to §6.1
  * fails the partition test below rather than quietly defaulting to indexable.
  */
 
@@ -35,14 +35,12 @@ const ALL_STATES = [
   'SUCCESSFUL',
   'UNSUCCESSFUL',
   'WITHDRAWN',
-  'COLLECTING',
-  'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
 ] as const;
 
 describe('the state table', () => {
-  it('answers for exactly the nineteen states of §6.1', () => {
+  it('answers for exactly the seventeen states of §6.1', () => {
     expect(Object.keys(PROJECT_STATE_INDEXABILITY).sort()).toEqual([...ALL_STATES].sort());
   });
 
@@ -69,9 +67,7 @@ describe('the state table', () => {
 describe('isIndexableProjectState', () => {
   it('admits a campaign whose public page has been moderated and is stable', () => {
     expect(isIndexableProjectState('LIVE')).toBe(true);
-    expect(isIndexableProjectState('LATE_PLEDGE')).toBe(true);
     expect(isIndexableProjectState('SUCCESSFUL')).toBe(true);
-    expect(isIndexableProjectState('COLLECTING')).toBe(true);
     expect(isIndexableProjectState('FULFILLING')).toBe(true);
     expect(isIndexableProjectState('COMPLETED')).toBe(true);
     expect(isIndexableProjectState('UNSUCCESSFUL')).toBe(true);

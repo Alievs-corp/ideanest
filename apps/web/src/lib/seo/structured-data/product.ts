@@ -93,7 +93,7 @@ export interface RewardProductsInput {
    * because an `@id` is a name and not a link. `url` beside it is the document.
    */
   readonly campaignId: string;
-  /** One of §6.1's sixteen states, as text. */
+  /** One of §6.1's seventeen states, as text. */
   readonly campaignState: string;
   /** ISO 8601, or `null` for a campaign that has not launched. */
   readonly deadline: string | null;

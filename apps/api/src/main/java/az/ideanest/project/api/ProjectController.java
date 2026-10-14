@@ -185,35 +185,12 @@ public class ProjectController {
     }
 
     /**
-     * §4.5's PL-16 and §4.8's PM-23: takes a collected campaign back to accepting
-     * pledges, until a date the creator names.
-     *
-     * <p><strong>Not in §10.2's endpoint list</strong>, and required by #81's
-     * definition of done — the same gap {@code openPrelaunch} and {@code requestChanges}
-     * have, recorded the same way. §6.1 has had {@code COLLECTING → LATE_PLEDGE} since
-     * the state machine was written and nothing performed it, so the state was
-     * reachable only by a hand-written {@code UPDATE}. §10.2 is amended in the same
-     * change rather than left describing an API that is not the API.
-     *
-     * <p>{@code POST} to a sub-resource rather than a field on {@code PATCH
-     * /v1/projects/{id}}: this moves the campaign's state, and every state change on
-     * this platform goes through an endpoint that does nothing else — a state that
-     * could be moved by an autosave is a state an autosave will eventually move.
-     */
-    @PostMapping("/{id}/late-pledges")
-    public ProjectEdit openLatePledges(
-            @AuthenticationPrincipal Jwt accessToken,
-            @PathVariable UUID id,
-            @Valid @RequestBody OpenLatePledgesRequest request) {
-
-        return responses.of(transitions.openLatePledges(id, callerOf(accessToken), request.endsAt()));
-    }
-
-    /**
      * Extends the campaign's deadline, once — IDN-EXT-01 (#34), §5.1.
      *
-     * <p>{@code POST} to a sub-resource, for {@code openLatePledges}' reason: it moves the
-     * campaign's state, and every state change goes through an endpoint that does nothing else.
+     * <p>{@code POST} to a sub-resource rather than a field on {@code PATCH /v1/projects/{id}}: it
+     * moves the campaign's state, and every state change goes through an endpoint that does
+     * nothing else — a state that could be moved by an autosave is a state an autosave will
+     * eventually move.
      * Refused with {@code EXTENSION_NOT_AVAILABLE} and the reason when the campaign may not be
      * extended now, and with {@code PROJECT_FIELD_INVALID} on {@code until} when the date is
      * outside what §5.1 allows.
@@ -237,20 +214,6 @@ public class ProjectController {
     @PostMapping("/{id}/withdrawal")
     public ProjectEdit withdraw(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
         return responses.of(transitions.withdraw(id, callerOf(accessToken)));
-    }
-
-    /**
-     * Stops taking late pledges and starts delivering.
-     *
-     * <p>{@code POST} to {@code /close} rather than {@code DELETE} on the resource
-     * above, because nothing is removed: the campaign keeps the record that it offered
-     * late pledges and the window it offered them in, and what happens is a transition
-     * to {@code FULFILLING}. §6.1 has no edge back — reopening after fulfilment has
-     * begun means shipping a second batch of what the creator has already packed.
-     */
-    @PostMapping("/{id}/late-pledges/close")
-    public ProjectEdit closeLatePledges(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
-        return responses.of(transitions.closeLatePledges(id, callerOf(accessToken)));
     }
 
     /**

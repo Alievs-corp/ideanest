@@ -74,13 +74,11 @@ public class PledgeController {
      * What a key is spent on, and part of its fingerprint.
      *
      * <p>Named for the operation rather than for the path, so that a key cannot serve
-     * a draft and a confirmation as though they were one request — and so that #56's
+     * a draft and a payment as though they were one request — and so that #56's
      * {@code pledge.edit} and {@code pledge.cancel} sit beside these rather than
      * being invented again.
      */
     private static final String DRAFT = "pledge.draft";
-
-    private static final String CONFIRM = "pledge.confirm";
 
     private static final String PAY = "pledge.pay";
 
@@ -165,50 +163,6 @@ public class PledgeController {
     }
 
     /**
-     * §6.2's {@code DRAFT --> CONFIRMED}: the held place becomes a claimed one.
-     *
-     * <p><strong>Nothing is charged.</strong> §9.2 puts the collection at the close of
-     * a successful campaign and says in terms that no money moves here and no ledger
-     * entry is written. The response says {@code cardVerified: false} because even the
-     * verification of §9.2's phase 1 is not built — {@code PledgeCapability}.
-     *
-     * <p><strong>§22.3's acknowledgement is part of the body</strong> — #427. The
-     * request carries the version of the backer agreement the checkout showed, and an
-     * acceptance is recorded against it in the same transaction as the confirmation. A
-     * request that acknowledges nothing, or acknowledges a version that is no longer in
-     * force, is refused with {@code AGREEMENT_REQUIRED}.
-     *
-     * <p>The body is optional: {@code paymentMethodId} is nullable until #55, and the
-     * acknowledgement is only required once a backer agreement has been published, so a
-     * client with nothing to send may send nothing.
-     */
-    @PostMapping(path = "/v1/pledges/{id}/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> confirm(
-            @AuthenticationPrincipal Jwt accessToken,
-            @PathVariable UUID id,
-            @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
-            @RequestBody(required = false) ConfirmPledgeRequest body) {
-
-        UUID backerId = callerOf(accessToken);
-        enforcePledgeRateLimit(backerId);
-
-        ConfirmPledgeRequest request = ConfirmPledgeRequest.orEmpty(body);
-        IdempotencyKey key = IdempotencyKey.of(idempotencyKey);
-        return recorded(idempotency.execute(
-                backerId,
-                // The pledge is part of what the key was spent on, so one key cannot
-                // confirm two different pledges — the second would otherwise be
-                // replayed with the first one's body, which is a client being told a
-                // pledge it never confirmed is confirmed.
-                CONFIRM + ":" + id,
-                key,
-                request,
-                HttpStatus.OK.value(),
-                () -> PledgeResponse.of(pledges.confirm(
-                        id, backerId, request.paymentMethodId(), request.acknowledgedAgreementVersion()))));
-    }
-
-    /**
      * IDN-EXT-01 (#39): pay for a draft on the provider's page — §6.2's {@code DRAFT → COLLECTED}.
      *
      * <p>Answers where to send the backer. Nothing is charged by this request and the pledge stays a
@@ -217,8 +171,8 @@ public class PledgeController {
      * the page it opened rather than opening a second one — and the key is sent to the provider as
      * the order, so a second key is a second payment attempt.
      *
-     * <p>{@code confirm} stays beside it for the retired stored-card model until the web checkout
-     * moves here (#44) and stage 4 removes it (#45).
+     * <p>Until #45 a {@code confirm} route sat beside it for the stored-card model, moving a draft
+     * to {@code CONFIRMED} with nothing charged. Both clients pay here since #44.
      */
     @PostMapping(path = "/v1/pledges/{id}/payment", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> pay(

@@ -23,8 +23,7 @@ import { errorFrom } from '../api/problem';
  * NOTHING HERE TAKES A CARD. Under IDN-EXT-01 a pledge is charged on the
  * payment provider's own page: `payForPledge` asks the service to open one and
  * returns where to send the browser, and the provider's webhook — not this
- * client — settles the pledge. `confirmPledge` is the retired model's call and
- * goes with #45.
+ * client — settles the pledge. The retired model's `confirmPledge` went with #45.
  */
 
 export type { Money } from '../money';
@@ -113,31 +112,6 @@ export async function getPublicRewards(
   return (await response.json()) as PublicRewardList;
 }
 
-/**
- * `POST /v1/pledges/{id}/confirm`'s body.
- *
- * `paymentMethodId` is null in every request this build makes, and that is the
- * honest value rather than a placeholder: `/v1/payment-methods/*` is #55, #55 is
- * blocked on #60, and there is no provider, no hosted field and no 3-D Secure to
- * produce an id with. The server accepts null for the same reason — the column is
- * nullable with no foreign key because `payment_methods` is #55's table.
- */
-export interface ConfirmPledgeRequest {
-  paymentMethodId: string | null;
-  /**
-   * The version of the backer agreement this checkout showed — #427, §22.3.
-   *
-   * A version and not a boolean, deliberately. A boolean would say "the client ticked
-   * something"; what has to be recorded is which sentence the person read. A page left open
-   * across a publication sends the old number and is refused with `AGREEMENT_REQUIRED`,
-   * which is the case the field exists for.
-   *
-   * Null when nothing is published, which is this platform's state until #439 seeds the
-   * words — the service treats an unpublished agreement as no requirement.
-   */
-  acknowledgedAgreementVersion: number | null;
-}
-
 const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
 
 async function readPledge(response: Response): Promise<PledgeResponse> {
@@ -195,41 +169,6 @@ export async function createPledgeDraft(
 /** The backer's own pledge. 404 for anybody else's. */
 export async function getPledge(id: string, signal?: AbortSignal): Promise<PledgeResponse> {
   return readPledge(await authorizedFetch(`/v1/pledges/${encodeURIComponent(id)}`, { signal }));
-}
-
-/**
- * `DRAFT` → `CONFIRMED`: commits the reserved stock.
- *
- * NO MONEY MOVES HERE, in either the client or the service. §9.2 is explicit
- * that confirmation writes no ledger entry and charges nothing; collection is
- * phase 2, at campaign close, and it is #64 in epic #59. The confirmation screen
- * says so in as many words, because a backer who believes they have been charged
- * will budget for it.
- *
- * Refused with `RESERVATION_EXPIRED` (409) once the five minutes have elapsed and
- * `PLEDGE_NOT_DRAFT` (409) when the pledge has already moved on. The first is
- * recoverable and the checkout recovers from it; see `useCheckout`. So is
- * `PLEDGE_MODIFIED` (409), which is what §8.4's sweep expiring this draft in the
- * moment it is confirmed looks like from here.
- *
- * `cardVerified` on the response says whether §9.2's phase 1 happened. It is
- * `false` on everything this build can confirm, and the confirmation screen
- * reads it rather than asserting it.
- */
-export async function confirmPledge(
-  id: string,
-  body: ConfirmPledgeRequest,
-  idempotencyKey: string,
-  signal?: AbortSignal,
-): Promise<PledgeResponse> {
-  return readPledge(
-    await authorizedFetch(`/v1/pledges/${encodeURIComponent(id)}/confirm`, {
-      method: 'POST',
-      headers: mutationHeaders(idempotencyKey),
-      body: JSON.stringify(body),
-      signal,
-    }),
-  );
 }
 
 export async function payForPledge(

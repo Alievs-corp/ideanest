@@ -42,8 +42,9 @@ class DiscoveryStatusTests {
         // And nothing in both, or the two statements would not be a partition and
         // one of them would be decorative.
         assertThat(DiscoveryStatus.PUBLIC_STATES).doesNotContainAnyElementsOf(DiscoveryStatus.HIDDEN_STATES);
-        // Nineteen since IDN-EXT-01 (#32) added CLOSING_WINDOW, EXTENDED and WITHDRAWN.
-        assertThat(ALL_STATES).hasSize(19);
+        // Nineteen once IDN-EXT-01 (#32) added CLOSING_WINDOW, EXTENDED and WITHDRAWN, and
+        // seventeen since #45 removed COLLECTING and LATE_PLEDGE.
+        assertThat(ALL_STATES).hasSize(17);
     }
 
     @Test
@@ -112,14 +113,13 @@ class DiscoveryStatusTests {
         // funded, not the newest tenth of it.
         assertThat(DiscoveryStatus.SUCCESSFUL.states())
                 .containsExactlyInAnyOrder(
-                        "SUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "WITHDRAWN", "FULFILLING", "COMPLETED");
+                        "SUCCESSFUL", "WITHDRAWN", "FULFILLING", "COMPLETED");
     }
 
     @Test
-    @DisplayName("IDN-EXT-01: a campaign left in LATE_PLEDGE badges as successful, and an extended one as live")
+    @DisplayName("IDN-EXT-01: a withdrawn campaign badges as successful, and an extended one as live")
     void theBadgeIsTheNarrowestGrouping() {
-        // Late pledges are switched off, so there is no late-pledge word left to badge with.
-        assertThat(DiscoveryStatus.badgeFor("LATE_PLEDGE")).contains(DiscoveryStatus.SUCCESSFUL);
+        assertThat(DiscoveryStatus.badgeFor("WITHDRAWN")).contains(DiscoveryStatus.SUCCESSFUL);
         // Extended is a filter and a label on the card, not the badge: it is still live.
         assertThat(DiscoveryStatus.badgeFor("EXTENDED")).contains(DiscoveryStatus.LIVE);
         assertThat(DiscoveryStatus.badgeFor("CLOSING_WINDOW")).contains(DiscoveryStatus.LIVE);

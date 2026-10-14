@@ -37,7 +37,6 @@ public record ProjectPatch(
         Patched<JsonNode> story,
         Patched<String> risks,
         Patched<CoverImageSelection> coverImage,
-        Patched<Boolean> latePledgeEnabled,
         Patched<UUID> videoMediaId) {
 
     public ProjectPatch {
@@ -54,7 +53,6 @@ public record ProjectPatch(
         story = Patched.orAbsent(story);
         risks = Patched.orAbsent(risks);
         coverImage = Patched.orAbsent(coverImage);
-        latePledgeEnabled = Patched.orAbsent(latePledgeEnabled);
         videoMediaId = Patched.orAbsent(videoMediaId);
     }
 

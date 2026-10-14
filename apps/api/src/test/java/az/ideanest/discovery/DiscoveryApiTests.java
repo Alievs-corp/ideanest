@@ -45,7 +45,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
      *   <tr><td>delta</td><td>SUCCESSFUL</td><td>music/albums</td><td>20000</td><td>20000</td><td>100</td><td>4</td><td>-40d</td><td>-1d</td><td>—</td></tr>
      *   <tr><td>echo</td><td>CANCELED</td><td>film/short</td><td>50000</td><td>37500</td><td>75</td><td>5</td><td>-60d</td><td>-2d</td><td>—</td></tr>
      *   <tr><td>foxtrot</td><td>PRELAUNCH</td><td>comics</td><td>—</td><td>0</td><td>—</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
-     *   <tr><td>golf</td><td>LATE_PLEDGE</td><td>games/tabletop</td><td>1000</td><td>3000</td><td>300</td><td>6</td><td>-50d</td><td>-5d</td><td>—</td></tr>
+     *   <tr><td>golf</td><td>FULFILLING</td><td>games/tabletop</td><td>1000</td><td>3000</td><td>300</td><td>6</td><td>-50d</td><td>-5d</td><td>—</td></tr>
      * </table>
      *
      * <p>{@code foxtrot} earns its place by having no goal, no launch, and no deadline.
@@ -121,7 +121,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
                 .withoutCover()
                 .insert();
         Campaigns.seed(dataSource, creator, "golf")
-                .state("LATE_PLEDGE")
+                .state("FULFILLING")
                 .subcategory("games", "tabletop")
                 .goal("1000.00")
                 .pledged("3000.00")
@@ -206,7 +206,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     void theStatusFilterMapsGroupings() {
         assertThat(slugs(feed("?limit=100&status=live"))).containsExactlyInAnyOrder("alpha", "bravo", "charlie");
         assertThat(slugs(feed("?limit=100&status=upcoming"))).containsExactly("foxtrot");
-        // A campaign left in LATE_PLEDGE reached its goal, so it is successful.
+        // A campaign delivering its rewards reached its goal, so it is successful.
         assertThat(slugs(feed("?limit=100&status=successful"))).containsExactlyInAnyOrder("delta", "golf");
         // Several statuses are OR'd: a campaign is in one state, so AND would return
         // nothing.

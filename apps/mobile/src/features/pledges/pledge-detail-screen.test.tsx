@@ -56,8 +56,6 @@ function pledge(extra: Partial<PledgeResponse> = {}): PledgeResponse {
     },
     isAnonymous: false,
     confirmedAt: '2026-09-30T10:00:00Z',
-    cardVerified: false,
-    latePledge: false,
     supplements: [],
     ...extra,
   };

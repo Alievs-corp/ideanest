@@ -1,7 +1,6 @@
 package az.ideanest.payment.infrastructure;
 
 import az.ideanest.payment.application.NoPayoutProviderException;
-import az.ideanest.payment.domain.ChargeResult;
 import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentProvider;
@@ -14,10 +13,6 @@ import az.ideanest.payment.domain.ProviderCapabilities;
 import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.payment.domain.RefundRequest;
 import az.ideanest.payment.domain.RefundResult;
-import az.ideanest.payment.domain.StoredCardChargeRequest;
-import az.ideanest.payment.domain.TokenizationRequest;
-import az.ideanest.payment.domain.TokenizationResult;
-import az.ideanest.payment.domain.TokenizationSession;
 import az.ideanest.payment.domain.WebhookVerificationException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -120,7 +115,7 @@ public class SandboxPaymentProvider implements PaymentProvider {
 
     @Override
     public ProviderCapabilities capabilities() {
-        return new ProviderCapabilities(false, false, null, false, false, false, Set.of(), Set.of("AZN"));
+        return new ProviderCapabilities(false, false, Set.of(), Set.of("AZN"));
     }
 
     @Override
@@ -202,21 +197,6 @@ public class SandboxPaymentProvider implements PaymentProvider {
         ObjectNode stored = ((ObjectNode) decoded).deepCopy();
         stored.remove("cardholder_name");
         return new PaymentEvent(NAME, cardId + ":" + status, type, null, null, null, stored.toString(), card);
-    }
-
-    @Override
-    public TokenizationSession beginTokenization(TokenizationRequest request) {
-        throw new UnsupportedOperationException(NAME + " moves no money and stores no cards");
-    }
-
-    @Override
-    public TokenizationResult resolveTokenization(String sessionId) {
-        throw new UnsupportedOperationException(NAME + " moves no money and stores no cards");
-    }
-
-    @Override
-    public ChargeResult chargeStoredCard(StoredCardChargeRequest request) {
-        throw new UnsupportedOperationException(NAME + " moves no money");
     }
 
     @Override

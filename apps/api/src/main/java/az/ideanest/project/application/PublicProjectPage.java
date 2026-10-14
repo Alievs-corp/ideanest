@@ -46,14 +46,6 @@ import java.util.UUID;
  * @param story the creator's document, verbatim, as the JSON it is stored as. Opaque
  *     here: #35 owns its schema, and a projection that parsed it would be a second
  *     implementation of that schema in the read path
- * @param latePledgeEnabled §4.5's PL-16 (#81): whether this creator offers late pledges.
- *     On the public page because a visitor arriving after the deadline needs to know
- *     whether there is still a way to back this, and the campaign's state alone does not
- *     say it -- a campaign can be in LATE_PLEDGE with the switch turned off, which is a
- *     creator who ran out of stock
- * @param latePledgeEndsAt when the window closes, or null when none is open. The date a
- *     backer is counting down to, which is why it is published rather than left as
- *     something the checkout refuses them with
  * @param video the campaign's video when it has a ready one — issue #331. Null otherwise
  * @param outcome null until the deadline has been decided
  */
@@ -73,8 +65,6 @@ public record PublicProjectPage(
         int backersCount,
         Instant launchedAt,
         Instant deadline,
-        boolean latePledgeEnabled,
-        Instant latePledgeEndsAt,
         String story,
         String risks,
         Outcome outcome) {

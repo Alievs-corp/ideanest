@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, lazy, useEffect, useId, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import {
   CharacterCount,
   Field,
@@ -9,7 +9,6 @@ import {
   Select,
   Skeleton,
   SkeletonGroup,
-  Switch,
   Textarea,
   TextInput,
 } from '@ideanest/ui';
@@ -53,7 +52,7 @@ import { useProjectEdit } from './useProjectEdit';
 
 /**
  * The basics tab: title, summary, category, goal, duration, scheduled launch,
- * late pledges, the cover image, and the campaign video.
+ * the cover image, and the campaign video.
  *
  * There is no save button. Every control writes its own field through
  * `PATCH /v1/projects/{id}` on a debounce (`useAutosave`), and the indicator in
@@ -146,8 +145,6 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
 
   const [categories, setCategories] = useState<readonly Category[] | null>(null);
   const [categoriesUnavailable, setCategoriesUnavailable] = useState(false);
-
-  const latePledgeHintId = useId();
 
   const autosave = useAutosave<ProjectPatch, ProjectEdit>({
     send: (patch) => patchProject(projectId, patch),
@@ -470,25 +467,6 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
               onBlur={autosave.flush}
             />
           </Field>
-        </div>
-
-        <div className="rounded-lg border border-white/8 bg-surface-2 p-5">
-          {/*
-            A switch, not a checkbox: this takes effect on the campaign rather
-            than being collected for later, and `role="switch"` is what makes a
-            screen reader say "on" instead of "checked" (docs/ui-kit.md §7.13).
-          */}
-          <Switch
-            checked={draft.latePledgeEnabled}
-            label={basics.latePledges}
-            aria-describedby={latePledgeHintId}
-            onCheckedChange={(checked) =>
-              change('latePledgeEnabled', { ...draft, latePledgeEnabled: checked })
-            }
-          />
-          <p id={latePledgeHintId} className="mt-2 text-[13px] text-white/64">
-            {basics.latePledgesHint}
-          </p>
         </div>
 
         <CoverImageField

@@ -113,14 +113,9 @@ SELECT
     pp.project_id,
     pp.backer_id,
     pp.tier_id,
-    -- A campaign that is collecting has not finished collecting: some cards are
-    -- still queued and some have already been declined once. Those two states
-    -- are the whole reason the collection schedule columns exist.
-    CASE
-        WHEN pp.project_state = 'COLLECTING' AND pp.rn % 17 = 0 THEN 'CHARGE_FAILED'
-        WHEN pp.project_state = 'COLLECTING' AND pp.rn % 9  = 0 THEN 'CHARGE_PENDING'
-        ELSE pp.pledge_state
-    END,
+    -- The stored-card collection at close, and its CHARGE_PENDING and CHARGE_FAILED
+    -- pledges, went with #45: a pledge is paid when it is made.
+    pp.pledge_state,
     pp.amount,
     0,
     -- A seventh of backers round their pledge up.
@@ -136,7 +131,8 @@ SELECT
               THEN (ARRAY['TR', 'GE', 'DE'])[1 + (pp.rn % 3)]
          ELSE 'AZ' END,
     pp.rn % 12 = 0,
-    pp.project_state = 'LATE_PLEDGE' AND pp.rn % 8 = 0,
+    -- No late pledges (IDN-EXT-01, #45).
+    false,
     CASE WHEN pp.rn % 5 = 0
          THEN (ARRAY['instagram', 'telegram', 'newsletter', 'friend'])[1 + (pp.rn % 4)]
          ELSE NULL END,
@@ -144,14 +140,11 @@ SELECT
     NULL,
     pp.launched_at + (pp.deadline - pp.launched_at) * seed_rand('when:' || pp.slug || pp.backer_id::text),
     CASE WHEN pp.pledge_state IN ('COLLECTED', 'FULFILLED')
-              AND NOT (pp.project_state = 'COLLECTING' AND (pp.rn % 17 = 0 OR pp.rn % 9 = 0))
          THEN pp.deadline + interval '2 days' ELSE NULL END,
     CASE WHEN pp.pledge_state = 'CANCELED_BY_PROJECT' THEN pp.deadline ELSE NULL END,
-    CASE WHEN pp.project_state = 'COLLECTING' AND (pp.rn % 17 = 0 OR pp.rn % 9 = 0)
-         THEN now() + interval '1 day' ELSE NULL END,
-    CASE WHEN pp.project_state = 'COLLECTING' AND (pp.rn % 17 = 0 OR pp.rn % 9 = 0)
-         THEN now() + interval '12 days' ELSE NULL END,
-    CASE WHEN pp.project_state = 'COLLECTING' AND pp.rn % 17 = 0 THEN 2 ELSE 0 END,
+    NULL,
+    NULL,
+    0,
     1,
     pp.launched_at + (pp.deadline - pp.launched_at) * seed_rand('when:' || pp.slug || pp.backer_id::text),
     now()

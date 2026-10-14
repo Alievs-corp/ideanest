@@ -420,7 +420,6 @@
         "CHARGEBACK": "Оспорен через банк",
         "FULFILLED": "Доставлен"
       },
-      "latePledge": "Поздний взнос",
       "anonymous": "Анонимно",
       "list": {
         "loading": "Загружаем ваши взносы",
@@ -2667,8 +2666,6 @@
           "APPROVED": "Одобрена",
           "SCHEDULED": "Запланирована",
           "LIVE": "Идёт сбор",
-          "COLLECTING": "Списание",
-          "LATE_PLEDGE": "Поздние взносы",
           "SUCCESSFUL": "Собрана",
           "UNSUCCESSFUL": "Не собрана",
           "FULFILLING": "Отправка",
@@ -3174,8 +3171,6 @@
         "SUCCESSFUL": "Успешна",
         "UNSUCCESSFUL": "Неуспешна",
         "WITHDRAWN": "Средства выведены",
-        "COLLECTING": "Сбор платежей",
-        "LATE_PLEDGE": "Поздние взносы",
         "FULFILLING": "Выполнение наград",
         "COMPLETED": "Завершена"
       },
@@ -4250,8 +4245,6 @@
       "PRELAUNCH": "Скоро",
       "LIVE": "Идёт сбор",
       "SUCCESSFUL": "Собрано",
-      "COLLECTING": "Собрано",
-      "LATE_PLEDGE": "Поздние взносы открыты",
       "FULFILLING": "Выполняется",
       "COMPLETED": "Завершена",
       "UNSUCCESSFUL": "Не собрала",
@@ -4519,8 +4512,6 @@
       "CANCELED": "Отменена",
       "SUCCESSFUL": "Собрана",
       "UNSUCCESSFUL": "Не собрана",
-      "COLLECTING": "Списание",
-      "LATE_PLEDGE": "Поздние взносы",
       "FULFILLING": "Отправка",
       "COMPLETED": "Завершена",
       "CLOSING_WINDOW": "Скоро закроется",
@@ -4555,8 +4546,6 @@
       "durationHintLocked": "После запуска кампании срок изменить нельзя.",
       "scheduledLaunch": "Запланированный запуск",
       "scheduledLaunchHint": "Необязательно. Оставьте пустым, чтобы запустить вручную после проверки.",
-      "latePledges": "Принимать поздние взносы",
-      "latePledgesHint": "Оставляет проект открытым для взносов после дедлайна, если цель уже достигнута. Это можно отключить в любой момент.",
       "validation": {
         "titleRequired": "У проекта должно быть название.",
         "titleTooLong": "В названии не более {max} символов. Уберите {over}.",
@@ -5384,8 +5373,6 @@
         "LIVE": "Идёт сбор",
         "SUCCESSFUL": "Собрана",
         "UNSUCCESSFUL": "Не собрана",
-        "COLLECTING": "Списание",
-        "LATE_PLEDGE": "Поздние взносы",
         "FULFILLING": "Отправка",
         "COMPLETED": "Завершена"
       }

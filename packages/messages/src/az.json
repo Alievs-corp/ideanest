@@ -420,7 +420,6 @@
         "CHARGEBACK": "Geri tələb edilib",
         "FULFILLED": "Çatdırılıb"
       },
-      "latePledge": "Gecikmiş dəstək",
       "anonymous": "Anonim",
       "list": {
         "loading": "Dəstəkləriniz yüklənir",
@@ -2667,8 +2666,6 @@
           "APPROVED": "Təsdiqlənib",
           "SCHEDULED": "Planlaşdırılıb",
           "LIVE": "Aktiv",
-          "COLLECTING": "Yığılır",
-          "LATE_PLEDGE": "Gecikmiş dəstəklər",
           "SUCCESSFUL": "Maliyyələşdi",
           "UNSUCCESSFUL": "Maliyyələşmədi",
           "FULFILLING": "İcra olunur",
@@ -3174,8 +3171,6 @@
         "SUCCESSFUL": "Uğurlu",
         "UNSUCCESSFUL": "Uğursuz",
         "WITHDRAWN": "Vəsait çıxarılıb",
-        "COLLECTING": "Ödənişlər toplanır",
-        "LATE_PLEDGE": "Gecikmiş dəstəklər",
         "FULFILLING": "Mükafatlar çatdırılır",
         "COMPLETED": "Tamamlanıb"
       },
@@ -4250,8 +4245,6 @@
       "PRELAUNCH": "Tezliklə",
       "LIVE": "Aktiv",
       "SUCCESSFUL": "Maliyyələşdi",
-      "COLLECTING": "Maliyyələşdi",
-      "LATE_PLEDGE": "Gecikmiş dəstək açıqdır",
       "FULFILLING": "Yerinə yetirilir",
       "COMPLETED": "Tamamlandı",
       "UNSUCCESSFUL": "Maliyyələşmədi",
@@ -4519,8 +4512,6 @@
       "CANCELED": "Ləğv edildi",
       "SUCCESSFUL": "Maliyyələşdi",
       "UNSUCCESSFUL": "Maliyyələşmədi",
-      "COLLECTING": "Yığılır",
-      "LATE_PLEDGE": "Gecikmiş dəstəklər",
       "FULFILLING": "İcra olunur",
       "COMPLETED": "Tamamlandı",
       "CLOSING_WINDOW": "Tezliklə bağlanır",
@@ -4555,8 +4546,6 @@
       "durationHintLocked": "Kampaniya başladıqdan sonra son tarixi dəyişmək olmaz.",
       "scheduledLaunch": "Planlaşdırılmış başlanğıc",
       "scheduledLaunchHint": "İstəyə bağlı. Baxış bitəndən sonra əl ilə başlatmaq üçün boş buraxın.",
-      "latePledges": "Gecikmiş dəstəkləri qəbul et",
-      "latePledgesHint": "Hədəf yığıldıqdan sonra layihəni son tarixdən sonra da dəstək üçün açıq saxlayır. İstənilən vaxt söndürmək olar.",
       "validation": {
         "titleRequired": "Layihənin başlığı olmalıdır.",
         "titleTooLong": "Başlıq ən çox {max} simvol olur. {over} simvol azaldın.",
@@ -5384,8 +5373,6 @@
         "LIVE": "Aktiv",
         "SUCCESSFUL": "Maliyyələşdi",
         "UNSUCCESSFUL": "Maliyyələşmədi",
-        "COLLECTING": "Yığılır",
-        "LATE_PLEDGE": "Gecikmiş dəstəklər",
         "FULFILLING": "İcra olunur",
         "COMPLETED": "Tamamlandı"
       }

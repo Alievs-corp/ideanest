@@ -1,7 +1,6 @@
 package az.ideanest.support;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,12 +8,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /**
  * Puts a pledge into the state a test needs to start from, by writing the row.
  *
- * <p>{@code Campaigns}' argument, applied to the other side of the checkout. The honest
- * way to a {@code CONFIRMED} pledge is the two requests a backer makes, and
- * {@code PledgeApiTests} takes it because that path is what it is checking. A suite about
- * §9.6's retry schedule is not: driving forty pledges through the checkout would make
- * every one of its tests depend on the reservation TTL, on the rate limiter, and on forty
- * accounts, for a state that is a precondition rather than a subject.
+ * <p>{@code Campaigns}' argument, applied to the other side of the checkout. A suite whose
+ * subject is not the checkout should not depend on the reservation TTL, the rate limiter
+ * and an account per pledge to reach a state that is a precondition rather than a subject.
+ *
+ * <p><strong>{@code CONFIRMED} has no request left that produces it.</strong> It was the
+ * stored-card model's commitment, which IDN-EXT-01 replaced with paying when the pledge is
+ * made, and #45 removed the {@code confirm} route. Pledges confirmed before then can still
+ * be in it, and the rules for them still hold — raised only, never cancelled — so the
+ * suites that check those rules make one here.
  *
  * <p>What is written is what confirmation writes — the state, the instant, the amounts —
  * so the row that results is one the application could have produced, and every check
@@ -71,43 +73,36 @@ public final class Pledges {
     }
 
     /**
-     * A pledge already queued for collection, with a schedule a test chose.
+     * Confirms a backer's draft the way the stored-card model's {@code confirm} did, before #45
+     * removed it: the places the draft holds go from reserved to claimed, and the pledge
+     * becomes {@code CONFIRMED} with nothing charged.
      *
-     * <p>For the cases that start part-way through §9.6 — a third attempt, a window about
-     * to close — where driving the earlier attempts would make the test about the earlier
-     * attempts.
-     *
-     * @param state {@code CHARGE_PENDING} or {@code CHARGE_FAILED};
-     *     {@code pledges_collection_schedule_is_whole} refuses anything else with a
-     *     schedule on it
-     * @param attempts how many attempts have already been made
+     * <p>For a test about a pledge confirmed before IDN-EXT-01. One statement per table, like
+     * {@code RewardTierRepository#commitPlaces}: the sum of the two counters never moves.
      */
-    public static UUID queued(
-            DataSource dataSource,
-            UUID projectId,
-            String handle,
-            String amount,
-            String state,
-            int attempts,
-            Instant nextAttemptAt,
-            Instant windowEndsAt) {
-        UUID pledgeId = UUID.randomUUID();
-        new JdbcTemplate(dataSource)
-                .update(
-                        """
-                        INSERT INTO pledges (id, project_id, backer_id, state, base_amount, currency,
-                                             confirmed_at, charge_attempts, next_charge_attempt_at,
-                                             charge_window_ends_at)
-                        VALUES (?, ?, ?, ?, ?, 'AZN', now(), ?, ?, ?)
-                        """,
-                        pledgeId,
-                        projectId,
-                        Campaigns.creator(dataSource, handle),
-                        state,
-                        new BigDecimal(amount),
-                        attempts,
-                        java.sql.Timestamp.from(nextAttemptAt),
-                        java.sql.Timestamp.from(windowEndsAt));
-        return pledgeId;
+    public static void confirmDraft(DataSource dataSource, UUID pledgeId) {
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        jdbc.update(
+                """
+                UPDATE reward_tiers t
+                   SET reserved_quantity = t.reserved_quantity - held.places,
+                       claimed_quantity = t.claimed_quantity + held.places
+                  FROM (SELECT reward_tier_id AS tier, 1 AS places
+                          FROM pledges
+                         WHERE id = ? AND reward_tier_id IS NOT NULL
+                        UNION ALL
+                        SELECT reward_tier_id, quantity
+                          FROM pledge_addons
+                         WHERE pledge_id = ?) held
+                 WHERE t.id = held.tier
+                """,
+                pledgeId,
+                pledgeId);
+        int updated = jdbc.update(
+                "UPDATE pledges SET state = 'CONFIRMED', confirmed_at = now() WHERE id = ? AND state = 'DRAFT'",
+                pledgeId);
+        if (updated != 1) {
+            throw new IllegalStateException("No draft " + pledgeId + " to confirm");
+        }
     }
 }

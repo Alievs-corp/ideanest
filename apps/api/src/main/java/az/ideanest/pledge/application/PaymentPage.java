@@ -6,8 +6,8 @@ import java.net.URI;
  * Opens the provider's payment page for a draft — IDN-EXT-01 (#39).
  *
  * <p><strong>Declared here and implemented by the payment module</strong>, so the dependency runs
- * one way. The payment module already depends on this one — it collects pledges through
- * {@code PledgeCollection} — and the pledge module naming a payment type would make the two a
+ * one way. The payment module already depends on this one — it settles pledges through
+ * {@code PledgePayments} — and the pledge module naming a payment type would make the two a
  * cycle, which {@code ModuleBoundaryTests} refuses.
  */
 public interface PaymentPage {

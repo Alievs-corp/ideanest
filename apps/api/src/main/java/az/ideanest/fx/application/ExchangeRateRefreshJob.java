@@ -29,8 +29,7 @@ import org.springframework.stereotype.Component;
  * the reason is mechanical rather than stylistic: a self-invoked annotated method does not
  * go through the proxy, so the annotation would have had no effect at all. Splitting them
  * also puts the boundary where it belongs — an HTTP call to a third party has no business
- * inside a database transaction, which is the same rule {@code CollectionRun} breaks
- * deliberately and explains at length.
+ * inside a database transaction.
  *
  * <h2>NOTHING IS ASKED FOR WHEN THE FEATURE IS OFF</h2>
  *

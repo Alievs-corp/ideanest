@@ -86,7 +86,6 @@ function project(extra: Partial<ProjectEdit> = {}): ProjectEdit {
     subcategoryId: null,
     goal: { amount: '5000.00', currency: 'AZN' },
     durationDays: 30,
-    latePledgeEnabled: false,
     lockedFields: [],
     createdAt: '2026-10-01T10:00:00.000Z',
     updatedAt: '2026-10-01T10:00:00.000Z',

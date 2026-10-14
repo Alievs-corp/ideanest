@@ -420,7 +420,6 @@
         "CHARGEBACK": "Banka üzerinden geri alındı",
         "FULFILLED": "Teslim edildi"
       },
-      "latePledge": "Geç destek",
       "anonymous": "Anonim",
       "list": {
         "loading": "Destekleriniz yükleniyor",
@@ -2667,8 +2666,6 @@
           "APPROVED": "Onaylandı",
           "SCHEDULED": "Planlandı",
           "LIVE": "Etkin",
-          "COLLECTING": "Tahsilat",
-          "LATE_PLEDGE": "Geç destekler",
           "SUCCESSFUL": "Fonlandı",
           "UNSUCCESSFUL": "Fonlanmadı",
           "FULFILLING": "Gönderim",
@@ -3174,8 +3171,6 @@
         "SUCCESSFUL": "Başarılı",
         "UNSUCCESSFUL": "Başarısız",
         "WITHDRAWN": "Fon çekildi",
-        "COLLECTING": "Ödemeler toplanıyor",
-        "LATE_PLEDGE": "Geç destekler",
         "FULFILLING": "Ödüller teslim ediliyor",
         "COMPLETED": "Tamamlandı"
       },
@@ -4250,8 +4245,6 @@
       "PRELAUNCH": "Çok yakında",
       "LIVE": "Etkin",
       "SUCCESSFUL": "Fonlandı",
-      "COLLECTING": "Fonlandı",
-      "LATE_PLEDGE": "Geç destekler açık",
       "FULFILLING": "Yerine getiriliyor",
       "COMPLETED": "Tamamlandı",
       "UNSUCCESSFUL": "Fonlanamadı",
@@ -4519,8 +4512,6 @@
       "CANCELED": "İptal edildi",
       "SUCCESSFUL": "Fonlandı",
       "UNSUCCESSFUL": "Fonlanmadı",
-      "COLLECTING": "Tahsilat",
-      "LATE_PLEDGE": "Geç destekler",
       "FULFILLING": "Gönderim",
       "COMPLETED": "Tamamlandı",
       "CLOSING_WINDOW": "Yakında kapanıyor",
@@ -4555,8 +4546,6 @@
       "durationHintLocked": "Kampanya başladıktan sonra son tarih değiştirilemez.",
       "scheduledLaunch": "Planlanmış lansman",
       "scheduledLaunchHint": "İsteğe bağlı. İnceleme bitince elle başlatmak için boş bırakın.",
-      "latePledges": "Geç destekleri kabul et",
-      "latePledgesHint": "Hedefe ulaşıldıktan sonra projeyi son tarihin ardından da desteğe açık tutar. İstediğiniz zaman kapatabilirsiniz.",
       "validation": {
         "titleRequired": "Bir projenin başlığı olmalı.",
         "titleTooLong": "Başlık en fazla {max} karakter olur. {over} karakter çıkarın.",
@@ -5384,8 +5373,6 @@
         "LIVE": "Etkin",
         "SUCCESSFUL": "Fonlandı",
         "UNSUCCESSFUL": "Fonlanmadı",
-        "COLLECTING": "Tahsilat",
-        "LATE_PLEDGE": "Geç destekler",
         "FULFILLING": "Gönderim",
         "COMPLETED": "Tamamlandı"
       }
