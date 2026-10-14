@@ -5,7 +5,7 @@ import { fireEvent, render, renderHook, screen } from '@testing-library/react-na
 import ru from '@ideanest/messages/ru.json';
 import en from '@ideanest/messages/en.json';
 import az from '@ideanest/messages/az.json';
-import { formatCount, formatDate, pluralCategory, translate } from './i18n';
+import { formatCount, formatDate, formatDeliveryMonth, pluralCategory, translate } from './i18n';
 import { currentLocale, setLocale } from './locale';
 
 /* The rich-text case renders through React Native; a cold first render is slow on a CI runner. */
@@ -170,5 +170,18 @@ describe('the app-only strings and formats', () => {
     } finally {
       setLocale(before);
     }
+  });
+});
+
+describe('a reward’s estimated delivery (#255)', () => {
+  it('is a month and a year, read in UTC, as the web prints it', () => {
+    expect(formatDeliveryMonth('2026-11-01', 'en')).toBe('November 2026');
+    // The first of a month stays in that month whatever zone the phone is in.
+    expect(formatDeliveryMonth('2026-11-01', 'az')).toContain('2026');
+    expect(formatDeliveryMonth('2026-11-01', 'az')?.toLowerCase()).toContain('noyabr');
+  });
+
+  it('is null for something that is not a date', () => {
+    expect(formatDeliveryMonth('soon', 'en')).toBeNull();
   });
 });

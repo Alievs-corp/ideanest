@@ -19,6 +19,7 @@ import {
 } from '@ideanest/messages/hermes';
 import { pluralForm, type PluralForms } from '@ideanest/messages/plurals';
 import { WINDOW_DATE_OPTIONS } from '@ideanest/discovery/collections';
+import { DELIVERY_MONTH_OPTIONS } from '@ideanest/campaign/reward-details';
 import { currentLocale, useLocale } from './locale';
 
 /**
@@ -152,6 +153,7 @@ let partlessDate: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefin
 let partlessTime: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
 let partlessDateTime: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
 let partlessWindow: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
+let partlessMonth: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
 
 function countFormat(locale: Locale): { format(value: number): string } {
   if (locale !== 'az' || PARTS.numbers) return numberFormat(locale, COUNT_OPTIONS, 'count');
@@ -171,6 +173,11 @@ function timeFormat(locale: Locale): { format(value: Date): string } {
 function dateTimeFormatFor(locale: Locale): { format(value: Date): string } {
   if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, DATE_TIME_OPTIONS, 'dateTime');
   return (partlessDateTime ??= partlessAzerbaijaniDateTimeFormat(DATE_TIME_OPTIONS));
+}
+
+function monthFormat(locale: Locale): { format(value: Date): string } {
+  if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, DELIVERY_MONTH_OPTIONS, 'delivery-month');
+  return (partlessMonth ??= partlessAzerbaijaniDateTimeFormat(DELIVERY_MONTH_OPTIONS));
 }
 
 function windowFormat(locale: Locale): { format(value: Date): string } {
@@ -224,6 +231,23 @@ export function formatWindowDate(iso: string, locale: Locale): string | null {
     return windowFormat(locale).format(date) || date.toISOString().slice(0, 10);
   } catch {
     return date.toISOString().slice(0, 10);
+  }
+}
+
+/**
+ * A reward's estimated delivery as a month and a year, in **UTC** — "November 2026", the web's
+ * `deliveryMonth` (#255). A month, because that is what a creator can honestly promise; UTC,
+ * because the service stores a plain date and the reader's zone would move the first of a month
+ * into the one before. `null` for a value that is not a date; the ISO month when the engine
+ * cannot format.
+ */
+export function formatDeliveryMonth(iso: string, locale: Locale): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    return monthFormat(locale).format(date) || date.toISOString().slice(0, 7);
+  } catch {
+    return date.toISOString().slice(0, 7);
   }
 }
 

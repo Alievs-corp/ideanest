@@ -6,8 +6,7 @@ import { formatMoney } from '../../lib/money';
 import { isShipped, isSoldOut, type PublicReward } from '../../lib/pledges/api';
 import { NO_REWARD } from './useCheckout';
 import { type CheckoutCopy, fillPlaceholders } from '../../lib/i18n/checkout-copy';
-import { dateTimeFormat } from '../../lib/i18n/formats';
-import type { Locale } from '../../lib/i18n/locale';
+import { deliveryMonth } from '../../lib/i18n/delivery-month';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /**
@@ -50,25 +49,6 @@ export interface RewardChoiceProps {
   onChange: (value: string) => void;
   /** True once stock is reserved: the selection is the server's until it is not. */
   disabled?: boolean;
-}
-
-/**
- * `2026-11-01` as `November 2026`.
- *
- * A month, because a month is what a creator can honestly promise — the same
- * reasoning the reward editor states about the field. The date is read in UTC:
- * the service stores a plain date and rendering it in the reader's zone would
- * move a first-of-the-month delivery into the month before it.
- */
-function deliveryMonth(date: string, locale: Locale): string | null {
-  const parsed = Date.parse(date);
-  if (!Number.isFinite(parsed)) return null;
-
-  return dateTimeFormat(
-    locale,
-    { month: 'long', year: 'numeric', timeZone: 'UTC' },
-    'delivery-month',
-  ).format(new Date(parsed));
 }
 
 function StockLine({

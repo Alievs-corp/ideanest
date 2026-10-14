@@ -1,9 +1,14 @@
 import { Link } from '../../i18n/navigation';
-import { formatMoney } from '../../lib/money';
-import type { PublicRewardTier } from '../../lib/seo/structured-data/product';
+import { CalendarClock, Truck } from 'lucide-react';
+import { Tag } from '@ideanest/ui/server';
+import type { RewardShipping } from '@ideanest/campaign/reward-details';
+import { formatMoney, type Money } from '../../lib/money';
+import type { CampaignRewardTier } from '../../lib/projects/publicPage';
 import type { ProjectState } from '../../lib/projects/api';
 import { acceptsPledges } from '../../lib/projects/pledgeable';
-import { getTranslations } from 'next-intl/server';
+import { deliveryMonth } from '../../lib/i18n/delivery-month';
+import { localeOrDefault } from '../../lib/i18n/locale';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 /**
  * The reward tiers a backer chooses between — §4.4's right-hand column, server-rendered.
@@ -42,6 +47,15 @@ import { getTranslations } from 'next-intl/server';
  * — the service refuses the draft with `REWARD_SOLD_OUT` — and a control that exists to be
  * refused teaches a reader that this page's buttons do not work.
  *
+ * <h2>When it arrives and where it can go — #255</h2>
+ *
+ * A backer chooses a reward by when it arrives and whether it can reach them, so every card says
+ * both before the checkout does: the estimated delivery month, and one shipping line — how many
+ * countries the creator has priced and the cheapest rate, or that nothing is shipped. The
+ * checkout's two tags, early bird and featured, are on the card in the checkout's words.
+ * `@ideanest/campaign/reward-details` reads all of it, the same way the app does. The items and
+ * the add-ons stay in the checkout, which has the room for them; the card stays short.
+ *
  * <h2>Colour</h2>
  *
  * No lime. §8.1 maps `--lime-500` to a *selected* reward tier — an active choice — and
@@ -51,7 +65,7 @@ import { getTranslations } from 'next-intl/server';
  * white primary pill stays in the header where `BackCampaignCta` draws it.
  */
 export interface CampaignRewardsProps {
-  readonly tiers: readonly PublicRewardTier[];
+  readonly tiers: readonly CampaignRewardTier[];
   /** The campaign's identifier — the `[id]` segment the checkout is reached by. */
   readonly projectId: string;
   readonly state: ProjectState;
@@ -75,8 +89,33 @@ export async function CampaignRewards({
   now = new Date(),
 }: CampaignRewardsProps) {
   const t = await getTranslations('campaign.rewards');
+  // The checkout's own words for the tags and the month, so the two pages agree.
+  const checkout = await getTranslations('checkout.reward');
+  const locale = localeOrDefault(await getLocale());
 
   if (tiers.length === 0) return null;
+
+  /** The shipping line, or `null` for a shipped tier with nowhere priced yet. */
+  const shippingLine = (shipping: RewardShipping, price: Money): string | null => {
+    switch (shipping.kind) {
+      case 'none':
+        return t('shipping.none');
+      case 'digital':
+        return t('shipping.digital');
+      case 'pickup':
+        return t('shipping.pickup');
+      case 'ships':
+        return shipping.lowestRate === null
+          ? t('shipping.shipsTo', { count: shipping.countries })
+          : t('shipping.shipsToFrom', {
+              count: shipping.countries,
+              // A rate table is in the campaign's currency, which is the tier's.
+              amount: formatMoney({ amount: shipping.lowestRate, currency: price.currency }),
+            });
+      case 'unpriced':
+        return null;
+    }
+  };
 
   /*
    * Asked once for the list rather than once per tier. The same function answers it for the
@@ -94,6 +133,10 @@ export async function CampaignRewards({
       <ul className="flex flex-col gap-3">
         {tiers.map((tier) => {
           const soldOut = tier.remainingQuantity === 0;
+          const { details } = tier;
+          const month =
+            details.estimatedDelivery === null ? null : deliveryMonth(details.estimatedDelivery, locale);
+          const shipping = shippingLine(details.shipping, tier.price);
 
           return (
             <li
@@ -104,8 +147,28 @@ export async function CampaignRewards({
                 {formatMoney(tier.price)}
               </p>
               <h3 className="text-base font-medium text-white">{tier.title}</h3>
+              {(details.earlyBird || details.featured) && (
+                /* Words, in the checkout's `default` skin: neither is a verdict or an urgency. */
+                <p className="flex flex-wrap gap-2">
+                  {details.earlyBird && <Tag variant="default">{checkout('earlyBird')}</Tag>}
+                  {details.featured && <Tag variant="default">{checkout('featured')}</Tag>}
+                </p>
+              )}
               {tier.description !== null && (
                 <p className="text-sm text-reading">{tier.description}</p>
+              )}
+
+              {month !== null && (
+                <p className="flex items-center gap-2 text-sm text-white/64">
+                  <CalendarClock aria-hidden="true" className="size-4 shrink-0" />
+                  {checkout('estimatedDelivery', { month })}
+                </p>
+              )}
+              {shipping !== null && (
+                <p className="flex items-center gap-2 text-sm text-white/64">
+                  <Truck aria-hidden="true" className="size-4 shrink-0" />
+                  {shipping}
+                </p>
               )}
 
               {tier.remainingQuantity !== null && (

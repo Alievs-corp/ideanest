@@ -4,7 +4,7 @@ import { formatMoney } from '@ideanest/money';
 import { NO_REWARD } from '@ideanest/checkout/draft';
 import { isSoldOut, type PublicReward } from '@ideanest/checkout/types';
 import { Body, Card, CardTitle, Icon, Meta, TONES, useSurface } from '../../components/ui';
-import { formatWindowDate, useT } from '../../lib/i18n';
+import { formatDeliveryMonth, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { radius, spacing } from '../../theme';
 
@@ -53,7 +53,7 @@ function TierCard({
   const tags = [reward.isEarlyBird ? t('earlyBird') : null, reward.isFeatured ? t('featured') : null].filter(
     (tag): tag is string => tag !== null,
   );
-  const month = reward.estimatedDelivery == null ? null : formatWindowDate(reward.estimatedDelivery, locale);
+  const month = reward.estimatedDelivery == null ? null : formatDeliveryMonth(reward.estimatedDelivery, locale);
   const delivery = {
     NONE: null,
     DIGITAL: t('digital'),

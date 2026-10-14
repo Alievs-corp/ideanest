@@ -1,14 +1,26 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { formatMoney } from '@ideanest/money';
+import { formatMoney, type Money } from '@ideanest/money';
+import type { RewardShipping } from '@ideanest/campaign/reward-details';
 import { Glyphs } from '../../icons';
 import type { RewardTier } from '../../lib/campaign-page';
 import { checkoutHref } from '../../lib/campaign-actions';
-import { useT } from '../../lib/i18n';
+import { formatDeliveryMonth, useT } from '../../lib/i18n';
+import { useLocale } from '../../lib/locale';
 import { font, fontSize, lineHeight, radius, size, spacing, tracking } from '../../theme';
 import { toneColor } from '../text';
-import { Icon, Pill, PressableScale, SurfaceProvider, TONES, haptics, useSurface } from '../ui';
+import {
+  Icon,
+  Pill,
+  PressableScale,
+  SurfaceProvider,
+  TONES,
+  Tag,
+  haptics,
+  useSurface,
+  type IconComponent,
+} from '../ui';
 import { BLOCK, blockSurface } from '../ui/surface';
 
 /**
@@ -20,6 +32,13 @@ import { BLOCK, blockSurface } from '../ui/surface';
  * limited tier how many places are left or that it is sold out — in words, because "6 left" in one
  * colour and "sold out" in another would be colour carrying the difference alone. A tier with no
  * limit says nothing about stock, as on the web.
+ *
+ * <p>When it arrives and where it can go (#255), as the web's card says them: the checkout's early
+ * bird and featured tags, the estimated delivery month, and one shipping line — how many countries
+ * the creator has priced and the cheapest rate, or that nothing is shipped — each beside a
+ * decorative Iconsax glyph (Calendar, Truck), the words carrying the meaning. Read by
+ * `@ideanest/campaign/reward-details`, as the web reads them. Items and add-ons stay in the
+ * checkout.
  *
  * <p>"Select this reward" only where it can be acted on: the campaign takes pledges
  * (`acceptsPledges`, decided by the caller) and the tier is not sold out. Its accessible name
@@ -42,9 +61,34 @@ export interface CampaignRewardsProps {
 
 export function CampaignRewards({ projectId, tiers, pledgeable }: CampaignRewardsProps) {
   const t = useT('campaign.rewards');
+  // The checkout's own words for the tags and the month, so the two screens agree.
+  const tCheckout = useT('checkout.reward');
+  const locale = useLocale();
   const router = useRouter();
   const surface = useSurface();
   if (tiers.length === 0) return null;
+
+  /** The shipping line, or `null` for a shipped tier with nowhere priced yet. */
+  const shippingLine = (shipping: RewardShipping, price: Money): string | null => {
+    switch (shipping.kind) {
+      case 'none':
+        return t('shipping.none');
+      case 'digital':
+        return t('shipping.digital');
+      case 'pickup':
+        return t('shipping.pickup');
+      case 'ships':
+        return shipping.lowestRate === null
+          ? t('shipping.shipsTo', { count: shipping.countries })
+          : t('shipping.shipsToFrom', {
+              count: shipping.countries,
+              // A rate table is in the campaign's currency, which is the tier's.
+              amount: formatMoney({ amount: shipping.lowestRate, currency: price.currency }),
+            });
+      case 'unpriced':
+        return null;
+    }
+  };
 
   return (
     <View style={styles.section} testID="campaign-rewards">
@@ -53,6 +97,10 @@ export function CampaignRewards({ projectId, tiers, pledgeable }: CampaignReward
       </Text>
       {tiers.map((tier) => {
         const soldOut = tier.remainingQuantity === 0;
+        const { details } = tier;
+        const month =
+          details.estimatedDelivery === null ? null : formatDeliveryMonth(details.estimatedDelivery, locale);
+        const shipping = shippingLine(details.shipping, tier.price);
         const select =
           pledgeable && !soldOut
             ? () => {
@@ -63,8 +111,26 @@ export function CampaignRewards({ projectId, tiers, pledgeable }: CampaignReward
         return (
           <RewardCard key={tier.id} onSelect={select} testID={`reward-${tier.id}`}>
             <TierText price={formatMoney(tier.price)} title={tier.title} />
+            {details.earlyBird || details.featured ? (
+              <View style={styles.tags}>
+                {details.earlyBird ? <Tag label={tCheckout('earlyBird')} /> : null}
+                {details.featured ? <Tag label={tCheckout('featured')} /> : null}
+              </View>
+            ) : null}
             {tier.description === null ? null : (
               <TierLine kind="reading">{tier.description}</TierLine>
+            )}
+            {month === null ? null : (
+              <View style={styles.stock}>
+                <DetailIcon icon={Glyphs.Calendar} />
+                <TierLine kind="secondary">{tCheckout('estimatedDelivery', { month })}</TierLine>
+              </View>
+            )}
+            {shipping === null ? null : (
+              <View style={styles.stock}>
+                <DetailIcon icon={Glyphs.Truck} />
+                <TierLine kind="secondary">{shipping}</TierLine>
+              </View>
             )}
             {tier.remainingQuantity === null ? null : (
               <View style={styles.stock}>
@@ -152,6 +218,11 @@ function TierLine({
   return <Text style={[styles.line, { color: toneColor(kind, useSurface()) }]}>{children}</Text>;
 }
 
+/** Decorative: the words beside it say when and where. */
+function DetailIcon({ icon }: { readonly icon: IconComponent }) {
+  return <Icon icon={icon} size={16} color={TONES[useSurface()].secondary} />;
+}
+
 /** Decorative: the words beside it say the stock. */
 function TierIcon({ soldOut }: { readonly soldOut: boolean }) {
   return (
@@ -196,5 +267,6 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.small,
   },
   stock: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   select: { marginTop: spacing[2], alignItems: 'flex-start' },
 });

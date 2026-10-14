@@ -8,6 +8,7 @@ import type { ProjectState } from './api';
 import { readStoryDocument, type StoryDocument } from '@ideanest/campaign/story';
 import { RENDERABLE_STATES } from '@ideanest/campaign/states';
 import { daysLeftOf } from '@ideanest/campaign/days-left';
+import { readRewardDetails, type RewardDetails } from '@ideanest/campaign/reward-details';
 
 /**
  * The campaign page's view model — what §4.4's page actually renders.
@@ -237,18 +238,27 @@ export function previewOf(page: CampaignPage): PublicProjectPreview {
 }
 
 /**
- * The reward tiers, as the structured data describes them.
+ * A tier as the campaign page's reward card draws it: what the structured data describes, and
+ * the delivery month, the shipping line and the tags the card adds (#255). Assignable to
+ * {@link PublicRewardTier}, so the page's one list feeds both.
+ */
+export interface CampaignRewardTier extends PublicRewardTier {
+  readonly details: RewardDetails;
+}
+
+/**
+ * The reward tiers, as the structured data describes them and the reward card draws them.
  *
  * Add-ons are deliberately left out. `rewardProductNodes` emits one `Product` per tier with
  * an `Offer`, and an add-on is something bought alongside a pledge rather than a thing a
  * backer chooses between — listing both would tell a search engine the campaign sells twice
  * as many distinct products as it does.
  */
-export function tiersOf(rewards: PublicRewardListResponse | null): readonly PublicRewardTier[] {
+export function tiersOf(rewards: PublicRewardListResponse | null): readonly CampaignRewardTier[] {
   const list = rewards?.rewards;
   if (!Array.isArray(list)) return [];
 
-  const tiers: PublicRewardTier[] = [];
+  const tiers: CampaignRewardTier[] = [];
   for (const reward of list) {
     const price = readMoney(reward?.price);
     if (typeof reward?.id !== 'string' || typeof reward.title !== 'string' || price === null) {
@@ -263,6 +273,7 @@ export function tiersOf(rewards: PublicRewardListResponse | null): readonly Publ
       // is shown and cannot be taken (PL-01) and is not the same thing.
       remainingQuantity: typeof reward.remainingQuantity === 'number' ? reward.remainingQuantity : null,
       imageUrl: null,
+      details: readRewardDetails(reward),
     });
   }
   return tiers;
