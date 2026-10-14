@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Slot, Stack, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { ApiError } from '@ideanest/api-client';
+import type { ProjectLoadCopy } from '@ideanest/campaign-editor/copy';
 import { traceIdOfError } from '../../api/client';
 import { Eyebrow, InlineAlert, MotionBudgetProvider, Pill, Screen, Tag } from '../../components/ui';
 import { signInHrefFor } from '../../lib/guard';
@@ -104,7 +105,7 @@ function Frame() {
           edges={EDGES}
           error={{
             title: copy.loadFailedTitle,
-            description: load === 'unreachable' ? tAll('mobile.offline.nothingCached') : loadFailure(editor.error, t),
+            description: load === 'unreachable' ? tAll('mobile.offline.nothingCached') : loadFailure(editor.error, copy.load),
             onRetry: editor.reload,
             retrying: editor.query.isFetching,
             traceId: load === 'failed' ? traceIdOfError(editor.error) : null,
@@ -127,7 +128,7 @@ function Frame() {
                 <InlineAlert
                   variant="danger"
                   title={copy.loadFailedTitle}
-                  description={loadFailure(editor.error, t)}
+                  description={loadFailure(editor.error, copy.load)}
                   testID="editor-refresh-failed"
                   action={
                     <Pill
@@ -178,15 +179,15 @@ function Frame() {
   );
 }
 
-/** The web's `useProjectEdit` `messageFor`, in the catalogue's words. */
-function loadFailure(error: unknown, t: ReturnType<typeof useT<'mobile.editor'>>): string {
+/** The web's `useProjectEdit` `messageFor`, in the shared builder's words. */
+function loadFailure(error: unknown, copy: ProjectLoadCopy): string {
   if (error instanceof ApiError) {
-    if (error.status === 403) return t('load.forbidden');
+    if (error.status === 403) return copy.forbidden;
     // 404 covers "no such project" and "not yours", deliberately indistinguishable.
-    if (error.status === 404) return t('load.notFound');
-    return error.problem?.detail ?? error.problem?.title ?? t('load.refused');
+    if (error.status === 404) return copy.notFound;
+    return error.problem?.detail ?? error.problem?.title ?? copy.refused;
   }
-  return t('load.unreachable');
+  return copy.unreachable;
 }
 
 const styles = StyleSheet.create({

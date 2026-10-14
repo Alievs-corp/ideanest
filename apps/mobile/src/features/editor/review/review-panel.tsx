@@ -30,7 +30,7 @@ import {
 } from '../../../components/ui';
 import { FOCUS_DELAY_MS, focusOn } from '../../../components/ui/overlay';
 import { Glyphs } from '../../../icons';
-import { formatDate, pluralCategory, useT } from '../../../lib/i18n';
+import { formatDate, pluralCategory } from '../../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, spacing } from '../../../theme';
 import { useEditor } from '../editor-context';
 import { editorTabHref } from '../editor-tabs';
@@ -162,7 +162,6 @@ function Review({
 }) {
   const editor = useEditor();
   const chrome = useEditorChromeCopy();
-  const tReview = useT('mobile.editor.review');
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -376,7 +375,7 @@ function Review({
           tone="blocking"
           words={words}
           tabs={chrome.tabs}
-          done={tReview('done')}
+          done={words.done}
           onFix={(section) => {
             editor.autosave.flush();
             router.replace(editorTabHref(projectId, section));
@@ -391,7 +390,7 @@ function Review({
           tone="advisory"
           words={words}
           tabs={chrome.tabs}
-          done={tReview('done')}
+          done={words.done}
           onFix={(section) => {
             editor.autosave.flush();
             router.replace(editorTabHref(projectId, section));
@@ -443,7 +442,7 @@ function Review({
             {confirmingLaunch ? (
               <View style={styles.confirm} testID="review-launch-confirm">
                 <Subheading accessibilityRole="header">{words.confirmLaunchTitle}</Subheading>
-                <Caption>{tReview('confirmLaunchBody')}</Caption>
+                <Caption>{words.confirmLaunchBody}</Caption>
                 <View style={styles.actions}>
                   <Pill
                     ref={launchNow}
@@ -476,14 +475,14 @@ function Review({
                   fullWidth
                   wrap
                   disabled={!online}
-                  accessibilityHint={tReview('launchExplanation')}
+                  accessibilityHint={words.launchExplanation}
                   onPress={() => {
                     setLaunchError(null);
                     setConfirmingLaunch(true);
                   }}
                   testID="review-launch"
                 />
-                <Caption>{tReview('launchExplanation')}</Caption>
+                <Caption>{words.launchExplanation}</Caption>
               </>
             )}
           </View>

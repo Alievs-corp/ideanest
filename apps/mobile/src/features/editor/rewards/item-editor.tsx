@@ -130,7 +130,7 @@ export function ItemEditor({ visible, projectId, item, copy, readOnly, onClose, 
           title={words.notSavedTitle}
           description={failure.message}
           testID="item-editor-failure"
-          action={<Caption>{t('notSavedDetail')}</Caption>}
+          action={<Caption>{words.notSavedDetail}</Caption>}
         />
       )}
 
@@ -194,7 +194,7 @@ export function ItemEditor({ visible, projectId, item, copy, readOnly, onClose, 
 
       <Field
         label={words.weight}
-        hint={draft.isDigital ? words.weightHintDigital : t('weightHint')}
+        hint={draft.isDigital ? words.weightHintDigital : words.weightHint}
         error={visibleErrors.weightGrams}
       >
         <TextInput

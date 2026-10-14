@@ -1,22 +1,13 @@
 import { ApiError } from '@ideanest/api-client';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import type { SaveFailureCopy } from '@ideanest/campaign-editor/copy';
 
 /**
- * The sentences a failed autosave can be put in — `mobile.editor.failures` in the catalogue.
- *
- * The web's `describeFailure` writes these in English inside the hook; on the phone every word is
- * the catalogue's, so the vocabulary is an argument (the `basicsValidationCopyFrom` rule: a pure
- * function is handed its words, never reaches for them).
+ * The sentences a failed autosave can be put in — the shared builder's `SaveFailureCopy`, which
+ * `useSaveFailureCopy` fills (#463). The vocabulary is an argument (the `basicsValidationCopyFrom`
+ * rule: a pure function is handed its words, never reaches for them).
  */
-export interface SaveFailureCopy {
-  readonly signedOut: string;
-  readonly forbidden: string;
-  readonly notFound: string;
-  readonly conflict: string;
-  readonly rejected: string;
-  readonly generic: string;
-  readonly unreachable: string;
-}
+export type { SaveFailureCopy };
 
 /**
  * A failed save as something a creator can act on — the web's `describeFailure`, same order.

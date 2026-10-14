@@ -47,6 +47,7 @@ import { CoverImageField } from '../cover-image-field';
 import { useEditor } from '../editor-context';
 import { describeSaveFailure } from '../save-failure';
 import { useEditorChromeCopy, useEditorTranslators } from '../translator';
+import { useSaveFailureCopy } from '../use-describe-failure';
 import { openPrelaunch, prelaunchLink } from './api';
 
 /**
@@ -134,8 +135,7 @@ function PrelaunchForm({
 }) {
   const editor = useEditor();
   const chrome = useEditorChromeCopy();
-  const failures = useT('mobile.editor.failures');
-  // The dialog's reassurance: the web's literal paragraph, from the catalogue here.
+  const failures = useSaveFailureCopy();
   const tPrelaunch = useT('mobile.editor.prelaunch');
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
@@ -243,15 +243,7 @@ function PrelaunchForm({
         setOpening('idle');
         setOpenFailure({
           fromSave: false,
-          message: describeSaveFailure(cause, {
-            signedOut: failures('signedOut'),
-            forbidden: failures('forbidden'),
-            notFound: failures('notFound'),
-            conflict: failures('conflict'),
-            rejected: failures('rejected'),
-            generic: failures('generic'),
-            unreachable: failures('unreachable'),
-          }).message,
+          message: describeSaveFailure(cause, failures).message,
         });
       }
     })();
@@ -428,7 +420,7 @@ function PrelaunchForm({
           </>
         }
       >
-        <Body>{tPrelaunch('confirmDetail')}</Body>
+        <Body>{words.confirmDetail}</Body>
         {refusedHere ? (
           <InlineAlert variant="warning" description={tPrelaunch('fixFirst')} testID="prelaunch-fix-first" />
         ) : null}

@@ -120,10 +120,10 @@ export function StoryVersionHistory({
         setLoad({ status: 'ready', versions });
       } catch (cause) {
         if (signal?.aborted === true) return;
-        setLoad({ status: 'failed', message: failureMessage(cause, t('history.loadFailed'), t('history.unreachable')) });
+        setLoad({ status: 'failed', message: failureMessage(cause, history.loadFailed, history.unreachable) });
       }
     },
-    [projectId, t],
+    [projectId, history],
   );
 
   useEffect(() => {
@@ -165,7 +165,7 @@ export function StoryVersionHistory({
       if (previewRequest.current !== request || request.signal.aborted) return;
       setPreview({
         status: 'failed',
-        message: failureMessage(cause, t('history.versionFailed'), t('history.unreachable')),
+        message: failureMessage(cause, history.versionFailed, history.unreachable),
       });
     }
   }
@@ -178,7 +178,7 @@ export function StoryVersionHistory({
       setConfirming(null);
       onRestored(project);
     } catch (cause) {
-      setRestoreError(failureMessage(cause, t('history.restoreFailed'), t('history.unreachable')));
+      setRestoreError(failureMessage(cause, history.restoreFailed, history.unreachable));
     } finally {
       setRestoring(false);
     }
@@ -313,7 +313,7 @@ export function StoryVersionHistory({
             {confirming === null ? null : (
               <View style={styles.confirm}>
                 <Body>
-                  {t('history.savedAt', {
+                  {fillPlaceholders(history.savedAt, {
                     number: String(confirming.number),
                     date: formatDateTime(confirming.createdAt, copy.locale),
                     characters: charactersPhrase(copy, confirming.characters),
@@ -323,7 +323,7 @@ export function StoryVersionHistory({
                   {discardsHeld
                     ? // Held back by an incomplete block, so never saved: nothing keeps it as a version.
                       t('history.discardsHeld')
-                    : t('history.currentHolds', { characters: charactersPhrase(copy, currentCharacters) })}
+                    : fillPlaceholders(history.currentHolds, { characters: charactersPhrase(copy, currentCharacters) })}
                 </Body>
                 {restoreError === null ? null : (
                   <InlineAlert variant="danger" description={restoreError} testID="story-restore-failed" />
@@ -365,9 +365,9 @@ function VersionCard({
     <View style={styles.card} testID={testID}>
       <View style={styles.cardText}>
         <Text style={styles.version}>
-          {t('history.version', { number })}
+          {fillPlaceholders(history.version, { number })}
           {/* "Most recent" is a word, never only a shade of grey. */}
-          {newest ? <Text style={styles.newest}>{`  ${t('history.mostRecent')}`}</Text> : null}
+          {newest ? <Text style={styles.newest}>{`  ${history.mostRecent}`}</Text> : null}
         </Text>
         <Caption>
           {`${formatDateTime(version.createdAt, copy.locale)} · ${charactersPhrase(copy, version.characters)}`}
@@ -375,7 +375,7 @@ function VersionCard({
       </View>
       <View style={styles.actions}>
         <Pill
-          label={expanded ? t('history.hide') : history.preview}
+          label={expanded ? history.hide : history.preview}
           accessibilityLabel={
             expanded
               ? t('history.hideVersion', { number })

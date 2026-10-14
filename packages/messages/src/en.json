@@ -6412,12 +6412,6 @@
     },
     "editor": {
       "signedOutDetail": "This phone no longer has a session. Sign in again to keep editing this campaign.",
-      "load": {
-        "forbidden": "You do not have access to this project.",
-        "notFound": "That project could not be found.",
-        "refused": "The service refused the request. Try again.",
-        "unreachable": "The service could not be reached. Check your connection and try again."
-      },
       "offlineReadOnly": "You are offline. This is the project as it was last loaded on this phone, and it cannot be changed until the connection is back.",
       "scheduledLaunchLocked": "The launch time cannot change once the campaign has launched.",
       "unsent": {
@@ -6427,13 +6421,7 @@
         "discard": "Discard"
       },
       "failures": {
-        "signedOut": "You have been signed out. Sign in again — nothing you typed has been lost.",
-        "forbidden": "You are not allowed to edit this project.",
-        "notFound": "This project no longer exists.",
-        "conflict": "The project has changed since this screen was opened. Reload it to see the current version.",
-        "rejected": "The service rejected the change. Check the fields marked below.",
-        "generic": "The change could not be saved. Try again.",
-        "unreachable": "The service could not be reached, so nothing was saved. Try again."
+        "conflict": "The project has changed since this screen was opened. Reload it to see the current version."
       },
       "discard": {
         "title": "Discard changes?",
@@ -6490,19 +6478,10 @@
         "confirmDateLabel": "Use {date} for {label}"
       },
       "rewards": {
-        "deliversOn": "Delivers {date}",
         "weight": "{grams} g",
-        "atCapacityBody": "A campaign can offer {max} rewards. Delete or combine one before adding another.",
-        "deleteItemBody": "An item that a reward contains cannot be deleted — take it out of the reward first. This one is not in any reward as far as this page knows, and the service checks again.",
-        "deleteRewardBody": "Once somebody has backed a reward it can no longer be deleted, only hidden — so deleting is offered while nobody has.",
-        "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below.",
-        "ratesNotSavedDetail": "Everything else about the reward was saved. Only the per-country rates were refused, so fix them and save again — the rest will not be sent twice.",
-        "weightHint": "Optional, and what shipping is worked out from later.",
         "image": "Image",
         "imageHint": "Optional. Choose a photo, take one, or use the address of an image that is already online.",
         "imageRemove": "Remove image",
-        "earlyBirdHint": "A better deal that runs out. It needs either a closing date or a limited number of places — without one it is an ordinary reward with a label that hurries people for nothing.",
-        "secretHint": "Left out of the public list and reached by a private token instead. Making it public again destroys that token, so any link already sent stops working.",
         "destination": "destination {position}",
         "copyToken": "Copy token",
         "copied": "Copied",
@@ -6511,47 +6490,18 @@
         "nothingCached": "You are offline, and the rewards have not been loaded on this phone yet."
       },
       "faq": {
-        "heading": "Questions",
-        "explanation": "These appear on the campaign’s FAQ tab, in this order. Answering the question a backer would otherwise ask in the comments is the point of the list.",
-        "atLimitBody": "A campaign may publish {max} questions. Delete one to add another.",
-        "deleteBody": "Nothing is owed against a question, so it goes for good — unlike a reward tier, which can only be hidden once somebody has chosen it.",
         "nothingCached": "You are offline, and the questions have not been loaded on this phone yet."
       },
       "story": {
         "unreadableDetail": "It was written in a newer format than this app understands. Update the app to edit it. Nothing has been changed, and the story is still on your project page.",
         "notSavedDetail": "Nothing you have written has been lost — it is still on this phone and will be sent again.",
-        "incomplete": {
-          "one": "{count} block is incomplete. The message beside it says what is missing, and saving resumes as soon as it is filled in.",
-          "few": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.",
-          "many": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.",
-          "other": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in."
-        },
-        "untitledSection": "Untitled section",
         "imageHint": "A photo from this phone, or an image that is already published.",
-        "pixels": "{size} pixels",
-        "altHint": "Required. It is what a backer using a screen reader receives instead of the picture, so describe what it shows rather than naming the file.",
-        "embedHint": "The title is what a screen reader announces instead of “frame”. Only YouTube and Vimeo can be embedded.",
         "providers": {
           "youtube": "YouTube",
           "vimeo": "Vimeo"
         },
         "history": {
-          "version": "Version {number}",
-          "mostRecent": "most recent",
-          "characters": {
-            "one": "{count} character",
-            "few": "{count} characters",
-            "many": "{count} characters",
-            "other": "{count} characters"
-          },
-          "hide": "Hide",
           "hideVersion": "Hide version {number}",
-          "savedAt": "Version {number} was saved {date} and holds {characters}.",
-          "currentHolds": "The story you have now holds {characters}. It is kept as a version before being replaced, so this can be undone from this same list.",
-          "loadFailed": "The version history could not be loaded.",
-          "versionFailed": "That version could not be loaded.",
-          "restoreFailed": "That version could not be restored. Nothing has changed.",
-          "unreachable": "The service could not be reached. Check your connection and try again.",
           "newerFormat": "This version was written in a newer format than this app understands. Update the app to read it.",
           "waitForSave": "Restoring becomes possible once every change on this phone has been saved.",
           "discardsHeld": "The story on this phone has an incomplete block, so its unsaved changes are not kept as a version. Restoring discards them."
@@ -6564,18 +6514,12 @@
         }
       },
       "prelaunch": {
-        "confirmDetail": "Nothing about your rewards, story, or funding goal is published, and the campaign does not take money until it is reviewed and launched.",
         "copyLabel": "Copy the pre-launch link",
         "copyFailed": "The link could not be copied. Press and hold the link above to select it and copy it yourself.",
         "share": "Share",
         "shareLabel": "Share the pre-launch link",
         "shareFailed": "The share sheet could not be opened. Try again.",
         "fixFirst": "Fix the title, summary or cover first. The page would publish what was last saved, not what is on screen."
-      },
-      "review": {
-        "done": "Done",
-        "launchExplanation": "The campaign appears everywhere on the platform and starts taking pledges the moment it launches. Its goal and its deadline freeze from that point, and a live campaign cannot be taken back to a draft.",
-        "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft."
       }
     },
     "native": {

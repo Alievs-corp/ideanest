@@ -14,7 +14,6 @@ import type { ProjectEdit, ProjectPatch } from '@ideanest/campaign-editor/contra
 import { readStoryDocument } from '@ideanest/campaign-editor/story';
 import { queryKeys } from '../../api/queries';
 import { useOnline } from '../../lib/connectivity';
-import { useT } from '../../lib/i18n';
 import { deviceStore, type KeyValueStore } from '../../lib/storage';
 import { unsentKeyFor } from '../../lib/unsent-edits';
 import { useSession } from '../../lib/use-session';
@@ -22,6 +21,7 @@ import { patchProject, useProjectEdit } from './api';
 import { describeSaveFailure } from './save-failure';
 import { withUnsaved } from './seed';
 import { useAutosave, type Autosave } from './use-autosave';
+import { useSaveFailureCopy } from './use-describe-failure';
 import { useVideoUpload, videoRefusalOf, type VideoUpload } from './use-video-upload';
 
 /**
@@ -120,7 +120,7 @@ export function EditorProvider({
   const queryClient = useQueryClient();
   const online = useOnline();
   const { signedIn } = useSession();
-  const failures = useT('mobile.editor.failures');
+  const failures = useSaveFailureCopy();
   const query = useProjectEdit(signedIn ? projectId : '');
   const [revision, setRevision] = useState(0);
   /**
@@ -140,19 +140,7 @@ export function EditorProvider({
     [queryClient, projectId],
   );
 
-  const describe = useCallback(
-    (cause: unknown) =>
-      describeSaveFailure(cause, {
-        signedOut: failures('signedOut'),
-        forbidden: failures('forbidden'),
-        notFound: failures('notFound'),
-        conflict: failures('conflict'),
-        rejected: failures('rejected'),
-        generic: failures('generic'),
-        unreachable: failures('unreachable'),
-      }),
-    [failures],
-  );
+  const describe = useCallback((cause: unknown) => describeSaveFailure(cause, failures), [failures]);
 
   const persist = useMemo(() => ({ store, key: unsentKeyFor(projectId) }), [store, projectId]);
   const send = useCallback((patch: ProjectPatch) => patchProject(projectId, patch), [projectId]);

@@ -1,13 +1,16 @@
 import { useMemo } from 'react';
 import { storyPanelCopyFrom, type StoryPanelCopy } from '@ideanest/campaign-editor/copy';
 import type { Locale } from '@ideanest/messages';
-import { formatCount, pluralCategory, useT } from '../../../lib/i18n';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
+import { pluralForm } from '@ideanest/messages/plurals';
+import { formatCount, useT } from '../../../lib/i18n';
 import { useEditorChromeCopy, useEditorTranslators } from '../translator';
 
 /**
  * The story tab's words (#162): the shared builder's `StoryPanelCopy` — the very object the web's
- * `StoryPanel` is handed — plus the few sentences the web still writes inline, which the app reads
- * from `mobile.editor.story.*` because no screen here speaks English of its own.
+ * `StoryPanel` is handed — plus the few sentences that are the phone's own ("this phone", "update
+ * the app"), which the app reads from `mobile.editor.story.*`. A sentence the web says too is read
+ * from `story`, never copied into `mobile` (#463).
  */
 export interface StoryCopy {
   readonly story: StoryPanelCopy;
@@ -28,7 +31,7 @@ export function useStoryCopy(): StoryCopy {
 
 /** "1,240 characters", in the reader's plural form and digit grouping. */
 export function charactersPhrase(copy: StoryCopy, count: number): string {
-  return copy.mobile(`history.characters.${pluralCategory(copy.locale, count)}`, {
+  return fillPlaceholders(pluralForm(copy.locale, copy.story.history.characters, count), {
     count: formatCount(count, copy.locale),
   });
 }

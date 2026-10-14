@@ -101,7 +101,7 @@ export function StoryImageFields({
               {...(block.alt.trim() === '' ? { decorative: true as const } : { alt: block.alt })}
             />
           </View>
-          <Caption testID={`${testID}-size`}>{copy.mobile('pixels', { size: describeSize(block) })}</Caption>
+          <Caption testID={`${testID}-size`}>{fillPlaceholders(blocks.pixels, { size: describeSize(block) })}</Caption>
         </View>
       ) : null}
 
@@ -111,7 +111,7 @@ export function StoryImageFields({
           disabled={disabled}
           invalid={invalid && measured && block.alt.trim() === ''}
           accessibilityLabel={fillPlaceholders(blocks.descriptionOf, { name })}
-          accessibilityHint={copy.mobile('altHint')}
+          accessibilityHint={blocks.altHint}
           placeholder={blocks.imageAltPlaceholder}
           onChangeText={(alt) => onChange({ ...block, alt })}
           onFocus={() => reveal(altField.current)}
@@ -122,7 +122,7 @@ export function StoryImageFields({
           testID={`${testID}-alt`}
         />
         <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {copy.mobile('altHint')}
+          {blocks.altHint}
         </Caption>
       </View>
     </View>

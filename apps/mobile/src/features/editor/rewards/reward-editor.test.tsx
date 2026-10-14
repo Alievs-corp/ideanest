@@ -216,7 +216,7 @@ describe('RewardEditor', () => {
     const alert = screen.getByTestId('reward-editor-failure');
     expect(within(alert).getByText(TIER.ratesNotSavedTitle)).toBeTruthy();
     expect(within(alert).getByText('TR is not a destination you ship to.')).toBeTruthy();
-    expect(within(alert).getByText(en.mobile.editor.rewards.ratesNotSavedDetail)).toBeTruthy();
+    expect(within(alert).getByText(en.campaignEditor.rewards.tier.ratesNotSavedDetail)).toBeTruthy();
     expect(onClose).not.toHaveBeenCalled();
     expect(onSaved).toHaveBeenCalledTimes(1);
 
