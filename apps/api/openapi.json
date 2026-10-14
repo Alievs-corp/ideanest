@@ -18908,6 +18908,13 @@
             "type" : "integer",
             "format" : "int64"
           },
+          "planPayments" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "planRevenue" : {
+            "$ref" : "#/components/schemas/Money"
+          },
           "pledgeCount" : {
             "type" : "integer",
             "format" : "int64"

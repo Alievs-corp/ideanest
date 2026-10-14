@@ -274,6 +274,8 @@ export interface PlatformAnalyticsCopy extends ConsoleChromeCopy {
   readonly backers: string;
   readonly averagePledge: string;
   readonly liveProjects: string;
+  readonly planRevenue: string;
+  readonly planPayments: string;
   readonly otherCurrencyTitle: string;
   /** Carries `{count}`. */
   readonly otherCurrencyBody: string;
@@ -312,6 +314,8 @@ export function platformAnalyticsCopyFrom(
     backers: t('screens.analytics.backers'),
     averagePledge: t('screens.analytics.averagePledge'),
     liveProjects: t('screens.analytics.liveProjects'),
+    planRevenue: t('screens.analytics.planRevenue'),
+    planPayments: t('screens.analytics.planPayments'),
     otherCurrencyTitle: t('screens.analytics.otherCurrencyTitle'),
     otherCurrencyBody: String(t.raw('screens.analytics.otherCurrencyBody')),
     outcomesHeading: t('screens.analytics.outcomesHeading'),

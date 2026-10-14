@@ -7376,6 +7376,9 @@ export interface components {
             /** Format: int64 */
             otherCurrencyPledges?: number;
             /** Format: int64 */
+            planPayments?: number;
+            planRevenue?: components["schemas"]["Money"];
+            /** Format: int64 */
             pledgeCount?: number;
             volume?: components["schemas"]["Money"];
         };

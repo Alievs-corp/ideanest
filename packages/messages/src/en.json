@@ -1321,6 +1321,8 @@
         "backers": "Backers",
         "averagePledge": "Average pledge",
         "liveProjects": "Live campaigns",
+        "planRevenue": "Plan revenue",
+        "planPayments": "Plan payments",
         "otherCurrencyTitle": "Some pledges are not in these totals",
         "otherCurrencyBody": "{count} pledges in the window were in another currency. §21.2 gives nothing to convert them with, so they are counted here and left out of the volume rather than added to a figure nobody could reconcile.",
         "outcomesHeading": "Campaigns that closed",

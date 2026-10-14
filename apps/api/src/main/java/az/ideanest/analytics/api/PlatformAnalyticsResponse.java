@@ -60,7 +60,9 @@ public record PlatformAnalyticsResponse(
             Money averagePledge,
             long backerCount,
             long liveProjects,
-            long otherCurrencyPledges) {
+            long otherCurrencyPledges,
+            Money planRevenue,
+            long planPayments) {
 
         static Totals of(PlatformAnalytics.Totals totals) {
             return new Totals(
@@ -69,7 +71,9 @@ public record PlatformAnalyticsResponse(
                     totals.averagePledge(),
                     totals.backerCount(),
                     totals.liveProjects(),
-                    totals.otherCurrencyPledges());
+                    totals.otherCurrencyPledges(),
+                    totals.planRevenue(),
+                    totals.planPayments());
         }
     }
 
