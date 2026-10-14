@@ -5303,7 +5303,8 @@
       "triggerOn": {
         "campaign": "Bu kampanyayı şikayet et",
         "account": "Bu hesabı şikayet et",
-        "comment": "Bu yorumu şikayet et"
+        "comment": "Bu yorumu şikayet et",
+        "update": "Bu güncellemeyi şikayet et"
       },
       "dialogLabel": "{name} hakkında şikayet",
       "commentOn": "{title} kampanyasındaki bir yorum",
@@ -5313,7 +5314,8 @@
       "filedBody": {
         "campaign": "Şikayetiniz bizde. Bu yüzden kampanyada hiçbir şey değişmez — şikayet, bir insanın bakması için yapılan bir istektir, oy değil.",
         "account": "Şikayetiniz bizde. Bu yüzden hesapta hiçbir şey değişmez — şikayet, bir insanın bakması için yapılan bir istektir, oy değil.",
-        "comment": "Şikayetiniz bizde. Bu yüzden yorumda hiçbir şey değişmez — şikayet, bir insanın bakması için yapılan bir istektir, oy değil."
+        "comment": "Şikayetiniz bizde. Bu yüzden yorumda hiçbir şey değişmez — şikayet, bir insanın bakması için yapılan bir istektir, oy değil.",
+        "update": "Şikayetiniz bizde. Bu yüzden güncellemede hiçbir şey değişmez — şikayet, bir insanın bakması için yapılan bir istektir, oy değil."
       },
       "close": "Kapat",
       "errorTitle": "Gönderilmedi",

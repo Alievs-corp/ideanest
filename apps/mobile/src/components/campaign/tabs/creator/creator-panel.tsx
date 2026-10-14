@@ -2,12 +2,14 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Glyphs } from '../../../../icons';
+import { useMe } from '../../../../lib/account';
 import type { CampaignCreator } from '../../../../lib/campaign-page';
 import { formatDay, useT } from '../../../../lib/i18n';
 import { useLocale } from '../../../../lib/locale';
 import { font, fontSize, lineHeight, radius, size, spacing } from '../../../../theme';
 import { Avatar, Icon, PressableScale, TONES, useFocusRing, useSurface } from '../../../ui';
 import { BLOCK, blockSurface } from '../../../ui/surface';
+import { ReportTrigger } from '../../report-link';
 import { entryText, useEntryTones } from '../shared/tab-section';
 import type { CreatorProfile, CreatorProject } from './creator-profile';
 
@@ -30,6 +32,11 @@ import type { CreatorProfile, CreatorProject } from './creator-profile';
  *
  * <p>The web's Follow control is not here: following a creator from the app is #156's profile
  * screen's, and this tab links to it.
+ *
+ * <p>`CreatorReport`: "Report this account", quiet, closing the tab (#255) — the web's
+ * `ProfileReportControl` in its `CreatorPanel`. Addressed by the campaign's `creator.slug`
+ * (`POST /v1/users/{slug}/report`), so it is there for a private profile too and no account id
+ * is needed. Not offered to the creator on their own campaign: reporting yourself is a 400.
  */
 
 /**
@@ -253,7 +260,32 @@ function Link({
   );
 }
 
+/** "Report this account", at the end of the tab. Nothing for the creator reading their own page. */
+export function CreatorReport({
+  creator,
+  profile,
+  offline,
+}: {
+  readonly creator: CampaignCreator;
+  readonly profile: CreatorProfile | null;
+  readonly offline: boolean;
+}) {
+  const me = useMe();
+  if (me.data?.slug === creator.slug) return null;
+  return (
+    <View style={styles.report} testID="creator-report">
+      <ReportTrigger
+        target={{ kind: 'account', slug: creator.slug }}
+        name={profile?.name ?? creator.name}
+        offline={offline}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  // The web's `gap-8` above it, the same space the two blocks keep between them.
+  report: { paddingTop: spacing[8] },
   // The web's `gap-4` inside the block, and the Campaign tab's 32 above it.
   about: { gap: spacing[4], paddingTop: spacing[8] },
   heading: {

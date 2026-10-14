@@ -212,6 +212,30 @@ describe('the Follow control on the creator tab — #143', () => {
   });
 });
 
+/** `moderation.report.triggerOn.account`, from the catalogue rather than retyped. */
+const REPORT_ACCOUNT = String(translatorFor('moderation.report').raw('triggerOn.account'));
+
+describe('reporting the creator’s account from the creator tab — #255', () => {
+  it('offers a reader the account report, by the slug the campaign carries', async () => {
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));
+
+    expect(screen.getByRole('button', { name: REPORT_ACCOUNT })).toBeInTheDocument();
+  });
+
+  it('is there even when the profile is private', async () => {
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={null} projects={[]} />));
+
+    expect(screen.getByRole('button', { name: REPORT_ACCOUNT })).toBeInTheDocument();
+  });
+
+  it('is not offered to the creator on their own campaign, because a self-report is refused', async () => {
+    vi.mocked(useSession).mockReturnValue(sessionAs('ayan'));
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));
+
+    expect(screen.queryByRole('button', { name: REPORT_ACCOUNT })).not.toBeInTheDocument();
+  });
+});
+
 describe('the creator tab', () => {
   it('links the creator through to the profile route the profile epic owns', async () => {
     render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));

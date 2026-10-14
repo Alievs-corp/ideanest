@@ -5,6 +5,7 @@ import { formatDay, useT } from '../../../../lib/i18n';
 import { useLocale } from '../../../../lib/locale';
 import { font, fontSize, lineHeight, spacing, tracking } from '../../../../theme';
 import { Tag } from '../../../ui';
+import { ReportTrigger } from '../../report-link';
 import { EntryCard, entryText, useEntryTones } from '../shared/tab-section';
 import { upperCaseIn } from './upper-case';
 
@@ -30,8 +31,20 @@ import { upperCaseIn } from './upper-case';
  * filter would be a second, weaker copy of the service's rule. The `warning` tag with Lock and a
  * word (never lime, never a colour alone) is drawn whenever the service does send such an update,
  * as the web draws it, because who else can read the paragraph is worth saying beside it.
+ *
+ * <p><strong>Every update can be reported</strong> (#255), as every comment can: the card ends on
+ * the same quiet `ReportTrigger`, addressed to `POST /v1/updates/{id}/report` and titled with the
+ * update's own title. It is drawn only for a row that carries its `id`. Offline it is disabled with
+ * the reason as its hint; the sentence itself is under "Report this campaign" at the foot of the
+ * same page, so it is not repeated under every card.
  */
-export function UpdateEntry({ update }: { readonly update: CampaignUpdate }) {
+export function UpdateEntry({
+  update,
+  offline,
+}: {
+  readonly update: CampaignUpdate;
+  readonly offline: boolean;
+}) {
   const t = useT('campaign.updates');
   const locale = useLocale();
   const day = formatDay(update.publishedAt, locale);
@@ -60,6 +73,14 @@ export function UpdateEntry({ update }: { readonly update: CampaignUpdate }) {
         </Text>
         {update.body === '' ? null : (
           <Text style={[entryText.body, { color: tones.body }]}>{update.body}</Text>
+        )}
+        {update.id === null ? null : (
+          <ReportTrigger
+            target={{ kind: 'update', id: update.id }}
+            name={update.title}
+            offline={offline}
+            showsOfflineReason={false}
+          />
         )}
       </EntryCard>
     </View>

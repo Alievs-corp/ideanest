@@ -5,17 +5,17 @@
  *
  * The web's Report dialog and the app's report sheet offer the same nine reasons in the same
  * order, require a sentence for the same one, cap it at the same length and send the same body
- * to the same three paths. All of that moved here from `apps/web/src/lib/moderation/report.ts`,
+ * to the same four paths. All of that moved here from `apps/web/src/lib/moderation/report.ts`,
  * which re-exports it under the same names. Sending the request — `authorizedFetch` on the web,
  * the typed client in the app — and the words, which are the catalogue's
  * (`moderation.report.*`, `admin.moderation.reason.*`), stay with each client.
  *
- * <h2>Three targets, one budget</h2>
+ * <h2>Four targets, one budget</h2>
  *
- * `ContentReportController` publishes `/projects/{id}/report`, `/users/{slug}/report` and
- * `/comments/{id}/report` on one controller sharing one rate limit, and says why: separate
+ * `ContentReportController` publishes `/projects/{id}/report`, `/users/{slug}/report`,
+ * `/comments/{id}/report` and `/updates/{id}/report` on one controller sharing one rate limit, and says why: separate
  * counters would let somebody who had spent their allowance on campaigns spend a second one
- * on people. {@link reportPath} mirrors that — one function over a target type, so a fourth
+ * on people. {@link reportPath} mirrors that — one function over a target type, so a fifth
  * surface cannot arrive spelling its path its own way.
  *
  * <h2>A second report on one thing is not a second report</h2>
@@ -46,9 +46,10 @@ export type ReportReason =
 export type ReportTarget =
   | { readonly kind: 'campaign'; readonly id: string }
   | { readonly kind: 'account'; readonly slug: string }
-  | { readonly kind: 'comment'; readonly id: string };
+  | { readonly kind: 'comment'; readonly id: string }
+  | { readonly kind: 'update'; readonly id: string };
 
-/** The path each target reports to. One place, so a fourth cannot be spelled two ways. */
+/** The path each target reports to. One place, so a fifth cannot be spelled two ways. */
 export function reportPath(target: ReportTarget): string {
   switch (target.kind) {
     case 'campaign':
@@ -57,6 +58,8 @@ export function reportPath(target: ReportTarget): string {
       return `/v1/users/${encodeURIComponent(target.slug)}/report`;
     case 'comment':
       return `/v1/comments/${encodeURIComponent(target.id)}/report`;
+    case 'update':
+      return `/v1/updates/${encodeURIComponent(target.id)}/report`;
   }
 }
 

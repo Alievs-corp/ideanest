@@ -36,6 +36,17 @@ describe('reading a page of updates', () => {
     expect(page.updates[0]?.visibility).toBe('BACKERS_ONLY');
   });
 
+  it('keeps the id a report is addressed to, and renders a row from an older service without one (#255)', () => {
+    const page = readUpdatePage({
+      updates: [
+        { id: 'u-9', number: 9, title: 'Nine', body: 'b', visibility: 'PUBLIC', publishedAt: '2026-08-01T00:00:00Z' },
+        { number: 4, title: 'Four', body: 'b', visibility: 'PUBLIC', publishedAt: '2026-07-01T00:00:00Z' },
+      ],
+    });
+
+    expect(page.updates.map((update) => update.id)).toEqual(['u-9', null]);
+  });
+
   /**
    * The safe default is for the READER, not for the platform: the list has already been
    * filtered by the service, so an unrecognised value is a row it chose to send. Marking it

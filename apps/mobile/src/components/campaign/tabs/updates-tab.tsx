@@ -80,7 +80,7 @@ export function useUpdatesTab(context: CampaignTabContext): CampaignTabBody {
 
   for (const update of updates.updates) {
     // The service's number is the update's identity, as the web keys its list.
-    rows.push({ key: `update-${update.number}`, render: () => <UpdateEntry update={update} /> });
+    rows.push({ key: `update-${update.number}`, render: () => <UpdateEntry update={update} offline={context.offline} /> });
   }
 
   return {

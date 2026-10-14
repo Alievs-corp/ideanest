@@ -14,7 +14,7 @@ import { readCampaignPage, type CampaignPage } from '../../../lib/campaign-page'
 import { formatDay } from '../../../lib/i18n';
 import { setLocale } from '../../../lib/locale';
 import { createQueryClient, persistOptions } from '../../../lib/offline';
-import { rememberAccessToken } from '../../../lib/session';
+import { endSession, rememberAccessToken, storeRefreshToken } from '../../../lib/session';
 import { memoryStore } from '../../../lib/storage';
 import type { CampaignTabBody, CampaignTabHook } from './contract';
 import { useCreatorTab } from './creator-tab';
@@ -46,6 +46,7 @@ jest.setTimeout(30_000);
 
 const C = en.campaign;
 const M = en.mobile.campaign;
+const R = en.moderation.report;
 const ID = '6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 
 const METRICS = {
@@ -347,6 +348,35 @@ describe('the Creator tab', () => {
     expect(screen.queryByTestId('creator-see-all')).toBeNull();
   });
 
+  it('ends on "Report this account", addressed by the creator slug, with the sheet titled for them (#255)', async () => {
+    await show(useCreatorTab);
+    const trigger = screen.getByRole('button', { name: R.triggerOn.account });
+    expect(trigger.props.testID).toBe('report-trigger-account');
+    // The tab's last row, after everything the tab says about the person.
+    expect(body.rows.map((row) => row.key).at(-1)).toBe('report');
+  });
+
+  it('offers it even when the profile is private, because the campaign carries the slug', async () => {
+    routes['/v1/users/aysel'] = () => problem(404);
+    await show(useCreatorTab);
+    expect(screen.getByRole('button', { name: R.triggerOn.account })).toBeTruthy();
+  });
+
+  it('does not offer the creator a report on their own account', async () => {
+    // A session on the phone, so the account is read (`useMe`): it is the creator's own.
+    await storeRefreshToken('refresh-1');
+    rememberAccessToken('signed-in-reader');
+    routes['/v1/me'] = () => json({ id: 'me', slug: 'aysel', name: 'Aysel', email: 'a@example.com' });
+    try {
+      await show(useCreatorTab);
+      await settle();
+      expect(requested('/v1/me')).not.toHaveLength(0);
+      expect(screen.queryByRole('button', { name: R.triggerOn.account })).toBeNull();
+    } finally {
+      await act(async () => endSession());
+    }
+  });
+
   it('says nothing about other campaigns when there are none', async () => {
     routes['/v1/users/aysel/projects'] = () =>
       json({ projects: [{ ...project(0), id: ID }], nextCursor: null });
@@ -454,6 +484,16 @@ describe('the Updates tab', () => {
   const olderPill = () => screen.queryByRole('button', { name: C.updates.older });
   const cards = () => screen.queryAllByTestId(/^update-\d+$/);
   const withCursor = () => requested(path).filter((url) => url.searchParams.has('cursor'));
+
+  it('ends each update on "Report this update", and only where the service named the update (#255)', async () => {
+    routes[path] = () =>
+      json({ updates: [update(7, { id: 'update-7' }), update(3)], nextCursor: null });
+    await show(useUpdatesTab);
+
+    const triggers = screen.getAllByRole('button', { name: R.triggerOn.update });
+    expect(triggers).toHaveLength(1);
+    expect(screen.getByTestId('update-7')).toContainElement(triggers[0] ?? null);
+  });
 
   it('reads nothing until the tab opens, then the newest twenty with no cursor, as nobody', async () => {
     routes[path] = () => json(page(45, 25));
@@ -702,6 +742,7 @@ describe('the Updates tab', () => {
 
 describe('an entry follows the surface it is drawn on (#281)', () => {
   const entry = {
+    id: null,
     number: 7,
     title: 'The moulds are late',
     body: 'Two weeks.',
@@ -718,7 +759,7 @@ describe('an entry follows the surface it is drawn on (#281)', () => {
     await render(
       <IntlProvider locale="en" messages={en}>
         <SurfaceProvider surface={surface}>
-          <UpdateEntry update={entry} />
+          <UpdateEntry update={entry} offline={false} />
         </SurfaceProvider>
       </IntlProvider>,
     );

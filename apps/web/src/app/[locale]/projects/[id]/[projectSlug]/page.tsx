@@ -435,11 +435,12 @@ export default async function CampaignPage({
         the end of the page is where they are; `--text-tertiary` at 4.9:1 is legible without
         competing (docs/ui-kit.md §9.1).
 
-        THE CREATOR'S ACCOUNT IS REPORTED FROM THEIR PROFILE, NOT FROM HERE. #143 moved the
-        account route to `POST /v1/users/{slug}/report` and mounted it on `/u/[slug]`, one
-        click away through the Creator tab. A second Report control here would put two
-        complaints — about the campaign and about the person — side by side at the foot of a
-        page whose subject is the campaign.
+        THE CREATOR'S ACCOUNT IS REPORTED FROM THE CREATOR TAB, NOT FROM HERE. #143 moved the
+        account route to `POST /v1/users/{slug}/report` and mounted it on `/u/[slug]`; #255
+        mounted the same control in the Creator tab, whose subject is the person, under their
+        name and bio. A second Report control here would put two complaints — about the
+        campaign and about the person — side by side at the foot of a page whose subject is
+        the campaign.
 
         `ReportControl` writes §4.11's dialog entry as a CSS keyframe rather than importing
         `@ideanest/ui/motion`, for the reason the header comment above gives: 116 kB of
@@ -537,7 +538,15 @@ async function UpdatesTab({
       ? null
       : campaignTabHref(path, 'updates', { cursor: String(page.nextCursor) });
 
-  return <CampaignUpdates page={page} olderHref={olderHref} paged={cursor !== null} />;
+  return (
+    <CampaignUpdates
+      page={page}
+      olderHref={olderHref}
+      paged={cursor !== null}
+      reportCopy={await reportControlCopy()}
+      returnTo={campaignTabHref(path, 'updates')}
+    />
+  );
 }
 
 /** §4.4's Comments tab — #285. */

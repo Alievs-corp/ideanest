@@ -5303,7 +5303,8 @@
       "triggerOn": {
         "campaign": "Report this campaign",
         "account": "Report this account",
-        "comment": "Report this comment"
+        "comment": "Report this comment",
+        "update": "Report this update"
       },
       "dialogLabel": "Report {name}",
       "commentOn": "a comment on {title}",
@@ -5313,7 +5314,8 @@
       "filedBody": {
         "campaign": "We have your report. Nothing about the campaign changes because of it — a report is a request for a person to look, not a vote.",
         "account": "We have your report. Nothing about the account changes because of it — a report is a request for a person to look, not a vote.",
-        "comment": "We have your report. Nothing about the comment changes because of it — a report is a request for a person to look, not a vote."
+        "comment": "We have your report. Nothing about the comment changes because of it — a report is a request for a person to look, not a vote.",
+        "update": "We have your report. Nothing about the update changes because of it — a report is a request for a person to look, not a vote."
       },
       "close": "Close",
       "errorTitle": "It was not sent",

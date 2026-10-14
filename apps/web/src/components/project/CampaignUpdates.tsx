@@ -6,6 +6,8 @@ import type { CampaignUpdate, CampaignUpdatePage } from '../../lib/community/upd
 import { ViewerInstant } from './ViewerClock';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../lib/i18n/locale';
+import type { ReportControlCopy } from '../../lib/i18n/report-copy';
+import { ReportControl } from '../moderation/ReportControl';
 
 /**
  * §4.4's Updates tab — issue #284, over §4.9's public update read.
@@ -51,6 +53,13 @@ import { localeOrDefault } from '../../lib/i18n/locale';
  * One that posted to the campaign thread instead would file a reply about update 7 under the
  * campaign at large, where nobody reading update 7 would find it.
  *
+ * <h2>Every update can be reported (#255)</h2>
+ *
+ * AD-09 moderates updates as it moderates comments, and `POST /v1/updates/{id}/report` existed
+ * with no control in front of it. Each update now ends on the same quiet "Report this update"
+ * link a comment carries — `ReportControl`, the one client island here, which the page already
+ * ships for the campaign's own report. It is drawn only for a row that carries its `id`.
+ *
  * <h2>Motion</h2>
  *
  * None. docs/motion-system.md §8 forbids animation in long content, and an update is long
@@ -65,9 +74,19 @@ export interface CampaignUpdatesProps {
   readonly olderHref: string | null;
   /** True when the reader is already past the first page — see the empty state below. */
   readonly paged: boolean;
+  /** The Report dialog's words, resolved on the server. */
+  readonly reportCopy: ReportControlCopy;
+  /** This tab's address, for the Report dialog's sign-in return. */
+  readonly returnTo: string;
 }
 
-export async function CampaignUpdates({ page, olderHref, paged }: CampaignUpdatesProps) {
+export async function CampaignUpdates({
+  page,
+  olderHref,
+  paged,
+  reportCopy,
+  returnTo,
+}: CampaignUpdatesProps) {
   const t = await getTranslations('campaign.updates');
 
   return (
@@ -95,7 +114,7 @@ export async function CampaignUpdates({ page, olderHref, paged }: CampaignUpdate
         <ol className="flex flex-col gap-6">
           {page.updates.map((update) => (
             <li key={update.number}>
-              <UpdateEntry update={update} />
+              <UpdateEntry update={update} reportCopy={reportCopy} returnTo={returnTo} />
             </li>
           ))}
         </ol>
@@ -116,7 +135,15 @@ export async function CampaignUpdates({ page, olderHref, paged }: CampaignUpdate
   );
 }
 
-async function UpdateEntry({ update }: { readonly update: CampaignUpdate }) {
+async function UpdateEntry({
+  update,
+  reportCopy,
+  returnTo,
+}: {
+  readonly update: CampaignUpdate;
+  readonly reportCopy: ReportControlCopy;
+  readonly returnTo: string;
+}) {
   /*
    * Its own lookup rather than a `t` threaded down from the section above it. Both are server
    * components in the same module, so each reaching the request directly costs nothing and
@@ -174,6 +201,17 @@ async function UpdateEntry({ update }: { readonly update: CampaignUpdate }) {
         <p className="max-w-[68ch] text-[1.0625rem] leading-[1.75] whitespace-pre-line text-reading">
           {update.body}
         </p>
+      )}
+
+      {update.id !== null && (
+        <div className="border-t border-white/6 pt-3">
+          <ReportControl
+            target={{ kind: 'update', id: update.id }}
+            name={update.title}
+            returnTo={returnTo}
+            copy={reportCopy}
+          />
+        </div>
       )}
     </article>
   );

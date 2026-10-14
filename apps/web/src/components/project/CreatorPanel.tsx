@@ -10,6 +10,8 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../lib/i18n/locale';
 import { FollowControl } from '../profile/FollowControl';
 import { followControlCopyFrom } from '../../lib/i18n/profile-copy';
+import { reportControlCopy } from '../../lib/i18n/shell-copy.server';
+import { ProfileReportControl } from '../profile/ProfileReportControl';
 
 /**
  * §4.4's Creator tab — issue #282.
@@ -69,6 +71,15 @@ import { followControlCopyFrom } from '../../lib/i18n/profile-copy';
  * client boundary: the owner sees nothing, a visitor sees a sign-in link, and everybody else
  * the toggle.
  *
+ * <h2>Report this account — #255</h2>
+ *
+ * The creator's account can be reported from here as well as from their profile, through the
+ * same `ProfileReportControl` (`POST /v1/users/{slug}/report`), addressed by the same
+ * `creator.slug` as Follow — so it works for a private profile too, and no account id is
+ * published for it. It closes the tab, quiet, after everything the tab says about the person:
+ * this is the part of the campaign page whose subject is the creator, and the foot of the page
+ * stays about the campaign. The owner is not offered it; reporting yourself is refused.
+ *
  * <h2>Every word is the catalogue's — #172</h2>
  *
  * The state words, "Member since" and the link to the profile were English literals in every
@@ -81,8 +92,8 @@ import { followControlCopyFrom } from '../../lib/i18n/profile-copy';
  *
  * <h2>Motion</h2>
  *
- * None. `ViewerInstant` and `FollowControl` are the tab's client boundaries, and neither
- * animates.
+ * None. `ViewerInstant`, `FollowControl` and the Report control are the tab's client
+ * boundaries; the Report dialog's 200ms entry is CSS, as on the rest of the page.
  */
 
 /**
@@ -255,6 +266,14 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
         would turn the absence of a track record into a sentence about them. The header already
         names them; this tab adds what the platform knows and stops.
       */}
+
+      <ProfileReportControl
+        slug={campaign.creator.slug}
+        name={name}
+        returnTo={returnTo}
+        copy={await reportControlCopy()}
+        className="border-t border-white/6 pt-6"
+      />
     </section>
   );
 }

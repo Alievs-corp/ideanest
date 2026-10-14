@@ -24,6 +24,12 @@ export type UpdateVisibility = 'PUBLIC' | 'BACKERS_ONLY';
 
 export interface CampaignUpdate {
   /**
+   * What `POST /v1/updates/{id}/report` is addressed to (#255), or `null` from a service that
+   * predates it — the row still renders, without a Report control. Never a key or a link: that
+   * is the number.
+   */
+  readonly id: string | null;
+  /**
    * §4.9's stored number, never a row index.
    *
    * "Update 7 said the moulds were late" is a thing somebody says to support six months
@@ -111,6 +117,7 @@ function readUpdate(value: unknown): CampaignUpdate | null {
   if (title === null || publishedAt === null) return null;
 
   return {
+    id: text(source['id']),
     number,
     title,
     /*
