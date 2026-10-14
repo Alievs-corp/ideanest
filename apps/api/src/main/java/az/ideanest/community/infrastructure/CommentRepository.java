@@ -36,6 +36,14 @@ import org.springframework.data.repository.query.Param;
  * What is never served is the body, and {@code CommentResponse} is the single place
  * that decides so.
  *
+ * <p><strong>Every read takes the reader, and hides what they blocked</strong> — #324. A
+ * comment whose author the reader has blocked is left out by the query itself, through a
+ * {@code NOT EXISTS} against {@code user_blocks}, rather than dropped from the page afterwards:
+ * a page filtered after it was read is a short page, and a page filtered to nothing looks like
+ * the end of the tab. An anonymous reader, and a reader who has blocked nobody, is passed as
+ * {@code CommentService}'s nil identifier, which no row in {@code user_blocks} can name — a
+ * value rather than a null bind, for {@link #rootPage}'s reason.
+ *
  * <p>There is no update method and no delete method. Removing a comment is
  * {@code Comment#deleteBy} on a loaded row inside a transaction — a tombstone is a
  * field assignment, not a statement of its own — and Spring Data will happily generate
@@ -58,6 +66,10 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
      * @param limit one more than the page size, so "is there another page" is answered
      *     by the rows already read rather than by a count query that could disagree
      *     with them
+     * @param readerId who is reading. A conversation started by somebody they blocked is
+     *     left out whole — its replies with it, because a reply read without the comment it
+     *     answers is half of somebody else's conversation, and the reader asked not to be in
+     *     this one
      */
     @Query(
             """
@@ -65,10 +77,17 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
              WHERE c.projectId = :projectId
                AND c.parentId IS NULL
                AND c.id < :below
+               AND NOT EXISTS (
+                   SELECT 1 FROM Block b
+                    WHERE b.blockerId = :readerId
+                      AND b.blockedId = c.authorId)
              ORDER BY c.id DESC
             """)
     List<Comment> rootPage(
-            @Param("projectId") UUID projectId, @Param("below") UUID below, Limit limit);
+            @Param("projectId") UUID projectId,
+            @Param("below") UUID below,
+            @Param("readerId") UUID readerId,
+            Limit limit);
 
     /**
      * The replies belonging to every thread on one page, oldest first, bounded per
@@ -92,6 +111,9 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
      * @param threadIds the identifiers of the roots on this page. Never empty — an
      *     empty {@code IN} is not valid SQL and the caller already knows the page held
      *     nothing
+     * @param readerId who is reading. Replies by somebody they blocked are left out
+     *     <em>inside</em> the window, so the bound counts replies the reader will see and a
+     *     blocked account cannot use up a thread's preview
      */
     @Query(
             value =
@@ -101,13 +123,19 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
                           FROM comments r
                          WHERE r.thread_id IN (:threadIds)
                            AND r.parent_id IS NOT NULL
+                           AND NOT EXISTS (
+                               SELECT 1 FROM user_blocks b
+                                WHERE b.blocker_id = :readerId
+                                  AND b.blocked_id = r.author_id)
                     ) c
                      WHERE c.reply_rank <= :perThread
                      ORDER BY c.thread_id, c.id
                     """,
             nativeQuery = true)
     List<Comment> repliesOf(
-            @Param("threadIds") Collection<UUID> threadIds, @Param("perThread") int perThread);
+            @Param("threadIds") Collection<UUID> threadIds,
+            @Param("perThread") int perThread,
+            @Param("readerId") UUID readerId);
 
     /**
      * One page of a single thread's replies, oldest first.
@@ -124,8 +152,15 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
              WHERE c.threadId = :threadId
                AND c.parentId IS NOT NULL
                AND c.id > :above
+               AND NOT EXISTS (
+                   SELECT 1 FROM Block b
+                    WHERE b.blockerId = :readerId
+                      AND b.blockedId = c.authorId)
              ORDER BY c.id
             """)
     List<Comment> threadPage(
-            @Param("threadId") UUID threadId, @Param("above") UUID above, Limit limit);
+            @Param("threadId") UUID threadId,
+            @Param("above") UUID above,
+            @Param("readerId") UUID readerId,
+            Limit limit);
 }

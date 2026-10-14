@@ -2708,6 +2708,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["blockList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/blocks/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["blockAdd"];
+        delete: operations["blockRemove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/currency": {
         parameters: {
             query?: never;
@@ -4260,6 +4292,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/users/{slug}/block": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["blockState"];
+        put?: never;
+        post: operations["blockAddBySlug"];
+        delete: operations["blockRemoveBySlug"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/users/{slug}/follow": {
         parameters: {
             query?: never;
@@ -4687,6 +4735,22 @@ export interface components {
             /** Format: int64 */
             byteSize?: number;
             contentType: string;
+        };
+        BlockListResponse: {
+            items?: components["schemas"]["BlockedAccount"][];
+            nextCursor?: string;
+        };
+        BlockStateResponse: {
+            blocked?: boolean;
+        };
+        BlockedAccount: {
+            avatarUrl?: string;
+            /** Format: date-time */
+            blockedAt?: string;
+            name?: string;
+            slug?: string;
+            /** Format: uuid */
+            userId?: string;
         };
         Branch: {
             category?: components["schemas"]["Category"];
@@ -7588,6 +7652,9 @@ export type SchemaBankTransfer = components['schemas']['BankTransfer'];
 export type SchemaBankTransferInstruction = components['schemas']['BankTransferInstruction'];
 export type SchemaBeginRequest = components['schemas']['BeginRequest'];
 export type SchemaBeginUploadBody = components['schemas']['BeginUploadBody'];
+export type SchemaBlockListResponse = components['schemas']['BlockListResponse'];
+export type SchemaBlockStateResponse = components['schemas']['BlockStateResponse'];
+export type SchemaBlockedAccount = components['schemas']['BlockedAccount'];
 export type SchemaBranch = components['schemas']['Branch'];
 export type SchemaBuyAddonsRequest = components['schemas']['BuyAddonsRequest'];
 export type SchemaCalculateRequest = components['schemas']['CalculateRequest'];
@@ -12424,6 +12491,73 @@ export interface operations {
             };
         };
     };
+    blockList: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockListResponse"];
+                };
+            };
+        };
+    };
+    blockAdd: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockStateResponse"];
+                };
+            };
+        };
+    };
+    blockRemove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockStateResponse"];
+                };
+            };
+        };
+    };
     currencyPreferenceSetCurrency: {
         parameters: {
             query?: never;
@@ -15449,6 +15583,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileProjectListResponse"];
+                };
+            };
+        };
+    };
+    blockState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockStateResponse"];
+                };
+            };
+        };
+    };
+    blockAddBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockStateResponse"];
+                };
+            };
+        };
+    };
+    blockRemoveBySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockStateResponse"];
                 };
             };
         };

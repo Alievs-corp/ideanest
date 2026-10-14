@@ -2,6 +2,7 @@ package az.ideanest.community.api;
 
 import az.ideanest.community.application.CommentDeletionNotPermittedException;
 import az.ideanest.community.application.CommentNotFoundException;
+import az.ideanest.community.application.CommentReplyNotPermittedException;
 import az.ideanest.community.domain.CommentContentInvalidException;
 import az.ideanest.community.domain.ReplyDepthExceededException;
 import az.ideanest.project.application.ProjectNotFoundException;
@@ -109,6 +110,24 @@ public class CommentExceptionHandler {
         problem.setDetail(exception.getMessage());
         problem.setProperty("code", "REPLY_DEPTH_EXCEEDED");
         problem.setProperty("meta", Map.of("maxDepth", exception.maxDepth()));
+        return problem;
+    }
+
+    /**
+     * 403 for a reply to somebody who has blocked the replier — #324.
+     *
+     * <p><strong>The words do not mention a block</strong>, and must not. A block is private,
+     * and "this person blocked you" is the sentence that invites the retaliation the block
+     * exists to stop. What is said is true and is the least that refusing requires: this
+     * comment does not take a reply from this account.
+     */
+    @ExceptionHandler(CommentReplyNotPermittedException.class)
+    public ProblemDetail handleReplyNotPermitted(CommentReplyNotPermittedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problem.setType(URI.create("https://ideanest.az/problems/comment-reply-not-permitted"));
+        problem.setTitle("Cannot reply to this comment");
+        problem.setDetail("This comment is not accepting replies from your account.");
+        problem.setProperty("code", "COMMENT_REPLY_NOT_PERMITTED");
         return problem;
     }
 }

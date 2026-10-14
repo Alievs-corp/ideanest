@@ -1368,8 +1368,30 @@ The most valuable and most complex module. It begins when funding closes.
 > it renders as §4.10's "direct message"; the reply half — a conversation a backer
 > can answer in — is not built.
 >
-> C-04 reactions, C-05 comments *on* an update, C-08 blocking and C-13/C-14
-> sharing are not built.
+> **C-08 is built (#324)**, because App Store Review Guideline 1.2 asks an app
+> with user-generated content to let somebody block an abusive user as well as
+> report one. **A block is about conversation and nothing else**: the blocked
+> account's comments and replies are left out of every comment read the blocker
+> makes -- inside the query, so a page is still a page, and a conversation the
+> blocked account started is left out whole -- and the blocked account cannot
+> reply to the blocker's comments (a 403, `COMMENT_REPLY_NOT_PERMITTED`, whose
+> words never mention a block). There is no mention feature, so there is no
+> mention to refuse. **Campaigns are not hidden from discovery**: a campaign is a
+> public commercial listing with backers' money behind it, and a block that
+> changed what somebody sees about a campaign they may have pledged to would be
+> the platform withholding facts about their money -- reporting stays the path
+> for an abusive campaign. A blocked creator's **updates stay visible** on their
+> own campaign (the blocker chose to open it), and so do campaign messages to
+> backers. Yourself and **platform staff** cannot be blocked; the second refusal
+> reveals that an account is staff, which is accepted over a block that silently
+> does nothing. Blocking and unblocking are idempotent, **private** -- the blocked
+> account is never told, and nothing about a block is served to anybody but the
+> blocker -- and audited (`account.blocked`, `account.unblocked`, written only by
+> the call that changed something). A comment page shaped by its reader's blocks
+> is served `private, no-cache` rather than `public`.
+>
+> C-04 reactions, C-05 comments *on* an update and C-13/C-14 sharing are not
+> built.
 >
 > **A comment thread is two levels deep, and the bound is structural.** A reply
 > answers a root; a reply to a reply is a 422 naming the bound. Not a preference:
@@ -3586,6 +3608,7 @@ by a database constraint and verified by a nightly reconciliation job.
 | `project_faqs` | §4.4's FAQ tab (#283). One row per question and answer, cascading on the campaign as `project_updates` does. **A table rather than a `jsonb` column on `projects`**, because §10.2 addresses single entries — an entry needs an identifier that survives a reorder — and because a jsonb array is read-mutate-write whole, so two editors silently lose one of the edits; `projects` is also the platform's hottest row. Ordering is `sort_order`, not unique and tiebroken on `created_at`, exactly as `reward_tiers` is: a **reorder rewrites the list from zero** rather than adjusting positions, so two concurrent reorders produce one of the two orders rather than a blend, and a unique constraint would refuse the rewrite mid-flight. Blankness is checked with `!~ '^\s*$'` and never `btrim`, which removes spaces only and would accept a body of two newlines. Capped at fifty entries per campaign, which is what makes the unpaged read honest — if fifty stops being enough the answer is a cursor and never a bigger cap, because the alternative fails by truncating silently. Writes need the `MANAGE_FAQ` grant V47 adds to V9's capability check; reading stays coarse, so a collaborator writing the story can still see the campaign's own list |
 | `user_social_links` | §4.2's P-03 (#276). Up to five links per account, one per platform by unique index over `(user_id, platform)`, ordered by `position`. **A table rather than columns on `users` or a `jsonb` blob**: the platform vocabulary and the per-row URL rule are then constraints rather than conventions, and `users` does not grow a column per website that becomes fashionable. `url` is **https only** by check — a profile link is a spam vector and a `javascript:` scheme is an XSS one — and the rows cascade on the account so §17.4's erasure cannot leave somebody's Instagram behind. The list is written whole rather than merged, which is why the service deletes and reinserts in one transaction |
 | `saves`, `follows` | §4.9's C-09 and C-10 (#90): the two signals a backer leaves without spending anything. **Two tables and not one with a discriminator**, because the referents differ -- a save points at a campaign and a follow at a person -- so both foreign keys stay real, unlike `audit_logs` and `content_reports` where the referent genuinely varies at runtime and the row has to outlive it. **Withdrawal deletes the row**, the same departure from §7.3 that `reminders` makes and for the same reason: soft delete is for audit and recovery, and a record of what somebody *used to* be interested in is retention §17.4 refuses -- it would also make the unique constraints partial, which is the shape that lets one person accumulate a hundred tombstoned saves of one campaign. Neither gains a counter column on `projects` or `users`: no screen shows a save count yet, and a cached number is a second thing that can be wrong plus an hourly job to correct it. `follows_is_not_self` is a constraint rather than tidiness -- a self-follow would put a creator in their own `FOLLOWERS` audience, so launching would notify them that somebody they follow had launched their own campaign |
+| `user_blocks` | §4.9's C-08 (#324): one account blocking another. One row per `(blocker_id, blocked_id)` by unique constraint -- which is also the index both comment-path lookups use -- and never self-directed. **Unblocking deletes the row**, as unfollowing does; the history of who blocked whom and when is in `audit_logs`, read only by staff. Private: nothing reads it to notify anybody, and no endpoint serves a row to anybody but its blocker |
 | `reminders` | Who asked to be told when a campaign opens, and whether they were |
 | `deadline_notices` | Which of §4.10's deadline thresholds a campaign has already been announced at (#90). **The row is the claim**: it is inserted in the same transaction as the `project.ending_soon` outbox event it authorises, so a crash either leaves the threshold unclaimed and unannounced or claimed and announced. It has to exist because the sweep's question -- "which live campaigns are within 48 hours of closing" -- is true for the whole of a campaign's last two days, so without it every closing campaign would be announced once a minute for two days and each announcement is a message to every backer. **A row per threshold rather than two columns on `projects`**: that table is the platform's widest and its hottest row, so a background sweep writing to it would contend with every edit and every pledge on precisely the campaigns that are busiest, and a third threshold would be a migration over every campaign ever created rather than one value in a check |
 | `campaign_messages` | §4.7's CD-13 (#98): a message a creator sent to their backers, or to a saved segment of them. The **act**; the notifications it produced are the delivery. It exists because `audit_logs` records that somebody messaged a segment and cannot record what they said -- §17.4 keeps content out of the one table with no retention rule -- and because reconstructing "what did we send, to whom" from `notifications` means reading five thousand rows to recover one subject line. **The segment is a snapshot, not a join**: `segment_id` has no foreign key and `segment_name` is copied beside it, for V21's and V23's reason plus one of this feature's own -- a segment's definition is editable, so a live join would report a message as having gone to a set it did not go to. `recipient_count` is frozen at send time for the same reason. The body is bounded at 2,000 characters, which is a product decision as much as a technical one: long-form belongs in a project update, which stores the text once and serves it from a page, where a message is copied into the rendering document of every notification it produces |
@@ -4973,6 +4996,9 @@ GET    /v1/me/backed
 GET    /v1/me/created
 GET    /v1/me/saved                         # C-09 (#90); the caller's saved campaigns
 GET    /v1/me/following                     # C-10 (#90); not in the original list -- see below
+GET    /v1/me/blocks                        # C-08 (#324); the caller's own, keyset paged, never cached
+POST   /v1/me/blocks/{userId}               # C-08 (#324); idempotent, by the id a comment carries
+DELETE /v1/me/blocks/{userId}               # C-08 (#324); idempotent
 GET    /v1/me/notifications
 POST   /v1/me/notifications/{id}/read
 GET    /v1/me/notification-preferences
@@ -4991,6 +5017,9 @@ GET    /v1/users/{slug}/projects            # P-05 (#274); public states only
 GET    /v1/users/{slug}/backed              # P-04 (#274); no amounts, anonymous pledges omitted
 POST   /v1/users/{slug}/follow              # C-10 (#90)
 DELETE /v1/users/{slug}/follow
+GET    /v1/users/{slug}/block               # C-08 (#324); the profile's control -- a profile carries no id
+POST   /v1/users/{slug}/block
+DELETE /v1/users/{slug}/block
 
 # Discovery
 GET    /v1/discover

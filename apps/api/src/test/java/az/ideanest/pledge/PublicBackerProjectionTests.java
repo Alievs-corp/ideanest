@@ -229,6 +229,7 @@ class PublicBackerProjectionTests {
                 // §4.2's P-10 currency half (#327). The platform's own, which is what every
                 // account holds until somebody chooses otherwise -- and nothing in a public
                 // backer projection reads it.
-                "AZN");
+                "AZN",
+                null);
     }
 }

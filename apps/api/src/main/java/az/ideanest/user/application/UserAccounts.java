@@ -266,6 +266,7 @@ public class UserAccounts {
                 user.getDeletionScheduledAt(),
                 user.getSuspendedAt(),
                 user.getLocale(),
-                user.getCurrency());
+                user.getCurrency(),
+                user.getAvatarUrl());
     }
 }

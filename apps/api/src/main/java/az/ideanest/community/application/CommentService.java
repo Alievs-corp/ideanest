@@ -7,6 +7,7 @@ import az.ideanest.audit.AuditOutcome;
 import az.ideanest.community.CommunityProperties;
 import az.ideanest.community.domain.Comment;
 import az.ideanest.community.domain.ReplyDepthExceededException;
+import az.ideanest.community.infrastructure.BlockRepository;
 import az.ideanest.community.infrastructure.CommentRepository;
 import az.ideanest.project.application.CapabilityNotGrantedException;
 import az.ideanest.shared.access.PlatformStaff;
@@ -74,6 +75,13 @@ import org.springframework.transaction.annotation.Transactional;
  * project module's {@code domain} package and is unreachable from here by
  * {@code ModuleBoundaryTests}. Matching the module's existing convention beats
  * inventing a second one.
+ *
+ * <h2>Blocks: what a reader hides, and who may answer whom</h2>
+ *
+ * <p>#324, and {@code BlockService} has the whole argument. Here it is two things. Every read
+ * passes its reader down to {@code CommentRepository}, which leaves out the comments of anybody
+ * that reader has blocked inside the query, so a page stays a page. And {@link #reply} refuses
+ * somebody replying to a comment whose author has blocked them, without saying why.
  */
 @Service
 public class CommentService {
@@ -90,7 +98,15 @@ public class CommentService {
     /** The same, for the ascending reply page: everything above the minimum UUID. */
     private static final UUID OLDEST_FIRST = new UUID(0L, 0L);
 
+    /**
+     * The reader passed to the queries when nobody's blocks apply — a visitor, or an account
+     * that has blocked nobody. The nil UUID, which no account has, so the {@code NOT EXISTS}
+     * finds nothing; a value rather than a null bind, for {@link #NEWEST_FIRST}'s reason.
+     */
+    private static final UUID NOBODY = new UUID(0L, 0L);
+
     private final CommentRepository comments;
+    private final BlockRepository blocks;
     private final ProjectAccess access;
     private final PublicProjects publicProjects;
     private final PlatformStaff moderators;
@@ -101,6 +117,7 @@ public class CommentService {
 
     public CommentService(
             CommentRepository comments,
+            BlockRepository blocks,
             ProjectAccess access,
             PublicProjects publicProjects,
             PlatformStaff moderators,
@@ -110,6 +127,7 @@ public class CommentService {
             Clock clock) {
 
         this.comments = comments;
+        this.blocks = blocks;
         this.access = access;
         this.publicProjects = publicProjects;
         this.moderators = moderators;
@@ -154,6 +172,9 @@ public class CommentService {
      *     removed, and when its campaign is not one this caller may see
      * @throws ReplyDepthExceededException when the parent is itself a reply. The rule
      *     is {@code Comment}'s and V25's; this method only carries it out
+     * @throws CommentReplyNotPermittedException when the parent's author has blocked this
+     *     caller — #324. Asked after visibility, so a comment the caller may not see is still
+     *     simply not there
      */
     @Transactional
     public Comment reply(UUID parentId, UUID authorId, String body) {
@@ -168,6 +189,12 @@ public class CommentService {
         boolean forTheCampaign = actingForTheCampaign(parent.getProjectId(), authorId);
         if (!forTheCampaign) {
             requireVisibleOrNotFound(parent);
+        }
+        if (blocks.existsByBlockerIdAndBlockedId(parent.getAuthorId(), authorId)) {
+            // Whoever wrote the parent asked not to hear from this caller. Asked of somebody
+            // replying for the campaign too: a campaign's team is not owed a conversation
+            // with a person who blocked one of its members.
+            throw new CommentReplyNotPermittedException(parentId);
         }
         return announce(comments.saveAndFlush(Comment.replyTo(parent, authorId, body, forTheCampaign)));
     }
@@ -241,7 +268,8 @@ public class CommentService {
      * <em>first</em>, so that a creator can read the comments on a campaign the public
      * cannot see yet.
      *
-     * @param viewerId the authenticated caller, or null. This endpoint is public
+     * @param viewerId the authenticated caller, or null. This endpoint is public. Whoever it
+     *     names is not shown the comments of the accounts they blocked
      * @throws ProjectNotFoundException for a campaign that does not exist and for one
      *     that is not publicly visible, identically, to a caller not on its team
      */
@@ -251,10 +279,12 @@ public class CommentService {
             publicProjects.requireVisible(projectId);
         }
 
+        UUID reader = readerOf(viewerId);
         int pageSize = pageSizeOf(limit);
         List<Comment> roots = new ArrayList<>(comments.rootPage(
                 projectId,
                 cursor == null ? NEWEST_FIRST : cursor,
+                reader,
                 // One more than the page, so "is there another page" is answered by
                 // the rows already read rather than by a count that could disagree.
                 Limit.of(pageSize + 1)));
@@ -264,11 +294,12 @@ public class CommentService {
             roots.removeLast();
             nextCursor = roots.getLast().getId();
         }
+        boolean personal = !NOBODY.equals(reader);
         if (roots.isEmpty()) {
             // An empty IN list is not valid SQL, and there is nothing to ask about.
-            return new CommentPage(List.of(), null);
+            return new CommentPage(List.of(), null, personal);
         }
-        return new CommentPage(withReplies(roots), nextCursor);
+        return new CommentPage(withReplies(roots, reader), nextCursor, personal);
     }
 
     /**
@@ -298,16 +329,24 @@ public class CommentService {
             throw new CommentNotFoundException(threadId);
         }
 
+        UUID reader = readerOf(viewerId);
+        boolean personal = !NOBODY.equals(reader);
+        if (personal && blocks.existsByBlockerIdAndBlockedId(reader, root.getAuthorId())) {
+            // The tab leaves this conversation out for this reader, and opening it by
+            // identifier answers the same: it is not there for them.
+            throw new CommentNotFoundException(threadId);
+        }
+
         int pageSize = pageSizeOf(limit);
-        List<Comment> replies = new ArrayList<>(
-                comments.threadPage(threadId, cursor == null ? OLDEST_FIRST : cursor, Limit.of(pageSize + 1)));
+        List<Comment> replies = new ArrayList<>(comments.threadPage(
+                threadId, cursor == null ? OLDEST_FIRST : cursor, reader, Limit.of(pageSize + 1)));
 
         UUID nextReplyCursor = null;
         if (replies.size() > pageSize) {
             replies.removeLast();
             nextReplyCursor = replies.getLast().getId();
         }
-        return new CommentPage(List.of(new CommentThread(root, replies, nextReplyCursor)), null);
+        return new CommentPage(List.of(new CommentThread(root, replies, nextReplyCursor)), null, personal);
     }
 
     /**
@@ -317,13 +356,13 @@ public class CommentService {
      * is answered by the rows in hand; the extra one is dropped here and its
      * predecessor becomes the cursor a client sends back to {@link #thread}.
      */
-    private List<CommentThread> withReplies(List<Comment> roots) {
+    private List<CommentThread> withReplies(List<Comment> roots, UUID reader) {
         int perThread = properties.comments().repliesPerThread();
         Map<UUID, List<Comment>> byThread = new LinkedHashMap<>();
         for (Comment root : roots) {
             byThread.put(root.getId(), new ArrayList<>());
         }
-        for (Comment reply : comments.repliesOf(byThread.keySet(), perThread + 1)) {
+        for (Comment reply : comments.repliesOf(byThread.keySet(), perThread + 1, reader)) {
             byThread.get(reply.getThreadId()).add(reply);
         }
 
@@ -338,6 +377,17 @@ public class CommentService {
             threads.add(new CommentThread(root, replies, nextReplyCursor));
         }
         return threads;
+    }
+
+    /**
+     * Whose blocks the queries apply: this viewer's when they have blocked somebody, and
+     * {@link #NOBODY} otherwise.
+     *
+     * <p>Asked once per read, so that a reader who has blocked nobody — nearly everybody — is
+     * served exactly the page a visitor is, and keeps the public cache policy with it.
+     */
+    private UUID readerOf(UUID viewerId) {
+        return viewerId != null && blocks.existsByBlockerId(viewerId) ? viewerId : NOBODY;
     }
 
     /**

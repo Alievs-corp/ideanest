@@ -229,7 +229,7 @@ class CommentRateLimitTests {
     private static final class AcceptingCommentService extends CommentService {
 
         private AcceptingCommentService() {
-            super(null, null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null, null);
         }
 
         @Override

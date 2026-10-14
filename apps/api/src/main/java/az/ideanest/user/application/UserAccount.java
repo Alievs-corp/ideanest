@@ -46,7 +46,16 @@ public record UserAccount(
          * for every account that has not chosen otherwise, which is the value V2 has
          * defaulted since the first migration.
          */
-        String currency) {
+        String currency,
+        /**
+         * The address of the account's picture, or null for the many that have none.
+         *
+         * <p>Part of the contract for #324's list of blocked accounts, which shows the
+         * person somebody blocked the way they appeared: a name alone is a weak way to
+         * recognise somebody, and names are not unique. Public already — the profile and
+         * the campaign page both serve it — so carrying it here publishes nothing new.
+         */
+        String avatarUrl) {
 
     /** Whether this account is inside its grace period and awaiting anonymisation. */
     public boolean deletionPending() {
