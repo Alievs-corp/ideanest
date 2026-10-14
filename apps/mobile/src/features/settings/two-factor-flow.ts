@@ -10,6 +10,10 @@ import type { TwoFactorEnrolment } from './two-factor-api';
  * an "already enabled" refusal of the password step goes straight to disable. The recovery
  * codes live only in this state, which lives only in the component: never in storage, never in
  * the query cache.
+ *
+ * Idle offers one of the two, by `GET /v1/me`'s `twoFactorEnabled` (#270). What this card has
+ * itself learned since — a confirmation, a disable, the service's "already enabled" — is
+ * {@link TwoFactorState.enabled}, and wins over an account read made before it.
  */
 
 export type TwoFactorStep =
@@ -27,6 +31,8 @@ export interface TwoFactorState {
   readonly busy: boolean;
   readonly failure: AuthFailure | null;
   readonly notice: TwoFactorNotice | null;
+  /** Whether two-factor is on, as this card has learned it; `null` until it learns anything. */
+  readonly enabled: boolean | null;
   /** Counts step changes. The card moves screen-reader focus to the heading when it changes. */
   readonly moves: number;
 }
@@ -50,6 +56,7 @@ export const INITIAL_TWO_FACTOR: TwoFactorState = {
   busy: false,
   failure: null,
   notice: null,
+  enabled: null,
   moves: 0,
 };
 
@@ -57,8 +64,9 @@ function go(
   state: TwoFactorState,
   step: TwoFactorStep,
   notice: TwoFactorNotice | null = state.notice,
+  enabled: boolean | null = state.enabled,
 ): TwoFactorState {
-  return { step, busy: false, failure: null, notice, moves: state.moves + 1 };
+  return { step, busy: false, failure: null, notice, enabled, moves: state.moves + 1 };
 }
 
 export function twoFactorReducer(state: TwoFactorState, event: TwoFactorEvent): TwoFactorState {
@@ -79,11 +87,13 @@ export function twoFactorReducer(state: TwoFactorState, event: TwoFactorEvent): 
     case 'enrolled':
       return step.kind === 'password' ? go(state, { kind: 'scan', enrolment: event.enrolment }) : state;
     case 'alreadyEnabled':
-      // The answer to the question this screen cannot ask: the off-path, with our sentence above it.
-      return step.kind === 'password' ? go(state, { kind: 'disable' }, 'alreadyEnabled') : state;
+      // The account read said off and the service says on: the off-path, with our sentence above it.
+      return step.kind === 'password'
+        ? go(state, { kind: 'disable' }, 'alreadyEnabled', true)
+        : state;
     case 'confirmed':
       return step.kind === 'scan'
-        ? go(state, { kind: 'codes', codes: event.codes, acknowledged: false })
+        ? go(state, { kind: 'codes', codes: event.codes, acknowledged: false }, state.notice, true)
         : state;
     case 'acknowledge':
       return step.kind === 'codes'
@@ -92,7 +102,7 @@ export function twoFactorReducer(state: TwoFactorState, event: TwoFactorEvent): 
     case 'done':
       return canFinish(state) ? go(state, { kind: 'idle' }, 'enabled') : state;
     case 'disabled':
-      return step.kind === 'disable' ? go(state, { kind: 'idle' }, 'disabled') : state;
+      return step.kind === 'disable' ? go(state, { kind: 'idle' }, 'disabled', false) : state;
     case 'refused':
       return { ...state, busy: false, failure: event.failure };
     case 'dismissNotice':

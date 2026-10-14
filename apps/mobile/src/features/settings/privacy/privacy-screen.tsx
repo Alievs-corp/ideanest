@@ -31,7 +31,7 @@ import {
   EXPORT_FILENAME,
   cancelDeletion,
   fetchAccountExport,
-  probeProfileVisibility,
+  readProfileVisibility,
   requestDeletion,
   setProfileVisibility,
   type ProfileVisibility,
@@ -122,9 +122,9 @@ function describeFailure(
 type Position = ProfileVisibility | 'unknown' | 'loading';
 
 /**
- * The web's `ProfileVisibilityPanel`. There is no read for this setting, so the switch shows
- * what a stranger is answered at `/v1/users/{slug}` — and when that cannot be read it is
- * disabled and says so, rather than guessing a position and then writing it.
+ * The web's `ProfileVisibilityPanel`. The switch shows `GET /v1/me/profile`'s
+ * `profileVisibility` (#270) — and when that cannot be read it is disabled and says so, rather
+ * than guessing a position and then writing it.
  */
 function VisibilityPanel({ slug }: { readonly slug: string | null }) {
   const t = useT('profile.editor.visibility');
@@ -132,34 +132,34 @@ function VisibilityPanel({ slug }: { readonly slug: string | null }) {
   const router = useRouter();
   const online = useOnline();
   const queryClient = useQueryClient();
-  const key = queryKeys.profileVisibility(slug ?? '');
+  const key = queryKeys.profileVisibility();
 
-  const probe = useQuery({
+  const read = useQuery({
     queryKey: key,
-    queryFn: ({ signal }) => probeProfileVisibility(slug ?? '', signal),
-    enabled: slug !== null,
+    queryFn: ({ signal }) => readProfileVisibility(signal),
     staleTime: 0,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const position: Position =
-    probe.data === 'PUBLIC' || probe.data === 'PRIVATE'
-      ? probe.data
-      : slug === null || probe.data === null || probe.isError
+    read.data === 'PUBLIC' || read.data === 'PRIVATE'
+      ? read.data
+      : read.data === null || read.isError
         ? 'unknown'
         : 'loading';
   const known = position === 'PUBLIC' || position === 'PRIVATE';
 
   async function change(next: boolean): Promise<void> {
-    if (saving || !online || !known || slug === null) return;
+    if (saving || !online || !known) return;
     const wanted: ProfileVisibility = next ? 'PUBLIC' : 'PRIVATE';
     const previous = position;
 
     setSaving(true);
     setError(null);
     await queryClient.cancelQueries({ queryKey: key });
-    // Optimistic: two round trips is long enough for a switch behind the finger to feel broken.
+    // Optimistic: a round trip is long enough for a switch behind the finger to feel broken. The
+    // 204 is the whole answer — the position it named is the one in force — so nothing is re-read.
     queryClient.setQueryData(key, wanted);
 
     try {
@@ -173,20 +173,6 @@ function VisibilityPanel({ slug }: { readonly slug: string | null }) {
           unreachable: t('unreachable'),
         }),
       );
-      setSaving(false);
-      return;
-    }
-
-    try {
-      // 204 carries nothing, so the only evidence the write took is asking as a stranger again.
-      await queryClient.fetchQuery({
-        queryKey: key,
-        queryFn: ({ signal }) => probeProfileVisibility(slug, signal),
-        staleTime: 0,
-      });
-    } catch {
-      // Written, but not confirmed: an unknown position, not the one we hoped for.
-      queryClient.setQueryData(key, null);
     } finally {
       setSaving(false);
     }
@@ -210,17 +196,15 @@ function VisibilityPanel({ slug }: { readonly slug: string | null }) {
           title={t('unknownTitle')}
           description={tAll('mobile.settings.privacy.visibility.unknownBody')}
           action={
-            slug === null ? undefined : (
-              <Pill
-                label={tAll('common.tryAgain')}
-                variant="ghost"
-                size="sm"
-                disabled={!online}
-                busy={probe.isFetching}
-                onPress={() => void probe.refetch()}
-                testID="privacy-visibility-retry"
-              />
-            )
+            <Pill
+              label={tAll('common.tryAgain')}
+              variant="ghost"
+              size="sm"
+              disabled={!online}
+              busy={read.isFetching}
+              onPress={() => void read.refetch()}
+              testID="privacy-visibility-retry"
+            />
           }
           testID="privacy-visibility-unknown"
         />

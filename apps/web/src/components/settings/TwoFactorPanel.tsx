@@ -11,6 +11,7 @@ import {
 } from '../../lib/auth/twoFactor';
 import type { TwoFactorPanelCopy } from '../../lib/i18n/settings-copy';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useSession } from '../session/SessionProvider';
 
 /**
  * §4.1's A-07 — enrolling in two-factor, seeing the recovery codes once, and switching it
@@ -32,18 +33,17 @@ import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
  * enrol afresh. The step that shows them therefore has no automatic navigation and one
  * deliberate acknowledgement, and it says what happens if they are lost.
  *
- * <h2>This screen cannot read whether two-factor is already on, and does not pretend to</h2>
+ * <h2>One action, the one that applies</h2>
  *
- * `GET /v1/me` returns six fields and none of them is `twoFactorEnabled` — there is no read
- * anywhere in the service that answers it. Two options were available and one of them is a
- * lie: guessing from the absence of information, or offering both paths and letting the
- * service answer. This does the second. `POST /2fa/enable` refuses an already-confirmed
- * enrolment with a sentence written for the account's owner — "Two-factor authentication is
- * already enabled." — and that refusal is what switches this panel to the off-path, with the
- * service's own words above it.
+ * `GET /v1/me` carries `twoFactorEnabled` (#270), so the panel offers "Set it up" to an account
+ * without a second factor and "Turn it off" to one with it — never both. What this panel did
+ * itself overrides the session until the session is read again, because the account changed
+ * under it: confirming an enrolment turns it on, and a disable turns it off.
  *
- * The honest fix is a field on `GET /v1/me`, which belongs to whoever owns §17 rather than to
- * an epic scoped to the web client. `apps/web/README.md` records the gap.
+ * A session that does not say — a service older than #270 — reads as off, and the refusal is
+ * still handled: `POST /2fa/enable` refuses an already-confirmed enrolment with a sentence
+ * written for the account's owner — "Two-factor authentication is already enabled." — and that
+ * refusal moves this panel to the off-path, with our own words above it.
  *
  * <h2>There is no QR code, and that is a dependency decision rather than an oversight</h2>
  *
@@ -99,6 +99,9 @@ export interface TwoFactorPanelProps {
 }
 
 export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
+  const { session, refresh } = useSession();
+  const [changed, setChanged] = useState<boolean | null>(null);
+  const enabled = changed ?? session?.twoFactorEnabled === true;
   const [step, setStep] = useState<Step>({ kind: 'idle' });
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
@@ -146,6 +149,12 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
     moved.current = true;
   }
 
+  /** What this panel just learned, held here and handed to the session for everybody else. */
+  function learned(on: boolean): void {
+    setChanged(on);
+    void refresh();
+  }
+
   async function begin(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (busy) return;
@@ -160,13 +169,14 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
       const detail = messageFor(cause, copy);
       if (detail === ALREADY_ENABLED) {
         /*
-         * Not an error the reader can act on where they are — it is the answer to the
-         * question this panel could not ask. The password they just proved is the same one
-         * the off-path needs, so they are moved there rather than sent back to the start.
+         * Not an error the reader can act on where they are — the session said off and the
+         * service says on. The password they just proved is the same one the off-path needs,
+         * so they are moved there rather than sent back to the start.
          */
         // Our sentence, not the one that arrived: see ALREADY_ENABLED for why the wire
         // sentence is English and why printing it here would be the panel's one English line.
         setNotice(copy.alreadyEnabled);
+        learned(true);
         go({ kind: 'disable' });
         return;
       }
@@ -184,6 +194,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
     setError(null);
     try {
       const codes = await confirmTwoFactorEnrolment(code.trim());
+      learned(true);
       setAcknowledged(false);
       go({ kind: 'codes', codes });
     } catch (cause) {
@@ -212,6 +223,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
       );
       setPassword('');
       setNotice(copy.disabledNotice);
+      learned(false);
       go({ kind: 'idle' });
     } catch (cause) {
       setError(messageFor(cause, copy));
@@ -273,14 +285,16 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
             })}
           </p>
           <div className="flex flex-wrap gap-3">
-            <Pill type="button" onClick={() => go({ kind: 'password' })}>
-              {copy.setUp}
-            </Pill>
-            <Pill type="button" variant="ghost" onClick={() => go({ kind: 'disable' })}>
-              {copy.turnOff}
-            </Pill>
+            {enabled ? (
+              <Pill type="button" variant="ghost" onClick={() => go({ kind: 'disable' })}>
+                {copy.turnOff}
+              </Pill>
+            ) : (
+              <Pill type="button" onClick={() => go({ kind: 'password' })}>
+                {copy.setUp}
+              </Pill>
+            )}
           </div>
-          <p className="max-w-[62ch] text-sm text-white/40">{copy.bothOffered}</p>
         </div>
       )}
 

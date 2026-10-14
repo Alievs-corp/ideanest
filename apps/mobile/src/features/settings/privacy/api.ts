@@ -1,5 +1,5 @@
 import { ApiError } from '@ideanest/api-client';
-import { api, publicApi, sendJson } from '../../../api/client';
+import { api, sendJson } from '../../../api/client';
 
 /**
  * The three requests behind `settings/privacy` (#161) — the web's `lib/profiles/api.ts`
@@ -8,30 +8,20 @@ import { api, publicApi, sendJson } from '../../../api/client';
 
 export type ProfileVisibility = 'PUBLIC' | 'PRIVATE';
 
-/** `PATCH /v1/me/profile-visibility` — 204, so the new position is confirmed by a probe. */
+/** `PATCH /v1/me/profile-visibility` — 204: the position it names is the position in force. */
 export async function setProfileVisibility(visibility: ProfileVisibility): Promise<void> {
   await sendJson('PATCH', '/v1/me/profile-visibility', { visibility });
 }
 
 /**
- * The account's own visibility, read from its effect: `GET /v1/users/{slug}` as nobody.
- *
- * There is no read for this setting, so the public endpoint is asked what a stranger sees: 200 is
- * `PUBLIC`, 404 is `PRIVATE`. It must go out without the bearer — with it, the service would
- * answer the owner, who can always see their own profile. `null` is an answer the contract does
- * not describe; a transport failure throws.
+ * The account's own visibility — `GET /v1/me/profile`'s `profileVisibility` (#270), with the
+ * session. Until that field existed it was read from its effect, by asking `GET /v1/users/{slug}`
+ * as nobody: a second request, and a disabled switch whenever it failed. `null` is an answer the
+ * contract does not describe; a refusal or a transport failure throws.
  */
-export async function probeProfileVisibility(
-  slug: string,
-  signal?: AbortSignal,
-): Promise<ProfileVisibility | null> {
-  try {
-    await publicApi().get('/v1/users/{slug}', { path: { slug }, signal, cache: 'no-store' });
-    return 'PUBLIC';
-  } catch (cause) {
-    if (cause instanceof ApiError) return cause.status === 404 ? 'PRIVATE' : null;
-    throw cause;
-  }
+export async function readProfileVisibility(signal?: AbortSignal): Promise<ProfileVisibility | null> {
+  const body = await api().get('/v1/me/profile', { signal, cache: 'no-store' });
+  return body.profileVisibility ?? null;
 }
 
 /** The name the shared file gets, matching the service's own `Content-Disposition`. */

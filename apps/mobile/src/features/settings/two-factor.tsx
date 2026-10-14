@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import { BackHandler, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Stack } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import {
   Body,
@@ -19,6 +20,7 @@ import {
 } from '../../components/ui';
 import { BLOCK, blockSurface } from '../../components/ui/surface';
 import { focusOn } from '../../components/ui/overlay';
+import { ACCOUNT_KEYS, useMe } from '../../lib/account';
 import { describeAuthFailure } from '../../lib/auth-failures';
 import { useOnline } from '../../lib/connectivity';
 import { useT } from '../../lib/i18n';
@@ -46,16 +48,19 @@ import { SettingsCard, Strong } from './settings-page';
  * time (`two-factor-flow.ts`), with what only a phone adds to the scan step: opening the
  * authenticator on this phone, a QR code for one on another device, and a Copy button for the key.
  *
- * <p>`GET /v1/me` cannot say whether two-factor is on, so idle offers both "Set it up" and "Turn
- * it off", exactly as the web does; the service's refusal of the first is what moves the reader to
- * the second.
+ * <p>Idle offers the one action that applies, by `GET /v1/me`'s `twoFactorEnabled` (#270), as the
+ * web does. An account read that does not say reads as off, and the service's "already enabled"
+ * refusal of "Set it up" still moves the reader to the off-path.
  */
 export function TwoFactorCard() {
   const t = useT('settings.panels.twoFactor');
   const tAll = useT();
   const inset = useInset();
   const online = useOnline();
+  const me = useMe();
+  const queryClient = useQueryClient();
   const [state, dispatch] = useReducer(twoFactorReducer, INITIAL_TWO_FACTOR);
+  const enabled = state.enabled ?? me.data?.twoFactorEnabled === true;
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');
@@ -107,6 +112,11 @@ export function TwoFactorCard() {
     }
   }
 
+  /** The account changed under the cached read: everything else that shows it reads it again. */
+  function changed(): void {
+    void queryClient.invalidateQueries({ queryKey: ACCOUNT_KEYS.me });
+  }
+
   function begin(): void {
     if (password === '') return;
     void attempt(
@@ -119,6 +129,7 @@ export function TwoFactorCard() {
         if (!isAlreadyEnabled(cause)) return false;
         // The password just proved is the one the off-path asks for, so it stays in the field.
         dispatch({ type: 'alreadyEnabled' });
+        changed();
         return true;
       },
     );
@@ -130,6 +141,7 @@ export function TwoFactorCard() {
     void attempt(async () => {
       const codes = await confirmTwoFactorEnrolment(typed);
       dispatch({ type: 'confirmed', codes });
+      changed();
     });
   }
 
@@ -146,6 +158,7 @@ export function TwoFactorCard() {
       );
       setPassword('');
       dispatch({ type: 'disabled' });
+      changed();
     });
   }
 
@@ -192,19 +205,21 @@ export function TwoFactorCard() {
             })}
           </Body>
           <View style={styles.actions}>
-            <Pill
-              label={t('setUp')}
-              onPress={() => dispatch({ type: 'setUp' })}
-              testID="two-factor-set-up"
-            />
-            <Pill
-              label={t('turnOff')}
-              variant="ghost"
-              onPress={() => dispatch({ type: 'turnOff' })}
-              testID="two-factor-turn-off"
-            />
+            {enabled ? (
+              <Pill
+                label={t('turnOff')}
+                variant="ghost"
+                onPress={() => dispatch({ type: 'turnOff' })}
+                testID="two-factor-turn-off"
+              />
+            ) : (
+              <Pill
+                label={t('setUp')}
+                onPress={() => dispatch({ type: 'setUp' })}
+                testID="two-factor-set-up"
+              />
+            )}
           </View>
-          <Caption>{t('bothOffered')}</Caption>
         </View>
       ) : null}
 

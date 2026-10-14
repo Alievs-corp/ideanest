@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from '../../i18n/navigation';
 import { InlineAlert, Switch } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import {
-  probeProfileVisibility,
   profileHref,
+  readProfileVisibility,
   setProfileVisibility,
   type ProfileVisibility,
 } from '../../lib/profiles/api';
@@ -30,32 +30,25 @@ import type { ProfileVisibilityCopy } from '../../lib/i18n/profile-copy';
  * argument (`app/settings/privacy/page.tsx` explains the order), and inserting a switch
  * between them would break it.
  *
- * <h2>The switch reads its own position from the thing it decides</h2>
+ * <h2>The switch reads its position from the owner's own profile</h2>
  *
- * There is no `GET` for this setting — `GET /v1/me` carries six fields and visibility is not
- * one of them — so the panel asks the public endpoint about the reader's own slug,
- * anonymously, and reads 200 as `PUBLIC` and 404 as `PRIVATE`. `probeProfileVisibility`
- * carries the full argument, including why the request must not send the access token.
+ * `GET /v1/me/profile` carries `profileVisibility` (#270). Before it did, the panel asked the
+ * public endpoint about the reader's own slug, anonymously, and read 200 as `PUBLIC` and 404 as
+ * `PRIVATE` — a second request on every visit, and a disabled switch whenever it failed.
  *
- * The alternatives were both worse. Assuming `PUBLIC` because that is the column default
- * would show the wrong position to everybody who has already turned it off — and the first
- * thing they would do is press the switch, which would write the value it already had and
- * leave them believing they had just hidden a profile that was never shown. Offering two
- * buttons and no state asks somebody to make a decision the interface refuses to tell them
- * they have already made.
+ * When the read cannot answer — the service is unreachable, or replies something the contract
+ * does not describe — the switch is disabled and says so. **It does not guess.** Assuming
+ * `PUBLIC` because that is the column default would show the wrong position to everybody who
+ * has already turned it off, and the first press would write the value it already had. A
+ * control that picks a position and then writes it overwrites a choice nobody revisited.
  *
- * When the probe cannot answer — the service is unreachable, or replies something the
- * contract does not describe — the switch is disabled and says so. **It does not guess.** A
- * control that picks a position and then writes it is a control that overwrites a choice
- * nobody revisited.
+ * <h2>The write is taken at its word</h2>
  *
- * <h2>The write is confirmed by re-reading, not assumed</h2>
- *
- * `PATCH` answers 204 with no body, so the only evidence the new value took is another probe.
- * The switch moves optimistically because the round trip is two requests and a setting that
- * lags behind the finger feels broken — and it moves **back** if either request refuses, with
- * a sentence saying which position is actually in force. An optimistic switch that cannot
- * revert is a lie with a nice animation.
+ * `PATCH` answers 204 with no body, and `ProfileVisibilityController` gives the reason: the
+ * outcome is exactly what the request named, so there is nothing to read back. The switch moves
+ * optimistically, because a setting that lags behind the finger feels broken — and it moves
+ * **back** if the write is refused, with a sentence saying which position is actually in force.
+ * An optimistic switch that cannot revert is a lie with a nice animation.
  *
  * <h2>Motion: 150ms, which is the thumb and nothing else</h2>
  *
@@ -63,7 +56,7 @@ import type { ProfileVisibilityCopy } from '../../lib/i18n/profile-copy';
  * `Switch` already animates only its thumb's `transform`. Nothing here enters or fades.
  */
 
-type Probe = ProfileVisibility | 'unknown' | 'loading';
+type Position = ProfileVisibility | 'unknown' | 'loading';
 
 export interface ProfileVisibilityPanelProps {
   /** Every word this panel draws, resolved on the server — #82. */
@@ -73,30 +66,26 @@ export interface ProfileVisibilityPanelProps {
 export function ProfileVisibilityPanel({ copy }: ProfileVisibilityPanelProps) {
   const { status, session } = useSession();
   const slug = session?.slug ?? null;
+  const signedIn = status === 'signed-in';
 
-  const [visibility, setVisibility] = useState<Probe>('loading');
+  const [visibility, setVisibility] = useState<Position>('loading');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const probe = useCallback(
-    async (signal?: AbortSignal): Promise<void> => {
-      if (slug === null) return;
-      const answer = await probeProfileVisibility(slug, signal);
-      if (signal?.aborted === true) return;
-      setVisibility(answer ?? 'unknown');
-    },
-    [slug],
-  );
-
   useEffect(() => {
-    if (slug === null) return;
+    if (!signedIn) return;
 
     const controller = new AbortController();
-    void probe(controller.signal).catch(() => {
-      if (!controller.signal.aborted) setVisibility('unknown');
-    });
+    readProfileVisibility(controller.signal).then(
+      (answer) => {
+        if (!controller.signal.aborted) setVisibility(answer ?? 'unknown');
+      },
+      () => {
+        if (!controller.signal.aborted) setVisibility('unknown');
+      },
+    );
     return () => controller.abort();
-  }, [probe, slug]);
+  }, [signedIn]);
 
   /*
    * Nothing at all until the session is known. `SessionProvider` guards `/settings`, so a
@@ -104,7 +93,7 @@ export function ProfileVisibilityPanel({ copy }: ProfileVisibilityPanelProps) {
    * disabled switch in the meantime would put a control about somebody's profile on a screen
    * that does not yet know whose profile it is.
    */
-  if (status !== 'signed-in' || slug === null) return null;
+  if (!signedIn || slug === null) return null;
 
   async function change(next: boolean): Promise<void> {
     const wanted: ProfileVisibility = next ? 'PUBLIC' : 'PRIVATE';
@@ -116,8 +105,6 @@ export function ProfileVisibilityPanel({ copy }: ProfileVisibilityPanelProps) {
 
     try {
       await setProfileVisibility(wanted);
-      // The endpoint answers 204, so the only confirmation is asking the public one again.
-      await probe();
     } catch (cause) {
       setVisibility(previous);
       setError(

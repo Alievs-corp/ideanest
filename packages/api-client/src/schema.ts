@@ -5799,6 +5799,7 @@ export interface components {
             locale?: string;
             name?: string;
             slug?: string;
+            twoFactorEnabled?: boolean;
         };
         Media: {
             blurDataUrl?: string;
@@ -6007,6 +6008,8 @@ export interface components {
             bio?: string;
             location?: components["schemas"]["LocationBody"];
             name?: string;
+            /** @enum {string} */
+            profileVisibility?: "PUBLIC" | "PRIVATE";
             slug?: string;
             socialLinks?: components["schemas"]["SocialLinkBody"][];
             websiteUrl?: string;

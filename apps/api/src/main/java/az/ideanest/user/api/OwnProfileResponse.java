@@ -1,6 +1,7 @@
 package az.ideanest.user.api;
 
 import az.ideanest.user.application.OwnProfile;
+import az.ideanest.user.domain.ProfileVisibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
@@ -9,8 +10,9 @@ import java.util.List;
  * {@code PATCH /v1/me/profile} answers with (#276).
  *
  * <p><strong>Not {@link PublicProfileResponse}, and the difference is not the audience this
- * time.</strong> Everything here is also on the public page. What differs is what the record
- * is <em>for</em>: this one feeds a form, so it carries the values as they are stored rather
+ * time.</strong> Everything here but {@code profileVisibility} is also on the public page, and
+ * that one decides whether there is a public page at all. What differs is what the record is
+ * <em>for</em>: this one feeds a form, so it carries the values as they are stored rather
  * than as they are rendered, and it omits {@code joinedAt} because an editor does not edit it.
  * Keeping them apart is what stops the editor's shape from deciding the public page's, which
  * is the failure {@code PublicProfile} describes from the other direction.
@@ -51,6 +53,9 @@ import java.util.List;
  * @param location null for an account that has not said where it is. A patch sends
  *     {@code locationSlug}, not this record — {@link LocationBody} says why
  * @param socialLinks in the order their owner put them, empty rather than null
+ * @param profileVisibility P-07's position, so the privacy screen's switch can show it without
+ *     asking the public endpoint what a stranger is answered (#270). Not writable through
+ *     {@code PATCH /v1/me/profile}; {@code PATCH /v1/me/profile-visibility} is its write
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record OwnProfileResponse(
@@ -60,7 +65,8 @@ public record OwnProfileResponse(
         String avatarUrl,
         String websiteUrl,
         LocationBody location,
-        List<SocialLinkBody> socialLinks) {
+        List<SocialLinkBody> socialLinks,
+        ProfileVisibility profileVisibility) {
 
     public static OwnProfileResponse of(OwnProfile profile) {
         return new OwnProfileResponse(
@@ -70,6 +76,7 @@ public record OwnProfileResponse(
                 profile.avatarUrl(),
                 profile.websiteUrl(),
                 LocationBody.of(profile.location()),
-                profile.socialLinks().stream().map(SocialLinkBody::of).toList());
+                profile.socialLinks().stream().map(SocialLinkBody::of).toList(),
+                profile.profileVisibility());
     }
 }

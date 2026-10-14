@@ -683,7 +683,8 @@ lock can always reach it.
 ### Two-factor enrolment on a phone
 
 `src/features/settings/two-factor.tsx` is the web's `TwoFactorPanel`, with its
-steps in a pure reducer (`two-factor-flow.ts`). The scan step adds what a phone
+steps in a pure reducer (`two-factor-flow.ts`). Idle offers one action, the one
+`GET /v1/me`'s `twoFactorEnabled` says applies (#270). The scan step adds what a phone
 can do: "Open in your authenticator app" (`Linking.openURL` of the
 `otpauth://` URI, offered only when `canOpenURL` says an app answers), a QR
 code encoded on the device with `qrcode` and drawn with `react-native-svg`

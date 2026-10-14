@@ -122,13 +122,23 @@ class ProfileEditorApiTests extends AbstractIntegrationTest {
 
         Map<String, Object> body = parse(response);
         // Exhaustive, on purpose. This is a third projection of `users` and the rule that
-        // keeps it apart from the other two is that a field is here only if PATCH can write
-        // it, plus the slug. A field added to the projection fails here rather than appearing
-        // in an editor that cannot save it -- and the address, which GET /v1/me owns and A-12
-        // changes, is the one most likely to be added by accident.
+        // keeps it apart from the other two is that a field is here only if the owner changes
+        // it on a profile screen -- PATCH's six and P-07's visibility -- plus the slug. A field
+        // added to the projection fails here rather than appearing in an editor that cannot
+        // save it -- and the address, which GET /v1/me owns and A-12 changes, is the one most
+        // likely to be added by accident.
         assertThat(body)
-                .containsOnlyKeys("name", "slug", "bio", "avatarUrl", "websiteUrl", "location", "socialLinks");
+                .containsOnlyKeys(
+                        "name",
+                        "slug",
+                        "bio",
+                        "avatarUrl",
+                        "websiteUrl",
+                        "location",
+                        "socialLinks",
+                        "profileVisibility");
         assertThat(body.get("slug")).isEqualTo(owner.slug());
+        assertThat(body.get("profileVisibility")).isEqualTo("PUBLIC");
         assertThat(response.getBody()).doesNotContain("@example.com");
 
         // Written out rather than omitted, like the public profile beside it: a form that
@@ -143,6 +153,28 @@ class ProfileEditorApiTests extends AbstractIntegrationTest {
         // One person's own data behind a bearer token. There is no shared cache to serve, and
         // nothing here should be written to disk by an intermediary.
         assertThat(response.getHeaders().getCacheControl()).contains("no-store");
+    }
+
+    @Test
+    @DisplayName("the owner's read carries P-07's position, both ways, and PATCH cannot change it")
+    void theOwnersReadCarriesTheVisibility() {
+        Account owner = registered("visibility");
+
+        // #270. The privacy screen used to read this from its effect -- an anonymous
+        // GET /v1/users/{slug}, 200 for public and 404 for private -- and now reads it here.
+        assertThat(parse(readProfile(owner)).get("profileVisibility")).isEqualTo("PUBLIC");
+
+        assertThat(setVisibility(owner, "PRIVATE").getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(parse(readProfile(owner)).get("profileVisibility")).isEqualTo("PRIVATE");
+
+        // Read here and written only on its own path. A patch that names it is not refused --
+        // an unknown key never is -- and the stored value does not move.
+        ResponseEntity<String> patched = patch(owner, "{\"profileVisibility\":\"PUBLIC\"}");
+        assertThat(patched.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(parse(patched).get("profileVisibility")).isEqualTo("PRIVATE");
+
+        assertThat(setVisibility(owner, "PUBLIC").getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(parse(readProfile(owner)).get("profileVisibility")).isEqualTo("PUBLIC");
     }
 
     @Test
@@ -589,6 +621,14 @@ class ProfileEditorApiTests extends AbstractIntegrationTest {
     private ResponseEntity<String> patch(Account owner, String body) {
         return rest.exchange(
                 "/v1/me/profile", HttpMethod.PATCH, new HttpEntity<>(body, bearer(owner.accessToken())), String.class);
+    }
+
+    private ResponseEntity<String> setVisibility(Account owner, String visibility) {
+        return rest.exchange(
+                "/v1/me/profile-visibility",
+                HttpMethod.PATCH,
+                new HttpEntity<>("{\"visibility\":\"" + visibility + "\"}", bearer(owner.accessToken())),
+                String.class);
     }
 
     private ResponseEntity<String> patchAnonymously(String body) {

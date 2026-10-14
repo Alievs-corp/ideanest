@@ -7,6 +7,7 @@ import az.ideanest.audit.AuditOutcome;
 import az.ideanest.shared.SecureTokens;
 import az.ideanest.auth.domain.SessionRevocationReason;
 import az.ideanest.auth.infrastructure.SessionRepository;
+import az.ideanest.auth.infrastructure.TwoFactorSecretRepository;
 import az.ideanest.auth.infrastructure.UserCredentialRepository;
 import az.ideanest.auth.infrastructure.VerificationTokenRepository;
 import az.ideanest.user.application.AccountSecurity;
@@ -30,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthAccountSecurity implements AccountSecurity {
 
     private final UserCredentialRepository credentials;
+    private final TwoFactorSecretRepository twoFactorSecrets;
     private final SessionRepository sessions;
     private final VerificationTokenRepository verificationTokens;
     private final PasswordHasher passwordHasher;
@@ -44,11 +46,13 @@ public class AuthAccountSecurity implements AccountSecurity {
 
     public AuthAccountSecurity(
             UserCredentialRepository credentials,
+            TwoFactorSecretRepository twoFactorSecrets,
             SessionRepository sessions,
             VerificationTokenRepository verificationTokens,
             PasswordHasher passwordHasher,
             AuditLog audit) {
         this.credentials = credentials;
+        this.twoFactorSecrets = twoFactorSecrets;
         this.sessions = sessions;
         this.verificationTokens = verificationTokens;
         this.passwordHasher = passwordHasher;
@@ -66,6 +70,14 @@ public class AuthAccountSecurity implements AccountSecurity {
                     passwordHasher.matches(rawPassword, decoyHash);
                     return false;
                 });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean twoFactorEnabled(UUID userId) {
+        // The same question sign-in asks, through the same query, so the settings screen
+        // and the challenge cannot disagree about whether a code will be demanded.
+        return twoFactorSecrets.findByUserIdAndConfirmedAtIsNotNull(userId).isPresent();
     }
 
     @Override

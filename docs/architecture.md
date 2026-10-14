@@ -313,13 +313,13 @@ Marked `[W]` web, `[M]` mobile, `[A]` admin.
 > minutes of somebody else's session and neither of these should be what makes it
 > permanent.
 
-> **`GET /v1/me` does not say whether two-factor is on, and #278's screen cannot
-> ask.** Its six fields carry no `twoFactorEnabled`, and no other read answers it
-> either. The enrolment screen therefore offers both directions and lets
-> `POST /v1/auth/2fa/enable` decide — it refuses an already-confirmed enrolment
-> with a sentence written for the account's owner. A field on `GET /v1/me` is the
-> honest fix and belongs to whoever owns this section rather than to an epic
-> scoped to the web client.
+> **`GET /v1/me` says whether two-factor is on (#270).** `twoFactorEnabled` is
+> true for a confirmed enrolment only — one that was started and never proved
+> with a code is not a second factor, and sign-in does not ask for it — so the
+> security screen on both clients offers the one action that applies rather than
+> both. `POST /v1/auth/2fa/enable` still refuses an already-confirmed enrolment
+> with a sentence written for the account's owner, and a client whose account
+> read did not say moves to the off-path on it.
 
 ### 4.2 Profile
 
@@ -5025,7 +5025,7 @@ GET    /v1/me/export
 POST   /v1/me/deletion
 DELETE /v1/me/deletion
 GET    /v1/me/pledges                       # PL-09/PL-10 (#287); the caller's own pledges
-GET    /v1/me/profile                       # P-01..P-03 (#276); the owner's editable projection
+GET    /v1/me/profile                       # P-01..P-03 (#276); the owner's editable projection, plus P-07's position (#270)
 PATCH  /v1/me/profile                       # P-01..P-03 (#276); named, not a general PATCH /v1/me
 PATCH  /v1/me/profile-visibility            # P-07 (#274); the profile page's one switch
 PATCH  /v1/me/locale                        # P-10's language half (#324); az|en|ru|tr, 204
