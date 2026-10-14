@@ -9,6 +9,7 @@ import { api, sendJson } from '../../api/client';
 import { sendIdempotent } from '../../api/mutate';
 
 export type BackerPledgeSummary = components['schemas']['BackerPledgeSummary'];
+export type DisputeWindow = components['schemas']['DisputeWindowBody'];
 
 export interface PledgePage {
   readonly items: readonly BackerPledgeSummary[];
@@ -30,6 +31,13 @@ export async function readPledge(id: string, signal?: AbortSignal): Promise<Pled
     path: { id },
     ...(signal === undefined ? {} : { signal }),
   })) as unknown as PledgeResponse;
+}
+
+export function readDisputeWindow(pledgeId: string, signal?: AbortSignal): Promise<DisputeWindow> {
+  return api().get('/v1/pledges/{pledgeId}/disputes/window', {
+    path: { pledgeId },
+    ...(signal === undefined ? {} : { signal }),
+  });
 }
 
 export async function openBackerDispute(pledgeId: string, reason: string): Promise<void> {

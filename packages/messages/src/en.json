@@ -4152,6 +4152,8 @@
     "dispute": {
       "heading": "Dispute this payment",
       "intro": "While the creator’s payout is held, you can ask for your payment back. An administrator reads your reason and decides; if they agree, you are refunded in full.",
+      "until": "You can dispute it until {date}.",
+      "notYet": "Disputes open once the campaign has ended, while the creator’s payout is held.",
       "reasonLabel": "What went wrong",
       "reasonHint": "Up to 2,000 characters. Say what you were promised and what happened.",
       "submit": "Send the dispute",

@@ -4152,6 +4152,8 @@
     "dispute": {
       "heading": "Bu ödənişə etiraz edin",
       "intro": "Müəllifin ödənişi saxlanılarkən pulunuzun qaytarılmasını istəyə bilərsiniz. Administrator səbəbinizi oxuyub qərar verir; razılaşsa, məbləğ sizə tam qaytarılır.",
+      "until": "Etirazı {date} tarixinədək göndərə bilərsiniz.",
+      "notYet": "Etiraz kampaniya bitəndən sonra, müəllifin ödənişi saxlanılarkən mümkün olur.",
       "reasonLabel": "Nə səhv getdi",
       "reasonHint": "2 000 simvola qədər. Sizə nə vəd edildiyini və nə baş verdiyini yazın.",
       "submit": "Etirazı göndərin",

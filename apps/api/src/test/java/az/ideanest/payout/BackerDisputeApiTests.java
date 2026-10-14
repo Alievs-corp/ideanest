@@ -134,6 +134,38 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("#480: the window says NOT_YET before a payout, and a stranger is not found")
+    void theWindowBeforeAPayout() {
+        Campaign campaign = aPaidCampaign("dispute-window-early");
+
+        ResponseEntity<Map<String, Object>> window = window(campaign.first());
+        assertThat(window.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(window.getBody()).containsEntry("status", "NOT_YET");
+        assertThat(window.getBody().get("until")).isNull();
+        assertThat(window.getBody().get("dispute")).isNull();
+
+        Backer stranger = new Backer(account("dispute-window-stranger"), campaign.first().pledgeId());
+        assertThat(window(stranger).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("#480: during the hold the window is OPEN until the payout is payable, and carries the open dispute")
+    void theWindowDuringTheHold() {
+        Campaign campaign = aWithdrawnCampaign("dispute-window-open");
+
+        ResponseEntity<Map<String, Object>> before = window(campaign.first());
+        assertThat(before.getBody()).containsEntry("status", "OPEN");
+        assertThat(before.getBody().get("until")).isNotNull();
+        assertThat(before.getBody().get("dispute")).isNull();
+
+        Object disputeId = dispute(campaign.first()).getBody().get("id");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> open = (Map<String, Object>) window(campaign.first()).getBody().get("dispute");
+        assertThat(open).containsEntry("id", disputeId).containsEntry("state", "OPEN");
+    }
+
+    @Test
     @DisplayName("upheld: the backer is refunded in full and the payout is recalculated without them, keeping its hold")
     void anUpheldDisputeRefundsAndRecalculates() {
         Campaign campaign = aWithdrawnCampaign("dispute-upheld");
@@ -372,6 +404,16 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
                 backer.account().accessToken(),
                 null,
                 Map.of("reason", "The reward was described differently when I backed it."));
+    }
+
+    private ResponseEntity<Map<String, Object>> window(Backer backer) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(backer.account().accessToken());
+        return rest.exchange(
+                "/v1/pledges/" + backer.pledgeId() + "/disputes/window",
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
     private ResponseEntity<Map<String, Object>> decide(Object disputeId, String outcome) {

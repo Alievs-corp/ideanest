@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * A backer disputes their payment while the payout is held — IDN-EXT-01 (#43), §6.3.
@@ -109,6 +110,35 @@ public class BackerDisputes {
                 clock.instant().truncatedTo(ChronoUnit.MICROS)));
         log.info("Backer dispute {} opened on pledge {} while payout {} is held.", opened.id(), pledgeId, held.id());
         return opened;
+    }
+
+    /**
+     * Whether the backer may dispute the pledge now — #480.
+     *
+     * @throws BackerDisputeNotFoundException when the pledge is not this backer's
+     */
+    @Transactional(readOnly = true)
+    public DisputeWindow window(UUID backerId, UUID pledgeId) {
+        BackedPledges.BackedPledge pledge = pledges
+                .pledge(pledgeId)
+                .filter(found -> found.backerId().equals(backerId))
+                .orElseThrow(() -> new BackerDisputeNotFoundException(pledgeId));
+
+        Optional<BackerDispute> existing = disputes.openFor(pledgeId);
+        Optional<Payout> held = payouts.inFlightFor(pledge.projectId());
+        if (held.isEmpty()) {
+            DisputeWindow.Status status = payouts.paidFor(pledge.projectId()).isPresent()
+                    ? DisputeWindow.Status.CLOSED
+                    : DisputeWindow.Status.NOT_YET;
+            return new DisputeWindow(status, null, existing);
+        }
+        if (held.get().moneyMayHaveLeft()) {
+            return new DisputeWindow(DisputeWindow.Status.CLOSED, null, existing);
+        }
+        if (existing.isEmpty() && funds.refundableOn(pledgeId).isEmpty()) {
+            return new DisputeWindow(DisputeWindow.Status.NOTHING_LEFT, null, existing);
+        }
+        return new DisputeWindow(DisputeWindow.Status.OPEN, held.get().payableAt(), existing);
     }
 
     /** The undecided disputes, oldest first. {@code MANAGE_DISPUTES}. */
