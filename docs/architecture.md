@@ -1388,7 +1388,13 @@ The most valuable and most complex module. It begins when funding closes.
 > account is never told, and nothing about a block is served to anybody but the
 > blocker -- and audited (`account.blocked`, `account.unblocked`, written only by
 > the call that changed something). A comment page shaped by its reader's blocks
-> is served `private, no-cache` rather than `public`.
+> is served `private, no-cache` rather than `public`. **The web** reads the
+> Comments tab anonymously on the server, so it applies the reader's blocks in
+> the browser from their own list (`BlockedAuthors`): the page arrives as
+> everybody's and is thinned once the list is read, a brief window the app does
+> not have. Block sits beside Report under each comment and at the foot of a
+> profile, asked in place, and `/settings/privacy` lists blocked accounts with
+> Unblock.
 >
 > C-04 reactions, C-05 comments *on* an update and C-13/C-14 sharing are not
 > built.

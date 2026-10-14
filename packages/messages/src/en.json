@@ -4444,7 +4444,8 @@
         "notPosted": "That could not be posted.",
         "unreachable": "The service could not be reached. Check your connection and try again.",
         "notWithdrawn": "That could not be withdrawn.",
-        "withdrawUnreachable": "The service could not be reached. Try again."
+        "withdrawUnreachable": "The service could not be reached. Try again.",
+        "replyNotAccepted": "This comment is not accepting replies from your account."
       }
     },
     "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once.",
@@ -6582,6 +6583,37 @@
       "faceIdUsage": "IdeyaNest uses Face ID to unlock the session kept on this device.",
       "cameraUsage": "IdeyaNest uses the camera so you can take a campaign image or a profile picture.",
       "photoLibraryUsage": "IdeyaNest opens your photos so you can choose a campaign image or a profile picture."
+    }
+  },
+  "blocking": {
+    "trigger": "Block this account",
+    "warning": "You will stop seeing comments and replies from this account, and it will not be able to reply to yours. The person is not told. Their campaigns stay visible — if a campaign is the problem, report it instead.",
+    "confirm": "Block",
+    "blocking": "Blocking",
+    "cancel": "Cancel",
+    "blockedState": "You blocked this account. Its comments are hidden from you.",
+    "unblock": "Unblock",
+    "unblocking": "Unblocking",
+    "blocked": "Blocked. You will not see this account’s comments, and you can undo this in your privacy settings.",
+    "unblocked": "Unblocked. Comments from this account will show again.",
+    "failures": {
+      "refused": "The service refused the request. Try again.",
+      "unreachable": "The service could not be reached. Check your connection and try again.",
+      "staff": "Platform staff cannot be blocked. You can report the account instead.",
+      "self": "You cannot block yourself."
+    },
+    "list": {
+      "title": "Blocked accounts",
+      "intro": "Blocking hides an account’s comments and replies from you and stops it replying to yours. Nobody is told. Campaigns stay visible, because backers’ money is behind them — report a campaign instead.",
+      "loading": "Loading the accounts you blocked",
+      "failedTitle": "The list could not be loaded",
+      "emptyTitle": "You have not blocked anyone",
+      "emptyBody": "You can block an account from one of its comments or from its profile.",
+      "meta": "Blocked {time}",
+      "unblock": "Unblock",
+      "unblockLabel": "Unblock {name}",
+      "unblockFailedTitle": "That did not change",
+      "unblockFailedBody": "{name} is still blocked. Try again in a moment."
     }
   }
 }

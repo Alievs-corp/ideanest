@@ -5,6 +5,7 @@ import { ProfileCampaignGrid } from '../../../../components/profile/ProfileCampa
 import { ProfileHeader } from '../../../../components/profile/ProfileHeader';
 import { FollowControl } from '../../../../components/profile/FollowControl';
 import { ProfileReportControl } from '../../../../components/profile/ProfileReportControl';
+import { ProfileBlockControl } from '../../../../components/profile/ProfileBlockControl';
 import { ProfileTabs, type ProfileTab } from '../../../../components/profile/ProfileTabs';
 import { CreatorObligationSummary } from '../../../../components/profile/CreatorObligationSummary';
 import { fetchCreatorObligations } from '../../../../lib/obligations/server';
@@ -22,6 +23,7 @@ import {
   followControlCopy,
   profileCopy,
   reportControlCopy,
+  blockControlCopy,
 } from '../../../../lib/i18n/shell-copy.server';
 import { getTranslations } from 'next-intl/server';
 
@@ -169,13 +171,14 @@ export default async function ProfilePage({
    * late campaigns" is a statement about a person. Guessing at the second one, or apologising
    * for not being able to make it, are both worse than saying nothing.
    */
-  const [created, backed, obligations, copy, followCopy, reportCopy] = await Promise.all([
+  const [created, backed, obligations, copy, followCopy, reportCopy, blockCopy] = await Promise.all([
     fetchCreatedProjects(slug),
     fetchBackedProjects(slug),
     fetchCreatorObligations(slug),
     profileCopy(),
     followControlCopy(),
     reportControlCopy(),
+    blockControlCopy(),
   ]);
 
   const tabs: readonly ProfileTab[] = [
@@ -262,6 +265,13 @@ export default async function ProfilePage({
         copy={reportCopy}
         className="mt-16 border-t border-white/6 pt-6"
       />
+
+      {/*
+        #324: blocking, under reporting and as quiet. Drawn only for a signed-in reader who is
+        not the owner — `ProfileBlockControl` says why a visitor gets nothing here, unlike
+        Report.
+      */}
+      <ProfileBlockControl slug={profile.slug} copy={blockCopy} className="mt-4" />
     </div>
   );
 }

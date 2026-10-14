@@ -93,6 +93,8 @@ export function messageFor(cause: unknown, failures: CommentFailureCopy, locale:
         ? failures.rateLimited
         : pluralise(locale, failures.rateLimitedFor, Math.ceil(seconds / 60));
     }
+    // #324: in the reader's language, and as unrevealing as the service's own sentence.
+    if (cause.problem?.code === 'COMMENT_REPLY_NOT_PERMITTED') return failures.replyNotAccepted;
     // The service's own wording wherever there is one: it knows which of its rules refused
     // the request and this function cannot.
     return cause.problem?.detail ?? cause.problem?.title ?? failures.notPosted;

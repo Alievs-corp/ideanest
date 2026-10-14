@@ -7,6 +7,8 @@ import type {
   CampaignCommentThread,
 } from '../../lib/community/comments';
 import { deleteComment, postComment, replyToComment } from '../../lib/community/comments';
+import { blockAccount, blockedIds } from '../../lib/community/blocks';
+import { blockControlCopyFrom } from '../../lib/i18n/block-copy';
 import { fetchSession, type Session } from '../../lib/session/session';
 import { SessionProvider } from '../session/SessionProvider';
 import { CampaignComments } from './CampaignComments';
@@ -80,6 +82,11 @@ vi.mock('../../lib/community/comments', async (importOriginal) => ({
   replyToComment: vi.fn(),
   deleteComment: vi.fn(),
 }));
+vi.mock('../../lib/community/blocks', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/community/blocks')>()),
+  blockedIds: vi.fn(),
+  blockAccount: vi.fn(),
+}));
 vi.mock('../../lib/session/session', () => ({ fetchSession: vi.fn() }));
 vi.mock('../../lib/api/access-token', () => ({ signOut: vi.fn().mockResolvedValue(undefined) }));
 
@@ -108,6 +115,11 @@ const postMock = vi.mocked(postComment);
 const replyMock = vi.mocked(replyToComment);
 const deleteMock = vi.mocked(deleteComment);
 const sessionMock = vi.mocked(fetchSession);
+const blockedIdsMock = vi.mocked(blockedIds);
+const blockMock = vi.mocked(blockAccount);
+
+/** The Block control's words (#324), built the way the page builds them. */
+const BLOCK = blockControlCopyFrom(translatorFor('blocking'));
 
 const PATH = '/projects/ayan/coffee-table-book';
 
@@ -177,6 +189,8 @@ beforeEach(() => {
   postMock.mockResolvedValue(null);
   replyMock.mockResolvedValue(null);
   deleteMock.mockResolvedValue(undefined);
+  blockedIdsMock.mockResolvedValue(new Set());
+  blockMock.mockResolvedValue(undefined);
 });
 
 afterEach(cleanup);
@@ -452,5 +466,94 @@ describe('accessibility', () => {
 
     const { container: empty } = await renderTab(page([]));
     await expectNoViolations(empty);
+  });
+});
+
+/**
+ * §4.9's C-08 — issue #324. The tab is read anonymously, so the reader's own blocks are applied
+ * in the browser: a conversation a blocked account started goes whole, a reply it wrote goes
+ * alone, and blocking from under a comment takes every comment by that account off the page.
+ */
+describe('blocking from the comments tab', () => {
+  const blockedThread = thread({
+    root: comment({ id: 'b1', threadId: 'b1', authorId: 'blocked', body: 'From somebody blocked' }),
+    replies: [comment({ id: 'b2', threadId: 'b1', parentId: 'b1', depth: 1, body: 'A reply under it' })],
+  });
+  const openThread = thread({
+    root: comment({ id: 'o1', threadId: 'o1', body: 'Everybody sees this' }),
+    replies: [
+      comment({
+        id: 'o2',
+        threadId: 'o1',
+        parentId: 'o1',
+        depth: 1,
+        authorId: 'blocked',
+        body: 'A blocked reply',
+      }),
+      comment({ id: 'o3', threadId: 'o1', parentId: 'o1', depth: 1, body: 'An ordinary reply' }),
+    ],
+  });
+
+  it('hides what the reader blocked: a conversation whole, a reply alone', async () => {
+    blockedIdsMock.mockResolvedValue(new Set(['blocked']));
+    await renderTab(page([blockedThread, openThread]));
+
+    await waitFor(() => expect(screen.queryByText('From somebody blocked')).not.toBeInTheDocument());
+    expect(screen.queryByText('A reply under it')).not.toBeInTheDocument();
+    expect(screen.queryByText('A blocked reply')).not.toBeInTheDocument();
+    expect(screen.getByText('Everybody sees this')).toBeInTheDocument();
+    expect(screen.getByText('An ordinary reply')).toBeInTheDocument();
+  });
+
+  it('shows everything to a visitor, and reads no list for them', async () => {
+    sessionMock.mockResolvedValue(null);
+    await renderTab(page([blockedThread]));
+
+    expect(await screen.findByText('From somebody blocked')).toBeInTheDocument();
+    expect(blockedIdsMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: BLOCK.trigger })).not.toBeInTheDocument();
+  });
+
+  it('asks first, then blocks the author and takes their comments off the page', async () => {
+    const user = userEvent.setup();
+    await renderTab(
+      page([
+        thread({ root: comment({ id: 'x1', threadId: 'x1', authorId: 'rude', body: 'Something rude' }) }),
+        thread({ root: comment({ id: 'x2', threadId: 'x2', authorId: 'rude', body: 'More of it' }) }),
+        thread({ root: comment({ id: 'x3', threadId: 'x3', body: 'Something kind' }) }),
+      ]),
+    );
+
+    const [first] = await screen.findAllByRole('button', { name: BLOCK.trigger });
+    await user.click(first as HTMLElement);
+    expect(blockMock).not.toHaveBeenCalled();
+    expect(screen.getByText(BLOCK.warning)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: BLOCK.confirm }));
+
+    await waitFor(() => expect(blockMock).toHaveBeenCalledWith('rude'));
+    await waitFor(() => expect(screen.queryByText('Something rude')).not.toBeInTheDocument());
+    expect(screen.queryByText('More of it')).not.toBeInTheDocument();
+    expect(screen.getByText('Something kind')).toBeInTheDocument();
+    expect(screen.getByText(BLOCK.blocked)).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('does not offer the author a way to block themselves', async () => {
+    await renderTab(page([thread({ root: comment({ authorId: ACCOUNT.id }) })]));
+
+    await screen.findByText('Will this ship to Georgia?');
+    await waitFor(() => expect(blockedIdsMock).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: BLOCK.trigger })).not.toBeInTheDocument();
+  });
+
+  it('says a refused reply in the catalogue’s words, without mentioning a block', () => {
+    const refused = new ApiError(403, {
+      code: 'COMMENT_REPLY_NOT_PERMITTED',
+      detail: 'This comment is not accepting replies from your account.',
+    });
+    const said = messageFor(refused, COPY.failures, 'en');
+
+    expect(said).toBe(COPY.failures.replyNotAccepted);
+    expect(said.toLowerCase()).not.toContain('block');
   });
 });

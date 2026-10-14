@@ -108,6 +108,11 @@ export interface CommentFailureCopy {
   readonly unreachable: string;
   readonly notWithdrawn: string;
   readonly withdrawUnreachable: string;
+  /**
+   * `COMMENT_REPLY_NOT_PERMITTED` (#324): the author of the comment blocked this reader. Says
+   * that this comment takes no reply from them and never why — a block is private.
+   */
+  readonly replyNotAccepted: string;
 }
 
 /**
@@ -263,6 +268,7 @@ export function commentCopyFrom(t: FundingTranslator): CommentCopy {
       unreachable: t('failures.unreachable'),
       notWithdrawn: t('failures.notWithdrawn'),
       withdrawUnreachable: t('failures.withdrawUnreachable'),
+      replyNotAccepted: t('failures.replyNotAccepted'),
     },
   };
 }

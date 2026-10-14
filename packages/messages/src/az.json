@@ -4444,7 +4444,8 @@
         "notPosted": "Şərhi göndərmək mümkün olmadı.",
         "unreachable": "Xidmətə çatmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
         "notWithdrawn": "Şərhi geri götürmək mümkün olmadı.",
-        "withdrawUnreachable": "Xidmətə çatmaq mümkün olmadı. Yenidən cəhd edin."
+        "withdrawUnreachable": "Xidmətə çatmaq mümkün olmadı. Yenidən cəhd edin.",
+        "replyNotAccepted": "Bu şərh sizin hesabınızdan cavab qəbul etmir."
       }
     },
     "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər.",
@@ -6582,6 +6583,37 @@
       "faceIdUsage": "IdeyaNest bu cihazda saxlanan seansınızı Face ID ilə açır.",
       "cameraUsage": "Kampaniya şəklini və ya profil şəklinizi çəkmək üçün IdeyaNest kameradan istifadə edir.",
       "photoLibraryUsage": "Kampaniya şəklini və ya profil şəklinizi seçmək üçün IdeyaNest qalereyanızı açır."
+    }
+  },
+  "blocking": {
+    "trigger": "Bu hesabı blokla",
+    "warning": "Bu hesabın şərhlərini və cavablarını artıq görməyəcəksiniz, o da sizin şərhlərinizə cavab yaza bilməyəcək. Həmin şəxsə xəbər verilmir. Onun kampaniyaları görünən qalır — problem kampaniyadadırsa, ondan şikayət edin.",
+    "confirm": "Blokla",
+    "blocking": "Bloklanır",
+    "cancel": "İmtina",
+    "blockedState": "Bu hesabı bloklamısınız. Onun şərhləri sizə göstərilmir.",
+    "unblock": "Blokdan çıxar",
+    "unblocking": "Blokdan çıxarılır",
+    "blocked": "Bloklandı. Bu hesabın şərhlərini görməyəcəksiniz. Bunu məxfilik parametrlərində geri qaytara bilərsiniz.",
+    "unblocked": "Blokdan çıxarıldı. Bu hesabın şərhləri yenidən görünəcək.",
+    "failures": {
+      "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
+      "unreachable": "Xidmətə çatmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
+      "staff": "Platforma əməkdaşlarını bloklamaq olmaz. Əvəzində hesabdan şikayət edə bilərsiniz.",
+      "self": "Özünüzü bloklaya bilməzsiniz."
+    },
+    "list": {
+      "title": "Bloklanmış hesablar",
+      "intro": "Bloklamaq hesabın şərhlərini və cavablarını sizdən gizlədir və onun sizin şərhlərinizə cavab yazmasının qarşısını alır. Heç kimə xəbər verilmir. Kampaniyalar görünən qalır, çünki onların arxasında dəstəkçilərin pulu dayanır — əvəzində kampaniyadan şikayət edin.",
+      "loading": "Bloklandığınız hesablar yüklənir",
+      "failedTitle": "Siyahı yüklənə bilmədi",
+      "emptyTitle": "Heç kimi bloklamamısınız",
+      "emptyBody": "Hesabı onun şərhlərindən birinin altından və ya profilindən bloklaya bilərsiniz.",
+      "meta": "{time} bloklanıb",
+      "unblock": "Blokdan çıxar",
+      "unblockLabel": "{name} adlı istifadəçini blokdan çıxar",
+      "unblockFailedTitle": "Dəyişmədi",
+      "unblockFailedBody": "{name} adlı istifadəçi hələ də bloklanıb. Bir azdan yenidən cəhd edin."
     }
   }
 }
