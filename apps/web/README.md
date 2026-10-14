@@ -413,11 +413,26 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   from values that were words before they arrived. That rule is what found the countdown and
   the checkout total, neither of which was on any list.
 
-What is still English:
+- the campaign editor, **in full** (#78) — the six tabs under `/projects/[id]/edit` and
+  `/projects/new`. The row this list used to end on had been half-true since #162: the frame,
+  every field label and every refusal a `validate*` function returns already read
+  `campaignEditor`, but fifty-two strings in twelve files were still English — the
+  explanations under the FAQ, rewards and review headings, every "nothing you typed has been
+  lost" line, the confirmation bodies, the story's version history, and the sentences
+  `useAutosave`'s `describeFailure` and `useProjectEdit` fell back on whenever the service sent
+  no `detail`. The last are the ones that mattered most and showed least: a creator who chose
+  Azerbaijani was told their save had failed in English. They ride on `EditorChromeCopy` as
+  `failures` and `load` now, and both hooks **require** them, so neither can fall back on a
+  literal again. The two dates the editor prints — a moderation decision and a story version —
+  were formatted with `en-GB` whatever the reader's language, and use `dateTimeFormat` now.
+  Most of these sentences already existed in four languages as `mobile.editor.*`, written for
+  the app while the web still drew them inline; the web's copies are under `campaignEditor.*`
+  beside the rest of the editor's words, taken from those translations, and the app moving
+  onto them is #463.
 
-| Surface | Where |
-|---|---|
-| The campaign editor | `components/campaign-editor` |
+**Nothing is listed as still English, and the table that listed it is gone.** A surface found
+drawing a literal now is a defect against the list above, not a row waiting on it. YouTube and
+Vimeo in the story's embed picker are names, and are the same in all four languages.
 
 **Azerbaijani does not write an ordinal after a number it has not met yet (#104).** The
 suffix's vowel is chosen from the number's last digit — 1-ci, 3-cü, 6-cı, 9-cu — so twelve
