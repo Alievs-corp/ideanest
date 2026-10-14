@@ -47,6 +47,7 @@ const ROUTES_THAT_EXIST = new Set([
   '/about',
   '/how-it-works',
   '/trust-safety',
+  '/support',
   '/legal',
   '/account/saved',
   '/account/following',
@@ -89,6 +90,11 @@ describe('the navigation lists', () => {
     expect(targets).toContain('/about');
     expect(targets).toContain('/how-it-works');
     expect(targets).toContain('/trust-safety');
+  });
+
+  it('carry the support page the store listings point at (#325)', () => {
+    const targets = FOOTER_GROUPS.flatMap((group) => group.links.map((link) => link.href));
+    expect(targets).toContain('/support');
   });
 
   it('carry the collections index #266 built, and only in the footer', () => {

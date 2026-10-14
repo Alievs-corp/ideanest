@@ -113,11 +113,16 @@ const THIS_PHONE: readonly Row[] = [
   { label: 'mobile.settings.security.appLockLink', icon: Glyphs.Lock, href: '/settings/security' },
 ];
 
-/** The web footer's `FOOTER_GROUPS.about`, with the same paths, native since #164. */
+/**
+ * The web footer's `FOOTER_GROUPS.about`, with the same paths, native since #164 — except
+ * Help and support (#325), which opens the web page: it is the page the store listings point at,
+ * and one address for it is what keeps the app and the listings saying the same thing.
+ */
 const ABOUT: readonly Row[] = [
   { label: 'shell.footer.links.about', icon: Glyphs.InfoCircle, href: '/about' },
   { label: 'shell.footer.links.howItWorks', icon: Glyphs.Discover, href: '/how-it-works' },
   { label: 'shell.footer.links.trustSafety', icon: Glyphs.Verify, href: '/trust-safety' },
+  { label: 'shell.footer.links.support', icon: Glyphs.Sms, web: '/support' },
   { label: 'shell.footer.links.legal', icon: Glyphs.DocumentText, href: '/legal' },
 ];
 

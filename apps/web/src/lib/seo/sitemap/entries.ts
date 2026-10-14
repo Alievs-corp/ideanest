@@ -56,6 +56,8 @@ export const PAGE_PATHS: readonly string[] = Object.freeze([
   '/about',
   '/how-it-works',
   '/trust-safety',
+  // #325: the store listings' support URL. Editorial, public and fixed, as the three above are.
+  '/support',
   /*
    * §22.2's index -- #439. The eight documents themselves are deliberately not listed
    * individually: `/legal` links to every one of them and a crawler follows links, so eight

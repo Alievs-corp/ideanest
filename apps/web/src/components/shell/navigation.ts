@@ -130,6 +130,12 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = Object.freeze([
       { href: '/how-it-works', key: 'howItWorks' },
       { href: '/trust-safety', key: 'trustSafety' },
       /*
+       * #325: the support URL both store listings carry, and the account-deletion address
+       * Google Play asks for. A page the listings point at and the site does not is a page
+       * found only by people who arrived from a store.
+       */
+      { href: '/support', key: 'support' },
+      /*
        * §22.2's eight, behind one address — #439.
        *
        * There was deliberately no legal link here until this issue, and the reason

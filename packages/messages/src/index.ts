@@ -1,6 +1,7 @@
 export { SUPPORTED_LOCALES, LOCALE_NAMES, isLocale, type Locale } from './locale';
 export { COUNTRY_HEADER, COUNTRY_LOCALES, localeForCountry } from './country';
 export * from './whatsapp';
+export * from './contact';
 /*
  * The pure formatting helpers, also published one module per subpath
  * (`@ideanest/messages/formats` and so on). The web's `lib/i18n/{plurals,placeholders,formats}.ts`

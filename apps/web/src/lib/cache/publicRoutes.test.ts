@@ -30,6 +30,7 @@ const PUBLIC = [
   '/about',
   '/how-it-works',
   '/trust-safety',
+  '/support',
   '/legal',
   '/legal/terms-of-use',
   '/legal/terms-of-use/v/3',

@@ -18,7 +18,9 @@ Common to every row unless it says otherwise:
   platform's behalf are named in the privacy policy, not "shared".
 - **Encrypted in transit**: yes (https only; the build refuses an http DSN).
 - **Deletion**: the account can be closed in the app (Settings → Privacy, "Data
-  and closure"), and on the web at `/<locale>/settings/privacy`.
+  and closure"), and on the web at `/<locale>/settings/privacy`. The deletion
+  URL given to Google Play is `https://ideyanest.com/<locale>/support#delete-account`,
+  which needs no sign-in: it also offers an email request to support (#325).
 
 | Data | What exactly | Who provides it | Optional | iOS manifest type | Play Data safety category |
 |---|---|---|---|---|---|
