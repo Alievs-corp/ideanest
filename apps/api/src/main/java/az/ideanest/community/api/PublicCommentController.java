@@ -39,6 +39,12 @@ import org.springframework.web.context.request.WebRequest;
  * private content: a comment has no {@code BACKERS_ONLY} and no scheduling, so the
  * campaign's own team is served the same page as a visitor and the body is shareable.
  *
+ * <p><strong>Except for a reader who has blocked somebody</strong> — #324. Their page leaves
+ * out the blocked accounts' comments, so it is theirs alone, and it is served
+ * {@code private, no-cache}: a shared cache holding it would show one person's blocks to the
+ * next reader, and whom somebody blocked is exactly what a block keeps private. Every other
+ * reader, signed in or not, still gets the public page.
+ *
  * <p>A {@code max-age} is deliberately not offered. This is the one surface on the
  * campaign page where a person is waiting for an answer to the question they just
  * asked, and buying throughput by making exactly that request the stale one is the
@@ -84,7 +90,9 @@ public class PublicCommentController {
 
         CommentListResponse body = CommentListResponse.of(page);
         response.setHeader(
-                HttpHeaders.CACHE_CONTROL, CacheControl.noCache().cachePublic().getHeaderValue());
+                HttpHeaders.CACHE_CONTROL,
+                (page.personal() ? CacheControl.noCache().cachePrivate() : CacheControl.noCache().cachePublic())
+                        .getHeaderValue());
 
         String etag = body.etag();
         if (request.checkNotModified(etag)) {

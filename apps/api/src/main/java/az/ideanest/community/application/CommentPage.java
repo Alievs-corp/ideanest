@@ -17,8 +17,12 @@ import java.util.UUID;
  *     conversations, or null when this is the last one. Always null in the
  *     single-thread read, where paging happens inside
  *     {@link CommentThread#nextReplyCursor()} instead
+ * @param personal whether this page was shaped for its reader — #324: somebody who has blocked
+ *     an account is served the page without that account's comments. A personal page must not
+ *     be kept by a shared cache, and {@code PublicCommentController} marks it private; every
+ *     other page is the same for everybody and stays public
  */
-public record CommentPage(List<CommentThread> threads, UUID nextCursor) {
+public record CommentPage(List<CommentThread> threads, UUID nextCursor, boolean personal) {
 
     public CommentPage {
         threads = List.copyOf(threads);

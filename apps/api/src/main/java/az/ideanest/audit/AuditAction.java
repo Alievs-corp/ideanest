@@ -231,6 +231,21 @@ public enum AuditAction {
     /** §4.11's AD-04 (#104): staff let an account back in. See {@link #ACCOUNT_SUSPENDED}. */
     ACCOUNT_REINSTATED("account.reinstated", "account"),
 
+    /**
+     * #324: one account blocked another. The entity is the blocked account and the actor is
+     * the blocker.
+     *
+     * <p>Recorded although nobody but the blocker ever sees a block, because a block changes
+     * what another person may do — reply to the blocker's comments — and "who had blocked
+     * this account, and since when" is a question a harassment complaint asks from either
+     * side. No detail: no reason is asked for, and the names are on the accounts. Written
+     * only by the call that created the block, so a double tap is one row.
+     */
+    ACCOUNT_BLOCKED("account.blocked", "account"),
+
+    /** #324: a block was lifted by the person who made it. See {@link #ACCOUNT_BLOCKED}. */
+    ACCOUNT_UNBLOCKED("account.unblocked", "account"),
+
     /** A second factor was confirmed and is now required to sign in. */
     TWO_FACTOR_ENABLED("two_factor.enabled", "account"),
 
