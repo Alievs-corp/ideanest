@@ -1,5 +1,5 @@
 import type { paths } from './schema';
-import { ApiError, problemFrom } from './problem';
+import { errorFrom } from './problem';
 
 /**
  * A typed reader for the IdeyaNest API — #136.
@@ -137,8 +137,14 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
         ...(request?.next === undefined ? {} : { next: request.next }),
       } as RequestInit);
 
+      /*
+       * `errorFrom` rather than a bare `ApiError`, so a read refused with `429` reports the
+       * `Retry-After` header as writes do. The body's `retryAfterSeconds` is a mirror an
+       * intermediary does not rewrite; a reader that took the wait from it alone would retry
+       * on a schedule the response did not set (#255).
+       */
       if (!response.ok) {
-        throw new ApiError(response.status, await problemFrom(response));
+        throw await errorFrom(response);
       }
 
       /*

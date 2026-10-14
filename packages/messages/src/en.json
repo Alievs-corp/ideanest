@@ -4468,7 +4468,12 @@
       "onListAnnouncement": "You are on the list. We will email you when this campaign opens.",
       "errors": {
         "rateLimited": "Too many attempts from here. Try again in a few minutes.",
-        "rateLimitedIn": "Too many attempts from here. Try again in about {minutes} minutes.",
+        "rateLimitedIn": {
+          "one": "Too many attempts from here. Try again in about {count} minute.",
+          "few": "Too many attempts from here. Try again in about {count} minutes.",
+          "many": "Too many attempts from here. Try again in about {count} minutes.",
+          "other": "Too many attempts from here. Try again in about {count} minutes."
+        },
         "notSaved": "That could not be saved. Try again.",
         "unreachable": "The service could not be reached. Check your connection and try again."
       }

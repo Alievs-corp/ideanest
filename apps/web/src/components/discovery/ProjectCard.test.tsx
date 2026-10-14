@@ -115,6 +115,22 @@ describe('ProjectCard', () => {
     expect(screen.getByRole('progressbar')).toHaveAccessibleName('126 percent of the goal');
   });
 
+  it('rounds 99.5% down, so a card never names the goal met before it is (#255)', () => {
+    renderCard({ completionPercent: '99.50' });
+
+    expect(screen.getByText('99% funded')).toBeInTheDocument();
+    expect(screen.queryByText('100% funded')).not.toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAccessibleName('99 percent of the goal');
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '99');
+  });
+
+  it('says 100% at exactly the goal', () => {
+    renderCard({ completionPercent: '100.00' });
+
+    expect(screen.getByText('100% funded')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100');
+  });
+
   it('shows the funded bar in success, never in lime', () => {
     const { container } = renderCard({ completionPercent: '100.00' });
 

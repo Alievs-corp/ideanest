@@ -105,6 +105,7 @@ export {
   PROGRESS_FILL,
   ProgressBar,
   fillFraction,
+  wholePercent,
   type ProgressBarProps,
   type ProgressBarRise,
   type ProgressBarSize,

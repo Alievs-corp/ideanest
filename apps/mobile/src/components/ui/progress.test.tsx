@@ -162,9 +162,26 @@ describe('ProgressBar (kit)', () => {
     ).toEqual({
       min: 0,
       max: 100,
-      now: 43,
-      text: en.common.card.progressLabel.replace('{percent}', '43'),
+      now: 42,
+      text: en.common.card.progressLabel.replace('{percent}', '42'),
     });
+  });
+
+  it('rounds 99.5 down to 99, so it never says 100% before the goal is met (#255)', async () => {
+    const { getByText, queryByText, getByRole } = await render(
+      <ProgressBar completionPercent="99.5" label="Funding" />,
+    );
+    expect(getByText(en.common.card.funded.replace('{percent}', '99'))).toBeTruthy();
+    expect(queryByText(en.mobile.funding.reached.replace('{percent}', '100'))).toBeNull();
+    expect(getByRole('progressbar').props.accessibilityValue.now).toBe(99);
+  });
+
+  it('says 100 at exactly the goal', async () => {
+    const { getByText, getByRole } = await render(
+      <ProgressBar completionPercent="100" label="Funding" />,
+    );
+    expect(getByText(en.mobile.funding.reached.replace('{percent}', '100'))).toBeTruthy();
+    expect(getByRole('progressbar').props.accessibilityValue.now).toBe(100);
   });
 
   it('keeps announcing the figure when the line under the bar is hidden', async () => {

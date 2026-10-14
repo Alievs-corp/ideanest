@@ -25,6 +25,7 @@ import {
   Tag,
   useFocusRing,
   useSharedSource,
+  wholePercent,
   type IconComponent,
   type TagVariant,
 } from './ui';
@@ -48,8 +49,8 @@ import {
  * <h2>Money is never a number</h2>
  *
  * `pledged` and `goal` are formatted from their digits by `@ideanest/money`, the web's own
- * module. `completionPercent` is read with `decimal.js` and rounded with `toFixed(0)`, so
- * "79.995" reads "80% funded" on both platforms. The only `number` is the bar's fill width,
+ * module. `completionPercent` is read with `decimal.js` and rounded down by `wholePercent`, so
+ * "99.5" reads "99% funded" on both platforms and never names the goal met before it is. The only `number` is the bar's fill width,
  * which is geometry, not an amount.
  *
  * <h2>An accent card, and lime is still only the urgency chip</h2>
@@ -147,7 +148,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
   const creator = card.creator?.name ?? '';
   const byline = creator === '' ? '' : t('discovery.card.by', { creator });
   const completion = completionOf(card);
-  const percent = completion?.toFixed(0) ?? '';
+  const percent = completion === null ? '' : wholePercent(completion);
   const status = isStatus(card.badge) ? card.badge : null;
 
   /*

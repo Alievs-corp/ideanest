@@ -18,6 +18,7 @@ import {
   Tag,
   useFocusRing,
   useSurface,
+  wholePercent,
   type IconComponent,
   type TagVariant,
 } from '../../components/ui';
@@ -103,7 +104,7 @@ export const ProfileCampaignCard = memo(function ProfileCampaignCard({
     funding === 'shown' && card.goal !== null && card.pledged !== null
       ? completionOf(card.goal.amount, card.pledged.amount)
       : null;
-  const percent = completion?.toFixed(0) ?? '';
+  const percent = completion === null ? '' : wholePercent(completion);
   const pledged = completion === null ? '' : formatMoney(card.pledged);
   const goal = completion === null ? '' : t('common.card.ofGoal', { amount: formatMoney(card.goal) });
   const backers = t(`common.card.backers.${pluralCategory(locale, card.backersCount)}`, {

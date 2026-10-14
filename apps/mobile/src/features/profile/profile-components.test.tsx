@@ -79,14 +79,14 @@ describe('ProfileCampaignCard', () => {
     }
   });
 
-  it('shows the funding on Created: amount, percent from Decimal, goal', async () => {
+  it('shows the funding on Created: amount, percent from Decimal rounded down (79.5 is 79), goal', async () => {
     await show(<ProfileCampaignCard card={card()} funding="shown" onOpen={jest.fn()} />);
     const node = screen.getByTestId('profile-card-p1');
     expect(node).toHaveTextContent(/795\.00 AZN/);
-    expect(node).toHaveTextContent(/80% funded/);
+    expect(node).toHaveTextContent(/79% funded/);
     expect(node).toHaveTextContent(/of 1,000\.00 AZN goal/);
     expect(screen.getByTestId('profile-card-funding')).toBeTruthy();
-    expect(node.props.accessibilityValue.text).toContain('80% funded');
+    expect(node.props.accessibilityValue.text).toContain('79% funded');
   });
 
   it('withholds every amount on Backed: no money, no percent, no bar, nothing announced', async () => {

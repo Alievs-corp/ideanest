@@ -4468,7 +4468,12 @@
       "onListAnnouncement": "Listedesiniz. Bu kampanya açıldığında size e-posta göndereceğiz.",
       "errors": {
         "rateLimited": "Buradan çok fazla deneme yapıldı. Birkaç dakika sonra tekrar deneyin.",
-        "rateLimitedIn": "Buradan çok fazla deneme yapıldı. Yaklaşık {minutes} dakika sonra tekrar deneyin.",
+        "rateLimitedIn": {
+          "one": "Buradan çok fazla deneme yapıldı. Yaklaşık {count} dakika sonra tekrar deneyin.",
+          "few": "Buradan çok fazla deneme yapıldı. Yaklaşık {count} dakika sonra tekrar deneyin.",
+          "many": "Buradan çok fazla deneme yapıldı. Yaklaşık {count} dakika sonra tekrar deneyin.",
+          "other": "Buradan çok fazla deneme yapıldı. Yaklaşık {count} dakika sonra tekrar deneyin."
+        },
         "notSaved": "Kaydedilemedi. Tekrar deneyin.",
         "unreachable": "Hizmete ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin."
       }

@@ -112,12 +112,18 @@ export function fillFraction(completionPercent: string): number {
 }
 
 /**
- * Rounded for display with `decimal.js`, as the web card rounds: "84.49999999999999999" is 84, where
- * `Math.round(Number(...))` makes it 85. The exact figure is a percentage of somebody's money.
+ * The whole percent a reader is shown, rounded DOWN with `decimal.js` — the campaign page's rule
+ * (#252), and every card's since #255. `toFixed(0)` rounds half up, so 99.5% read "100%" before the
+ * goal was met; and a float would make "84.99999999999999999" 85. The exact figure is a percentage
+ * of somebody's money.
  */
+export function wholePercent(completion: Decimal): string {
+  return completion.toFixed(0, Decimal.ROUND_DOWN);
+}
+
 function readablePercent(completionPercent: string): string {
   if (!PERCENT.test(completionPercent)) return '0';
-  return new Decimal(completionPercent).toFixed(0);
+  return wholePercent(new Decimal(completionPercent));
 }
 
 /**

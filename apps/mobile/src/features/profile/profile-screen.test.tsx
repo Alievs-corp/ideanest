@@ -251,7 +251,7 @@ describe('the screen', () => {
 
   it('shows funding on Created cards and opens the campaign', async () => {
     await show();
-    expect(screen.getByTestId('profile-card-c1')).toHaveTextContent(/80% funded/);
+    expect(screen.getByTestId('profile-card-c1')).toHaveTextContent(/79% funded/);
     fireEvent.press(screen.getByRole('link', { name: 'Campaign c1' }));
     expect(mockRouter.push).toHaveBeenCalledWith({
       pathname: '/projects/[creatorSlug]/[projectSlug]',

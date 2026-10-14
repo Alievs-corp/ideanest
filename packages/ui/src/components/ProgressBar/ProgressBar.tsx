@@ -39,14 +39,16 @@ export function ProgressBar({
 }: ProgressBarProps) {
   const clamped = Math.max(0, Math.min(value, 100));
   const complete = value >= 100;
+  // Floored, as every printed percent is: 99.5 announced as 100 names the goal met before it is.
+  const whole = Math.floor(value);
 
   return (
     <div
       role="progressbar"
-      aria-valuenow={Math.round(value)}
+      aria-valuenow={whole}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={label ?? `Funding: ${Math.round(value)} percent`}
+      aria-label={label ?? `Funding: ${whole} percent`}
       className={cn(
         'w-full overflow-hidden rounded-full bg-surface-3',
         size === 'sm' ? 'h-1.5' : 'h-2.5',

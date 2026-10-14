@@ -142,6 +142,8 @@ export function ProfileCampaignCard({
     funding === 'shown' && goal !== null && pledged !== null
       ? completionOf(goal.amount, pledged.amount)
       : null;
+  // Rounded down, as the discovery card and the campaign page round: 99.5% is not "100%".
+  const percent = completion?.toFixed(0, Decimal.ROUND_DOWN) ?? '';
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-lg border border-white/8 bg-surface-2 transition-colors duration-300 ease-in-out hover:bg-surface-3">
@@ -210,12 +212,12 @@ export function ProfileCampaignCard({
               /* A width, not an amount. The figure a reader acts on is the text below it,
                  which comes from the decimal. */
               value={completion.toNumber()}
-              label={fillPlaceholders(copy.progressLabel, { percent: completion.toFixed(0) })}
+              label={fillPlaceholders(copy.progressLabel, { percent })}
             />
             <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1 text-xs">
               <span className="font-medium tabular-nums text-white">{formatMoney(pledged)}</span>
               <span className="tabular-nums text-white/64">
-                {fillPlaceholders(copy.funded, { percent: completion.toFixed(0) })}
+                {fillPlaceholders(copy.funded, { percent })}
               </span>
             </div>
             {goal !== null && (
