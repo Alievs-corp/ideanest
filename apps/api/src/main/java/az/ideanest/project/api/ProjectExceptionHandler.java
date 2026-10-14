@@ -4,7 +4,6 @@ import az.ideanest.project.application.AgreementRequiredException;
 import az.ideanest.project.application.CapabilityNotGrantedException;
 import az.ideanest.project.application.ExtensionNotAvailableException;
 import az.ideanest.project.application.WithdrawalNotAvailableException;
-import az.ideanest.project.application.LatePledgesNotEnabledException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
@@ -451,17 +450,6 @@ public class ProjectExceptionHandler {
         problem.setDetail(exception.getMessage());
         problem.setProperty("code", "EXTENSION_NOT_AVAILABLE");
         problem.setProperty("meta", Map.of("reason", exception.reason().name()));
-        return problem;
-    }
-
-    @ExceptionHandler(LatePledgesNotEnabledException.class)
-    public ProblemDetail handleLatePledgesNotEnabled(LatePledgesNotEnabledException exception) {
-        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problem.setType(URI.create("https://ideanest.az/problems/late-pledges-not-enabled"));
-        problem.setTitle("Late pledges are switched off");
-        problem.setDetail("Turn late pledges on for this campaign before opening a window for them.");
-        problem.setProperty("code", "LATE_PLEDGES_NOT_ENABLED");
-        problem.setProperty("meta", Map.of("field", "latePledgeEnabled"));
         return problem;
     }
 

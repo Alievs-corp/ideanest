@@ -65,7 +65,6 @@ const PROJECT: ProjectEdit = {
   title: 'A field recorder',
   goal: { amount: '5000.00', currency: 'AZN' },
   durationDays: 30,
-  latePledgeEnabled: false,
   lockedFields: [],
   createdAt: '2026-08-15T09:00:00.000Z',
   updatedAt: '2026-08-15T09:00:00.000Z',

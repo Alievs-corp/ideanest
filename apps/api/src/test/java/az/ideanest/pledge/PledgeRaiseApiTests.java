@@ -22,6 +22,7 @@ import az.ideanest.shared.money.Money;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.PaymentRows;
+import az.ideanest.support.Pledges;
 import az.ideanest.support.ScriptedPaymentProvider;
 import az.ideanest.support.ScriptedWebhooks;
 import az.ideanest.user.infrastructure.UserRepository;
@@ -380,7 +381,8 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
         Account legacy = account("raise-confirmed-backer");
         UUID confirmedId = draft(draft, legacy, "25.00");
         paidPledges.add(confirmedId);
-        post(legacy, "/v1/pledges/" + confirmedId + "/confirm", UUID.randomUUID().toString(), Map.of());
+        // Confirmed the stored-card way, as a pledge made before IDN-EXT-01 is. No route does it since #45.
+        Pledges.confirmDraft(dataSource, confirmedId);
         assertThat(state(confirmedId)).isEqualTo("CONFIRMED");
 
         ResponseEntity<Map<String, Object>> legacyRaise = raise(

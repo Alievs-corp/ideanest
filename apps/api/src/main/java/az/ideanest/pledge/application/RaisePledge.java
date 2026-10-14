@@ -49,7 +49,6 @@ public record RaisePledge(
                 addons,
                 contribution,
                 shippingCountry,
-                Patched.absent(),
                 Patched.absent());
     }
 }

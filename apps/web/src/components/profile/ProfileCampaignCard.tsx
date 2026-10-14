@@ -1,7 +1,7 @@
 import Decimal from 'decimal.js';
 import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
-import { CalendarClock, CircleCheck, CircleDot, CircleSlash, Hourglass, Package, Users } from 'lucide-react';
+import { CalendarClock, CircleCheck, CircleDot, CircleSlash, Package, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
 import { canOptimise } from '../../lib/images/source';
@@ -63,12 +63,11 @@ import type { ProfileCardCopy } from '../../lib/i18n/profile-copy';
  */
 
 /**
- * The nine publicly visible states of §6.1, as words, each with an icon.
+ * The publicly listed states of §6.1, as words, each with an icon.
  *
  * A `Record<string, …>` rather than a `Record<ProjectState, …>` because the wire type is
  * widened (`lib/profiles/api.ts` says why): a state a newer service returns renders as
- * itself rather than as an empty tag or a crash. The nine that are here are the nine a
- * public list can contain.
+ * itself rather than as an empty tag or a crash.
  */
 const STATE: Record<string, { readonly icon: ReactNode; readonly variant: 'default' | 'success' | 'warning' }> = {
   PRELAUNCH: { icon: <CalendarClock className="size-2.5" />, variant: 'default' },
@@ -76,8 +75,6 @@ const STATE: Record<string, { readonly icon: ReactNode; readonly variant: 'defau
   LIVE: { icon: <CircleDot className="size-2.5" />, variant: 'default' },
   SUCCESSFUL: { icon: <CircleCheck className="size-2.5" />, variant: 'success' },
   UNSUCCESSFUL: { icon: <CircleSlash className="size-2.5" />, variant: 'default' },
-  COLLECTING: { icon: <Hourglass className="size-2.5" />, variant: 'warning' },
-  LATE_PLEDGE: { icon: <Hourglass className="size-2.5" />, variant: 'warning' },
   FULFILLING: { icon: <Package className="size-2.5" />, variant: 'default' },
   COMPLETED: { icon: <CircleCheck className="size-2.5" />, variant: 'success' },
 };

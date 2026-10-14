@@ -9,10 +9,10 @@ import type { ProjectState } from '../projects/api';
  * away from, and a page that is indexable but absent from the sitemap is a page
  * nobody finds. So the decision is made once, here, and both read it.
  *
- * The table below is derived from `docs/architecture.md` §6.1 — the sixteen
+ * The table below is derived from `docs/architecture.md` §6.1 — the seventeen
  * project states — and from §4.3, which says which of them discovery may return.
  * The service states the same split independently in
- * `az.ideanest.discovery.domain.DiscoveryStatus`: nine `PUBLIC_STATES` and seven
+ * `az.ideanest.discovery.domain.DiscoveryStatus`: ten `PUBLIC_STATES` and seven
  * `HIDDEN_STATES`. Nothing here is guessed, and nothing here is a copy of the
  * transition table; it is a copy of the visibility rule only.
  *
@@ -31,10 +31,10 @@ export type Indexability =
 /**
  * Every state of §6.1, with the reason for its answer.
  *
- * `Record<ProjectState, …>` rather than a partial map: a seventeenth state added
+ * `Record<ProjectState, …>` rather than a partial map: an eighteenth state added
  * to §6.1 is a type error here rather than a campaign that quietly defaults to
  * indexable. `ProjectState` itself is imported rather than restated — one copy
- * of the sixteen names, in `lib/projects/api.ts`.
+ * of the seventeen names, in `lib/projects/api.ts`.
  */
 export const PROJECT_STATE_INDEXABILITY: Readonly<Record<ProjectState, Indexability>> = {
   /* The seven discovery never returns under any filter or sort (§4.3). The
@@ -72,9 +72,7 @@ export const PROJECT_STATE_INDEXABILITY: Readonly<Record<ProjectState, Indexabil
   CLOSING_WINDOW: 'INDEXABLE',
   EXTENDED: 'INDEXABLE',
   WITHDRAWN: 'INDEXABLE',
-  LATE_PLEDGE: 'INDEXABLE',
   SUCCESSFUL: 'INDEXABLE',
-  COLLECTING: 'INDEXABLE',
   FULFILLING: 'INDEXABLE',
   COMPLETED: 'INDEXABLE',
   UNSUCCESSFUL: 'INDEXABLE',

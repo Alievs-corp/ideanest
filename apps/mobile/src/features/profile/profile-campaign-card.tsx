@@ -50,15 +50,13 @@ interface StateSpec {
   readonly variant: TagVariant;
 }
 
-/** The nine publicly visible states. Anything else is drawn as its own raw value. */
+/** The publicly listed states. Anything else is drawn as its own raw value. */
 const STATES: Readonly<Record<string, StateSpec>> = {
   PRELAUNCH: { icon: Glyphs.Calendar, variant: 'default' },
   SCHEDULED: { icon: Glyphs.Calendar, variant: 'default' },
   LIVE: { icon: Glyphs.RecordCircle, variant: 'default' },
   SUCCESSFUL: { icon: Glyphs.TickCircle, variant: 'success' },
   UNSUCCESSFUL: { icon: Glyphs.Slash, variant: 'default' },
-  COLLECTING: { icon: Glyphs.Timer1, variant: 'warning' },
-  LATE_PLEDGE: { icon: Glyphs.Timer1, variant: 'warning' },
   FULFILLING: { icon: Glyphs.Box, variant: 'default' },
   COMPLETED: { icon: Glyphs.TickCircle, variant: 'success' },
 };
@@ -69,8 +67,6 @@ type KnownState =
   | 'LIVE'
   | 'SUCCESSFUL'
   | 'UNSUCCESSFUL'
-  | 'COLLECTING'
-  | 'LATE_PLEDGE'
   | 'FULFILLING'
   | 'COMPLETED';
 

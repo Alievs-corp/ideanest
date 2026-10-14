@@ -9,7 +9,7 @@ import java.util.Objects;
  * <p><strong>A session and not a signature, because the answer is not knowable
  * synchronously.</strong> There is a person and a phone in the middle: the prompt appears in
  * their SİMA application, and they sign it, decline it, or put the phone down. That is the
- * same shape {@code TokenizationSession} has and for the same reason — an interface that
+ * same shape {@code HostedPaymentSession} has and for the same reason — an interface that
  * pretended to return an answer here would be an interface that blocks a request thread on a
  * human being.
  *

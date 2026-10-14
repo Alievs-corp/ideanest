@@ -283,7 +283,7 @@ export function projectSocialDescription(project: {
  * `<meta>` tag.
  *
  * `Record<ProjectState, boolean>` rather than a list of the public ones, so that
- * adding a seventeenth state to §6.1 is a COMPILE ERROR here rather than a state
+ * adding an eighteenth state to §6.1 is a COMPILE ERROR here rather than a state
  * that quietly defaults to one answer or the other. Which answer it would have
  * defaulted to decides whether the mistake is an unindexed campaign or a
  * published draft, and neither is a decision to leave to a fallthrough.
@@ -317,13 +317,11 @@ const PUBLICLY_VISIBLE: Record<ProjectState, boolean> = {
   CANCELED: false,
   SUCCESSFUL: true,
   UNSUCCESSFUL: true,
-  COLLECTING: true,
-  LATE_PLEDGE: true,
   FULFILLING: true,
   COMPLETED: true,
 };
 
-/** The sixteen states of docs/architecture.md §6.1, as values. */
+/** The seventeen states of docs/architecture.md §6.1, as values. */
 export const PROJECT_STATES = Object.keys(PUBLICLY_VISIBLE) as readonly ProjectState[];
 
 /** See `PUBLICLY_VISIBLE`. A state this build does not know is not public. */

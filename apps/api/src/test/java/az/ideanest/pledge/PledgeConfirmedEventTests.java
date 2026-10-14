@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import az.ideanest.pledge.application.DraftPledge;
-import az.ideanest.pledge.application.PledgeNotDraftException;
+import az.ideanest.pledge.application.PledgePayments;
 import az.ideanest.pledge.application.PledgeService;
 import az.ideanest.shared.Identifiers;
 import az.ideanest.shared.money.Money;
@@ -28,17 +28,20 @@ import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * The producer half of {@code pledge.confirmed} (#235): what confirming a pledge
+ * The producer half of {@code pledge.confirmed} (#235): what paying for a pledge
  * announces, and when it does not.
+ *
+ * <p>Since #45 the producer is {@code PledgePayments#recordPaid} — the provider saying the
+ * backer paid, IDN-EXT-01's {@code DRAFT → COLLECTED}. Until then it was the stored-card
+ * model's {@code confirm}, which moved a draft to {@code CONFIRMED} with nothing charged;
+ * the contract these tests hold the event to did not change with the producer.
  *
  * <p><strong>Against the real {@code Outbox} and the real database.</strong> Nothing
  * here is mocked, because every property being checked is a property of a transaction
@@ -52,13 +55,10 @@ import tools.jackson.databind.ObjectMapper;
  *       is the assertion that fails under every implementation that records the event
  *       beside the transaction rather than inside it, including the two that look
  *       correct: publishing after the commit and publishing before it.
- *   <li>{@link #aReplayedConfirmationRecordsNoSecondEvent()} and
- *       {@link #aSecondConfirmationIsRefusedAndAnnouncesNothing()} are the two ways one
- *       confirmation can arrive twice — the same {@code Idempotency-Key}, and a fresh
- *       key against a pledge that has already moved. Neither may produce a second
- *       event, and they fail differently: the first would mean the recording sits above
- *       {@code shared.idempotency}, the second that it sits on the replay path rather
- *       than the transitioning one.
+ *   <li>{@link #aRedeliveredPaymentAnnouncesNothing()} is the way one payment arrives
+ *       twice — the provider delivering its callback again. It may not produce a second
+ *       event: the recording sits on the path that transitions, not the one that finds
+ *       the pledge already collected.
  *   <li>{@link #theTotalCrossesAsAStringObjectAndNeverANumber()} — money over a JSON
  *       boundary, which {@code CLAUDE.md} §3 makes not optional to test. Asserted
  *       against the committed bytes, because the bytes are what a consumer receives.
@@ -91,6 +91,9 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
 
     @Autowired
     private PledgeService pledges;
+
+    @Autowired
+    private PledgePayments payments;
 
     @Autowired
     private TestRestTemplate rest;
@@ -152,11 +155,11 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("confirming records exactly one pledge.confirmed against the pledge")
-    void confirmingRecordsOnePledgeConfirmedEvent() {
+    @DisplayName("paying records exactly one pledge.confirmed against the pledge")
+    void payingRecordsOnePledgeConfirmedEvent() {
         UUID pledgeId = draft(null);
 
-        pledges.confirm(pledgeId, backer.id(), UUID.randomUUID(), null);
+        pay(pledgeId);
 
         List<Map<String, Object>> events = eventsFor(pledgeId);
         assertThat(events).hasSize(1);
@@ -176,7 +179,7 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
         UUID pledgeId = draft("aB7-xY9_Qz");
         Instant confirmedAt = now();
 
-        pledges.confirm(pledgeId, backer.id(), null, null);
+        pay(pledgeId);
 
         ConsumerShape event = json.readValue(payloadOf(pledgeId), ConsumerShape.class);
         assertThat(event.pledgeId()).isEqualTo(pledgeId);
@@ -202,7 +205,7 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
         // test here, and silently stops every consumer from reading it.
         UUID pledgeId = draft("aB7-xY9_Qz");
 
-        pledges.confirm(pledgeId, backer.id(), null, null);
+        pay(pledgeId);
 
         assertThat(parse(payloadOf(pledgeId)))
                 .containsOnlyKeys("pledgeId", "projectId", "backerId", "total", "referrerCode", "confirmedAt");
@@ -218,7 +221,7 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
         // discovered by a consumer that refused the message.
         UUID pledgeId = draft(null);
 
-        pledges.confirm(pledgeId, backer.id(), null, null);
+        pay(pledgeId);
 
         assertThat(parse(payloadOf(pledgeId))).doesNotContainKey("referrerCode");
         assertThat(json.readValue(payloadOf(pledgeId), ConsumerShape.class).referrerCode())
@@ -234,7 +237,7 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
     void theTotalCrossesAsAStringObjectAndNeverANumber() {
         UUID pledgeId = draft(null);
 
-        pledges.confirm(pledgeId, backer.id(), null, null);
+        pay(pledgeId);
 
         // Asserted against the committed bytes rather than against a parsed object: a
         // JSON number is an IEEE 754 double in every mainstream parser, and a payload
@@ -247,42 +250,22 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
     }
 
     // -----------------------------------------------------------------------
-    // Confirming twice
+    // Paid twice
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("a retry carrying the same idempotency key records no second event")
-    void aReplayedConfirmationRecordsNoSecondEvent() {
+    @DisplayName("a redelivered payment finds the pledge collected and announces nothing")
+    void aRedeliveredPaymentAnnouncesNothing() {
+        // A provider delivers its callback again, or the sweep asks about a page whose
+        // callback did arrive. The recording has to sit after the check that finds the
+        // pledge already collected, on the path that actually transitions.
         UUID pledgeId = draft(null);
-        String key = UUID.randomUUID().toString();
+        pay(pledgeId);
 
-        ResponseEntity<String> first = confirmOverHttp(pledgeId, key);
-        ResponseEntity<String> replay = confirmOverHttp(pledgeId, key);
-
-        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
-        // The same answer, byte for byte: shared.idempotency replayed the recorded
-        // response and PledgeService never ran. If the recording had been put above it
-        // -- in the controller, or in a listener on the response -- this is where the
-        // second event would appear.
-        assertThat(replay.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(replay.getBody()).isEqualTo(first.getBody());
-        assertThat(eventCountFor(pledgeId)).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("a second confirmation with a fresh key is refused and announces nothing")
-    void aSecondConfirmationIsRefusedAndAnnouncesNothing() {
-        // The other replay: a client that lost its key and sent a new one. The
-        // idempotency machinery cannot help -- this is a different request as far as it
-        // is concerned -- so what has to be true is that the recording sits after the
-        // refusal, on the path that actually transitions.
-        UUID pledgeId = draft(null);
-        pledges.confirm(pledgeId, backer.id(), null, null);
-
-        assertThatThrownBy(() -> pledges.confirm(pledgeId, backer.id(), null, null))
-                .isInstanceOf(PledgeNotDraftException.class);
+        pay(pledgeId);
 
         assertThat(eventCountFor(pledgeId)).isEqualTo(1);
+        assertThat(stateOf(pledgeId)).isEqualTo("COLLECTED");
     }
 
     // -----------------------------------------------------------------------
@@ -299,7 +282,7 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
         // sent, and a message sent only after the commit is lost when the process dies
         // in between. Recorded in the transaction, it is neither.
         assertThatThrownBy(() -> new TransactionTemplate(transactions).executeWithoutResult(status -> {
-                    pledges.confirm(pledgeId, backer.id(), null, null);
+                    payments.recordPaid(pledgeId, now());
                     throw new IllegalStateException("Something after the transition failed");
                 }))
                 .isInstanceOf(IllegalStateException.class);
@@ -397,21 +380,11 @@ class PledgeConfirmedEventTests extends AbstractIntegrationTest {
     }
 
     /**
-     * Confirmation as a backer sends it, through the idempotency machinery.
-     *
-     * <p>Over HTTP for one reason: the replay this suite has to rule out is one that
-     * never reaches {@link PledgeService} at all, so a test that called the service
-     * could not produce it.
+     * The provider's word that the backer paid, as {@code HostedChargeEvents} passes it on: in a
+     * transaction of its own, because {@code recordPaid} runs only inside the caller's.
      */
-    private ResponseEntity<String> confirmOverHttp(UUID pledgeId, String idempotencyKey) {
-        HttpHeaders headers = jsonHeaders();
-        headers.setBearerAuth(backer.accessToken());
-        headers.set("Idempotency-Key", idempotencyKey);
-        return rest.exchange(
-                "/v1/pledges/" + pledgeId + "/confirm",
-                HttpMethod.POST,
-                new HttpEntity<>(Map.of(), headers),
-                String.class);
+    private void pay(UUID pledgeId) {
+        new TransactionTemplate(transactions).executeWithoutResult(status -> payments.recordPaid(pledgeId, now()));
     }
 
     private static HttpHeaders jsonHeaders() {

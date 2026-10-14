@@ -155,7 +155,6 @@ alerted on.
 |---|---|---|
 | `ideanest_ledger_reconciliation_findings` | Discrepancies the last reconciliation found | `ReconciliationStatusSource` (#70) |
 | `ideanest_ledger_reconciliation_age_seconds` | Seconds since it last ran on this instance | the same |
-| `ideanest_payment_collection_attempts_total{outcome}` | Collection attempts, by what came of them | `CollectionMetrics` |
 | `ideanest_provider_available{provider}` | 1 when a provider answers, 0 when the breaker is open | `ProviderStatusSource` (#316) |
 | `ideanest_queue_waiting{queue}` / `ideanest_queue_dead{queue}` | Every queue on the platform | `QueueDepthSource` (#316) |
 | `ideanest_payment_hosted_sweep_settled_total{outcome}` | Payment pages `hosted-charge-sweep` settled because their callback never came: `collected` or `failed` | `HostedChargeMetrics` (#356) |
@@ -227,8 +226,6 @@ second rule beside it for the failure people forget:
 |---|---|
 | `LedgerImbalance` | The books do not reconcile |
 | `LedgerReconciliationStopped` | Nobody has checked for 36 hours, or ever on this fleet |
-| `CollectionFailureRate` | More than a quarter of collections failing over fifteen minutes |
-| `NoCollectionsAttempted` | The collection job publishing nothing at all |
 | `PaymentProviderUnavailable` | A breaker open for five minutes |
 | `QueueBacklog` / `QueueDeadLetters` | A queue that is not draining, and work that has been abandoned |
 

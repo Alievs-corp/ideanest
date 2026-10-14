@@ -225,7 +225,7 @@ class ReservationTests extends AbstractIntegrationTest {
         // Three asked for, two available. Two is not the answer: the backer was quoted
         // for three, would be charged for three, and the creator would be told to ship
         // three.
-        assertThatThrownBy(() -> reservations.draft(draftWithAddon(projectId, insertBacker(), addonId, 3), false))
+        assertThatThrownBy(() -> reservations.draft(draftWithAddon(projectId, insertBacker(), addonId, 3)))
                 .isInstanceOf(RewardSoldOutException.class);
 
         assertThat(reservedQuantity(addonId)).isZero();
@@ -233,7 +233,7 @@ class ReservationTests extends AbstractIntegrationTest {
 
         // And exactly two is still sold, so the refusal above was about the quantity
         // and not about the add-on being closed.
-        assertThatCode(() -> reservations.draft(draftWithAddon(projectId, insertBacker(), addonId, 2), false))
+        assertThatCode(() -> reservations.draft(draftWithAddon(projectId, insertBacker(), addonId, 2)))
                 .doesNotThrowAnyException();
         assertThat(reservedQuantity(addonId)).isEqualTo(2);
     }
@@ -272,8 +272,7 @@ class ReservationTests extends AbstractIntegrationTest {
                 null,
                 false,
                 null,
-                Identifiers.newIdentifier().toString()),
-                false);
+                Identifiers.newIdentifier().toString()));
 
         // §7.2 gives a pledge one reward_tier_id, so the reward is always one place;
         // PL-04 gives the add-on a quantity, so it is three.
@@ -298,12 +297,11 @@ class ReservationTests extends AbstractIntegrationTest {
                 null,
                 false,
                 null,
-                Identifiers.newIdentifier().toString()),
-                false);
+                Identifiers.newIdentifier().toString()));
         assertThat(reservedQuantity(addonId)).isEqualTo(4);
 
         // Somebody else cannot have one while this checkout is holding all four.
-        assertThatThrownBy(() -> reservations.draft(draftWithAddon(projectId, insertBacker(), addonId, 1), false))
+        assertThatThrownBy(() -> reservations.draft(draftWithAddon(projectId, insertBacker(), addonId, 1)))
                 .isInstanceOf(RewardSoldOutException.class);
 
         clock.advance(ttl().plusSeconds(1));
@@ -318,7 +316,7 @@ class ReservationTests extends AbstractIntegrationTest {
         assertThat(reservedQuantity(addonId)).isZero();
 
         // And they are genuinely back on sale, which is the whole point of the sweep.
-        assertThatCode(() -> reservations.draft(draftWithAddon(projectId, insertBacker(), addonId, 4), false))
+        assertThatCode(() -> reservations.draft(draftWithAddon(projectId, insertBacker(), addonId, 4)))
                 .doesNotThrowAnyException();
         assertThat(reservedQuantity(addonId)).isEqualTo(4);
     }
@@ -504,7 +502,7 @@ class ReservationTests extends AbstractIntegrationTest {
     private Race raceForAddonPlaces(UUID projectId, UUID addonId, int quantity, List<UUID> backers)
             throws InterruptedException {
 
-        return race(backers, backerId -> reservations.draft(draftWithAddon(projectId, backerId, addonId, quantity), false));
+        return race(backers, backerId -> reservations.draft(draftWithAddon(projectId, backerId, addonId, quantity)));
     }
 
     /**

@@ -57,7 +57,7 @@ public class BackerArchiveRows {
             p.id, p.project_id, p.state, p.reward_tier_id, p.currency,
             p.base_amount, p.addons_amount, p.bonus_amount, p.shipping_amount,
             p.tax_amount, p.total_amount,
-            p.is_anonymous, p.is_late_pledge,
+            p.is_anonymous,
             p.confirmed_at, p.canceled_at, p.created_at,
             (SELECT SUM(r.amount) FROM refunds r
               WHERE r.pledge_id = p.id
@@ -196,7 +196,6 @@ public class BackerArchiveRows {
                 // lines above it.
                 Money.of(row.getBigDecimal("total_amount"), currency),
                 row.getBoolean("is_anonymous"),
-                row.getBoolean("is_late_pledge"),
                 instantOf(row, "confirmed_at"),
                 instantOf(row, "canceled_at"),
                 instantOf(row, "created_at"),

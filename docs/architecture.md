@@ -521,8 +521,8 @@ and each entry needs a translation per supported locale.
 >
 > **Built (#37).** The status filter is *upcoming*, *live* (`LIVE`, `CLOSING_WINDOW`,
 > `EXTENDED`), *extended* (`EXTENDED`, also inside *live*) and *successful*; *late pledge*
-> and *unsuccessful* are no longer filter values, and a campaign left in `LATE_PLEDGE`
-> badges as *successful*. A card carries `closingSoon` and `extended` beside its badge;
+> and *unsuccessful* are no longer filter values. `LATE_PLEDGE` and `COLLECTING` are gone
+> (#45, V106): a campaign left in either was moved to `FULFILLING`, which badges as *successful*. A card carries `closingSoon` and `extended` beside its badge;
 > an extended card counts `daysLeft` to the extension's end. `UNSUCCESSFUL` stays in
 > `DiscoveryStatus.PUBLIC_STATES` — its page and rewards resolve — and is not in
 > `LISTED_STATES`, which every feed, search, suggestion, facet, explanation and collection
@@ -850,7 +850,7 @@ sequenceDiagram
 > **Everything below about PL-10 and PL-16 records what was built, and IDN-EXT-01 has
 > withdrawn both.** Pledges are accepted while the campaign is live, during the 7-day
 > window after the first deadline, and during an extension — and at no other time (#36).
-> The notes stay because the code does until stage 4 (#45) removes it.
+> The notes stay as the record of what was built; stage 4 (#45) removed the code.
 >
 > **PL-16, as #81 built it.** A campaign takes pledges in two windows and not one:
 > while it is `LIVE` and before its deadline, and again while it is `LATE_PLEDGE` and
@@ -877,11 +877,11 @@ sequenceDiagram
 > money nine months after it closed has customers rather than backers, and it has no
 > stock to sell them.
 >
-> **What is not built is the way in.** `COLLECTING → LATE_PLEDGE` is the only edge into
-> the state §6.1 draws, and the edge into `COLLECTING` is the batched collection of
-> epic #59 — blocked on #60. So the feature is complete and unreachable in production
-> until collection lands: a stub that let a creator declare their campaign collected
-> would be the platform claiming cards had been charged.
+> **What was never built is the way in.** `COLLECTING → LATE_PLEDGE` was the only edge into
+> the state, and nothing in production ever reached `COLLECTING`. #45 removed both states,
+> the two routes, `latePledgeEnabled`/`latePledgeEndsAt` and the pledge's `latePledge` flag;
+> `projects.late_pledge_enabled`, `late_pledge_ends_at` and `pledges.is_late_pledge` are no
+> longer read or written and wait for the contract migration that drops them.
 
 > **PL-13 used to say "Redis TTL", and #51 changed it after building the
 > feature**, exactly as #47 changed §7.3's PostGIS row. §7.2 had already
@@ -1268,11 +1268,12 @@ The most valuable and most complex module. It begins when funding closes.
 > introduce one. **No pledge state moves either** — §6.2's `FULFILLED` is reached from
 > `COLLECTED`, and marking a parcel delivered must not skip the charge.
 >
-> **#81 built late pledges (PM-23), and #36 switched them off** — the edge into `LATE_PLEDGE` is gone, so opening a window is refused. §4.5's PL-16 carries the design; what belongs
-> here is the shape of the creator's side. `POST /projects/{id}/late-pledges` takes the
-> `COLLECTING → LATE_PLEDGE` edge and names the date the window closes, and
-> `POST …/late-pledges/close` takes `LATE_PLEDGE → FULFILLING` and stops them. The
-> campaign's public page carries `latePledgeEnabled` and `latePledgeEndsAt`, because a
+> **#81 built late pledges (PM-23), #36 switched them off, and #45 removed them** — the routes,
+> the state and the fields below are gone. §4.5's PL-16 carries the design; what follows is the
+> creator's side as it was built. `POST /projects/{id}/late-pledges` took the
+> `COLLECTING → LATE_PLEDGE` edge and named the date the window closed, and
+> `POST …/late-pledges/close` took `LATE_PLEDGE → FULFILLING` and stopped them. The
+> campaign's public page carried `latePledgeEnabled` and `latePledgeEndsAt`, because a
 > visitor arriving after the deadline has to be able to see that there is still a way
 > in — the state alone does not say it, since a campaign can sit in `LATE_PLEDGE` with
 > the switch turned off.
@@ -2183,10 +2184,11 @@ is withdrawn.
 > failure reduces the payout, never the outcome.** The campaign page shows both
 > numbers, each labelled as what it is.
 >
-> What the job does *not* do is collect: §6.1 makes `SUCCESSFUL → COLLECTING` a
-> separate edge so that deciding and charging are two decisions with a durable
-> record between them, and #64 owns the second. Nor does it purge tokens, which
-> is `token-cleaner` on a thirty-day horizon rather than this job's minute.
+> What the job does *not* do is move money: every pledge was charged when it was made, a
+> successful campaign is withdrawn by its creator or automatically after 30 days, and an
+> unsuccessful one is refunded by `campaign-refunds`. Until #45 a successful campaign went
+> on to `SUCCESSFUL → COLLECTING`, the stored-card collection at close; the edge and the
+> state are gone.
 
 ### 5.2 Fees
 
@@ -2551,7 +2553,7 @@ there is a free tier.
 
 What counts against the campaign limit is a campaign that has left the creator's
 hands and not finished: `SUBMITTED`, `CHANGES_REQUESTED`, `APPROVED`,
-`SCHEDULED`, `LIVE`, `COLLECTING`, `LATE_PLEDGE`. Drafts do not count, and the
+`SCHEDULED`, `LIVE`, `CLOSING_WINDOW`, `EXTENDED`. Drafts do not count, and the
 campaign being submitted is excluded from its own count — otherwise a
 resubmission would refuse every creator on a one-campaign plan.
 
@@ -2729,10 +2731,14 @@ stateDiagram-v2
 > deadline and decides on D+8, and the direct `LIVE → SUCCESSFUL`/`UNSUCCESSFUL` edges are gone
 > from `ProjectStateMachine` — a campaign the sweep finds after its window already ended walks
 > both edges in one transaction rather than skipping the window. The extension is #34 and the
-> withdrawal #41; `SUCCESSFUL → COLLECTING` stays until #39.
-> V74 only *adds* — the three states, `extended_until` and `extension_used_at` — and the old
-> two stay in the database until stage 4 (#45), because expand-then-contract (CLAUDE.md)
-> forbids both in one release. `deadline` stays the *first* deadline: the seven-day window
+> withdrawal #41.
+> V74 only *added* — the three states, `extended_until` and `extension_used_at` — because
+> expand-then-contract (CLAUDE.md) forbids both in one release. **Stage 4 (#45) removed
+> `COLLECTING` and `LATE_PLEDGE`** from `ProjectState`, the machine and `projects.state`'s
+> check (V106). V106 first moves any campaign still in either to `FULFILLING`, the only edge out
+> of both, with a `SYSTEM` transition row whose note starts `V106`. `project_state_transitions`
+> keeps both names in its check, because its rows are history and are not rewritten; nothing
+> in the service loads such a row as an entity. `deadline` stays the *first* deadline: the seven-day window
 > and the D+60 limit are both measured from it, so an extension is its own column rather
 > than an overwrite.
 >
@@ -2779,8 +2785,11 @@ stateDiagram-v2
 > `CONFIRMED`, `CHARGE_PENDING`, `CHARGE_FAILED` and `DROPPED` leave the diagram, and there is
 > no edge from a paid pledge to `CANCELED_BY_BACKER`: a backer cannot cancel. A raise is not
 > an edge — the pledge stays `COLLECTED`. During the campaign its selection and total change once
-> the difference is paid (#171, §4.5); after the campaign it gains a supplement (§4.8). The removed states remain in
-> the code until stage 4 (#45); the notes below record why each was added.
+> the difference is paid (#171, §4.5); after the campaign it gains a supplement (§4.8). Stage 4
+> (#45) removed every edge into the four — the `confirm` route and the collection at close —
+> but the states stay in `PledgeState` and `pledges_state_known`: a pledge confirmed before
+> IDN-EXT-01 can still be `CONFIRMED`, and what to do with those backers is a decision rather
+> than a cleanup. The notes below record why each was added.
 >
 > **`DRAFT --> CANCELED_BY_BACKER` is new, and #56 added it while building
 > PL-10.** The diagram had one edge out of a draft that ends it —
@@ -3861,8 +3870,8 @@ load profile).
 |---|---|---|
 | `campaign-launcher` | Every minute | Takes a cleared campaign live at the launch time its creator chose. **Built (#389).** §6.1 has carried `APPROVED → SCHEDULED → LIVE` since the state machine was written and nothing performed it: `ProjectTransitionService.launch` was the only producer of `LIVE` and it needs somebody signed in to press something, so a creator who set a time for nine on Monday and was not at a keyboard at nine on Monday had a campaign that did not open. The sweep reads both `APPROVED` and `SCHEDULED`, because nothing sets the second state today and a job that read only it would find nothing for as long as that stayed true. Every minute, for the reason `campaign-finalizer` is: the interval is the gap between the moment a creator told their followers the campaign opens and the moment it does |
 | `campaign-finalizer` | Every minute | Determine success at the deadline |
-| `charge-processor` | Every minute | Opens the collection of campaigns that closed above goal, and makes §9.6's first attempt against the pledges it queues. **Built (#64).** The rate limit is §9.3's R-09 expressed as a batch per tick — a hundred charges a minute is roughly 1.7 requests a second, a figure a provider can be told in advance rather than one discovered by being throttled at a campaign's close. There is deliberately no sleeping inside a pass to smooth it further: a sleep would hold the job's lease, and a pass that outlasts its lease is joined by a second replica |
-| `charge-retry` | Every 6 hours | Retries failures within the window and drops what has run out of it. **Built (#65).** Six hours rather than a minute because §9.6's slots are at +24h, +72h and +5 days — nobody can tell an attempt made at 24:00 from one at 27:00. **Two jobs and not one**, for the reason §8.4 gives about splitting `reminder-sender` from `deadline-reminder`: `JobRunner` counts failures per job name, so one job doing both queues would let a database problem in the retry sweep back off the initial collection too. The drop is here rather than in a third job — it is the last row of the same table, at the same granularity, and it runs after the retries so a pledge whose final attempt is due in the same pass gets it |
+| ~~`charge-processor`~~ | — | **Removed by #45.** Opened the stored-card collection of campaigns that closed above goal and made §9.6's first attempt (#64). IDN-EXT-01 charges a pledge when it is made, so there is nothing to collect at close |
+| ~~`charge-retry`~~ | — | **Removed by #45.** Retried declined stored-card charges within §9.6's window and dropped what ran out of it (#65). V106 deleted both jobs' `scheduled_jobs` rows |
 | `payout-scheduler` | Daily | Prepare payouts once the hold elapses |
 | `reservation-cleaner` | Every minute | Release expired stock reservations: lapsed drafts, and since #171 the places a raise of a paid pledge held for a payment that did not arrive in the payment window. Since #174's review it also settles a raise whose charge settled without it (a rolling deployment's previous-release node): applied if it still can be, otherwise `UNAPPLIED` and refunded |
 | `search-indexer` | Event-driven plus nightly full | Keep the index current |
@@ -3873,7 +3882,7 @@ load profile).
 | `update-obligation-sweep` | Daily | §5.5's monthly clock (#437): warn the creators whose month is nearly up, and put the ones whose month is up in front of a moderator. **Two claims, each keyed to the due date it was made for**, so a reminder is sent once per cycle and an escalation happens once rather than every morning -- and a new due date re-arms both without anything having to clear a flag. Daily rather than by the minute because the obligation is monthly and the state a campaign page reads is a comparison rather than a column: a late pass shows the right thing on the page and only delays the warning. One obligation per transaction, never one pass per transaction |
 | `subscription-renewal-reminders` | Hourly, 09:00–20:00 Baku (#457) | Tell a creator their priced plan is due for renewal at each configured lead (three days and one day by default) and, once, that it lapsed (#450, §5.6). **Each lead owns the window down to the next smaller one**, so a plan first seen with twenty hours left is reminded once rather than twice in one morning, and a pass that misses a window costs that reminder rather than sending a burst. The `subscription_reminders` row is the claim, written with the outbox event. The lapse is bounded by a seven-day look-back, so the first deployment does not announce every plan that ever ran out. Not paused during maintenance: it records outbox events, and `notification-sender`, which delivers them, is what pauses |
 | `ledger-reconciliation` | Daily | Verify the balance invariant, compare to settlement |
-| `token-cleaner` | Daily | Purge tokens from unsuccessful campaigns |
+| ~~`token-cleaner`~~ | — | **Withdrawn (#45).** Would have purged stored card tokens; IDN-EXT-01 stores none |
 | `exchange-rate-refresh` | Hourly | §21.2's display currency (#327): fetch the central bank's publication and store what is new. **Hourly over a source that publishes daily is not a contradiction** — the hour is how quickly the platform notices a new publication, and eleven of the twelve passes write nothing because V59's unique index over `(source, base, quote, published_for)` already holds the day. An unreachable source is a `WARN` and not a thrown run: throwing would make `JobRunner` back the job off and eventually stop it, so a central bank's bad afternoon would permanently disable a feature whose failure mode is a missing figure. What makes that safe is the age check on the other side — a rate past `max-age` stops being offered, so a source that is genuinely gone takes the approximation off the screen within days |
 | `denormalization-sync` | Hourly | Correct cached counters |
 | `account-anonymiser` | Hourly | Anonymise accounts whose deletion grace period has elapsed |
@@ -4077,8 +4086,8 @@ collecting it.
 > first time here** — nothing in production moved them before, so §5.1 had been deciding on a
 > number no pledge changed; `CampaignTotals` adds a paid pledge in one statement. A payment that
 > arrives for a pledge whose hold already ended is posted and logged for a refund (#40).
-> `confirm` stays for the retired model until the web checkout moves (#44) and #45 removes it;
-> the collection jobs stay inert behind any provider that cannot collect stored cards.
+> `confirm` stayed for the retired model until the web checkout moved (#44), and #45 removed it
+> together with the collection jobs.
 >
 > **Built (#44), the checkout.** The review step's control now reads "Continue to payment"
 > (with §22.3's acknowledgement in its label when an agreement is published) and calls
@@ -4154,7 +4163,10 @@ sequenceDiagram
 > than nothing: it would make this path look finished and would have told clients
 > that cards were verified when no card was ever seen.
 >
-> What `POST /v1/pledges/{id}/confirm` does today is the rest of the diagram: §6.2's
+> **Removed by #45:** the `confirm` route and the `cardVerified` and `paymentMethodId` fields
+> the next three paragraphs describe.
+>
+> What `POST /v1/pledges/{id}/confirm` did is the rest of the diagram: §6.2's
 > `DRAFT → CONFIRMED`, and the reward tier's held place becoming a claimed one, in
 > one transaction. That is correct and complete on its own precisely because of what
 > this section already says — **no money moves at confirmation and no ledger entry
@@ -4296,9 +4308,10 @@ single-file change.
 > **Built (#61), and nothing implements it.** #60 has not chosen a provider, and §9.2
 > already says why no stub ships in the meantime: one that returned an approval "would
 > make this path look finished". So `PaymentProviders` finds no adapters in a deployed
-> environment, `CollectionRun` refuses to collect when it finds none, and that single
-> refusal is what keeps the batching, the circuit breaker, §9.6's schedule and the
-> ledger posting inert until there is something real behind them.
+> environment, `CollectionRun` refused to collect when it found none, and that single
+> refusal kept the batching, the circuit breaker, §9.6's schedule and the ledger posting
+> inert until there was something real behind them. #45 removed `CollectionRun` with the
+> rest of the stored-card collection.
 > `PaymentProviderBoundaryTests` asserts both halves — that no adapter is on the
 > production classpath, and that no module outside `payment` names a request or result
 > type, which is the checkable form of "changing provider is a single-file change".
@@ -4314,9 +4327,8 @@ single-file change.
 > it); `payout` is `/refund-request` against the card. Amounts go on the wire from the
 > `BigDecimal`, AZN only, and the cardholder's name is removed from every stored response.
 > **The start-up refusal above is lifted**: an adapter that cannot do R-01 to R-03 now
-> registers, and `PaymentProviders.collecting()` — not `primary()` — is what `CollectionRun`
-> uses, so the retired stored-card collection stays inert behind Epoint until #39 and #45
-> remove it. Configured as `ideanest.payment.provider.primary: EPOINT` with
+> registers. #45 then removed the stored-card calls from the port — `beginTokenization`,
+> `resolveTokenization`, `chargeStoredCard` — and R-01 to R-03 from `ProviderCapabilities`. Configured as `ideanest.payment.provider.primary: EPOINT` with
 > `ideanest.payment.epoint.{base-url,public-key,private-key,language}`; unset by default.
 > Epoint's callback carries no event id or timestamp, so a delivery is identified by
 > transaction, status and operation code, and deduplication rather than a replay window is
@@ -4654,7 +4666,7 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 >   `ideanest.payment.refunds.withhold-provider-fee` (`PAYMENT_REFUNDS_WITHHOLD_PROVIDER_FEE`,
 >   **false by default**) when the payment page is opened, which is the moment the backer has read
 >   the checkout, and the settled charge copies it from that page's row. A collection at close
->   (`CollectionRun`) is always taken under the old words. A refund reads its charge's flag, never
+>   (`CollectionRun`, removed by #45) was always taken under the old words. A refund reads its charge's flag, never
 >   today's setting. The setting is switched on only once the checkout, the terms and the refund
 >   notices say so, and once every node runs V101: a node of the release before reads `amount`
 >   alone and would send the withheld fee.
@@ -5065,8 +5077,6 @@ POST   /v1/projects/{id}/prelaunch
 POST   /v1/projects/{id}/submit
 POST   /v1/projects/{id}/launch
 POST   /v1/projects/{id}/cancel
-POST   /v1/projects/{id}/late-pledges        # WITHDRAWN by IDN-EXT-01: refused for every campaign since #36 (PROJECT_TRANSITION_NOT_ALLOWED); removed by #45
-POST   /v1/projects/{id}/late-pledges/close  # WITHDRAWN by IDN-EXT-01: still moves a campaign already in LATE_PLEDGE to FULFILLING; removed by #45
 POST   /v1/projects/{id}/extension           # IDN-EXT-01 (#34): creator only; once, D-7..D+7, 50%+, ends after D and no later than D+60. 409 EXTENSION_NOT_AVAILABLE {reason}; backers get CAMPAIGN_EXTENDED
 POST   /v1/projects/{id}/withdrawal          # IDN-EXT-01 (#41): 80%+, closes the campaign, requests the payout with the 14-day hold
 GET    /v1/projects/{id}/checklist
@@ -5097,7 +5107,6 @@ POST   /v1/collaborators/invitations/{token}/accept
 # Pledge
 POST   /v1/pledges/draft
 GET    /v1/pledges/{id}
-POST   /v1/pledges/{id}/confirm
 POST   /v1/pledges/{id}/payment          # IDN-EXT-01 (#39): hold the draft, open the payment page; paid → COLLECTED by webhook
 PATCH  /v1/pledges/{id}
 POST   /v1/pledges/{id}/raise            # #171: raise a COLLECTED pledge while the campaign takes pledges; opens the payment page for the difference, applied by webhook
@@ -7304,7 +7313,7 @@ window only.
 
 **Background work pauses.** The jobs that send money or messages out return
 `pausesDuringMaintenance() = true` and `JobRunner` does not claim them while a window
-is active: `charge-processor`, `charge-retry`, `campaign-refunds`,
+is active: `campaign-refunds`, `hosted-charge-sweep`,
 `ledger-reconciliation`, `notification-sender`, `notification-digest` and
 `reminder-sender`. Not claiming means no attempt is counted and no backoff starts;
 they resume on the first tick after the window. The outbox relay keeps running: it
@@ -7935,9 +7944,9 @@ animate), and the confirm control's own label carries the acceptance — one act
 rather than a tick beside a button, which is harder to click past and is not friction
 on the platform's most important conversion.
 
-`POST /v1/pledges/{id}/confirm` carries the **version** of the backer agreement the
-client showed, and the confirmation records an acceptance against it in the same
-transaction as the transition. A version rather than a boolean: a boolean would say
+`POST /v1/pledges/{id}/payment` carries the **version** of the backer agreement the
+client showed, and opening the payment records an acceptance against it in the same
+transaction that holds the draft for it (on `confirm` until #45 removed that route). A version rather than a boolean: a boolean would say
 the client ticked something, where what has to be recorded is which sentence the
 person read. A page left open across a publication sends the old number and is refused
 with `AGREEMENT_REQUIRED` (409), whose recovery is a reload.

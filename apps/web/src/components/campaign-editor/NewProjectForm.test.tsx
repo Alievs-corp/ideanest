@@ -38,7 +38,6 @@ const CREATED = {
   slug: 'a-field-recorder',
   state: 'DRAFT',
   title: 'A field recorder',
-  latePledgeEnabled: false,
   lockedFields: [],
   createdAt: '2026-08-15T09:00:00.000Z',
   updatedAt: '2026-08-15T09:00:00.000Z',

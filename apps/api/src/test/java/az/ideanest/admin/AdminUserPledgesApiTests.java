@@ -273,7 +273,7 @@ class AdminUserPledgesApiTests extends AbstractIntegrationTest {
         String unique = "pledges-creator" + SEQUENCE.incrementAndGet();
         return Campaigns.seed(dataSource, Campaigns.creator(dataSource, unique), unique)
                 .title(title)
-                .state("COLLECTING")
+                .state("FULFILLING")
                 .goal("100.00")
                 .insert();
     }

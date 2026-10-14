@@ -467,7 +467,6 @@ class PayriffPaymentProviderTests {
         assertThatThrownBy(() -> payriff.beginPayoutCardRegistration(
                         new PayoutCardRequest(UUID.randomUUID(), null, null, null, null)))
                 .isInstanceOf(UnsupportedOperationException.class);
-        assertThat(payriff.capabilities().supportsStoredCardCollection()).isFalse();
         assertThat(payriff.capabilities().partialRefund()).isTrue();
         assertThat(payriff.capabilities().supports("AZN")).isTrue();
     }
@@ -531,7 +530,7 @@ class PayriffPaymentProviderTests {
 
     private static PaymentProperties properties(PaymentProperties.Payriff payriff) {
         return new PaymentProperties(
-                new PaymentProperties.Provider("PAYRIFF"), null, null, null, null, null, null, payriff, null);
+                new PaymentProperties.Provider("PAYRIFF"), null, null, null, null, null, payriff, null);
     }
 
     private static PaymentLookup lookUp(String status) {

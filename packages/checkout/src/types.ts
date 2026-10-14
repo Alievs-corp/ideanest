@@ -212,41 +212,6 @@ export interface PledgeResponse {
   /** A decimal string. Units of `amounts.total`'s currency per ONE unit of `displayCurrency`. */
   displayRate?: string | null;
   /**
-   * What the backer said to charge later, echoed back. Null until #55 exists to
-   * give them one, and null on every pledge this build can make.
-   *
-   * Optional in the same way every nullable field here is, and read rather than
-   * assumed: the confirmation screen states whether a payment method was
-   * collected, and that sentence is only true for as long as somebody keeps
-   * remembering to change it. The field is the thing that stops it being a
-   * claim this client makes about a service it cannot see.
-   */
-  paymentMethodId?: string | null;
-  /**
-   * Whether §9.2's phase 1 happened — the verification authorisation, 3-D
-   * Secure, the stored token and the void.
-   *
-   * ALWAYS PRESENT, and `false` on every confirmed pledge the platform holds
-   * until #55 lands. Required rather than optional because the service writes it
-   * out unconditionally, and because a client that could read it as `undefined`
-   * would need a default — and the only safe default is the value the field
-   * exists to stop being guessed.
-   *
-   * IT DOES NOT MEAN A CHARGE SUCCEEDED OR FAILED. §9.2 moves no money at
-   * confirmation under any circumstances; collection is phase 2, at the close of
-   * a successful campaign, and belongs to epic #59.
-   */
-  cardVerified: boolean;
-  /**
-   * §4.5's PL-16: whether this pledge was taken after the campaign's deadline.
-   *
-   * Read-only in every sense. It is stamped from what `PledgeAcceptance` answered at the time
-   * and is deliberately NOT re-stamped by an edit — a backer changing their shirt size during
-   * a late-pledge window does not move their original pledge into the late column, because
-   * §5.1's funding decision was made from the number this flag divides.
-   */
-  latePledge: boolean;
-  /**
    * §4.8's PM-09 and PM-10 — what was bought against this pledge after the campaign closed.
    *
    * BESIDE THE PLEDGE AND NEVER INSIDE IT, which is why the amounts above do not include
@@ -353,8 +318,8 @@ export interface DraftPledgeRequest {
 /**
  * What paying for a draft sends.
  *
- * The same acknowledgement `ConfirmPledgeRequest` carries, because the payment endpoint makes
- * confirmation's refusals and records the backer agreement in its place. `successUrl` and
+ * The backer agreement's acknowledgement, which the retired confirm endpoint carried until #45:
+ * the payment endpoint makes confirmation's refusals and records the agreement in its place. `successUrl` and
  * `errorUrl` are where the provider sends the backer back; `language` is the page's, so the
  * provider's page speaks the one the backer was reading.
  */
@@ -384,7 +349,6 @@ export interface PledgeEdit {
   contribution?: Money;
   shippingCountry?: string | null;
   isAnonymous?: boolean;
-  paymentMethodId?: string | null;
 }
 
 export interface PledgeRaiseRequest {

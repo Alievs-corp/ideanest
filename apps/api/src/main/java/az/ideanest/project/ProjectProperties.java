@@ -16,7 +16,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param reminders how launch reminders are collected and sent
  * @param finalisation how often §5.1 is applied at the deadline, and to how many
  *     campaigns at once
- * @param latePledges how long a campaign may keep taking pledges after it closed
  * @param submissions how much of the moderation submission queue one request may read
  * @param directory how much of the console's campaign directory one request may read
  * @param launches how often campaigns whose launch time has arrived are taken live

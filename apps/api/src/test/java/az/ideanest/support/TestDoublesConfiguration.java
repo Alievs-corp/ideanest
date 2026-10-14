@@ -142,23 +142,4 @@ public class TestDoublesConfiguration {
     ScriptedPaymentProvider scriptedPaymentProvider() {
         return new ScriptedPaymentProvider();
     }
-
-    /**
-     * A stored card for every pledge, because {@code payment_methods} does not exist.
-     *
-     * <p>Replaces {@code UnavailableStoredCards}, which answers "there is no card on file"
-     * — true of the platform and fatal to any test of collection, since every attempt
-     * would fail with {@code payment_method_missing} before a provider was asked. #55 is
-     * what replaces it for real.
-     *
-     * <p>{@code @Primary} because {@code PaymentConfiguration} registers its own only
-     * {@code @ConditionalOnMissingBean}, and the condition is evaluated against the
-     * application context rather than this test configuration — so both can exist and the
-     * primary is what gets injected.
-     */
-    @Bean
-    @Primary
-    ScriptedStoredCards scriptedStoredCards() {
-        return new ScriptedStoredCards();
-    }
 }

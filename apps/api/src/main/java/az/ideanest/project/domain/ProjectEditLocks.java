@@ -120,8 +120,6 @@ public final class ProjectEditLocks {
         locked.put(ProjectState.CANCELED, afterLaunch());
         locked.put(ProjectState.SUCCESSFUL, afterLaunch());
         locked.put(ProjectState.UNSUCCESSFUL, afterLaunch());
-        locked.put(ProjectState.COLLECTING, afterLaunch());
-        locked.put(ProjectState.LATE_PLEDGE, afterLaunch());
         locked.put(ProjectState.FULFILLING, afterLaunch());
         locked.put(ProjectState.COMPLETED, afterLaunch());
 

@@ -39,8 +39,6 @@ import java.util.UUID;
  * @param isAnonymous §4.5's PL-12, as the backer set it. On their own list because it is
  *     the only place they can check what they chose — the public archive shows this pledge
  *     to nobody when it is true
- * @param latePledge §4.5's PL-16: taken after the campaign closed, in a window its creator
- *     reopened
  * @param project null when the campaign row no longer exists. The pledge is still served: it
  *     is the backer's money, and it is still theirs when the thing they backed has been
  *     removed
@@ -58,7 +56,6 @@ public record BackerPledgeSummary(
         UUID rewardTierId,
         String rewardTitle,
         boolean isAnonymous,
-        boolean latePledge,
         Instant confirmedAt,
         Instant canceledAt,
         Campaign project,
@@ -141,7 +138,6 @@ public record BackerPledgeSummary(
                 pledge.rewardTierId(),
                 entry.rewardTitle(),
                 pledge.anonymous(),
-                pledge.latePledge(),
                 pledge.confirmedAt(),
                 pledge.canceledAt(),
                 Campaign.of(entry.campaign()),

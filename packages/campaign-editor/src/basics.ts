@@ -75,7 +75,6 @@ export interface BasicsDraft {
   durationDays: string;
   /** The `datetime-local` value: local wall-clock time, no offset. */
   scheduledLaunchAt: string;
-  latePledgeEnabled: boolean;
   /**
    * The address as typed, which is not the same thing as the saved cover.
    *
@@ -111,8 +110,7 @@ export type BasicsField =
   | 'durationDays'
   | 'scheduledLaunchAt'
   | 'coverImage'
-  | 'videoMediaId'
-  | 'latePledgeEnabled';
+  | 'videoMediaId';
 
 export type BasicsErrors = Partial<Record<BasicsField, string>>;
 
@@ -134,7 +132,6 @@ export const BASICS_FIELDS: readonly BasicsField[] = [
   'scheduledLaunchAt',
   'coverImage',
   'videoMediaId',
-  'latePledgeEnabled',
 ];
 
 export function isBasicsField(value: string): value is BasicsField {
@@ -151,7 +148,6 @@ export function draftFromProject(project: ProjectEdit): BasicsDraft {
     currency: project.goal?.currency ?? DEFAULT_CURRENCY,
     durationDays: project.durationDays === null ? '' : (project.durationDays?.toString() ?? ''),
     scheduledLaunchAt: toDateTimeLocal(project.scheduledLaunchAt),
-    latePledgeEnabled: project.latePledgeEnabled,
     coverImageUrl: project.coverImage?.url ?? '',
     coverImage: project.coverImage ?? null,
     video: project.video ?? null,
@@ -393,9 +389,6 @@ export function patchForField(field: BasicsField, draft: BasicsDraft): ProjectPa
       const instant = fromDateTimeLocal(draft.scheduledLaunchAt);
       return instant === null ? null : { scheduledLaunchAt: instant };
     }
-
-    case 'latePledgeEnabled':
-      return { latePledgeEnabled: draft.latePledgeEnabled };
 
     case 'coverImage':
       return { coverImage: draft.coverImage };

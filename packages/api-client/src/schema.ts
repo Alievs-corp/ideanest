@@ -3220,22 +3220,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/pledges/{id}/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["pledgeConfirm"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/pledges/{id}/payment": {
         parameters: {
             query?: never;
@@ -3438,38 +3422,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["projectExtend"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/projects/{id}/late-pledges": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["projectOpenLatePledges"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/projects/{id}/late-pledges/close": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["projectCloseLatePledges"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4644,7 +4596,6 @@ export interface components {
             /** Format: date-time */
             confirmedAt?: string;
             isAnonymous?: boolean;
-            latePledge?: boolean;
             /** Format: uuid */
             pledgeId?: string;
             project?: components["schemas"]["Campaign"];
@@ -5081,12 +5032,6 @@ export interface components {
         };
         ConfirmEmailChangeRequest: {
             token: string;
-        };
-        ConfirmPledgeRequest: {
-            /** Format: int32 */
-            acknowledgedAgreementVersion?: number;
-            /** Format: uuid */
-            paymentMethodId?: string;
         };
         ConfirmTwoFactorRequest: {
             code: string;
@@ -6021,10 +5966,6 @@ export interface components {
         OpenDisputeRequest: {
             reason: string;
         };
-        OpenLatePledgesRequest: {
-            /** Format: date-time */
-            endsAt: string;
-        };
         Outcome: {
             /** Format: int32 */
             backersCount?: number;
@@ -6088,8 +6029,6 @@ export interface components {
             addons?: components["schemas"]["PledgeAddonBody"][];
             contribution?: components["schemas"]["Money"];
             isAnonymous?: boolean;
-            /** Format: uuid */
-            paymentMethodId?: string;
             /** Format: uuid */
             rewardTierId?: string;
             shippingCountry?: string;
@@ -6245,7 +6184,6 @@ export interface components {
             amounts?: components["schemas"]["Amounts"];
             /** Format: date-time */
             canceledAt?: string;
-            cardVerified?: boolean;
             /** Format: date-time */
             confirmedAt?: string;
             displayCurrency?: string;
@@ -6253,10 +6191,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             isAnonymous?: boolean;
-            latePledge?: boolean;
             latestRaise?: components["schemas"]["PledgeRaiseBody"];
-            /** Format: uuid */
-            paymentMethodId?: string;
             /** Format: uuid */
             projectId?: string;
             raisable?: boolean;
@@ -6412,9 +6347,6 @@ export interface components {
             goal?: components["schemas"]["Money"];
             /** Format: uuid */
             id?: string;
-            latePledgeEnabled?: boolean;
-            /** Format: date-time */
-            latePledgeEndsAt?: string;
             /** Format: date-time */
             launchedAt?: string;
             lockedFields?: string[];
@@ -6452,9 +6384,6 @@ export interface components {
             goal?: components["schemas"]["Money"];
             /** Format: uuid */
             id?: string;
-            latePledgeEnabled?: boolean;
-            /** Format: date-time */
-            latePledgeEndsAt?: string;
             /** Format: date-time */
             launchedAt?: string;
             outcome?: components["schemas"]["Outcome"];
@@ -6475,7 +6404,6 @@ export interface components {
             /** Format: int32 */
             durationDays?: number;
             goal?: components["schemas"]["Money"];
-            latePledgeEnabled?: boolean;
             risks?: string;
             /** Format: date-time */
             scheduledLaunchAt?: string;
@@ -7718,7 +7646,6 @@ export type SchemaCollectionPage = components['schemas']['CollectionPage'];
 export type SchemaCommentListResponse = components['schemas']['CommentListResponse'];
 export type SchemaCommentResponse = components['schemas']['CommentResponse'];
 export type SchemaConfirmEmailChangeRequest = components['schemas']['ConfirmEmailChangeRequest'];
-export type SchemaConfirmPledgeRequest = components['schemas']['ConfirmPledgeRequest'];
 export type SchemaConfirmTwoFactorRequest = components['schemas']['ConfirmTwoFactorRequest'];
 export type SchemaConsoleDashboardFigure = components['schemas']['ConsoleDashboardFigure'];
 export type SchemaConsoleDashboardPoint = components['schemas']['ConsoleDashboardPoint'];
@@ -7826,7 +7753,6 @@ export type SchemaNotificationResponse = components['schemas']['NotificationResp
 export type SchemaOAuthSignInRequest = components['schemas']['OAuthSignInRequest'];
 export type SchemaObligation = components['schemas']['Obligation'];
 export type SchemaOpenDisputeRequest = components['schemas']['OpenDisputeRequest'];
-export type SchemaOpenLatePledgesRequest = components['schemas']['OpenLatePledgesRequest'];
 export type SchemaOutcome = components['schemas']['Outcome'];
 export type SchemaOutcomes = components['schemas']['Outcomes'];
 export type SchemaOverride = components['schemas']['Override'];
@@ -9419,7 +9345,7 @@ export interface operations {
     submissionQueueSubmissions: {
         parameters: {
             query?: {
-                state?: "DRAFT" | "PRELAUNCH" | "SUBMITTED" | "CHANGES_REQUESTED" | "REJECTED" | "APPROVED" | "SCHEDULED" | "LIVE" | "CLOSING_WINDOW" | "EXTENDED" | "SUSPENDED" | "CANCELED" | "SUCCESSFUL" | "UNSUCCESSFUL" | "WITHDRAWN" | "COLLECTING" | "LATE_PLEDGE" | "FULFILLING" | "COMPLETED";
+                state?: "DRAFT" | "PRELAUNCH" | "SUBMITTED" | "CHANGES_REQUESTED" | "REJECTED" | "APPROVED" | "SCHEDULED" | "LIVE" | "CLOSING_WINDOW" | "EXTENDED" | "SUSPENDED" | "CANCELED" | "SUCCESSFUL" | "UNSUCCESSFUL" | "WITHDRAWN" | "FULFILLING" | "COMPLETED";
                 after?: string;
                 limit?: number;
             };
@@ -10151,7 +10077,7 @@ export interface operations {
     campaignDirectoryCampaigns: {
         parameters: {
             query?: {
-                state?: "DRAFT" | "PRELAUNCH" | "SUBMITTED" | "CHANGES_REQUESTED" | "REJECTED" | "APPROVED" | "SCHEDULED" | "LIVE" | "CLOSING_WINDOW" | "EXTENDED" | "SUSPENDED" | "CANCELED" | "SUCCESSFUL" | "UNSUCCESSFUL" | "WITHDRAWN" | "COLLECTING" | "LATE_PLEDGE" | "FULFILLING" | "COMPLETED";
+                state?: "DRAFT" | "PRELAUNCH" | "SUBMITTED" | "CHANGES_REQUESTED" | "REJECTED" | "APPROVED" | "SCHEDULED" | "LIVE" | "CLOSING_WINDOW" | "EXTENDED" | "SUSPENDED" | "CANCELED" | "SUCCESSFUL" | "UNSUCCESSFUL" | "WITHDRAWN" | "FULFILLING" | "COMPLETED";
                 creatorId?: string;
                 query?: string;
                 after?: string;
@@ -13518,34 +13444,6 @@ export interface operations {
             };
         };
     };
-    pledgeConfirm: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ConfirmPledgeRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-        };
-    };
     pledgePay: {
         parameters: {
             query?: never;
@@ -13887,54 +13785,6 @@ export interface operations {
                 "application/json": components["schemas"]["ExtendCampaignRequest"];
             };
         };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectEdit"];
-                };
-            };
-        };
-    };
-    projectOpenLatePledges: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OpenLatePledgesRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectEdit"];
-                };
-            };
-        };
-    };
-    projectCloseLatePledges: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description OK */
             200: {

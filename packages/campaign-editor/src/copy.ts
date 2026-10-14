@@ -240,8 +240,6 @@ const PROJECT_STATES = [
   'SUCCESSFUL',
   'UNSUCCESSFUL',
   'WITHDRAWN',
-  'COLLECTING',
-  'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
 ] as const satisfies readonly ProjectState[];
@@ -389,8 +387,6 @@ export interface BasicsPanelCopy {
   readonly durationHintLocked: string;
   readonly scheduledLaunch: string;
   readonly scheduledLaunchHint: string;
-  readonly latePledges: string;
-  readonly latePledgesHint: string;
   readonly validation: BasicsValidationCopy;
   readonly cover: CoverImageCopy;
   readonly video: CampaignVideoCopy;
@@ -447,8 +443,6 @@ export function basicsPanelCopyFrom(t: CampaignEditorTranslator): BasicsPanelCop
     durationHintLocked: t('basics.durationHintLocked'),
     scheduledLaunch: t('basics.scheduledLaunch'),
     scheduledLaunchHint: t('basics.scheduledLaunchHint'),
-    latePledges: t('basics.latePledges'),
-    latePledgesHint: t('basics.latePledgesHint'),
     validation: basicsValidationCopyFrom(t),
     cover: coverImageCopyFrom(t),
     video: campaignVideoCopyFrom(t),

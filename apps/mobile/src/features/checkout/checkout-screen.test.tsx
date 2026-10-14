@@ -77,8 +77,6 @@ function draft(): PledgeResponse {
     amounts: { base: { amount: '45.00', currency: 'AZN' }, addons: zero, bonus: zero, shipping: zero, tax: zero, total: { amount: '45.00', currency: 'AZN' } },
     isAnonymous: false,
     reservationExpiresAt: new Date(Date.now() + 300_000).toISOString(),
-    cardVerified: false,
-    latePledge: false,
     supplements: [],
   };
 }

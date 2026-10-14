@@ -46,23 +46,20 @@ import org.hibernate.generator.EventType;
  *
  * <p><strong>What is deliberately absent</strong> is every transition except the
  * ones that are built. #51 owns nothing to {@link PledgeState#DRAFT} and
- * {@code DRAFT} to {@link PledgeState#EXPIRED}; #52 adds {@link #confirm}, which is
- * §6.2's {@code DRAFT --> CONFIRMED}; #56 adds {@link #edit}, which moves no state at
- * all, and {@link #cancelByBacker}, which is {@code CANCELED_BY_BACKER}; #103 adds
+ * {@code DRAFT} to {@link PledgeState#EXPIRED}; #39 adds {@link #paid}, which is
+ * IDN-EXT-01's {@code DRAFT --> COLLECTED}; #56 adds {@link #edit}, which moves no state
+ * at all, and {@link #cancelByBacker}, which is {@code CANCELED_BY_BACKER}; #103 adds
  * {@link #cancelByProject}, which is what a halted campaign does to every pledge on
- * it; #76 adds {@link #upgradeTo}, which moves no state at all.
+ * it; #76 adds {@link #upgradeTo}, which moves no state at all; #40 and #175 add
+ * {@link #refunded} and {@link #chargedBack}.
  *
- * <p><strong>#64 and #65 add the collection edges</strong> —
- * {@link #queueForCollection}, {@link #collected}, {@link #chargeFailed} and
- * {@link #dropped}, which are §6.2's {@code CONFIRMED → CHARGE_PENDING → COLLECTED},
- * the {@code CHARGE_FAILED} loop between them, and the {@code DROPPED} that ends it.
- * {@link #chargeUnresolved} is not on that diagram and moves no state: it is a
- * provider that has taken the instruction and not answered, which §9.6 has no row for
- * because §9.6 is about cards that were refused.
- *
- * <p>The refund of an already-collected pledge (#67) and the chargeback (#68) are
- * still absent, and setters that let any caller move the state would be a state
- * machine with no rules in it.
+ * <p><strong>The stored-card model's edges are gone (#45).</strong> {@code DRAFT -->
+ * CONFIRMED} and the collection at close — {@code CONFIRMED → CHARGE_PENDING →
+ * COLLECTED}, the {@code CHARGE_FAILED} loop and {@code DROPPED} — were removed with the
+ * collection run. The four states stay in {@link PledgeState}, because pledges confirmed
+ * before IDN-EXT-01 may still be in {@code CONFIRMED} and every row has to stay readable;
+ * nothing moves a pledge into any of them any more. Setters that let any caller move the
+ * state would be a state machine with no rules in it.
  */
 @Entity
 @Table(name = "pledges")
@@ -145,18 +142,11 @@ public class Pledge {
     @Column(name = "display_rate")
     private BigDecimal displayRate;
 
-    /** No reference yet: {@code payment_methods} is #55, blocked on #60. See V17. */
-    @Column(name = "payment_method_id")
-    private UUID paymentMethodId;
-
     @Column(name = "shipping_country")
     private String shippingCountry;
 
     @Column(name = "is_anonymous", nullable = false)
     private boolean anonymous;
-
-    @Column(name = "is_late_pledge", nullable = false)
-    private boolean latePledge;
 
     @Column(name = "referrer_code")
     private String referrerCode;
@@ -192,37 +182,6 @@ public class Pledge {
     /** Also when a lapsed reservation was released; see V17. */
     @Column(name = "canceled_at")
     private Instant canceledAt;
-
-    /**
-     * §9.6: how many collection attempts have been made, counted from zero.
-     *
-     * <p>A counter and not a log. What each attempt <em>was</em> — its decline code, its
-     * provider identifier, the moment it happened — is a {@code transactions} row, which
-     * V41 made append-only precisely so that this column can be a number nobody has to
-     * trust as evidence. What it is used for is the schedule: §9.6 gives the fourth
-     * attempt a different notification from the second, and the window a bound.
-     *
-     * <p>Advanced only when the platform learns something. A provider that could not be
-     * reached does not cost a backer one of their four attempts — see
-     * {@code CollectionRun}.
-     */
-    @Column(name = "charge_attempts", nullable = false)
-    private int chargeAttempts;
-
-    /** §9.6: when the next attempt may be made. Null unless this pledge is queued. */
-    @Column(name = "next_charge_attempt_at")
-    private Instant nextChargeAttemptAt;
-
-    /**
-     * §9.6's seven days: when the platform stops trying and the pledge is dropped.
-     *
-     * <p>Frozen when the pledge is queued rather than computed from the campaign's
-     * deadline on every read, so that shortening the configured window does not
-     * retroactively drop pledges that were inside it when their backer was last told
-     * about them. V42 has the argument.
-     */
-    @Column(name = "charge_window_ends_at")
-    private Instant chargeWindowEndsAt;
 
     @Version
     @Column(name = "version", nullable = false)
@@ -314,45 +273,7 @@ public class Pledge {
         pledge.referrerCode = draft.referrerCode();
         pledge.idempotencyKey = draft.idempotencyKey();
         pledge.reservationExpiresAt = draft.reservationExpiresAt();
-        // §4.5's PL-16 (#81). Decided when the campaign was asked whether it takes
-        // pledges at all, and stamped here rather than later: the campaign's window can
-        // close between this draft and its confirmation, and a pledge that changed
-        // which total it counted towards while the backer was typing their address
-        // would be one nobody could explain.
-        pledge.latePledge = draft.latePledge();
         return pledge;
-    }
-
-    /**
-     * §6.2's {@code DRAFT --> CONFIRMED}: the backer is committed.
-     *
-     * <p><strong>Nothing has been charged.</strong> §9.2 is explicit that no money
-     * moves at confirmation and that no ledger entry is written — the card is
-     * verified and the verification is voided, and the charge happens at the close of
-     * a successful campaign. Today not even the verification happens: it needs a
-     * payment provider, which is #55 and is blocked on #60.
-     *
-     * <p>The reservation's expiry is deliberately left where it is rather than
-     * cleared. V17 gives the argument: it is a true statement about the window the
-     * backer actually had, and requiring every transition to clear it would be one
-     * more thing each of them has to remember for no reader's benefit. What
-     * {@code reservationExpiresAt} means to a client is handled where the response is
-     * built, which is the only place that knows a confirmed pledge holds no
-     * reservation.
-     *
-     * @param paymentMethodId what the backer said to charge later, or null until #55
-     *     exists to give them one. No foreign key — see V17
-     * @throws IllegalStateException when this pledge is not a draft. The service
-     *     refuses first, with something a client can act on; this is the entity
-     *     holding its own invariant against a caller that did not ask
-     */
-    public void confirm(Instant at, UUID paymentMethodId) {
-        if (state != PledgeState.DRAFT) {
-            throw new IllegalStateException("A pledge in " + state + " cannot be confirmed");
-        }
-        this.state = PledgeState.CONFIRMED;
-        this.confirmedAt = Objects.requireNonNull(at, "A confirmation happened at a time");
-        this.paymentMethodId = paymentMethodId;
     }
 
     /**
@@ -374,13 +295,6 @@ public class Pledge {
     }
 
     /**
-     * §6.2's {@code DRAFT → COLLECTED}, as IDN-EXT-01 draws it (#39): the provider says the backer
-     * paid.
-     *
-     * <p>One instant for both columns, because under the charge-now model they are one event: the
-     * pledge is confirmed by being paid for. {@code CONFIRMED} is never passed through.
-     */
-    /**
      * §6.2's {@code COLLECTED → REFUNDED} (IDN-EXT-01, #40): the backer's money went back in full.
      */
     public void refunded() {
@@ -401,6 +315,13 @@ public class Pledge {
         this.state = PledgeState.CHARGEBACK;
     }
 
+    /**
+     * §6.2's {@code DRAFT → COLLECTED}, as IDN-EXT-01 draws it (#39): the provider says the backer
+     * paid.
+     *
+     * <p>One instant for both columns, because under the charge-now model they are one event: the
+     * pledge is confirmed by being paid for. {@code CONFIRMED} is never passed through.
+     */
     public void paid(Instant at) {
         if (state != PledgeState.DRAFT) {
             throw new IllegalStateException("A pledge in " + state + " cannot be paid for");
@@ -409,7 +330,6 @@ public class Pledge {
         this.state = PledgeState.COLLECTED;
         this.confirmedAt = at;
         this.collectedAt = at;
-        this.chargeAttempts = chargeAttempts + 1;
     }
 
     /**
@@ -439,8 +359,6 @@ public class Pledge {
      *
      * @param rewardTierId the tier after the edit, or null for a pledge that has
      *     given up its reward and is now support only
-     * @param paymentMethodId what to charge later, echoed unchanged when the backer
-     *     did not name a new one. Nothing resolves it until #55
      * @throws IllegalStateException when this pledge is in a state no backer may
      *     change. The service refuses first, with something a client can act on;
      *     this is the entity holding its own invariant against a caller that did not
@@ -450,8 +368,7 @@ public class Pledge {
             PledgeQuote quote,
             UUID rewardTierId,
             String shippingCountry,
-            boolean anonymous,
-            UUID paymentMethodId) {
+            boolean anonymous) {
 
         if (!state.isEditable()) {
             throw new IllegalStateException("A pledge in " + state + " cannot be edited");
@@ -467,7 +384,6 @@ public class Pledge {
         this.currency = quote.currency();
         this.shippingCountry = shippingCountry;
         this.anonymous = anonymous;
-        this.paymentMethodId = paymentMethodId;
     }
 
     /**
@@ -610,144 +526,6 @@ public class Pledge {
         this.canceledAt = Objects.requireNonNull(at, "A cancellation happened at a time");
     }
 
-    /**
-     * §6.2's {@code CONFIRMED → CHARGE_PENDING}: the campaign succeeded and this pledge
-     * is queued for collection.
-     *
-     * <p><strong>The bulk path does not come through here.</strong> A campaign with four
-     * thousand backers is queued by one conditional {@code UPDATE} —
-     * {@code PledgeRepository#queueConfirmedPledges} — because loading four thousand
-     * entities to move each one's state is four thousand round trips inside the
-     * transaction that opens a campaign's collection. This exists for the single-pledge
-     * case and, more usefully, so that the invariant lives on the entity where a reader
-     * looks for it.
-     *
-     * @param firstAttemptAt when the first attempt may be made. §9.6's first row is
-     *     "immediately after close", so in practice the pass's own instant
-     * @param windowEndsAt §9.6's seven days. See {@link #getChargeWindowEndsAt()}
-     * @throws IllegalStateException when this pledge is not confirmed. Every other state
-     *     is deliberate rather than an oversight: a draft never committed, a cancelled
-     *     pledge is over, and one already queued or collected must not have its attempt
-     *     count reset — which is what queuing it a second time would do
-     */
-    public void queueForCollection(Instant firstAttemptAt, Instant windowEndsAt) {
-        if (state != PledgeState.CONFIRMED) {
-            throw new IllegalStateException("A pledge in " + state + " cannot be queued for collection");
-        }
-        Objects.requireNonNull(firstAttemptAt, "A queued pledge has a first attempt");
-        Objects.requireNonNull(windowEndsAt, "§9.6 bounds the window; a pledge queued without one is never dropped");
-        if (windowEndsAt.isBefore(firstAttemptAt)) {
-            throw new IllegalArgumentException("A retry window that ends before it starts drops the pledge at once");
-        }
-        this.state = PledgeState.CHARGE_PENDING;
-        this.chargeAttempts = 0;
-        this.nextChargeAttemptAt = firstAttemptAt;
-        this.chargeWindowEndsAt = windowEndsAt;
-    }
-
-    /**
-     * §6.2's {@code CHARGE_PENDING → COLLECTED}: the card was charged.
-     *
-     * <p><strong>The schedule is cleared, and V42's constraint is why it must be.</strong>
-     * A collected pledge that kept a {@code next_charge_attempt_at} would be picked up by
-     * the next pass and charged again; the database refuses the row rather than trusting
-     * this method to remember.
-     *
-     * @param at when the charge was approved. {@code transactions.created_at} is written
-     *     in the same commit, so the two cannot disagree
-     */
-    public void collected(Instant at) {
-        requireBeingCollected();
-        this.state = PledgeState.COLLECTED;
-        this.collectedAt = Objects.requireNonNull(at, "A collection happened at a time");
-        this.chargeAttempts = chargeAttempts + 1;
-        this.nextChargeAttemptAt = null;
-        this.chargeWindowEndsAt = null;
-    }
-
-    /**
-     * §6.2's {@code CHARGE_PENDING → CHARGE_FAILED}, and the self-edge back from it: the
-     * provider refused, and §9.6 says when to try again.
-     *
-     * <p>The attempt is counted here and nowhere else, which is what makes "this backer
-     * has had three of their four attempts" a number rather than an estimate.
-     *
-     * @param nextAttemptAt the next slot in §9.6's schedule. Never null even on the last
-     *     attempt — V42 refuses a queued pledge with no schedule, and the pledge stays
-     *     queued until the window elapses and {@link #dropped} ends it. A pledge that is
-     *     out of attempts is one whose next slot falls past its window
-     */
-    public void chargeFailed(Instant nextAttemptAt) {
-        requireBeingCollected();
-        this.state = PledgeState.CHARGE_FAILED;
-        this.chargeAttempts = chargeAttempts + 1;
-        this.nextChargeAttemptAt = Objects.requireNonNull(nextAttemptAt, "A failed attempt is followed by another");
-    }
-
-    /**
-     * The provider accepted the instruction and has not decided: come back to the
-     * <em>same</em> attempt later.
-     *
-     * <p><strong>The attempt is deliberately not counted.</strong> §9.6 gives a backer
-     * four chances at their card, and an answer nobody has received yet is not one of
-     * them. Keeping the number where it is also keeps the idempotency key where it is —
-     * see {@code CollectionRun} — so the next call asks the provider about the charge it
-     * already has rather than making a second one.
-     *
-     * <p>The state does not move either. {@code CHARGE_FAILED} would say the card was
-     * refused, which is precisely what is not known.
-     */
-    public void chargeUnresolved(Instant recheckAt) {
-        requireBeingCollected();
-        this.nextChargeAttemptAt = Objects.requireNonNull(recheckAt, "An unresolved charge is asked about again");
-    }
-
-    /**
-     * §6.2's {@code CHARGE_FAILED → DROPPED}: §9.6's seven days elapsed.
-     *
-     * <p>The end of the line for this pledge, and the reason §9.6's rule that success is
-     * "decided at the deadline and never revisited" matters: dropping a pledge reduces
-     * what the creator is paid and does not reopen the question of whether the campaign
-     * funded.
-     *
-     * <p><strong>A dropped pledge does not give its reward place back.</strong> That is
-     * deliberate, and it is the decision §4.11's AD-02 already makes about a halted
-     * campaign: the tier's remaining count is a fact about a campaign that has closed,
-     * and crediting it would make a sold-out tier look available on a page nobody can
-     * pledge from. The pledge manager (#72) is where a creator decides what to do with
-     * the place.
-     */
-    public void dropped(Instant at) {
-        requireBeingCollected();
-        this.state = PledgeState.DROPPED;
-        this.canceledAt = Objects.requireNonNull(at, "A pledge stopped being active at a time");
-        this.nextChargeAttemptAt = null;
-        this.chargeWindowEndsAt = null;
-    }
-
-    /** Whether this pledge is queued for collection or waiting on §9.6's next attempt. */
-    public boolean isBeingCollected() {
-        return state == PledgeState.CHARGE_PENDING || state == PledgeState.CHARGE_FAILED;
-    }
-
-    /** Whether §9.6's window has run out as of {@code now}. */
-    public boolean isPastItsChargeWindow(Instant now) {
-        return isBeingCollected() && chargeWindowEndsAt != null && !chargeWindowEndsAt.isAfter(now);
-    }
-
-    /**
-     * The guard the four collection transitions share.
-     *
-     * <p>One method rather than four copies, because the set of states from which a
-     * collection may move is the rule — and a copy of it that drifts is a pledge
-     * collected twice or refunded from a state that never charged.
-     */
-    private void requireBeingCollected() {
-        if (!isBeingCollected()) {
-            throw new IllegalStateException("A pledge in " + state + " is not being collected");
-        }
-    }
-
     /** Whether this pledge is still holding a place. */
     public boolean isDraft() {
         return state == PledgeState.DRAFT;
@@ -869,20 +647,12 @@ public class Pledge {
         this.displayRate = displayRate;
     }
 
-    public UUID getPaymentMethodId() {
-        return paymentMethodId;
-    }
-
     public String getShippingCountry() {
         return shippingCountry;
     }
 
     public boolean isAnonymous() {
         return anonymous;
-    }
-
-    public boolean isLatePledge() {
-        return latePledge;
     }
 
     public String getReferrerCode() {
@@ -903,19 +673,6 @@ public class Pledge {
 
     public Instant getCollectedAt() {
         return collectedAt;
-    }
-
-    /** §9.6: how many attempts have been made. See the field. */
-    public int getChargeAttempts() {
-        return chargeAttempts;
-    }
-
-    public Instant getNextChargeAttemptAt() {
-        return nextChargeAttemptAt;
-    }
-
-    public Instant getChargeWindowEndsAt() {
-        return chargeWindowEndsAt;
     }
 
     public Instant getCanceledAt() {

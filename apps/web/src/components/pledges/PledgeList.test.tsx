@@ -44,7 +44,6 @@ function summary(id: string, state: string): BackerPledgeSummary {
     rewardTierId: null,
     rewardTitle: null,
     isAnonymous: false,
-    latePledge: false,
     confirmedAt: null,
     canceledAt: null,
     project: {

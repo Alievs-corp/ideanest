@@ -167,8 +167,6 @@ public class ProjectEditingService {
         patch.scheduledLaunchAt().ifPresent(project::setScheduledLaunchAt);
         patch.coverImage().ifPresent(selection -> project.setCoverImage(resolveCover(selection, accountId)));
         patch.videoMediaId().ifPresent(mediaId -> replaceVideo(project, accountId, mediaId));
-        patch.latePledgeEnabled()
-                .ifPresent(enabled -> project.setLatePledgeEnabled(requireBoolean(enabled)));
         patch.durationDays().ifPresent(days -> project.setDurationDays(validDuration(days)));
         patch.goal().ifPresent(goal -> applyGoal(project, goal));
 
@@ -283,8 +281,7 @@ public class ProjectEditingService {
                 || patch.durationDays().isPresent()
                 || patch.scheduledLaunchAt().isPresent()
                 || patch.coverImage().isPresent()
-                || patch.videoMediaId().isPresent()
-                || patch.latePledgeEnabled().isPresent()) {
+                || patch.videoMediaId().isPresent()) {
             needed.add(Capability.EDIT_BASICS);
         }
         return needed;
@@ -465,13 +462,6 @@ public class ProjectEditingService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private static boolean requireBoolean(Boolean value) {
-        if (value == null) {
-            throw new ProjectFieldRejectedException("latePledgeEnabled", "Late pledging is either on or off.");
-        }
-        return value;
     }
 
     /**

@@ -60,7 +60,7 @@ class HealthEndpointTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("the metrics endpoint answers the scraper, with §8.4's three conditions in it")
+    @DisplayName("the metrics endpoint answers the scraper, with §8.4's alert families in it")
     void metricsAnswerTheScraper() {
         ResponseEntity<String> response = rest.withBasicAuth("prometheus", "scrape-me")
                 .getForEntity("/actuator/prometheus", String.class);
@@ -69,10 +69,10 @@ class HealthEndpointTests extends AbstractIntegrationTest {
 
         String body = response.getBody();
         assertThat(body).isNotNull();
-        // The three §8.4 alerts read these three families. A rename that broke `alerts.yml`
-        // would otherwise be invisible until the night somebody needed the alert.
+        // The §8.4 alerts read these families. A rename that broke `alerts.yml` would
+        // otherwise be invisible until the night somebody needed the alert. The collection
+        // attempts family went with the stored-card collection (#45), and its alert with it.
         assertThat(body).contains("ideanest_ledger_reconciliation_findings");
-        assertThat(body).contains("ideanest_payment_collection_attempts_total");
         assertThat(body).contains("ideanest_queue_waiting");
     }
 

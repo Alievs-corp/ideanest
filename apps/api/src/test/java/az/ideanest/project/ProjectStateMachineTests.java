@@ -60,11 +60,9 @@ class ProjectStateMachineTests {
             EXTENDED          -> WITHDRAWN, SUCCESSFUL, UNSUCCESSFUL, SUSPENDED, CANCELED
             SUSPENDED         ->
             CANCELED          ->
-            SUCCESSFUL        -> COLLECTING, WITHDRAWN
+            SUCCESSFUL        -> WITHDRAWN
             UNSUCCESSFUL      ->
             WITHDRAWN         -> FULFILLING
-            COLLECTING        -> FULFILLING
-            LATE_PLEDGE       -> FULFILLING
             FULFILLING        -> COMPLETED
             COMPLETED         ->
             """;

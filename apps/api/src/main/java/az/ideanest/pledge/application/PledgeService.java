@@ -6,24 +6,16 @@ import az.ideanest.pledge.domain.PledgeAddon;
 import az.ideanest.pledge.infrastructure.PledgeAddonRepository;
 import az.ideanest.pledge.infrastructure.PledgeRepository;
 import az.ideanest.project.application.PledgeAcceptance;
-import az.ideanest.shared.legal.AgreementInForce;
-import az.ideanest.shared.legal.AgreementKind;
-import az.ideanest.shared.legal.Agreements;
-import az.ideanest.shared.outbox.Outbox;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * What a backer does with a pledge: make one, read it, confirm it, change it, and
- * withdraw it.
+ * What a backer does with a pledge: make one, read it, change it, and withdraw it.
  *
  * <p>§4.5's flow, minus the two halves that belong elsewhere. Reserving the places,
  * pricing the selection and moving places from one tier to another are
@@ -54,31 +46,20 @@ import org.springframework.transaction.annotation.Transactional;
  * and the only part of it this module may see. {@code ModuleBoundaryTests} fails the
  * build over the alternative.
  *
- * <p><strong>Nothing here charges anything.</strong> §9.2 is explicit: at
- * confirmation the card is verified and the verification is voided, no money moves,
- * and no ledger entry is written. Today not even the verification happens — see
- * {@link PledgeCapability#CARD_VERIFICATION}, which names the issue that owns it.
- *
- * <p><strong>{@link #confirm} is the one method here that announces anything</strong>
- * (#235). It records {@link PledgeConfirmedEvent} through §8.3's outbox, in the
- * transaction that performs the transition — see that method for why it is there and
- * nowhere else. The draft, the edit and the cancellation announce nothing yet, and
- * each is a separate piece of work with a consumer behind it rather than an event
- * recorded because it would be symmetrical.
+ * <p><strong>Nothing here charges anything.</strong> A pledge is paid for on the
+ * provider's page — {@code PledgeCheckout} opens it and {@code PledgePayments} settles it,
+ * recording {@link PledgeConfirmedEvent} there. Until #45 this class also had
+ * {@code confirm}, the stored-card model's {@code DRAFT --> CONFIRMED} with nothing
+ * charged; IDN-EXT-01 retired it and #45 removed it.
  */
 @Service
 public class PledgeService {
-
-    private static final Logger log = LoggerFactory.getLogger(PledgeService.class);
 
     private final ReservationService reservations;
     private final PledgeAcceptance acceptance;
     private final PledgeRepository pledges;
     private final PledgeAddonRepository addons;
     private final PledgeDetails details;
-    private final Outbox outbox;
-    private final DisplayRates displayRates;
-    private final Agreements agreements;
     private final Clock clock;
 
     public PledgeService(
@@ -87,18 +68,12 @@ public class PledgeService {
             PledgeRepository pledges,
             PledgeAddonRepository addons,
             PledgeDetails details,
-            Outbox outbox,
-            DisplayRates displayRates,
-            Agreements agreements,
             Clock clock) {
         this.reservations = reservations;
         this.acceptance = acceptance;
         this.pledges = pledges;
         this.addons = addons;
         this.details = details;
-        this.outbox = outbox;
-        this.displayRates = displayRates;
-        this.agreements = agreements;
         this.clock = clock;
     }
 
@@ -122,7 +97,7 @@ public class PledgeService {
         acceptance.requireAcceptingPledges(command.projectId());
         // Never a late pledge: IDN-EXT-01 (#36) switched them off, so every pledge counts
         // towards the goal the campaign is judged on. The flag goes with stage 4 (#45).
-        return detailOf(reservations.draft(command, false));
+        return detailOf(reservations.draft(command));
     }
 
     /**
@@ -135,182 +110,6 @@ public class PledgeService {
     public PledgeDetail read(UUID pledgeId, UUID backerId) {
         return detailOf(pledges.findOwned(pledgeId, backerId)
                 .orElseThrow(() -> new PledgeNotFoundException(pledgeId)));
-    }
-
-    /**
-     * {@code POST /v1/pledges/{id}/confirm}: §6.2's {@code DRAFT --> CONFIRMED}.
-     *
-     * <p><strong>Two things happen, and they are one transaction.</strong> The held
-     * places become claimed ones and the pledge becomes {@code CONFIRMED}. Either
-     * alone is a lie: a confirmed pledge against places still counted as merely
-     * reserved is one the sweep would give away if it ever saw the row as a draft
-     * again, and claimed places against a pledge still in {@code DRAFT} are stock
-     * nobody will ever release.
-     *
-     * <p><strong>Every place the pledge holds, which since #203 is the add-ons as
-     * well as the reward.</strong> The move itself is
-     * {@link ReservationService#confirm}, where the other four stock paths live; what
-     * is left here is the three refusals below and the read of the add-on lines, which
-     * are needed by the move and by the response and are read once for both. The move
-     * per tier is one statement, not a release followed by a claim —
-     * {@code RewardTierRepository#commitPlaces} carries the argument for why the tier
-     * must never be momentarily short.
-     *
-     * <p><strong>What §9.2 says happens here and does not yet.</strong> Phase 1 of
-     * card-on-file is a verification authorisation, 3-D Secure, storing the token and
-     * the scheme transaction identifier, and voiding the authorisation. It is
-     * {@link PledgeCapability#CARD_VERIFICATION} — #55, blocked on #60 — and it is
-     * absent rather than stubbed. What §9.2 also says, and what makes the rest of
-     * this correct without it, is that <em>no money moves at confirmation and no
-     * ledger entry is written</em>: the charge is phase 2, at the close of a
-     * successful campaign. So this transition commits a backer to a campaign, and
-     * that is all it has ever done.
-     *
-     * <p>{@code paymentMethodId} is accepted and stored so that the shape a client
-     * sends does not change when #55 lands. Nothing resolves it, nothing validates
-     * it, and the response says {@code cardVerified: false} rather than letting a
-     * client infer otherwise.
-     *
-     * <p><strong>The third thing that happens, and it is the same transaction
-     * (#235).</strong> {@link PledgeConfirmedEvent} is recorded through §8.3's outbox,
-     * so the row that says the pledge is confirmed and the row that says so to
-     * everybody else are written by one commit. That is the entire reason the outbox
-     * exists — {@code Outbox} is {@code MANDATORY} precisely so that this cannot
-     * accidentally be recorded next to the transaction rather than inside it — and it
-     * is what makes a consumer's answer unable to disagree with the pledge it is
-     * about. Until this landed the pledge module announced nothing at all, and
-     * {@code analytics}' attribution listener, built and tested against a real
-     * outbox, saw no traffic in production.
-     *
-     * <p><strong>After the transition, and on the path that transitions.</strong>
-     * Before it, the event would describe a confirmation that the three refusals below
-     * may still prevent. And the two ways a confirmation is replayed both miss this
-     * line, which is what makes it record once per pledge rather than once per
-     * request: an ordinary retry carries the same {@code Idempotency-Key} and is
-     * answered by {@code shared.idempotency} without this method running at all, and a
-     * client that lost its key and sent a fresh one arrives at a pledge that is no
-     * longer a {@code DRAFT} and is refused above. Neither reaches here. The outbox's
-     * own delivery is separately at-least-once, which is the consumer's problem and is
-     * the contract {@code OutboxMessage} states.
-     *
-     * <p><strong>The fourth thing that happens, and it is also the same transaction
-     * (#427).</strong> §22.3 requires that "rewards are not guaranteed" is stated within the
-     * pledge flow, and the sentence has been in the catalogues since #324 — what was missing
-     * was the record that anybody saw it. So the confirmation carries the version of the
-     * backer agreement the client showed, and an acceptance is written against it here.
-     *
-     * <p>At confirmation and not at registration, because the risk is a risk about
-     * <em>this</em> campaign and <em>this</em> reward. A statement accepted at sign-up,
-     * months earlier, on a platform the person was only browsing, is a statement nobody read
-     * about a thing that did not exist yet. It is also the moment §9.2 makes a commitment:
-     * nothing is charged, and the pledge counts towards whether the campaign succeeds.
-     *
-     * @param acknowledgedVersion the version of the backer agreement the client showed, or
-     *     null when it showed none. Compared against the version in force rather than
-     *     trusted, so a checkout page left open across a publication is refused and reloaded
-     *     rather than recording an acknowledgement of a sentence nobody read
-     * @throws PledgeNotFoundException when the pledge is not this backer's
-     * @throws PledgeNotDraftException when it is not in {@code DRAFT} — §10.4's
-     *     {@code PLEDGE_NOT_DRAFT}
-     * @throws ReservationExpiredException when its five minutes ran out — §10.4's
-     *     {@code RESERVATION_EXPIRED}
-     * @throws BackerAgreementRequiredException when a backer agreement is in force and the
-     *     request did not acknowledge that version — §10.4's {@code AGREEMENT_REQUIRED}
-     */
-    @Transactional
-    public PledgeDetail confirm(UUID pledgeId, UUID backerId, UUID paymentMethodId, Integer acknowledgedVersion) {
-        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
-
-        Pledge pledge = pledges.findOwned(pledgeId, backerId)
-                .orElseThrow(() -> new PledgeNotFoundException(pledgeId));
-
-        if (!pledge.isDraft()) {
-            throw new PledgeNotDraftException(pledgeId, pledge.getState());
-        }
-        if (pledge.hasLapsed(now)) {
-            // The clock decides, not the state: §8.4's sweep runs every minute and
-            // the backer does not, so a draft whose window closed forty seconds ago
-            // is still DRAFT in the table. Confirming it would commit a place the
-            // tier has already promised to give back. See ReservationExpiredException
-            // for why it is not expired here as well.
-            throw new ReservationExpiredException(pledgeId, pledge.getReservationExpiresAt());
-        }
-
-        // Read once and used twice: the places to commit, and the lines the response
-        // reports. Reading them again afterwards would let what was committed and what
-        // was answered describe two different selections.
-        List<PledgeAddon> heldAddons = addons.findByPledge(pledgeId);
-
-        Pledge confirmed = reservations.confirm(pledge, heldAddons, now, paymentMethodId);
-
-        /*
-         * §22.3's acknowledgement (#427), recorded in this transaction.
-         *
-         * <p>After the transition and before the outbox, which is the same position and the
-         * same argument the event has: before it, an acceptance would be recorded against a
-         * confirmation the three refusals above may still prevent, and a person would be on
-         * record as having acknowledged a risk they never took.
-         *
-         * <p>The refusal is here rather than at the top of the method for the same reason.
-         * A backer whose reservation lapsed forty seconds ago should be told that, not told
-         * to re-read a sentence about a pledge they can no longer make.
-         *
-         * <p>Nothing happens when no backer agreement has been published, which is this
-         * repository's state until #439 seeds the text. `Agreements` argues why the legal
-         * gates fail open where the subscription gate fails closed: a platform refusing every
-         * confirmation until somebody writes a document is worse than one that starts asking
-         * the day the document exists.
-         */
-        Optional<AgreementInForce> required = agreements.inForce(AgreementKind.BACKER_AGREEMENT);
-        if (required.isPresent()) {
-            AgreementInForce agreement = required.get();
-            if (acknowledgedVersion == null || acknowledgedVersion != agreement.version()) {
-                // A mismatch is a stale checkout page, and it is the case worth refusing:
-                // the client acknowledged a sentence that is no longer the one in force.
-                throw new BackerAgreementRequiredException(pledgeId, agreement, acknowledgedVersion);
-            }
-            agreements.accept(backerId, agreement);
-        }
-
-        /*
-         * §21.2's rate retention (#327): "the rate used is stored on the pledge, for audit".
-         *
-         * <p>Resolved here rather than taken from the request, and that is the choice worth
-         * defending. What §21.2 wants recorded is the approximation the backer was shown, and
-         * the client is the thing that showed it — so the obvious design is for the checkout
-         * to send back the rate it drew. It is also the design in which the one number nobody
-         * can check is supplied by the party with an interest in it: a client that sent a
-         * different rate would produce a pledge whose audit record says the platform quoted a
-         * figure it never quoted.
-         *
-         * <p>The server reads the same hourly cache the display read, so the two agree except
-         * across an hour boundary — and across one, the server's answer is the one that can be
-         * reconciled against `exchange_rates`. `DisplayRates` returns nothing at all when the
-         * backer reads amounts in the campaign's own currency, which is most of them.
-         */
-        displayRates
-                .forBacker(backerId, confirmed.getCurrency())
-                .ifPresent(rate -> confirmed.recordDisplayRate(rate.currency(), rate.rate()));
-
-        // In this transaction, which is the whole guarantee. The instant is read back
-        // off the row rather than taken from `now` again, so the event and
-        // `pledges.confirmed_at` cannot come to two answers about when this happened.
-        UUID eventId = outbox.record(
-                PledgeConfirmedEvent.AGGREGATE_TYPE,
-                confirmed.getId(),
-                PledgeConfirmedEvent.EVENT_TYPE,
-                PledgeConfirmedEvent.of(confirmed));
-
-        // The two identifiers together, which is what lets an incident be traced from
-        // a pledge to the event it produced and back. No amount and no backer: a log
-        // line about a pledge should not be a record of what somebody spent.
-        log.debug("Pledge {} confirmed; recorded outbox event {}.", confirmed.getId(), eventId);
-
-        // Assembled from the lines this method already read rather than through
-        // PledgeDetails, which would read them a second time inside the same
-        // transaction. A confirmation cannot have supplements: they are bought after
-        // the campaign closed and this pledge was a draft a moment ago.
-        return new PledgeDetail(confirmed, heldAddons, List.of(), List.of());
     }
 
     /**
@@ -444,14 +243,13 @@ public class PledgeService {
             throw new PledgeNotEditableException(pledge.getId(), pledge.getState());
         }
         if (refuseALapsedDraft && pledge.hasLapsed(now)) {
-            // The clock decides, not the state — confirm()'s reason, unchanged. A
-            // draft whose window closed forty seconds ago is still DRAFT in the
-            // table, and editing it would re-price a place the tier has already
-            // promised to give back.
+            // The clock decides, not the state: §8.4's sweep runs every minute and the
+            // backer does not, so a draft whose window closed forty seconds ago is still
+            // DRAFT in the table, and editing it would re-price a place the tier has
+            // already promised to give back.
             throw new ReservationExpiredException(pledge.getId(), pledge.getReservationExpiresAt());
         }
         // Whether the campaign still takes pledges — live, in its seven days, or extended.
-        // An edit re-prices a pledge and never re-stamps `is_late_pledge`.
         acceptance.requireAcceptingPledges(pledge.getProjectId());
     }
 

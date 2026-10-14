@@ -118,7 +118,7 @@ is there to make that visible.
 
 **26 campaigns**, chosen so that every state in the lifecycle has at least one
 row behind it — 13 `LIVE` between 15% and 171% funded, plus `SUCCESSFUL`,
-`UNSUCCESSFUL`, `COLLECTING`, `LATE_PLEDGE`, `FULFILLING`, `COMPLETED`,
+`UNSUCCESSFUL`, `WITHDRAWN`, `FULFILLING`, `COMPLETED`,
 `DRAFT`, `PRELAUNCH`, `SUBMITTED`, `SCHEDULED`, `SUSPENDED` and `CANCELED`.
 
 A demo where everything is `LIVE` hides exactly the screens that are hardest to

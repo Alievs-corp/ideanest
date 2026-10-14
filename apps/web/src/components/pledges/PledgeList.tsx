@@ -176,7 +176,6 @@ export function PledgeList({ copy }: PledgeListProps) {
                     {pledgeStateLabel(pledge.state, copy.states)}
                   </Tag>
                   {pledge.isAnonymous && <Tag>{copy.anonymous}</Tag>}
-                  {pledge.latePledge && <Tag>{copy.latePledge}</Tag>}
                   {pledge.refundAwaitingBankTransfer != null && (
                     <Tag variant="warning">{copy.refundPending}</Tag>
                   )}

@@ -276,7 +276,7 @@ describe('which controls are offered', () => {
     expect(screen.getByText(C.heading)).toBeTruthy();
   });
 
-  it.each(['WITHDRAWN', 'UNSUCCESSFUL', 'COLLECTING', 'SUSPENDED'])('draws nothing for %s', async (state) => {
+  it.each(['WITHDRAWN', 'UNSUCCESSFUL', 'FULFILLING', 'SUSPENDED'])('draws nothing for %s', async (state) => {
     api.readOverview.mockResolvedValueOnce(read({ state }));
     await show();
     expect(screen.queryByText(C.heading)).toBeNull();

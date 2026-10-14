@@ -26,7 +26,7 @@ import { PressableScale, Tag, useFocusRing, type IconComponent, type TagVariant 
 export const URGENT_DAYS = 2;
 
 interface StateBadge {
-  /** A key under `campaign.state`. COLLECTING and WITHDRAWN read as funded, as on the web. */
+  /** A key under `campaign.state`. WITHDRAWN reads as funded, as on the web. */
   readonly labelKey: keyof typeof STATE_KEYS;
   readonly icon: IconComponent;
   readonly variant: TagVariant;
@@ -37,8 +37,6 @@ const STATE_KEYS = {
   PRELAUNCH: true,
   LIVE: true,
   SUCCESSFUL: true,
-  COLLECTING: true,
-  LATE_PLEDGE: true,
   FULFILLING: true,
   COMPLETED: true,
   UNSUCCESSFUL: true,
@@ -53,8 +51,6 @@ export const STATE_BADGES: Partial<Record<ProjectState, StateBadge>> = {
   PRELAUNCH: { labelKey: 'PRELAUNCH', icon: Glyphs.Calendar, variant: 'default' },
   LIVE: { labelKey: 'LIVE', icon: Glyphs.RecordCircle, variant: 'default' },
   SUCCESSFUL: { labelKey: 'SUCCESSFUL', icon: Glyphs.TickCircle, variant: 'success' },
-  COLLECTING: { labelKey: 'SUCCESSFUL', icon: Glyphs.TickCircle, variant: 'success' },
-  LATE_PLEDGE: { labelKey: 'LATE_PLEDGE', icon: Glyphs.Timer1, variant: 'warning' },
   FULFILLING: { labelKey: 'FULFILLING', icon: Glyphs.Timer1, variant: 'success' },
   COMPLETED: { labelKey: 'COMPLETED', icon: Glyphs.TickCircle, variant: 'success' },
   UNSUCCESSFUL: { labelKey: 'UNSUCCESSFUL', icon: Glyphs.Slash, variant: 'default' },

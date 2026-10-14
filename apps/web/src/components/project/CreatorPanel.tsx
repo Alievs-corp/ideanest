@@ -95,8 +95,6 @@ const STATE_KEYS: ReadonlySet<CreatorProject['state']> = new Set([
   'PRELAUNCH',
   'LIVE',
   'SUCCESSFUL',
-  'COLLECTING',
-  'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
   'UNSUCCESSFUL',

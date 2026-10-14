@@ -31,9 +31,6 @@ import java.util.UUID;
  *     only place they can check what they chose — the public archive shows this pledge to
  *     nobody when it is true, and a setting whose effect is invisible is a setting nobody
  *     trusts
- * @param latePledge §4.5's PL-16: whether this was taken after the campaign closed, in a
- *     window its creator reopened. Read from the row rather than derived from the
- *     campaign's state, which will have moved on by the time anybody looks
  * @param createdAt when the pledge was made. The key {@link BackerCursor} pages on, and it
  *     is not serialised: {@code confirmedAt} is the date a backer means, and a draft that
  *     was never confirmed has no date worth showing
@@ -57,7 +54,6 @@ public record BackerPledge(
         Money tax,
         Money total,
         boolean anonymous,
-        boolean latePledge,
         Instant confirmedAt,
         Instant canceledAt,
         Instant createdAt,

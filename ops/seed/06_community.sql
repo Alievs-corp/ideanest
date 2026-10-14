@@ -212,7 +212,7 @@ SELECT seed_id('save:' || p.slug || ':' || u.id::text), p.id, u.id,
        now() - ((1 + (seed_rand('save:' || p.slug || u.id::text) * 60)::int) || ' days')::interval
 FROM projects p
 CROSS JOIN (SELECT id FROM users WHERE email LIKE 'backer%@example.az') u
-WHERE p.state IN ('LIVE', 'LATE_PLEDGE', 'PRELAUNCH', 'SCHEDULED')
+WHERE p.state IN ('LIVE', 'PRELAUNCH', 'SCHEDULED')
   AND seed_rand('save:' || p.slug || u.id::text) < 0.09
 ON CONFLICT (project_id, user_id) DO NOTHING;
 

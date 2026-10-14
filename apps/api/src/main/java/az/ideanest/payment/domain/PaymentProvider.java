@@ -12,35 +12,19 @@ import java.util.Map;
  * the primary is unavailable on the day a large campaign closes, the entire business
  * stops", and a second provider is only a day's work if the first one's vocabulary
  * never leaked. The moment a decline code, a currency-in-minor-units, or a status
- * string from one provider reaches the collection run, the second integration becomes
+ * string from one provider reaches the payment module, the second integration becomes
  * a rewrite of everything that touched it.
  *
  * <p>{@code PaymentProviderBoundaryTests} checks the rule rather than restating it,
  * the same way {@code ModuleBoundaryTests} checks §16.1's.
- *
- * <h2>Nothing implements this yet, and that is the honest state</h2>
- *
- * <p>#60 — choose the payment provider and confirm §9.3's fourteen capabilities in
- * writing — is unanswered, and §9.2 says plainly why no stub ships in the meantime:
- * an adapter that returned an approval "would be worse than nothing: it would make
- * this path look finished and would have told clients that cards were verified when
- * no card was ever seen". The same argument applies with more force to
- * {@link #chargeStoredCard}, which moves real money.
- *
- * <p>So {@code PaymentProviders} finds no adapters in a deployed environment, and
- * {@code CollectionRun} refuses to start when it finds none. That refusal is the
- * single gate that keeps every piece of machinery built on top of this interface —
- * the batching, the circuit breaker, §9.6's schedule, the ledger posting — inert
- * until there is a real provider behind it, rather than half-working against a
- * pretend one.
  *
  * <h2>What an implementation must guarantee</h2>
  *
  * <ul>
  *   <li><strong>It is a translator, not a decision maker.</strong> An adapter maps
  *       one call to one provider request and one provider response to one result. It
- *       does not retry — §9.6 owns the schedule and a hidden retry inside an adapter
- *       is a second charge nobody counted. It does not consult the database, does not
+ *       does not retry — a hidden retry inside an adapter is a second charge nobody
+ *       counted. It does not consult the database, does not
  *       write a transaction row, and does not post to the ledger.
  *   <li><strong>A refusal is a value; not being able to ask is a throw.</strong> See
  *       {@link ChargeResult} and {@link ProviderUnavailableException} for why the two
@@ -48,58 +32,14 @@ import java.util.Map;
  *   <li><strong>Card data never leaves it.</strong> §17.2 targets SAQ A. Anything a
  *       provider returns is redacted inside the adapter before it becomes a
  *       {@code rawResponse}, because that string is stored and logged.
- *   <li><strong>It is stateless and thread-safe.</strong> The collection run charges a
- *       batch concurrently; a single bean serves all of it.
+ *   <li><strong>It is stateless and thread-safe.</strong> A single bean serves every
+ *       payment page, refund and payout concurrently.
  * </ul>
  */
 public interface PaymentProvider {
 
     /** Which provider this adapter speaks to. The value stored on every row it produces. */
     ProviderName name();
-
-    /**
-     * §9.2's phase one: verify a card and create a stored token, with the backer
-     * present and 3-D Secure in the loop.
-     *
-     * <p>Returns a session rather than a token because the answer is not knowable
-     * synchronously — there is a human being and an issuer in the middle. #55 owns the
-     * caller.
-     *
-     * @throws ProviderUnavailableException when the provider could not be reached
-     */
-    TokenizationSession beginTokenization(TokenizationRequest request);
-
-    /**
-     * The other half of phase one: what the session came to, once the backer has been
-     * through it.
-     *
-     * <p>Asked by the return leg of the redirect and again by any reconciliation, so it
-     * must be safe to ask repeatedly — a session that has resolved keeps resolving to
-     * the same answer.
-     *
-     * @param sessionId {@link TokenizationSession#sessionId()}
-     * @throws ProviderUnavailableException when the provider could not be reached
-     */
-    TokenizationResult resolveTokenization(String sessionId);
-
-    /**
-     * §9.2's phase two: collect at the campaign's close, without the customer present.
-     *
-     * <p><strong>The call the platform's whole design rests on.</strong> §9.3's R-02
-     * and R-03 are what make it legal and acceptable to the schemes — the charge is
-     * merchant-initiated and chained to the original customer-initiated authorisation
-     * carried on {@link StoredCard#schemeTransactionId()} — and
-     * {@code PaymentProviders} refuses to register an adapter whose
-     * {@link #capabilities()} do not claim both.
-     *
-     * <p>Must be idempotent on {@link StoredCardChargeRequest#idempotencyKey()}: R-08
-     * is on §9.3's list precisely so that a request whose answer was lost can be
-     * repeated without charging a backer twice.
-     *
-     * @throws ProviderUnavailableException when the provider could not be reached, or
-     *     answered something that cannot be read. <strong>Never for a decline</strong>
-     */
-    ChargeResult chargeStoredCard(StoredCardChargeRequest request);
 
     /**
      * §9.7's reversal, in full or in part. #67 owns the caller.
@@ -141,8 +81,8 @@ public interface PaymentProvider {
     /**
      * IDN-EXT-01's payment (#38): begin a charge the backer makes on the provider's own page.
      *
-     * <p>A default that refuses, so an adapter for the retired stored-card model need not
-     * pretend to support it. #39 is the caller.
+     * <p>A default that refuses, so a test adapter that never opens a page need not pretend
+     * to. #39 is the caller.
      *
      * @throws ProviderUnavailableException when the provider could not be reached, or refused to
      *     begin — which, before a card has been seen, is a configuration fault and not a decline
@@ -184,9 +124,8 @@ public interface PaymentProvider {
     /**
      * What this provider can do, from §9.3's table.
      *
-     * <p>Read at start-up by {@code PaymentProviders}, which refuses an adapter that
-     * cannot do R-01, R-02 and R-03 — see {@link ProviderCapabilities} for why that
-     * check is at start-up and not at the first charge.
+     * <p>Read for the currencies a provider settles in and whether it refunds in part; see
+     * {@link ProviderCapabilities}.
      */
     ProviderCapabilities capabilities();
 }

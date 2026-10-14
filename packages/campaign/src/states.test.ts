@@ -7,7 +7,7 @@ import { RENDERABLE_STATES, isRenderableState } from './states';
  * draft never reaches either.
  */
 describe('RENDERABLE_STATES', () => {
-  it('is the twelve public states', () => {
+  it('is the ten public states', () => {
     expect([...RENDERABLE_STATES].sort()).toEqual(
       [
         'PRELAUNCH',
@@ -15,8 +15,6 @@ describe('RENDERABLE_STATES', () => {
         'CANCELED',
         'SUCCESSFUL',
         'UNSUCCESSFUL',
-        'COLLECTING',
-        'LATE_PLEDGE',
         'FULFILLING',
         'COMPLETED',
         'CLOSING_WINDOW',

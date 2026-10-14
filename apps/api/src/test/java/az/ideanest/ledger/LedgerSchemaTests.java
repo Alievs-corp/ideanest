@@ -343,7 +343,7 @@ class LedgerSchemaTests extends AbstractIntegrationTest {
         if (sharedPledgeId == null) {
             UUID creatorId = Campaigns.creator(dataSource, "ledger-schema");
             UUID projectId = Campaigns.seed(dataSource, creatorId, "ledger-schema")
-                    .state("COLLECTING")
+                    .state("FULFILLING")
                     .goal("100.00")
                     .insert();
             sharedPledgeId = Pledges.confirmed(dataSource, projectId, "ledger-schema-b", "100.00");

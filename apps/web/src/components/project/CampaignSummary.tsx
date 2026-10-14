@@ -63,40 +63,34 @@ import {
 const URGENT_DAYS = 2;
 
 interface StateBadge {
-  /**
-   * A key into `campaign.state`, not a word.
-   *
-   * `COLLECTING` deliberately shares `SUCCESSFUL`'s key rather than having one of its own:
-   * it is an internal fact about where §6.1 has got to, and what a visitor needs to know is
-   * that the campaign funded. The comment above explains the rest of the mapping.
-   */
+  /** A key into `campaign.state`, not a word. The comment below explains the mapping. */
   readonly labelKey: string;
   readonly icon: ReactNode;
   readonly variant: 'default' | 'success' | 'warning' | 'danger';
 }
 
 /**
- * The twelve public states, as a word a reader recognises.
+ * The ten public states, as a word a reader recognises.
  *
- * Deliberately not the raw state name. `COLLECTING` and `FULFILLING` are internal facts
- * about where a campaign is in §6.1; what a visitor needs to know is that it funded and
- * the money is being taken. `CANCELED` is its own word rather than "unsuccessful", because
+ * Deliberately not the raw state name. `FULFILLING` is an internal fact about where a
+ * campaign is in §6.1; what a visitor needs to know is that it funded and the rewards are
+ * on their way. `CANCELED` is its own word rather than "unsuccessful", because
  * a campaign somebody stopped and a campaign that missed its goal are different things and
  * the backers of each were told different things.
  *
  * IDN-EXT-01 (#44) adds three. `CLOSING_WINDOW` is the week after the first deadline, when the
  * campaign still takes pledges and the catalogue badges it "Closing soon" (#37) — the same word
  * here, so a card and the page it opens agree. `EXTENDED` is the one extension. `WITHDRAWN` is a
- * campaign whose creator has taken the money: to a backer it funded, and it shares
- * `SUCCESSFUL`'s word for `COLLECTING`'s reason. Each key is its own in the catalogue so a
- * translator can tell them apart.
+ * campaign whose creator has taken the money: to a backer it funded, and its word is
+ * `SUCCESSFUL`'s. Each key is its own in the catalogue so a translator can tell them apart.
+ *
+ * #45 removed `COLLECTING` and `LATE_PLEDGE`. The second was tagged "Late pledges open" while
+ * nothing was offered (#255); IDN-EXT-01 rule 1.6 has no late pledges, so neither has a tag.
  */
 const BADGES: Partial<Record<ProjectState, StateBadge>> = {
   PRELAUNCH: { labelKey: 'PRELAUNCH', icon: <CalendarClock className="size-3.5" />, variant: 'default' },
   LIVE: { labelKey: 'LIVE', icon: <CircleDot className="size-3.5" />, variant: 'default' },
   SUCCESSFUL: { labelKey: 'SUCCESSFUL', icon: <CircleCheck className="size-3.5" />, variant: 'success' },
-  COLLECTING: { labelKey: 'SUCCESSFUL', icon: <CircleCheck className="size-3.5" />, variant: 'success' },
-  LATE_PLEDGE: { labelKey: 'LATE_PLEDGE', icon: <Hourglass className="size-3.5" />, variant: 'warning' },
   FULFILLING: { labelKey: 'FULFILLING', icon: <Hourglass className="size-3.5" />, variant: 'success' },
   COMPLETED: { labelKey: 'COMPLETED', icon: <CircleCheck className="size-3.5" />, variant: 'success' },
   UNSUCCESSFUL: { labelKey: 'UNSUCCESSFUL', icon: <CircleSlash className="size-3.5" />, variant: 'default' },

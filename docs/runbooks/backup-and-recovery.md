@@ -204,9 +204,10 @@ IDEANEST_BACKUP_AGE_RECIPIENT=age1...        # public key only
    `pg_stat_archiver.last_archived_wal` and `failed_count` decide, in one line,
    whether the archive is complete up to the failure. Write them into the
    incident record before doing anything that changes them.
-4. **Stop the workers before the API.** §8.4's jobs write. `charge-processor` in
-   particular moves money, and a job that runs against a database you are about
-   to rewind is a charge that exists at the provider and not in the ledger.
+4. **Stop the workers before the API.** §8.4's jobs write. `campaign-refunds` and
+   `hosted-charge-sweep` in particular move or settle money, and a job that runs
+   against a database you are about to rewind is a refund or a payment that exists
+   at the provider and not in the ledger.
 
 ---
 
@@ -242,7 +243,7 @@ corruption was written.
 | Restore into a **new** cluster | On-call, alone | Always safe. Costs money and nothing else. **Start this while the rest is being decided** |
 | Point the application at the recovered cluster (failover) | **Incident lead**, and not the person performing the restore | This is the irreversible step: from here, writes to the old primary are lost |
 | Choose a recovery target that discards committed data | **Incident lead plus one engineer**, both named in the incident record | It is §17.2's dual approval applied to the same kind of harm |
-| Resume `charge-processor` after a rewind | **Incident lead**, after [§10.3](#103-payments-after-a-rewind) reconciliation | Never automatic |
+| Resume `campaign-refunds` and `hosted-charge-sweep` after a rewind | **Incident lead**, after [§10.3](#103-payments-after-a-rewind) reconciliation | Never automatic |
 | Tell backers and creators | Incident lead, with whoever owns communications | [§11](#11-communication) |
 
 The split in row three exists because the person who has just spent forty
@@ -413,7 +414,7 @@ hand afterwards is often possible.
 `ledger_imbalance_detected_total > 0` is a **P0** (§18.3) and it is not
 automatically a restore.
 
-1. **Freeze money.** Stop `charge-processor`, `charge-retry` and
+1. **Freeze money.** Stop `campaign-refunds`, `hosted-charge-sweep` and
    `payout-scheduler`. Nothing that moves money runs while the ledger is
    suspect.
 2. **Identify the offending transactions:**
@@ -515,7 +516,7 @@ the one that was lost.
 3. **Idempotency keys are rewound.** §17.2 retains them 24 hours. A client
    retrying a payment mutation whose key is no longer in the table will have the
    work **executed again rather than replayed**. This is the reason
-   `charge-processor` stays stopped until §10.3 is done.
+   `campaign-refunds` and `hosted-charge-sweep` stay stopped until §10.3 is done.
 4. **Scheduled job leases are stale.** `scheduled_jobs` rows may hold leases
    belonging to a process that no longer exists. They expire on their own within
    `ideanest.jobs.lock-lease` (one minute). Do nothing.
@@ -534,7 +535,7 @@ A rewind moves the database back in time. The payment provider does not move
 with it. Any charge, refund or payout sent between the target and the failure
 **happened**, and the restored database does not know:
 
-1. Keep `charge-processor`, `charge-retry` and `payout-scheduler` stopped.
+1. Keep `campaign-refunds`, `hosted-charge-sweep` and `payout-scheduler` stopped.
 2. Pull the provider's transaction list for the window
    `[target, incident]` — §9.3 R-08 requires idempotency and every request
    carries a key (§9.4), so the provider can be asked what it did.

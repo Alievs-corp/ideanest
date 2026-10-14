@@ -69,8 +69,6 @@ class MyProjectApiTests extends AbstractIntegrationTest {
             "CANCELED",
             "SUCCESSFUL",
             "UNSUCCESSFUL",
-            "COLLECTING",
-            "LATE_PLEDGE",
             "FULFILLING",
             "COMPLETED",
             "SUSPENDED");

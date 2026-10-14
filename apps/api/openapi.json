@@ -1926,7 +1926,7 @@
           "schema" : {
             "type" : "string",
             "default" : "SUBMITTED",
-            "enum" : [ "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "LIVE", "CLOSING_WINDOW", "EXTENDED", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "WITHDRAWN", "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED" ]
+            "enum" : [ "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "LIVE", "CLOSING_WINDOW", "EXTENDED", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "WITHDRAWN", "FULFILLING", "COMPLETED" ]
           }
         }, {
           "in" : "query",
@@ -2897,7 +2897,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "enum" : [ "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "LIVE", "CLOSING_WINDOW", "EXTENDED", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "WITHDRAWN", "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED" ]
+            "enum" : [ "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "LIVE", "CLOSING_WINDOW", "EXTENDED", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "WITHDRAWN", "FULFILLING", "COMPLETED" ]
           }
         }, {
           "in" : "query",
@@ -7488,49 +7488,6 @@
         "tags" : [ "pledge-controller" ]
       }
     },
-    "/v1/pledges/{id}/confirm" : {
-      "post" : {
-        "operationId" : "pledgeConfirm",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        }, {
-          "in" : "header",
-          "name" : "Idempotency-Key",
-          "required" : false,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ConfirmPledgeRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "pledge-controller" ]
-      }
-    },
     "/v1/pledges/{id}/payment" : {
       "post" : {
         "operationId" : "pledgePay",
@@ -8013,70 +7970,6 @@
           },
           "required" : true
         },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProjectEdit"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "project-controller" ]
-      }
-    },
-    "/v1/projects/{id}/late-pledges" : {
-      "post" : {
-        "operationId" : "projectOpenLatePledges",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/OpenLatePledgesRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProjectEdit"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "project-controller" ]
-      }
-    },
-    "/v1/projects/{id}/late-pledges/close" : {
-      "post" : {
-        "operationId" : "projectCloseLatePledges",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        } ],
         "responses" : {
           "200" : {
             "content" : {
@@ -11530,9 +11423,6 @@
           "isAnonymous" : {
             "type" : "boolean"
           },
-          "latePledge" : {
-            "type" : "boolean"
-          },
           "pledgeId" : {
             "type" : "string",
             "format" : "uuid"
@@ -12730,19 +12620,6 @@
           }
         },
         "required" : [ "token" ]
-      },
-      "ConfirmPledgeRequest" : {
-        "type" : "object",
-        "properties" : {
-          "acknowledgedAgreementVersion" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "paymentMethodId" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        }
       },
       "ConfirmTwoFactorRequest" : {
         "type" : "object",
@@ -15267,16 +15144,6 @@
         },
         "required" : [ "reason" ]
       },
-      "OpenLatePledgesRequest" : {
-        "type" : "object",
-        "properties" : {
-          "endsAt" : {
-            "type" : "string",
-            "format" : "date-time"
-          }
-        },
-        "required" : [ "endsAt" ]
-      },
       "Outcome" : {
         "type" : "object",
         "properties" : {
@@ -15436,10 +15303,6 @@
           },
           "isAnonymous" : {
             "type" : "boolean"
-          },
-          "paymentMethodId" : {
-            "type" : "string",
-            "format" : "uuid"
           },
           "rewardTierId" : {
             "type" : "string",
@@ -15826,9 +15689,6 @@
             "type" : "string",
             "format" : "date-time"
           },
-          "cardVerified" : {
-            "type" : "boolean"
-          },
           "confirmedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -15846,15 +15706,8 @@
           "isAnonymous" : {
             "type" : "boolean"
           },
-          "latePledge" : {
-            "type" : "boolean"
-          },
           "latestRaise" : {
             "$ref" : "#/components/schemas/PledgeRaiseBody"
-          },
-          "paymentMethodId" : {
-            "type" : "string",
-            "format" : "uuid"
           },
           "projectId" : {
             "type" : "string",
@@ -16264,13 +16117,6 @@
             "type" : "string",
             "format" : "uuid"
           },
-          "latePledgeEnabled" : {
-            "type" : "boolean"
-          },
-          "latePledgeEndsAt" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
           "launchedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -16369,13 +16215,6 @@
             "type" : "string",
             "format" : "uuid"
           },
-          "latePledgeEnabled" : {
-            "type" : "boolean"
-          },
-          "latePledgeEndsAt" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
           "launchedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -16428,9 +16267,6 @@
           },
           "goal" : {
             "$ref" : "#/components/schemas/Money"
-          },
-          "latePledgeEnabled" : {
-            "type" : "boolean"
           },
           "risks" : {
             "type" : "string"

@@ -36,7 +36,7 @@ import { apiOrigin } from './config';
 export interface SitemapProject {
   readonly creatorSlug: string;
   readonly slug: string;
-  /** One of the sixteen states of §6.1, as text. */
+  /** One of the seventeen states of §6.1, as text. */
   readonly state: string;
   readonly launchedAt?: string | null;
   readonly deadline?: string | null;

@@ -95,15 +95,12 @@ public final class ProjectStateMachine {
                         ProjectState.UNSUCCESSFUL,
                         ProjectState.SUSPENDED,
                         ProjectState.CANCELED));
-        // COLLECTING stays until stage 2 retires collection at close (#39) and stage 4
-        // removes it (#45); WITHDRAWN is where a successful campaign goes under IDN-EXT-01.
-        edges.put(ProjectState.SUCCESSFUL, EnumSet.of(ProjectState.COLLECTING, ProjectState.WITHDRAWN));
+        // Decided successful: the creator withdraws, or the platform does after 30 days.
+        // IDN-EXT-01 removed the stored-card collection at close (COLLECTING) and the late
+        // pledges after it (LATE_PLEDGE) — #39 and #36 stopped using them, #45 deleted them.
+        edges.put(ProjectState.SUCCESSFUL, EnumSet.of(ProjectState.WITHDRAWN));
+        // Withdrawal closes the campaign, then delivery.
         edges.put(ProjectState.WITHDRAWN, EnumSet.of(ProjectState.FULFILLING));
-        // Collection, then delivery. IDN-EXT-01 (#36) took away the edge into LATE_PLEDGE:
-        // late pledges are switched off. The edge out stays, so a campaign already there
-        // can still start delivering; stage 4 (#45) removes the state.
-        edges.put(ProjectState.COLLECTING, EnumSet.of(ProjectState.FULFILLING));
-        edges.put(ProjectState.LATE_PLEDGE, EnumSet.of(ProjectState.FULFILLING));
         edges.put(ProjectState.FULFILLING, EnumSet.of(ProjectState.COMPLETED));
 
         // REJECTED, SUSPENDED, CANCELED, UNSUCCESSFUL, and COMPLETED are absent

@@ -201,9 +201,7 @@ class SandboxPaymentProviderTests {
         void approvesNothing() {
             assertThatThrownBy(() -> sandbox.refund(mock(RefundRequest.class)))
                     .isInstanceOf(UnsupportedOperationException.class);
-            assertThatThrownBy(() -> sandbox.chargeStoredCard(null)).isInstanceOf(UnsupportedOperationException.class);
             assertThatThrownBy(() -> sandbox.beginHostedPayment(null)).isInstanceOf(UnsupportedOperationException.class);
-            assertThat(sandbox.capabilities().supportsStoredCardCollection()).isFalse();
         }
     }
 

@@ -41,7 +41,6 @@ public record ProjectPatchRequest(
         Patched<JsonNode> story,
         Patched<String> risks,
         Patched<CoverImageBody> coverImage,
-        Patched<Boolean> latePledgeEnabled,
         Patched<UUID> videoMediaId) {
 
     public ProjectPatchRequest {
@@ -58,7 +57,6 @@ public record ProjectPatchRequest(
         story = Patched.orAbsent(story);
         risks = Patched.orAbsent(risks);
         coverImage = Patched.orAbsent(coverImage);
-        latePledgeEnabled = Patched.orAbsent(latePledgeEnabled);
         videoMediaId = Patched.orAbsent(videoMediaId);
     }
 
@@ -88,7 +86,6 @@ public record ProjectPatchRequest(
                 story,
                 risks,
                 coverImage.map(CoverImageBody::toSelection),
-                latePledgeEnabled,
                 videoMediaId);
     }
 }

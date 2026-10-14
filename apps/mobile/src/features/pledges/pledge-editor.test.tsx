@@ -79,8 +79,6 @@ function pledge(extra: Partial<PledgeResponse> = {}): PledgeResponse {
       total: money('45.00'),
     },
     isAnonymous: false,
-    cardVerified: false,
-    latePledge: false,
     supplements: [],
     ...extra,
   };

@@ -62,15 +62,15 @@ public enum DiscoveryStatus {
     /**
      * "It made it."
      *
-     * <p>Five states, because reaching the goal is one event and everything after
-     * it is fulfilment. {@code SUCCESSFUL} is the deadline having passed at or
-     * above goal; {@code COLLECTING} is the cards being charged; {@code LATE_PLEDGE}
-     * is that window still being open; {@code FULFILLING} is rewards going out; and
-     * {@code COMPLETED} is all of them delivered. A backer browsing "successful"
-     * wants to see what this platform has actually funded, and excluding the four
-     * that came after would show them the newest tenth of it.
+     * <p>Four states, because reaching the goal is one event and everything after
+     * it is fulfilment. {@code SUCCESSFUL} is the campaign decided at or above the
+     * threshold; {@code WITHDRAWN} is the creator having taken the money;
+     * {@code FULFILLING} is rewards going out; and {@code COMPLETED} is all of them
+     * delivered. A backer browsing "successful" wants to see what this platform has
+     * actually funded, and excluding the three that came after would show them the
+     * newest tenth of it.
      */
-    SUCCESSFUL("successful", "SUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "WITHDRAWN", "FULFILLING", "COMPLETED");
+    SUCCESSFUL("successful", "SUCCESSFUL", "WITHDRAWN", "FULFILLING", "COMPLETED");
 
     /**
      * The nine states a campaign may be listed in, whatever was asked for.
@@ -103,8 +103,7 @@ public enum DiscoveryStatus {
      * {@code PublicProjects} answer for as well.
      */
     public static final Set<String> PUBLIC_STATES = Set.of(
-            "PRELAUNCH", "LIVE", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL",
-            "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED",
+            "PRELAUNCH", "LIVE", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "FULFILLING", "COMPLETED",
             // IDN-EXT-01 (#32): still taking pledges, and closed by withdrawal.
             "CLOSING_WINDOW", "EXTENDED", "WITHDRAWN");
 
@@ -135,8 +134,7 @@ public enum DiscoveryStatus {
      * Which grouping a card's badge shows, for a state that is in more than one.
      *
      * <p>{@link #EXTENDED} is not a badge: an extended campaign badges as {@code live}, and
-     * the card carries {@code extended} beside it. A campaign left in {@code LATE_PLEDGE}
-     * badges as successful, which is what it is.
+     * the card carries {@code extended} beside it.
      */
     private static final List<DiscoveryStatus> BADGE_ORDER = List.of(UPCOMING, LIVE, SUCCESSFUL);
 

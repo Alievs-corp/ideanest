@@ -19,8 +19,8 @@ import { Pill, SurfaceProvider } from '../ui';
  * <h2>Shown only where pledges are taken</h2>
  *
  * The caller renders it only when `acceptsPledges` is true — LIVE before its deadline,
- * CLOSING_WINDOW and EXTENDED — so a closed, a pre-launch and a late-pledge campaign have no Back
- * control at all, in the header or at the foot.
+ * CLOSING_WINDOW and EXTENDED — so a closed and a pre-launch campaign have no Back control at all,
+ * in the header or at the foot.
  *
  * <h2>Where it goes</h2>
  *

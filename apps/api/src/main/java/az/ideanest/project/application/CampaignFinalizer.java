@@ -44,16 +44,11 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <h2>What this does not do</h2>
  *
- * <p><strong>It collects nothing.</strong> §5.1's successful branch says "collect every
- * confirmed pledge", and that is {@code batched collection at campaign close} (#64), which
- * moves {@code SUCCESSFUL → COLLECTING} and works from the state this job writes. §6.1
- * makes them two states precisely so that deciding and charging are two decisions with a
- * durable record between them — a platform that decided and charged in one transaction
- * could not tell you, after a crash, which of the two it had done.
- *
- * <p><strong>It purges nothing.</strong> §5.1's unsuccessful branch deletes stored card
- * tokens within thirty days, which is §8.4's {@code token-cleaner} and which reads the
- * same state. Thirty days is not this job's minute.
+ * <p><strong>It moves no money.</strong> Under IDN-EXT-01 every pledge was charged when it was
+ * made, so a successful decision charges nothing — the creator withdraws, or the platform
+ * does after 30 days — and an unsuccessful one is refunded by {@code CampaignRefundJob},
+ * which reads the state this job writes. Until #45 a successful campaign went on to
+ * {@code COLLECTING}, the stored-card collection at close; that state is gone.
  */
 @Service
 public class CampaignFinalizer {

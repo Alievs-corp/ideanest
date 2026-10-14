@@ -34,7 +34,7 @@ describe('myCampaignHref', () => {
   });
 
   it('agrees with the web on which states are public and which have launched', () => {
-    expect(PUBLIC_STATES.size).toBe(12);
+    expect(PUBLIC_STATES.size).toBe(10);
     expect(isPubliclyVisible('PRELAUNCH')).toBe(true);
     expect(hasLaunched('PRELAUNCH')).toBe(false);
     expect(hasLaunched('SUSPENDED')).toBe(true);

@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
  * §4.11's AD-05 payment log, read — #304.
  *
  * <p>Every charge the platform has attempted, its provider reference, and why the refused
- * ones were refused. It is the read half of a table {@code CollectionRun} writes and
+ * ones were refused. It is the read half of a table the payment pages write and
  * nothing updates, so there is no consistency question here at all: a row that exists said
  * the same thing yesterday and will say it next year.
  *

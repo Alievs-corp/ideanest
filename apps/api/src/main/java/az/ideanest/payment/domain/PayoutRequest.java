@@ -19,7 +19,7 @@ import java.util.UUID;
  * @param amount the net, after §5.2's fees and #78's tax. The split itself is
  *     {@code ledger_entries}' and was decided at collection; this is one number
  * @param destinationReference where to: the provider's token for the creator's account.
- *     <strong>Opaque to this service</strong>, like {@link StoredCard#token()}. This
+ *     <strong>Opaque to this service</strong>, like any provider token. This
  *     once went on to say that the platform never stores an IBAN; since #394 it does —
  *     the owner decided creators are paid by bank transfer from IdeyaNest's own account,
  *     so the account is held in {@code payout_destinations}, encrypted (V97). Such a

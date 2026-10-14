@@ -37,7 +37,7 @@ describe('which campaigns take pledges and have a page', () => {
     expect(acceptsPledges('CLOSING_WINDOW', '2026-08-01T00:00:00Z', NOW)).toBe(true);
     expect(acceptsPledges('EXTENDED', '2026-08-01T00:00:00Z', NOW)).toBe(true);
     expect(acceptsPledges('PRELAUNCH', '2026-09-01T00:00:00Z', NOW)).toBe(false);
-    expect(acceptsPledges('LATE_PLEDGE', '2026-09-01T00:00:00Z', NOW)).toBe(false);
+    expect(acceptsPledges('SUCCESSFUL', '2026-09-01T00:00:00Z', NOW)).toBe(false);
   });
 
   it('shows not-found for a draft and a page for a cancelled campaign', () => {

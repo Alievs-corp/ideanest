@@ -144,12 +144,6 @@ public class Project {
     @Column(name = "video_media_id")
     private UUID videoMediaId;
 
-    @Column(name = "late_pledge_enabled", nullable = false)
-    private boolean latePledgeEnabled;
-
-    @Column(name = "late_pledge_ends_at")
-    private Instant latePledgeEndsAt;
-
     /**
      * §5.1's decision, frozen — V29's four columns, written once by
      * {@link #finalise} and never again.
@@ -217,7 +211,6 @@ public class Project {
         this.slug = slug;
         this.currency = currency;
         this.state = ProjectStateMachine.initial();
-        this.latePledgeEnabled = false;
     }
 
     /**
@@ -513,43 +506,6 @@ public class Project {
 
     public void setVideoMediaId(UUID videoMediaId) {
         this.videoMediaId = videoMediaId;
-    }
-
-    public boolean isLatePledgeEnabled() {
-        return latePledgeEnabled;
-    }
-
-    /**
-     * §4.5's PL-16: whether this creator offers late pledges at all.
-     *
-     * <p>Set from the campaign editor, at any point in the campaign's life —
-     * {@link ProjectEditLocks} deliberately does not freeze it at launch, because the
-     * decision is usually taken after the campaign has closed and the creator is
-     * counting what they can still manufacture.
-     *
-     * <p><strong>Switching it off closes any open window immediately</strong>, without
-     * moving the campaign's state: {@code PledgeAcceptance} requires all three facts, so
-     * a creator who has run out of stock has a switch that takes effect on the next
-     * request rather than a transition they have to make and cannot undo. The campaign
-     * stays in {@link ProjectState#LATE_PLEDGE} until they decide to start delivering.
-     *
-     * <p><strong>The window is cleared with it, and it has to be.</strong>
-     * {@code projects_late_pledge_window_needs_the_feature} refuses a window on a
-     * campaign that does not offer late pledges, so leaving the instant behind would
-     * turn one checkbox into a constraint violation — a 500 for a creator doing
-     * something entirely reasonable. What is lost is the date they had planned to stop
-     * on; what keeps it is {@code project_state_transitions}, where the note on the
-     * edge into {@code LATE_PLEDGE} records the window that was announced.
-     */
-    public void setLatePledgeEnabled(boolean latePledgeEnabled) {
-        this.latePledgeEnabled = latePledgeEnabled;
-        if (!latePledgeEnabled) {
-            this.latePledgeEndsAt = null;
-        }
-    }
-
-    public Instant getLatePledgeEndsAt() {
-        return latePledgeEndsAt;
     }
 
     public void extendUntil(Instant until, Instant at) {

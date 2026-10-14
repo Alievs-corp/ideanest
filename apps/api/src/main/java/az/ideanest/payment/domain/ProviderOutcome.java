@@ -38,9 +38,9 @@ public enum ProviderOutcome {
      * <p><strong>Not the same as an error, and the difference is money.</strong> A
      * transport failure means the platform does not know whether the provider was
      * reached; this means it was, and that the charge may still succeed. Retrying a
-     * {@code PENDING} charge is how a backer gets charged twice, which is why
-     * {@code CollectionRun} leaves such a pledge where it is and waits for #66's
-     * webhook rather than counting an attempt against it.
+     * {@code PENDING} charge is how a backer gets charged twice, which is why a pending
+     * payment is left where it is to wait for the provider's callback or the hosted-charge
+     * sweep rather than being asked for again.
      */
     PENDING
 }

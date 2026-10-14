@@ -61,7 +61,7 @@ import org.springframework.transaction.annotation.Transactional;
  *       the creator; a payout does the reverse for the <em>net</em>. Nothing writes
  *       {@code platform_fee}, so the difference stays in escrow as a balance no account claims,
  *       and the creator's account keeps a residual credit equal to the fees for ever.
- *       {@code CollectionRun} and {@code PayoutPostings} each say the other one posts the
+ *       The collection and {@code PayoutPostings} each said the other one posted the
  *       split; neither does. That is #69's to close and it is named here rather than papered
  *       over, because a summary claiming to be reconciled to books that do not carry the fee
  *       would be claiming more than it can.

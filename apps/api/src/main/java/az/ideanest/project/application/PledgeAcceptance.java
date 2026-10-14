@@ -37,11 +37,10 @@ import org.springframework.transaction.annotation.Transactional;
  * the same funding: the campaign is not decided until the last of them ends, so a pledge
  * taken in any of them counts towards the goal it is judged on.
  *
- * <p><strong>No late pledges.</strong> PL-16's second window (#81), a {@code LATE_PLEDGE}
- * campaign taking money after it was decided, is switched off: the state machine no longer
- * has an edge into that state, and a campaign already in it is refused like any other closed
- * one. So nothing this answers stamps {@code pledges.is_late_pledge} any more; the column
- * goes with stage 4 (#45).
+ * <p><strong>No late pledges.</strong> PL-16's second window (#81), a campaign taking money
+ * after it was decided, was switched off by #36 and its {@code LATE_PLEDGE} state removed by
+ * #45. {@code pledges.is_late_pledge} is no longer written or read; the column waits for the
+ * contract migration that drops it.
  */
 @Service
 public class PledgeAcceptance {

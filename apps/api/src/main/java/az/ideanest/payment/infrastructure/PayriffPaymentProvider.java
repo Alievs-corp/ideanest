@@ -1,7 +1,6 @@
 package az.ideanest.payment.infrastructure;
 
 import az.ideanest.payment.PaymentProperties;
-import az.ideanest.payment.domain.ChargeResult;
 import az.ideanest.payment.domain.HostedPaymentRequest;
 import az.ideanest.payment.domain.HostedPaymentSession;
 import az.ideanest.payment.domain.PaymentEvent;
@@ -18,10 +17,6 @@ import az.ideanest.payment.domain.ProviderOutcome;
 import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.domain.RefundRequest;
 import az.ideanest.payment.domain.RefundResult;
-import az.ideanest.payment.domain.StoredCardChargeRequest;
-import az.ideanest.payment.domain.TokenizationRequest;
-import az.ideanest.payment.domain.TokenizationResult;
-import az.ideanest.payment.domain.TokenizationSession;
 import az.ideanest.payment.domain.WebhookVerificationException;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
@@ -296,29 +291,10 @@ public class PayriffPaymentProvider implements PaymentProvider {
         throw payoutsUndecided();
     }
 
-    @Override
-    public TokenizationSession beginTokenization(TokenizationRequest request) {
-        throw storedCardsRetired();
-    }
-
-    @Override
-    public TokenizationResult resolveTokenization(String sessionId) {
-        throw storedCardsRetired();
-    }
-
-    @Override
-    public ChargeResult chargeStoredCard(StoredCardChargeRequest request) {
-        throw storedCardsRetired();
-    }
-
-    /**
-     * Payments on its page and refunds in part, in AZN, USD and EUR. Card saving and
-     * {@code /autoPay} exist at Payriff, but merchant-initiated charges and scheme chaining are not
-     * confirmed in writing — and unused under IDN-EXT-01 — so the retired collection is not claimed.
-     */
+    /** Payments on its page and refunds in part, in AZN, USD and EUR. */
     @Override
     public ProviderCapabilities capabilities() {
-        return new ProviderCapabilities(true, false, null, false, false, true, Set.of(), CURRENCIES);
+        return new ProviderCapabilities(false, true, Set.of(), CURRENCIES);
     }
 
     // ------------------------------------------------------------------
@@ -518,10 +494,5 @@ public class PayriffPaymentProvider implements PaymentProvider {
     private static UnsupportedOperationException payoutsUndecided() {
         return new UnsupportedOperationException(
                 "Payriff pays out to a card number, which SAQ A does not allow; #352 decides how creators are paid.");
-    }
-
-    private static UnsupportedOperationException storedCardsRetired() {
-        return new UnsupportedOperationException(
-                "Payriff takes payments on its own page under IDN-EXT-01; stored-card collection is retired (#39).");
     }
 }

@@ -6,15 +6,15 @@
  * The published contract types `state` as a bare `string` — springdoc cannot see the Java enum
  * behind it — so the vocabulary has always been written down by hand on the client. It was
  * `apps/web/src/lib/projects/api.ts`; it moved here with the campaign page's logic (#155) so
- * the app's campaign screen reads the same nineteen words, and the web module re-exports it so
+ * the app's campaign screen reads the same seventeen words, and the web module re-exports it so
  * none of its callers changed. CLAUDE.md §3: a type shared between packages lives in a shared
  * package and is never duplicated.
  */
 
 /**
- * Exactly the nineteen states of docs/architecture.md §6.1, no more. IDN-EXT-01 added
- * `CLOSING_WINDOW`, `EXTENDED` and `WITHDRAWN` (#32); `COLLECTING` and `LATE_PLEDGE` stay
- * until stage 4 removes them (#45).
+ * Exactly the seventeen states of docs/architecture.md §6.1, no more. IDN-EXT-01 added
+ * `CLOSING_WINDOW`, `EXTENDED` and `WITHDRAWN` (#32), and stage 4 removed `COLLECTING` and
+ * `LATE_PLEDGE` (#45).
  *
  * The clients only ever render these; the transitions themselves are the server's business
  * and there is deliberately no client-side copy of the transition table to fall out of step
@@ -36,8 +36,6 @@ export type ProjectState =
   | 'SUCCESSFUL'
   | 'UNSUCCESSFUL'
   | 'WITHDRAWN'
-  | 'COLLECTING'
-  | 'LATE_PLEDGE'
   | 'FULFILLING'
   | 'COMPLETED';
 
@@ -73,8 +71,6 @@ export const RENDERABLE_STATES: readonly ProjectState[] = [
   'CANCELED',
   'SUCCESSFUL',
   'UNSUCCESSFUL',
-  'COLLECTING',
-  'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
   // IDN-EXT-01 (#32): public like their siblings — two still take pledges, and a withdrawn

@@ -31,26 +31,9 @@ import java.util.UUID;
  *     backer had), but to a client the field means "your reservation runs out at",
  *     and a confirmed pledge holds no reservation. Answering with the old instant
  *     would put a countdown on a screen that has nothing to count down to
- * @param paymentMethodId what the backer said to charge later, echoed. Null until
- *     #55 exists to give them one
- * @param cardVerified <strong>whether §9.2's phase 1 actually happened, and today it
- *     never has.</strong> The verification authorisation, 3-D Secure, the stored
- *     token and the void are {@code PledgeCapability.CARD_VERIFICATION} — #55,
- *     blocked on #60 — so this is false on every confirmed pledge the platform holds.
- *     It is in the body rather than left to be inferred because the alternative is a
- *     client reading {@code state: "CONFIRMED"} as "the card is good", which is a
- *     stronger claim than the platform can make.
- *     <p>It does <em>not</em> mean a charge failed or succeeded. §9.2 is explicit
- *     that no money moves at confirmation and no ledger entry is written under any
- *     circumstances; collection is phase 2, at the close of a successful campaign,
- *     and belongs to epic #59
  * @param supplements §4.8's PM-09 and PM-10 (#76): what this backer bought after the
  *     campaign closed, each of them charged separately from the pledge and none of
  *     them charged yet. Empty on every pledge until somebody upgrades
- * @param latePledge §4.5's PL-16 (#81): whether this pledge was taken after the
- *     campaign closed, in a window its creator reopened. Read from the row rather than
- *     derived from the campaign's state, which will have moved on by the time anybody
- *     looks
  * @param raisable #171: whether this pledge may be raised now, with
  *     {@code POST /v1/pledges/{id}/raise} — it is paid for and its campaign is taking pledges
  * @param latestRaise #171: the most recent attempt to raise it, or null. A page the payment provider
@@ -78,9 +61,6 @@ public record PledgeResponse(
         Instant reservationExpiresAt,
         Instant confirmedAt,
         Instant canceledAt,
-        UUID paymentMethodId,
-        boolean cardVerified,
-        boolean latePledge,
         /**
          * §21.2's rate retention (#327): the currency this pledge was approximated in at
          * confirmation, or null when the backer was shown the campaign's own.
@@ -157,11 +137,6 @@ public record PledgeResponse(
                 pledge.isDraft() ? pledge.getReservationExpiresAt() : null,
                 pledge.getConfirmedAt(),
                 pledge.getCanceledAt(),
-                pledge.getPaymentMethodId(),
-                // Never true yet, and it is a field rather than a constant in the
-                // client so that #55 changes one expression here and nothing there.
-                false,
-                pledge.isLatePledge(),
                 pledge.getDisplayCurrency(),
                 // `toPlainString` and never `toString`: a BigDecimal whose scale and
                 // precision line up renders in scientific notation, and a client parsing

@@ -150,7 +150,7 @@ public class PlatformRollupRepository {
      * moments.
      *
      * <p>"Succeeded" is every state §6.1 puts after a campaign reached its goal, not only
-     * {@code SUCCESSFUL}: a campaign that has since moved on to {@code COLLECTING} or
+     * {@code SUCCESSFUL}: a campaign that has since moved on to {@code WITHDRAWN} or
      * {@code COMPLETED} still succeeded, and counting only the first of those would make the
      * success rate fall as campaigns progressed.
      */
@@ -158,7 +158,7 @@ public class PlatformRollupRepository {
         List<Outcomes> rows = jdbc.query(
                 """
                 SELECT COALESCE(SUM(CASE WHEN p.state IN
-                           ('SUCCESSFUL', 'COLLECTING', 'LATE_PLEDGE', 'WITHDRAWN', 'FULFILLING', 'COMPLETED')
+                           ('SUCCESSFUL', 'WITHDRAWN', 'FULFILLING', 'COMPLETED')
                        THEN 1 ELSE 0 END), 0) AS succeeded,
                        COALESCE(SUM(CASE WHEN p.state = 'UNSUCCESSFUL' THEN 1 ELSE 0 END), 0) AS failed
                   FROM projects p

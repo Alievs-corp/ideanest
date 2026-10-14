@@ -13,8 +13,6 @@ export const PUBLIC_STATES: ReadonlySet<string> = new Set([
   'CANCELED',
   'SUCCESSFUL',
   'UNSUCCESSFUL',
-  'COLLECTING',
-  'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
   'CLOSING_WINDOW',

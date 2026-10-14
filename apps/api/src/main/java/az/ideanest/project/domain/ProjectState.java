@@ -3,7 +3,7 @@ package az.ideanest.project.domain;
 /**
  * Where a campaign is in its life.
  *
- * <p>Exactly the sixteen states of {@code docs/architecture.md} §6.1, in the
+ * <p>Exactly the seventeen states of {@code docs/architecture.md} §6.1, in the
  * order they are reached. The edges between them are
  * {@link ProjectStateMachine}, which is deliberately a separate type: the states
  * are a vocabulary and the transitions are a rule, and a rule that lives inside
@@ -13,6 +13,13 @@ package az.ideanest.project.domain;
  * {@code project_state_transitions}, and both columns carry a check constraint
  * listing them. Renaming one is therefore a migration, which is the correct
  * amount of friction for renaming a state that appears in an audit trail.
+ *
+ * <p><strong>{@code COLLECTING} and {@code LATE_PLEDGE} are gone (#45).</strong> They were
+ * the stored-card collection at close and the late-pledge window after it, both retired by
+ * IDN-EXT-01. V106 moves any campaign still in one to {@code FULFILLING}, the only edge out
+ * of either, and takes them out of {@code projects.state}'s check. They stay allowed in
+ * {@code project_state_transitions}, whose rows are history; nothing in this service reads
+ * that table's state columns back into this enum.
  */
 public enum ProjectState {
 
@@ -79,7 +86,10 @@ public enum ProjectState {
     /** Terminal. Stopped by the creator before the deadline. Nothing is charged. */
     CANCELED,
 
-    /** The deadline passed at or above goal (§5.1). Collection has not started. */
+    /**
+     * Decided at or above the threshold (§5.1), and the creator has not withdrawn yet. Moves
+     * to {@link #WITHDRAWN} when they do, or automatically 30 days after the end.
+     */
     SUCCESSFUL,
 
     /** Terminal. The deadline passed below goal. Nothing is charged and no fee is due. */
@@ -92,13 +102,7 @@ public enum ProjectState {
      */
     WITHDRAWN,
 
-    /** Charging the confirmed pledges, including the seven-day retry window. */
-    COLLECTING,
-
-    /** Collected, and still accepting late pledges (epic #72). */
-    LATE_PLEDGE,
-
-    /** Collected, rewards being delivered. */
+    /** Withdrawn, rewards being delivered. */
     FULFILLING,
 
     /** Terminal. Everything delivered. */

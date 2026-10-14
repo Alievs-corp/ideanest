@@ -10,6 +10,7 @@ import az.ideanest.shared.EmailAddress;
 import az.ideanest.shared.outbox.OutboxRelay;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.Pledges;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -373,15 +374,10 @@ class ProjectSuspensionApiTests extends AbstractIntegrationTest {
         return UUID.fromString((String) created.getBody().get("id"));
     }
 
+    /** A pledge confirmed the stored-card way, as one made before IDN-EXT-01 is; no route does it since #45. */
     private UUID confirmedPledge(UUID project, Account backer, UUID tier) {
         UUID pledge = draftPledge(project, backer, tier);
-        HttpHeaders headers = bearer(backer.accessToken());
-        headers.set("Idempotency-Key", UUID.randomUUID().toString());
-        rest.exchange(
-                "/v1/pledges/" + pledge + "/confirm",
-                HttpMethod.POST,
-                new HttpEntity<>(Map.of(), headers),
-                String.class);
+        Pledges.confirmDraft(dataSource, pledge);
         return pledge;
     }
 

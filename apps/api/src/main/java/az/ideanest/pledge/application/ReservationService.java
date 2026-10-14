@@ -84,8 +84,8 @@ import org.springframework.transaction.annotation.Transactional;
  * last of a limited add-on and the constraint could not see it, because the count it
  * guards never moved. What a pledge holds is now a map from tier to a number of
  * places — see {@link HeldPlaces}, which also carries why the map is sorted — and
- * every path below moves one of those: the draft takes them, {@link #confirm} moves
- * them from reserved to claimed, {@link #cancel} gives them back,
+ * every path below moves one of those: the draft takes them, {@link #collect} moves
+ * them from reserved to claimed when the pledge is paid for, {@link #cancel} gives them back,
  * {@link #edit} takes the difference and releases the difference, and
  * {@link ReservationExpiry} walks {@code pledge_addons} when a draft lapses. The
  * reward tier is a line in the same map with a quantity of one, so there is one rule
@@ -95,9 +95,8 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <ul>
  *   <li><strong>Whether the campaign will take a pledge at all.</strong> A
- *       reservation on a campaign that is not live, or one past its deadline
- *       without late pledging enabled, is a request that should never reach this
- *       far. That is a question about {@code projects}, which is another module's
+ *       reservation on a campaign that is not taking pledges is a request that
+ *       should never reach this far. That is a question about {@code projects}, which is another module's
  *       state machine, and it belongs with the endpoint that has already loaded
  *       the campaign to render it (#52). Checking it here would mean this module
  *       depending on the project module in order to say no twice — so #52 put it
@@ -241,16 +240,11 @@ public class ReservationService {
      *     posted and the destination has no rate
      * @throws RewardSoldOutException when the reward tier, or any add-on, has too few
      *     places left — §10.4's {@code REWARD_SOLD_OUT}, naming whichever it was
-     * @param latePledge what {@code PledgeAcceptance} answered about the campaign's
-     *     funding window -- §4.5's PL-16 (#81). A parameter rather than a field on
-     *     {@code DraftPledge}, because that record is what a client sent and this is
-     *     what the platform decided; a backer must not be able to choose which of a
-     *     campaign's two totals their money counts towards
      * @throws PledgeAlreadyExistsException when this backer already has a live pledge
      *     on this campaign. §7.2: one per backer per project
      */
     @Transactional
-    public Pledge draft(DraftPledge command, boolean latePledge) {
+    public Pledge draft(DraftPledge command) {
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
 
         settleAnyExistingPledge(command.projectId(), command.backerId(), now);
@@ -273,8 +267,7 @@ public class ReservationService {
                 command.anonymous(),
                 command.referrerCode(),
                 command.idempotencyKey(),
-                lapsesAt(now),
-                latePledge)));
+                lapsesAt(now))));
 
         if (!command.addons().isEmpty()) {
             addons.saveAll(command.addons().stream()
@@ -365,8 +358,7 @@ public class ReservationService {
                 quote,
                 planned.rewardTierId(),
                 planned.shippingCountry(),
-                planned.anonymous(),
-                planned.paymentMethodId());
+                planned.anonymous());
         replaceAddons(pledge, existingAddons, planned.addons());
 
         // saveAndFlush for draft's second reason: total_amount is generated, so the
@@ -390,7 +382,6 @@ public class ReservationService {
             List<DraftPledge.AddonSelection> addons,
             String shippingCountry,
             boolean anonymous,
-            UUID paymentMethodId,
             PledgeQuote quote,
             SortedMap<UUID, Integer> places) {
     }
@@ -415,9 +406,6 @@ public class ReservationService {
                 : pledge.getShippingCountry();
         boolean anonymous =
                 command.anonymous().isPresent() ? command.anonymous().value() : pledge.isAnonymous();
-        UUID paymentMethodId = command.paymentMethodId().isPresent()
-                ? command.paymentMethodId().value()
-                : pledge.getPaymentMethodId();
         List<DraftPledge.AddonSelection> addonSelections = selectedAddons(command, existingAddons);
         Money contribution =
                 command.contribution().isPresent() ? command.contribution().value() : contributionOf(pledge);
@@ -434,7 +422,6 @@ public class ReservationService {
                 addonSelections,
                 shippingCountry,
                 anonymous,
-                paymentMethodId,
                 quote,
                 HeldPlaces.of(rewardTierId, addonSelections));
     }
@@ -561,63 +548,14 @@ public class ReservationService {
     }
 
     /**
-     * §6.2's {@code DRAFT --> CONFIRMED}: the backer commits, and every place they
-     * were holding is committed with them. #52, extended by #203.
-     *
-     * <p><strong>Here rather than in {@link PledgeService} because it moves
-     * stock.</strong> #52 put the single {@code commitOnePlace} call beside the
-     * transition, which was defensible while a pledge held one place; a pledge that
-     * holds places on its reward tier <em>and</em> on each of its add-ons is the same
-     * map every other method in this class moves, and leaving one of the five paths
-     * outside would be the one place a future change could forget.
-     *
-     * <p><strong>Reserved becomes claimed, in one statement per tier.</strong> The sum
-     * never changes, so no other checkout sees a place appear or disappear and V7's
-     * constraint is evaluated against a total that did not move —
-     * {@code RewardTierRepository#commitPlaces} carries the argument for why a release
-     * followed by a claim is wrong in both orders.
-     *
-     * <p><strong>A tier with nothing to convert is logged, and the confirmation goes
-     * ahead.</strong> This transaction holds the pledge and its version, so a mismatch
-     * is an invariant violation rather than a race; refusing would strand a backer who
-     * did everything right in front of a state only we can repair. The count is
-     * recoverable from the pledges, and a lost commitment is not.
-     *
-     * <p>Nothing is charged. §9.2 is explicit that no money moves at confirmation, and
-     * §9.2's phase 1 — the verification authorisation — is #55, blocked on #60.
-     *
-     * @param pledge the backer's own draft, already established to be theirs, to be a
-     *     draft, and to be inside its window. {@link PledgeService#confirm} decides all
-     *     three, because two of them need the clock and one needs an answer a client
-     *     can act on
-     * @param heldAddons the add-on lines as they stand, read by the caller inside this
-     *     transaction — the same lines the response is built from, so what is committed
-     *     and what is reported cannot disagree
-     */
-    @Transactional
-    public Pledge confirm(Pledge pledge, List<PledgeAddon> heldAddons, Instant now, UUID paymentMethodId) {
-        for (Map.Entry<UUID, Integer> line : HeldPlaces.heldBy(pledge, heldAddons).entrySet()) {
-            if (!stock.commitPlaces(line.getKey(), line.getValue())) {
-                log.error(
-                        "Pledge {} was confirmed against reward tier {}, which had no {} reserved places to commit.",
-                        pledge.getId(),
-                        line.getKey(),
-                        line.getValue());
-            }
-        }
-
-        // Where §9.2's phase 1 goes: authorise, 3-D Secure, store the token, void.
-        // PledgeCapability.CARD_VERIFICATION — #55, blocked on #60.
-        pledge.confirm(now, paymentMethodId);
-        return pledge;
-    }
-
-    /**
      * IDN-EXT-01 (#39): a paid draft commits the places it was holding and becomes {@code COLLECTED}.
      *
-     * <p>The same commit {@link #confirm} makes — a draft holds <em>reserved</em> places and a paid
-     * pledge holds <em>claimed</em> ones — without the stop at {@code CONFIRMED}, because under the
-     * charge-now model a pledge is confirmed by being paid for.
+     * <p>A draft holds <em>reserved</em> places and a paid pledge holds <em>claimed</em> ones. The
+     * sum never changes, so no other checkout sees a place appear or disappear —
+     * {@code RewardTierRepository#commitPlaces} carries the argument for why a release followed by
+     * a claim is wrong in both orders. Until #45 the stored-card model's {@code confirm} made the
+     * same commit and stopped at {@code CONFIRMED}; under the charge-now model a pledge is
+     * confirmed by being paid for.
      */
     public Pledge collect(Pledge pledge, List<PledgeAddon> heldAddons, Instant now) {
         for (Map.Entry<UUID, Integer> line : HeldPlaces.heldBy(pledge, heldAddons).entrySet()) {

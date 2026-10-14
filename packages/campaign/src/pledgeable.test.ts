@@ -46,8 +46,6 @@ describe('acceptsPledges', () => {
     'PRELAUNCH',
     'SUCCESSFUL',
     'UNSUCCESSFUL',
-    'COLLECTING',
-    'LATE_PLEDGE',
     'WITHDRAWN',
     'FULFILLING',
     'COMPLETED',
@@ -67,8 +65,8 @@ describe('acceptsPledges', () => {
 });
 
 /**
- * #155: every one of the nineteen states, with an open deadline. The table is a
- * `Record<ProjectState, …>`, so a twentieth state fails to compile here until somebody decides
+ * #155: every one of the seventeen states, with an open deadline. The table is a
+ * `Record<ProjectState, …>`, so an eighteenth state fails to compile here until somebody decides
  * whether it takes pledges — which is the decision a new state needs.
  */
 describe('acceptsPledges, state by state', () => {
@@ -88,8 +86,6 @@ describe('acceptsPledges, state by state', () => {
     SUCCESSFUL: false,
     UNSUCCESSFUL: false,
     WITHDRAWN: false,
-    COLLECTING: false,
-    LATE_PLEDGE: false,
     FULFILLING: false,
     COMPLETED: false,
   };

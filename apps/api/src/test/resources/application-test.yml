@@ -293,26 +293,6 @@ ideanest:
       # writing, and would report an imbalance that is a half-finished fixture.
       # The tests drive LedgerReconciliationJob directly.
       schedule: "-"
-    collection:
-      # Both `-`, like every other job's schedule in this profile. A timer firing in
-      # the background of a test suite would charge the very pledges a test is about
-      # to charge itself, and the assertion that failed would be about somebody's
-      # card. The tests drive the two jobs directly with the instant they want.
-      schedule: "-"
-      retry-schedule: "-"
-      # Small, so that a test can prove the bound is applied without creating a
-      # hundred pledges to prove it with.
-      campaigns-per-pass: 2
-      charges-per-pass: 3
-      drops-per-pass: 2
-      retry-window: P7D
-      attempt-delays:
-        - PT0S
-        - PT24H
-        - PT72H
-        - P5D
-      unresolved-recheck: PT1H
-      statement-descriptor: IdeyaNest
     circuit-breaker:
       # Two rather than five, so that a test can open the breaker with two failures
       # instead of five. The cooldown stays a minute: AdjustableClock is what moves

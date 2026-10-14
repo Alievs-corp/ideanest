@@ -269,7 +269,7 @@ class PaymentLogOrderingApiTests extends AbstractIntegrationTest {
         String unique = handle + SEQUENCE.incrementAndGet();
         UUID creatorId = Campaigns.creator(dataSource, unique);
         UUID projectId = Campaigns.seed(dataSource, creatorId, unique)
-                .state("COLLECTING")
+                .state("FULFILLING")
                 .goal("100.00")
                 .insert();
         return new Fixture(projectId, Pledges.confirmed(dataSource, projectId, unique + "-backer", "100.00"));

@@ -1230,7 +1230,7 @@ heard of is treated as **not public** — it fails closed.
 |---|---|---|
 | `NOT_PUBLIC` | `DRAFT`, `SUBMITTED`, `CHANGES_REQUESTED`, `REJECTED`, `APPROVED`, `SCHEDULED`, `SUSPENDED` | §4.3: discovery never returns these under any filter or sort. The service states the same seven independently as `DiscoveryStatus.HIDDEN_STATES` |
 | `PUBLIC_NOT_INDEXABLE` | `PRELAUNCH`, `CANCELED` | Reachable, deliberately not indexed. A pre-launch page is an **unmoderated** teaser — `DRAFT → PRELAUNCH` passes no review — on an id-based URL that stops existing when the campaign opens. A cancelled campaign stays reachable for the backers who have the link, but a permanent search result for a withdrawn campaign is a dead end outranking the live ones beside it |
-| `INDEXABLE` | `LIVE`, `LATE_PLEDGE`, `SUCCESSFUL`, `COLLECTING`, `FULFILLING`, `COMPLETED`, `UNSUCCESSFUL` | Public, moderated, and stable — §4.4's project page is the page a backer is looking for |
+| `INDEXABLE` | `LIVE`, `CLOSING_WINDOW`, `EXTENDED`, `SUCCESSFUL`, `WITHDRAWN`, `FULFILLING`, `COMPLETED`, `UNSUCCESSFUL` | Public, moderated, and stable — §4.4's project page is the page a backer is looking for |
 
 **One predicate, both surfaces.** `isIndexableProjectState` is what the sitemap
 filters on, and `projectPageRobots` is the same decision shaped as a `robots`
@@ -1404,24 +1404,13 @@ would be the second pledge this whole mechanism exists to prevent.
 | `IDEMPOTENCY_KEY_REQUIRED` / `IDEMPOTENCY_KEY_INVALID` | Says it is a fault in this page. Neither can happen while `idempotency.ts` sends a `crypto.randomUUID()`, so reaching one is a bug report and not a state a backer can recover from |
 | `PLEDGE_MODIFIED` | Offers a new reservation. Usually §8.4's sweep expiring the draft as it was confirmed — the service will not claim a cause it inferred rather than observed, and neither does the wording |
 
-**The confirmation reads the pledge rather than asserting facts about it.**
-`cardVerified` and `paymentMethodId` come back on every `PledgeResponse`, and
-the "what happens now" sentences are written from them. Both say the same thing
-today as the hard-coded prose they replaced — nothing charged, no method
-collected — and #55 is precisely the change that would have made that prose a
-lie nobody was told to go and fix.
-
-**There is no card form, and adding one would be a defect.** Card entry and 3-D
-Secure are #55, blocked on #60 (`status: needs-decision`), so there is no
-provider, no hosted field and nothing to tokenise with. `§17.2` targets SAQ A,
-which holds only while card data never touches our servers — and a field that
-looks like it takes a card teaches somebody that this is where a card goes on
-this site. The payment step is an honest note saying nothing is collected, and
-`paymentMethodId` is sent as null.
-
-**Confirmation is a commitment, not a payment.** §9.2 collects nothing until the
-campaign succeeds, and this build has not even taken a card, so the confirmation
-screen says both in as many words.
+**There is no card form, and adding one would be a defect.** Under IDN-EXT-01
+the pledge is paid on the payment provider's own page (`POST
+/v1/pledges/{id}/payment`), and the provider's webhook settles it `COLLECTED`.
+`§17.2` targets SAQ A, which holds only while card data never touches our
+servers — and a field that looks like it takes a card teaches somebody that this
+is where a card goes on this site. #45 removed the stored-card model's
+`confirm` call and its `paymentMethodId` and `cardVerified` fields.
 
 **Tax is `0.00` and the line is not printed.** `TaxPolicy` holds the zero
 deliberately until #78. A permanent "Tax 0.00" row invites the one question the

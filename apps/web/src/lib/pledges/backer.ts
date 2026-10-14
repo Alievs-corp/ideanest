@@ -64,8 +64,6 @@ export interface BackerPledgeSummary {
   /** Null for §4.5's PL-02 — support with no reward, which is a first-class choice. */
   readonly rewardTitle: string | null;
   readonly isAnonymous: boolean;
-  /** §4.5's PL-16: money taken after the deadline, which §5.1's decision was not made from. */
-  readonly latePledge: boolean;
   readonly confirmedAt: string | null;
   readonly canceledAt: string | null;
   readonly project: BackerPledgeProject;

@@ -21,7 +21,7 @@ import type { ProjectState } from './states';
  *
  * <h2>This answers a narrower question than "is this page public"</h2>
  *
- * `RENDERABLE_STATES` in `./states` is twelve states long: a `SUCCESSFUL` campaign is
+ * `RENDERABLE_STATES` in `./states` is ten states long: a `SUCCESSFUL` campaign is
  * public, indexable, and closed. Its rewards are still printed, and they are still not for
  * sale. Backing is three of the public states — IDN-EXT-01 (#36).
  *

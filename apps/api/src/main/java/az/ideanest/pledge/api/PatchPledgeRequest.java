@@ -16,8 +16,6 @@ import java.util.regex.Pattern;
  * {@code referrerCode}. A pledge backs the campaign it was made for, so moving it is
  * not an edit; and a referrer is a record of which link brought the backer, which is
  * a fact about how they arrived and not a preference they can revise.
- * {@code paymentMethodId} is here and is not on the draft, because §4.5 has the card
- * chosen after the draft exists.
  *
  * <p><strong>Absent and null are different, and on this endpoint the difference is
  * money.</strong> {@code "rewardTierId": null} gives up the reward and makes the
@@ -37,8 +35,7 @@ public record PatchPledgeRequest(
         Patched<List<PledgeAddonBody>> addons,
         Patched<Money> contribution,
         Patched<String> shippingCountry,
-        Patched<Boolean> isAnonymous,
-        Patched<UUID> paymentMethodId) {
+        Patched<Boolean> isAnonymous) {
 
     /** The same shape {@code shipping_rules.country_code} and {@code pledges.shipping_country} hold. */
     private static final Pattern COUNTRY = Pattern.compile("^[A-Z]{2}$");
@@ -50,7 +47,6 @@ public record PatchPledgeRequest(
         addons = Patched.orAbsent(addons);
         contribution = Patched.orAbsent(contribution);
         isAnonymous = Patched.orAbsent(isAnonymous);
-        paymentMethodId = Patched.orAbsent(paymentMethodId);
 
         // Through map, which preserves an explicit null rather than collapsing it to
         // absence — a backer whose new selection has nothing to post clears the
@@ -68,8 +64,7 @@ public record PatchPledgeRequest(
                 addons.map(PledgeAddonBody::selectionsOf),
                 contribution,
                 shippingCountry,
-                isAnonymous,
-                paymentMethodId);
+                isAnonymous);
     }
 
     /**
