@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Field, FileDropZone, InlineAlert, Media, Pill, TextInput } from '@ideanest/ui';
 import type { CoverImage } from '../../lib/projects/api';
 import {
@@ -10,7 +10,7 @@ import {
   meetsCoverMinimum,
 } from '@ideanest/campaign-editor/cover-image';
 import { measureImage } from '../../lib/projects/coverImage';
-import { UploadFailed, uploadImage, type UploadStage } from '../../lib/media/upload';
+import { describeUploadFailure, useImageUpload } from '../../lib/media/useImageUpload';
 
 /**
  * The cover image.
@@ -31,11 +31,7 @@ import { UploadFailed, uploadImage, type UploadStage } from '../../lib/media/upl
  * the dimensions are read here in the browser and are the client's word — which is one of the
  * two reasons the size rule stopped blocking.
  */
-import {
-  COVER_FAILURE_CODES,
-  type CoverFailureCode,
-  type CoverImageCopy,
-} from '@ideanest/campaign-editor/copy';
+import type { CoverImageCopy } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface CoverImageFieldProps {
@@ -56,15 +52,6 @@ type Note = { tone: 'success' | 'info' | 'danger'; title?: string; text: string 
 
 const MINIMUM = `${COVER_MIN_WIDTH}×${COVER_MIN_HEIGHT}`;
 
-/**
- * What each refusal means, in words a creator can act on.
- *
- * Keyed on the server's code rather than rendering its sentence, because the sentence is
- * English for a log and these are read by somebody deciding what to do next. The editor is
- * not translated yet (#324 scopes that separately); when it is, this table is what moves to
- * the catalogue.
- */
-
 export function CoverImageField({
   copy,
   url,
@@ -76,7 +63,11 @@ export function CoverImageField({
   onRemove,
 }: CoverImageFieldProps) {
   const [checking, setChecking] = useState(false);
-  const [stage, setStage] = useState<UploadStage | null>(null);
+  /*
+   * The transfer itself, shared with every other field that takes a picture since #271:
+   * `lib/media/useImageUpload.ts` abandons a superseded file rather than racing it.
+   */
+  const { stage, upload: send } = useImageUpload();
   const [note, setNote] = useState<Note | null>(null);
   /*
    * The blur placeholder for the preview. For an upload it comes from the server, on the
@@ -85,9 +76,6 @@ export function CoverImageField({
    * load — which is honest, because for that path nothing on the server has seen the bytes.
    */
   const [placeholder, setPlaceholder] = useState<string | null>(null);
-
-  /* Abandoning an upload when the creator picks a different file, rather than racing it. */
-  const inFlight = useRef<AbortController | null>(null);
 
   function sizeAdvice(size: { width: number; height: number }): Note {
     return meetsCoverMinimum(size)
@@ -113,18 +101,6 @@ export function CoverImageField({
         };
   }
 
-  function describeFailure(cause: unknown): string {
-    if (cause instanceof UploadFailed) {
-      /*
-       * `cause.message` is the SERVICE's own sentence when it sent one, and empty when it did
-       * not — `lib/media/upload.ts` stopped carrying English fallbacks in #86, and the three
-       * codes it throws instead are in `copy.failures` with the other nine.
-       */
-      return refusalFor(copy, cause.code) ?? (cause.message === '' ? copy.unusable : cause.message);
-    }
-    return cause instanceof Error ? cause.message : copy.unusable;
-  }
-
   async function useAddress(): Promise<void> {
     const address = url.trim();
     if (address === '') {
@@ -143,24 +119,19 @@ export function CoverImageField({
       onAccept({ url: address, width: size.width, height: size.height, mediaId: null });
       setNote(sizeAdvice(size));
     } catch (cause) {
-      setNote({ tone: 'danger', text: describeFailure(cause) });
+      setNote({ tone: 'danger', text: cause instanceof Error ? cause.message : copy.unusable });
     } finally {
       setChecking(false);
     }
   }
 
   async function upload(file: File): Promise<void> {
-    inFlight.current?.abort();
-    const controller = new AbortController();
-    inFlight.current = controller;
-
     setChecking(true);
     setNote(null);
     try {
-      const image = await uploadImage(file, {
-        signal: controller.signal,
-        onStage: setStage,
-      });
+      const image = await send(file);
+      // Abandoned for a newer file, which is the one this field now reports on.
+      if (image === null) return;
 
       setPlaceholder(image.blurDataUrl === '' ? null : image.blurDataUrl);
       onAccept({
@@ -174,11 +145,8 @@ export function CoverImageField({
       });
       setNote(sizeAdvice(image));
     } catch (cause) {
-      if (cause instanceof DOMException && cause.name === 'AbortError') return;
-      setNote({ tone: 'danger', title: copy.notUsedTitle, text: describeFailure(cause) });
+      setNote({ tone: 'danger', title: copy.notUsedTitle, text: describeUploadFailure(cause, copy) });
     } finally {
-      if (inFlight.current === controller) inFlight.current = null;
-      setStage(null);
       setChecking(false);
     }
   }
@@ -308,19 +276,4 @@ export function CoverImageField({
       </div>
     </Field>
   );
-}
-
-/**
- * The sentence for an upload refusal this build knows, or `null`.
- *
- * A lookup on a `Record` keyed by the service's own codes. An unknown code falls through to
- * the service's own message rather than to nothing: the deployment may refuse for a reason
- * this build has never heard of, and its sentence is better than silence.
- */
-function refusalFor(copy: CoverImageCopy, code: string): string | null {
-  return isKnownCode(code) ? copy.failures[code] : null;
-}
-
-function isKnownCode(code: string): code is CoverFailureCode {
-  return (COVER_FAILURE_CODES as readonly string[]).includes(code);
 }

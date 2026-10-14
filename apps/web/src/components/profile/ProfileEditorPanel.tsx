@@ -213,6 +213,11 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
   const [locations, setLocations] = useState<readonly ProfileLocation[] | null>(null);
 
   const [saving, setSaving] = useState(false);
+  /*
+   * An uploaded picture's own save. "Save profile" waits for it, because the two answers would
+   * otherwise race to replace the stored profile, and the older one could win.
+   */
+  const [avatarSaving, setAvatarSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, string>>>({});
@@ -263,7 +268,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (saving || profile === null || draft === null) return;
+    if (saving || avatarSaving || profile === null || draft === null) return;
 
     setSaving(true);
     setSaved(false);
@@ -285,22 +290,61 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
        */
       await refresh();
     } catch (cause) {
-      const refusal = profileFieldRefusal(cause);
-
-      if (refusal !== null && isProfileField(refusal.field)) {
-        setFieldErrors({ [refusal.field]: refusal.message });
-        /*
-         * No banner as well. The sentence is under the control it is about, and repeating it
-         * at the top of the form would have somebody fix one thing and read about it twice.
-         */
-        setFailure(null);
-      } else {
-        setFailure(
-          cause instanceof ApiError ? (cause.problem?.detail ?? cause.message) : copy.unreachable,
-        );
-      }
+      placeRefusal(cause);
     } finally {
       setSaving(false);
+    }
+  }
+
+  /** A refused save, under the control it names, or over the form when it names none. */
+  function placeRefusal(cause: unknown): void {
+    const refusal = profileFieldRefusal(cause);
+
+    if (refusal !== null && isProfileField(refusal.field)) {
+      setFieldErrors({ [refusal.field]: refusal.message });
+      /*
+       * No banner as well. The sentence is under the control it is about, and repeating it
+       * at the top of the form would have somebody fix one thing and read about it twice.
+       */
+      setFailure(null);
+    } else {
+      setFailure(
+        cause instanceof ApiError ? (cause.problem?.detail ?? cause.message) : copy.unreachable,
+      );
+    }
+  }
+
+  /**
+   * An uploaded picture, saved on its own — `ProfileAvatarField` says why it does not wait for
+   * the form. #271.
+   *
+   * The request carries `avatarUrl` and nothing else, so whatever else somebody has typed and
+   * not yet saved is neither sent nor lost: the answer replaces the stored profile, as every
+   * answer does, and only the picture in the draft. `false` tells the field the save was
+   * refused, and the refusal itself lands where `submit`'s would.
+   */
+  async function saveAvatar(url: string): Promise<boolean> {
+    setAvatarSaving(true);
+    setSaved(false);
+    setFailure(null);
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next['avatarUrl'];
+      return next;
+    });
+    try {
+      const answer = await saveOwnProfile({ avatarUrl: url });
+      setProfile(answer);
+      setDraft((current) =>
+        current === null ? draftFrom(answer) : { ...current, avatarUrl: answer.avatarUrl ?? '' },
+      );
+      // No `refresh()`, unlike `submit`: the session carries the name and not the picture.
+      return true;
+    } catch (cause) {
+      placeRefusal(cause);
+      return false;
+    } finally {
+      setAvatarSaving(false);
     }
   }
 
@@ -431,6 +475,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
             disabled={saving}
             error={fieldErrors['avatarUrl']}
             onUrlChange={(url) => change({ avatarUrl: url })}
+            onUploaded={saveAvatar}
             copy={copy.avatar}
           />
 
@@ -509,7 +554,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
           />
 
           <div className="flex flex-wrap items-center gap-4">
-            <Pill type="submit" disabled={saving}>
+            <Pill type="submit" disabled={saving || avatarSaving}>
               {saving ? copy.saving : copy.save}
             </Pill>
           </div>

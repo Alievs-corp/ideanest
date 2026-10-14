@@ -49,11 +49,10 @@ export async function generateMetadata(): Promise<Metadata> {
  *
  * <h2>What is still missing, said plainly</h2>
  *
- * **P-01 is "avatar upload and crop" and this page performs neither.** There is no object
- * storage and no media table; §13.1's ingestion pipeline is a different epic.
- * `ProfileAvatarField` takes the address of a picture that is already published and says so
- * on screen, which is the same position `components/campaign-editor/CoverImageField` takes
- * about a campaign's cover.
+ * **P-01 is "avatar upload and crop" and this page performs the first half.** Since #271
+ * `ProfileAvatarField` uploads through §13.1's pipeline, the cover's, and still takes the
+ * address of a picture published elsewhere. There is no crop: the frame is a circle cut from
+ * the middle of the picture, and the field says so beside its preview.
  *
  * <h2>Motion: none</h2>
  *

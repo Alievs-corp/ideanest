@@ -1,4 +1,9 @@
+import {
+  type CampaignEditorTranslator,
+  coverImageCopyFrom,
+} from '@ideanest/campaign-editor/copy';
 import { type CardTranslator, type SharedCardCopy, sharedCardCopyFrom } from './card-copy';
+import type { ImageUploadCopy } from '../media/useImageUpload';
 
 /**
  * Every word `/u/[slug]` draws — issue #324.
@@ -201,12 +206,10 @@ export function followControlCopyFrom(t: ProfileRawTranslator): FollowControlCop
  * copy of the service's validation is a rule free to drift from the one that actually holds.
  * ---------------------------------------------------------------------- */
 
-/** §4.2's P-03 — the avatar field, which takes an address rather than a file. */
+/** §4.2's P-01 — the avatar field: an upload, with an address as the second way in (#271). */
 export interface ProfileAvatarCopy {
   readonly label: string;
   readonly hint: string;
-  readonly pipelineTitle: string;
-  readonly pipelineBody: string;
   /** Carries `{name}`. The accessible name of the initials fallback. */
   readonly noPicture: string;
   readonly broken: string;
@@ -215,18 +218,23 @@ export interface ProfileAvatarCopy {
   readonly initials: string;
   readonly address: string;
   readonly addressPlaceholder: string;
+  /** Says the address, unlike an upload, waits for "Save profile". */
+  readonly addressHint: string;
   readonly remove: string;
-  readonly squareTitle: string;
-  readonly notSquareTitle: string;
-  /** Carries `{file}` and `{size}`. */
-  readonly square: string;
-  /** Carries `{file}` and `{size}`. */
-  readonly notSquare: string;
-  readonly unreadable: string;
   readonly prompt: string;
   readonly dragPrompt: string;
   readonly buttonLabel: string;
   readonly dropHint: string;
+  /** An uploaded picture is saved on its own; this says it was. */
+  readonly uploaded: string;
+  /** The form's own word, for the moment between a ready upload and its save. */
+  readonly saving: string;
+  /**
+   * The stages and the refusals, which are the cover's — `lib/media/useImageUpload.ts` says
+   * why — except `UPLOAD_STILL_PROCESSING`. The cover's sentence promises the image may appear
+   * later; a profile stores an address rather than a media id, so an avatar never will.
+   */
+  readonly upload: ImageUploadCopy;
 }
 
 /** §4.2's P-02 — at most five accounts elsewhere, one per platform. */
@@ -306,7 +314,17 @@ export interface ProfileEditorCopy {
   readonly links: ProfileLinksCopy;
 }
 
-export function profileEditorCopyFrom(t: ProfileRawTranslator): ProfileEditorCopy {
+/**
+ * `editor` is a lookup rooted at `campaignEditor`, for the upload's words: the route resolves
+ * both namespaces, and the avatar borrows the cover's stages and refusals rather than keeping
+ * a fifth translation of each.
+ */
+export function profileEditorCopyFrom(
+  t: ProfileRawTranslator,
+  editor: CampaignEditorTranslator,
+): ProfileEditorCopy {
+  const cover = coverImageCopyFrom(editor);
+
   return {
     heading: t('editor.heading'),
     liveAt: String(t.raw('editor.liveAt')),
@@ -336,24 +354,29 @@ export function profileEditorCopyFrom(t: ProfileRawTranslator): ProfileEditorCop
     avatar: {
       label: t('editor.avatar.label'),
       hint: t('editor.avatar.hint'),
-      pipelineTitle: t('editor.avatar.pipelineTitle'),
-      pipelineBody: t('editor.avatar.pipelineBody'),
       noPicture: String(t.raw('editor.avatar.noPicture')),
       broken: t('editor.avatar.broken'),
       cropped: t('editor.avatar.cropped'),
       initials: t('editor.avatar.initials'),
       address: t('editor.avatar.address'),
       addressPlaceholder: t('editor.avatar.addressPlaceholder'),
+      addressHint: t('editor.avatar.addressHint'),
       remove: t('editor.avatar.remove'),
-      squareTitle: t('editor.avatar.squareTitle'),
-      notSquareTitle: t('editor.avatar.notSquareTitle'),
-      square: String(t.raw('editor.avatar.square')),
-      notSquare: String(t.raw('editor.avatar.notSquare')),
-      unreadable: t('editor.avatar.unreadable'),
       prompt: t('editor.avatar.prompt'),
       dragPrompt: t('editor.avatar.dragPrompt'),
       buttonLabel: t('editor.avatar.buttonLabel'),
       dropHint: t('editor.avatar.dropHint'),
+      uploaded: t('editor.avatar.uploaded'),
+      saving: t('editor.saving'),
+      upload: {
+        stage: cover.stage,
+        notUsedTitle: cover.notUsedTitle,
+        unusable: cover.unusable,
+        failures: {
+          ...cover.failures,
+          UPLOAD_STILL_PROCESSING: t('editor.avatar.stillProcessing'),
+        },
+      },
     },
     links: {
       label: t('editor.links.label'),

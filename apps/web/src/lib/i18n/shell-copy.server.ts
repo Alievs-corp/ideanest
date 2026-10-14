@@ -305,7 +305,11 @@ export async function followControlCopy(): Promise<FollowControlCopy> {
  * `/settings/privacy` draws the visibility switch beside the data export and the closure.
  */
 export async function profileEditorCopy(): Promise<ProfileEditorCopy> {
-  return profileEditorCopyFrom(await getTranslations('profile'));
+  const [profile, editor] = await Promise.all([
+    getTranslations('profile'),
+    getTranslations('campaignEditor'),
+  ]);
+  return profileEditorCopyFrom(profile, editor);
 }
 
 export async function profileVisibilityCopy(): Promise<ProfileVisibilityCopy> {

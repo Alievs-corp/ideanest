@@ -5355,8 +5355,6 @@
       "avatar": {
         "label": "Profil şəkli",
         "hint": "Profilinizdə və yaratdığınız hər kampaniyada adınızın yanında göstərilir.",
-        "pipelineTitle": "Yükləmə media boru xətti ilə birlikdə gələcək",
-        "pipelineBody": "IdeyaNest hələ fayl saxlaya bilmir, ona görə burada artıq harada isə dərc olunmuş şəklin ünvanı verilir. Şəklin hansı hissəsinin göstəriləcəyini seçmək — kəsim — eyni işlə birlikdə gələcək.",
         "noPicture": "{name}, şəkilsiz",
         "broken": "Həmin ünvan burada şəkil kimi açılmadı. Profiliniz onun yerinə baş hərflərinizi göstərəcək.",
         "cropped": "Şəkliniz dairəyə belə kəsilir.",
@@ -5364,15 +5362,13 @@
         "address": "Profil şəklinin ünvanı",
         "addressPlaceholder": "https://images.example.com/me.jpg",
         "remove": "Şəkli sil",
-        "squareTitle": "Bu şəkil kvadratdır",
-        "notSquareTitle": "Bu şəkil kvadrat deyil",
-        "square": "{file} {size} pikseldir və dairəyə olduğu kimi yerləşir. Heç nə yüklənməyib — onu açıq bir yerdə dərc edin və ünvanını aşağıya yapışdırın.",
-        "notSquare": "{file} {size} pikseldir, ona görə ortadan dairəyə kəsilir. Heç nə yüklənməyib — onu açıq bir yerdə dərc edin və ünvanını aşağıya yapışdırın.",
-        "unreadable": "Həmin fayl şəkil kimi oxuna bilmədi.",
-        "prompt": "Və ya necə kəsiləcəyini görmək üçün bura şəkil atın",
-        "dragPrompt": "Şəkli ölçmək üçün buraxın",
-        "buttonLabel": "Ölçmək üçün şəkil seçin",
-        "dropHint": "Brauzerinizdə ölçülür. Heç nə yüklənmir."
+        "prompt": "Profilinizdə işlətmək üçün şəkli bura atın",
+        "dragPrompt": "Bu şəkli yükləmək üçün buraxın",
+        "buttonLabel": "Şəkil seçin",
+        "dropHint": "JPEG, PNG, WebP, AVIF və ya HEIC, 20 MB-a qədər. Hazır olan kimi profilinizdə saxlanılır. Kvadrat şəkil dairəyə ən yaxşı oturur.",
+        "addressHint": "Və ya artıq dərc olunmuş şəklin ünvanını yapışdırın. Ünvan formun qalan hissəsi ilə birlikdə saxlanılır.",
+        "uploaded": "Yeni şəkliniz saxlanıldı və profilinizdə göstərilir.",
+        "stillProcessing": "Şəklin işlənməsi həmişəkindən uzun çəkir. Bir azdan yenidən cəhd edin."
       },
       "links": {
         "label": "Digər hesablarınıza keçidlər",
