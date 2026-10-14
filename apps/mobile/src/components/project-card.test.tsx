@@ -192,10 +192,21 @@ describe('not open for pledges yet', () => {
 });
 
 describe('the money on the card', () => {
-  it('rounds the percent through decimal.js: 79.995 is 80% funded', async () => {
+  it('rounds the percent down through decimal.js: 79.995 is 79% funded', async () => {
     await renderCard({ ...LIVE, completionPercent: '79.995' });
-    expect(screen.getByText('80% funded')).toBeTruthy();
-    expect(completionOf({ completionPercent: '79.995' })?.toFixed(0)).toBe('80');
+    expect(screen.getByText('79% funded')).toBeTruthy();
+    expect(completionOf({ completionPercent: '79.995' })?.toFixed()).toBe('79.995');
+  });
+
+  it('says 99% at 99.5, not 100%: the goal is not met yet (#255)', async () => {
+    await renderCard({ ...LIVE, completionPercent: '99.5' });
+    expect(screen.getByText('99% funded')).toBeTruthy();
+    expect(screen.queryByText('100% funded')).toBeNull();
+  });
+
+  it('says 100% at exactly 100', async () => {
+    await renderCard({ ...LIVE, completionPercent: '100' });
+    expect(screen.getByText('100% funded')).toBeTruthy();
   });
 
   it('never goes through a float: 84.49999999999999999 is 84, where Number() makes it 85', async () => {
@@ -226,7 +237,7 @@ describe('the money on the card', () => {
     await renderCard(LIVE);
     expect(screen.getByText('Succeeds at 80% of the goal')).toBeTruthy();
     // Printed once, beside the bar: the bar's own "% funded" line is off.
-    expect(screen.getAllByText('43% funded', { includeHiddenElements: true })).toHaveLength(1);
+    expect(screen.getAllByText('42% funded', { includeHiddenElements: true })).toHaveLength(1);
   });
 
   it('leaves out "of goal" when there is no goal', async () => {
@@ -259,7 +270,7 @@ describe('the card as one link', () => {
   it('carries what it prints as its value, so a screen reader hears it on the one stop', async () => {
     await renderCard({ ...LIVE, extended: true, daysLeft: 2 });
     expect(screen.getByRole('link')).toHaveAccessibilityValue({
-      text: 'Live, Extended, 2 days left, 43% funded, 12 backers',
+      text: 'Live, Extended, 2 days left, 42% funded, 12 backers',
     });
   });
 

@@ -146,6 +146,15 @@ describe('ProgressBar', () => {
     expect(bar).toHaveAttribute('aria-valuemax', '100');
   });
 
+  it('announces 99.5 as 99 and 100 as 100, never rounding the goal into being met', () => {
+    const { rerender } = render(<ProgressBar value={99.5} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '99');
+    expect(screen.getByRole('progressbar', { name: 'Funding: 99 percent' })).toBeInTheDocument();
+
+    rerender(<ProgressBar value={100} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100');
+  });
+
   it('keeps the real figure in aria while clamping the fill to 100%', () => {
     const { container } = render(<ProgressBar value={1111} />);
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1111');

@@ -56,6 +56,13 @@ describe('a campaign on the created list', () => {
     expect(screen.getByText('of 10,000.00 AZN goal')).toBeInTheDocument();
   });
 
+  it('rounds 99.5% down rather than calling it funded (#255)', () => {
+    const almost = { ...CARD, pledged: { amount: '9950.00', currency: 'AZN' } };
+    render(<ProfileCampaignCard copy={COPY.grid.card} locale="en" card={almost} funding="shown" />);
+
+    expect(screen.getByText('99% funded')).toBeInTheDocument();
+  });
+
   it('links to the campaign at its public address', () => {
     render(<ProfileCampaignCard copy={COPY.grid.card} locale="en" card={CARD} funding="shown" />);
 

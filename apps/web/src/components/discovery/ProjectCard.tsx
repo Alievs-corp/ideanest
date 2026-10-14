@@ -163,6 +163,11 @@ export interface ProjectCardProps {
 
 export function ProjectCard({ card, priority = false, copy, locale }: ProjectCardProps) {
   const completion = completionOf(card);
+  /*
+   * Rounded DOWN, as `LiveFunding` rounds the campaign page's figure (#252, #255): `toFixed(0)`
+   * rounds half up, and a card at 99.5% read "100% funded" before the goal was met.
+   */
+  const percent = completion?.toFixed(0, Decimal.ROUND_DOWN) ?? '';
   const badge = card.badge == null ? null : BADGES[card.badge];
   const accent = campaignAccent(card);
   const days = card.daysLeft ?? null;
@@ -322,14 +327,14 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
                  */
                 completion.toNumber()
               }
-              label={fillPlaceholders(copy.progressLabel, { percent: completion.toFixed(0) })}
+              label={fillPlaceholders(copy.progressLabel, { percent })}
             />
             <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1 text-xs">
               <span className="font-medium text-on-accent tabular-nums">
                 {formatMoney(card.pledged)}
               </span>
               <span className="text-on-accent/72 tabular-nums">
-                {fillPlaceholders(copy.funded, { percent: completion.toFixed(0) })}
+                {fillPlaceholders(copy.funded, { percent })}
               </span>
             </div>
             {/*

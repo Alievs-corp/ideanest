@@ -30,7 +30,7 @@ export function DotIndicator({ percent, onLime = false, className, ...props }: D
   return (
     <div
       role="img"
-      aria-label={`Funding: ${Math.round(percent)} percent`}
+      aria-label={`Funding: ${Math.floor(percent)} percent`}
       className={cn('flex items-center gap-1', className)}
       {...props}
     >
