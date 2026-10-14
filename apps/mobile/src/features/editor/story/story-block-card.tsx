@@ -474,14 +474,14 @@ function EmbedFields({
         disabled={disabled}
         invalid={invalid && block.url.trim() !== '' && block.title.trim() === '' ? true : undefined}
         accessibilityLabel={fillPlaceholders(blocks.titleOf, { name })}
-        accessibilityHint={copy.mobile('embedHint')}
+        accessibilityHint={blocks.embedHint}
         placeholder={blocks.embedTitlePlaceholder}
         onChangeText={(title) => onChange({ ...block, title })}
         onBlur={onFlush}
         testID={`${testID}-title`}
       />
       <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        {copy.mobile('embedHint')}
+        {blocks.embedHint}
       </Caption>
     </View>
   );

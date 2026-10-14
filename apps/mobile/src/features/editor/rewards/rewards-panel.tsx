@@ -393,7 +393,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
                 variant="warning"
                 politeness="polite"
                 title={words.atCapacityTitle}
-                description={t('atCapacityBody', { max: String(MAX_REWARD_TIERS) })}
+                description={fillPlaceholders(words.atCapacityBody, { max: String(MAX_REWARD_TIERS) })}
                 testID="tiers-full"
               />
             ) : null}
@@ -437,7 +437,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
                     busy={busyId === reward.id}
                     reordering={reordering}
                     readOnly={readOnly}
-                    deliversOn={(date) => t('deliversOn', { date })}
+                    deliversOn={(date) => fillPlaceholders(words.deliversOn, { date })}
                     onEdit={() => openReward(reward)}
                     onDuplicate={() => duplicate(reward)}
                     onHide={() => setVisibility(reward, true)}
@@ -479,7 +479,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
         title={
           deletingItem === null ? words.deleteItemTitle : fillPlaceholders(words.deleteItemNamed, { name: deletingItem.name })
         }
-        description={`${words.cannotBeUndone}\n\n${t('deleteItemBody')}`}
+        description={`${words.cannotBeUndone}\n\n${words.deleteItemBody}`}
         deleteLabel={words.delete}
         keepLabel={words.keepIt}
         deleting={deletingItem !== null && busyId === deletingItem.id}
@@ -497,7 +497,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
             ? words.deleteRewardTitle
             : fillPlaceholders(words.deleteRewardNamed, { title: deletingReward.title })
         }
-        description={`${words.cannotBeUndone}\n\n${t('deleteRewardBody')}`}
+        description={`${words.cannotBeUndone}\n\n${words.deleteRewardBody}`}
         deleteLabel={words.delete}
         keepLabel={words.keepIt}
         deleting={deletingReward !== null && busyId === deletingReward.id}

@@ -6412,12 +6412,6 @@
     },
     "editor": {
       "signedOutDetail": "Bu telefonda artıq sessiya yoxdur. Bu kampaniyanı redaktə etməyə davam etmək üçün yenidən daxil olun.",
-      "load": {
-        "forbidden": "Bu layihəyə girişiniz yoxdur.",
-        "notFound": "Belə layihə tapılmadı.",
-        "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
-        "unreachable": "Xidmətlə əlaqə qurulmadı. Bağlantını yoxlayıb yenidən cəhd edin."
-      },
       "offlineReadOnly": "İnternet bağlantısı yoxdur. Bu, layihənin bu telefonda son yüklənmiş halıdır və bağlantı bərpa olunana qədər dəyişdirilə bilməz.",
       "scheduledLaunchLocked": "Kampaniya başladıqdan sonra başlama vaxtını dəyişmək olmaz.",
       "unsent": {
@@ -6427,13 +6421,7 @@
         "discard": "İmtina et"
       },
       "failures": {
-        "signedOut": "Hesabdan çıxmısınız. Yenidən daxil olun — yazdıqlarınızın heç biri itməyib.",
-        "forbidden": "Bu layihəni redaktə etməyə icazəniz yoxdur.",
-        "notFound": "Bu layihə artıq mövcud deyil.",
-        "conflict": "Bu ekran açılandan bəri layihə dəyişib. Cari versiyanı görmək üçün onu yenidən yükləyin.",
-        "rejected": "Xidmət dəyişikliyi qəbul etmədi. Aşağıda qeyd olunan sahələri yoxlayın.",
-        "generic": "Dəyişiklik saxlanıla bilmədi. Yenidən cəhd edin.",
-        "unreachable": "Xidmətlə əlaqə qurulmadı, ona görə də heç nə saxlanmadı. Yenidən cəhd edin."
+        "conflict": "Bu ekran açılandan bəri layihə dəyişib. Cari versiyanı görmək üçün onu yenidən yükləyin."
       },
       "discard": {
         "title": "Dəyişikliklərdən imtina edilsin?",
@@ -6490,19 +6478,10 @@
         "confirmDateLabel": "{label} üçün {date} tarixini seç"
       },
       "rewards": {
-        "deliversOn": "Çatdırılma: {date}",
         "weight": "{grams} q",
-        "atCapacityBody": "Kampaniya ən çox {max} mükafat təklif edə bilər. Yenisini əlavə etməzdən əvvəl birini silin və ya birləşdirin.",
-        "deleteItemBody": "Mükafatın tərkibində olan əşya silinə bilməz — əvvəlcə onu mükafatdan çıxarın. Bu səhifənin bildiyinə görə bu əşya heç bir mükafatda deyil, xidmət isə bunu yenidən yoxlayır.",
-        "deleteRewardBody": "Kimsə mükafatı seçəndən sonra onu silmək olmur, yalnız gizlətmək olar — ona görə silmək hələ heç kim seçməyəndə təklif olunur.",
-        "notSavedDetail": "Yazdığınız heç nə itmədi — mətn aşağıdakı sahələrdə qalır.",
-        "ratesNotSavedDetail": "Mükafat haqqında qalan hər şey yadda saxlanıldı. Yalnız ölkələr üzrə tariflər qəbul olunmadı — onları düzəldib yenidən yadda saxlayın, qalanı ikinci dəfə göndərilməyəcək.",
-        "weightHint": "İstəyə bağlı. Çatdırılma xərci sonra buna görə hesablanır.",
         "image": "Şəkil",
         "imageHint": "İstəyə bağlı. Şəkil seçin, şəkil çəkin və ya artıq internetdə olan şəklin ünvanını yazın.",
         "imageRemove": "Şəkli sil",
-        "earlyBirdHint": "Bitən sərfəli təklif. Ona ya bağlanma tarixi, ya da məhdud yer sayı lazımdır — onsuz bu, insanları boş yerə tələsdirən etiketli adi mükafatdır.",
-        "secretHint": "İctimai siyahıda görünmür, ona gizli token ilə çatılır. Mükafatı yenidən ictimai etmək tokeni ləğv edir, ona görə artıq göndərilmiş keçidlər işləməyəcək.",
         "destination": "sıra nömrəsi {position} olan istiqamət",
         "copyToken": "Tokeni kopyala",
         "copied": "Kopyalandı",
@@ -6511,47 +6490,18 @@
         "nothingCached": "Oflaynsınız, mükafatlar isə bu telefonda hələ yüklənməyib."
       },
       "faq": {
-        "heading": "Suallar",
-        "explanation": "Bunlar kampaniyanın Suallar bölməsində bu sıra ilə görünür. Siyahının mənası dəstəkçinin şərhlərdə verəcəyi suala əvvəlcədən cavab verməkdir.",
-        "atLimitBody": "Kampaniya ən çox {max} sual dərc edə bilər. Yenisini əlavə etmək üçün birini silin.",
-        "deleteBody": "Sual üzrə heç kimə borc yoxdur, ona görə o birdəfəlik silinir — mükafatdan fərqli olaraq, mükafatı kimsə seçəndən sonra onu yalnız gizlətmək olar.",
         "nothingCached": "Oflaynsınız, suallar isə bu telefonda hələ yüklənməyib."
       },
       "story": {
         "unreadableDetail": "Bu hekayə tətbiqin anladığından daha yeni formatda yazılıb. Onu redaktə etmək üçün tətbiqi yeniləyin. Heç nə dəyişdirilməyib və hekayə layihə səhifənizdə qalır.",
         "notSavedDetail": "Yazdıqlarınızın heç biri itməyib — hamısı bu telefondadır və yenidən göndəriləcək.",
-        "incomplete": {
-          "one": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
-          "few": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
-          "many": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
-          "other": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək."
-        },
-        "untitledSection": "Adsız bölmə",
         "imageHint": "Bu telefondan bir foto və ya artıq dərc olunmuş şəkil.",
-        "pixels": "{size} piksel",
-        "altHint": "Məcburidir. Ekran oxuyucusundan istifadə edən dəstəkçi şəkil əvəzinə bunu eşidir, ona görə faylın adını yox, şəkildə nə göründüyünü təsvir edin.",
-        "embedHint": "Başlıq ekran oxuyucusunun «çərçivə» sözü əvəzinə oxuduğu mətndir. Yalnız YouTube və Vimeo videoları yerləşdirilə bilər.",
         "providers": {
           "youtube": "YouTube",
           "vimeo": "Vimeo"
         },
         "history": {
-          "version": "Versiya {number}",
-          "mostRecent": "ən son",
-          "characters": {
-            "one": "{count} simvol",
-            "few": "{count} simvol",
-            "many": "{count} simvol",
-            "other": "{count} simvol"
-          },
-          "hide": "Gizlət",
           "hideVersion": "Versiya {number} önbaxışını gizlət",
-          "savedAt": "Versiya {number} saxlanılma vaxtı: {date}. Həcmi: {characters}.",
-          "currentHolds": "Hazırkı hekayənin həcmi: {characters}. Əvəz olunmazdan əvvəl o, versiya kimi saxlanılır, ona görə bunu elə bu siyahıdan geri qaytarmaq olar.",
-          "loadFailed": "Versiya tarixçəsi yüklənə bilmədi.",
-          "versionFailed": "Bu versiya yüklənə bilmədi.",
-          "restoreFailed": "Bu versiya bərpa oluna bilmədi. Heç nə dəyişməyib.",
-          "unreachable": "Xidmətə qoşulmaq mümkün olmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
           "newerFormat": "Bu versiya tətbiqin anladığından daha yeni formatda yazılıb. Onu oxumaq üçün tətbiqi yeniləyin.",
           "waitForSave": "Bu telefondakı bütün dəyişikliklər saxlanılandan sonra bərpa etmək mümkün olacaq.",
           "discardsHeld": "Bu telefondakı hekayədə tamamlanmamış blok var, ona görə saxlanılmamış dəyişikliklər versiya kimi qorunmur. Bərpa onları ləğv edəcək."
@@ -6564,18 +6514,12 @@
         }
       },
       "prelaunch": {
-        "confirmDetail": "Mükafatlarınız, hekayəniz və maliyyə hədəfiniz haqqında heç nə dərc olunmur. Kampaniya yoxlanılıb başladılana qədər pul qəbul etmir.",
         "copyLabel": "Başlanğıcdan əvvəlki linki kopyala",
         "copyFailed": "Linki kopyalamaq alınmadı. Yuxarıdakı linkə basıb saxlayın, onu seçib özünüz kopyalayın.",
         "share": "Paylaş",
         "shareLabel": "Başlanğıcdan əvvəlki linki paylaş",
         "shareFailed": "Paylaşma pəncərəsini açmaq alınmadı. Yenidən cəhd edin.",
         "fixFirst": "Əvvəlcə başlığı, qısa təsviri və ya örtük şəklini düzəldin. Səhifə ekrandakını deyil, son saxlanılanı dərc edərdi."
-      },
-      "review": {
-        "done": "Hazırdır",
-        "launchExplanation": "Kampaniya başladığı andan platformanın hər yerində görünür və dəstək qəbul etməyə başlayır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı yenidən qaralamaya qaytarmaq olmaz.",
-        "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz."
       }
     },
     "native": {

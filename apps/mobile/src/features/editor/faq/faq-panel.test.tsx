@@ -103,7 +103,7 @@ describe('FaqPanel', () => {
     mockFaqs = () => new Promise(() => {});
     await show();
     expect(screen.getByTestId('faq-list-loading')).toBeTruthy();
-    expect(screen.getByText(en.mobile.editor.faq.heading)).toBeTruthy();
+    expect(screen.getByText(en.campaignEditor.faq.heading)).toBeTruthy();
   });
 
   it('says the questions could not be loaded, and tries again', async () => {

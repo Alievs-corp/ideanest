@@ -120,7 +120,7 @@ describe('PrelaunchPanel', () => {
     await fireEvent.press(screen.getByTestId('prelaunch-open'));
     await settle();
     expect(screen.getByText(words.confirmTitle)).toBeTruthy();
-    expect(screen.getByText(mobile.confirmDetail)).toBeTruthy();
+    expect(screen.getByText(words.confirmDetail)).toBeTruthy();
     expect(calls()).toEqual([]);
 
     await fireEvent.press(screen.getByTestId('prelaunch-confirm-cancel'));

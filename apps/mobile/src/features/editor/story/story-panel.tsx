@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
-import { pluralise } from '@ideanest/messages/plurals';
+import { pluralForm, pluralise } from '@ideanest/messages/plurals';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
 import type { ProjectEdit } from '@ideanest/campaign-editor/contract';
 import {
@@ -46,7 +46,7 @@ import {
 } from '../../../components/ui';
 import { FOCUS_DELAY_MS, focusOn } from '../../../components/ui/overlay';
 import { Glyphs } from '../../../icons';
-import { formatCount, pluralCategory } from '../../../lib/i18n';
+import { formatCount } from '../../../lib/i18n';
 import { PERSIST_DELAY_MS } from '../use-autosave';
 import { colors, fontSize, lineHeight, radius, spacing } from '../../../theme';
 import { useEditor } from '../editor-context';
@@ -678,7 +678,7 @@ function StoryForm({
                   description={
                     problems.size === 1
                       ? story.notSavingDetail
-                      : t(`incomplete.${pluralCategory(locale, problems.size)}`, {
+                      : fillPlaceholders(pluralForm(locale, story.incomplete, problems.size), {
                           count: formatCount(problems.size, locale),
                         })
                   }
@@ -725,7 +725,7 @@ function StoryForm({
                         style={[styles.anchor, anchor.level === 3 && styles.indented]}
                       >
                         <Body tone="primary" style={anchor.level === 3 ? styles.small : undefined}>
-                          {anchor.text.trim() === '' ? t('untitledSection') : anchor.text}
+                          {anchor.text.trim() === '' ? story.untitledSection : anchor.text}
                         </Body>
                         <Caption tone="tertiary">{`#${anchor.id}`}</Caption>
                       </View>

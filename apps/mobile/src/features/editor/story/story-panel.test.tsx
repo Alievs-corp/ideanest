@@ -536,7 +536,7 @@ describe('StoryPanel — earlier versions', () => {
     await fireEvent.press(screen.getByTestId('story-history-open'));
     await settle();
     expect(within(screen.getByTestId('story-history-failed')).getByText(STORY.history.failedTitle)).toBeTruthy();
-    expect(screen.getByText(MOBILE.history.unreachable)).toBeTruthy();
+    expect(screen.getByText(en.campaignEditor.story.history.unreachable)).toBeTruthy();
     await fireEvent.press(within(screen.getByTestId('story-history-failed')).getByRole('button'));
     await settle();
     expect(screen.getByTestId('story-version-7')).toBeTruthy();

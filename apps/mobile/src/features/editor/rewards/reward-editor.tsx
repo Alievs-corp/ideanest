@@ -229,7 +229,7 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
           title={ratesUnsaved ? words.ratesNotSavedTitle : words.notSavedTitle}
           description={failure.message}
           testID="reward-editor-failure"
-          action={<Caption>{ratesUnsaved ? t('ratesNotSavedDetail') : t('notSavedDetail')}</Caption>}
+          action={<Caption>{ratesUnsaved ? words.ratesNotSavedDetail : words.notSavedDetail}</Caption>}
         />
       )}
 
@@ -470,7 +470,7 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
         <View style={styles.option}>
           <Switch
             label={words.earlyBird}
-            description={t('earlyBirdHint')}
+            description={words.earlyBirdHint}
             value={draft.isEarlyBird}
             onValueChange={(isEarlyBird) => setDraft({ ...draft, isEarlyBird })}
             testID="reward-early-bird"
@@ -496,7 +496,7 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
         <View style={styles.option}>
           <Switch
             label={words.secret}
-            description={t('secretHint')}
+            description={words.secretHint}
             value={draft.isSecret}
             onValueChange={(isSecret) => setDraft({ ...draft, isSecret })}
             testID="reward-secret"

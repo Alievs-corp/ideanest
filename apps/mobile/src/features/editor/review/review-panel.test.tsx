@@ -48,7 +48,6 @@ const METRICS = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 const words = en.campaignEditor.review;
-const mobile = en.mobile.editor.review;
 
 function project(extra: Partial<ProjectEdit> = {}): ProjectEdit {
   return {
@@ -185,7 +184,7 @@ describe('ReviewPanel', () => {
     await show();
     expect(screen.getByText(words.requiredHeading)).toBeTruthy();
     expect(screen.getByText(words.recommendedHeading)).toBeTruthy();
-    expect(screen.getByLabelText(`Title, ${mobile.done}`)).toBeTruthy();
+    expect(screen.getByLabelText(`Title, ${words.done}`)).toBeTruthy();
     expect(
       screen.getByLabelText(`Cover image, ${words.requiredNotDone}. A cover image is required.`),
     ).toBeTruthy();
@@ -313,7 +312,7 @@ describe('ReviewPanel', () => {
     await settle();
     expect(calls()).toEqual([]);
     expect(screen.getByText(words.confirmLaunchTitle)).toBeTruthy();
-    expect(screen.getByText(mobile.confirmLaunchBody)).toBeTruthy();
+    expect(screen.getByText(words.confirmLaunchBody)).toBeTruthy();
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, FOCUS_DELAY_MS + 20));
     });

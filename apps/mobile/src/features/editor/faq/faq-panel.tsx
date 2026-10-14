@@ -185,10 +185,10 @@ function Questions({ words }: { readonly words: FaqPanelCopy }) {
           <View style={styles.head}>
             <View style={styles.words}>
               <View style={styles.heading} accessible accessibilityRole="header">
-                <Heading>{t('heading')}</Heading>
+                <Heading>{words.heading}</Heading>
                 {ready ? <Meta>{`(${faqs.length})`}</Meta> : null}
               </View>
-              <Caption>{t('explanation')}</Caption>
+              <Caption>{words.explanation}</Caption>
             </View>
             <View style={styles.start}>
               <Pill
@@ -208,7 +208,7 @@ function Questions({ words }: { readonly words: FaqPanelCopy }) {
               variant="info"
               politeness="polite"
               title={words.atLimitTitle}
-              description={t('atLimitBody', { max: String(MAX_PROJECT_FAQS) })}
+              description={fillPlaceholders(words.atLimitBody, { max: String(MAX_PROJECT_FAQS) })}
               testID="faq-full"
             />
           ) : null}
@@ -305,7 +305,7 @@ function Questions({ words }: { readonly words: FaqPanelCopy }) {
       <DeleteDialog
         open={deleting !== null}
         title={deleting === null ? words.deleteTitle : fillPlaceholders(words.deleteNamed, { question: deleting.question })}
-        description={`${words.cannotBeUndone}\n\n${t('deleteBody')}`}
+        description={`${words.cannotBeUndone}\n\n${words.deleteBody}`}
         deleteLabel={words.delete}
         keepLabel={words.keepIt}
         deleting={deleting !== null && busyId === deleting.id}

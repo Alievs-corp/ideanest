@@ -170,8 +170,8 @@ describe('EditorFrame', () => {
   });
 
   it.each([
-    [403, en.mobile.editor.load.forbidden],
-    [404, en.mobile.editor.load.notFound],
+    [403, en.campaignEditor.load.forbidden],
+    [404, en.campaignEditor.load.notFound],
   ])('words a %i and offers to try again', async (status, words) => {
     mockGet.mockRejectedValueOnce(new ApiError(status, { status })).mockResolvedValueOnce(project());
     await show();
