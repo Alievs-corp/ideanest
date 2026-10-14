@@ -7,7 +7,8 @@ import type { ProjectPageResponse } from '../../lib/api/server';
 import type { CampaignPage } from '../../lib/projects/publicPage';
 import { readCampaignPage } from '../../lib/projects/publicPage';
 import { saveCampaign } from '../../lib/projects/api';
-import { unsaveCampaign, viewerState } from '../../lib/community/signals';
+import { unsaveCampaign } from '../../lib/community/signals';
+import { viewerState } from '../../lib/community/viewer';
 import { fetchSession, type Session } from '../../lib/session/session';
 import { SessionProvider } from '../session/SessionProvider';
 import { CampaignActions } from './CampaignActions';
@@ -113,8 +114,8 @@ vi.mock('../../lib/projects/api', async (importOriginal) => ({
 vi.mock('../../lib/community/signals', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/community/signals')>()),
   unsaveCampaign: vi.fn(),
-  viewerState: vi.fn(),
 }));
+vi.mock('../../lib/community/viewer', () => ({ viewerState: vi.fn() }));
 vi.mock('../../lib/session/session', () => ({ fetchSession: vi.fn() }));
 vi.mock('../../lib/api/access-token', () => ({ signOut: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('next/navigation', async (importOriginal) => ({

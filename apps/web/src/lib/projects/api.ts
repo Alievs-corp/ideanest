@@ -443,7 +443,7 @@ export interface SaveState {
  * rather than a value this side guessed.
  *
  * The state the control starts from is not read here: `viewerState` in
- * `lib/community/signals.ts` asks `GET /v1/projects/{id}/viewer` for it (#137).
+ * `lib/community/viewer.ts` asks `GET /v1/projects/{id}/viewer` for it (#137).
  */
 export async function saveCampaign(projectId: string, signal?: AbortSignal): Promise<SaveState> {
   const response = await authorizedFetch(`/v1/projects/${encodeURIComponent(projectId)}/save`, {
