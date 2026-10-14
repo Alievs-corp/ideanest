@@ -105,7 +105,8 @@ class AccountReadControllerTests {
                 null,
                 null,
                 "az",
-                "AZN");
+                "AZN",
+                null);
     }
 
     private static OwnProfile profile(ProfileVisibility visibility) {
