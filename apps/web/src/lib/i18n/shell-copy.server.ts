@@ -46,6 +46,12 @@ import {
 } from './signals-copy';
 import { type SurveysCopy, surveysCopyFrom } from './surveys-copy';
 import { type ReportControlCopy, reportControlCopyFrom } from './report-copy';
+import {
+  type BlockControlCopy,
+  type BlockedListCopy,
+  blockControlCopyFrom,
+  blockedListCopyFrom,
+} from './block-copy';
 import { type PayoutPanelCopy, payoutPanelCopyFrom } from './payout-copy';
 import { type CampaignControlsCopy, campaignControlsCopyFrom } from './campaign-controls-copy';
 import type { PluralForms } from '@ideanest/ui';
@@ -443,6 +449,16 @@ export async function reportControlCopy(): Promise<ReportControlCopy> {
     await getTranslations('admin.moderation'),
     await getTranslations('common'),
   );
+}
+
+/** The Block control under a comment and on a profile — §4.9's C-08 (#324). `block-copy.ts` carries the rest. */
+export async function blockControlCopy(): Promise<BlockControlCopy> {
+  return blockControlCopyFrom(await getTranslations('blocking'));
+}
+
+/** `/settings/privacy`'s list of blocked accounts — §4.9's C-08 (#324). */
+export async function blockedListCopy(): Promise<BlockedListCopy> {
+  return blockedListCopyFrom(await getTranslations('blocking'), await getTranslations('common'));
 }
 
 /** The creator's payout details panel — IDN-EXT-01 (#44). */

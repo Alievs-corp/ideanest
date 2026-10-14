@@ -3,12 +3,17 @@ import { MessageSquareOff } from 'lucide-react';
 import { Tag } from '@ideanest/ui/server';
 import { formatInstant, SERVER_TIME_ZONE } from '../../lib/projects/deadline';
 import type { CampaignComment, CampaignCommentPage } from '../../lib/community/comments';
+import { BlockedAuthorsProvider, BlockNotice, HiddenIfBlocked } from './BlockedAuthors';
 import { CommentComposer } from './CommentComposer';
 import { CommentControls } from './CommentControls';
 import { ViewerInstant } from './ViewerClock';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../lib/i18n/locale';
-import { commentCopy, reportControlCopy } from '../../lib/i18n/shell-copy.server';
+import {
+  blockControlCopy,
+  commentCopy,
+  reportControlCopy,
+} from '../../lib/i18n/shell-copy.server';
 
 /**
  * §4.4's Comments tab — issue #285, over §4.9's C-01, C-02, C-03 and C-07.
@@ -72,6 +77,14 @@ import { commentCopy, reportControlCopy } from '../../lib/i18n/shell-copy.server
  * it. Whoever adds a public name to the comment projection closes it, and this component
  * gains a byline and nothing else.
  *
+ * <h2>What the reader blocked is hidden in the browser — #324</h2>
+ *
+ * The page is read anonymously, so it arrives as everybody's page. `BlockedAuthors` reads the
+ * signed-in reader's own list once the session is known and leaves out, through
+ * `HiddenIfBlocked`, every conversation a blocked account started and every reply it wrote —
+ * the same two things the service leaves out of a read that carries the reader's token. That
+ * file argues why the page is drawn first and thinned after, rather than held back.
+ *
  * <h2>Motion</h2>
  *
  * None. This tab reads as long content and docs/motion-system.md §8 forbids animation in it.
@@ -108,100 +121,108 @@ export async function CampaignComments({
   const copy = await commentCopy();
 
   return (
-    <section aria-labelledby="campaign-comments" className="flex flex-col gap-6">
-      <h2 id="campaign-comments" className="text-xl font-medium tracking-[-0.02em] text-white">
-        {t('heading')}
-      </h2>
+    <BlockedAuthorsProvider>
+      <section aria-labelledby="campaign-comments" className="flex flex-col gap-6">
+        <h2 id="campaign-comments" className="text-xl font-medium tracking-[-0.02em] text-white">
+          {t('heading')}
+        </h2>
 
-      {singleThread ? (
-        <p>
-          <Link
-            href={allThreadsHref}
-            scroll={false}
-            className="rounded-sm text-sm text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
-          >
-            {t('all')}
-          </Link>
-        </p>
-      ) : (
-        /*
-          The composer is above the list rather than below it. A tab whose write control is at
-          the foot of a hundred comments is a tab where the control is unreachable on the
-          surface that needs it most — and §4.9's rate limit means somebody who scrolled that
-          far to find it may then be refused.
-        */
-        <CommentComposer
-          copy={copy}
-          target={{ kind: 'campaign', projectId }}
-          returnTo={returnTo}
-          label={copy.composerLabel}
-          submitLabel={copy.postComment}
-        />
-      )}
+        {singleThread ? (
+          <p>
+            <Link
+              href={allThreadsHref}
+              scroll={false}
+              className="rounded-sm text-sm text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            >
+              {t('all')}
+            </Link>
+          </p>
+        ) : (
+          /*
+            The composer is above the list rather than below it. A tab whose write control is at
+            the foot of a hundred comments is a tab where the control is unreachable on the
+            surface that needs it most — and §4.9's rate limit means somebody who scrolled that
+            far to find it may then be refused.
+          */
+          <CommentComposer
+            copy={copy}
+            target={{ kind: 'campaign', projectId }}
+            returnTo={returnTo}
+            label={copy.composerLabel}
+            submitLabel={copy.postComment}
+          />
+        )}
 
-      {page === null ? (
-        /*
-         * THE SERVICE, NOT THE CAMPAIGN. `fetchCommentThreads` answers `null` only when the
-         * read was refused or could not be made. "Nobody has commented" printed over a
-         * restarting service is a statement about the campaign that happens to be false.
-         */
-        <p className="text-sm text-white/64">
-          {t('failed')}
-        </p>
-      ) : page.threads.length === 0 ? (
-        <p className="text-sm text-white/64">{t('empty')}</p>
-      ) : (
-        <ol className="flex flex-col gap-6">
-          {page.threads.map((thread) => (
-            <li key={thread.root.id}>
-              <CommentEntry
-                comment={thread.root}
-                campaignTitle={campaignTitle}
-                returnTo={returnTo}
-              />
+        <BlockNotice />
 
-              {(thread.replies.length > 0 || thread.nextReplyCursor !== null) && (
-                <ol className="mt-3 flex flex-col gap-3 border-l border-white/8 pl-4 sm:pl-6">
-                  {thread.replies.map((reply) => (
-                    <li key={reply.id}>
-                      <CommentEntry
-                        comment={reply}
-                        campaignTitle={campaignTitle}
-                        returnTo={returnTo}
-                      />
-                    </li>
-                  ))}
+        {page === null ? (
+          /*
+           * THE SERVICE, NOT THE CAMPAIGN. `fetchCommentThreads` answers `null` only when the
+           * read was refused or could not be made. "Nobody has commented" printed over a
+           * restarting service is a statement about the campaign that happens to be false.
+           */
+          <p className="text-sm text-white/64">
+            {t('failed')}
+          </p>
+        ) : page.threads.length === 0 ? (
+          <p className="text-sm text-white/64">{t('empty')}</p>
+        ) : (
+          <ol className="flex flex-col gap-6">
+            {page.threads.map((thread) => (
+              <HiddenIfBlocked key={thread.root.id} authorId={thread.root.authorId}>
+                <li>
+                  <CommentEntry
+                    comment={thread.root}
+                    campaignTitle={campaignTitle}
+                    returnTo={returnTo}
+                  />
 
-                  {thread.nextReplyCursor !== null && threadHrefs[thread.root.id] !== undefined && (
-                    <li>
-                      <Link
-                        href={threadHrefs[thread.root.id] as string}
-                        scroll={false}
-                        className="rounded-sm text-xs text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
-                      >
-                        {t('showReplies')}
-                      </Link>
-                    </li>
+                  {(thread.replies.length > 0 || thread.nextReplyCursor !== null) && (
+                    <ol className="mt-3 flex flex-col gap-3 border-l border-white/8 pl-4 sm:pl-6">
+                      {thread.replies.map((reply) => (
+                        <HiddenIfBlocked key={reply.id} authorId={reply.authorId}>
+                          <li>
+                            <CommentEntry
+                              comment={reply}
+                              campaignTitle={campaignTitle}
+                              returnTo={returnTo}
+                            />
+                          </li>
+                        </HiddenIfBlocked>
+                      ))}
+
+                      {thread.nextReplyCursor !== null && threadHrefs[thread.root.id] !== undefined && (
+                        <li>
+                          <Link
+                            href={threadHrefs[thread.root.id] as string}
+                            scroll={false}
+                            className="rounded-sm text-xs text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                          >
+                            {t('showReplies')}
+                          </Link>
+                        </li>
+                      )}
+                    </ol>
                   )}
-                </ol>
-              )}
-            </li>
-          ))}
-        </ol>
-      )}
+                </li>
+              </HiddenIfBlocked>
+            ))}
+          </ol>
+        )}
 
-      {olderHref !== null && (
-        <p>
-          <Link
-            href={olderHref}
-            scroll={false}
-            className="rounded-sm text-sm text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
-          >
-            {t('older')}
-          </Link>
-        </p>
-      )}
-    </section>
+        {olderHref !== null && (
+          <p>
+            <Link
+              href={olderHref}
+              scroll={false}
+              className="rounded-sm text-sm text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            >
+              {t('older')}
+            </Link>
+          </p>
+        )}
+      </section>
+    </BlockedAuthorsProvider>
   );
 }
 
@@ -282,6 +303,7 @@ async function CommentEntry({
       <CommentControls
         copy={copy}
         reportCopy={await reportControlCopy()}
+        blockCopy={await blockControlCopy()}
         commentId={comment.id}
         authorId={comment.authorId}
         acceptsReplies={comment.acceptsReplies}

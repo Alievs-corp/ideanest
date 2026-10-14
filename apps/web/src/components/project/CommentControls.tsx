@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from '../../i18n/navigation';
-import { Reply, Trash2 } from 'lucide-react';
+import { Ban, Reply, Trash2 } from 'lucide-react';
 import { ApiError } from '../../lib/api/problem';
+import { blockAccount, blockFailureMessage } from '../../lib/community/blocks';
 import { deleteComment } from '../../lib/community/comments';
 import { ReportControl } from '../moderation/ReportControl';
 import { useSession } from '../session/SessionProvider';
+import { useBlockedAuthors } from './BlockedAuthors';
 import { CommentComposer } from './CommentComposer';
+import type { BlockControlCopy } from '../../lib/i18n/block-copy';
 import type { CommentCopy } from '../../lib/i18n/campaign-copy';
 import type { ReportControlCopy } from '../../lib/i18n/report-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -53,6 +56,16 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  * "Delete" would promise an erasure the platform deliberately does not perform — and somebody
  * pressing it to make a sentence disappear from the internet is entitled to know that it
  * will still be there, marked as withdrawn, for the moderator holding a report about it.
+ *
+ * <h2>Block sits beside Report, and is asked in place like Withdraw — #324</h2>
+ *
+ * §4.9's C-08. Offered to a signed-in reader under somebody else's comment, and nowhere else:
+ * a visitor has no blocks to keep, and the author cannot block themselves. The question is
+ * asked inline, for Withdraw's reason, and the sentence it shows is the one that matters before
+ * pressing — what the block hides, that the other person cannot reply, that they are not told,
+ * and that their campaigns stay visible. Once the service agrees the id goes into
+ * `BlockedAuthors`, and this comment and every other one by the same account leave the page —
+ * this control with them, which is why the sentence afterwards is the tab's to say.
  */
 
 export interface CommentControlsProps {
@@ -69,6 +82,8 @@ export interface CommentControlsProps {
   readonly campaignTitle: string;
   /** The report dialog's own words. Resolved beside {@link CommentCopy}, on the server. */
   readonly reportCopy: ReportControlCopy;
+  /** The Block control's words (#324). Resolved on the server from `blocking`. */
+  readonly blockCopy: BlockControlCopy;
 }
 
 export function CommentControls({
@@ -79,17 +94,41 @@ export function CommentControls({
   campaignTitle,
   copy,
   reportCopy,
+  blockCopy,
 }: CommentControlsProps) {
   const router = useRouter();
   const { status, session } = useSession();
+  const blockedAuthors = useBlockedAuthors();
 
   const [replying, setReplying] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [confirmingBlock, setConfirmingBlock] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const signedIn = status === 'signed-in';
   const isAuthor = signedIn && session !== null && authorId !== null && session.id === authorId;
+  /*
+   * Only inside a comments tab that can hide what is blocked: a Block that succeeded and left
+   * the comment on screen would read as a Block that did nothing.
+   */
+  const mayBlock = signedIn && !isAuthor && authorId !== null && blockedAuthors !== null;
+
+  async function block(): Promise<void> {
+    if (busy || authorId === null || blockedAuthors === null) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      await blockAccount(authorId);
+      setConfirmingBlock(false);
+      blockedAuthors.add(authorId, blockCopy.blocked);
+    } catch (cause) {
+      setError(blockFailureMessage(cause, blockCopy.failures));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function withdraw(): Promise<void> {
     if (busy) return;
@@ -158,7 +197,46 @@ export function CommentControls({
           returnTo={returnTo}
           copy={reportCopy}
         />
+
+        {mayBlock && !confirmingBlock && (
+          <button
+            type="button"
+            onClick={() => setConfirmingBlock(true)}
+            className="inline-flex items-center gap-1.5 rounded-sm text-xs text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          >
+            <Ban aria-hidden="true" className="size-3.5" />
+            {blockCopy.trigger}
+          </button>
+        )}
       </div>
+
+      {confirmingBlock && (
+        /*
+          Asked in place, for Withdraw's reason below. Not drawn in the danger colour: a block
+          removes nothing from anybody else's page and is undone from privacy settings — it is
+          a decision about what this reader sees, not a destructive act.
+        */
+        <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-3 p-3">
+          <p className="text-xs text-reading">{blockCopy.warning}</p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void block()}
+              className="rounded-sm text-xs font-medium text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] disabled:opacity-40"
+            >
+              {busy ? blockCopy.blocking : blockCopy.confirm}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingBlock(false)}
+              className="rounded-sm text-xs text-white/64 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            >
+              {blockCopy.cancel}
+            </button>
+          </div>
+        </div>
+      )}
 
       {confirming && (
         /*

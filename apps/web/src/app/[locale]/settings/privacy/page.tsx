@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import { AccountPageHeader } from '../../../../components/account/AccountPageHeader';
 import { ProfileVisibilityPanel } from '../../../../components/profile/ProfileVisibilityPanel';
 import { AccountClosurePanel } from '../../../../components/settings/AccountClosurePanel';
+import { BlockedAccountsPanel } from '../../../../components/settings/BlockedAccountsPanel';
 import { DataExportPanel } from '../../../../components/settings/DataExportPanel';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { getTranslations } from 'next-intl/server';
 import {
   accountClosurePanelCopy,
+  blockedListCopy,
   dataExportPanelCopy,
   profileVisibilityCopy,
 } from '../../../../lib/i18n/shell-copy.server';
@@ -39,6 +41,12 @@ export async function generateMetadata(): Promise<Metadata> {
  * only one that is reversible in a keystroke, which is the right thing to meet first on a page
  * whose last panel closes an account.
  *
+ * <h2>The blocked accounts are second — #324</h2>
+ *
+ * §4.9's C-08. The visibility switch says who can see you; the list of blocked accounts says
+ * whom you no longer see, and who can no longer answer you. It belongs with the first and
+ * before the pair below, which must stay together.
+ *
  * <h2>The export is above the closure, and the order is the point</h2>
  *
  * They are the two halves of the same moment: §17.4 anonymises a closed account after thirty
@@ -53,11 +61,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function PrivacyPage() {
   // Both panels are client islands behind a bearer token, so the route resolves their words
   // and hands them down — lib/i18n/settings-copy.ts carries the reasoning.
-  const [t, exportCopy, closureCopy, visibility] = await Promise.all([
+  const [t, exportCopy, closureCopy, visibility, blocked] = await Promise.all([
     getTranslations('settings.pages.privacy'),
     dataExportPanelCopy(),
     accountClosurePanelCopy(),
     profileVisibilityCopy(),
+    blockedListCopy(),
   ]);
 
   return (
@@ -68,6 +77,7 @@ export default async function PrivacyPage() {
 
       <div className="mt-8 flex flex-col gap-6">
         <ProfileVisibilityPanel copy={visibility} />
+        <BlockedAccountsPanel copy={blocked} />
         <DataExportPanel copy={exportCopy} />
         <AccountClosurePanel copy={closureCopy} />
       </div>

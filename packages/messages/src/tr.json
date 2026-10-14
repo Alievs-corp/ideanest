@@ -4444,7 +4444,8 @@
         "notPosted": "Yorum gönderilemedi.",
         "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "notWithdrawn": "Yorum geri çekilemedi.",
-        "withdrawUnreachable": "Servise ulaşılamadı. Tekrar deneyin."
+        "withdrawUnreachable": "Servise ulaşılamadı. Tekrar deneyin.",
+        "replyNotAccepted": "Bu yorum hesabınızdan yanıt kabul etmiyor."
       }
     },
     "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Yaratıcı son tarihi bir kez uzatabilir.",
@@ -6582,6 +6583,37 @@
       "faceIdUsage": "IdeyaNest, bu cihazda tutulan oturumunuzun kilidini açmak için Face ID kullanır.",
       "cameraUsage": "IdeyaNest, kampanya görseli veya profil fotoğrafı çekebilmeniz için kamerayı kullanır.",
       "photoLibraryUsage": "IdeyaNest, kampanya görseli veya profil fotoğrafı seçebilmeniz için fotoğraflarınızı açar."
+    }
+  },
+  "blocking": {
+    "trigger": "Bu hesabı engelle",
+    "warning": "Bu hesabın yorumlarını ve yanıtlarını artık görmeyeceksiniz, o da sizin yorumlarınıza yanıt veremeyecek. Kişiye haber verilmez. Kampanyaları görünür kalır — sorun bir kampanyadaysa onu şikayet edin.",
+    "confirm": "Engelle",
+    "blocking": "Engelleniyor",
+    "cancel": "İptal",
+    "blockedState": "Bu hesabı engellediniz. Yorumları size gösterilmiyor.",
+    "unblock": "Engeli kaldır",
+    "unblocking": "Engel kaldırılıyor",
+    "blocked": "Engellendi. Bu hesabın yorumlarını görmeyeceksiniz; bunu gizlilik ayarlarınızdan geri alabilirsiniz.",
+    "unblocked": "Engel kaldırıldı. Bu hesabın yorumları yeniden görünecek.",
+    "failures": {
+      "refused": "Servis isteği reddetti. Yeniden deneyin.",
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+      "staff": "Platform çalışanları engellenemez. Bunun yerine hesabı şikayet edebilirsiniz.",
+      "self": "Kendinizi engelleyemezsiniz."
+    },
+    "list": {
+      "title": "Engellenen hesaplar",
+      "intro": "Engellemek, bir hesabın yorumlarını ve yanıtlarını sizden gizler ve sizin yorumlarınıza yanıt vermesini engeller. Kimseye haber verilmez. Kampanyalar görünür kalır, çünkü arkalarında destekçilerin parası var — bunun yerine kampanyayı şikayet edin.",
+      "loading": "Engellediğiniz hesaplar yükleniyor",
+      "failedTitle": "Liste yüklenemedi",
+      "emptyTitle": "Kimseyi engellemediniz",
+      "emptyBody": "Bir hesabı yorumlarından birinin altından ya da profilinden engelleyebilirsiniz.",
+      "meta": "{time} engellendi",
+      "unblock": "Engeli kaldır",
+      "unblockLabel": "{name} adlı kullanıcının engelini kaldır",
+      "unblockFailedTitle": "Değişmedi",
+      "unblockFailedBody": "{name} adlı kullanıcının engeli kaldırılamadı. Birazdan yeniden deneyin."
     }
   }
 }
