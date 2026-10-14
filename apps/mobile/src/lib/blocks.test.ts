@@ -13,6 +13,7 @@ function comment(id: string, authorId: string | null, parentId: string | null = 
     threadId: parentId ?? id,
     parentId,
     authorId,
+    author: null,
     body: authorId === null ? null : `Comment ${id}`,
     byCreator: false,
     deleted: authorId === null,
