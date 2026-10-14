@@ -60,12 +60,8 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
 export interface FaqEntryEditorProps {
   projectId: string;
   /**
-   * The drawer's two buttons.
-   *
-   * The rest of this editor is still English — the FAQ tab has not been translated yet — and
-   * these are threaded now because `EditorDrawer` is shared and stopped carrying its own
-   * words. A partly translated drawer is not the goal; it is what a shared component being
-   * translated first looks like from the tab that follows it.
+   * The drawer's two buttons — the frame's, because `EditorDrawer` is shared by three tabs and
+   * carries no words of its own.
    */
   drawer: EditorDrawerCopy;
   /** This drawer's own words. */
@@ -135,7 +131,7 @@ export function FaqEntryEditor({
       }
       onOpenChange(false);
     } catch (cause) {
-      setFailure(describeFailure(cause));
+      setFailure(describeFailure(cause, copy.failures));
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ProjectLoadCopy } from '@ideanest/campaign-editor/copy';
 import { ApiError } from '../../lib/api/problem';
 import { getProjectEdit, type ProjectEdit } from '../../lib/projects/api';
 
@@ -29,26 +30,32 @@ function wasAborted(cause: unknown): boolean {
   return cause instanceof DOMException && cause.name === 'AbortError';
 }
 
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: ProjectLoadCopy): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 403) return 'You do not have access to this project.';
+    if (cause.status === 403) return copy.forbidden;
     if (cause.status === 404) {
       // 404 covers "no such project" and "not yours", deliberately
       // indistinguishable so the endpoint cannot be used to enumerate ids.
-      return 'That project could not be found.';
+      return copy.notFound;
     }
-    return (
-      cause.problem?.detail ?? cause.problem?.title ?? 'The service refused the request. Try again.'
-    );
+    return cause.problem?.detail ?? cause.problem?.title ?? copy.refused;
   }
-  return 'The service could not be reached. Check your connection and try again.';
+  return copy.unreachable;
 }
 
-export function useProjectEdit(projectId: string): ProjectEditHandle {
+/**
+ * `copy` is the frame's `load` — the words a failed load is put in. Read through a ref, so
+ * a caller handing a fresh object each render does not reload the project.
+ */
+export function useProjectEdit(projectId: string, copy: ProjectLoadCopy): ProjectEditHandle {
   const [project, setProject] = useState<ProjectEdit | null>(null);
   const [status, setStatus] = useState<ProjectLoadStatus>('loading');
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const copyRef = useRef(copy);
+  useEffect(() => {
+    copyRef.current = copy;
+  }, [copy]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -69,7 +76,7 @@ export function useProjectEdit(projectId: string): ProjectEditHandle {
           setStatus('signed-out');
           return;
         }
-        setError(messageFor(cause));
+        setError(messageFor(cause, copyRef.current));
         setStatus('failed');
       }
     })();

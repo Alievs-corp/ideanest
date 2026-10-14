@@ -118,7 +118,7 @@ export function ItemEditor({
       }
       onOpenChange(false);
     } catch (cause) {
-      setFailure(describeFailure(cause));
+      setFailure(describeFailure(cause, copy.failures));
     } finally {
       setSaving(false);
     }
@@ -138,9 +138,7 @@ export function ItemEditor({
         {failure !== null && (
           <InlineAlert variant="danger" title={copy.notSavedTitle}>
             <p>{failure.message}</p>
-            <p className="mt-2 text-white/64">
-              Nothing you typed has been lost — it is still in the fields below.
-            </p>
+            <p className="mt-2 text-white/64">{copy.notSavedDetail}</p>
           </InlineAlert>
         )}
 
@@ -233,11 +231,7 @@ export function ItemEditor({
         <div className="grid gap-6 sm:grid-cols-2">
           <Field
             label={copy.weight}
-            hint={
-              draft.isDigital
-                ? copy.weightHintDigital
-                : 'Optional, and what shipping is worked out from later.'
-            }
+            hint={draft.isDigital ? copy.weightHintDigital : copy.weightHint}
             error={visible.weightGrams}
           >
             <TextInput

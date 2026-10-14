@@ -514,11 +514,7 @@ function BlockFields({
           disabled={disabled}
           describedBy={describedBy}
           rows={block.type === 'quote' ? 3 : 5}
-          placeholder={
-            block.type === 'quote'
-              ? 'Something somebody said about this project'
-              : 'Write a paragraph. Select text and use Bold or Italic, or type **bold** and *italic*.'
-          }
+          placeholder={block.type === 'quote' ? copy.quoteHint : copy.paragraphHint}
           onChange={(text) => onChange({ ...block, spans: parseSpans(text) })}
           onBlur={onFlush}
         />
@@ -600,10 +596,7 @@ function BlockFields({
             onChange={(event) => onChange({ ...block, title: event.target.value })}
             onBlur={onFlush}
           />
-          <p className="text-[13px] text-white/40">
-            The title is what a screen reader announces instead of “frame”. Only YouTube and Vimeo
-            can be embedded.
-          </p>
+          <p className="text-[13px] text-white/40">{copy.embedHint}</p>
         </div>
       );
   }
@@ -768,8 +761,7 @@ function ImageFields({
         did nothing, which is worse than no control.
       */}
       <InlineAlert variant="info" title={copy.nothingUploadedTitle}>
-        Give the address of an image that is already published. Its size is read in your browser and
-        stored with the story, so the page can reserve its space before it loads.
+        {copy.imageAddressHint}
       </InlineAlert>
 
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -830,7 +822,7 @@ function ImageFields({
             />
           </div>
           <figcaption className="px-4 py-2 text-[13px] text-white/64">
-            {describeSize(block)} pixels
+            {fillPlaceholders(copy.pixels, { size: describeSize(block) })}
           </figcaption>
         </figure>
       )}
@@ -844,10 +836,7 @@ function ImageFields({
         onChange={(event) => onChange({ ...block, alt: event.target.value })}
         onBlur={onFlush}
       />
-      <p className="text-[13px] text-white/40">
-        Required. It is what a backer using a screen reader receives instead of the picture, so
-        describe what it shows rather than naming the file.
-      </p>
+      <p className="text-[13px] text-white/40">{copy.altHint}</p>
 
       {/*
         Two regions, for the reason `CoverImageField` gives: `InlineAlert` already

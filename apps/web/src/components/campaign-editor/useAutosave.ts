@@ -11,6 +11,7 @@ import {
   type SaveFailure,
   type SaveState,
 } from '@ideanest/campaign-editor/autosave';
+import type { SaveFailureCopy } from '@ideanest/campaign-editor/copy';
 import { ApiError } from '../../lib/api/problem';
 
 /**
@@ -54,6 +55,12 @@ export interface AutosaveOptions<P, R> {
   onSaved?: (result: R) => void;
   /** How long the creator has to stop typing before a request goes out. */
   delayMs?: number;
+  /**
+   * The words a failure falls back on — the frame's `failures`. Required, for the reason
+   * `basicsValidationCopyFrom` gives: an optional vocabulary is a form that quietly refuses in
+   * English at the moment somebody is already stuck.
+   */
+  failures: SaveFailureCopy;
 }
 
 /**
@@ -61,10 +68,11 @@ export interface AutosaveOptions<P, R> {
  *
  * The service's `detail` is preferred wherever it exists, because a problem
  * detail written by the endpoint knows which of its rules was broken and this
- * function cannot. The wording below is for the cases where there is no body to
- * read, or where the status means something the creator has to be told plainly.
+ * function cannot. `copy` is for the cases where there is no body to read, or
+ * where the status means something the creator has to be told plainly — handed
+ * in rather than written here since #78, so it is in the creator's language.
  */
-export function describeFailure(cause: unknown): SaveFailure {
+export function describeFailure(cause: unknown, copy: SaveFailureCopy): SaveFailure {
   if (cause instanceof ApiError) {
     const detail = cause.problem?.detail ?? cause.problem?.title ?? null;
     const fieldErrors = cause.problem?.errors ?? {};
@@ -73,22 +81,22 @@ export function describeFailure(cause: unknown): SaveFailure {
     const message =
       detail ??
       (cause.status === 401
-        ? 'You have been signed out. Sign in again — nothing you typed has been lost.'
+        ? copy.signedOut
         : cause.status === 403
-          ? 'You are not allowed to edit this project.'
+          ? copy.forbidden
           : cause.status === 404
-            ? 'This project no longer exists.'
+            ? copy.notFound
             : cause.status === 409
-              ? 'The project has changed since this page was opened. Reload it to see the current version.'
+              ? copy.conflict
               : cause.status === 422 || cause.status === 400
-                ? 'The service rejected the change. Check the fields marked below.'
-                : 'The change could not be saved. Try again.');
+                ? copy.rejected
+                : copy.generic);
 
     return { message, fieldErrors, status: cause.status, code, meta: cause.problem?.meta ?? null };
   }
 
   return {
-    message: 'The service could not be reached, so nothing was saved. Try again.',
+    message: copy.unreachable,
     fieldErrors: {},
     status: null,
     code: null,
@@ -100,6 +108,7 @@ export function useAutosave<P extends object, R>({
   send,
   onSaved,
   delayMs = 800,
+  failures,
 }: AutosaveOptions<P, R>): Autosave<P> {
   /*
    * One snapshot of the machine for the render, and the ref every transition reads. A
@@ -114,10 +123,12 @@ export function useAutosave<P extends object, R>({
   // every render.
   const sendRef = useRef(send);
   const onSavedRef = useRef(onSaved);
+  const failuresRef = useRef(failures);
   useEffect(() => {
     sendRef.current = send;
     onSavedRef.current = onSaved;
-  }, [send, onSaved]);
+    failuresRef.current = failures;
+  }, [send, onSaved, failures]);
 
   const apply = useCallback((event: AutosaveEvent<P>): AutosaveMachine<P> => {
     const next = autosaveReducer(machine.current, event);
@@ -142,7 +153,7 @@ export function useAutosave<P extends object, R>({
         run();
       },
       (cause: unknown) => {
-        apply({ type: 'failed', failure: describeFailure(cause) });
+        apply({ type: 'failed', failure: describeFailure(cause, failuresRef.current) });
       },
     );
   }, [apply]);

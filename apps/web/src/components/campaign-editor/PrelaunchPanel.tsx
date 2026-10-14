@@ -133,7 +133,7 @@ export function PrelaunchPanel({
   cover,
   prelaunch: words,
 }: PrelaunchPanelProps) {
-  const { project, status, error, reload, apply } = useProjectEdit(projectId);
+  const { project, status, error, reload, apply } = useProjectEdit(projectId, copy.load);
 
   /** Seeded once, for the reason `BasicsPanel` gives: re-seeding eats keystrokes. */
   const [draft, setDraft] = useState<BasicsDraft | null>(null);
@@ -147,6 +147,7 @@ export function PrelaunchPanel({
   const autosave = useAutosave<ProjectPatch, ProjectEdit>({
     send: (patch) => patchProject(projectId, patch),
     onSaved: apply,
+    failures: copy.failures,
   });
 
   useEffect(() => {
@@ -205,7 +206,7 @@ export function PrelaunchPanel({
       apply(await openPrelaunch(projectId));
       setConfirming(false);
     } catch (cause) {
-      setOpenFailure(describeFailure(cause));
+      setOpenFailure(describeFailure(cause, copy.failures));
     } finally {
       setOpening(false);
     }
@@ -279,10 +280,7 @@ export function PrelaunchPanel({
         {autosave.failure !== null && (
           <InlineAlert variant="danger" title={words.notSavedTitle}>
             <p>{autosave.failure.message}</p>
-            <p className="mt-2 text-white/64">
-              Nothing you typed has been lost — it is still in the fields below and will be sent
-              again.
-            </p>
+            <p className="mt-2 text-white/64">{words.notSavedDetail}</p>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
               {copy.tryAgain}
             </Pill>
@@ -476,10 +474,7 @@ export function PrelaunchPanel({
         {/* `text-on-white`, not `text-white`: the modal is the one white surface
             in the system (docs/ui-kit.md §7.14), and white text on it is
             invisible. */}
-        <p className="text-sm text-on-white/64">
-          Nothing about your rewards, story, or funding goal is published, and the campaign does not
-          take money until it is reviewed and launched.
-        </p>
+        <p className="text-sm text-on-white/64">{words.confirmDetail}</p>
       </Modal>
     </EditorShell>
   );

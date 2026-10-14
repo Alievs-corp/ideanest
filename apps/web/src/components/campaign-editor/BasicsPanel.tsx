@@ -131,7 +131,7 @@ export interface BasicsPanelProps {
 }
 
 export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
-  const { project, status, error, reload, apply } = useProjectEdit(projectId);
+  const { project, status, error, reload, apply } = useProjectEdit(projectId, copy.load);
 
   /**
    * The form's state, seeded once from the project.
@@ -152,6 +152,7 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
   const autosave = useAutosave<ProjectPatch, ProjectEdit>({
     send: (patch) => patchProject(projectId, patch),
     onSaved: apply,
+    failures: copy.failures,
   });
 
   useEffect(() => {

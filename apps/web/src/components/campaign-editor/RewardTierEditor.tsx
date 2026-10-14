@@ -301,14 +301,14 @@ export function RewardTierEditor({
           onSaved(repriced);
         } catch (cause) {
           setRatesUnsaved(true);
-          setFailure(describeFailure(cause));
+          setFailure(describeFailure(cause, copy.failures));
           return;
         }
       }
 
       onOpenChange(false);
     } catch (cause) {
-      setFailure(describeFailure(cause));
+      setFailure(describeFailure(cause, copy.failures));
     } finally {
       setSaving(false);
     }
@@ -334,15 +334,9 @@ export function RewardTierEditor({
           >
             <p>{failure.message}</p>
             {ratesUnsaved ? (
-              <p className="mt-2 text-white/64">
-                {copy.rest} <strong className="text-white">was</strong> saved.
-                Only the per-country rates were refused, so fix them and save again — the rest will
-                not be sent twice.
-              </p>
+              <p className="mt-2 text-white/64">{copy.ratesNotSavedDetail}</p>
             ) : (
-              <p className="mt-2 text-white/64">
-                Nothing you typed has been lost — it is still in the fields below.
-              </p>
+              <p className="mt-2 text-white/64">{copy.notSavedDetail}</p>
             )}
           </InlineAlert>
         )}
@@ -524,9 +518,7 @@ export function RewardTierEditor({
               onCheckedChange={(checked) => setDraft({ ...draft, isEarlyBird: checked })}
             />
             <p id={earlyBirdHintId} className="mt-2 text-[13px] text-white/64">
-              A better deal that runs out. It needs either a closing date or a limited number of
-              places — without one it is an ordinary reward with a label that hurries people for
-              nothing.
+              {copy.earlyBirdHint}
             </p>
             {visible.isEarlyBird !== undefined && (
               <InlineAlert variant="danger" className="mt-3">
@@ -560,8 +552,7 @@ export function RewardTierEditor({
               onCheckedChange={(checked) => setDraft({ ...draft, isSecret: checked })}
             />
             <p id={secretHintId} className="mt-2 text-[13px] text-white/64">
-              Left out of the public list and reached by a private token instead. Making it public
-              again destroys that token, so any link already sent stops working.
+              {copy.secretHint}
             </p>
             {target?.isSecret === true && target.secretToken != null && (
               /*

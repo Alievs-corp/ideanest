@@ -113,7 +113,7 @@ export interface RewardsPanelProps {
 }
 
 export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelProps) {
-  const { project, status, error, reload } = useProjectEdit(projectId);
+  const { project, status, error, reload } = useProjectEdit(projectId, copy.load);
 
   const [items, setItems] = useState<readonly Item[]>([]);
   const [rewards, setRewards] = useState<readonly Reward[]>([]);
@@ -169,7 +169,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
         setListStatus('ready');
       } catch (cause) {
         if (controller.signal.aborted) return;
-        setListError(describeFailure(cause).message);
+        setListError(describeFailure(cause, copy.failures).message);
         setListStatus('failed');
       }
     })();
@@ -249,7 +249,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
           setRewards(await reorderRewards(projectId, order));
           setFailure(null);
         } catch (cause) {
-          setFailure(describeFailure(cause));
+          setFailure(describeFailure(cause, copy.failures));
           /*
            * The optimistic order on screen is now a lie. Re-reading is the only
            * honest recovery: the service refuses a partial order outright, so a
@@ -307,7 +307,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
     try {
       await action();
     } catch (cause) {
-      setFailure(describeFailure(cause));
+      setFailure(describeFailure(cause, copy.failures));
     } finally {
       setBusyId(null);
     }
@@ -482,7 +482,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
 
           {full && (
             <InlineAlert variant="warning" title={words.atCapacityTitle}>
-              §5.3 allows {MAX_REWARD_TIERS}. Delete or combine one before adding another.
+              {fillPlaceholders(words.atCapacityBody, { max: String(MAX_REWARD_TIERS) })}
             </InlineAlert>
           )}
 
@@ -593,10 +593,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
           </div>
         }
       >
-        <p>
-          An item that a reward contains cannot be deleted — take it out of the reward first. This
-          one is not in any reward as far as this page knows, and the service checks again.
-        </p>
+        <p>{words.deleteItemBody}</p>
       </Modal>
 
       <Modal
@@ -633,10 +630,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
           </div>
         }
       >
-        <p>
-          Once somebody has backed a reward it can no longer be deleted, only hidden — so deleting
-          is offered while nobody has.
-        </p>
+        <p>{words.deleteRewardBody}</p>
       </Modal>
     </EditorShell>
   );
@@ -711,7 +705,7 @@ function RewardCard({
             {reward.isEarlyBird && <Tag>{words.earlyBird}</Tag>}
             {reward.isAddon && <Tag>{words.addOn}</Tag>}
             {reward.estimatedDelivery != null && reward.estimatedDelivery !== '' && (
-              <Tag>Delivers {reward.estimatedDelivery}</Tag>
+              <Tag>{fillPlaceholders(words.deliversOn, { date: reward.estimatedDelivery })}</Tag>
             )}
           </div>
 
