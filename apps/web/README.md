@@ -81,7 +81,7 @@ the browser half of the auth flow work at all.
 | `/settings/notifications` | Site | §4.10's table as a grid — per category, per channel, with a digest option (#89), moved by #275 |
 | `/settings/security` | Site | §4.1 A-07: enrol in two-factor, see the recovery codes once, disable (#278) |
 | `/settings/privacy` | Site | §4.1 A-10 and A-11: the data export and the thirty-day closure (#279), plus §4.2 P-07's profile switch (#274) |
-| `/settings/profile` | Site | §4.2 P-01 to P-03: name, biography, picture, website, location and links (#276). The picture is an address, not an upload — §13.1 |
+| `/settings/profile` | Site | §4.2 P-01 to P-03: name, biography, picture, website, location and links (#276). The picture is uploaded through §13.1's pipeline and saved at once, or given as an address saved with the form (#271) |
 | `/settings/email` | Site | §4.1 A-12: asks to move the account. Says plainly that nothing has changed yet (#277) |
 | `/settings/password` | Site | §4.1 A-13: replaces the password. Signs the reader out, and says so before they submit (#277) |
 | `/settings/language` | Site | §4.2 P-10, both halves: the interface language from §21.1's four (#280), and the display currency the reader sees amounts in (#327). The currency is a control when the platform has a published rate to offer and a sentence when it does not |

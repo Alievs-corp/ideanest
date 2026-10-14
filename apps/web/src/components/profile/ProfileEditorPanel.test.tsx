@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import {
@@ -10,6 +10,7 @@ import {
   type ProfileSocialLink,
 } from '../../lib/profiles/api';
 import { listProfileLocations } from '../../lib/profiles/locations';
+import { UploadFailed, uploadImage, type UploadedImage, type UploadStage } from '../../lib/media/upload';
 import { ProfileEditorPanel } from './ProfileEditorPanel';
 import { profileEditorCopyFrom } from '../../lib/i18n/profile-copy';
 import { translatorFor } from '../../test-copy';
@@ -20,7 +21,7 @@ import { translatorFor } from '../../test-copy';
  * Retyping the sentences here would give a test that passes whatever the catalogue says, and
  * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
  */
-const COPY = profileEditorCopyFrom(translatorFor('profile'));
+const COPY = profileEditorCopyFrom(translatorFor('profile'), translatorFor('campaignEditor'));
 
 /**
  * §4.2's profile editor — P-01 to P-03, issue #276.
@@ -52,8 +53,9 @@ const COPY = profileEditorCopyFrom(translatorFor('profile'));
  *   - **the form renders from the response, not from its own draft.** The endpoint answers
  *     200 with the whole profile because the result is not inferable from the request — text
  *     comes back trimmed and a location comes back with a name this browser never sent.
- *   - the avatar says plainly that nothing is uploaded, because §13.1's pipeline does not
- *     exist and a control that implied otherwise would be worse than the missing feature.
+ *   - **an uploaded picture is saved on its own, at once.** #271: the request carries
+ *     `avatarUrl` and nothing else, so a name typed and not yet saved is neither sent nor lost,
+ *     and every refusal the media service can give is said in words rather than as a code.
  */
 
 vi.mock('../session/SessionProvider', () => ({
@@ -81,9 +83,20 @@ vi.mock('../../lib/profiles/locations', () => ({
   listProfileLocations: vi.fn(),
 }));
 
+/*
+ * The transfer is mocked, as `BasicsPanel.test.tsx` mocks it for the cover: three requests and
+ * a poll that belong to `lib/media/upload.ts`, whose steps the service's own tests pin. What is
+ * asserted here is what the form does with a picture once there is one, or with a refusal.
+ */
+vi.mock('../../lib/media/upload', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/media/upload')>()),
+  uploadImage: vi.fn(),
+}));
+
 const readMock = vi.mocked(readOwnProfile);
 const saveMock = vi.mocked(saveOwnProfile);
 const locationsMock = vi.mocked(listProfileLocations);
+const uploadMock = vi.mocked(uploadImage);
 
 /** One place in the gazetteer. */
 function location(overrides: Partial<ProfileLocation> = {}): ProfileLocation {
@@ -123,6 +136,7 @@ beforeEach(() => {
   readMock.mockReset();
   saveMock.mockReset();
   locationsMock.mockReset();
+  uploadMock.mockReset();
 
   readMock.mockResolvedValue(profile());
   saveMock.mockImplementation(async () => profile());
@@ -173,10 +187,15 @@ describe('the form as it opens', () => {
     expect(screen.queryByRole('textbox', { name: /handle/iu })).not.toBeInTheDocument();
   });
 
-  it('says the picture is an address rather than an upload, because §13.1 does not exist', async () => {
+  it('offers to upload a picture, and keeps the address as the second way in', async () => {
     await open();
 
-    expect(screen.getByText(/cannot store a file yet/u)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Choose a picture' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Profile picture address' })).toHaveAccessibleDescription(
+      /already published/u,
+    );
+    // The banner that said there was nowhere to put a file is gone with the reason for it.
+    expect(screen.queryByText(/cannot store a file yet/u)).not.toBeInTheDocument();
   });
 });
 
@@ -452,5 +471,139 @@ describe('when the profile itself cannot be read', () => {
 
     expect(await screen.findByText('Your profile could not be loaded')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save profile' })).not.toBeInTheDocument();
+  });
+});
+
+describe('uploading a picture', () => {
+  const UPLOADED: UploadedImage = {
+    mediaId: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+    url: 'https://cdn.example.test/media/3f2504e0.webp',
+    width: 640,
+    height: 640,
+    blurDataUrl: 'data:image/webp;base64,AAAA',
+  };
+
+  /**
+   * Hands a file to the drop zone. `fireEvent` on the input rather than `userEvent.upload`, for
+   * the reason `BasicsPanel.test.tsx` gives: the input is hidden behind the zone's own button.
+   */
+  function choose(file = new File(['bytes'], 'me.jpg', { type: 'image/jpeg' })): void {
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]');
+    if (input === null) throw new Error('The picture field has no file input');
+    fireEvent.change(input, { target: { files: [file] } });
+  }
+
+  it('saves the uploaded address on its own, leaving what was typed and not saved alone', async () => {
+    uploadMock.mockResolvedValue(UPLOADED);
+    saveMock.mockImplementation(async () => profile({ avatarUrl: UPLOADED.url }));
+    const user = await open();
+
+    const name = screen.getByRole('textbox', { name: /^Name/u });
+    await user.clear(name);
+    await user.type(name, 'Typed, not saved');
+    choose();
+
+    expect(await screen.findByText('Your new picture is saved and shown on your profile.')).toBeInTheDocument();
+    // `avatarUrl` and nothing else: the name is still a draft, and stays one.
+    expect(saveMock).toHaveBeenCalledTimes(1);
+    expect(saveMock).toHaveBeenCalledWith({ avatarUrl: UPLOADED.url });
+    expect(screen.getByRole('textbox', { name: /^Name/u })).toHaveValue('Typed, not saved');
+    expect(screen.getByRole('textbox', { name: 'Profile picture address' })).toHaveValue(UPLOADED.url);
+
+    // And the next save of the form does not send the picture again, because it is stored.
+    await save(user);
+    expect(saveMock).toHaveBeenLastCalledWith({ name: 'Typed, not saved' });
+  });
+
+  it('says where the upload is while it runs, and takes no second file meanwhile', async () => {
+    let report: ((stage: UploadStage) => void) | undefined;
+    let finish: ((image: UploadedImage) => void) | undefined;
+    uploadMock.mockImplementation((_file, options) => {
+      report = options?.onStage;
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    });
+    saveMock.mockImplementation(async () => profile({ avatarUrl: UPLOADED.url }));
+    await open();
+
+    choose();
+    await act(async () => report?.('uploading'));
+
+    const stage = await screen.findByText('Uploading the image…');
+    expect(stage.closest('[role="status"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Choose a picture' })).toBeDisabled();
+
+    await act(async () => report?.('processing'));
+    expect(screen.getByText('Processing the image…')).toBeInTheDocument();
+
+    await act(async () => finish?.(UPLOADED));
+    expect(await screen.findByText(/new picture is saved/u)).toBeInTheDocument();
+    expect(screen.queryByText('Processing the image…')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Choose a picture' })).toBeEnabled();
+  });
+
+  /*
+   * Every refusal the issue names, plus the two a 503 carries, in words a person can act on.
+   * The service's own sentence is passed as the message and deliberately never appears: it is
+   * English for a log.
+   */
+  it.each([
+    ['UNSUPPORTED_FORMAT', /not an image this platform can read/u],
+    ['TOO_LARGE', /The limit is 20 MB/u],
+    ['TOO_SMALL', /from 320×320 upwards/u],
+    ['EMPTY', /That file is empty/u],
+    ['UPLOADS_UNAVAILABLE', /not switched on for this environment/u],
+    ['MEDIA_STORAGE_UNREACHABLE', /storage is not answering/u],
+    // The avatar's own: the cover's sentence promises the image may appear later, and an
+    // avatar, which keeps no media id, never will.
+    ['UPLOAD_STILL_PROCESSING', /Your picture is taking longer than usual/u],
+  ])('explains %s and saves nothing', async (code, sentence) => {
+    uploadMock.mockRejectedValue(new UploadFailed(code, 'service log sentence'));
+    await open();
+
+    choose();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('That file was not used');
+    expect(alert).toHaveTextContent(sentence);
+    expect(alert).not.toHaveTextContent('service log sentence');
+    expect(alert).not.toHaveTextContent('{minimum}');
+    expect(saveMock).not.toHaveBeenCalled();
+  });
+
+  it('puts a refused save of the uploaded address under the picture, and claims no success', async () => {
+    uploadMock.mockResolvedValue(UPLOADED);
+    saveMock.mockRejectedValue(
+      new ApiError(400, {
+        status: 400,
+        title: 'Invalid field',
+        detail: 'A link has to start with https:// and hold no spaces.',
+        code: 'PROFILE_FIELD_INVALID',
+        meta: { field: 'avatarUrl' },
+      }),
+    );
+    await open();
+
+    choose();
+
+    expect(await screen.findByText(/hold no spaces/u)).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Profile picture address' })).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+    expect(screen.queryByText(/new picture is saved/u)).not.toBeInTheDocument();
+  });
+
+  it('still takes a typed address, saved with the rest of the form', async () => {
+    const user = await open();
+
+    const address = screen.getByRole('textbox', { name: 'Profile picture address' });
+    await user.clear(address);
+    await user.type(address, 'https://images.example.com/new.jpg');
+    await save(user);
+
+    expect(uploadMock).not.toHaveBeenCalled();
+    expect(saveMock).toHaveBeenCalledWith({ avatarUrl: 'https://images.example.com/new.jpg' });
   });
 });

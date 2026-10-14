@@ -5355,8 +5355,6 @@
       "avatar": {
         "label": "Profile picture",
         "hint": "Shown beside your name on your profile and on every campaign you create.",
-        "pipelineTitle": "Uploading arrives with the media pipeline",
-        "pipelineBody": "IdeyaNest cannot store a file yet, so this takes the address of a picture that is already published somewhere. Choosing which part of it to show — the crop — arrives with the same work.",
         "noPicture": "{name}, with no picture",
         "broken": "That address did not load as a picture here. Your profile would show your initials instead.",
         "cropped": "This is how your picture is cropped to a circle.",
@@ -5364,15 +5362,13 @@
         "address": "Profile picture address",
         "addressPlaceholder": "https://images.example.com/me.jpg",
         "remove": "Remove picture",
-        "squareTitle": "This picture is square",
-        "notSquareTitle": "This picture is not square",
-        "square": "{file} is {size} pixels and fits the circle as it is. Nothing has been uploaded — publish it somewhere public and paste the address below.",
-        "notSquare": "{file} is {size} pixels, so it is cropped to a circle from the middle. Nothing has been uploaded — publish it somewhere public and paste the address below.",
-        "unreadable": "That file could not be read as an image.",
-        "prompt": "Or drop a picture here to see how it would be cropped",
-        "dragPrompt": "Release to measure this picture",
-        "buttonLabel": "Choose a picture to measure",
-        "dropHint": "Measured in your browser. Nothing is uploaded."
+        "prompt": "Drop a picture here to use it on your profile",
+        "dragPrompt": "Release to upload this picture",
+        "buttonLabel": "Choose a picture",
+        "dropHint": "JPEG, PNG, WebP, AVIF or HEIC, up to 20 MB. It is saved to your profile as soon as it is ready. A square picture fits the circle best.",
+        "addressHint": "Or paste the address of a picture that is already published. An address is saved with the rest of the form.",
+        "uploaded": "Your new picture is saved and shown on your profile.",
+        "stillProcessing": "Your picture is taking longer than usual to process. Try again in a moment."
       },
       "links": {
         "label": "Links to your other accounts",

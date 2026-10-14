@@ -378,12 +378,16 @@ Marked `[W]` web, `[M]` mobile, `[A]` admin.
 > and a `javascript:` scheme is an XSS one, so the scheme is refused at the column,
 > at the domain and at the request.
 >
-> **P-01 is half-served and the half that is missing is the half the capability
-> names.** `users.avatar_url` is writable now — as an address of an image that is
-> already published, which is exactly what `projects.cover_image_url` has always
-> been and is stated in the same words in `OwnProfileResponse` as in `CoverImage`.
-> The server has never seen the bytes. **Upload and crop wait on §13.1**, and until
-> that pipeline exists an uploader here would be a control with nowhere to write.
+> **P-01 uploads and does not crop.** `users.avatar_url` is writable, and since
+> §13.1's pipeline landed both clients fill it by uploading — the app with #268, the
+> web with #271 — through the same presigned flow a campaign cover uses. The column
+> still holds an address rather than a `mediaId`, so an uploaded picture is saved as
+> the address the media row answers with, and the address of a picture published
+> elsewhere is still accepted beside the upload. Two consequences follow from the
+> address: a replaced avatar's asset stays in storage, because `deleteAbandoned`
+> removes only `PENDING` rows, and a deployment whose `MEDIA_PUBLIC_BASE_URL` is not
+> https has the save refused with `PROFILE_FIELD_INVALID`. **The crop is not built**:
+> the frame is a circle cut from the middle, and both clients say so.
 >
 > **P-10 arrived with #280, as one half offered and one half stated.** Its blocker
 > was misattributed until #324: the dependency was §21.1's message catalogue, not
@@ -6247,12 +6251,14 @@ notice says — epic #100.
 Client requests a pre-signed URL, uploads directly to object storage, then
 notifies the API, which enqueues processing.
 
-**Built, for campaign covers.** `POST /v1/media/uploads` issues a presigned
+**Built, for campaign covers and profile pictures.** `POST /v1/media/uploads` issues a presigned
 `PUT`, the browser writes to it, `POST /v1/media/{id}/complete` says the bytes
 are there, and `media-processing` — a job on §8.4's durable scheduler, every five
 seconds — converts them. A campaign cover may then be set by identifier, and the
 dimensions recorded against it are **measured** rather than reported by a
-browser. What is not built is in "What is still a typed URL" below.
+browser. A profile picture (#268, #271) is the same upload, saved as the
+address the ready row answers with. What is not built is in "What is still a
+typed URL" below.
 
 **One derived file, not four variants.** §13.1 originally asked ingestion for
 160w, 640w, 1440w and the original. It stores one, reduced to 1440 on its longest
@@ -6301,9 +6307,11 @@ a guess about somebody else's infrastructure.
 
 #### What is still a typed URL
 
-Profile avatars, reward item images, collection covers, **and images inside a
-campaign story**. Each keeps taking an address a person pasted, and the two
-consequences are named here rather than left to be discovered:
+Reward item images, collection covers, **and images inside a campaign story**.
+Each keeps taking an address a person pasted, and the two consequences are named
+here rather than left to be discovered. Profile avatars upload now (#271), and
+still accept a pasted address beside the upload, so they hold `remotePatterns`
+open as well:
 
 1. **`remotePatterns` has not narrowed.** It still allows `https` on any host, so
    `/_next/image` remains usable as an image proxy. It cannot narrow while any

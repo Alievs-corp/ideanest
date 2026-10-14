@@ -1,56 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Field, FileDropZone, InlineAlert, Media, Pill, TextInput } from '@ideanest/ui';
-import { describeSize } from '@ideanest/campaign-editor/cover-image';
-import { measureImage } from '../../lib/projects/coverImage';
 import type { ProfileAvatarCopy } from '../../lib/i18n/profile-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { describeUploadFailure, useImageUpload } from '../../lib/media/useImageUpload';
 
 /**
- * §4.2's P-01, as much of it as the platform can do — the profile picture.
+ * §4.2's P-01 — the profile picture. Issue #271.
  *
- * <h2>P-01 IS "AVATAR UPLOAD AND CROP", AND NEITHER HALF EXISTS YET</h2>
+ * <h2>An upload first, and an address second</h2>
  *
- * There is no object storage, no `media` table and no ingestion pipeline: §13.1 is a
- * different epic and nothing in this repository puts a file anywhere. **Upload and crop wait
- * on §13.1** and this control is not a down payment on them — when that pipeline lands, this
- * component is replaced rather than extended, exactly as
- * `components/campaign-editor/CoverImageField` says of itself.
+ * This used to take only the address of a picture already published somewhere, because
+ * there was nowhere to put a file. §13.1's pipeline exists now and the cover has used it since
+ * #86, so choosing a file sends it there — `lib/media/useImageUpload.ts`, the same transfer
+ * the cover makes — and the address the service answers with becomes `avatarUrl`. The address
+ * field stays, below the drop zone, for a picture that is already hosted, which is what the
+ * app (#268) offers behind "Use an image address" too.
  *
- * What the account *can* record is one column, `users.avatar_url`, so that is what this
- * collects: the address of a picture that is already published. The `InlineAlert` says so in
- * the first thing a reader meets, because a control that implied an upload and then did not
- * perform one would be a worse failure than the missing feature.
+ * <h2>An uploaded picture is saved at once, and an address waits for the form</h2>
  *
- * <h2>The drop zone still earns its place, and it is not decoration</h2>
+ * The bytes exist the moment the upload is ready. Holding the address in the draft until
+ * "Save profile" would leave a stored picture belonging to nobody whenever somebody left the
+ * page first, so `onUploaded` saves it on its own, leaving the rest of the draft as it is —
+ * the app's `saveAvatar` makes the same choice. A typed address costs nothing to abandon, so
+ * it stays part of the form, and `addressHint` says so beside it.
  *
- * `CoverImageField` makes the argument and it holds here with a different measurement at the
- * end of it. Somebody holding a photograph on their laptop has one question this browser can
- * actually answer — *what will this look like in a circle* — and dropping the file answers it
- * without publishing anything anywhere. So the zone measures, reports the pixel size, says
- * whether the image is square, and states plainly that nothing was uploaded. A `FileDropZone`
- * that silently did nothing would be worse than no drop zone at all.
+ * <h2>What the service does not do, said so the next reader does not assume it</h2>
  *
- * **No minimum is asserted**, unlike the cover's 1024×576. §5.3 makes that one a submission
- * requirement and this repository has no equivalent rule for an avatar; inventing a threshold
- * here would be this component taking a product decision inside a hint string.
- *
- * <h2>Square, because the frame is a circle</h2>
- *
- * `ProfileHeader` renders the avatar `rounded-full` with `object-cover`, so a portrait
- * photograph loses its top and bottom and a panorama loses its sides. That is the crop P-01
- * would let somebody choose and today cannot, which makes saying it out loud the only thing
- * this control can offer in its place.
+ * - **No crop.** P-01 names one and there is none: `ProfileHeader` renders the avatar
+ *   `rounded-full` with `object-cover`, so the preview below shows the circle the middle of
+ *   the picture is cut to, and `dropHint` recommends a square one.
+ * - **A replaced picture stays in storage.** The profile stores an address rather than a
+ *   media id, and `deleteAbandoned` only removes rows that never finished uploading.
+ * - **A deployment whose `MEDIA_PUBLIC_BASE_URL` is not https** answers the save with
+ *   `PROFILE_FIELD_INVALID` on `avatarUrl`, because the column takes https only. The panel
+ *   puts that sentence under this field like any other refusal of it.
  *
  * <h2>Motion: none</h2>
  *
  * docs/motion-system.md §5 — "authentication, account settings: none, 150ms colour on
- * controls". Nothing here enters, fades or moves; the preview appears when the address does.
+ * controls". Nothing here enters, fades or moves; the stage sentences replace one another.
  */
 
 export interface ProfileAvatarFieldProps {
-  /** The address as typed, which is the whole of the value — there is nothing else to save. */
+  /** The address as the form holds it — typed, or the one an upload was saved with. */
   readonly url: string;
   /** Whose picture it is, for the initials shown while there is none. */
   readonly name: string;
@@ -58,11 +52,13 @@ export interface ProfileAvatarFieldProps {
   /** The service's own refusal, when it named `avatarUrl`. */
   readonly error?: string;
   readonly onUrlChange: (url: string) => void;
+  /** Saves an uploaded picture's address on its own; `false` when the save was refused. */
+  readonly onUploaded: (url: string) => Promise<boolean>;
   /** Every word this field draws, the two accessible names included — #82. */
   readonly copy: ProfileAvatarCopy;
 }
 
-type Note = { tone: 'info' | 'danger'; title?: string; text: string };
+type Note = { tone: 'success' | 'danger'; title?: string; text: string };
 
 /** "Jane Doe" -> "JD", the same rule `Avatar` and `ProfileHeader` use. */
 function initialsOf(name: string): string {
@@ -81,9 +77,12 @@ export function ProfileAvatarField({
   disabled = false,
   error,
   onUrlChange,
+  onUploaded,
   copy,
 }: ProfileAvatarFieldProps) {
-  const [checking, setChecking] = useState(false);
+  const { stage, upload: send } = useImageUpload();
+  /* Between a ready upload and the answer to its save, which is a request of its own. */
+  const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
   /*
    * An address the browser could not load as an image. Kept as the exact string rather than
@@ -91,7 +90,9 @@ export function ProfileAvatarField({
    * "this did not load" after the typo was fixed is a preview nobody believes twice.
    */
   const [broken, setBroken] = useState<string | null>(null);
+  const addressHintId = useId();
 
+  const busy = stage !== null || saving;
   const address = url.trim();
   /*
    * `https://` and nothing else, which is the service's rule rather than this component's —
@@ -101,30 +102,33 @@ export function ProfileAvatarField({
    */
   const previewable = address.startsWith('https://') && broken !== address;
 
-  async function checkFile(file: File): Promise<void> {
-    setChecking(true);
+  async function upload(file: File): Promise<void> {
     setNote(null);
     try {
-      const size = await measureImage(file);
-      const square = size.width === size.height;
+      const image = await send(file);
+      // Abandoned for a newer file, which is the one this field now reports on.
+      if (image === null) return;
 
-      setNote({
-        tone: 'info',
-        title: square ? copy.squareTitle : copy.notSquareTitle,
-        text: fillPlaceholders(square ? copy.square : copy.notSquare, {
-          file: file.name,
-          size: describeSize(size),
-        }),
-      });
+      setSaving(true);
+      setBroken(null);
+      /*
+       * A refused save says nothing here. The panel puts the service's sentence under this
+       * field, where every refusal of `avatarUrl` goes, and a second one in this region would
+       * have somebody read about one failure twice.
+       */
+      if (await onUploaded(image.url)) setNote({ tone: 'success', text: copy.uploaded });
     } catch (cause) {
       setNote({
         tone: 'danger',
-        text: cause instanceof Error ? cause.message : copy.unreadable,
+        title: copy.upload.notUsedTitle,
+        text: describeUploadFailure(cause, copy.upload),
       });
     } finally {
-      setChecking(false);
+      setSaving(false);
     }
   }
+
+  const progress = stage !== null ? copy.upload.stage[stage] : saving ? copy.saving : null;
 
   return (
     <Field
@@ -134,8 +138,6 @@ export function ProfileAvatarField({
       error={error}
     >
       <div className="flex flex-col gap-3">
-        <InlineAlert variant="info" title={copy.pipelineTitle}>{copy.pipelineBody}</InlineAlert>
-
         <div className="flex items-center gap-4">
           <div className="size-20 shrink-0 overflow-hidden rounded-full border border-white/8 bg-surface-3">
             {previewable ? (
@@ -174,21 +176,62 @@ export function ProfileAvatarField({
           </p>
         </div>
 
+        <FileDropZone
+          accept="image/*"
+          disabled={disabled || busy}
+          prompt={copy.prompt}
+          dragPrompt={copy.dragPrompt}
+          buttonLabel={copy.buttonLabel}
+          hint={copy.dropHint}
+          onFiles={(files) => {
+            const [first] = files;
+            if (first) void upload(first);
+          }}
+        />
+
+        {/*
+          Where the upload is, and that it was saved, has to be announced, or a screen-reader
+          user chooses a picture and hears nothing for the seconds the service takes.
+
+          Two regions rather than one, for the reason `CoverImageField` gives: `InlineAlert`
+          already carries `role="alert"` for danger, and an alert inside a polite live region
+          hands assistive technology two contradictory instructions about one sentence. The
+          polite region is rendered on every pass so that it is registered before anything is
+          put into it.
+        */}
+        <div role="status" aria-live="polite" className="empty:hidden">
+          {progress !== null && <InlineAlert variant="info">{progress}</InlineAlert>}
+          {progress === null && note !== null && note.tone === 'success' && (
+            <InlineAlert variant="success">{note.text}</InlineAlert>
+          )}
+        </div>
+
+        {note !== null && note.tone === 'danger' && (
+          <InlineAlert variant="danger" title={note.title}>
+            {note.text}
+          </InlineAlert>
+        )}
+
+        <p id={addressHintId} className="text-[13px] text-white/64">
+          {copy.addressHint}
+        </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <TextInput
             type="url"
             inputMode="url"
             value={url}
-            disabled={disabled}
+            disabled={disabled || busy}
             /*
               The `Field` label names a group here, so it cannot name this control; without a
               label of its own the input is announced as "edit text" and nothing else.
             */
             aria-label={copy.address}
+            aria-describedby={addressHintId}
             placeholder={copy.addressPlaceholder}
             className="sm:flex-1"
             onChange={(event) => {
               setBroken(null);
+              setNote(null);
               onUrlChange(event.target.value);
             }}
           />
@@ -196,7 +239,7 @@ export function ProfileAvatarField({
             <Pill
               type="button"
               variant="ghost"
-              disabled={disabled}
+              disabled={disabled || busy}
               onClick={() => {
                 setBroken(null);
                 setNote(null);
@@ -207,43 +250,6 @@ export function ProfileAvatarField({
             </Pill>
           )}
         </div>
-
-        <FileDropZone
-          accept="image/*"
-          disabled={disabled || checking}
-          prompt={copy.prompt}
-          dragPrompt={copy.dragPrompt}
-          buttonLabel={copy.buttonLabel}
-          hint={copy.dropHint}
-          onFiles={(files) => {
-            const [first] = files;
-            if (first) void checkFile(first);
-          }}
-        />
-
-        {/*
-          The outcome of dropping a file has to be announced, or a screen-reader user presses
-          "Choose a picture to measure" and hears nothing at all.
-
-          Two regions rather than one, for the reason `CoverImageField` gives: `InlineAlert`
-          already carries `role="alert"` for danger, and an alert inside a polite live region
-          hands assistive technology two contradictory instructions about one sentence. The
-          polite region is rendered on every pass so that it is registered before anything is
-          put into it.
-        */}
-        <div role="status" aria-live="polite" className="empty:hidden">
-          {note !== null && note.tone === 'info' && (
-            <InlineAlert variant="info" title={note.title}>
-              {note.text}
-            </InlineAlert>
-          )}
-        </div>
-
-        {note !== null && note.tone === 'danger' && (
-          <InlineAlert variant="danger" title={note.title}>
-            {note.text}
-          </InlineAlert>
-        )}
       </div>
     </Field>
   );

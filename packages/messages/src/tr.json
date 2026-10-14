@@ -5355,8 +5355,6 @@
       "avatar": {
         "label": "Profil fotoğrafı",
         "hint": "Profilinizde ve oluşturduğunuz her kampanyada adınızın yanında gösterilir.",
-        "pipelineTitle": "Yükleme, medya hattıyla birlikte gelecek",
-        "pipelineBody": "IdeyaNest henüz dosya saklayamıyor, bu yüzden burada başka bir yerde zaten yayımlanmış bir görselin adresi alınıyor. Hangi bölümünün gösterileceğini seçmek — kırpma — aynı işle birlikte gelecek.",
         "noPicture": "{name}, fotoğrafsız",
         "broken": "Bu adres burada bir görsel olarak açılmadı. Profilinizde onun yerine baş harfleriniz görünür.",
         "cropped": "Fotoğrafınız daireye böyle kırpılıyor.",
@@ -5364,15 +5362,13 @@
         "address": "Profil fotoğrafı adresi",
         "addressPlaceholder": "https://images.example.com/me.jpg",
         "remove": "Fotoğrafı kaldır",
-        "squareTitle": "Bu görsel kare",
-        "notSquareTitle": "Bu görsel kare değil",
-        "square": "{file} {size} piksel ve daireye olduğu gibi oturuyor. Hiçbir şey yüklenmedi — onu açık bir yerde yayımlayıp adresini aşağıya yapıştırın.",
-        "notSquare": "{file} {size} piksel, bu yüzden ortadan daireye kırpılıyor. Hiçbir şey yüklenmedi — onu açık bir yerde yayımlayıp adresini aşağıya yapıştırın.",
-        "unreadable": "Bu dosya bir görsel olarak okunamadı.",
-        "prompt": "Ya da nasıl kırpılacağını görmek için buraya bir görsel bırakın",
-        "dragPrompt": "Bu görseli ölçmek için bırakın",
-        "buttonLabel": "Ölçmek için bir görsel seçin",
-        "dropHint": "Tarayıcınızda ölçülür. Hiçbir şey yüklenmez."
+        "prompt": "Profilinizde kullanmak için buraya bir fotoğraf bırakın",
+        "dragPrompt": "Bu fotoğrafı yüklemek için bırakın",
+        "buttonLabel": "Bir fotoğraf seçin",
+        "dropHint": "JPEG, PNG, WebP, AVIF veya HEIC, en fazla 20 MB. Hazır olur olmaz profilinize kaydedilir. Kare bir fotoğraf daireye en iyi oturur.",
+        "addressHint": "Ya da zaten yayımlanmış bir fotoğrafın adresini yapıştırın. Adres formun geri kalanıyla birlikte kaydedilir.",
+        "uploaded": "Yeni fotoğrafınız kaydedildi ve profilinizde gösteriliyor.",
+        "stillProcessing": "Fotoğrafınızın işlenmesi her zamankinden uzun sürüyor. Birazdan yeniden deneyin."
       },
       "links": {
         "label": "Diğer hesaplarınıza bağlantılar",
