@@ -21,7 +21,7 @@
           "Baku"
         ],
         "marketingUrl": "https://ideyanest.com/en",
-        "supportUrl": "https://ideyanest.com/en/about",
+        "supportUrl": "https://ideyanest.com/en/support",
         "privacyPolicyUrl": "https://ideyanest.com/en/legal/privacy-policy"
       },
       "ru": {
@@ -42,7 +42,7 @@
           "Баку"
         ],
         "marketingUrl": "https://ideyanest.com/ru",
-        "supportUrl": "https://ideyanest.com/ru/about",
+        "supportUrl": "https://ideyanest.com/ru/support",
         "privacyPolicyUrl": "https://ideyanest.com/ru/legal/privacy-policy"
       },
       "tr": {
@@ -63,7 +63,7 @@
           "Bakü"
         ],
         "marketingUrl": "https://ideyanest.com/tr",
-        "supportUrl": "https://ideyanest.com/tr/about",
+        "supportUrl": "https://ideyanest.com/tr/support",
         "privacyPolicyUrl": "https://ideyanest.com/tr/legal/privacy-policy"
       }
     }

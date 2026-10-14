@@ -99,6 +99,7 @@
         "about": "IdeyaNest haqqında",
         "howItWorks": "Necə işləyir",
         "trustSafety": "Etibar və təhlükəsizlik",
+        "support": "Kömək və əlaqə",
         "legal": "Hüquqi"
       }
     },
@@ -5505,6 +5506,45 @@
         "heading": "Nə edə bilmərik",
         "first": "IdeyaNest kampaniyanı öhdəliyini yerinə yetirməyə məcbur edə bilməz. Edə bildiyi şey qeydi dürüst saxlamaqdır: kampaniyanın yenilikləri, şərhləri və onu şikayət etmək yolu — hamısı kampaniyanın öz səhifəsindədir, yəni onu dəstəkləyib-dəstəkləməməyi düşünən şəxsin görəcəyi yerdə.",
         "second": "Müəllif öz kampaniyasındakı şərhləri moderasiya edə bilər, silinən şərh isə yox olmur — sətir qalır, silinmiş kimi işarələnir. Təmizlənmiş şərh axını buna görə yenə də təmizlənmiş kimi görünür, məsələ də budur: üzərində heç nə olmayan səhifə ilə on iki silinməsi olan səhifə ayrı şeylərdir və oxucunun bunları ayırd etməyə haqqı var."
+      }
+    },
+    "support": {
+      "metaTitle": "Kömək və əlaqə",
+      "metaDescription": "IdeyaNest dəstək xidməti ilə e-poçt və ya telefonla əlaqə saxlayın, kampaniyaya dəstək olmaq və kampaniya aparmaq barədə cavabları tapın, hesabınızı necə silməyi öyrənin.",
+      "title": "Kömək və əlaqə",
+      "summary": "IdeyaNest komandası ilə necə əlaqə saxlamaq, ən çox verilən sualların cavablarını harada tapmaq və hesabınızı necə silmək olar.",
+      "contact": {
+        "heading": "Bizimlə əlaqə",
+        "intro": "Bizə yazın və ya zəng edin. Hesabınızın e-poçt ünvanını bildirin, sual kampaniya və ya dəstəklə bağlıdırsa, onun keçidini də əlavə edin — bu, əlavə sual-cavaba ehtiyacı aradan qaldırır.",
+        "email": "<b>E-poçt:</b> <email>{address}</email>",
+        "phone": "<b>Telefon:</b> <phone>{number}</phone>",
+        "operator": "IdeyaNest platformasını {operator} idarə edir. Fərdi məlumatlarınızla bağlı sorğular da həmin ünvana göndərilir; onlara necə baxıldığı <privacy>Məxfilik Siyasətində</privacy> təsvir olunub."
+      },
+      "answers": {
+        "heading": "Cavabı artıq yazılmış ola bilər",
+        "howItWorks": "<link>Necə işləyir</link>: kampaniyaya dəstək olmaq, kampaniya aparmaq və dəstəkdən bağlamaya qədər nə baş verdiyi.",
+        "pricing": "<link>Planlar</link>: platformanın kampaniyadan nə qədər və nə vaxt götürdüyü.",
+        "trustSafety": "<link>Etibar və təhlükəsizlik</link>: kampaniya başlamazdan əvvəl nəyin yoxlandığı, pul və məlumatlarla nə baş verdiyi.",
+        "legal": "<link>Hüquqi sənədlər</link>: istifadə şərtləri, Məxfilik Siyasəti və qüvvədə olan bütün digər sənədlər."
+      },
+      "report": {
+        "heading": "Kampaniya, şərh və ya hesabdan şikayət",
+        "body": "Kampaniyanın, şərhin və ya profilin özündəki «Şikayət et» düyməsindən istifadə edin. Şikayət moderatora haqqında olduğu məzmunla birlikdə çatır — e-poçt bunu edə bilməz. Bundan sonra nə baş verdiyini <trustSafety>Etibar və təhlükəsizlik</trustSafety> izah edir."
+      },
+      "deletion": {
+        "heading": "Hesabınızı silin",
+        "intro": "Bunu üç yolla istəmək olar və yalnız üçüncüsü bizim iştirakımızı tələb edir.",
+        "app": "<b>Tətbiqdə:</b> Mən → Parametrlər → Məlumatlar və hesabın bağlanması, sonra «Hesabımı bağla».",
+        "web": "<b>Saytda:</b> daxil olun, parametrlərdə <privacy>Məlumatlar və hesabın bağlanması</privacy> bölməsini açın, sonra «Hesabımı bağla».",
+        "email": "<b>Daxil olmadan:</b> hesabınızın qeydiyyatda olduğu ünvandan <email>{address}</email> ünvanına «{subject}» mövzusu ilə məktub yazın. Sorğunu icra etməzdən əvvəl onu təsdiqləmək üçün həmin ünvana cavab yazırıq — beləcə heç kim başqasının adından yazaraq onun hesabını bağlaya bilməz.",
+        "subject": "IdeyaNest hesabımı silin",
+        "grace": "Tətbiqdə və ya saytda bağlama dərhal baş vermir. Hesab otuz gün saxlanılır və bu müddətdə daxil olub ləğv etmək hər şeyi geri qaytarır. Bundan sonra hesab anonimləşdirilir və anonimləşdirilmiş hesabı bərpa etmək mümkün deyil: yeni hesab əvvəlki tarixçə olmadan başlayır. Bağlamazdan əvvəl həmin səhifədən məlumatlarınızın surətini yükləyə bilərsiniz.",
+        "removed": "<b>Nə silinir:</b> adınız, e-poçt ünvanınız, profil şəkliniz, bioqrafiyanız, saytınız, yeriniz və keçidləriniz, həmçinin daxil olunmuş bütün cihazlar. Yazdığınız şərhlər kampaniya səhifəsində «silinmiş istifadəçi» adı ilə qala və ya silinə bilər.",
+        "keptIntro": "Bəzi məlumatlar qalır, çünki qanun və ya başqa bir şəxs onlardan asılıdır:",
+        "records": "<b>Maliyyə qeydləri</b> — dəstəklər, ödənişlər, geri qaytarmalar, müəllifə köçürmələr və vergi qeydləri — <privacy>Məxfilik Siyasətində</privacy> göstərilən müddətlərdə bloklanmış vəziyyətdə saxlanılır və başqa heç bir məqsəd üçün istifadə edilmir.",
+        "pledges": "<b>Etdiyiniz dəstəklər qüvvədə qalır.</b> Hesabın bağlanması dəstəyi ləğv etmir və geri qaytarmaya səbəb olmur. Kampaniya hədəfinin 80%-indən az toplasa, dəstək yenə də həmin karta avtomatik qaytarılır.",
+        "rewards": "<b>Hələ çatdırılmamış mükafat:</b> kampaniya müəllifi onu göndərmək üçün lazım olan məlumatları saxlayır, siz isə hesabınızdakı bildirişləri və izləmə nömrəsini itirirsiniz.",
+        "creators": "<b>Kampaniya müəllifləri:</b> aktiv kampaniyası, ödənilməmiş geri tələb (çarjbek) borcu və ya başa çatmamış mükafat öhdəlikləri olan hesab bunlar həll olunanadək tam silinə bilməz və o vaxtadək bloklanmış qalır. Gözləyən ödəniş isə əvvəlcə köçürülməli və ya ondan yazılı imtina edilməlidir."
       }
     }
   },

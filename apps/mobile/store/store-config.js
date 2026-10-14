@@ -52,7 +52,7 @@ function buildStoreConfig() {
       keywords: text.keywords.split(',').map((keyword) => keyword.trim()),
       ...(FIRST_VERSION ? {} : { releaseNotes: text.whatsNew }),
       marketingUrl: `${SITE}/${locale}`,
-      supportUrl: `${SITE}/${locale}/about`,
+      supportUrl: `${SITE}/${locale}/support`,
       privacyPolicyUrl: `${SITE}/${locale}/legal/privacy-policy`,
     };
   }

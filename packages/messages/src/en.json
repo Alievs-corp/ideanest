@@ -99,6 +99,7 @@
         "about": "About IdeyaNest",
         "howItWorks": "How it works",
         "trustSafety": "Trust and safety",
+        "support": "Help and support",
         "legal": "Legal"
       }
     },
@@ -5505,6 +5506,45 @@
         "heading": "What we cannot do",
         "first": "IdeyaNest cannot make a campaign deliver. What it can do is keep the record honest: a campaign’s updates, its comments and the way to report it are all on the campaign’s own page, where somebody deciding whether to back it will see them.",
         "second": "A creator can moderate comments on their own campaign, and a removed one does not vanish — the row stays, marked as removed. A comment thread that has been cleaned out therefore still looks like one, which is the point: a page with nothing on it and a page with twelve removals are different things, and a reader is entitled to tell them apart."
+      }
+    },
+    "support": {
+      "metaTitle": "Help and support",
+      "metaDescription": "Contact IdeyaNest support by email or phone, find the answers about backing and running campaigns, and learn how to delete your account.",
+      "title": "Help and support",
+      "summary": "How to reach the IdeyaNest team, where the common answers already are, and how to delete your account.",
+      "contact": {
+        "heading": "Contact us",
+        "intro": "Write to us or call. Tell us the email address your account uses and, if the question is about a campaign or a pledge, include its link — it saves a round of questions.",
+        "email": "<b>Email:</b> <email>{address}</email>",
+        "phone": "<b>Phone:</b> <phone>{number}</phone>",
+        "operator": "IdeyaNest is operated by {operator}. Questions about your personal data go to the same address, and the <privacy>privacy policy</privacy> describes how they are handled."
+      },
+      "answers": {
+        "heading": "Answers that may already be written",
+        "howItWorks": "<link>How it works</link>: backing a campaign, running one, and what happens between a pledge and a parcel.",
+        "pricing": "<link>Pricing</link>: what the platform takes from a campaign, and when.",
+        "trustSafety": "<link>Trust and safety</link>: what is reviewed before a campaign launches, and what happens to money and data.",
+        "legal": "<link>Legal documents</link>: the terms, the privacy policy and every other document in force."
+      },
+      "report": {
+        "heading": "Reporting a campaign, a comment or an account",
+        "body": "Use Report on the campaign, the comment or the profile itself. The report reaches a moderator with the thing it is about attached, which an email cannot do. <trustSafety>Trust and safety</trustSafety> explains what happens after that."
+      },
+      "deletion": {
+        "heading": "Delete your account",
+        "intro": "There are three ways to ask, and only the third needs us.",
+        "app": "<b>In the app:</b> Me → Settings → Data and closure, then Close my account.",
+        "web": "<b>On the website:</b> sign in, open <privacy>Data and closure</privacy> in your settings, then Close my account.",
+        "email": "<b>Without signing in:</b> email <email>{address}</email> from the address your account is registered with, with the subject “{subject}”. We reply to that address to confirm the request before acting on it, so nobody can close an account by writing in somebody else’s name.",
+        "subject": "Delete my IdeyaNest account",
+        "grace": "Closing from the app or the website is not immediate. The account is kept for thirty days, and signing in and cancelling during that time puts everything back. After that it is anonymised, and an anonymised account cannot be restored: a new account starts with no history. You can download a copy of your data from the same page before you close it.",
+        "removed": "<b>What is deleted:</b> your name, email address, profile picture, biography, website, location and links, and every signed-in device. Comments you wrote may stay on the campaign page, shown as written by a deleted user, or be removed.",
+        "keptIntro": "Some things stay, because the law or another person depends on them:",
+        "records": "<b>Financial records</b> — pledges, payments, refunds, and payout and tax records — are kept for the periods the <privacy>privacy policy</privacy> sets out, blocked and used for nothing else.",
+        "pledges": "<b>Pledges you made stand.</b> Closing an account does not cancel a pledge or refund it. If the campaign ends below 80% of its goal, the pledge is still refunded to the same card automatically.",
+        "rewards": "<b>A reward not yet delivered:</b> the creator keeps the details needed to send it, and you lose the notifications and the tracking number in your account.",
+        "creators": "<b>Creators:</b> an account with a live campaign, an unpaid chargeback or rewards still owed cannot be fully deleted until those are settled, and stays blocked until then. A payout that is still due must be completed, or waived in writing, first."
       }
     }
   },

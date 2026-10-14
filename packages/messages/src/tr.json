@@ -99,6 +99,7 @@
         "about": "IdeyaNest hakkında",
         "howItWorks": "Nasıl çalışır",
         "trustSafety": "Güven ve güvenlik",
+        "support": "Yardım ve iletişim",
         "legal": "Hukuki"
       }
     },
@@ -5505,6 +5506,45 @@
         "heading": "Yapamadıklarımız",
         "first": "IdeyaNest bir kampanyayı teslim etmeye zorlayamaz. Yapabileceği şey kaydı dürüst tutmaktır: bir kampanyanın güncellemeleri, yorumları ve onu bildirme yolu — hepsi kampanyanın kendi sayfasında, onu destekleyip desteklemeyeceğine karar veren kişinin göreceği yerde.",
         "second": "Bir yaratıcı kendi kampanyasındaki yorumları yönetebilir ve kaldırılan bir yorum yok olmaz — satır kalır, kaldırıldı olarak işaretlenir. Temizlenmiş bir yorum başlığı bu yüzden hâlâ temizlenmiş görünür; mesele de budur: üzerinde hiçbir şey olmayan bir sayfa ile on iki kaldırma bulunan bir sayfa farklı şeylerdir ve okuyucunun bunları ayırt etmeye hakkı vardır."
+      }
+    },
+    "support": {
+      "metaTitle": "Yardım ve iletişim",
+      "metaDescription": "IdeyaNest destek ekibine e-posta veya telefonla ulaşın, kampanyalara destek olma ve kampanya yürütme hakkındaki yanıtları bulun ve hesabınızı nasıl sileceğinizi öğrenin.",
+      "title": "Yardım ve iletişim",
+      "summary": "IdeyaNest ekibine nasıl ulaşacağınız, sık sorulan soruların yanıtlarının nerede olduğu ve hesabınızı nasıl sileceğiniz.",
+      "contact": {
+        "heading": "Bize ulaşın",
+        "intro": "Bize yazın ya da arayın. Hesabınızın kullandığı e-posta adresini belirtin; soru bir kampanya ya da bir destekle ilgiliyse bağlantısını da ekleyin — bu, fazladan bir soru-cevap turunu önler.",
+        "email": "<b>E-posta:</b> <email>{address}</email>",
+        "phone": "<b>Telefon:</b> <phone>{number}</phone>",
+        "operator": "IdeyaNest’i {operator} işletir. Kişisel verilerinizle ilgili sorular da aynı adrese gönderilir; bunların nasıl ele alındığı <privacy>Gizlilik Politikası</privacy>’nda anlatılır."
+      },
+      "answers": {
+        "heading": "Yanıt zaten yazılmış olabilir",
+        "howItWorks": "<link>Nasıl çalışır</link>: bir kampanyaya destek olmak, kampanya yürütmek ve destekten koliye kadar neler olduğu.",
+        "pricing": "<link>Fiyatlandırma</link>: platformun bir kampanyadan ne aldığı ve ne zaman aldığı.",
+        "trustSafety": "<link>Güven ve güvenlik</link>: bir kampanya başlamadan önce neyin incelendiği, paraya ve verilere ne olduğu.",
+        "legal": "<link>Hukuki belgeler</link>: kullanım koşulları, gizlilik politikası ve yürürlükteki diğer tüm belgeler."
+      },
+      "report": {
+        "heading": "Bir kampanyayı, yorumu ya da hesabı şikayet etmek",
+        "body": "Kampanyanın, yorumun ya da profilin kendisindeki «Şikayet et»i kullanın. Şikayet, ilgili olduğu içerikle birlikte bir moderatöre ulaşır — bir e-posta bunu yapamaz. Sonrasında ne olduğunu <trustSafety>Güven ve güvenlik</trustSafety> anlatır."
+      },
+      "deletion": {
+        "heading": "Hesabınızı silin",
+        "intro": "Bunu istemenin üç yolu var ve yalnızca üçüncüsü bize ihtiyaç duyar.",
+        "app": "<b>Uygulamada:</b> Ben → Ayarlar → Veriler ve hesap kapatma, ardından «Hesabımı kapat».",
+        "web": "<b>Web sitesinde:</b> giriş yapın, ayarlarda <privacy>Veriler ve hesap kapatma</privacy> bölümünü açın, ardından «Hesabımı kapat».",
+        "email": "<b>Giriş yapmadan:</b> hesabınızın kayıtlı olduğu adresten <email>{address}</email> adresine «{subject}» konusuyla e-posta gönderin. Talebi yerine getirmeden önce onaylamak için o adrese yanıt yazarız; böylece kimse başkası adına yazarak bir hesabı kapatamaz.",
+        "subject": "IdeyaNest hesabımı silin",
+        "grace": "Uygulamadan ya da web sitesinden kapatma hemen olmaz. Hesap otuz gün tutulur ve bu sürede giriş yapıp iptal etmek her şeyi geri getirir. Ardından hesap anonimleştirilir ve anonimleştirilmiş bir hesap geri getirilemez: yeni bir hesap geçmişi olmadan başlar. Kapatmadan önce aynı sayfadan verilerinizin bir kopyasını indirebilirsiniz.",
+        "removed": "<b>Silinenler:</b> adınız, e-posta adresiniz, profil fotoğrafınız, biyografiniz, web siteniz, konumunuz ve bağlantılarınız ile giriş yapılmış tüm cihazlar. Yazdığınız yorumlar kampanya sayfasında «silinmiş kullanıcı» olarak kalabilir ya da kaldırılabilir.",
+        "keptIntro": "Bazı şeyler kalır, çünkü yasa ya da başka biri onlara bağlıdır:",
+        "records": "<b>Mali kayıtlar</b> — destekler, ödemeler, iadeler, yaratıcılara yapılan ödemeler ve vergi kayıtları — <privacy>Gizlilik Politikası</privacy>’nda belirtilen süreler boyunca engellenmiş olarak saklanır ve başka hiçbir amaçla kullanılmaz.",
+        "pledges": "<b>Yaptığınız destekler geçerli kalır.</b> Hesabı kapatmak bir desteği iptal etmez ya da iade ettirmez. Kampanya hedefinin %80’ine ulaşamadan biterse destek yine aynı karta otomatik olarak iade edilir.",
+        "rewards": "<b>Henüz teslim edilmemiş bir ödül:</b> yaratıcı onu göndermek için gereken bilgileri saklar; siz ise hesabınızdaki bildirimleri ve takip numarasını kaybedersiniz.",
+        "creators": "<b>Yaratıcılar:</b> aktif bir kampanyası, ödenmemiş bir ters ibrazı ya da tamamlanmamış ödül yükümlülükleri olan bir hesap bunlar çözülene kadar tamamen silinemez ve o zamana kadar engelli kalır. Bekleyen bir ödeme önce yapılmalı ya da yazılı olarak bundan vazgeçilmelidir."
       }
     }
   },

@@ -3,12 +3,14 @@ import { AccessibilityInfo, Alert, StyleSheet, type AlertButton } from 'react-na
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import type { TestInstance } from 'test-renderer';
 import MeScreen from '../app/(tabs)/me';
 import { useMe, useSessionState, type Me, type SessionState } from '../lib/account';
 import { signOut } from '../lib/auth';
+import { currentLocale } from '../lib/locale';
 import { forgetPersistedCache } from '../lib/offline';
 import { colors } from '../theme';
 
@@ -105,6 +107,7 @@ const ABOUT = [
   'About IdeyaNest',
   'How it works',
   'Trust and safety',
+  'Help and support',
   'Legal',
   'Message us on WhatsApp',
 ];
@@ -444,6 +447,17 @@ describe('the Me tab', () => {
       await fireEvent.press(screen.getByRole('button', { name }));
       expect(mockRouter.push).toHaveBeenCalledWith(path);
     }
+  });
+
+  it('opens Help and support on the website, the page the store listings point at (#325)', async () => {
+    given('unknown', undefined, true);
+    await renderMe();
+
+    await fireEvent.press(screen.getByRole('link', { name: en.shell.footer.links.support }));
+    expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith(
+      `https://test.invalid/${currentLocale()}/support`,
+    );
+    expect(mockRouter.push).not.toHaveBeenCalled();
   });
 
   it('opens the WhatsApp sheet from the About group', async () => {

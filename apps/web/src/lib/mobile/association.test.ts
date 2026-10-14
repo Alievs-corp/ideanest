@@ -174,11 +174,15 @@ describe('the route handlers', () => {
 });
 
 /**
- * Pages the association deliberately leaves to the browser, each with its reason. Empty today:
- * every page the site serves under a locale, except the administration console, has a screen in
- * the application. A page added here needs the reason as its value.
+ * Pages the association deliberately leaves to the browser, each with its reason. Every other
+ * page the site serves under a locale, except the administration console, has a screen in the
+ * application. A page added here needs the reason as its value.
  */
-const NOT_CLAIMED: Readonly<Record<string, string>> = {};
+const NOT_CLAIMED: Readonly<Record<string, string>> = {
+  '/support':
+    'The store listings’ support and account-deletion URL (#325). A reviewer, or somebody who ' +
+    'can no longer sign in, must reach the web page; the app’s own row opens it in the browser.',
+};
 
 /** Every `page.tsx` under `app/[locale]`, as the path the site serves it at, without the locale. */
 function webPages(): string[] {
