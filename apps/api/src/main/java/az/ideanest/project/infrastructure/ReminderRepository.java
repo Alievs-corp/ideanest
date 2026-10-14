@@ -71,6 +71,9 @@ public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
     /** This account's reminder on this campaign, if it has one. */
     Optional<Reminder> findByProjectIdAndUserId(UUID projectId, UUID userId);
 
+    /** Whether this account has a reminder on this campaign, which the campaign page asks per view. */
+    boolean existsByProjectIdAndUserId(UUID projectId, UUID userId);
+
     /** The reminder registered for a bare address on this campaign, if there is one. */
     Optional<Reminder> findByProjectIdAndEmail(UUID projectId, EmailAddress email);
 

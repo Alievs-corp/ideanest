@@ -4084,6 +4084,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/projects/{projectId}/viewer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["backerSignalViewer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/rewards/{id}": {
         parameters: {
             query?: never;
@@ -4835,6 +4851,17 @@ export interface components {
             url?: string;
             /** Format: int32 */
             width?: number;
+        };
+        /** @description The signed-in reader's own state on one campaign (#137). Private and never cached. */
+        CampaignViewerResponse: {
+            /** @description This account holds a pledge on the campaign in CONFIRMED, CHARGE_PENDING, CHARGE_FAILED, COLLECTED or FULFILLED. A DRAFT (a checkout in progress) is not a backing, and neither is a pledge that EXPIRED, was cancelled, DROPPED, REFUNDED or charged back. */
+            backed: boolean;
+            /** @description This account follows the campaign's creator (POST /v1/users/{slug}/follow). */
+            followingCreator: boolean;
+            /** @description This account asked to be told when the campaign opens (POST /v1/projects/{id}/remind while signed in). A reminder registered with a bare email address is not counted, because the signed-in DELETE does not remove it. */
+            reminded: boolean;
+            /** @description The campaign is on this account's saved list (GET /v1/me/saved). */
+            saved: boolean;
         };
         CancelProjectRequest: {
             reason: string;
@@ -7664,6 +7691,7 @@ export type SchemaCampaignFinanceResponse = components['schemas']['CampaignFinan
 export type SchemaCampaignMessageListResponse = components['schemas']['CampaignMessageListResponse'];
 export type SchemaCampaignMessageResponse = components['schemas']['CampaignMessageResponse'];
 export type SchemaCampaignVideoBody = components['schemas']['CampaignVideoBody'];
+export type SchemaCampaignViewerResponse = components['schemas']['CampaignViewerResponse'];
 export type SchemaCancelProjectRequest = components['schemas']['CancelProjectRequest'];
 export type SchemaCancelRequest = components['schemas']['CancelRequest'];
 export type SchemaCaptureVisitRequest = components['schemas']['CaptureVisitRequest'];
@@ -15157,6 +15185,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectUpdateResponse"];
+                };
+            };
+        };
+    };
+    backerSignalViewer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's own state on the campaign. 401 without a session; 404 for a campaign that does not exist or that the public may not see. Cache-Control: no-store. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignViewerResponse"];
                 };
             };
         };

@@ -81,6 +81,19 @@ public class BackedPledgeFacts implements BackedPledges {
                 (row, index) -> map(row));
     }
 
+    @Override
+    public boolean isBacking(UUID projectId, UUID backerId) {
+        // `pledges_project_backer_active_key` is on exactly these columns, so this is an index
+        // probe on the read a signed-in reader makes per campaign page.
+        Boolean found = jdbc.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM pledges"
+                        + " WHERE project_id = :projectId AND backer_id = :backerId"
+                        + " AND state IN (" + BACKING_STATES + "))",
+                Map.of("projectId", projectId, "backerId", backerId),
+                Boolean.class);
+        return Boolean.TRUE.equals(found);
+    }
+
     private static BackedPledge map(java.sql.ResultSet row) throws java.sql.SQLException {
         return new BackedPledge(
                 row.getObject("id", UUID.class),

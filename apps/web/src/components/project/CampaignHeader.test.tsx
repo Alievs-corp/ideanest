@@ -7,7 +7,7 @@ import type { ProjectPageResponse } from '../../lib/api/server';
 import type { CampaignPage } from '../../lib/projects/publicPage';
 import { readCampaignPage } from '../../lib/projects/publicPage';
 import { saveCampaign } from '../../lib/projects/api';
-import { unsaveCampaign } from '../../lib/community/signals';
+import { unsaveCampaign, viewerState } from '../../lib/community/signals';
 import { fetchSession, type Session } from '../../lib/session/session';
 import { SessionProvider } from '../session/SessionProvider';
 import { CampaignActions } from './CampaignActions';
@@ -113,6 +113,7 @@ vi.mock('../../lib/projects/api', async (importOriginal) => ({
 vi.mock('../../lib/community/signals', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/community/signals')>()),
   unsaveCampaign: vi.fn(),
+  viewerState: vi.fn(),
 }));
 vi.mock('../../lib/session/session', () => ({ fetchSession: vi.fn() }));
 vi.mock('../../lib/api/access-token', () => ({ signOut: vi.fn().mockResolvedValue(undefined) }));
@@ -138,6 +139,7 @@ vi.mock('next/navigation', async (importOriginal) => ({
 
 const saveMock = vi.mocked(saveCampaign);
 const unsaveMock = vi.mocked(unsaveCampaign);
+const viewerMock = vi.mocked(viewerState);
 const sessionMock = vi.mocked(fetchSession);
 
 const PATH = '/projects/ayan/coffee-table-book';
@@ -178,6 +180,7 @@ beforeEach(() => {
   sessionMock.mockResolvedValue(null);
   saveMock.mockResolvedValue({ saved: true });
   unsaveMock.mockResolvedValue(undefined);
+  viewerMock.mockResolvedValue({ saved: false, reminded: false, followingCreator: false, backed: false });
 });
 
 afterEach(cleanup);
@@ -485,9 +488,9 @@ describe('the save, share and reminder controls', () => {
   });
 
   /**
-   * The platform publishes no per-campaign "have I saved this", so the control offers the
-   * action and reads the state from the answer. The write is idempotent, so a second press by
-   * somebody who saved it last week is told the truth rather than quietly unsaving it.
+   * The press's answer is what the control draws afterwards, not what this side assumed it did.
+   * The write is idempotent, so a press by somebody who saved it on another device since the
+   * page loaded is told the truth rather than quietly unsaving it.
    */
   it('reads the saved state from the service’s answer rather than assuming it', async () => {
     sessionMock.mockResolvedValue(ACCOUNT);
@@ -503,6 +506,75 @@ describe('the save, share and reminder controls', () => {
     });
     expect(pressed).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('A coffee table book saved.')).toBeInTheDocument();
+  });
+
+  /** #137: the page is the same for everybody, so the reader's own state is a read of its own. */
+  it('starts Save and Remind where the reader left them', async () => {
+    sessionMock.mockResolvedValue(ACCOUNT);
+    viewerMock.mockResolvedValue({ saved: true, reminded: true, followingCreator: false, backed: false });
+    await renderActions(campaign({ state: 'PRELAUNCH', goal: undefined, deadline: undefined }));
+
+    expect(
+      await screen.findByRole('button', { name: 'A coffee table book is saved' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      screen.getByRole('button', { name: 'You will be told when A coffee table book opens' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(viewerMock).toHaveBeenCalledWith('0193f2a1-0000-7000-8000-000000000001', expect.any(AbortSignal));
+  });
+
+  it('does not ask for the reader’s state when nobody is signed in', async () => {
+    await renderActions();
+
+    await screen.findByRole('link', { name: 'Save' });
+    expect(viewerMock).not.toHaveBeenCalled();
+  });
+
+  it('offers the action when the reader’s state cannot be read', async () => {
+    sessionMock.mockResolvedValue(ACCOUNT);
+    viewerMock.mockRejectedValue(new Error('offline'));
+    await renderActions();
+
+    await waitFor(() => expect(viewerMock).toHaveBeenCalled());
+    expect(
+      await screen.findByRole('button', { name: 'Save A coffee table book' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  /**
+   * A press made before the read answers is newer than the read, so the read must not undo it:
+   * otherwise a reader who saved in the first second would watch the page unsave it.
+   */
+  it('lets a press made before the read answers win over the read', async () => {
+    sessionMock.mockResolvedValue(ACCOUNT);
+    let answer: (state: Awaited<ReturnType<typeof viewerState>>) => void = () => {};
+    viewerMock.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+    await renderActions();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Save A coffee table book' }));
+    await screen.findByRole('button', { name: 'A coffee table book is saved' });
+
+    answer({ saved: false, reminded: false, followingCreator: false, backed: false });
+    await waitFor(() => expect(viewerMock).toHaveBeenCalled());
+    await Promise.resolve();
+
+    expect(screen.getByRole('button', { name: 'A coffee table book is saved' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('keeps each toggle as wide as its longer word, so the row does not move when it flips', async () => {
+    sessionMock.mockResolvedValue(ACCOUNT);
+    await renderActions();
+
+    const save = await screen.findByRole('button', { name: 'Save A coffee table book' });
+    const held = save.querySelector('[aria-hidden="true"].invisible');
+    expect(held).toHaveTextContent(ACTIONS_COPY.saved);
   });
 
   it('says what happened, because the effect of sharing is somewhere the reader cannot see', async () => {

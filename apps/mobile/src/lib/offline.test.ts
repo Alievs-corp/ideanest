@@ -55,6 +55,8 @@ describe('what survives a restart', () => {
     expect(shouldPersistQuery(queryKeys.comments('p1', 'c1'))).toBe(false);
     expect(shouldPersistQuery(queryKeys.profile('aysel'))).toBe(false);
     expect(shouldPersistQuery(queryKeys.profileProjects('aysel'))).toBe(false);
+    // #137: the reader's own state on the campaign, which is not the campaign's.
+    expect(shouldPersistQuery(queryKeys.campaignViewer('p1'))).toBe(false);
   });
 
   it('keeps the account area’s four lists (#159)', () => {
@@ -109,6 +111,7 @@ describe('what survives a restart', () => {
       queryKeys.dashboardFinance('p1'),
       queryKeys.dashboardBackers('p1', 'filter:{}'),
       queryKeys.dashboardSurveys('p1'),
+      queryKeys.campaignViewer('p1'),
     ];
     for (const key of own) expect(ACCOUNT_ROOTS).toContain(key[0]);
     expect(ACCOUNT_ROOTS).not.toContain(queryKeys.project('aysel', 'solar-lamp')[0]);

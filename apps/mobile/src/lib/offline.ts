@@ -105,6 +105,8 @@ const PERSISTED_ROOTS: readonly string[] = [
  *   campaign's money, its fees and its payouts.
  * - `inbox`: the notifications (#160) — time-sensitive like a feed; offline, the screen shows what
  *   this process read and nothing older.
+ * - `viewer`: what this account has said about a campaign (#137) — saved, reminded, backed. One
+ *   account's state on a public page; offline, the campaign page's writes are disabled anyway.
  */
 export const UNPERSISTED_ROOTS: readonly string[] = [
   'comments',
@@ -114,6 +116,7 @@ export const UNPERSISTED_ROOTS: readonly string[] = [
   'dashboardBackers',
   'dashboard',
   'inbox',
+  'viewer',
 ];
 
 /**
@@ -138,6 +141,7 @@ export const ACCOUNT_ROOTS: readonly string[] = [
   'dashboardSurveys',
   'projectEdit',
   'projectEditLists',
+  'viewer',
 ];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {

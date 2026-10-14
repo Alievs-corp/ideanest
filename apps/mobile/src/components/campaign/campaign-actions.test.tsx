@@ -50,8 +50,16 @@ const problem = (status: number, body: Record<string, unknown> = {}) =>
   });
 
 type Route = () => Response | Promise<Response>;
-let routes: { save: Route; unsave: Route; remind: Route; forget: Route; refresh: Route };
+let routes: {
+  save: Route;
+  unsave: Route;
+  remind: Route;
+  forget: Route;
+  refresh: Route;
+  viewer: Route;
+};
 let writes: string[];
+let viewerReads: number;
 let client: QueryClient;
 
 beforeEach(async () => {
@@ -61,17 +69,23 @@ beforeEach(async () => {
   rememberAccessToken(null);
   jest.clearAllMocks();
   writes = [];
+  viewerReads = 0;
   routes = {
     save: () => json({ saved: true }),
     unsave: () => json({ saved: false }),
     remind: () => json({ following: true, followerCount: 4 }),
     forget: () => new Response(null, { status: 204 }),
     refresh: () => problem(401),
+    viewer: () => json({ saved: false, reminded: false, followingCreator: false, backed: false }),
   };
   global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const method = init?.method ?? 'GET';
     if (url.pathname === '/v1/auth/refresh') return routes.refresh();
+    if (url.pathname === `/v1/projects/${ID}/viewer` && method === 'GET') {
+      viewerReads += 1;
+      return routes.viewer();
+    }
     writes.push(`${method} ${url.pathname}`);
     if (url.pathname === `/v1/projects/${ID}/save`) {
       return method === 'POST' ? routes.save() : routes.unsave();
@@ -230,6 +244,55 @@ describe('Save', () => {
     await fireEvent.press(screen.getByRole('button', { name: named(A.saveLabel) }));
     await settle();
     expect(notice()).toBe(A.failures.unreachable);
+  });
+});
+
+describe('where the reader left them (#137)', () => {
+  it('starts Save and Remind from the viewer read', async () => {
+    await signIn();
+    routes.viewer = () => json({ saved: true, reminded: true, followingCreator: false, backed: false });
+    await show('PRELAUNCH');
+    expect(viewerReads).toBe(1);
+    expect(screen.getByTestId('action-save').props.accessibilityLabel).toBe(named(A.savedLabel));
+    expect(screen.getByTestId('action-save').props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: true }),
+    );
+    expect(screen.getByTestId('action-remind').props.accessibilityLabel).toBe(
+      named(A.remindingLabel),
+    );
+    expect(writes).toEqual([]);
+  });
+
+  it('does not ask signed out, nor offline', async () => {
+    await show();
+    await show('LIVE', { offline: true });
+    expect(viewerReads).toBe(0);
+  });
+
+  it('offers the actions when the read fails', async () => {
+    await signIn();
+    routes.viewer = () => problem(500);
+    await show('PRELAUNCH');
+    expect(viewerReads).toBe(1);
+    expect(screen.getByTestId('action-save').props.accessibilityLabel).toBe(named(A.saveLabel));
+    expect(screen.getByTestId('action-remind').props.accessibilityLabel).toBe(named(A.remindLabel));
+  });
+
+  it('lets a press outrank the read, and writes it back for the next visit', async () => {
+    await signIn();
+    routes.viewer = () => json({ saved: true, reminded: false, followingCreator: true, backed: true });
+    await show();
+
+    await fireEvent.press(screen.getByRole('button', { name: named(A.savedLabel) }));
+    await settle();
+    expect(writes).toEqual([`DELETE /v1/projects/${ID}/save`]);
+    expect(screen.getByTestId('action-save').props.accessibilityLabel).toBe(named(A.saveLabel));
+    expect(client.getQueryData(queryKeys.campaignViewer(ID))).toEqual({
+      saved: false,
+      reminded: false,
+      followingCreator: true,
+      backed: true,
+    });
   });
 });
 

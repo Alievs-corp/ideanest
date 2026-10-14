@@ -1,3 +1,4 @@
+import type { components } from '@ideanest/api-client';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 
@@ -71,6 +72,27 @@ export function listFollowing(
   return readPage<FollowedCreator>('/v1/me/following', cursor, signal);
 }
 
+/** What the signed-in reader has already said about one campaign. See {@link viewerState}. */
+export type ViewerState = components['schemas']['CampaignViewerResponse'];
+
+/**
+ * Whether the signed-in reader has saved this campaign, asked for its launch reminder, follows
+ * its creator and backs it — `GET /v1/projects/{id}/viewer` (#137).
+ *
+ * A read of its own rather than part of the campaign page, because the page is public and the
+ * same for everybody: folding the reader into it would make every cached copy somebody's. The
+ * service answers it `no-store`, 401 without a session and 404 for a campaign the public may not
+ * see; a caller treats any failure as "not known" and offers the actions, which is safe because
+ * every write behind them is idempotent.
+ */
+export async function viewerState(projectId: string, signal?: AbortSignal): Promise<ViewerState> {
+  const response = await authorizedFetch(`/v1/projects/${encodeURIComponent(projectId)}/viewer`, {
+    signal,
+  });
+  if (!response.ok) throw await errorFrom(response);
+  return (await response.json()) as ViewerState;
+}
+
 /** Removes a campaign from the saved list — `DELETE /v1/projects/{id}/save`. */
 export async function unsaveCampaign(projectId: string): Promise<void> {
   const response = await authorizedFetch(`/v1/projects/${encodeURIComponent(projectId)}/save`, {
@@ -116,8 +138,8 @@ const FOLLOWING_SCAN_PAGES = 5;
 /**
  * Whether the signed-in reader follows `slug`, read from `GET /v1/me/following`. Issue #143.
  *
- * There is no per-creator "do I follow this" read (#137 proposes a viewer-state endpoint), so
- * the list is walked at the service's largest page size. The walk stops after
+ * There is no per-creator "do I follow this" read — #137's `viewerState` answers per campaign,
+ * and a profile is not one — so the list is walked at the service's largest page size. The walk stops after
  * `FOLLOWING_SCAN_PAGES` pages — five hundred accounts — and answers `false` beyond that. That
  * is safe rather than merely convenient, for the reason `CampaignActions` gives about saving:
  * following is idempotent, so the worst case is a reader who follows five hundred people

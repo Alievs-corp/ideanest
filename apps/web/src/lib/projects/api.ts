@@ -442,11 +442,8 @@ export interface SaveState {
  * changes nothing and the returned `saved` flag is the truth the button shows afterwards
  * rather than a value this side guessed.
  *
- * <strong>There is no read of "have I saved this one".</strong> §10.2 publishes
- * `GET /v1/me/saved` — a paginated list — and no per-campaign check, so a page cannot know
- * the initial state without walking every page of somebody's saved campaigns. The control
- * therefore offers the action rather than reflecting the state until it is pressed, and
- * `CampaignActions` says what that looks like and why it is harmless.
+ * The state the control starts from is not read here: `viewerState` in
+ * `lib/community/signals.ts` asks `GET /v1/projects/{id}/viewer` for it (#137).
  */
 export async function saveCampaign(projectId: string, signal?: AbortSignal): Promise<SaveState> {
   const response = await authorizedFetch(`/v1/projects/${encodeURIComponent(projectId)}/save`, {

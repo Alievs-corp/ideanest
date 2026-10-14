@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Glyphs } from '../../icons';
 import type { ProjectState } from '@ideanest/campaign/states';
-import { queryKeys } from '../../api/queries';
+import { queryKeys, useCampaignViewer, type CampaignViewer } from '../../api/queries';
 import {
   actionFailureOf,
   forgetMe,
@@ -21,16 +21,17 @@ import { Pill, announce, haptics } from '../ui';
 /**
  * Block 8 — the web's `CampaignActions` (#155): Save, Share and, before launch, Remind me.
  *
- * <h2>Save starts off, because nothing says otherwise yet</h2>
+ * <h2>Save and Remind start where the reader left them (#137)</h2>
  *
- * There is no per-campaign "have I saved this" until #137's viewer read lands, and walking the
- * paginated `/v1/me/saved` to guess would be slow and wrong for anybody with more than a page of
- * saves. So, as on the web, the control offers the action. The write is idempotent — saving a
- * saved campaign is the same success — so the worst case is being told, truly, that it is saved.
+ * Signed in and online, `useCampaignViewer` asks `GET /v1/projects/{id}/viewer` and the two
+ * toggles draw its `saved` and `reminded`. Until it answers, and if it cannot, they offer the
+ * action: both writes are idempotent, so the worst case is being told, truly, that it is saved.
+ * A press is held in the control's own state and outranks the read from then on — its answer is
+ * newer — and is written back into the read's cache, so coming back to the page draws it.
  *
- * <p>Pressed, it flips at once and asks; the service's `saved` decides what it settles on, and a
- * refusal flips it back with the reason. A success invalidates the Saved tab's list so it is
- * current the next time it is opened.
+ * <p>Pressed, a toggle flips at once and asks; the service's `saved` decides what it settles on,
+ * and a refusal flips it back with the reason. A saved success invalidates the Saved tab's list
+ * so it is current the next time it is opened.
  *
  * <h2>Signed out</h2>
  *
@@ -69,8 +70,12 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
   const queryClient = useQueryClient();
   const { signedIn } = useSession();
 
-  const [saved, setSaved] = useState(false);
-  const [reminding, setReminding] = useState(false);
+  const viewer = useCampaignViewer(projectId, signedIn && !offline);
+  // `null` until pressed: the read decides until the reader does.
+  const [savedPress, setSaved] = useState<boolean | null>(null);
+  const [remindPress, setReminding] = useState<boolean | null>(null);
+  const saved = savedPress ?? viewer.data?.saved ?? false;
+  const reminding = remindPress ?? viewer.data?.reminded ?? false;
   const [shared, setShared] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
   /*
@@ -88,6 +93,11 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
     // Android reads the live region below; iOS has none, so it is said once here.
     if (Platform.OS === 'ios') announce(message);
   };
+
+  const remember = (change: Partial<CampaignViewer>) =>
+    queryClient.setQueryData<CampaignViewer>(queryKeys.campaignViewer(projectId), (known) =>
+      known === undefined ? known : { ...known, ...change },
+    );
 
   const failure = (cause: unknown): string => {
     const reason = actionFailureOf(cause);
@@ -118,6 +128,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
     try {
       const now = was ? await unsaveCampaign(projectId) : await saveCampaign(projectId);
       setSaved(now);
+      remember({ saved: now });
       if (!was && now) setJustSaved(true);
       say(
         was && !now
@@ -162,6 +173,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
     try {
       if (was) await forgetMe(projectId);
       else await remindMe(projectId);
+      remember({ reminded: !was });
       say(was ? t('notices.remindOff') : t('notices.remindOn'));
     } catch (cause) {
       setReminding(was);

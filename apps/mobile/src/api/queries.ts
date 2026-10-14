@@ -38,6 +38,7 @@ export type PublicRewards = GetResponse<'/v1/projects/{projectId}/rewards/public
 export type ProjectUpdates = GetResponse<'/v1/projects/{projectId}/updates'>;
 export type PrelaunchPage = GetResponse<'/v1/projects/{id}/prelaunch'>;
 export type PledgeList = GetResponse<'/v1/me/pledges'>;
+export type CampaignViewer = GetResponse<'/v1/projects/{projectId}/viewer'>;
 
 /**
  * The roots in `lib/offline.ts`'s persistence list are the string literals
@@ -89,6 +90,13 @@ export const queryKeys = {
    * page: it is public — a title, a blurb, a cover and a count — and nothing in it is anybody's.
    */
   prelaunch: (projectId: string) => ['project', projectId, 'prelaunch'] as const,
+  /**
+   * What the signed-in reader has already said about one campaign (#137): saved, reminded,
+   * following its creator, backed. Its own root, `viewer`, never persisted and erased with the
+   * account: it is one account's state, and under `project` it would be written to disk with
+   * the public page and shown to whoever signs in next.
+   */
+  campaignViewer: (projectId: string) => ['viewer', projectId] as const,
   saved: () => ['saved'] as const,
   /** The saved list's pages (#159), under `saved`: invalidating `saved()` refreshes it. */
   savedList: () => ['saved', 'list'] as const,
@@ -424,6 +432,25 @@ export function useProjectRewards(projectId: string | undefined) {
         path: { projectId: projectId as string },
         signal,
       }),
+  });
+}
+
+/**
+ * The signed-in reader's own state on one campaign — `GET /v1/projects/{id}/viewer` (#137), which
+ * is what lets the campaign page draw Save and Remind as the reader left them.
+ *
+ * Asked only with a session and a connection (`enabled`): signed out the answer is a 401, and
+ * offline it is a failure the controls do not need, since they are disabled. Not retried — a
+ * read that fails leaves the controls offering the action, which is safe because both writes are
+ * idempotent.
+ */
+export function useCampaignViewer(projectId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.campaignViewer(projectId),
+    enabled: enabled && projectId !== '',
+    retry: false,
+    queryFn: ({ signal }): Promise<CampaignViewer> =>
+      api().get('/v1/projects/{projectId}/viewer', { path: { projectId }, signal }),
   });
 }
 

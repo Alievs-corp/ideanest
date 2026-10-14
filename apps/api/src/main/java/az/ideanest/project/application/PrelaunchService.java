@@ -208,6 +208,20 @@ public class PrelaunchService {
         reminders.deleteByToken(SecureTokens.hash(unsubscribeToken));
     }
 
+    /**
+     * Whether this account asked to be told when this campaign opens — #137's {@code reminded}.
+     *
+     * <p><strong>The account's row only.</strong> A reminder registered with a bare address is
+     * not counted even when the address is this account's: {@link #withdraw} with an account
+     * removes the account's row and nothing else, so reporting the address row as "reminded"
+     * would draw a control that cannot be switched off. Not restricted by state either, for
+     * {@link #withdraw}'s reason — a row that is there is there, launched or not.
+     */
+    @Transactional(readOnly = true)
+    public boolean hasReminder(UUID projectId, UUID accountId) {
+        return reminders.existsByProjectIdAndUserId(projectId, accountId);
+    }
+
     /** How many people are waiting for this campaign. */
     @Transactional(readOnly = true)
     public long followerCount(UUID projectId) {
