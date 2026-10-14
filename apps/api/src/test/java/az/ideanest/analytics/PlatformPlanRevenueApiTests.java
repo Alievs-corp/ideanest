@@ -3,12 +3,13 @@ package az.ideanest.analytics;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
-import az.ideanest.shared.EmailAddress;
 import az.ideanest.shared.Identifiers;
 import az.ideanest.support.AbstractIntegrationTest;
-import az.ideanest.user.infrastructure.UserRepository;
+import az.ideanest.support.Campaigns;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.UUID;
 import javax.sql.DataSource;
@@ -31,17 +32,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 class PlatformPlanRevenueApiTests extends AbstractIntegrationTest {
 
-    private static final String PASSWORD = "a-long-enough-password";
-
-    private static final String MODERATOR_EMAIL = "moderator@ideanest.test";
-
     private static String accessToken;
+
+    /** The test clock refuses a zone, so the window is named rather than defaulted. */
+    private static final LocalDate TODAY = LocalDate.now(ZoneId.of("Asia/Baku"));
 
     @Autowired
     private TestRestTemplate rest;
-
-    @Autowired
-    private UserRepository users;
 
     @Autowired
     private AccessTokenIssuer tokens;
@@ -93,12 +90,12 @@ class PlatformPlanRevenueApiTests extends AbstractIntegrationTest {
         headers.setBearerAuth(staffToken());
 
         ResponseEntity<Map<String, Object>> response = rest.exchange(
-                "/v1/admin/analytics",
+                "/v1/admin/analytics?from=" + TODAY.minusDays(1) + "&to=" + TODAY.plusDays(1),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 new ParameterizedTypeReference<Map<String, Object>>() {});
 
-        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getStatusCode().is2xxSuccessful()).as("%s %s", response.getStatusCode(), response.getBody()).isTrue();
         return (Map<String, Object>) response.getBody().get("totals");
     }
 
@@ -120,15 +117,16 @@ class PlatformPlanRevenueApiTests extends AbstractIntegrationTest {
         if (accessToken != null) {
             return accessToken;
         }
-        EmailAddress email = EmailAddress.of(MODERATOR_EMAIL);
-        if (users.findByEmailAndDeletedAtIsNull(email).isEmpty()) {
-            rest.postForEntity(
-                    "/v1/auth/register",
-                    Map.of("email", email.value(), "password", PASSWORD, "name", "Test Moderator"),
-                    String.class);
-        }
-
-        UUID id = users.findByEmailAndDeletedAtIsNull(email).orElseThrow().getId();
+        UUID id = Campaigns.creator(dataSource, "plan-revenue-analyst");
+        new JdbcTemplate(dataSource)
+                .update(
+                        """
+                        INSERT INTO staff_role_grants (account_id, role, granted_by, note)
+                        VALUES (?, 'SUPER_ADMIN', ?, '#478 fixture')
+                        ON CONFLICT DO NOTHING
+                        """,
+                        id,
+                        id);
         accessToken = tokens.issue(
                         id,
                         UUID.randomUUID(),
