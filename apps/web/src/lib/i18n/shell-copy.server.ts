@@ -393,7 +393,7 @@ export async function checkoutCopy(): Promise<CheckoutCopy> {
  * that already exists and draws its field, its hints and its refusals from there.
  */
 export async function pledgeListCopy(): Promise<PledgeListCopy> {
-  return pledgeListCopyFrom(await getTranslations('account.pledges'));
+  return pledgeListCopyFrom(await getTranslations('account.pledges'), await getTranslations('common'));
 }
 
 export async function pledgeManagerCopy(): Promise<PledgeManagerCopy> {

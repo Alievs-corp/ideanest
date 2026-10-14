@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../lib/api/problem';
 import type { Page } from '../../lib/community/signals';
 
@@ -32,6 +32,16 @@ import type { Page } from '../../lib/community/signals';
 
 export type ListStatus = 'loading' | 'ready' | 'failed' | 'signed-out';
 
+/**
+ * What `error` says when the service sent no `detail` of its own — `common.list.refused` and
+ * `common.list.unreachable`, handed in by the panel because a hook cannot read the catalogue
+ * (#462). They are the paginator's, like `common.list.showMore`, so every list says them alike.
+ */
+export interface CursorListFailureCopy {
+  readonly refused: string;
+  readonly unreachable: string;
+}
+
 export interface CursorList<T> {
   readonly status: ListStatus;
   readonly items: readonly T[];
@@ -47,18 +57,20 @@ function wasAborted(cause: unknown): boolean {
   return cause instanceof DOMException && cause.name === 'AbortError';
 }
 
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: CursorListFailureCopy): string {
   if (cause instanceof ApiError) {
-    return (
-      cause.problem?.detail ?? cause.problem?.title ?? 'The service refused the request. Try again.'
-    );
+    return cause.problem?.detail ?? cause.problem?.title ?? copy.refused;
   }
-  return 'The service could not be reached. Check your connection and try again.';
+  return copy.unreachable;
 }
 
 export function useCursorList<T>(
   read: (cursor: string | null, signal?: AbortSignal) => Promise<Page<T>>,
+  failures: CursorListFailureCopy,
 ): CursorList<T> {
+  // Read when a request fails rather than as a dependency: new words must not refetch the list.
+  const failureCopy = useRef(failures);
+  failureCopy.current = failures;
   const [status, setStatus] = useState<ListStatus>('loading');
   const [items, setItems] = useState<readonly T[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -86,7 +98,7 @@ export function useCursorList<T>(
           setStatus('signed-out');
           return;
         }
-        setError(messageFor(cause));
+        setError(messageFor(cause, failureCopy.current));
         setStatus('failed');
       }
     })();
@@ -113,7 +125,7 @@ export function useCursorList<T>(
         setHasMore(page.nextCursor !== null);
       } catch (cause) {
         if (wasAborted(cause)) return;
-        setError(messageFor(cause));
+        setError(messageFor(cause, failureCopy.current));
       } finally {
         setLoadingMore(false);
       }

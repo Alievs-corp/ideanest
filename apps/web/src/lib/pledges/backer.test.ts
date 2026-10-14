@@ -149,7 +149,7 @@ describe('findMyPledge', () => {
  * Retyping them here would give a test that passes whatever the catalogue says, and would
  * still be green with the message file empty. `src/test-copy.ts` carries the argument.
  */
-const STATES = pledgeListCopyFrom(translatorFor('account.pledges')).states;
+const STATES = pledgeListCopyFrom(translatorFor('account.pledges'), translatorFor('common')).states;
 
 describe('pledgeStateLabel', () => {
   it('says who cancelled, because the schema’s spelling is not a sentence', () => {

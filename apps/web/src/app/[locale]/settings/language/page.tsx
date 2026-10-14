@@ -9,23 +9,18 @@ import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 
 /**
- * THE METADATA IS ENGLISH WHILE THE PAGE IS NOT, and that is a choice rather than an omission.
+ * The tab title in the reader's language — #462.
  *
- * Not for the reason this paragraph used to give. It said the document stayed `lang="en"`
- * because the public routes were cached shared renders; #123 shipped the locale-prefixed URLs
- * that removed that constraint, and `app/[locale]/layout.tsx` declares the route's own
- * language now.
- *
- * What is left is a smaller and still sufficient reason: this page is `noindex, nofollow`, so
- * the only reader of its title is the person who opened it, and the one string a
- * `generateMetadata` would change is already the `<h1>` below in their own language. A browser
- * tab is not worth a per-route metadata function; when the settings area grows one for its own
- * sake, this comes with it.
+ * This was the last `const` metadata under `/settings`, kept in English on the grounds that a
+ * per-route metadata function was not worth it for one tab. Every sibling has had one since
+ * #324, so the reason it gave for waiting is gone, and the prose guard
+ * (`components/prose-literals.test.ts`) no longer lets an English title through.
  */
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Language and currency',
-  description: 'Choose the language IdeyaNest writes to you in, and the currency it shows amounts in.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('settings.language');
+
+  return privatePageMetadata({ title: t('metaTitle'), description: t('metaDescription') });
+}
 
 /**
  * `/settings/language` — §4.2's P-10, issue #280.

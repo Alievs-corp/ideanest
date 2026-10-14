@@ -72,17 +72,22 @@ export interface SignalListCopy {
   readonly showMore: string;
   readonly loadingMore: string;
   readonly nextPageFailed: string;
+  /** What a page the service refused, or never answered, says when it sent no `detail` (#462). */
+  readonly refused: string;
+  readonly unreachable: string;
 }
 
-/** The three words every cursor-paginated list on the platform ends with. */
+/** The words every cursor-paginated list on the platform ends with. */
 function paginator(common: SignalsTranslator): Pick<
   SignalListCopy,
-  'showMore' | 'loadingMore' | 'nextPageFailed'
+  'showMore' | 'loadingMore' | 'nextPageFailed' | 'refused' | 'unreachable'
 > {
   return {
     showMore: common('list.showMore'),
     loadingMore: common('list.loadingMore'),
     nextPageFailed: common('list.nextPageFailed'),
+    refused: common('list.refused'),
+    unreachable: common('list.unreachable'),
   };
 }
 

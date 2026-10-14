@@ -51,7 +51,10 @@ export interface SavedProjectsPanelProps {
 export function SavedProjectsPanel({ copy }: SavedProjectsPanelProps) {
   const locale = useRouteLocale();
   const { status, items, hasMore, loadingMore, error, loadMore, remove } =
-    useCursorList<SavedCampaign>(useCallback((cursor, signal) => listSaved(cursor, signal), []));
+    useCursorList<SavedCampaign>(
+      useCallback((cursor, signal) => listSaved(cursor, signal), []),
+      copy,
+    );
 
   const [removalError, setRemovalError] = useState<string | null>(null);
   const [restored, setRestored] = useState<readonly SavedCampaign[]>([]);

@@ -42,6 +42,7 @@ export function BlockedAccountsPanel({ copy }: BlockedAccountsPanelProps) {
   const locale = useRouteLocale();
   const { status, items, hasMore, loadingMore, error, loadMore, remove } = useCursorList<BlockedAccount>(
     useCallback((cursor, signal) => listBlocked(cursor, signal), []),
+    copy,
   );
 
   const [unblockError, setUnblockError] = useState<string | null>(null);

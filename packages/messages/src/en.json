@@ -21,7 +21,9 @@
     "list": {
       "showMore": "Show more",
       "loadingMore": "Loading",
-      "nextPageFailed": "The next page did not load"
+      "nextPageFailed": "The next page did not load",
+      "refused": "The service refused the request. Try again.",
+      "unreachable": "The service could not be reached. Check your connection and try again."
     },
     "trail": {
       "home": "Home",
@@ -3186,6 +3188,8 @@
   },
   "settings": {
     "language": {
+      "metaTitle": "Language and currency",
+      "metaDescription": "Choose the language IdeyaNest writes to you in, and the currency it shows amounts in.",
       "title": "Language and currency",
       "intro": "How IdeyaNest writes to you, and the currency you read amounts in.",
       "fieldLabel": "Interface language",
@@ -4603,6 +4607,7 @@
         "physical": "Physical",
         "editNamed": "Edit {name}",
         "deleteNamed": "Delete {name}",
+        "weight": "{grams} g",
         "itemsHeading": "Items",
         "edit": "Edit"
       },
@@ -6480,7 +6485,6 @@
         "confirmDateLabel": "Use {date} for {label}"
       },
       "rewards": {
-        "weight": "{grams} g",
         "image": "Image",
         "imageHint": "Optional. Choose a photo, take one, or use the address of an image that is already online.",
         "imageRemove": "Remove image",

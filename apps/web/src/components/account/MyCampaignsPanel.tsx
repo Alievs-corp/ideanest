@@ -51,6 +51,9 @@ export interface MyCampaignsPanelCopy {
   readonly loadingList: string;
   readonly loadMore: string;
   readonly loadingMore: string;
+  /** `common.list`'s, for a page the service refused or never answered. */
+  readonly refused: string;
+  readonly unreachable: string;
   readonly draftHint: string;
   /** #141: a launched campaign's two actions, and the first's stand-in when it is not public. */
   readonly view: string;
@@ -135,6 +138,7 @@ function LaunchedRow({ campaign, copy }: RowProps) {
 export function MyCampaignsPanel({ copy }: MyCampaignsPanelProps) {
   const { status, items, hasMore, loadingMore, error, loadMore } = useCursorList<ProfileProjectCard>(
     useCallback((cursor, signal) => listMyProjects(cursor, signal), []),
+    copy,
   );
 
   /*

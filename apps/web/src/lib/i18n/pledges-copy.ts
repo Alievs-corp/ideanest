@@ -93,11 +93,14 @@ export interface PledgeListCopy {
   readonly loadingMore: string;
   readonly showMore: string;
   readonly nextPageFailed: string;
+  /** `common.list`'s, for a page the service refused or never answered (#462). */
+  readonly refused: string;
+  readonly unreachable: string;
   readonly anonymous: string;
   readonly states: PledgeStatesCopy;
 }
 
-export function pledgeListCopyFrom(t: PledgesTranslator): PledgeListCopy {
+export function pledgeListCopyFrom(t: PledgesTranslator, common: PledgesTranslator): PledgeListCopy {
   return {
     loading: t('list.loading'),
     failedTitle: t('list.failedTitle'),
@@ -114,6 +117,8 @@ export function pledgeListCopyFrom(t: PledgesTranslator): PledgeListCopy {
     loadingMore: t('list.loadingMore'),
     showMore: t('list.showMore'),
     nextPageFailed: t('list.nextPageFailed'),
+    refused: common('list.refused'),
+    unreachable: common('list.unreachable'),
     anonymous: t('anonymous'),
     states: statesFrom(t),
   };

@@ -362,6 +362,9 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
     devDependencies:
+      '@babel/parser':
+        specifier: ^7.29.8
+        version: 7.29.8
       '@tailwindcss/postcss':
         specifier: ^4.3.3
         version: 4.3.3

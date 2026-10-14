@@ -21,7 +21,9 @@
     "list": {
       "showMore": "Daha fazla göster",
       "loadingMore": "Yükleniyor",
-      "nextPageFailed": "Sonraki sayfa yüklenmedi"
+      "nextPageFailed": "Sonraki sayfa yüklenmedi",
+      "refused": "Servis isteği reddetti. Yeniden deneyin.",
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."
     },
     "trail": {
       "home": "Ana sayfa",
@@ -3186,6 +3188,8 @@
   },
   "settings": {
     "language": {
+      "metaTitle": "Dil ve para birimi",
+      "metaDescription": "IdeyaNest'in size hangi dilde yazacağını ve tutarları hangi para biriminde göstereceğini seçin.",
       "title": "Dil ve para birimi",
       "intro": "IdeyaNest'in size nasıl yazdığı ve tutarları hangi para biriminde okuduğunuz.",
       "fieldLabel": "Arayüz dili",
@@ -4603,6 +4607,7 @@
         "physical": "Fiziksel",
         "editNamed": "«{name}» düzenle",
         "deleteNamed": "«{name}» sil",
+        "weight": "{grams} g",
         "itemsHeading": "Ürünler",
         "edit": "Düzenle"
       },
@@ -6480,7 +6485,6 @@
         "confirmDateLabel": "{label} için {date} tarihini seç"
       },
       "rewards": {
-        "weight": "{grams} g",
         "image": "Görsel",
         "imageHint": "İsteğe bağlı. Bir fotoğraf seçin, çekin ya da zaten çevrimiçi olan bir görselin adresini kullanın.",
         "imageRemove": "Görseli kaldır",

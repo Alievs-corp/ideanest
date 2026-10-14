@@ -510,6 +510,8 @@ export interface ItemsSectionCopy {
   readonly editNamed: string;
   /** Carries `{name}`. */
   readonly deleteNamed: string;
+  /** An item's shipping weight. Carries `{grams}`; the unit is the reader's ("г" in Russian). */
+  readonly weight: string;
 }
 
 /** `RewardTierEditor` — the drawer one reward is edited in. */
@@ -766,6 +768,7 @@ export function rewardsPanelCopyFrom(
       physical: at('items.physical'),
       editNamed: tpl('rewards.items.editNamed'),
       deleteNamed: tpl('rewards.items.deleteNamed'),
+      weight: tpl('rewards.items.weight'),
     },
     item: {
       drawer: drawer('item'),
