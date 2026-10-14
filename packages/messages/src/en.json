@@ -4614,7 +4614,6 @@
         "description": "Description",
         "descriptionHint": "Optional. Size, colour, edition — whatever distinguishes this from the next item.",
         "imageUrl": "Image address",
-        "imageUrlHint": "A published address. There is no uploader yet, so paste a link to an image that is already online.",
         "imageUrlPlaceholder": "https://",
         "isDigital": "Delivered as a file",
         "weight": "Weight in grams",
@@ -4630,7 +4629,15 @@
           "saving": "Saving"
         },
         "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below.",
-        "weightHint": "Optional, and what shipping is worked out from later."
+        "weightHint": "Optional, and what shipping is worked out from later.",
+        "image": "Image",
+        "imageHint": "Optional. Upload one, or paste the address of an image that is already online.",
+        "imagePrompt": "Drop an image of this item here",
+        "imageDragPrompt": "Release to upload this image",
+        "imageButtonLabel": "Choose an image",
+        "imageDropHint": "Up to 20 MB: JPEG, PNG, WebP, AVIF or HEIC.",
+        "imageRemove": "Remove image",
+        "imageUploaded": "Image uploaded. Save the item to keep it."
       },
       "tier": {
         "addTitle": "Add a reward",
@@ -4905,9 +4912,8 @@
         "embedTitlePlaceholder": "What this video shows",
         "imageUrlPlaceholder": "https://images.example.com/prototype.jpg",
         "imageAltPlaceholder": "What the picture shows",
-        "nothingUploadedTitle": "Nothing is uploaded here",
         "listHint": "Bulleted or numbered.",
-        "imageHint": "An image that is already published somewhere.",
+        "imageHint": "An image you upload, or one that is already published.",
         "quoteHint": "Something somebody said about this project",
         "paragraphHint": "Write a paragraph. Select text and use Bold or Italic, or type **bold** and *italic*.",
         "needUrlFirst": "Enter the address of an image first.",
@@ -4941,7 +4947,7 @@
           "heading": "A section title. Headings become the anchor menu.",
           "list": "Bulleted or numbered.",
           "quote": "A pulled-out quotation.",
-          "image": "An image that is already published somewhere.",
+          "image": "An image you upload, or one that is already published.",
           "embed": "A YouTube or Vimeo video.",
           "rule": "A horizontal divider."
         },
@@ -4949,7 +4955,12 @@
         "embedHint": "The title is what a screen reader announces instead of “frame”. Only YouTube and Vimeo can be embedded.",
         "altHint": "Required. It is what a backer using a screen reader receives instead of the picture, so describe what it shows rather than naming the file.",
         "pixels": "{size} pixels",
-        "imageAddressHint": "Give the address of an image that is already published. Its size is read in your browser and stored with the story, so the page can reserve its space before it loads."
+        "imageAddressHint": "Or paste the address of an image that is already published. Its size is read in your browser.",
+        "imagePrompt": "Drop an image here to add it to the story",
+        "imageDragPrompt": "Release to upload this image",
+        "imageButtonLabel": "Choose an image",
+        "imageDropHint": "Up to 20 MB: JPEG, PNG, WebP, AVIF or HEIC. Its size is measured, so the page can reserve its space before it loads.",
+        "imageUploadOf": "Upload to {name}"
       },
       "history": {
         "title": "Earlier versions",

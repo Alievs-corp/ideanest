@@ -4614,7 +4614,6 @@
         "description": "Açıklama",
         "descriptionHint": "İsteğe bağlı. Boyut, renk, baskı — bu ürünü diğerinden ayıran ne varsa.",
         "imageUrl": "Görsel adresi",
-        "imageUrlHint": "Yayımlanmış bir adres. Henüz yükleyici yok, bu yüzden zaten internette olan bir görselin bağlantısını yapıştırın.",
         "imageUrlPlaceholder": "https://",
         "isDigital": "Dosya olarak teslim edilir",
         "weight": "Gram olarak ağırlık",
@@ -4630,7 +4629,15 @@
           "saving": "Kaydediliyor"
         },
         "notSavedDetail": "Yazdıklarınızdan hiçbiri kaybolmadı — metin aşağıdaki alanlarda duruyor.",
-        "weightHint": "İsteğe bağlı. Kargo ücreti daha sonra buna göre hesaplanır."
+        "weightHint": "İsteğe bağlı. Kargo ücreti daha sonra buna göre hesaplanır.",
+        "image": "Görsel",
+        "imageHint": "İsteğe bağlı. Bir görsel yükleyin ya da zaten çevrimiçi olan bir görselin adresini yapıştırın.",
+        "imagePrompt": "Bu ürünün görselini buraya bırakın",
+        "imageDragPrompt": "Bu görseli yüklemek için bırakın",
+        "imageButtonLabel": "Bir görsel seçin",
+        "imageDropHint": "En fazla 20 MB: JPEG, PNG, WebP, AVIF veya HEIC.",
+        "imageRemove": "Görseli kaldır",
+        "imageUploaded": "Görsel yüklendi. Saklamak için ürünü kaydedin."
       },
       "tier": {
         "addTitle": "Ödül ekle",
@@ -4905,9 +4912,8 @@
         "embedTitlePlaceholder": "Bu videoda ne gösteriliyor",
         "imageUrlPlaceholder": "https://images.example.com/prototype.jpg",
         "imageAltPlaceholder": "Resimde ne var",
-        "nothingUploadedTitle": "Buraya hiçbir şey yüklenmiyor",
         "listHint": "Madde işaretli ya da numaralı.",
-        "imageHint": "Zaten bir yerde yayımlanmış bir görsel.",
+        "imageHint": "Yüklediğiniz ya da zaten yayımlanmış bir görsel.",
         "quoteHint": "Birinin bu proje hakkında söyledikleri",
         "paragraphHint": "Bir paragraf yazın. Metni seçip «Kalın» ya da «İtalik» kullanın, veya **kalın** ve *italik* yazın.",
         "needUrlFirst": "Önce bir görselin adresini girin.",
@@ -4941,7 +4947,7 @@
           "heading": "Bölüm başlığı. Başlıklardan çapa menüsü oluşur.",
           "list": "Madde işaretli ya da numaralı.",
           "quote": "Öne çıkarılmış bir alıntı.",
-          "image": "Zaten bir yerde yayımlanmış bir görsel.",
+          "image": "Yüklediğiniz ya da zaten yayımlanmış bir görsel.",
           "embed": "YouTube ya da Vimeo videosu.",
           "rule": "Yatay bir ayırıcı."
         },
@@ -4949,7 +4955,12 @@
         "embedHint": "Başlık, ekran okuyucunun «çerçeve» yerine okuduğu metindir. Yalnızca YouTube ve Vimeo videoları gömülebilir.",
         "altHint": "Zorunlu. Ekran okuyucu kullanan bir destekçi görsel yerine bunu duyar; bu yüzden dosyanın adını değil, görselde ne olduğunu anlatın.",
         "pixels": "{size} piksel",
-        "imageAddressHint": "Zaten yayımlanmış bir görselin adresini verin. Boyutu tarayıcınızda okunur ve hikâyeyle birlikte saklanır; böylece sayfa, görsel yüklenmeden önce yerini ayırabilir."
+        "imageAddressHint": "Ya da zaten yayımlanmış bir görselin adresini yapıştırın. Boyutu tarayıcınızda okunur.",
+        "imagePrompt": "Hikâyeye eklemek için buraya bir görsel bırakın",
+        "imageDragPrompt": "Bu görseli yüklemek için bırakın",
+        "imageButtonLabel": "Bir görsel seçin",
+        "imageDropHint": "En fazla 20 MB: JPEG, PNG, WebP, AVIF veya HEIC. Boyutu ölçülür, böylece sayfa görsel yüklenmeden yerini ayırabilir.",
+        "imageUploadOf": "Yükleme: {name}"
       },
       "history": {
         "title": "Önceki sürümler",

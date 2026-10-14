@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import {
@@ -19,6 +19,7 @@ import {
   type Reward,
 } from '../../lib/projects/api';
 import { RewardsPanel } from './RewardsPanel';
+import { UploadFailed, uploadImage, type UploadedImage } from '../../lib/media/upload';
 import { EDITOR_COPY, REWARDS_COPY } from '../../test-editor-copy';
 
 /**
@@ -49,6 +50,17 @@ vi.mock('../../lib/projects/api', async (importOriginal) => ({
   replaceShippingRules: vi.fn(),
 }));
 
+/*
+ * The upload is mocked for the reason `BasicsPanel.test.tsx` gives for the cover: three
+ * requests and a poll that belong to `lib/media/upload.ts`. What the item drawer does with the
+ * result — and with a refusal — is what is asserted here (#313).
+ */
+vi.mock('../../lib/media/upload', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/media/upload')>()),
+  uploadImage: vi.fn(),
+}));
+
+const uploadImageMock = vi.mocked(uploadImage);
 const getProjectEditMock = vi.mocked(getProjectEdit);
 const listItemsMock = vi.mocked(listItems);
 const listRewardsMock = vi.mocked(listRewards);
@@ -547,6 +559,108 @@ describe('RewardsPanel', () => {
         weightGrams: null,
         isDigital: false,
         sku: null,
+      });
+    });
+
+    describe('its image', () => {
+      const UPLOADED: UploadedImage = {
+        mediaId: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+        url: 'https://cdn.example.test/media/3f2504e0.jpg',
+        width: 1200,
+        height: 1200,
+        blurDataUrl: '',
+      };
+
+      /** Hands a file to the drawer's drop zone; the input is hidden behind its button. */
+      function chooseImage(file = new File(['bytes'], 'mug.jpg', { type: 'image/jpeg' })): void {
+        const input = screen.getByRole('dialog').querySelector<HTMLInputElement>('input[type="file"]');
+        if (input === null) throw new Error('The item drawer has no file input');
+        fireEvent.change(input, { target: { files: [file] } });
+      }
+
+      it('uploads one and saves its address with the item, keeping what was typed meanwhile', async () => {
+        const user = await openRewards({ items: [] });
+        createItemMock.mockResolvedValue({ ...MUG, id: 'item-new', name: 'Poster' });
+        let finish: ((image: UploadedImage) => void) | undefined;
+        uploadImageMock.mockImplementation((_file, options) => {
+          options?.onStage?.('processing');
+          return new Promise((resolve) => {
+            finish = resolve;
+          });
+        });
+
+        await user.click(screen.getByRole('button', { name: 'Add the first item' }));
+        chooseImage();
+
+        expect(await screen.findByText('Processing the image…')).toBeInTheDocument();
+        // Saving now would store the item without the picture being waited for.
+        expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+        await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Poster');
+        await act(async () => finish?.(UPLOADED));
+
+        expect(screen.getByText('Image uploaded. Save the item to keep it.')).toBeInTheDocument();
+        expect(screen.getByRole('textbox', { name: 'Image address' })).toHaveValue(UPLOADED.url);
+
+        await user.click(screen.getByRole('button', { name: 'Save' }));
+        await tick();
+
+        expect(createItemMock).toHaveBeenCalledWith(
+          'project-1',
+          expect.objectContaining({ name: 'Poster', imageUrl: UPLOADED.url }),
+        );
+      });
+
+      it.each([
+        ['UNSUPPORTED_FORMAT', /not an image this platform can read/],
+        ['TOO_LARGE', /The limit is 20 MB/],
+        ['TOO_SMALL', /from 320×320 upwards/],
+        ['EMPTY', /That file is empty/],
+        ['MEDIA_STORAGE_UNREACHABLE', /storage is not answering/],
+      ])('explains a refusal with %s, and the item keeps no image', async (code, sentence) => {
+        const user = await openRewards({ items: [] });
+        createItemMock.mockResolvedValue({ ...MUG, id: 'item-new', name: 'Poster' });
+        uploadImageMock.mockRejectedValue(new UploadFailed(code, 'service log sentence'));
+
+        await user.click(screen.getByRole('button', { name: 'Add the first item' }));
+        chooseImage();
+
+        const alert = (await screen.findByText('That file was not used')).closest('[role="alert"]');
+        expect(alert).toHaveTextContent(sentence);
+        expect(alert).not.toHaveTextContent('service log sentence');
+
+        await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Poster');
+        await user.click(screen.getByRole('button', { name: 'Save' }));
+        await tick();
+        expect(createItemMock).toHaveBeenCalledWith(
+          'project-1',
+          expect.objectContaining({ imageUrl: null }),
+        );
+      });
+
+      it('still takes a typed address, and previews it', async () => {
+        const user = await openRewards({ items: [] });
+        createItemMock.mockResolvedValue({ ...MUG, id: 'item-new', name: 'Poster' });
+
+        await user.click(screen.getByRole('button', { name: 'Add the first item' }));
+        await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Poster');
+        await user.type(
+          screen.getByRole('textbox', { name: 'Image address' }),
+          'https://images.example.com/poster.jpg',
+        );
+        expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+          'src',
+          'https://images.example.com/poster.jpg',
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Save' }));
+        await tick();
+
+        expect(uploadImageMock).not.toHaveBeenCalled();
+        expect(createItemMock).toHaveBeenCalledWith(
+          'project-1',
+          expect.objectContaining({ imageUrl: 'https://images.example.com/poster.jpg' }),
+        );
       });
     });
 

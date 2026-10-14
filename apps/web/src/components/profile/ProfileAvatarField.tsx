@@ -4,7 +4,7 @@ import { useId, useState } from 'react';
 import { Field, FileDropZone, InlineAlert, Media, Pill, TextInput } from '@ideanest/ui';
 import type { ProfileAvatarCopy } from '../../lib/i18n/profile-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
-import { describeUploadFailure, useImageUpload } from '../../lib/media/useImageUpload';
+import { useImageUpload } from '../../lib/media/useImageUpload';
 
 /**
  * §4.2's P-01 — the profile picture. Issue #271.
@@ -80,7 +80,7 @@ export function ProfileAvatarField({
   onUploaded,
   copy,
 }: ProfileAvatarFieldProps) {
-  const { stage, upload: send } = useImageUpload();
+  const { stage, upload: send } = useImageUpload(copy.upload);
   /* Between a ready upload and the answer to its save, which is a request of its own. */
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
@@ -105,9 +105,14 @@ export function ProfileAvatarField({
   async function upload(file: File): Promise<void> {
     setNote(null);
     try {
-      const image = await send(file);
+      const result = await send(file);
       // Abandoned for a newer file, which is the one this field now reports on.
-      if (image === null) return;
+      if (result === null) return;
+      if ('refusal' in result) {
+        setNote({ tone: 'danger', title: copy.upload.notUsedTitle, text: result.refusal });
+        return;
+      }
+      const { image } = result;
 
       setSaving(true);
       setBroken(null);
@@ -117,12 +122,6 @@ export function ProfileAvatarField({
        * have somebody read about one failure twice.
        */
       if (await onUploaded(image.url)) setNote({ tone: 'success', text: copy.uploaded });
-    } catch (cause) {
-      setNote({
-        tone: 'danger',
-        title: copy.upload.notUsedTitle,
-        text: describeUploadFailure(cause, copy.upload),
-      });
     } finally {
       setSaving(false);
     }

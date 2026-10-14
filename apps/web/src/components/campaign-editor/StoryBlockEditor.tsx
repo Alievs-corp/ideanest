@@ -7,7 +7,7 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -21,10 +21,10 @@ import {
   Trash2,
   Video,
 } from 'lucide-react';
-import { InlineAlert, Media, Pill, Select, TextInput, cn } from '@ideanest/ui';
+import { FileDropZone, InlineAlert, Media, Pill, Select, TextInput, cn } from '@ideanest/ui';
 import { intrinsicSize } from '../../lib/images/source';
 import { describeSize } from '@ideanest/campaign-editor/cover-image';
-import { measureImage } from '../../lib/projects/coverImage';
+import { useImageUpload } from '../../lib/media/useImageUpload';
 import {
   EMBED_PROVIDERS,
   blockProblem,
@@ -718,15 +718,33 @@ function ImageFields({
    */
   const [typed, setTyped] = useState(block.url);
   const [measuring, setMeasuring] = useState(false);
-  const [note, setNote] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+  const [note, setNote] = useState<{
+    tone: 'success' | 'danger';
+    title?: string;
+    text: string;
+  } | null>(null);
   /*
-   * The blur placeholder from the same load that measured the image
-   * (`lib/images/lqip.ts`). The story document has no field for it — the server
-   * validates that schema (#35) — so it lives here and is gone on reload, which
-   * is exactly as far as a placeholder can travel until the media pipeline
-   * stores one (docs/architecture.md §13.1).
+   * The blur placeholder: from the same load that measured a typed address
+   * (`lib/images/lqip.ts`), or from the media row of an upload. The story
+   * document has no field for it — the server validates that schema (#35) — so
+   * it lives here and is gone on reload.
    */
   const [placeholder, setPlaceholder] = useState<string | null>(null);
+  /*
+   * The upload — the cover's, through `lib/media/useImageUpload.ts` (#313). What
+   * it returns is exactly what an `ImageBlock` stores: the address and the size
+   * the service measured, so no contract changed for it.
+   */
+  const { stage, upload: send } = useImageUpload(copy.upload);
+  /*
+   * The block as it stands NOW. An upload takes seconds, and a description typed
+   * meanwhile is part of the block it finishes into; spreading the block this
+   * render closed over would put the image back with the description it had
+   * when the file was chosen.
+   */
+  const current = useRef(block);
+  current.current = block;
+  const busy = measuring || stage !== null;
 
   async function measure(): Promise<void> {
     const address = typed.trim();
@@ -738,9 +756,15 @@ function ImageFields({
     setMeasuring(true);
     setNote(null);
     try {
+      /*
+       * Loaded on the click, like the upload's transfer: a reader of this tab who never adds a
+       * picture by address never needs it, and the route's first-load budget had no room left
+       * once the upload arrived (#313).
+       */
+      const { measureImage } = await import('../../lib/projects/coverImage');
       const size = await measureImage(address);
       setPlaceholder(size.placeholder);
-      onChange({ ...block, url: address, width: size.width, height: size.height });
+      onChange({ ...current.current, url: address, width: size.width, height: size.height });
       setNote({ tone: 'success', text: fillPlaceholders(copy.measured, { size: describeSize(size) }) });
     } catch (cause) {
       setNote({
@@ -752,18 +776,49 @@ function ImageFields({
     }
   }
 
+  async function upload(file: File): Promise<void> {
+    setNote(null);
+    const result = await send(file);
+    // Abandoned for a newer file, which is the one this block now reports on.
+    if (result === null) return;
+    if ('refusal' in result) {
+      setNote({ tone: 'danger', title: copy.upload.notUsedTitle, text: result.refusal });
+      return;
+    }
+    const { image } = result;
+
+    setTyped(image.url);
+    setPlaceholder(image.blurDataUrl === '' ? null : image.blurDataUrl);
+    onChange({ ...current.current, url: image.url, width: image.width, height: image.height });
+    setNote({ tone: 'success', text: fillPlaceholders(copy.measured, { size: describeSize(image) }) });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {/*
-        Said plainly rather than implied. There is no media table, no object storage,
-        and no uploader (contract §3, docs/architecture.md §13): nothing this form
-        does puts a file anywhere. A drop zone here would be a control that quietly
-        did nothing, which is worse than no control.
-      */}
-      <InlineAlert variant="info" title={copy.nothingUploadedTitle}>
-        {copy.imageAddressHint}
-      </InlineAlert>
+        THE UPLOAD FIRST, THE ADDRESS SECOND. This block used to say, in a banner,
+        that nothing was uploaded here, because nothing could be. The cover's
+        pipeline reaches it now (#313), and the app uploads for the same block
+        (#162); an address still works, for a picture that is already hosted.
 
+        Named per block, as every other control here is: a story with three images
+        has three of these, and "Choose an image" alone does not say which.
+      */}
+      <FileDropZone
+        accept="image/*"
+        disabled={disabled || busy}
+        aria-label={fillPlaceholders(copy.imageUploadOf, { name })}
+        prompt={copy.imagePrompt}
+        dragPrompt={copy.imageDragPrompt}
+        buttonLabel={copy.imageButtonLabel}
+        hint={copy.imageDropHint}
+        onFiles={(files) => {
+          const [first] = files;
+          if (first) void upload(first);
+        }}
+      />
+
+      <p className="text-[13px] text-white/40">{copy.imageAddressHint}</p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <TextInput
           type="url"
@@ -777,7 +832,7 @@ function ImageFields({
           className="sm:flex-1"
           onChange={(event) => setTyped(event.target.value)}
         />
-        <Pill variant="ghost" disabled={disabled || measuring} onClick={() => void measure()}>
+        <Pill variant="ghost" disabled={disabled || busy} onClick={() => void measure()}>
           {measuring ? copy.measuring : copy.measureAndAdd}
         </Pill>
       </div>
@@ -802,8 +857,8 @@ function ImageFields({
             here is a fact about the document, not a decision about the preview.
 
             NOT `next/image`, for the reason `CoverImageField` gives: a preview
-            has to show the bytes the creator gave us, and `measureImage` has
-            already put exactly those bytes in the browser cache.
+            has to show the bytes the creator gave us, and `measureImage` or the
+            upload has already put exactly those bytes in the browser cache.
           */}
           <div
             className="mx-auto w-full"
@@ -845,12 +900,15 @@ function ImageFields({
         same text.
       */}
       <div role="status" aria-live="polite" className="empty:hidden">
-        {note !== null && note.tone === 'success' && (
+        {stage !== null && <InlineAlert variant="info">{copy.upload.stage[stage]}</InlineAlert>}
+        {stage === null && note !== null && note.tone === 'success' && (
           <InlineAlert variant="success">{note.text}</InlineAlert>
         )}
       </div>
       {note !== null && note.tone === 'danger' && (
-        <InlineAlert variant="danger">{note.text}</InlineAlert>
+        <InlineAlert variant="danger" title={note.title}>
+          {note.text}
+        </InlineAlert>
       )}
     </div>
   );

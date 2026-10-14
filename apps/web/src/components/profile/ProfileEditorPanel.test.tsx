@@ -529,6 +529,8 @@ describe('uploading a picture', () => {
     await open();
 
     choose();
+    // The transfer's module loads first; the stage it reports is what is announced.
+    await vi.waitFor(() => expect(report).toBeDefined());
     await act(async () => report?.('uploading'));
 
     const stage = await screen.findByText('Uploading the image…');

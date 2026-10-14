@@ -6299,14 +6299,15 @@ notice says — epic #100.
 Client requests a pre-signed URL, uploads directly to object storage, then
 notifies the API, which enqueues processing.
 
-**Built, for campaign covers and profile pictures.** `POST /v1/media/uploads` issues a presigned
+**Built, for campaign covers, profile pictures, story images and reward items.** `POST /v1/media/uploads` issues a presigned
 `PUT`, the browser writes to it, `POST /v1/media/{id}/complete` says the bytes
 are there, and `media-processing` — a job on §8.4's durable scheduler, every five
 seconds — converts them. A campaign cover may then be set by identifier, and the
 dimensions recorded against it are **measured** rather than reported by a
-browser. A profile picture (#268, #271) is the same upload, saved as the
-address the ready row answers with. What is not built is in "What is still a
-typed URL" below.
+browser. A profile picture (#268, #271), a story image block and a reward
+item's image (#162, #313) are the same upload, saved as the address and — for a
+story block — the size the ready row answers with. What is not built is in
+"What is still a typed URL" below.
 
 **One derived file, not four variants.** §13.1 originally asked ingestion for
 160w, 640w, 1440w and the original. It stores one, reduced to 1440 on its longest
@@ -6355,11 +6356,10 @@ a guess about somebody else's infrastructure.
 
 #### What is still a typed URL
 
-Reward item images, collection covers, **and images inside a campaign story**.
-Each keeps taking an address a person pasted, and the two consequences are named
-here rather than left to be discovered. Profile avatars upload now (#271), and
-still accept a pasted address beside the upload, so they hold `remotePatterns`
-open as well:
+Collection covers take only an address a person pasted. Profile avatars (#271),
+story images and reward item images (#313) upload now, and every one of them
+still accepts a pasted address beside the upload, so they hold the same doors
+open. The two consequences are named here rather than left to be discovered:
 
 1. **`remotePatterns` has not narrowed.** It still allows `https` on any host, so
    `/_next/image` remains usable as an image proxy. It cannot narrow while any
@@ -6367,7 +6367,8 @@ open as well:
 2. **`blurDataUrl` reaches covers and nothing else.** The `media` row carries it;
    a typed URL has no row and therefore no placeholder outside the editor.
 
-Both close when those three fields migrate.
+Both close when no field takes an address any more — or when the ones that do
+keep taking it only for hosts we serve.
 
 **The placeholder is a variant, not an afterthought.** Ingestion also emits a
 16-pixel-wide sample, base64'd into the media record beside the URL and the
@@ -6397,9 +6398,9 @@ halves independently.
 
 1. **`remotePatterns` narrows to the storage origin.** Every cover would then be
    on one host, the wildcard would go, and the proxy would stop existing. **Not
-   done**, and it cannot be while avatars, reward item images and collection
-   covers still resolve to hosts we do not control — see "What is still a typed
-   URL" above.
+   done**, and it cannot be while avatars, story and reward item images still
+   accept an address beside their upload and collection covers take nothing
+   else — see "What is still a typed URL" above.
 2. **The media record carries `blurDataUrl`.** **Done in the record**, on
    `media.blur_data_url`, and read back by the media endpoint. It has not yet
    replaced the editor's own sample (`apps/web/src/lib/images/lqip.ts`) on the

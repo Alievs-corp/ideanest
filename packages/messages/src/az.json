@@ -4614,7 +4614,6 @@
         "description": "Təsvir",
         "descriptionHint": "İstəyə bağlı. Ölçü, rəng, nəşr — bu əşyanı digərindən ayıran nə varsa.",
         "imageUrl": "Şəklin ünvanı",
-        "imageUrlHint": "Dərc olunmuş ünvan. Hələ yükləyici yoxdur, ona görə artıq internetdə olan şəklin linkini yapışdırın.",
         "imageUrlPlaceholder": "https://",
         "isDigital": "Fayl kimi çatdırılır",
         "weight": "Çəki (qram)",
@@ -4630,7 +4629,15 @@
           "saving": "Yadda saxlanılır"
         },
         "notSavedDetail": "Yazdığınız heç nə itmədi — mətn aşağıdakı sahələrdə qalır.",
-        "weightHint": "İstəyə bağlı. Çatdırılma xərci sonra buna görə hesablanır."
+        "weightHint": "İstəyə bağlı. Çatdırılma xərci sonra buna görə hesablanır.",
+        "image": "Şəkil",
+        "imageHint": "İstəyə bağlı. Şəkil yükləyin və ya artıq internetdə olan şəklin ünvanını yapışdırın.",
+        "imagePrompt": "Bu əşyanın şəklini bura atın",
+        "imageDragPrompt": "Bu şəkli yükləmək üçün buraxın",
+        "imageButtonLabel": "Şəkil seçin",
+        "imageDropHint": "20 MB-a qədər: JPEG, PNG, WebP, AVIF və ya HEIC.",
+        "imageRemove": "Şəkli sil",
+        "imageUploaded": "Şəkil yükləndi. Saxlamaq üçün əşyanı yadda saxlayın."
       },
       "tier": {
         "addTitle": "Mükafat əlavə et",
@@ -4905,9 +4912,8 @@
         "embedTitlePlaceholder": "Videoda nə göstərilir",
         "imageUrlPlaceholder": "https://images.example.com/prototype.jpg",
         "imageAltPlaceholder": "Şəkildə nə var",
-        "nothingUploadedTitle": "Bura heç nə yüklənmir",
         "listHint": "İşarəli və ya nömrələnmiş.",
-        "imageHint": "Artıq harasa dərc olunmuş şəkil.",
+        "imageHint": "Yüklədiyiniz və ya artıq dərc olunmuş şəkil.",
         "quoteHint": "Kiminsə bu layihə haqqında dedikləri",
         "paragraphHint": "Abzas yazın. Mətni seçib «Qalın» və ya «Kursiv» işlədin, yaxud **qalın** və *kursiv* yazın.",
         "needUrlFirst": "Əvvəlcə şəklin ünvanını yazın.",
@@ -4941,7 +4947,7 @@
           "heading": "Bölmə başlığı. Başlıqlardan lövbər menyusu yığılır.",
           "list": "İşarəli və ya nömrələnmiş.",
           "quote": "Ayrıca verilmiş sitat.",
-          "image": "Artıq harasa dərc olunmuş şəkil.",
+          "image": "Yüklədiyiniz və ya artıq dərc olunmuş şəkil.",
           "embed": "YouTube və ya Vimeo videosu.",
           "rule": "Üfüqi ayırıcı."
         },
@@ -4949,7 +4955,12 @@
         "embedHint": "Başlıq ekran oxuyucusunun «çərçivə» sözü əvəzinə oxuduğu mətndir. Yalnız YouTube və Vimeo videoları yerləşdirilə bilər.",
         "altHint": "Məcburidir. Ekran oxuyucusundan istifadə edən dəstəkçi şəkil əvəzinə bunu eşidir, ona görə faylın adını yox, şəkildə nə göründüyünü təsvir edin.",
         "pixels": "{size} piksel",
-        "imageAddressHint": "Artıq dərc olunmuş şəklin ünvanını verin. Onun ölçüsü brauzerinizdə oxunur və hekayə ilə birlikdə saxlanılır ki, səhifə şəkil yüklənməmişdən əvvəl onun yerini ayıra bilsin."
+        "imageAddressHint": "Və ya artıq dərc olunmuş şəklin ünvanını yapışdırın. Ölçüsü brauzerinizdə oxunur.",
+        "imagePrompt": "Hekayəyə əlavə etmək üçün şəkli bura atın",
+        "imageDragPrompt": "Bu şəkli yükləmək üçün buraxın",
+        "imageButtonLabel": "Şəkil seçin",
+        "imageDropHint": "20 MB-a qədər: JPEG, PNG, WebP, AVIF və ya HEIC. Ölçüsü ölçülür ki, səhifə şəkil yüklənməmiş onun yerini ayıra bilsin.",
+        "imageUploadOf": "Yükləmə: {name}"
       },
       "history": {
         "title": "Əvvəlki versiyalar",

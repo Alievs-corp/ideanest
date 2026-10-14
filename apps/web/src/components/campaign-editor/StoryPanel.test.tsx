@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import {
   getProjectEdit,
@@ -11,6 +11,7 @@ import {
   type StoryVersionSummary,
 } from '../../lib/projects/api';
 import { measureImage } from '../../lib/projects/coverImage';
+import { UploadFailed, uploadImage, type UploadedImage } from '../../lib/media/upload';
 import type { StoryDocument } from '@ideanest/campaign-editor/story';
 import { StoryPanel } from './StoryPanel';
 import { EDITOR_COPY, STORY_COPY } from '../../test-editor-copy';
@@ -47,11 +48,40 @@ vi.mock('../../lib/projects/coverImage', async (importOriginal) => ({
   measureImage: vi.fn(),
 }));
 
+/*
+ * The upload is mocked for the reason `BasicsPanel.test.tsx` gives for the cover: three
+ * requests and a poll that belong to `lib/media/upload.ts`. What an image block does with the
+ * result — and with a refusal — is what is asserted here (#313).
+ */
+vi.mock('../../lib/media/upload', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/media/upload')>()),
+  uploadImage: vi.fn(),
+}));
+
 const getProjectEditMock = vi.mocked(getProjectEdit);
 const patchProjectMock = vi.mocked(patchProject);
 const listStoryVersionsMock = vi.mocked(listStoryVersions);
 const restoreStoryVersionMock = vi.mocked(restoreStoryVersion);
 const measureImageMock = vi.mocked(measureImage);
+const uploadImageMock = vi.mocked(uploadImage);
+
+const UPLOADED: UploadedImage = {
+  mediaId: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+  url: 'https://cdn.example.test/media/3f2504e0.jpg',
+  width: 1440,
+  height: 1080,
+  blurDataUrl: 'data:image/jpeg;base64,BBBB',
+};
+
+/**
+ * Hands a file to one image block's drop zone, found by the name it carries. `fireEvent` on the
+ * input rather than `userEvent.upload`, because the input is hidden behind the zone's button.
+ */
+function chooseFileFor(name: RegExp, file = new File(['bytes'], 'photo.jpg', { type: 'image/jpeg' })) {
+  const input = screen.getByRole('group', { name }).querySelector<HTMLInputElement>('input[type="file"]');
+  if (input === null) throw new Error(`${name} has no file input`);
+  fireEvent.change(input, { target: { files: [file] } });
+}
 
 /** The debounce `useAutosave` defaults to. */
 const DEBOUNCE = 800;
@@ -104,6 +134,7 @@ describe('StoryPanel', () => {
     listStoryVersionsMock.mockReset().mockResolvedValue([]);
     restoreStoryVersionMock.mockReset();
     measureImageMock.mockReset().mockResolvedValue({ width: 1600, height: 900, placeholder: null });
+    uploadImageMock.mockReset();
   });
 
   afterEach(() => {
@@ -258,6 +289,74 @@ describe('StoryPanel', () => {
     await settle(user);
 
     expect(document.querySelector('img')).toHaveAttribute('alt', 'The prototype on a desk');
+  });
+
+  /*
+   * #313. The block used to say, in a banner, that nothing was uploaded here. The upload's
+   * result is exactly what an image block stores, so the block takes it as it is.
+   */
+  it('uploads a chosen file into the block, keeping a description typed while it uploaded', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    let finish: ((image: UploadedImage) => void) | undefined;
+    uploadImageMock.mockImplementation((_file, options) => {
+      options?.onStage?.('uploading');
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    });
+    renderPanel();
+    await screen.findByRole('group', { name: /^Heading 1 of 2/ });
+
+    await user.click(screen.getByRole('button', { name: /Add image/ }));
+    await screen.findByRole('group', { name: /^Image 3 of 3/ });
+    expect(screen.queryByText('Nothing is uploaded here')).not.toBeInTheDocument();
+
+    chooseFileFor(/^Upload to Image 3 of 3/);
+    expect(await screen.findByText('Uploading the image…')).toBeInTheDocument();
+
+    await user.type(
+      screen.getByRole('textbox', { name: /Description of Image 3 of 3/ }),
+      'The prototype on a desk',
+    );
+    await act(async () => finish?.(UPLOADED));
+    await settle(user);
+
+    // The service's measurement, not this browser's: nothing was measured here.
+    expect(measureImageMock).not.toHaveBeenCalled();
+    expect(sent().at(-1)?.story?.blocks.at(-1)).toEqual({
+      type: 'image',
+      url: UPLOADED.url,
+      width: 1440,
+      height: 1080,
+      alt: 'The prototype on a desk',
+    });
+    expect(screen.getByText('Added a 1440×1080 pixel image.')).toBeInTheDocument();
+    // The address box shows where the picture now lives, so it can be read and replaced.
+    expect(screen.getByRole('textbox', { name: /Address of Image 3 of 3/ })).toHaveValue(UPLOADED.url);
+  });
+
+  it.each([
+    ['UNSUPPORTED_FORMAT', /not an image this platform can read/],
+    ['TOO_LARGE', /The limit is 20 MB/],
+    ['TOO_SMALL', /from 320×320 upwards/],
+    ['EMPTY', /That file is empty/],
+    ['UPLOADS_UNAVAILABLE', /not switched on for this environment/],
+  ])('explains an upload refused with %s, and leaves the block as it was', async (code, sentence) => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    uploadImageMock.mockRejectedValue(new UploadFailed(code, 'service log sentence'));
+    renderPanel();
+    await screen.findByRole('group', { name: /^Heading 1 of 2/ });
+
+    await user.click(screen.getByRole('button', { name: /Add image/ }));
+    await screen.findByRole('group', { name: /^Image 3 of 3/ });
+    chooseFileFor(/^Upload to Image 3 of 3/);
+
+    // Not the only alert: an empty image block already has one saying the story is held.
+    const alert = (await screen.findByText('That file was not used')).closest('[role="alert"]');
+    expect(alert).toHaveTextContent(sentence);
+    expect(alert).not.toHaveTextContent('service log sentence');
+    await settle(user);
+    expect(sent().some((patch) => JSON.stringify(patch).includes('cdn.example.test'))).toBe(false);
   });
 
   it('saves the risks section without refusing a half-written answer', async () => {

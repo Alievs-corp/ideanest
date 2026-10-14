@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, renderHook } from '@testing-library/react';
-import { coverImageCopyFrom } from '@ideanest/campaign-editor/copy';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { imageUploadCopyFrom } from '@ideanest/campaign-editor/copy';
 import { translatorFor } from '../../test-copy';
 import { UploadFailed, uploadImage, type UploadedImage, type UploadOptions } from './upload';
-import { describeUploadFailure, useImageUpload } from './useImageUpload';
+import { describeUploadFailure } from './imageTransfer';
+import { useImageUpload, type ImageUploadResult } from './useImageUpload';
 
 /**
  * The upload every picture field shares — #271, #313.
@@ -20,7 +21,7 @@ vi.mock('./upload', async (importOriginal) => ({
 }));
 
 const uploadMock = vi.mocked(uploadImage);
-const COPY = coverImageCopyFrom(translatorFor('campaignEditor'));
+const COPY = imageUploadCopyFrom(translatorFor('campaignEditor'));
 
 const file = (name = 'photo.jpg') => new File(['bytes'], name, { type: 'image/jpeg' });
 
@@ -73,34 +74,38 @@ describe('useImageUpload', () => {
 
   it('reports the stage while it runs and clears it when the image is ready', async () => {
     const calls = pending();
-    const { result } = renderHook(() => useImageUpload());
+    const { result } = renderHook(() => useImageUpload(COPY));
 
-    let finished: Promise<UploadedImage | null> | undefined;
+    let finished: Promise<ImageUploadResult | null> | undefined;
     act(() => {
       finished = result.current.upload(file());
     });
+    // Said at once, while the transfer's module is still being fetched.
     expect(result.current.stage).toBe('preparing');
+    await waitFor(() => expect(calls).toHaveLength(1));
 
     act(() => calls[0]?.options.onStage?.('processing'));
     expect(result.current.stage).toBe('processing');
 
     await act(async () => calls[0]?.resolve(image('https://cdn.example.test/a.webp')));
-    await expect(finished).resolves.toEqual(image('https://cdn.example.test/a.webp'));
+    await expect(finished).resolves.toEqual({ image: image('https://cdn.example.test/a.webp') });
     expect(result.current.stage).toBeNull();
   });
 
   it('abandons the first file when a second is chosen, and reports only the second', async () => {
     const calls = pending();
-    const { result } = renderHook(() => useImageUpload());
+    const { result } = renderHook(() => useImageUpload(COPY));
 
-    let first: Promise<UploadedImage | null> | undefined;
-    let second: Promise<UploadedImage | null> | undefined;
+    let first: Promise<ImageUploadResult | null> | undefined;
+    let second: Promise<ImageUploadResult | null> | undefined;
     act(() => {
       first = result.current.upload(file('first.jpg'));
     });
+    await waitFor(() => expect(calls).toHaveLength(1));
     act(() => {
       second = result.current.upload(file('second.jpg'));
     });
+    await waitFor(() => expect(calls).toHaveLength(2));
 
     expect(calls[0]?.options.signal?.aborted).toBe(true);
     await expect(first).resolves.toBeNull();
@@ -111,28 +116,47 @@ describe('useImageUpload', () => {
     expect(result.current.stage).toBe('uploading');
 
     await act(async () => calls[1]?.resolve(image('https://cdn.example.test/b.webp')));
-    await expect(second).resolves.toEqual(image('https://cdn.example.test/b.webp'));
+    await expect(second).resolves.toEqual({ image: image('https://cdn.example.test/b.webp') });
   });
 
-  it('stops the transfer when the field leaves the page', () => {
+  it('never starts a file superseded while the transfer was still loading', async () => {
     const calls = pending();
-    const { result, unmount } = renderHook(() => useImageUpload());
+    const { result } = renderHook(() => useImageUpload(COPY));
+
+    let first: Promise<ImageUploadResult | null> | undefined;
+    act(() => {
+      first = result.current.upload(file('first.jpg'));
+      void result.current.upload(file('second.jpg'));
+    });
+
+    await expect(first).resolves.toBeNull();
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(uploadMock.mock.calls[0]?.[0].name).toBe('second.jpg');
+  });
+
+  it('stops the transfer when the field leaves the page', async () => {
+    const calls = pending();
+    const { result, unmount } = renderHook(() => useImageUpload(COPY));
 
     act(() => {
       void result.current.upload(file());
     });
+    await waitFor(() => expect(calls).toHaveLength(1));
     unmount();
 
     expect(calls[0]?.options.signal?.aborted).toBe(true);
   });
 
-  it('passes a refusal on to the field to explain', async () => {
+  it('hands back the sentence for a refusal rather than the refusal itself', async () => {
     uploadMock.mockRejectedValue(new UploadFailed('TOO_LARGE', 'log'));
-    const { result } = renderHook(() => useImageUpload());
+    const { result } = renderHook(() => useImageUpload(COPY));
 
+    let outcome: ImageUploadResult | null = null;
     await act(async () => {
-      await expect(result.current.upload(file())).rejects.toMatchObject({ code: 'TOO_LARGE' });
+      outcome = await result.current.upload(file());
     });
+
+    expect(outcome).toEqual({ refusal: 'That file is too large. The limit is 20 MB.' });
     expect(result.current.stage).toBeNull();
   });
 });

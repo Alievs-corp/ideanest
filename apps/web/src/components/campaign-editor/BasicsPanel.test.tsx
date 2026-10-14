@@ -594,6 +594,8 @@ describe('BasicsPanel', () => {
       });
 
       chooseFile(new File(['bytes'], 'photo.jpg', { type: 'image/jpeg' }));
+      // The transfer's module is fetched when a file is chosen (`useImageUpload`), not before.
+      await vi.waitFor(() => expect(uploadImageMock).toHaveBeenCalled());
       await tick();
       await tick(DEBOUNCE);
 
