@@ -1395,7 +1395,7 @@ The most valuable and most complex module. It begins when funding closes.
 > everybody's and is thinned once the list is read. The app reads the tab
 > anonymously too, and does the same. Block sits beside Report under each comment and at the foot of a
 > profile, asked in place, and `/settings/privacy` lists blocked accounts with
-> Unblock.
+> Unblock; the app has the same three, with the list in Settings → Privacy.
 >
 > C-04 reactions, C-05 comments *on* an update and C-13/C-14 sharing are not
 > built.

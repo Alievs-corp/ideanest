@@ -97,6 +97,8 @@ let backed: Route;
 let obligations: () => Response;
 let following: () => Response;
 let follow: (method: string) => Response;
+/** `/v1/users/aysel/block` (#324): the reader's block, by method. */
+let block: (method: string) => Response;
 let requests: Request[];
 let client: QueryClient;
 
@@ -115,6 +117,7 @@ beforeEach(async () => {
   obligations = () => json({ creatorId: 'x', lapsedCount: 0, obligations: [] });
   following = () => json({ items: [] });
   follow = (method) => json({ following: method === 'POST' });
+  block = (method) => json({ blocked: method === 'POST' });
   global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input instanceof Request ? input.url : input));
     const method = init?.method ?? 'GET';
@@ -135,6 +138,8 @@ beforeEach(async () => {
         return following();
       case '/v1/users/aysel/follow':
         return follow(method);
+      case '/v1/users/aysel/block':
+        return block(method);
       default:
         return json({}, 404);
     }
@@ -498,5 +503,56 @@ describe('Follow and Report', () => {
     await act(async () => setOnline(false));
     expect(screen.getByRole('button', { name: `Follow ${PROFILE.name}` })).toBeDisabled();
     expect(screen.getByTestId('profile-follow-notice')).toHaveTextContent(en.mobile.profile.followOffline);
+  });
+});
+
+/** #324: Block this account, under Report at the foot of the profile. */
+describe('blocking', () => {
+  const B = en.blocking;
+  const blockCalls = () => requests.filter((r) => r.path === '/v1/users/aysel/block').map((r) => r.method);
+
+  it('offers a visitor nothing and asks nothing', async () => {
+    await show();
+    expect(screen.queryByTestId('profile-block-trigger')).toBeNull();
+    expect(blockCalls()).toEqual([]);
+  });
+
+  it('offers the owner nothing', async () => {
+    await signIn('aysel');
+    await show();
+    expect(screen.queryByTestId('profile-block-trigger')).toBeNull();
+    expect(blockCalls()).toEqual([]);
+  });
+
+  it('asks first, then blocks by slug, says so, and offers Unblock in place', async () => {
+    await signIn();
+    await show();
+
+    await act(async () => fireEvent.press(screen.getAllByTestId('profile-block-trigger')[0]!));
+    expect(screen.getAllByText(B.warning).length).toBeGreaterThan(0);
+    expect(blockCalls()).toEqual(['GET']);
+
+    await act(async () => fireEvent.press(screen.getAllByTestId('profile-block-it')[0]!));
+    await settle();
+    expect(blockCalls()).toEqual(['GET', 'POST']);
+    expect(screen.getAllByTestId('profile-block-state')[0]).toHaveTextContent(B.blockedState);
+    expect(screen.getAllByTestId('profile-block-notice')[0]).toHaveTextContent(B.blocked);
+
+    await act(async () => fireEvent.press(screen.getAllByTestId('profile-unblock')[0]!));
+    await settle();
+    expect(blockCalls()).toEqual(['GET', 'POST', 'DELETE']);
+    expect(screen.getAllByTestId('profile-block-trigger').length).toBeGreaterThan(0);
+  });
+
+  it('says a member of staff cannot be blocked, in the catalogue’s words', async () => {
+    await signIn();
+    block = (method) => (method === 'POST' ? problem(422, { code: 'CANNOT_BLOCK_STAFF' }) : json({ blocked: false }));
+    await show();
+
+    await act(async () => fireEvent.press(screen.getAllByTestId('profile-block-trigger')[0]!));
+    await act(async () => fireEvent.press(screen.getAllByTestId('profile-block-it')[0]!));
+    await settle();
+    expect(screen.getAllByTestId('profile-block-notice')[0]).toHaveTextContent(B.failures.staff);
+    expect(screen.queryByTestId('profile-block-state')).toBeNull();
   });
 });

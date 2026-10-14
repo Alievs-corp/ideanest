@@ -186,6 +186,16 @@ export const queryKeys = {
   legalSubject: () => ['settings', 'legalSubject'] as const,
   payoutDestination: () => ['settings', 'payoutDestination'] as const,
   /**
+   * The accounts this reader blocked (#324): the Settings → Privacy list's pages, and every id the
+   * Comments tab hides by. Under `settings`, never persisted: whom somebody blocked is the most
+   * private list they keep here. `blockedIds` is not under `blockedList`, so refreshing the list
+   * does not re-read the scan the tab is filtering by.
+   */
+  blockedList: () => ['settings', 'blocks', 'list'] as const,
+  blockedIds: () => ['settings', 'blocks', 'ids'] as const,
+  /** Whether `viewer` blocked the account at `slug` (#324) — the profile's Block control. */
+  profileBlocked: (slug: string, viewer: string) => ['profile', slug, 'blocked', viewer] as const,
+  /**
    * The creator dashboard's Overview (#163): one campaign's totals, deadline and state, with the
    * clock skew measured when they arrived. Persisted, private: the creator's own figures, read
    * offline with "As of" beside them; nothing in it is a backer's.

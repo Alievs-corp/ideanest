@@ -6529,6 +6529,9 @@
       "faceIdUsage": "IdeyaNest bu cihazda saxlanan seansınızı Face ID ilə açır.",
       "cameraUsage": "Kampaniya şəklini və ya profil şəklinizi çəkmək üçün IdeyaNest kameradan istifadə edir.",
       "photoLibraryUsage": "Kampaniya şəklini və ya profil şəklinizi seçmək üçün IdeyaNest qalereyanızı açır."
+    },
+    "blocking": {
+      "offline": "Bloklamaq üçün internet bağlantısı lazımdır."
     }
   },
   "blocking": {

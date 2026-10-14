@@ -4,6 +4,7 @@ import Animated from 'react-native-reanimated';
 import { Glyphs } from '../../../../icons';
 import type { CampaignComment } from '@ideanest/campaign/comments';
 import { useMe } from '../../../../lib/account';
+import { blockAccount, blockFailureOf } from '../../../../lib/blocks';
 import { withdrawComment, withdrawFailureOf } from '../../../../lib/comments';
 import { formatInstant, useT } from '../../../../lib/i18n';
 import { useLocale } from '../../../../lib/locale';
@@ -74,6 +75,11 @@ import { CommentComposer } from './comment-composer';
  *   the warning says the row and its replies stay and nothing can be restored, then "Withdraw it"
  *   or "Keep it". Afterwards the list is re-read, so the tombstone is the server's.
  * - **Report this comment**, opening the report sheet about "a comment on {title}".
+ * - **Block this account** (#324), to a signed-in reader under somebody else's comment. Asked in
+ *   place like Withdraw, with the sentence that says what a block does — their comments hidden,
+ *   no replies to yours, they are not told, their campaigns stay visible. Once the service agrees,
+ *   `onBlocked` hands the id to the tab, which hides every comment by that account at once and
+ *   says so; the card, and this control with it, leave the screen.
  *
  * Offline, Withdraw and Report are disabled and say why; Reply still opens, and its Post says why.
  *
@@ -87,9 +93,11 @@ export interface CommentCardProps {
   readonly offline: boolean;
   /** Re-read the comments after a reply or a withdrawal, keeping the pages already shown. */
   readonly onChanged: () => Promise<unknown>;
+  /** The service accepted a block of this comment's author (#324): the tab hides their comments. */
+  readonly onBlocked: (authorId: string) => void;
 }
 
-export function CommentCard({ comment, campaignTitle, offline, onChanged }: CommentCardProps) {
+export function CommentCard({ comment, campaignTitle, offline, onChanged, onBlocked }: CommentCardProps) {
   const t = useT('campaign.comments');
   const locale = useLocale();
   const block = blockSurface(useSurface());
@@ -134,6 +142,7 @@ export function CommentCard({ comment, campaignTitle, offline, onChanged }: Comm
           campaignTitle={campaignTitle}
           offline={offline}
           onChanged={onChanged}
+          onBlocked={onBlocked}
         />
       </SurfaceProvider>
     </View>
@@ -155,26 +164,38 @@ function creatorSkin(block: BlockSurface) {
       };
 }
 
-function CommentControls({ comment, campaignTitle, offline, onChanged }: CommentCardProps) {
+function CommentControls({ comment, campaignTitle, offline, onChanged, onBlocked }: CommentCardProps) {
   const t = useT('campaign.comments');
+  const tBlock = useT('blocking');
   const tAll = useT();
   const { signedIn } = useSession();
   const me = useMe();
 
   const [replying, setReplying] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [confirmingBlock, setConfirmingBlock] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const replyButton = useRef<View>(null);
   const withdrawButton = useRef<View>(null);
+  const blockButton = useRef<View>(null);
   const warning = useRef<Text>(null);
+  const blockWarning = useRef<Text>(null);
   /** Where screen-reader focus goes once the next render has drawn it. */
-  const [focusNext, setFocusNext] = useState<'warning' | 'withdraw' | 'reply' | null>(null);
+  const [focusNext, setFocusNext] = useState<
+    'warning' | 'withdraw' | 'reply' | 'blockWarning' | 'block' | null
+  >(null);
 
   useEffect(() => {
     if (focusNext === null) return undefined;
-    const target = { warning, withdraw: withdrawButton, reply: replyButton }[focusNext];
+    const target = {
+      warning,
+      withdraw: withdrawButton,
+      reply: replyButton,
+      blockWarning,
+      block: blockButton,
+    }[focusNext];
     // After the frame that mounts it: a focus event sent to a view drawn in the same frame is lost.
     const timer = setTimeout(() => {
       focusOn(target.current);
@@ -192,6 +213,27 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
   const viewerId = signedIn ? (me.data?.id ?? null) : null;
   const isAuthor = viewerId !== null && comment.authorId !== null && viewerId === comment.authorId;
   const offlineReason = tAll('mobile.campaign.comments.offline');
+  const authorId = comment.authorId;
+  // A visitor has no blocks to keep, and the author cannot block themselves.
+  const mayBlock = viewerId !== null && authorId !== null && !isAuthor;
+
+  const block = async () => {
+    if (busy || offline || authorId === null) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await blockAccount(authorId);
+      setConfirmingBlock(false);
+      onBlocked(authorId);
+    } catch (cause) {
+      const message = tBlock(BLOCK_FAILURE_KEY[blockFailureOf(cause)]);
+      setError(message);
+      // Android reads the alert's live region below; iOS has none, so it is said here.
+      if (Platform.OS === 'ios') announce(message, { assertive: true });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const withdraw = async () => {
     if (busy || offline) return;
@@ -250,7 +292,62 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
           offline={offline}
           showsOfflineReason={false}
         />
+        {mayBlock && !confirmingBlock ? (
+          <TextButton
+            ref={blockButton}
+            icon={Glyphs.Slash}
+            label={tBlock('trigger')}
+            disabled={offline}
+            hint={offline ? tAll('mobile.blocking.offline') : undefined}
+            onPress={() => {
+              setConfirmingBlock(true);
+              setFocusNext('blockWarning');
+            }}
+            testID={`block-${comment.id}`}
+          />
+        ) : null}
       </View>
+
+      {confirmingBlock ? (
+        // Asked in place, for Withdraw's reason. Not the danger pill: a block removes nothing from
+        // anybody else's page and is undone in Settings → Privacy.
+        <View
+          style={[
+            styles.confirm,
+            { backgroundColor: surface === 'white' ? colors.whiteSurface : colors.surface3 },
+          ]}
+          testID={`block-confirm-${comment.id}`}
+        >
+          <Text
+            ref={blockWarning}
+            style={[styles.warning, { color: toneColor('reading', surface) }]}
+            testID={`block-warning-${comment.id}`}
+          >
+            {tBlock('warning')}
+          </Text>
+          <View style={styles.confirmActions}>
+            <Pill
+              label={busy ? tBlock('blocking') : tBlock('confirm')}
+              size="sm"
+              busy={busy}
+              disabled={offline}
+              accessibilityHint={offline ? tAll('mobile.blocking.offline') : undefined}
+              onPress={() => void block()}
+              testID={`block-it-${comment.id}`}
+            />
+            <Pill
+              label={tBlock('cancel')}
+              variant="outline"
+              size="sm"
+              onPress={() => {
+                setConfirmingBlock(false);
+                setError(null);
+                setFocusNext('block');
+              }}
+            />
+          </View>
+        </View>
+      ) : null}
 
       {confirming ? (
         <View
@@ -321,6 +418,14 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
     </View>
   );
 }
+
+/** The `blocking.failures` sentence for each way a block can fail (#324). */
+const BLOCK_FAILURE_KEY = {
+  staff: 'failures.staff',
+  self: 'failures.self',
+  refused: 'failures.refused',
+  unreachable: 'failures.unreachable',
+} as const;
 
 /** Hit slop above and below a line of small text, so its target is 44pt and its row is not. */
 const REACH = Math.max(0, (size.touchTarget - lineHeight.small) / 2);

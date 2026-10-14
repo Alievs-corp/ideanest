@@ -1,12 +1,13 @@
-import { useMemo, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Glyphs } from '../../../icons';
 import { CAMPAIGN_THREAD_PARAM, campaignCursorFrom } from '@ideanest/campaign/tabs';
+import { useBlockedIds, withoutBlocked } from '../../../lib/blocks';
 import { conversationOf, threadsOf, useCommentThreads } from '../../../lib/comments';
 import { useT } from '../../../lib/i18n';
 import { useSession } from '../../../lib/use-session';
 import { font, fontSize, lineHeight, spacing, tracking } from '../../../theme';
-import { Icon, Pill, TONES, useSurface } from '../../ui';
+import { Icon, Pill, TONES, announce, useSurface } from '../../ui';
 import { CommentCard } from './comments/comment-card';
 import { CommentComposer } from './comments/comment-composer';
 import { CommentThreadBlock, QuietLink, ReplyRow } from './comments/comment-thread';
@@ -50,6 +51,14 @@ import {
  * <p>Offline, every write is disabled and says why; what is already in memory is still shown. The
  * sentence is the composer's own notice where there is a composer; in the single-thread view and
  * for a signed-out reader there is none, so it stands once under the heading instead.
+ *
+ * <h2>What the reader blocked is left out — #324</h2>
+ *
+ * The read is made as nobody, so the service cannot leave out this reader's blocks; `useBlockedIds`
+ * reads them through the session and the rows are built without them — a conversation a blocked
+ * account started, whole, and each reply it wrote, which is what the service does for a read that
+ * carries a token. A block made under a comment hides that account's comments at once, and a line
+ * under the heading says so, where the card that was pressed used to be; it is announced too.
  */
 export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
   const { campaign, active, offline, params, setParam, scrollToTabs } = context;
@@ -57,17 +66,25 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
 
   // Every hook before the early return: all five tabs' hooks run on every render.
   const { signedIn } = useSession();
+  const tAll = useT();
+  const blocked = useBlockedIds();
+  const [blockNotice, setBlockNotice] = useState<string | null>(null);
   const { query, loadMore, refreshFirstPage, refreshAll } = useCommentThreads(
     campaign.id,
     thread,
     active,
   );
   const pages = query.data?.pages;
-  const threads = useMemo(() => (pages === undefined ? [] : threadsOf(pages)), [pages]);
-  const conversation = useMemo(
-    () => (pages === undefined ? null : conversationOf(pages)),
-    [pages],
+  const threads = useMemo(
+    () => (pages === undefined ? [] : withoutBlocked(threadsOf(pages), blocked.ids)),
+    [pages, blocked.ids],
   );
+  const conversation = useMemo(() => {
+    const whole = pages === undefined ? null : conversationOf(pages);
+    if (whole === null) return null;
+    const [kept] = withoutBlocked([{ root: whole.root, replies: whole.replies, nextReplyCursor: null }], blocked.ids);
+    return kept === undefined ? { blocked: true as const } : { ...whole, replies: kept.replies, blocked: false as const };
+  }, [pages, blocked.ids]);
 
   if (!active) return INACTIVE_TAB;
 
@@ -81,6 +98,12 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
   };
   const refresh = () => refreshFirstPage().catch(() => undefined);
   const changed = () => refreshAll().catch(() => undefined);
+  const onBlocked = (authorId: string) => {
+    blocked.add(authorId);
+    const said = tAll('blocking.blocked');
+    setBlockNotice(said);
+    announce(said);
+  };
 
   // Offline with nothing in memory, the read waits for a connection; that is a failure to show,
   // not a placeholder to hold.
@@ -93,6 +116,9 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
   const rows: CampaignTabRow[] = [{ key: 'heading', render: () => spaced(<CommentsHeading />, 8) }];
   if (offline && (thread !== null || !signedIn)) {
     rows.push({ key: 'offline', render: () => spaced(<OfflineNote />, 3) });
+  }
+  if (blockNotice !== null) {
+    rows.push({ key: 'blocked', render: () => spaced(<BlockedNote text={blockNotice} />, 4) });
   }
 
   if (thread === null) {
@@ -119,6 +145,7 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
                 campaignTitle={campaign.title}
                 offline={offline}
                 onChanged={changed}
+                onBlocked={onBlocked}
                 onShowMore={() => openThread(item.root.id)}
               />,
               6,
@@ -130,6 +157,9 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
     rows.push({ key: 'all', render: () => spaced(<AllComments onPress={leaveThread} />, 4) });
     if (failed || conversation === null) {
       rows.push({ key: 'failed', render: () => spaced(<Note kind="failed" />, 6) });
+    } else if (conversation.blocked) {
+      // A conversation a blocked account started, opened by its address: not there for this
+      // reader, as the tab does not show it. "All comments" above is the way back.
     } else {
       const { root, replies } = conversation;
       rows.push({
@@ -141,6 +171,7 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
               campaignTitle={campaign.title}
               offline={offline}
               onChanged={changed}
+              onBlocked={onBlocked}
             />,
             6,
           ),
@@ -155,6 +186,7 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
                 campaignTitle={campaign.title}
                 offline={offline}
                 onChanged={changed}
+                onBlocked={onBlocked}
               />
             </ReplyRow>
           ),
@@ -234,6 +266,20 @@ function OfflineNote() {
   return (
     <Text style={[styles.note, { color: tone.secondary }]} testID="comments-offline">
       {t('mobile.campaign.comments.offline')}
+    </Text>
+  );
+}
+
+/** What was just blocked, where the pressed card used to be (#324). Polite, and drawn as well as said. */
+function BlockedNote({ text }: { readonly text: string }) {
+  const tone = TONES[useSurface()];
+  return (
+    <Text
+      accessibilityLiveRegion="polite"
+      style={[styles.note, { color: tone.secondary }]}
+      testID="comments-blocked"
+    >
+      {text}
     </Text>
   );
 }

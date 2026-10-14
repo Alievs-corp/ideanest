@@ -20,12 +20,15 @@ export function CommentThreadBlock({
   campaignTitle,
   offline,
   onChanged,
+  onBlocked,
   onShowMore,
 }: {
   readonly thread: CampaignCommentThread;
   readonly campaignTitle: string;
   readonly offline: boolean;
   readonly onChanged: () => Promise<unknown>;
+  /** A block the service accepted (#324): the tab hides that account's comments. */
+  readonly onBlocked: (authorId: string) => void;
   readonly onShowMore: () => void;
 }) {
   const t = useT('campaign.comments');
@@ -39,6 +42,7 @@ export function CommentThreadBlock({
         campaignTitle={campaignTitle}
         offline={offline}
         onChanged={onChanged}
+        onBlocked={onBlocked}
       />
       {thread.replies.length > 0 || hasMore ? (
         <View style={[styles.replies, rule]}>
@@ -49,6 +53,7 @@ export function CommentThreadBlock({
               campaignTitle={campaignTitle}
               offline={offline}
               onChanged={onChanged}
+              onBlocked={onBlocked}
             />
           ))}
           {hasMore ? (
