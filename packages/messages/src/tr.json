@@ -4154,6 +4154,8 @@
     "dispute": {
       "heading": "Bu ödemeye itiraz et",
       "intro": "Yaratıcının ödemesi bekletilirken paranızın iadesini isteyebilirsiniz. Bir yönetici gerekçenizi okur ve karar verir; kabul ederse tutarın tamamı iade edilir.",
+      "until": "{date} tarihine kadar itiraz edebilirsiniz.",
+      "notYet": "İtiraz, kampanya bittikten sonra, yaratıcının ödemesi bekletilirken mümkün olur.",
       "reasonLabel": "Ne ters gitti",
       "reasonHint": "En fazla 2.000 karakter. Size ne vaat edildiğini ve ne olduğunu yazın.",
       "submit": "İtirazı gönder",

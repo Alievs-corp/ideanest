@@ -83,6 +83,8 @@ export const queryKeys = {
   mySubscription: () => ['subscription'] as const,
   platformFeeDisclosure: () => ['fees', 'platform'] as const,
   pledge: (id: string) => ['pledges', id] as const,
+  /** Whether the backer may dispute the pledge now (#480). Read fresh; never persisted. */
+  disputeWindow: (pledgeId: string) => ['dispute-window', pledgeId] as const,
   /** The Updates tab's pages (#155), under `project` so they survive a restart with the page. */
   projectUpdates: (projectId: string) => ['project', projectId, 'updates'] as const,
   /**

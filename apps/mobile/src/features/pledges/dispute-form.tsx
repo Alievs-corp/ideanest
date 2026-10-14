@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import {
   Body,
@@ -11,9 +12,11 @@ import {
   Textarea,
   announce,
 } from '../../components/ui';
-import { useT } from '../../lib/i18n';
+import { queryKeys } from '../../api/queries';
+import { formatDateTime, useT } from '../../lib/i18n';
+import { useLocale } from '../../lib/locale';
 import { spacing } from '../../theme';
-import { openBackerDispute } from './api';
+import { openBackerDispute, readDisputeWindow } from './api';
 
 export const DISPUTE_REASON_MAX = 2000;
 
@@ -22,8 +25,19 @@ export interface DisputeFormProps {
   readonly disabled: boolean;
 }
 
+/**
+ * A backer disputing their payment while the creator's payout is held (#43). The window is asked first
+ * (#480), so the form is offered only when a dispute can be opened; a window that cannot be read falls
+ * back to offering it, and the refusal is still worded.
+ */
 export function DisputeForm({ pledgeId, disabled }: DisputeFormProps) {
   const t = useT('checkout.dispute');
+  const locale = useLocale();
+  const disputeWindow = useQuery({
+    queryKey: queryKeys.disputeWindow(pledgeId),
+    queryFn: ({ signal }) => readDisputeWindow(pledgeId, signal),
+    retry: false,
+  });
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -55,7 +69,19 @@ export function DisputeForm({ pledgeId, disabled }: DisputeFormProps) {
     }
   }
 
-  if (opened) {
+  if (disputeWindow.isPending) return null;
+  const status = disputeWindow.data?.status;
+  if (status === 'CLOSED' || status === 'NOTHING_LEFT') return null;
+  if (status === 'NOT_YET') {
+    return (
+      <Body tone="secondary" testID="dispute-not-yet">
+        {t('notYet')}
+      </Body>
+    );
+  }
+  const until = status === 'OPEN' ? (disputeWindow.data?.until ?? null) : null;
+
+  if (opened || (disputeWindow.data?.dispute ?? null) !== null) {
     return (
       <InlineAlert
         variant="info"
@@ -77,6 +103,11 @@ export function DisputeForm({ pledgeId, disabled }: DisputeFormProps) {
           onPress={() => setOpen(true)}
           testID="dispute-open"
         />
+        {until === null ? null : (
+          <Body tone="secondary" testID="dispute-until">
+            {t('until', { date: formatDateTime(until, locale) })}
+          </Body>
+        )}
       </View>
     );
   }

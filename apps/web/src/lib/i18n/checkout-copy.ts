@@ -187,6 +187,9 @@ export interface CheckoutCopy {
     readonly sending: string;
     readonly cancel: string;
     readonly opened: string;
+    /** Carries `{date}`, the end of the payout hold (#480). */
+    readonly until: string;
+    readonly notYet: string;
     readonly windowClosed: string;
     readonly nothing: string;
     readonly failed: string;
@@ -391,6 +394,8 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       sending: t('dispute.sending'),
       cancel: t('dispute.cancel'),
       opened: t('dispute.opened'),
+      until: String(t.raw('dispute.until')),
+      notYet: t('dispute.notYet'),
       windowClosed: t('dispute.windowClosed'),
       nothing: t('dispute.nothing'),
       failed: t('dispute.failed'),

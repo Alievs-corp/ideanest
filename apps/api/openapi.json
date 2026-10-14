@@ -7656,6 +7656,33 @@
         "tags" : [ "backer-dispute-controller" ]
       }
     },
+    "/v1/pledges/{pledgeId}/disputes/window" : {
+      "get" : {
+        "operationId" : "backerDisputeWindow",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pledgeId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DisputeWindowBody"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "backer-dispute-controller" ]
+      }
+    },
     "/v1/pledges/{pledgeId}/shipping-address" : {
       "get" : {
         "operationId" : "shippingAddressRead",
@@ -13436,6 +13463,21 @@
           "page" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "DisputeWindowBody" : {
+        "type" : "object",
+        "properties" : {
+          "dispute" : {
+            "$ref" : "#/components/schemas/DisputeBody"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "until" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         }
       },

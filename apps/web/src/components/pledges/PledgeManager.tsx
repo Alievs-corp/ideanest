@@ -401,7 +401,7 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
       )}
 
       {/* IDN-EXT-01 (#44): a paid pledge may be disputed while the creator's payout is held. */}
-      {pledge.state === 'COLLECTED' && <BackerDisputeForm pledgeId={pledge.id} copy={copy.dispute} />}
+      {pledge.state === 'COLLECTED' && <BackerDisputeForm pledgeId={pledge.id} copy={copy.dispute} locale={locale} />}
 
       <div>
         <Link href="/pledges">

@@ -26,6 +26,7 @@ jest.mock('./api', () => ({
   readPledge: jest.fn(),
   listMyPledges: jest.fn(),
   openBackerDispute: jest.fn(),
+  readDisputeWindow: jest.fn(),
 }));
 
 jest.setTimeout(30_000);
@@ -109,6 +110,7 @@ beforeEach(async () => {
   setOnline(true);
   mockSession = { signedIn: true, locked: false, unlocked: false };
   api.listMyPledges.mockResolvedValue({ items: [summary()], nextCursor: null });
+  api.readDisputeWindow.mockResolvedValue({ status: 'OPEN', until: '2026-11-01T08:00:00Z' });
 });
 
 describe('the payment return notice', () => {
@@ -425,6 +427,45 @@ describe('the dispute', () => {
     expect(api.openBackerDispute).toHaveBeenCalledWith('pl-1', 'It never arrived');
     expect(screen.getByTestId('dispute-opened')).toBeTruthy();
     expect(screen.queryByTestId('dispute-form')).toBeNull();
+  });
+
+  it('says until when the payout is held', async () => {
+    api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED' }));
+    await show();
+
+    expect(screen.getByTestId('dispute-open')).toBeTruthy();
+    expect(screen.getByTestId('dispute-until')).toHaveTextContent(/2026/);
+  });
+
+  it('#480: offers no form before a payout is held, and says when one can be opened', async () => {
+    api.readDisputeWindow.mockResolvedValue({ status: 'NOT_YET' });
+    api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED' }));
+    await show();
+
+    expect(screen.getByTestId('dispute-not-yet')).toHaveTextContent(en.checkout.dispute.notYet);
+    expect(screen.queryByTestId('dispute-open')).toBeNull();
+  });
+
+  it.each(['CLOSED', 'NOTHING_LEFT'] as const)('#480: offers nothing when the window is %s', async (status) => {
+    api.readDisputeWindow.mockResolvedValue({ status });
+    api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED' }));
+    await show();
+
+    expect(screen.queryByTestId('dispute-open')).toBeNull();
+    expect(screen.queryByTestId('dispute-not-yet')).toBeNull();
+  });
+
+  it('#480: a dispute already open is shown as open', async () => {
+    api.readDisputeWindow.mockResolvedValue({
+      status: 'OPEN',
+      until: '2026-11-01T08:00:00Z',
+      dispute: { id: 'd1', pledgeId: 'pl-1', state: 'OPEN' },
+    });
+    api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED' }));
+    await show();
+
+    expect(screen.getByTestId('dispute-opened')).toBeTruthy();
+    expect(screen.queryByTestId('dispute-open')).toBeNull();
   });
 
   it.each([

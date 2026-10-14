@@ -3284,6 +3284,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/pledges/{pledgeId}/disputes/window": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["backerDisputeWindow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/pledges/{pledgeId}/shipping-address": {
         parameters: {
             query?: never;
@@ -5332,6 +5348,12 @@ export interface components {
             hasMore?: boolean;
             /** Format: int32 */
             page?: number;
+        };
+        DisputeWindowBody: {
+            dispute?: components["schemas"]["DisputeBody"];
+            status?: string;
+            /** Format: date-time */
+            until?: string;
         };
         Document: {
             body?: string;
@@ -7695,6 +7717,7 @@ export type SchemaDisclosure = components['schemas']['Disclosure'];
 export type SchemaDispute = components['schemas']['Dispute'];
 export type SchemaDisputeBody = components['schemas']['DisputeBody'];
 export type SchemaDisputePage = components['schemas']['DisputePage'];
+export type SchemaDisputeWindowBody = components['schemas']['DisputeWindowBody'];
 export type SchemaDocument = components['schemas']['Document'];
 export type SchemaDraft = components['schemas']['Draft'];
 export type SchemaDraftPledgeRequest = components['schemas']['DraftPledgeRequest'];
@@ -13564,6 +13587,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DisputeBody"];
+                };
+            };
+        };
+    };
+    backerDisputeWindow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pledgeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeWindowBody"];
                 };
             };
         };

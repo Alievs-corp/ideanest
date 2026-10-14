@@ -1,6 +1,7 @@
 package az.ideanest.payout.api;
 
 import az.ideanest.payout.application.BackerDisputes;
+import az.ideanest.payout.application.DisputeWindow;
 import az.ideanest.payout.domain.BackerDispute;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -49,6 +50,15 @@ public class BackerDisputeController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .cacheControl(CacheControl.noStore())
                 .body(DisputeBody.of(disputes.open(callerOf(accessToken), pledgeId, request.reason())));
+    }
+
+    /** Whether the caller may dispute their pledge now, and the dispute already open on it (#480). */
+    @GetMapping("/v1/pledges/{pledgeId}/disputes/window")
+    public ResponseEntity<DisputeWindowBody> window(
+            @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID pledgeId) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(DisputeWindowBody.of(disputes.window(callerOf(accessToken), pledgeId)));
     }
 
     /** The undecided disputes, oldest first. {@code MANAGE_DISPUTES}. */
@@ -105,6 +115,14 @@ public class BackerDisputeController {
                     dispute.openedAt(),
                     dispute.decidedAt(),
                     dispute.refundId());
+        }
+    }
+
+    public record DisputeWindowBody(String status, Instant until, DisputeBody dispute) {
+
+        static DisputeWindowBody of(DisputeWindow window) {
+            return new DisputeWindowBody(
+                    window.status().name(), window.until(), window.open().map(DisputeBody::of).orElse(null));
         }
     }
 

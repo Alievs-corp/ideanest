@@ -20,3 +20,18 @@ export async function openBackerDispute(pledgeId: string, reason: string, signal
   if (!response.ok) throw await errorFrom(response);
   return (await response.json()) as BackerDispute;
 }
+
+/** Whether the backer may dispute now (#480): the same rules the POST enforces, asked first. */
+export interface DisputeWindow {
+  readonly status: 'OPEN' | 'NOT_YET' | 'CLOSED' | 'NOTHING_LEFT';
+  /** When the hold ends, for `OPEN`. */
+  readonly until: string | null;
+  /** The dispute already open on the pledge. */
+  readonly dispute: BackerDispute | null;
+}
+
+export async function readDisputeWindow(pledgeId: string, signal?: AbortSignal): Promise<DisputeWindow> {
+  const response = await authorizedFetch(`/v1/pledges/${encodeURIComponent(pledgeId)}/disputes/window`, { signal });
+  if (!response.ok) throw await errorFrom(response);
+  return (await response.json()) as DisputeWindow;
+}
