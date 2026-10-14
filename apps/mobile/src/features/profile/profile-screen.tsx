@@ -24,6 +24,7 @@ import {
   usePublicProfile,
   type ProfileList,
 } from './api';
+import { ProfileBlock } from './block-control';
 import { ProfileIdentity } from './follow-control';
 import { knownTotal } from './format';
 import { CreatorObligationSummary } from './obligation-summary';
@@ -213,7 +214,8 @@ export function ProfileScreen({ slug, tab: tabParam }: { readonly slug: string; 
 
 /**
  * "Report this account", quiet, at the foot of every tab — the web's `ProfileReportControl`. Not
- * offered to the account the page is about: reporting yourself is a 400.
+ * offered to the account the page is about: reporting yourself is a 400. "Block this account"
+ * (#324) sits under it, for a signed-in reader only — `block-control.tsx` says why.
  */
 function ProfileReport({ profile, offline }: { readonly profile: PublicProfile; readonly offline: boolean }) {
   const me = useMe();
@@ -221,6 +223,7 @@ function ProfileReport({ profile, offline }: { readonly profile: PublicProfile; 
   return (
     <View style={styles.report} testID="profile-report">
       <ReportTrigger target={{ kind: 'account', slug: profile.slug }} name={profile.name} offline={offline} />
+      <ProfileBlock slug={profile.slug} offline={offline} />
     </View>
   );
 }
@@ -259,6 +262,7 @@ const styles = StyleSheet.create({
   tabs: { marginTop: spacing[2] },
   aboutFooter: { gap: spacing[6] },
   report: {
+    gap: spacing[4],
     paddingTop: spacing[6],
     borderTopWidth: StyleSheet.hairlineWidth,
     // The rule sits in the white sheet.

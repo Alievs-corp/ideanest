@@ -6529,6 +6529,9 @@
       "faceIdUsage": "IdeyaNest, bu cihazda tutulan oturumunuzun kilidini açmak için Face ID kullanır.",
       "cameraUsage": "IdeyaNest, kampanya görseli veya profil fotoğrafı çekebilmeniz için kamerayı kullanır.",
       "photoLibraryUsage": "IdeyaNest, kampanya görseli veya profil fotoğrafı seçebilmeniz için fotoğraflarınızı açar."
+    },
+    "blocking": {
+      "offline": "Engellemek için bağlantı gerekir."
     }
   },
   "blocking": {

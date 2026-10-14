@@ -36,6 +36,7 @@ import {
   setProfileVisibility,
   type ProfileVisibility,
 } from './api';
+import { BlockedPanel } from './blocked-panel';
 import {
   ExportWriteError,
   ShareSheetError,
@@ -47,7 +48,9 @@ import {
 /**
  * `settings/privacy` — the web's `/settings/privacy` (#161): who can see the profile, a copy of
  * the account, and closing it. The order is the web's and it is the argument: the reversible
- * switch first, then the export, then the closure the export makes survivable.
+ * switch first, then the export, then the closure the export makes survivable. The blocked
+ * accounts (#324) come second: whom you no longer see belongs with who can see you, and before
+ * the pair that must stay together.
  */
 export function PrivacySettingsScreen() {
   const t = useT('settings.pages.privacy');
@@ -82,6 +85,7 @@ function PrivacyPanels() {
   return (
     <>
       <VisibilityPanel slug={me.data.slug ?? null} />
+      <BlockedPanel />
       <DataExportPanel />
       <AccountClosurePanel scheduledFor={me.data.deletionScheduledAt ?? null} />
     </>

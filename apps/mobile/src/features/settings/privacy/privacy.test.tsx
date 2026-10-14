@@ -80,6 +80,8 @@ const METRICS = {
 type Me = { slug?: string; deletionScheduledAt?: string; email?: string };
 let me: Me;
 let stored: 'PUBLIC' | 'PRIVATE' | 'BROKEN';
+/** `GET /v1/me/blocks` (#324): the accounts this reader blocked. */
+let blockedRows: Record<string, unknown>[];
 
 function refusal(status: number, detail?: string): ApiError {
   return new ApiError(status, {
@@ -124,8 +126,10 @@ beforeEach(async () => {
   mockFiles.clear();
   me = { slug: 'aysel', email: 'aysel@example.com' };
   stored = 'PUBLIC';
+  blockedRows = [];
   mockGet.mockImplementation(async (path: string) => {
     if (path === '/v1/me') return me;
+    if (path === '/v1/me/blocks') return { items: blockedRows, nextCursor: null };
     if (path === '/v1/me/profile') {
       if (stored === 'BROKEN') throw refusal(500);
       return { name: 'Aysel', slug: 'aysel', socialLinks: [], profileVisibility: stored };
@@ -437,5 +441,49 @@ describe('states', () => {
       params: { returnTo: '/settings/privacy' },
     });
     expect(screen.queryByTestId('privacy-closure')).toBeNull();
+  });
+});
+
+/** #324: the blocked accounts, second on the screen, with Unblock. */
+describe('blocked accounts', () => {
+  const L = en.blocking.list;
+
+  it('says what a block does, and that nobody is blocked yet', async () => {
+    await show();
+    expect(screen.getByText(L.title)).toBeTruthy();
+    expect(screen.getByText(L.intro)).toBeTruthy();
+    expect(screen.getByText(L.emptyTitle)).toBeTruthy();
+  });
+
+  it('lists each account, names its Unblock, and unblocks by id at once', async () => {
+    blockedRows = [{ userId: 'u1', name: 'Kamran', slug: 'kamran', blockedAt: '2026-10-01T09:00:00Z' }];
+    await show();
+
+    const unblock = screen.getByRole('button', { name: 'Unblock Kamran' });
+    await fireEvent.press(unblock);
+    await settle();
+
+    expect(sendJson).toHaveBeenCalledWith('DELETE', '/v1/me/blocks/u1');
+    expect(screen.queryByText('Kamran')).toBeNull();
+  });
+
+  it('opens the profile from the name', async () => {
+    blockedRows = [{ userId: 'u1', name: 'Kamran', slug: 'kamran' }];
+    await show();
+    await fireEvent.press(screen.getByRole('link', { name: 'Kamran' }));
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/u/[slug]', params: { slug: 'kamran' } });
+  });
+
+  it('puts the row back and says it is still blocked when the service refused', async () => {
+    blockedRows = [{ userId: 'u1', name: 'Kamran', slug: 'kamran' }];
+    sendJson.mockRejectedValue(refusal(500));
+    await show();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Unblock Kamran' }));
+    await settle();
+
+    expect(screen.getByText(L.unblockFailedTitle)).toBeTruthy();
+    expect(screen.getByText('Kamran is still blocked. Try again in a moment.')).toBeTruthy();
+    expect(screen.getByText('Kamran')).toBeTruthy();
   });
 });

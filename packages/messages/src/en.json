@@ -6529,6 +6529,9 @@
       "faceIdUsage": "IdeyaNest uses Face ID to unlock the session kept on this device.",
       "cameraUsage": "IdeyaNest uses the camera so you can take a campaign image or a profile picture.",
       "photoLibraryUsage": "IdeyaNest opens your photos so you can choose a campaign image or a profile picture."
+    },
+    "blocking": {
+      "offline": "Blocking needs a connection."
     }
   },
   "blocking": {

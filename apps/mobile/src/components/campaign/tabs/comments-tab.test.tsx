@@ -99,7 +99,7 @@ const SECOND_PAGE = {
 };
 
 type Route = (url: URL) => Response | Promise<Response>;
-let routes: { comments: Route; post: Route; reply: Route; withdraw: Route; me: Route };
+let routes: { comments: Route; post: Route; reply: Route; withdraw: Route; me: Route; blocks: Route; block: Route };
 let reads: string[];
 /** The `Authorization` each comments read carried, in order — `null` for none. */
 let readAuthorization: (string | null)[];
@@ -123,12 +123,16 @@ beforeEach(async () => {
     reply: () => json(replyRow('new-reply', 'c1'), 201),
     withdraw: () => new Response(null, { status: 204 }),
     me: () => json({ id: ME, name: 'Me', slug: 'me' }),
+    blocks: () => json({ items: [], nextCursor: null }),
+    block: () => json({ blocked: true }),
   };
   global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     const method = init?.method ?? 'GET';
     if (url.pathname === '/v1/auth/refresh') return problem(401);
     if (url.pathname === '/v1/me') return routes.me(url);
+    // #324: the reader's own blocks, read through the session; not a write to record.
+    if (method === 'GET' && url.pathname === '/v1/me/blocks') return routes.blocks(url);
     if (method === 'GET' && url.pathname === `/v1/projects/${ID}/comments`) {
       reads.push(url.search);
       readAuthorization.push(new Headers(init?.headers).get('Authorization'));
@@ -138,6 +142,7 @@ beforeEach(async () => {
     if (url.pathname === `/v1/projects/${ID}/comments`) return routes.post(url);
     if (/^\/v1\/comments\/[^/]+\/reply$/.test(url.pathname)) return routes.reply(url);
     if (method === 'DELETE' && url.pathname.startsWith('/v1/comments/')) return routes.withdraw(url);
+    if (method === 'POST' && url.pathname.startsWith('/v1/me/blocks/')) return routes.block(url);
     return json({}, 404);
   }) as unknown as typeof fetch;
 });
@@ -629,5 +634,68 @@ describe('reporting a comment', () => {
     const triggers = screen.getAllByRole('button', { name: en.moderation.report.triggerOn.comment });
     // c1, its reply, c2 and c3's reply; the withdrawn c3 has none.
     expect(triggers).toHaveLength(4);
+  });
+});
+
+/**
+ * #324: the tab is read as nobody, so the reader's own blocks are applied here — a conversation a
+ * blocked account started goes whole, a reply it wrote goes alone — and blocking from under a
+ * comment hides every comment by that account at once and says so.
+ */
+describe('blocking', () => {
+  const B = en.blocking;
+
+  it('leaves out what the reader blocked, and reads the list through the session', async () => {
+    await signIn();
+    routes.blocks = () => json({ items: [{ userId: 'someone-else', name: 'X', slug: 'x' }], nextCursor: null });
+    await show();
+    await settle();
+
+    // The blocked account wrote c2 and both replies; the reader wrote c1, and c3 is a tombstone.
+    expect(screen.queryByText('Comment c2')).toBeNull();
+    expect(screen.queryByText('Comment c1-r1')).toBeNull();
+    expect(screen.getByText('Comment c1')).toBeTruthy();
+    expect(screen.getByTestId('comment-c3')).toBeTruthy();
+    expect(screen.queryByTestId('comment-c3-r1')).toBeNull();
+  });
+
+  it('offers a visitor no Block and reads no list for them', async () => {
+    await show();
+    await settle();
+    expect(screen.queryByRole('button', { name: B.trigger })).toBeNull();
+  });
+
+  it('asks first, then blocks the author by id and hides their comments at once', async () => {
+    await signIn();
+    await show();
+    await settle();
+
+    // Not under the reader's own comment (c1), nor under a tombstone.
+    expect(screen.queryByTestId('block-c1')).toBeNull();
+    await fireEvent.press(screen.getByTestId('block-c2'));
+    expect(screen.getByText(B.warning)).toBeTruthy();
+    expect(writes).toEqual([]);
+
+    await fireEvent.press(screen.getByRole('button', { name: B.confirm }));
+    await settle();
+
+    expect(writes).toEqual(['POST /v1/me/blocks/someone-else']);
+    expect(screen.queryByText('Comment c2')).toBeNull();
+    expect(screen.getByText('Comment c1')).toBeTruthy();
+    expect(screen.getByTestId('comments-blocked')).toHaveTextContent(B.blocked);
+  });
+
+  it('says a member of staff cannot be blocked, in the catalogue’s words', async () => {
+    await signIn();
+    routes.block = () => problem(422, { code: 'CANNOT_BLOCK_STAFF' });
+    await show();
+    await settle();
+
+    await fireEvent.press(screen.getByTestId('block-c2'));
+    await fireEvent.press(screen.getByRole('button', { name: B.confirm }));
+    await settle();
+
+    expect(screen.getByText(B.failures.staff)).toBeTruthy();
+    expect(screen.getByText('Comment c2')).toBeTruthy();
   });
 });
