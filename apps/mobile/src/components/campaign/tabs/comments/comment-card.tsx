@@ -22,6 +22,7 @@ import {
 } from '../../../../theme';
 import { toneColor } from '../../../text';
 import {
+  Avatar,
   Icon,
   Pill,
   SurfaceProvider,
@@ -60,11 +61,14 @@ import { CommentComposer } from './comment-composer';
  * in place — never a gap, never with the withdrawal attributed to anybody — and offers nothing
  * under it: nothing to answer, nothing to withdraw twice, nothing left for a moderator to read.
  *
- * <h2>Nobody is named</h2>
+ * <h2>Every comment has a byline (#255)</h2>
  *
- * The comment carries an account id and no public name, so there is no byline — as on the web,
- * which says why in `CampaignComments.tsx` and calls it a gap rather than a design. Nothing is
- * invented to fill it.
+ * The name and picture (an `xs` `Avatar`, decorative — the name is beside it) the author's public
+ * profile shows, when the service named them in `author`. When it did not — a private profile, an
+ * author who backed this campaign anonymously, a closed account — the same neutral "Member" for
+ * every case, so the row never says which: not "Backer", which §4.9 does not check, and not
+ * "Anonymous", which a private profile did not choose. The web's `CampaignComments.tsx` carries
+ * the argument. The campaign's own comment needs no word: its tag says whose it is.
  *
  * <h2>The controls</h2>
  *
@@ -126,14 +130,22 @@ export function CommentCard({ comment, campaignTitle, offline, onChanged, onBloc
       testID={`comment-${comment.id}`}
     >
       <SurfaceProvider surface={block}>
-        {comment.byCreator || posted !== null ? (
-          <View style={styles.meta}>
-            {comment.byCreator ? <Tag label={t('fromCreator')} /> : null}
-            {posted === null ? null : (
-              <Text style={[styles.date, { color: tone.secondary }]}>{posted}</Text>
-            )}
-          </View>
-        ) : null}
+        <View style={styles.meta}>
+          {comment.author !== null ? (
+            <View style={styles.byline}>
+              <Avatar name={comment.author.name} src={comment.author.avatarUrl} size="xs" decorative />
+              <Text style={[styles.author, { color: tone.primary }]}>{comment.author.name}</Text>
+            </View>
+          ) : comment.byCreator ? null : (
+            <Text style={[styles.author, styles.unnamed, { color: tone.secondary }]}>
+              {t('unnamedAuthor')}
+            </Text>
+          )}
+          {comment.byCreator ? <Tag label={t('fromCreator')} /> : null}
+          {posted === null ? null : (
+            <Text style={[styles.date, { color: tone.secondary }]}>{posted}</Text>
+          )}
+        </View>
 
         <Text style={[styles.body, { color: toneColor('reading', block) }]}>{comment.body}</Text>
 
@@ -481,6 +493,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
   },
   meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing[2] },
+  byline: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  // The web's `text-sm font-medium`; the unnamed word in the regular weight, as a label.
+  author: {
+    ...font.medium,
+    fontSize: fontSize.sm,
+    lineHeight: lineHeight.small,
+  },
+  unnamed: { ...font.regular },
   date: {
     ...font.regular,
     fontSize: fontSize.xs,

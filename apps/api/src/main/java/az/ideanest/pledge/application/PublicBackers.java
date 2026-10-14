@@ -3,8 +3,10 @@ package az.ideanest.pledge.application;
 import az.ideanest.pledge.domain.PledgeState;
 import az.ideanest.pledge.infrastructure.PublicBackerRepository;
 import az.ideanest.project.application.PublicProjects;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -98,6 +100,24 @@ public class PublicBackers {
 
         return new PublicBacking(
                 backings.countBackers(projectId, COUNTED), backings.countBackersByRewardTier(projectId, COUNTED));
+    }
+
+    /**
+     * Which of these accounts asked to back this campaign anonymously — #255.
+     *
+     * <p>For the comment tab, which names a comment's author unless they did: PL-12 hides
+     * who backed a campaign, and a name under a comment on it says exactly that. The
+     * campaign's visibility is not checked here; the caller has already read the comments,
+     * which it may do only for a campaign the reader may see.
+     *
+     * @return the subset of {@code accountIds} to show no name for
+     */
+    @Transactional(readOnly = true)
+    public Set<UUID> anonymousBackersAmong(UUID projectId, Collection<UUID> accountIds) {
+        if (accountIds.isEmpty()) {
+            return Set.of();
+        }
+        return Collections.unmodifiableSet(new HashSet<>(backings.anonymousBackersAmong(projectId, accountIds)));
     }
 
     /** See {@link #COUNTED}. */

@@ -1,6 +1,8 @@
 package az.ideanest.community.application;
 
+import az.ideanest.user.application.PublicName;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -21,10 +23,14 @@ import java.util.UUID;
  *     an account is served the page without that account's comments. A personal page must not
  *     be kept by a shared cache, and {@code PublicCommentController} marks it private; every
  *     other page is the same for everybody and stays public
+ * @param authors the names a stranger may see beside these comments, by author — #255,
+ *     decided by {@link CommentAuthors}. An author absent from it is drawn without a name
  */
-public record CommentPage(List<CommentThread> threads, UUID nextCursor, boolean personal) {
+public record CommentPage(
+        List<CommentThread> threads, UUID nextCursor, boolean personal, Map<UUID, PublicName> authors) {
 
     public CommentPage {
         threads = List.copyOf(threads);
+        authors = Map.copyOf(authors);
     }
 }

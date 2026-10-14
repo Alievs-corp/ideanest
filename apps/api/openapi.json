@@ -12554,6 +12554,17 @@
           }
         }
       },
+      "CommentAuthor" : {
+        "type" : "object",
+        "properties" : {
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        }
+      },
       "CommentListResponse" : {
         "type" : "object",
         "properties" : {
@@ -12574,6 +12585,9 @@
         "properties" : {
           "acceptsReplies" : {
             "type" : "boolean"
+          },
+          "author" : {
+            "$ref" : "#/components/schemas/CommentAuthor"
           },
           "authorId" : {
             "type" : "string",

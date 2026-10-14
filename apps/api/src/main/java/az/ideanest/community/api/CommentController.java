@@ -1,12 +1,16 @@
 package az.ideanest.community.api;
 
 import az.ideanest.community.CommunityProperties;
+import az.ideanest.community.application.CommentAuthors;
 import az.ideanest.community.application.CommentService;
+import az.ideanest.community.domain.Comment;
 import az.ideanest.shared.ratelimit.ClientAddress;
 import az.ideanest.shared.ratelimit.RateLimiter;
 import az.ideanest.shared.ratelimit.RateLimits;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,12 +64,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommentController {
 
     private final CommentService comments;
+    private final CommentAuthors authors;
     private final RateLimiter rateLimiter;
     private final CommunityProperties properties;
 
     public CommentController(
-            CommentService comments, RateLimiter rateLimiter, CommunityProperties properties) {
+            CommentService comments,
+            CommentAuthors authors,
+            RateLimiter rateLimiter,
+            CommunityProperties properties) {
         this.comments = comments;
+        this.authors = authors;
         this.rateLimiter = rateLimiter;
         this.properties = properties;
     }
@@ -92,7 +101,7 @@ public class CommentController {
         UUID authorId = callerOf(accessToken);
         spendWritingBudget(authorId, httpRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(CommentResponse.of(comments.post(projectId, authorId, request.body())));
+                .body(named(comments.post(projectId, authorId, request.body())));
     }
 
     /**
@@ -117,7 +126,7 @@ public class CommentController {
         UUID authorId = callerOf(accessToken);
         spendWritingBudget(authorId, httpRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(CommentResponse.of(comments.reply(commentId, authorId, request.body())));
+                .body(named(comments.reply(commentId, authorId, request.body())));
     }
 
     /**
@@ -135,7 +144,16 @@ public class CommentController {
      */
     @DeleteMapping("/v1/comments/{commentId}")
     public CommentResponse delete(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID commentId) {
-        return CommentResponse.of(comments.delete(commentId, callerOf(accessToken)));
+        // A tombstone names nobody, so there is no name to look up.
+        return CommentResponse.of(comments.delete(commentId, callerOf(accessToken)), Map.of());
+    }
+
+    /**
+     * A comment just written, with its author named as the tab will name them (#255) — so the
+     * row a client draws from this answer is the row the next read of the tab draws.
+     */
+    private CommentResponse named(Comment comment) {
+        return CommentResponse.of(comment, authors.on(comment.getProjectId(), List.of(comment)));
     }
 
     /**

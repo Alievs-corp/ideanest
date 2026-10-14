@@ -86,6 +86,32 @@ public interface PublicBackerRepository extends Repository<Pledge, UUID> {
     List<RewardTierBackers> countBackersByRewardTier(
             @Param("projectId") UUID projectId, @Param("states") Collection<PledgeState> states);
 
+    /**
+     * Which of these accounts asked not to be named on this campaign — #255.
+     *
+     * <p>The comment tab names a comment's author unless they asked §4.5's PL-12 for
+     * anonymity here: the people who comment on a campaign are, by §3.1, its backers, so a
+     * name under a comment says "this person backed it" as plainly as a backer list would.
+     *
+     * <p><strong>Any pledge, in any state.</strong> No state filter, unlike the counts
+     * above: a backer who asked for anonymity and then cancelled, or whose charge is still
+     * being retried, asked all the same, and the cost of honouring a request that has
+     * lapsed is one comment without a name.
+     *
+     * <p>It answers only about identifiers the caller already holds, and only which of them
+     * to withhold a name for. It is not a list of backers.
+     */
+    @Query(
+            """
+            SELECT DISTINCT p.backerId
+              FROM Pledge p
+             WHERE p.projectId = :projectId
+               AND p.backerId IN :accounts
+               AND p.anonymous = true
+            """)
+    List<UUID> anonymousBackersAmong(
+            @Param("projectId") UUID projectId, @Param("accounts") Collection<UUID> accounts);
+
     // There is deliberately no query here that returns the pledges themselves.
     // Whether a campaign publishes who backed it is #209, which carries
     // `status: needs-decision`; until it is answered, a read that could hand a caller

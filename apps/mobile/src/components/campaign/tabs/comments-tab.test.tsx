@@ -263,6 +263,24 @@ describe('the list', () => {
     expect(screen.getByText(C.fromCreator)).toBeTruthy();
   });
 
+  it('names the author the service named, and calls everybody else a "Member" (#255)', async () => {
+    routes.comments = () =>
+      json({
+        threads: [
+          { root: row('c1', { author: { name: 'Leyla M', avatarUrl: null } }), replies: [], nextReplyCursor: null },
+          { root: row('c2', { author: null }), replies: [], nextReplyCursor: null },
+          // The campaign's own unnamed comment has its tag, and no "Member".
+          { root: row('c3', { author: null, byCreator: true }), replies: [], nextReplyCursor: null },
+        ],
+        nextCursor: null,
+      });
+    await show();
+    expect(screen.getByTestId('comment-c1')).toHaveTextContent(/Leyla M/);
+    expect(screen.getByTestId('comment-c2')).toHaveTextContent(new RegExp(C.unnamedAuthor));
+    expect(screen.getByTestId('comment-c3')).not.toHaveTextContent(new RegExp(C.unnamedAuthor));
+    expect(screen.getByTestId('comment-c3')).toHaveTextContent(new RegExp(C.fromCreator));
+  });
+
   it('draws a withdrawn comment as a tombstone with nothing under it, and keeps its replies', async () => {
     await show();
     const tombstone = screen.getByTestId('comment-c3');

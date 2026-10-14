@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
 import { MessageSquareOff } from 'lucide-react';
 import { Tag } from '@ideanest/ui/server';
@@ -9,6 +10,7 @@ import { CommentControls } from './CommentControls';
 import { ViewerInstant } from './ViewerClock';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../lib/i18n/locale';
+import { canOptimise } from '../../lib/images/source';
 import {
   blockControlCopy,
   commentCopy,
@@ -62,20 +64,20 @@ import {
  * under the thread, nothing to withdraw twice, and nothing left for a moderator to read if it
  * were reported.
  *
- * <h2>NOBODY IS NAMED, AND THAT IS A GAP RATHER THAN A DESIGN</h2>
+ * <h2>Every comment has a byline — #255</h2>
  *
- * `CommentResponse` carries `authorId` — an account identifier — and no display name, no slug
- * and no avatar. The public profile read is addressed by slug (`GET /v1/users/{slug}`), so
- * there is no endpoint that turns the one into the other, and the campaign response carries
- * the creator's slug and name but not their id. This is the same shape of gap the page's own
- * comment describes about reporting the creator's account.
+ * Nobody was named until #255, and that was a gap rather than a design: `CommentResponse`
+ * carried `authorId` and no name. It now carries `author` — the name and picture the author's
+ * public profile shows — and `CommentAuthors` on the service decides when there is none: a
+ * private profile, an author who backed this campaign anonymously, a closed account.
  *
- * The honest consequence is a thread where the campaign's replies are marked and everybody
- * else is unattributed. <strong>Nothing is invented to fill it</strong>: a byline reading
- * "Backer" would be a claim about somebody's relationship to the campaign that §4.9 says the
- * service does not currently check, and one reading "Anonymous" would be a claim they chose
- * it. Whoever adds a public name to the comment projection closes it, and this component
- * gains a byline and nothing else.
+ * <strong>An unnamed author is a "Member", and nothing more specific.</strong> One word for
+ * every withheld case, so the row never says which. Not "Backer": that is a claim about
+ * somebody's relationship to the campaign that §4.9 says the service does not check, since a
+ * non-backer can comment. Not "Anonymous": that is a claim they chose it, and a private
+ * profile did not choose anything about this campaign. Every commenter has an account, so
+ * "Member" is true of all of them. The campaign's own comment needs no word: its tag says whose
+ * it is.
  *
  * <h2>What the reader blocked is hidden in the browser — #324</h2>
  *
@@ -271,6 +273,32 @@ async function CommentEntry({
       }
     >
       <div className="flex flex-wrap items-center gap-2">
+        {/*
+          WHO WROTE IT — #255. The name and picture the author's public profile shows, when the
+          service named them. When it did not — a private profile, an author who backed this
+          campaign anonymously, a closed account — the same neutral word for every case, so the
+          row never says which (see the class comment for why it is "Member"). The campaign's own
+          comment needs no word: its tag says whose it is.
+        */}
+        {comment.author !== null ? (
+          <span className="inline-flex items-center gap-2">
+            {comment.author.avatarUrl !== null && (
+              /* Decorative: the name is beside it, so a screen reader is not told twice. */
+              <Image
+                src={comment.author.avatarUrl}
+                alt=""
+                width={24}
+                height={24}
+                unoptimized={!canOptimise(comment.author.avatarUrl)}
+                className="size-6 shrink-0 rounded-full object-cover"
+              />
+            )}
+            <span className="text-sm font-medium text-white">{comment.author.name}</span>
+          </span>
+        ) : (
+          !comment.byCreator && <span className="text-sm text-white/64">{t('unnamedAuthor')}</span>
+        )}
+
         {comment.byCreator && (
           /*
             A WORD, not a tint. §9.2 forbids colour carrying meaning alone, and C-02's whole

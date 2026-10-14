@@ -106,6 +106,7 @@ public class CommentService {
     private static final UUID NOBODY = new UUID(0L, 0L);
 
     private final CommentRepository comments;
+    private final CommentAuthors authors;
     private final BlockRepository blocks;
     private final ProjectAccess access;
     private final PublicProjects publicProjects;
@@ -117,6 +118,7 @@ public class CommentService {
 
     public CommentService(
             CommentRepository comments,
+            CommentAuthors authors,
             BlockRepository blocks,
             ProjectAccess access,
             PublicProjects publicProjects,
@@ -127,6 +129,7 @@ public class CommentService {
             Clock clock) {
 
         this.comments = comments;
+        this.authors = authors;
         this.blocks = blocks;
         this.access = access;
         this.publicProjects = publicProjects;
@@ -297,9 +300,9 @@ public class CommentService {
         boolean personal = !NOBODY.equals(reader);
         if (roots.isEmpty()) {
             // An empty IN list is not valid SQL, and there is nothing to ask about.
-            return new CommentPage(List.of(), null, personal);
+            return new CommentPage(List.of(), null, personal, Map.of());
         }
-        return new CommentPage(withReplies(roots, reader), nextCursor, personal);
+        return pageOf(projectId, withReplies(roots, reader), nextCursor, personal);
     }
 
     /**
@@ -346,7 +349,17 @@ public class CommentService {
             replies.removeLast();
             nextReplyCursor = replies.getLast().getId();
         }
-        return new CommentPage(List.of(new CommentThread(root, replies, nextReplyCursor)), null, personal);
+        return pageOf(projectId, List.of(new CommentThread(root, replies, nextReplyCursor)), null, personal);
+    }
+
+    /** A page, with the names a stranger may see beside its comments (#255). */
+    private CommentPage pageOf(UUID projectId, List<CommentThread> threads, UUID nextCursor, boolean personal) {
+        List<Comment> all = new ArrayList<>();
+        for (CommentThread thread : threads) {
+            all.add(thread.root());
+            all.addAll(thread.replies());
+        }
+        return new CommentPage(threads, nextCursor, personal, authors.on(projectId, all));
     }
 
     /**

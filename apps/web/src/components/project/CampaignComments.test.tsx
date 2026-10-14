@@ -137,6 +137,7 @@ function comment(overrides: Partial<CampaignComment> = {}): CampaignComment {
     threadId: 'c1',
     parentId: null,
     authorId: 'u9',
+    author: { name: 'Leyla M', avatarUrl: null },
     body: 'Will this ship to Georgia?',
     byCreator: false,
     deleted: false,
@@ -224,11 +225,35 @@ describe('the comments tab', () => {
     expect(screen.getByText('Yes, Georgia is in zone 1.')).toBeInTheDocument();
   });
 
+  it('names the author the service named, with their picture beside the name (#255)', async () => {
+    const { container } = await renderTab(
+      page([thread({ root: comment({ author: { name: 'Leyla M', avatarUrl: 'https://cdn.example/leyla.jpg' } }) })]),
+    );
+
+    expect(await screen.findByText('Leyla M')).toBeInTheDocument();
+    // Decorative: the name is beside it.
+    expect(container.querySelector('img[alt=""]')).not.toBeNull();
+  });
+
+  it('calls an author the service did not name a "Member", and says nothing about why', async () => {
+    await renderTab(page([thread({ root: comment({ author: null }) })]));
+
+    expect(await screen.findByText('Member')).toBeInTheDocument();
+    expect(screen.queryByText(/backer|anonymous|private/iu)).not.toBeInTheDocument();
+  });
+
+  it('gives the campaign’s own unnamed comment its tag and no "Member"', async () => {
+    await renderTab(page([thread({ root: comment({ author: null, byCreator: true }) })]));
+
+    expect(await screen.findByText('From the campaign')).toBeInTheDocument();
+    expect(screen.queryByText('Member')).not.toBeInTheDocument();
+  });
+
   it('renders a withdrawn comment as a tombstone that names nobody', async () => {
     const { container } = await renderTab(
       page([
         thread({
-          root: comment({ deleted: true, body: null, authorId: null, acceptsReplies: false }),
+          root: comment({ deleted: true, body: null, authorId: null, author: null, acceptsReplies: false }),
           replies: [comment({ id: 'c2', parentId: 'c1', depth: 1, body: 'Still here.' })],
         }),
       ]),
