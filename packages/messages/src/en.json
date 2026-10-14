@@ -4338,7 +4338,14 @@
       "select": "Select this reward",
       "selectNamed": "Select this reward: {title}",
       "soldOut": "Sold out",
-      "remaining": "{count, plural, one {# place left} other {# places left}}"
+      "remaining": "{count, plural, one {# place left} other {# places left}}",
+      "shipping": {
+        "none": "Nothing is shipped",
+        "digital": "Digital, nothing shipped",
+        "pickup": "Collected in person, nothing shipped",
+        "shipsTo": "{count, plural, one {Ships to # country} other {Ships to # countries}}",
+        "shipsToFrom": "{count, plural, one {Ships to # country, shipping from {amount}} other {Ships to # countries, shipping from {amount}}}"
+      }
     },
     "media": {
       "play": "Watch",
@@ -4442,7 +4449,8 @@
         "notWithdrawn": "That could not be withdrawn.",
         "withdrawUnreachable": "The service could not be reached. Try again.",
         "replyNotAccepted": "This comment is not accepting replies from your account."
-      }
+      },
+      "unnamedAuthor": "Member"
     },
     "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once.",
     "prelaunch": {

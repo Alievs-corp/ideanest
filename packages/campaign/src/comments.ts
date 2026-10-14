@@ -29,6 +29,20 @@
  */
 
 /**
+ * Who wrote a comment, as a stranger may see them — #255.
+ *
+ * Absent ({@link CampaignComment.author} `null`) whenever the service withholds a name: a
+ * private profile, an author who backed this campaign anonymously, a closed account, a
+ * tombstone. Both clients draw the same neutral "Member" then (`campaign.comments.unnamedAuthor`),
+ * and nothing that says which. Not "Backer": §4.9 does not check that a commenter backed.
+ */
+export interface CommentAuthor {
+  readonly name: string;
+  /** `null` for the many accounts with no picture. */
+  readonly avatarUrl: string | null;
+}
+
+/**
  * One comment, as the public read serves it.
  *
  * `body` and `authorId` are nullable because a tombstone has neither — that is the shape
@@ -41,8 +55,10 @@ export interface CampaignComment {
   readonly threadId: string;
   /** `null` for a root. */
   readonly parentId: string | null;
-  /** `null` on a tombstone, and on nothing else. */
+  /** `null` on a tombstone, and on nothing else. What a reader's block list is matched against. */
   readonly authorId: string | null;
+  /** The name to draw, or `null` to draw the neutral label — see {@link CommentAuthor}. */
+  readonly author: CommentAuthor | null;
   /** `null` on a tombstone. */
   readonly body: string | null;
   /** §4.9's C-02, decided by the server at write time and never by the request body. */
@@ -174,6 +190,7 @@ export function readComment(value: unknown): CampaignComment | null {
     threadId: text(source['threadId']) ?? id,
     parentId: text(source['parentId']),
     authorId: text(source['authorId']),
+    author: deleted ? null : readAuthor(source['author']),
     body: deleted ? null : body,
     byCreator: source['byCreator'] === true,
     deleted,
@@ -181,6 +198,14 @@ export function readComment(value: unknown): CampaignComment | null {
     createdAt,
     acceptsReplies: source['acceptsReplies'] === true,
   };
+}
+
+/** A name with nothing in it is no name: the row is drawn with the neutral label instead. */
+function readAuthor(value: unknown): CommentAuthor | null {
+  if (value === null || typeof value !== 'object') return null;
+  const source = value as Record<string, unknown>;
+  const name = text(source['name']);
+  return name === null ? null : { name, avatarUrl: text(source['avatarUrl']) };
 }
 
 function text(value: unknown): string | null {

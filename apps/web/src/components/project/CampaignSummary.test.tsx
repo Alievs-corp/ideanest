@@ -110,6 +110,14 @@ const NOW = new Date('2026-08-19T12:00:00Z');
  * campaign is still open, and a suite that let it read the wall clock would start failing on
  * the deadline in the fixture rather than on anything a developer changed.
  */
+/** A card with nothing to add: no month, nothing shipped said, no tags. */
+const NO_DETAILS = {
+  estimatedDelivery: null,
+  shipping: { kind: 'unpriced' },
+  earlyBird: false,
+  featured: false,
+} as const;
+
 const TIERS = [
   {
     id: 'tier-1',
@@ -118,6 +126,7 @@ const TIERS = [
     price: { amount: '45.00', currency: 'AZN' },
     remainingQuantity: 0,
     imageUrl: null,
+    details: NO_DETAILS,
   },
   {
     id: 'tier-2',
@@ -126,6 +135,7 @@ const TIERS = [
     price: { amount: '60.00', currency: 'AZN' },
     remainingQuantity: null,
     imageUrl: null,
+    details: NO_DETAILS,
   },
 ] as const;
 
@@ -312,6 +322,7 @@ describe('the reward tiers', () => {
             price: { amount: '45.00', currency: 'AZN' },
             remainingQuantity: 0,
             imageUrl: null,
+            details: NO_DETAILS,
           },
           {
             id: 'tier-2',
@@ -320,6 +331,7 @@ describe('the reward tiers', () => {
             price: { amount: '60.00', currency: 'AZN' },
             remainingQuantity: null,
             imageUrl: null,
+            details: NO_DETAILS,
           },
         ]}
       />,
@@ -330,6 +342,58 @@ describe('the reward tiers', () => {
     expect(screen.getByText('Sold out')).toBeInTheDocument();
     // An unlimited tier says nothing about how many are left, because there is no number.
     expect(screen.queryByText(/places? left/)).not.toBeInTheDocument();
+  });
+
+  it('says when a tier arrives and where it can be sent, before the checkout does (#255)', async () => {
+    render(
+      await resolveServerTree(
+        <CampaignRewards
+          {...REWARD_CONTEXT}
+          tiers={[
+            {
+              ...TIERS[1],
+              details: {
+                estimatedDelivery: '2026-11-01',
+                shipping: { kind: 'ships', countries: 3, lowestRate: '4.9' },
+                earlyBird: true,
+                featured: true,
+              },
+            },
+            {
+              ...TIERS[0],
+              id: 'tier-3',
+              title: 'The file',
+              details: { ...NO_DETAILS, shipping: { kind: 'digital' } },
+            },
+          ]}
+        />,
+      ),
+    );
+
+    expect(screen.getByText('Estimated delivery November 2026')).toBeInTheDocument();
+    expect(screen.getByText('Ships to 3 countries, shipping from 4.90 AZN')).toBeInTheDocument();
+    expect(screen.getByText('Digital, nothing shipped')).toBeInTheDocument();
+    // The checkout's tags, in words.
+    expect(screen.getByText('Early bird')).toBeInTheDocument();
+    expect(screen.getByText('Featured')).toBeInTheDocument();
+  });
+
+  it('says "1 country" in the singular, and nothing at all for a tier with nowhere priced', async () => {
+    render(
+      await resolveServerTree(
+        <CampaignRewards
+          {...REWARD_CONTEXT}
+          tiers={[
+            { ...TIERS[1], details: { ...NO_DETAILS, shipping: { kind: 'ships', countries: 1, lowestRate: null } } },
+            { ...TIERS[1], id: 'tier-4', title: 'Unpriced', details: NO_DETAILS },
+          ]}
+        />,
+      ),
+    );
+
+    expect(screen.getByText('Ships to 1 country')).toBeInTheDocument();
+    expect(screen.queryByText(/estimated delivery/iu)).not.toBeInTheDocument();
+    expect(screen.queryAllByText(/^Ships to/u)).toHaveLength(1);
   });
 
   it('renders nothing when a campaign offers no tiers', async () => {
@@ -462,6 +526,7 @@ describe('accessibility', () => {
               price: { amount: '45.00', currency: 'AZN' },
               remainingQuantity: 0,
               imageUrl: null,
+              details: NO_DETAILS,
             },
             {
               id: 'tier-2',
@@ -470,6 +535,7 @@ describe('accessibility', () => {
               price: { amount: '60.00', currency: 'AZN' },
               remainingQuantity: null,
               imageUrl: null,
+              details: NO_DETAILS,
             },
           ]}
         />,

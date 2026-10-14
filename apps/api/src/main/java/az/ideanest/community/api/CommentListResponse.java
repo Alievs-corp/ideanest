@@ -48,13 +48,13 @@ public record CommentListResponse(List<Thread> threads, UUID nextCursor) {
 
     public static CommentListResponse of(CommentPage page) {
         return new CommentListResponse(
-                page.threads().stream().map(CommentListResponse::threadOf).toList(), page.nextCursor());
+                page.threads().stream().map(thread -> threadOf(thread, page)).toList(), page.nextCursor());
     }
 
-    private static Thread threadOf(CommentThread thread) {
+    private static Thread threadOf(CommentThread thread, CommentPage page) {
         return new Thread(
-                CommentResponse.of(thread.root()),
-                thread.replies().stream().map(CommentResponse::of).toList(),
+                CommentResponse.of(thread.root(), page.authors()),
+                thread.replies().stream().map(reply -> CommentResponse.of(reply, page.authors())).toList(),
                 thread.nextReplyCursor());
     }
 
@@ -72,6 +72,8 @@ public record CommentListResponse(List<Thread> threads, UUID nextCursor) {
      * moderator had taken down — which is the one revalidation on this endpoint that
      * must never be wrong. {@code byCreator} is in for the same reason in the other
      * direction: it is a claim of authority, and a stale one is a claim nobody made.
+     * The author's name and picture are in it too (#255): a profile turned private has to
+     * take the name off the page at the next revalidation, not when the cache expires.
      */
     public String etag() {
         StringBuilder canonical = new StringBuilder();
@@ -93,6 +95,10 @@ public record CommentListResponse(List<Thread> threads, UUID nextCursor) {
                 .append(comment.body())
                 .append(FIELD_SEPARATOR)
                 .append(comment.authorId())
+                .append(FIELD_SEPARATOR)
+                .append(comment.author() == null ? null : comment.author().name())
+                .append(FIELD_SEPARATOR)
+                .append(comment.author() == null ? null : comment.author().avatarUrl())
                 .append(FIELD_SEPARATOR)
                 .append(comment.byCreator())
                 .append(FIELD_SEPARATOR)

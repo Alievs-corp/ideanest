@@ -686,6 +686,12 @@ and each entry needs a translation per supported locale.
 > Only the active tab is fetched, so the second read is paid for by the reader who
 > asked for it.
 >
+> **A reward card says when it arrives and where it can go (#255).** The estimated
+> delivery month and one shipping line — the number of countries the creator priced and
+> the cheapest rate, or that nothing is shipped — plus the checkout's early-bird and
+> featured tags, on the web and in the app alike, read by `@ideanest/campaign/reward-details`.
+> Items and add-ons stay in the checkout, so the card stays short.
+>
 > **The FAQ tab needed a schema before it could need a design (#283).** §4.4 has
 > always listed it and nothing on the platform stored a question: a tab that always
 > said "no questions yet" would have been a claim about the campaign rather than
@@ -1417,6 +1423,12 @@ The most valuable and most complex module. It begins when funding closes.
 > authority made by the side making the claim, and never derived on read, where
 > a year-old comment would silently lose its highlight the day its author left
 > the team.
+>
+> **A comment names its author (#255).** `CommentResponse.author` carries the name and
+> picture the author's public profile shows, and is null — drawn as a neutral "Member" —
+> for a private profile (P-07), for an author who backed the campaign anonymously (PL-12),
+> and for a closed account. Not "Backer", which commenting does not check, and not
+> "Anonymous", which a private profile did not choose. `authorId` stays, for blocks.
 >
 > **Deleting a comment is a tombstone, not a removal.** The row stays, its body
 > stays, and the read serves neither: `body: null`, `authorId: null`,

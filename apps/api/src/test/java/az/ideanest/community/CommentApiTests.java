@@ -7,7 +7,9 @@ import az.ideanest.audit.AuditEntryRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.Pledges;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -62,6 +64,9 @@ class CommentApiTests extends AbstractIntegrationTest {
     @Autowired
     private DataSource dataSource;
 
+    /** Pledges this class wrote, so the cleanup removes exactly those. */
+    private final List<UUID> pledgesMade = new ArrayList<>();
+
     @AfterEach
     void clearCampaigns() {
         // Comments cascade from projects; deleted explicitly anyway, because a
@@ -73,6 +78,12 @@ class CommentApiTests extends AbstractIntegrationTest {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         jdbc.update("DELETE FROM content_reports");
         jdbc.update("DELETE FROM comments");
+        // The anonymous-backer fixture (#255) writes pledges, which refer to their campaign.
+        // Only those: another suite's rows are that suite's to clear.
+        for (UUID pledge : pledgesMade) {
+            jdbc.update("DELETE FROM pledges WHERE id = ?", pledge);
+        }
+        pledgesMade.clear();
         jdbc.update("DELETE FROM project_state_transitions");
         jdbc.update("DELETE FROM projects");
     }
@@ -204,6 +215,81 @@ class CommentApiTests extends AbstractIntegrationTest {
         // A root heads its own thread, which is what makes the replies query find it.
         assertThat(posted.getBody().get("threadId")).isEqualTo(posted.getBody().get("id"));
         assertThat(posted.getBody().get("parentId")).isNull();
+    }
+
+    @Test
+    @DisplayName("a comment names its author as their public profile does, when written and when read (#255)")
+    void aCommentNamesItsAuthor() {
+        Account creator = account("creator");
+        Account backer = account("backer");
+        UUID project = liveCampaign(creator);
+
+        ResponseEntity<Map<String, Object>> posted = post(project, backer, "Will this ship to Baku?");
+        assertThat(authorOf(posted.getBody())).containsEntry("name", "Test Person").containsKey("avatarUrl");
+
+        Map<String, Object> listed = rootOf(threadsIn(get("/v1/projects/" + project + "/comments", null)).getFirst());
+        assertThat(authorOf(listed)).containsEntry("name", "Test Person");
+        // The identifier stays: it is what a reader's block list is matched against.
+        assertThat(listed.get("authorId")).isEqualTo(backer.id().toString());
+    }
+
+    @Test
+    @DisplayName("an author whose profile is private is not named under their comment")
+    void aPrivateProfileIsNotNamed() {
+        Account creator = account("creator");
+        Account backer = account("backer");
+        UUID project = liveCampaign(creator);
+        new JdbcTemplate(dataSource).update("UPDATE users SET profile_visibility = 'PRIVATE' WHERE id = ?", backer.id());
+
+        ResponseEntity<Map<String, Object>> posted = post(project, backer, "Quietly asking.");
+        assertThat(posted.getBody()).containsKey("author");
+        assertThat(posted.getBody().get("author")).isNull();
+
+        Map<String, Object> listed = rootOf(threadsIn(get("/v1/projects/" + project + "/comments", null)).getFirst());
+        assertThat(listed.get("author")).isNull();
+    }
+
+    @Test
+    @DisplayName("a backer who backed this campaign anonymously is not named under their comment")
+    void anAnonymousBackerIsNotNamed() {
+        Account creator = account("creator");
+        Account hidden = account("hidden");
+        Account open = account("open");
+        UUID project = liveCampaign(creator);
+        UUID pledge = Pledges.confirmedFor(dataSource, project, hidden.id(), "25.00");
+        pledgesMade.add(pledge);
+        new JdbcTemplate(dataSource).update("UPDATE pledges SET is_anonymous = true WHERE id = ?", pledge);
+        pledgesMade.add(Pledges.confirmedFor(dataSource, project, open.id(), "25.00"));
+
+        post(project, hidden, "From somebody who asked not to be named.");
+        post(project, open, "From somebody who did not.");
+
+        List<Map<String, Object>> threads = threadsIn(get("/v1/projects/" + project + "/comments", null));
+        Map<String, Object> newest = rootOf(threads.get(0));
+        Map<String, Object> older = rootOf(threads.get(1));
+        assertThat(newest.get("authorId")).isEqualTo(open.id().toString());
+        assertThat(authorOf(newest)).containsEntry("name", "Test Person");
+        assertThat(older.get("authorId")).isEqualTo(hidden.id().toString());
+        assertThat(older.get("author")).isNull();
+    }
+
+    @Test
+    @DisplayName("a removed comment names nobody")
+    void aRemovedCommentNamesNobody() {
+        Account creator = account("creator");
+        Account backer = account("backer");
+        UUID project = liveCampaign(creator);
+        UUID comment = idOf(post(project, backer, "Withdrawn in a moment."));
+
+        assertThat(delete(comment, backer).getBody().get("author")).isNull();
+        Map<String, Object> listed = rootOf(threadsIn(get("/v1/projects/" + project + "/comments", null)).getFirst());
+        assertThat(listed.get("author")).isNull();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> authorOf(Map<String, Object> comment) {
+        assertThat(comment.get("author")).as("a named author").isInstanceOf(Map.class);
+        return (Map<String, Object>) comment.get("author");
     }
 
     @Test

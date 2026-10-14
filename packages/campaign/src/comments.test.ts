@@ -47,6 +47,25 @@ describe('reading a page of conversations', () => {
     expect(page.threads[0]?.replies).toHaveLength(1);
   });
 
+  it('reads the author the service named, and no author where it named none (#255)', () => {
+    expect(readComment(comment({ author: { name: 'Aysel', avatarUrl: 'https://cdn.example/a.jpg' } }))?.author).toEqual({
+      name: 'Aysel',
+      avatarUrl: 'https://cdn.example/a.jpg',
+    });
+    expect(readComment(comment({ author: { name: 'Aysel', avatarUrl: null } }))?.author).toEqual({
+      name: 'Aysel',
+      avatarUrl: null,
+    });
+    // Withheld — a private profile, an anonymous backer — and an older service that sent none.
+    expect(readComment(comment({ author: null }))?.author).toBeNull();
+    expect(readComment(comment())?.author).toBeNull();
+    // A blank name is no name, and a tombstone names nobody whatever it was sent.
+    expect(readComment(comment({ author: { name: '  ', avatarUrl: null } }))?.author).toBeNull();
+    expect(
+      readComment(comment({ deleted: true, body: null, author: { name: 'Aysel', avatarUrl: null } }))?.author,
+    ).toBeNull();
+  });
+
   it('reads the creator highlight from the row and never from the depth or the author', () => {
     const page = readCommentPage({
       threads: [

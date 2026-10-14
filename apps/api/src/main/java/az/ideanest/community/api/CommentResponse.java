@@ -1,8 +1,10 @@
 package az.ideanest.community.api;
 
 import az.ideanest.community.domain.Comment;
+import az.ideanest.user.application.PublicName;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -25,9 +27,12 @@ import java.util.UUID;
  * its own — reply, delete, report — so this one is a handle to a resource that really
  * exists. {@code ProjectUpdateResponse} carries one for its single endpoint, report.
  *
- * @param authorId who wrote it. The name behind it is the profile endpoint's to serve,
- *     for {@code ProjectUpdateResponse}'s reason: a body carrying names would need a
- *     join per row and a decision about what a deleted account is called
+ * @param authorId who wrote it. Kept beside {@code author} because it is what a reader's
+ *     own block list is matched against (#324), and a name is not unique
+ * @param author the name and picture to draw beside it, or null to draw neither — #255.
+ *     Null for a removed comment and for every author {@code CommentAuthors} withholds a
+ *     name for: a private profile, an anonymous backer of this campaign, a closed
+ *     account. The client draws a neutral "Member" then, and never says which case it was
  * @param byCreator C-02's highlight. Computed at write time from the authorisation
  *     then in force — never from anything the client sent
  * @param acceptsReplies whether {@code POST /v1/comments/{id}/reply} would be accepted
@@ -43,13 +48,29 @@ public record CommentResponse(
         int depth,
         String body,
         UUID authorId,
+        CommentAuthor author,
         boolean byCreator,
         boolean deleted,
         boolean acceptsReplies,
         Instant createdAt) {
 
-    public static CommentResponse of(Comment comment) {
+    /**
+     * A comment's author as a stranger may see them: a name and a picture, nothing to
+     * address them by.
+     *
+     * @param avatarUrl null for the many accounts with no picture
+     */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record CommentAuthor(String name, String avatarUrl) {
+    }
+
+    /**
+     * @param names who may be named, from {@code CommentAuthors}; an author absent from it
+     *     is answered with no author
+     */
+    public static CommentResponse of(Comment comment, Map<UUID, PublicName> names) {
         boolean deleted = comment.isDeleted();
+        PublicName name = deleted ? null : names.get(comment.getAuthorId());
         return new CommentResponse(
                 comment.getId(),
                 comment.getParentId(),
@@ -57,6 +78,7 @@ public record CommentResponse(
                 comment.getDepth(),
                 deleted ? null : comment.getBody(),
                 deleted ? null : comment.getAuthorId(),
+                name == null ? null : new CommentAuthor(name.name(), name.avatarUrl()),
                 // A tombstone claims nothing on the campaign's behalf, whoever wrote it.
                 !deleted && comment.isByCreator(),
                 deleted,

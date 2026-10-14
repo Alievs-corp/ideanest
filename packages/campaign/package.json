@@ -4,7 +4,7 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "The campaign page's platform-neutral rules: which states have a page and take pledges, the 80% threshold, the countdown, the tabs, the story reader, the live counter's wire format and reconnect policy, the community wire readers and the report vocabulary, shared by apps/web and apps/mobile.",
+  "description": "The campaign page's platform-neutral rules: which states have a page and take pledges, the 80% threshold, the countdown, the tabs, the story reader, the live counter's wire format and reconnect policy, the community wire readers, the report vocabulary and the reward card details, shared by apps/web and apps/mobile.",
   "exports": {
     "./states": "./src/states.ts",
     "./pledgeable": "./src/pledgeable.ts",
@@ -19,7 +19,8 @@
     "./updates": "./src/updates.ts",
     "./faqs": "./src/faqs.ts",
     "./obligation": "./src/obligation.ts",
-    "./report": "./src/report.ts"
+    "./report": "./src/report.ts",
+    "./reward-details": "./src/reward-details.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

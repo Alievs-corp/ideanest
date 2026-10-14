@@ -21,6 +21,7 @@ function comment(id: string, overrides: Partial<CampaignComment> = {}): Campaign
     threadId: id,
     parentId: null,
     authorId: 'author-1',
+    author: null,
     body: `Body of ${id}`,
     byCreator: false,
     deleted: false,

@@ -4338,7 +4338,14 @@
       "select": "Bu mükafatı seç",
       "selectNamed": "Bu mükafatı seç: {title}",
       "soldOut": "Tükənib",
-      "remaining": "{count, plural, other {# yer qalıb}}"
+      "remaining": "{count, plural, other {# yer qalıb}}",
+      "shipping": {
+        "none": "Heç nə göndərilmir",
+        "digital": "Rəqəmsal, heç nə göndərilmir",
+        "pickup": "Şəxsən götürülür, heç nə göndərilmir",
+        "shipsTo": "{count, plural, other {# ölkəyə göndərilir}}",
+        "shipsToFrom": "{count, plural, other {# ölkəyə göndərilir, çatdırılma ən azı {amount}}}"
+      }
     },
     "media": {
       "play": "İzlə",
@@ -4442,7 +4449,8 @@
         "notWithdrawn": "Şərhi geri götürmək mümkün olmadı.",
         "withdrawUnreachable": "Xidmətə çatmaq mümkün olmadı. Yenidən cəhd edin.",
         "replyNotAccepted": "Bu şərh sizin hesabınızdan cavab qəbul etmir."
-      }
+      },
+      "unnamedAuthor": "Üzv"
     },
     "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər.",
     "prelaunch": {

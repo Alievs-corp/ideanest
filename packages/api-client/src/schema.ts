@@ -5007,6 +5007,10 @@ export interface components {
             items?: components["schemas"]["Card"][];
             nextCursor?: string;
         };
+        CommentAuthor: {
+            avatarUrl?: string;
+            name?: string;
+        };
         CommentListResponse: {
             /** Format: uuid */
             nextCursor?: string;
@@ -5014,6 +5018,7 @@ export interface components {
         };
         CommentResponse: {
             acceptsReplies?: boolean;
+            author?: components["schemas"]["CommentAuthor"];
             /** Format: uuid */
             authorId?: string;
             body?: string;
@@ -7648,6 +7653,7 @@ export type SchemaCollection = components['schemas']['Collection'];
 export type SchemaCollectionBody = components['schemas']['CollectionBody'];
 export type SchemaCollectionIndex = components['schemas']['CollectionIndex'];
 export type SchemaCollectionPage = components['schemas']['CollectionPage'];
+export type SchemaCommentAuthor = components['schemas']['CommentAuthor'];
 export type SchemaCommentListResponse = components['schemas']['CommentListResponse'];
 export type SchemaCommentResponse = components['schemas']['CommentResponse'];
 export type SchemaConfirmEmailChangeRequest = components['schemas']['ConfirmEmailChangeRequest'];

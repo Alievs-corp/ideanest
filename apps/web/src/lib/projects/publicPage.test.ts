@@ -295,6 +295,30 @@ describe('tiersOf', () => {
     expect(tiers[0]).toMatchObject({ id: 'tier-1', title: 'Early bird', remainingQuantity: 0 });
   });
 
+  it('reads what the card adds: the delivery month, the shipping line and the tags (#255)', () => {
+    const [tier] = tiersOf({
+      rewards: [
+        {
+          id: 'tier-1',
+          title: 'Standard',
+          price: { amount: '60.00', currency: 'AZN' },
+          estimatedDelivery: '2026-11-01',
+          shippingType: 'INTERNATIONAL',
+          shippingRates: [{ countryCode: 'AZ', amount: '5.00' }, { countryCode: 'GE', amount: '9.00' }],
+          isEarlyBird: true,
+          isFeatured: false,
+        },
+      ],
+    } as never);
+
+    expect(tier?.details).toEqual({
+      estimatedDelivery: '2026-11-01',
+      shipping: { kind: 'ships', countries: 2, lowestRate: '5' },
+      earlyBird: true,
+      featured: false,
+    });
+  });
+
   it('is empty rather than throwing when the read failed', () => {
     expect(tiersOf(null)).toEqual([]);
   });

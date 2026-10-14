@@ -311,6 +311,34 @@ describe('the campaign page, state by state', () => {
     expect(textOf(screen.getByTestId('reward-tier-3'))).not.toMatch(/left|unlimited/i);
   });
 
+  it('says when a tier arrives and where it can be sent, with the checkout’s tags (#255)', async () => {
+    routes.rewards = () =>
+      json({
+        currency: 'AZN',
+        rewards: [
+          {
+            ...REWARDS.rewards?.[0],
+            estimatedDelivery: '2026-11-01',
+            shippingType: 'INTERNATIONAL',
+            shippingRates: [
+              { countryCode: 'AZ', amount: '5.00' },
+              { countryCode: 'GE', amount: '12.00' },
+            ],
+            isEarlyBird: true,
+            isFeatured: false,
+          },
+          { ...REWARDS.rewards?.[2], shippingType: 'DIGITAL', shippingRates: [] },
+        ],
+      });
+    await show();
+    const first = textOf(screen.getByTestId('reward-tier-1'));
+    expect(first).toContain('Estimated delivery November 2026');
+    expect(first).toContain('Ships to 2 countries, shipping from 5.00 AZN');
+    expect(first).toContain(en.checkout.reward.earlyBird);
+    expect(first).not.toContain(en.checkout.reward.featured);
+    expect(textOf(screen.getByTestId('reward-tier-3'))).toContain(C.rewards.shipping.digital);
+  });
+
   it('draws no rewards section when there are no tiers', async () => {
     routes.rewards = () => json({ rewards: [], currency: 'AZN' });
     await show();

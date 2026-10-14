@@ -4,6 +4,9 @@ import az.ideanest.user.domain.ProfileVisibility;
 import az.ideanest.user.domain.User;
 import az.ideanest.user.infrastructure.ProfileLocations;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -127,6 +130,35 @@ public class PublicProfiles {
                 account.getWebsiteUrl(),
                 locations.findById(account.getLocationId()).orElse(null),
                 profiles.socialLinksOf(account.getId()));
+    }
+
+    /**
+     * The names a stranger may see beside things these accounts wrote — #255, for the
+     * comments on a campaign page.
+     *
+     * <p><strong>The same rule as {@link #requireVisible}, applied to a batch.</strong> An
+     * account that chose {@link ProfileVisibility#PRIVATE}, and one §17.4 has anonymised,
+     * is simply absent from the answer, and the caller draws no name for it. A comment is
+     * a public page too, and a private profile whose name still appeared under every
+     * comment its owner wrote would be a setting honoured on one surface out of two —
+     * the failure this class exists to prevent.
+     *
+     * <p>One query for the page, not one per row: the caller is a list.
+     *
+     * @return the visible accounts among {@code accountIds}, keyed by identifier
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, PublicName> publicNames(Collection<UUID> accountIds) {
+        if (accountIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, PublicName> names = new LinkedHashMap<>();
+        for (User account : users.findAllByIdInAndDeletedAtIsNull(accountIds)) {
+            if (account.getProfileVisibility() == ProfileVisibility.PUBLIC) {
+                names.put(account.getId(), new PublicName(account.getName(), account.getAvatarUrl()));
+            }
+        }
+        return names;
     }
 
     /**

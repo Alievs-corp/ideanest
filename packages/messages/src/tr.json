@@ -4338,7 +4338,14 @@
       "select": "Bu ödülü seç",
       "selectNamed": "Bu ödülü seç: {title}",
       "soldOut": "Tükendi",
-      "remaining": "{count, plural, other {# yer kaldı}}"
+      "remaining": "{count, plural, other {# yer kaldı}}",
+      "shipping": {
+        "none": "Hiçbir şey gönderilmez",
+        "digital": "Dijital, hiçbir şey gönderilmez",
+        "pickup": "Elden teslim alınır, hiçbir şey gönderilmez",
+        "shipsTo": "{count, plural, other {# ülkeye gönderilir}}",
+        "shipsToFrom": "{count, plural, other {# ülkeye gönderilir, kargo en az {amount}}}"
+      }
     },
     "media": {
       "play": "İzle",
@@ -4442,7 +4449,8 @@
         "notWithdrawn": "Yorum geri çekilemedi.",
         "withdrawUnreachable": "Servise ulaşılamadı. Tekrar deneyin.",
         "replyNotAccepted": "Bu yorum hesabınızdan yanıt kabul etmiyor."
-      }
+      },
+      "unnamedAuthor": "Üye"
     },
     "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Yaratıcı son tarihi bir kez uzatabilir.",
     "prelaunch": {

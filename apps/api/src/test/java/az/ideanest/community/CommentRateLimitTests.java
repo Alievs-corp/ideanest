@@ -6,13 +6,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import az.ideanest.community.api.CommentController;
 import az.ideanest.community.api.PostCommentRequest;
+import az.ideanest.community.application.CommentAuthors;
 import az.ideanest.community.application.CommentService;
 import az.ideanest.community.domain.Comment;
 import az.ideanest.shared.ratelimit.InMemoryRateLimiter;
 import az.ideanest.shared.ratelimit.RateLimitExceededException;
+import az.ideanest.user.application.PublicName;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,7 +69,10 @@ class CommentRateLimitTests {
     @BeforeEach
     void buildTheEndpoint() {
         comments = new CommentController(
-                new AcceptingCommentService(), new InMemoryRateLimiter(FIXED), CommunityProperties.defaults());
+                new AcceptingCommentService(),
+                new NamingNobody(),
+                new InMemoryRateLimiter(FIXED),
+                CommunityProperties.defaults());
         bindARequest("198.51.100.7");
     }
 
@@ -226,10 +233,23 @@ class CommentRateLimitTests {
      * real signatures without failing to compile. Its collaborators are null and none
      * is reachable — every method that would touch one is overridden here.
      */
+    /** No names, and no lookups: the limiter is what is being tested, not who is named. */
+    private static final class NamingNobody extends CommentAuthors {
+
+        private NamingNobody() {
+            super(null, null);
+        }
+
+        @Override
+        public Map<UUID, PublicName> on(UUID projectId, Collection<Comment> comments) {
+            return Map.of();
+        }
+    }
+
     private static final class AcceptingCommentService extends CommentService {
 
         private AcceptingCommentService() {
-            super(null, null, null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null, null, null);
         }
 
         @Override
