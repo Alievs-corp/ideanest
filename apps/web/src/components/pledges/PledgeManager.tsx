@@ -61,7 +61,7 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  * campaign's</h2>
  *
  * `PledgeService#requireEditable` composes two facts owned by two different modules: the
- * pledge is `DRAFT` or `CONFIRMED`, **and** the campaign is still accepting pledges. This
+ * pledge is `DRAFT`, **and** the campaign is still accepting pledges. This
  * component checks the first and deliberately does not check the second.
  *
  * The reason is that the client cannot check it correctly. `PledgeAcceptance` accepts a `LIVE`

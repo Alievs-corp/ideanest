@@ -18,7 +18,6 @@ export interface PledgeCardProps {
 export const STATE_ICON: Record<PledgeTone, IconComponent> = {
   success: Glyphs.TickCircle,
   warning: Glyphs.Clock,
-  danger: Glyphs.Warning2,
   default: Glyphs.InfoCircle,
 };
 

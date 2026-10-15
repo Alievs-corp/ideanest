@@ -23,11 +23,11 @@
  * length on a pledge somebody already made than on one they are still making — and so is the
  * `Anonymous` tag, which the list draws without any checkout copy to read it from.
  *
- * <h2>The twelve states are one group, read by both screens</h2>
+ * <h2>The eight states are one group, read by both screens</h2>
  *
  * `lib/pledges/backer.ts` held them as a module-level constant, which is evaluated before any
  * request exists and cannot read a catalogue — the shape `lib/moderation/describe.ts` is in.
- * The list and the manager draw the same twelve words, so a second copy would be two tables
+ * The list and the manager draw the same eight words, so a second copy would be two tables
  * that agree until one is edited.
  */
 
@@ -38,7 +38,7 @@ export interface PledgesTranslator {
 }
 
 /**
- * §6.2's twelve states as words a backer can read.
+ * §6.2's eight states as words a backer can read.
  *
  * The wording is the backer's rather than the schema's: `CANCELED_BY_PROJECT` is not a thing
  * anybody did to themselves, and "Cancelled by the creator" is what actually happened. A state
@@ -48,14 +48,10 @@ export type PledgeStatesCopy = Readonly<Record<string, string>>;
 
 const STATE_KEYS = [
   'DRAFT',
-  'CONFIRMED',
   'EXPIRED',
   'CANCELED_BY_BACKER',
   'CANCELED_BY_PROJECT',
-  'CHARGE_PENDING',
-  'CHARGE_FAILED',
   'COLLECTED',
-  'DROPPED',
   'REFUNDED',
   'CHARGEBACK',
   'FULFILLED',

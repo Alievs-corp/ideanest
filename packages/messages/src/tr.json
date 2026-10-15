@@ -410,14 +410,10 @@
     "pledges": {
       "states": {
         "DRAFT": "Tamamlanmadı",
-        "CONFIRMED": "Onaylandı",
         "EXPIRED": "Süresi doldu",
         "CANCELED_BY_BACKER": "Sizin tarafınızdan iptal edildi",
         "CANCELED_BY_PROJECT": "Yaratıcı tarafından iptal edildi",
-        "CHARGE_PENDING": "Ödeme sürüyor",
-        "CHARGE_FAILED": "Ödeme başarısız",
         "COLLECTED": "Ödendi",
-        "DROPPED": "Gerçekleşmedi",
         "REFUNDED": "İade edildi",
         "CHARGEBACK": "Banka üzerinden geri alındı",
         "FULFILLED": "Teslim edildi"
@@ -1723,14 +1719,10 @@
         "campaignGone": "Kampanya artık yok",
         "pledgeState": {
           "DRAFT": "Tamamlanmadı",
-          "CONFIRMED": "Onaylandı",
           "EXPIRED": "Süresi doldu",
           "CANCELED_BY_BACKER": "Destekçi iptal etti",
           "CANCELED_BY_PROJECT": "Kurucu iptal etti",
-          "CHARGE_PENDING": "Tahsilat sürüyor",
-          "CHARGE_FAILED": "Tahsilat başarısız",
           "COLLECTED": "Tahsil edildi",
-          "DROPPED": "Tahsilattan vazgeçildi",
           "REFUNDED": "İade edildi",
           "CHARGEBACK": "Ters ibraz",
           "FULFILLED": "Teslim edildi"
@@ -5739,9 +5731,6 @@
       "noCampaign": "Böyle bir kampanya yok ya da üzerinde çalıştığınız bir kampanya değil."
     },
     "states": {
-      "CONFIRMED": "Onaylandı",
-      "CHARGE_PENDING": "Tahsilat bekliyor",
-      "CHARGE_FAILED": "Ödeme başarısız",
       "COLLECTED": "Tahsil edildi",
       "FULFILLED": "Teslim edildi"
     },

@@ -4587,7 +4587,7 @@ export interface components {
         BackerFilterBody: {
             countries?: string[];
             rewardTierIds?: string[];
-            states?: ("DRAFT" | "CONFIRMED" | "EXPIRED" | "CANCELED_BY_BACKER" | "CANCELED_BY_PROJECT" | "CHARGE_PENDING" | "COLLECTED" | "CHARGE_FAILED" | "DROPPED" | "REFUNDED" | "CHARGEBACK" | "FULFILLED")[];
+            states?: ("DRAFT" | "EXPIRED" | "CANCELED_BY_BACKER" | "CANCELED_BY_PROJECT" | "COLLECTED" | "REFUNDED" | "CHARGEBACK" | "FULFILLED")[];
             term?: string;
         };
         BackerFulfilmentResponse: {
@@ -4821,7 +4821,7 @@ export interface components {
         };
         /** @description The signed-in reader's own state on one campaign (#137). Private and never cached. */
         CampaignViewerResponse: {
-            /** @description This account holds a pledge on the campaign in CONFIRMED, CHARGE_PENDING, CHARGE_FAILED, COLLECTED or FULFILLED. A DRAFT (a checkout in progress) is not a backing, and neither is a pledge that EXPIRED, was cancelled, DROPPED, REFUNDED or charged back. */
+            /** @description This account holds a pledge on the campaign in COLLECTED or FULFILLED. A DRAFT (a checkout in progress) is not a backing, and neither is a pledge that EXPIRED, was cancelled, REFUNDED or charged back. */
             backed: boolean;
             /** @description This account follows the campaign's creator (POST /v1/users/{slug}/follow). */
             followingCreator: boolean;
@@ -14233,7 +14233,7 @@ export interface operations {
         parameters: {
             query?: {
                 segment?: string;
-                state?: ("DRAFT" | "CONFIRMED" | "EXPIRED" | "CANCELED_BY_BACKER" | "CANCELED_BY_PROJECT" | "CHARGE_PENDING" | "COLLECTED" | "CHARGE_FAILED" | "DROPPED" | "REFUNDED" | "CHARGEBACK" | "FULFILLED")[];
+                state?: ("DRAFT" | "EXPIRED" | "CANCELED_BY_BACKER" | "CANCELED_BY_PROJECT" | "COLLECTED" | "REFUNDED" | "CHARGEBACK" | "FULFILLED")[];
                 rewardTier?: string[];
                 country?: string[];
                 q?: string;

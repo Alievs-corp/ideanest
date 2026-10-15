@@ -67,7 +67,7 @@ function pledge(extra: Partial<PledgeResponse> = {}): PledgeResponse {
   return {
     id: 'pl-1',
     projectId: 'p1',
-    state: 'CONFIRMED',
+    state: 'COLLECTED',
     rewardTierId: 'r1',
     addons: [],
     amounts: {

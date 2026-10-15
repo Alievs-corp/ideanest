@@ -662,7 +662,7 @@ function CreatedCampaigns({
 /**
  * What this person has backed.
  *
- * <p>Every state of §6.2's twelve, because a cancelled pledge and one whose card was refused
+ * <p>Every state of §6.2's eight, because a cancelled pledge and one that was charged back
  * are facts about the account rather than noise — and on this screen they are among the more
  * interesting ones.
  *

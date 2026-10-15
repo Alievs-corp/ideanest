@@ -7,7 +7,7 @@ import { Body, Card, CardTitle, Icon, Meta, TONES, useSurface } from '../../../c
 import { Glyphs } from '../../../icons';
 import { formatDate, useT, type Translate } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
-import { colors, spacing } from '../../../theme';
+import { spacing } from '../../../theme';
 
 /** What a pledge that took no reward, or a tier since removed, is called on the card. */
 function rewardOf(backer: Backer, t: Translate): string {
@@ -41,14 +41,12 @@ export function backerCardLabel(backer: Backer, t: Translate, locale: Locale): s
  * One backer — the web's `BackerTable` row as a card, which a 720pt table cannot be on a phone.
  * The name and email lead, the amount sits on the right in tabular figures, and the reward,
  * state, destination and date run underneath. Anonymity is shown, not obeyed: the creator still
- * has to address a parcel, so the name stays and the eye icon and words say what it means. A
- * failed payment carries a danger icon beside its word, never colour alone.
+ * has to address a parcel, so the name stays and the eye icon and words say what it means.
  */
 export const BackerCard = memo(function BackerCard({ backer }: { readonly backer: Backer }) {
   const t = useT();
   const locale = useLocale();
   const surface = useSurface();
-  const failed = backer.state === 'CHARGE_FAILED';
 
   return (
     <View
@@ -74,10 +72,7 @@ export const BackerCard = memo(function BackerCard({ backer }: { readonly backer
           <View style={styles.meta}>
             <Meta>{rewardOf(backer, t)}</Meta>
             <Meta>·</Meta>
-            <View style={styles.inline}>
-              {failed ? <Icon icon={Glyphs.Danger} size={14} color={colors.danger} /> : null}
-              <Meta tone={failed ? 'primary' : 'tertiary'}>{t(`dashboard.states.${backer.state}`)}</Meta>
-            </View>
+            <Meta>{t(`dashboard.states.${backer.state}`)}</Meta>
             <Meta>·</Meta>
             <Meta>{backer.country ?? t('dashboard.charts.noDestination')}</Meta>
             <Meta>·</Meta>

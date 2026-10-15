@@ -284,7 +284,7 @@ describe('useCheckout — payment hand-off', () => {
     expect(api.payForPledge.mock.calls.map((call) => call[2])).toEqual(['key-2', 'key-2']);
   });
 
-  it.each(['COLLECTED', 'CHARGE_PENDING', 'CHARGE_FAILED'] as const)(
+  it.each(['COLLECTED', 'EXPIRED'] as const)(
     'a dismissed browser on a %s pledge goes to the pledge as returned',
     async (state) => {
       api.payForPledge.mockResolvedValue({ pledgeId: 'pl-1', providerTransactionId: 't', redirectUrl: 'https://pay/x' });

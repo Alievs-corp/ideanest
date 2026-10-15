@@ -129,7 +129,7 @@ describe('PledgeListScreen', () => {
     expect(screen.getByTestId('pledge-card-b')).toBeTruthy();
   });
 
-  it('labels every one of the twelve states from the catalogue, with its tags', async () => {
+  it('labels every one of the eight states from the catalogue, with its tags', async () => {
     api.listMyPledges.mockResolvedValueOnce({
       items: STATES.map((state, index) =>
         summary(state, { state, isAnonymous: index === 0 }),
@@ -148,14 +148,14 @@ describe('PledgeListScreen', () => {
 
   it('pairs each state with an icon, so the tone is never colour alone', async () => {
     api.listMyPledges.mockResolvedValueOnce({
-      items: [summary('paid'), summary('failed', { state: 'CHARGE_FAILED' }), summary('draft', { state: 'DRAFT' })],
+      items: [summary('paid'), summary('refunded', { state: 'REFUNDED' }), summary('draft', { state: 'DRAFT' })],
       nextCursor: null,
     });
     await show();
 
     const hidden = { includeHiddenElements: true };
     expect(within(screen.getByTestId('pledge-card-paid')).getByTestId('icon-TickCircle', hidden)).toBeTruthy();
-    expect(within(screen.getByTestId('pledge-card-failed')).getByTestId('icon-Warning2', hidden)).toBeTruthy();
+    expect(within(screen.getByTestId('pledge-card-refunded')).getByTestId('icon-InfoCircle', hidden)).toBeTruthy();
     expect(within(screen.getByTestId('pledge-card-draft')).getByTestId('icon-Clock', hidden)).toBeTruthy();
   });
 

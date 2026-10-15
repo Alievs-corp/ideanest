@@ -6,7 +6,7 @@ export type PaymentReturnHint = 'returned' | 'failed';
 export const PAYMENT_CHECKS = 20;
 export const PAYMENT_CHECK_INTERVAL_MS = 3000;
 
-const EDITABLE: ReadonlySet<string> = new Set(['DRAFT', 'CONFIRMED']);
+const EDITABLE: ReadonlySet<string> = new Set(['DRAFT']);
 
 export function isEditable(state: string): boolean {
   return EDITABLE.has(state);
@@ -20,12 +20,10 @@ export function isDisputable(state: string): boolean {
   return state === 'COLLECTED';
 }
 
-export type PledgeTone = 'default' | 'success' | 'warning' | 'danger';
+export type PledgeTone = 'default' | 'success' | 'warning';
 
 const TONES: Readonly<Record<string, PledgeTone>> = {
   DRAFT: 'warning',
-  CHARGE_PENDING: 'warning',
-  CHARGE_FAILED: 'danger',
   COLLECTED: 'success',
   FULFILLED: 'success',
 };

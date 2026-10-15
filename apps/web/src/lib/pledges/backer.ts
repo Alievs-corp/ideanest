@@ -164,7 +164,7 @@ export function pledgeHref(pledgeId: string): string {
 }
 
 /*
- * The twelve states of §6.2 used to be a table here, in English — #81.
+ * The eight states of §6.2 used to be a table here, in English — #81.
  *
  * They are `account.pledges.states` in the catalogue now, resolved by the route and handed
  * to the panel that draws them. A module-level constant is evaluated before any request
