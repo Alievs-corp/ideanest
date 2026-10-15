@@ -88,12 +88,19 @@ export function Tag({ label, variant = 'default', icon, testID }: TagProps) {
     resolved !== 'onWhite' &&
     resolved !== 'urgent';
   // On lime or white a status colour is illegible as text; the surface's own ink is not.
-  const words = status && surface !== 'dark' ? TONES[surface].primary : skin.text;
+  const onAccent = surface === 'accent' && resolved !== 'urgent';
+  const words = onAccent
+    ? colors.textPrimary
+    : status && surface !== 'dark'
+      ? TONES[surface].primary
+      : skin.text;
+  const glyph = onAccent && !status ? colors.textPrimary : skin.text;
+  const background = onAccent ? TONES.accent.primary : skin.background;
 
   return (
     <View style={styles.hug}>
-      <View style={[styles.tag, { backgroundColor: skin.background }]} testID={testID}>
-        {icon === undefined ? null : <Icon icon={icon} size={12} color={skin.text} />}
+      <View style={[styles.tag, { backgroundColor: background }]} testID={testID}>
+        {icon === undefined ? null : <Icon icon={icon} size={12} color={glyph} />}
         <Text style={[styles.label, { color: words }]} numberOfLines={1}>
           {label}
         </Text>

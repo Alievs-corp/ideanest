@@ -525,15 +525,16 @@ Hover-only would make it unreachable without a pointer.
   color: rgb(10 10 10 / 0.72);
 }
 .tag--on-accent {
-  background: rgb(10 10 10 / 0.10);
-  color: var(--text-on-accent);
+  background: var(--text-on-accent);
+  color: var(--text-primary);
 }
 ```
 
 > Inside a lime card the default tag is invisible — dark on dark. Use the
 > black-tint variant. On a sun, mint or sky card use `onAccent`: a status
 > colour is illegible there too (`--success` on mint is 1.1:1), so the icon and
-> the word carry the status.
+> the word carry the status. The tag is a solid near-black pill with white
+> words, so it stands apart from the accent rather than sinking into it.
 
 ### 7.6 Avatar and avatar group
 

@@ -75,9 +75,12 @@ describe('the status badge', () => {
     await renderCard({ ...LIVE, badge: 'successful', state: 'FUNDED' });
     const icon = screen.getByTestId('icon-TickCircle', { includeHiddenElements: true });
     expect(icon.props.color).toBe(colors.success);
-    // On the accent the word takes the accent's ink: green text on sun or mint is unreadable.
+    // On the accent a tag is a near-black pill with white words, set apart from the card.
     const words = StyleSheet.flatten(screen.getByText('Successful').props.style).color;
-    expect(words).toBe(TONES.accent.primary);
+    expect(words).toBe(colors.textPrimary);
+    expect(StyleSheet.flatten(screen.getByText('Successful').parent?.props.style).backgroundColor).toBe(
+      TONES.accent.primary,
+    );
     expect([icon.props.color, words]).not.toContain(colors.lime500);
   });
 
@@ -97,13 +100,13 @@ describe('the Extended and Closing soon tags', () => {
     expect(screen.getByText('Extended')).toBeTruthy();
   });
 
-  it('adds Closing soon in the warning colour, its words in the accent ink', async () => {
+  it('adds Closing soon with a warning-coloured icon and white words on a near-black pill', async () => {
     await renderCard({ ...LIVE, closingSoon: true });
     expect(screen.getByTestId('icon-Timer1', { includeHiddenElements: true }).props.color).toBe(
       colors.warning,
     );
     expect(StyleSheet.flatten(screen.getByText('Closing soon').props.style).color).toBe(
-      TONES.accent.primary,
+      colors.textPrimary,
     );
   });
 
