@@ -43,16 +43,19 @@ public class PayoutGateway {
     private final RefundRepository refunds;
     private final PaymentProviders providers;
     private final PayoutPostings postings;
+    private final ProviderCircuitBreaker breaker;
 
     public PayoutGateway(
             PaymentTransactionRepository transactions,
             RefundRepository refunds,
             PaymentProviders providers,
-            PayoutPostings postings) {
+            PayoutPostings postings,
+            ProviderCircuitBreaker breaker) {
         this.transactions = transactions;
         this.refunds = refunds;
         this.providers = providers;
         this.postings = postings;
+        this.breaker = breaker;
     }
 
     /**
@@ -133,10 +136,12 @@ public class PayoutGateway {
 
         PaymentProvider provider = providers.primary().orElseThrow(NoPayoutProviderException::new);
 
+        // Counted by the breaker but not refused by it: an unreachable answer below makes the send
+        // unconfirmed, which a payout nobody sent is not.
         PayoutResult result;
         try {
-            result = provider.payout(
-                    new PayoutRequest(payoutId, creatorId, figures.net(), destinationReference, idempotencyKey));
+            result = breaker.call(provider.name(), () -> provider.payout(
+                    new PayoutRequest(payoutId, creatorId, figures.net(), destinationReference, idempotencyKey)));
         } catch (ProviderUnavailableException e) {
             // No transaction row: nothing the provider said reached us to record. The payout
             // stays approved with its send unconfirmed (#184's review) and is retried only

@@ -49,6 +49,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  *   <li><strong>Pending, or not answered</strong>, goes to the back of the queue
  *       ({@code hosted_charge_checks}) and is asked again on a later pass, until {@code asked-for}
  *       after it was opened. A page abandoned unpaid stays pending at some providers for ever.
+ *       A provider whose {@link ProviderCircuitBreaker} is open is not asked, and counts as not
+ *       answered.
  *   <li><strong>Plan pages too</strong> (#449). A creator who paid for a period and was never told
  *       is the same failure, so {@code subscription_charges} is asked about on the same pass, with
  *       the same window, and settled through {@link SubscriptionChargeEvents}.
@@ -68,6 +70,7 @@ public class HostedChargeSweepJob implements ScheduledJob {
     private final HostedChargeMetrics metrics;
     private final PaymentProperties.HostedCharges properties;
     private final TransactionTemplate transaction;
+    private final ProviderCircuitBreaker breaker;
     private final Clock clock;
 
     public HostedChargeSweepJob(
@@ -80,6 +83,7 @@ public class HostedChargeSweepJob implements ScheduledJob {
             HostedChargeMetrics metrics,
             PaymentProperties properties,
             PlatformTransactionManager transactionManager,
+            ProviderCircuitBreaker breaker,
             Clock clock) {
         this.transactions = transactions;
         this.checks = checks;
@@ -91,6 +95,7 @@ public class HostedChargeSweepJob implements ScheduledJob {
         this.properties = properties.hostedCharges();
         this.transaction = new TransactionTemplate(transactionManager);
         this.transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.breaker = breaker;
         this.clock = clock;
     }
 
@@ -174,13 +179,13 @@ public class HostedChargeSweepJob implements ScheduledJob {
     private boolean settlePlan(SubscriptionCharge pending, Instant now) {
         String reference = pending.getProviderTransactionId();
         Optional<PaymentProvider> provider = providers.byName(pending.getProvider());
-        if (provider.isEmpty()) {
+        if (provider.isEmpty() || !breaker.isAvailable(pending.getProvider())) {
             markChecked(pending, now);
             return false;
         }
         PaymentLookup lookup;
         try {
-            lookup = provider.get().lookUpPayment(reference);
+            lookup = breaker.call(pending.getProvider(), () -> provider.get().lookUpPayment(reference));
         } catch (UnsupportedOperationException | ProviderUnavailableException e) {
             log.info("hosted-charge-sweep: plan payment {} stays pending: {}", reference, e.getMessage());
             markChecked(pending, now);
@@ -230,10 +235,14 @@ public class HostedChargeSweepJob implements ScheduledJob {
             checks.checked(pending.getId(), now, State.UNANSWERED);
             return false;
         }
+        if (!breaker.isAvailable(pending.getProvider())) {
+            checks.checked(pending.getId(), now, State.UNANSWERED);
+            return false;
+        }
 
         PaymentLookup lookup;
         try {
-            lookup = provider.get().lookUpPayment(reference);
+            lookup = breaker.call(pending.getProvider(), () -> provider.get().lookUpPayment(reference));
         } catch (UnsupportedOperationException | ProviderUnavailableException e) {
             log.info("hosted-charge-sweep: payment {} stays pending: {}", reference, e.getMessage());
             checks.checked(pending.getId(), now, State.UNANSWERED);

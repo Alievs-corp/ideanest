@@ -3,9 +3,11 @@ package az.ideanest.payment;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.payment.application.HostedChargeSweepJob;
+import az.ideanest.payment.application.PaymentProviderStatus;
 import az.ideanest.payment.domain.HostedPaymentRequest;
 import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.shared.EmailAddress;
+import az.ideanest.shared.observability.ProviderStatusSource.ProviderStatus;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.PaymentRows;
@@ -78,6 +80,9 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private MeterRegistry meters;
+
+    @Autowired
+    private PaymentProviderStatus providerStatus;
 
     /**
      * The deliveries this suite made. ProviderWebhookApiTests reads that table as its own, and a row
@@ -276,6 +281,33 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
 
         assertThat(lastCheck(charge)).containsExactly("UNANSWERED");
         assertThat(attention("unanswered")).isGreaterThanOrEqualTo(1d);
+    }
+
+    @Test
+    @DisplayName("#470: a provider that stops answering opens the breaker, and the next page is refused without asking it")
+    void anOpenBreakerRefusesThePageWithoutAskingTheProvider() {
+        Checkout checkout = aDraft("hosted-breaker");
+        provider.willRefuseHostedPayments();
+        try {
+            // The test profile's threshold is two.
+            for (int attempt = 0; attempt < 2; attempt++) {
+                ResponseEntity<Map<String, Object>> refused = pay(checkout, UUID.randomUUID().toString());
+                assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            }
+            assertThat(azericard().available()).as("reported out of service").isFalse();
+            assertThat(azericard().configured()).isTrue();
+
+            provider.willOpenHostedPayments();
+            int asked = provider.hostedPayments().size();
+            ResponseEntity<Map<String, Object>> refused = pay(checkout, UUID.randomUUID().toString());
+
+            assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            assertThat(refused.getBody()).containsEntry("code", "PAYMENT_UNAVAILABLE");
+            assertThat(provider.hostedPayments()).as("the provider was not asked").hasSize(asked);
+            assertThat(charges(checkout.pledgeId())).isEmpty();
+        } finally {
+            provider.willOpenHostedPayments();
+        }
     }
 
     @Test
@@ -507,6 +539,13 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
     private List<String> lastCheck(UUID charge) {
         return jdbc().queryForList(
                 "SELECT last_state FROM hosted_charge_checks WHERE transaction_id = ?", String.class, charge);
+    }
+
+    private ProviderStatus azericard() {
+        return providerStatus.providerStatuses().stream()
+                .filter(status -> status.name().equals("AZERICARD"))
+                .findFirst()
+                .orElseThrow();
     }
 
     private double swept(String outcome) {

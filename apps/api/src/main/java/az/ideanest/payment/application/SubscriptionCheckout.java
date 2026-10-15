@@ -40,6 +40,7 @@ public class SubscriptionCheckout {
     private final SubscriptionChargeRepository charges;
     private final ReturnUrls returnUrls;
     private final PaymentProperties.HostedCharges properties;
+    private final ProviderCircuitBreaker breaker;
     private final Clock clock;
 
     public SubscriptionCheckout(
@@ -47,11 +48,13 @@ public class SubscriptionCheckout {
             SubscriptionChargeRepository charges,
             ReturnUrls returnUrls,
             PaymentProperties properties,
+            ProviderCircuitBreaker breaker,
             Clock clock) {
         this.providers = providers;
         this.charges = charges;
         this.returnUrls = returnUrls;
         this.properties = properties.hostedCharges();
+        this.breaker = breaker;
         this.clock = clock;
     }
 
@@ -78,18 +81,21 @@ public class SubscriptionCheckout {
         PaymentProvider provider = providers
                 .primary()
                 .orElseThrow(() -> new SubscriptionCheckoutUnavailableException("No payment provider is configured."));
+        if (!breaker.isAvailable(provider.name())) {
+            throw new SubscriptionCheckoutUnavailableException("The circuit breaker for " + provider.name() + " is open.");
+        }
 
         UUID chargeId = Identifiers.newIdentifier();
         HostedPaymentSession session;
         try {
-            session = provider.beginHostedPayment(new HostedPaymentRequest(
+            session = breaker.call(provider.name(), () -> provider.beginHostedPayment(new HostedPaymentRequest(
                     chargeId,
                     request.amount(),
                     description(request),
                     language,
                     successUrl,
                     errorUrl,
-                    chargeId.toString()));
+                    chargeId.toString())));
         } catch (UnsupportedOperationException e) {
             throw new SubscriptionCheckoutUnavailableException(
                     provider.name() + " does not take payments on a hosted page.", e);

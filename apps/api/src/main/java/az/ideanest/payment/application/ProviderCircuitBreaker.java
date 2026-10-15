@@ -2,58 +2,63 @@ package az.ideanest.payment.application;
 
 import az.ideanest.payment.PaymentProperties;
 import az.ideanest.payment.domain.ProviderName;
+import az.ideanest.payment.domain.ProviderUnavailableException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
  * §9.3's warning, made operational: stop asking a provider that has stopped answering
- * (#64).
+ * (#64, fed by the live calls since #470).
  *
  * <p>"If the primary is unavailable on the day a large campaign closes, the entire
  * business stops." The answer to that is a second provider, which is #61's interface
  * and an adapter nobody has written. <strong>This is not that answer</strong>, and it
  * is worth saying so plainly rather than letting the name imply otherwise. What it does
- * is bound the damage of an outage: a campaign with four thousand pledges would
- * otherwise spend every pass rediscovering the same failure a hundred times, producing
- * a hundred rows in {@code transactions}, a hundred lines in the log, and a hundred
- * requests at a provider that is already struggling.
+ * is bound the damage of an outage: a backer is told at once that payments are down
+ * rather than after a timeout, the sweeps stop asking about every pending page and
+ * refund in turn, and the health screen ({@link PaymentProviderStatus}) says the
+ * provider is out rather than that every configured one is up.
+ *
+ * <h2>Who feeds it</h2>
+ *
+ * <p>Every provider call in this package goes through {@link #call}: the payment pages
+ * for a pledge and for a plan, the payout card page, refunds, the sweeps' look-ups and
+ * payouts. All but the payout also ask {@link #isAvailable} first and, when it is open,
+ * take the path they already had for an unreachable provider. A payout does not: that
+ * path records a send that may have happened, which a refusal here is not.
  *
  * <h2>Only unavailability counts</h2>
  *
- * <p>A decline never opens the breaker. §9.6 puts collection failure at 5–15% of
- * pledges, so a breaker that counted declines would open on a perfectly healthy
- * campaign and stop collecting the other 85%. What counts is
- * {@code ProviderUnavailableException}: the platform could not ask, which is a
- * statement about the provider rather than about anybody's card.
+ * <p>A decline never opens the breaker. Declines are an ordinary share of card
+ * payments, so a breaker that counted them would open on a perfectly healthy day.
+ * What counts is {@code ProviderUnavailableException}: the platform could not ask,
+ * which is a statement about the provider rather than about anybody's card.
  *
  * <h2>Per replica, in memory, and that is a real bound</h2>
  *
  * <p>There is no shared state here: each replica counts its own failures and opens its
  * own breaker. A fleet of three therefore makes up to three times the threshold before
  * every replica has stopped, and a replica that restarts starts counting again. Both
- * are accepted rather than solved, because the alternatives cost more than they save —
- * a row in PostgreSQL means a write on every provider call, and the collection is
- * already claimed one pledge at a time by a job that runs once across the fleet, so in
- * practice one replica is doing the charging and the divergence is theoretical.
+ * are accepted rather than solved: a row in PostgreSQL would mean a write on every
+ * provider call to save a handful of failed ones.
  *
  * <p>The state is also deliberately not durable. A breaker that survived a restart
- * would mean a deploy during an outage came up already refusing to collect, with
+ * would mean a deploy during an outage came up already refusing payments, with
  * nothing in the new process's logs to say why.
  *
  * <h2>Half-open is one call, not a state</h2>
  *
- * <p>When the cooldown elapses the breaker simply closes and the next pass tries. There
- * is no probe and no half-open counter, because the caller is a job that runs every
- * minute against a queue it can re-read: the "probe" is the next pledge, and if the
- * provider is still down the breaker opens again after the threshold. A half-open state
- * would be machinery for deciding when to try, in a component whose caller already has
- * a schedule.
+ * <p>When the cooldown elapses the breaker simply closes and the next call tries. There
+ * is no probe and no half-open counter: the "probe" is the next backer or the next
+ * sweep pass, and if the provider is still down the breaker opens again after the
+ * threshold.
  */
 @Component
 public class ProviderCircuitBreaker {
@@ -79,7 +84,7 @@ public class ProviderCircuitBreaker {
     /**
      * Whether the platform should ask this provider anything at all right now.
      *
-     * <p>Asked once per charge rather than once per pass, so that a breaker which opens
+     * <p>Asked once per call rather than once per pass, so that a breaker which opens
      * part-way through a batch stops the rest of it.
      */
     public boolean isAvailable(ProviderName provider) {
@@ -91,12 +96,31 @@ public class ProviderCircuitBreaker {
             return false;
         }
         // The cooldown has elapsed. Closing here rather than in a timer means the breaker
-        // costs nothing while nobody is collecting, and it means the state is only ever
+        // costs nothing while nobody is paying, and it means the state is only ever
         // changed by a thread that is about to make a call.
         openUntil.remove(provider);
         consecutiveFailures.remove(provider);
-        log.info("The circuit breaker for {} has closed; collection will be attempted again.", provider);
+        log.info("The circuit breaker for {} has closed; it will be asked again.", provider);
         return true;
+    }
+
+    /**
+     * One call to a provider, counted: any answer is {@link #recordAnswered}, and
+     * {@code ProviderUnavailableException} is {@link #recordUnavailable} and rethrown.
+     *
+     * <p>Anything else the call throws, such as a provider that does not offer it, says
+     * nothing about whether the provider is up and is not counted.
+     */
+    public <T> T call(ProviderName provider, Supplier<T> request) {
+        T answer;
+        try {
+            answer = request.get();
+        } catch (ProviderUnavailableException e) {
+            recordUnavailable(provider);
+            throw e;
+        }
+        recordAnswered(provider);
+        return answer;
     }
 
     /**
@@ -132,7 +156,7 @@ public class ProviderCircuitBreaker {
         if (opened) {
             log.error(
                     "The circuit breaker for {} has opened after {} consecutive failures; "
-                            + "collection stops until {}.",
+                            + "it is not asked again until {}.",
                     provider,
                     failures,
                     until);

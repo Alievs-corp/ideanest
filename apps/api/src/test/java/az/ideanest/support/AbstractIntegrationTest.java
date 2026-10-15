@@ -1,5 +1,8 @@
 package az.ideanest.support;
 
+import az.ideanest.payment.application.ProviderCircuitBreaker;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -28,6 +31,18 @@ import org.springframework.test.context.DynamicPropertySource;
 @ActiveProfiles("test")
 @Import({ContainersConfiguration.class, TestDoublesConfiguration.class})
 public abstract class AbstractIntegrationTest {
+
+    @Autowired
+    private ProviderCircuitBreaker providerCircuitBreaker;
+
+    /**
+     * #470: the breaker counts every provider call, and a test that scripts an outage would
+     * otherwise leave the next class one failure from an open breaker.
+     */
+    @BeforeEach
+    void closeTheProviderCircuitBreaker() {
+        providerCircuitBreaker.reset();
+    }
 
     /**
      * Points the identity providers at the local stub.
