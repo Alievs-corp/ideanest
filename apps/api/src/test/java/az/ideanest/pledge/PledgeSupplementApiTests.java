@@ -154,7 +154,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("while the campaign is running, the edit is the way to change a pledge")
+    @DisplayName("while the campaign is running, the raise is the way to change a paid pledge")
     void whileTheCampaignRunsTheEditIsTheWayToDoThis() {
         Account creator = account("sup-live");
         UUID project = project(creator);
@@ -171,7 +171,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         assertThat(refused.getBody()).containsEntry("code", "CAMPAIGN_STILL_TAKING_PLEDGES");
         assertThat(meta(refused.getBody()))
                 .as("a refusal that does not name the alternative is one a client hides a button over")
-                .containsEntry("use", "PATCH /v1/pledges/{id}");
+                .containsEntry("use", "POST /v1/pledges/{id}/raise");
     }
 
     @Test

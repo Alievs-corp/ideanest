@@ -161,7 +161,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
         Campaign campaign = liveCampaign();
         UUID tier = tier(campaign, "An early copy", "25.00");
         backer(campaign, "Aysel Mammadova", "25.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z", tier);
-        backer(campaign, "Rashad Aliyev", "40.00", "DE", "COLLECTED", "2026-03-02T10:00:00Z", null);
+        backer(campaign, "Rashad Aliyev", "40.00", "DE", "FULFILLED", "2026-03-02T10:00:00Z", null);
 
         assertThat(matchedIn(campaign, "?state=COLLECTED")).isEqualTo(1);
         assertThat(matchedIn(campaign, "?country=DE")).isEqualTo(1);
@@ -173,7 +173,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
         assertThat(matchedIn(campaign, "?q=MAMMADOVA")).isEqualTo(1);
         assertThat(matchedIn(campaign, "?q=nobody")).isZero();
         // Two axes narrow rather than widen.
-        assertThat(matchedIn(campaign, "?state=COLLECTED&country=AZ")).isZero();
+        assertThat(matchedIn(campaign, "?state=FULFILLED&country=AZ")).isZero();
     }
 
     @Test

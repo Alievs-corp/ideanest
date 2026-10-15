@@ -99,7 +99,12 @@ class RetiredPledgeStatesMigrationTests extends AbstractIntegrationTest {
         assertThat(states(committedSegment)).containsExactly("COLLECTED", "FULFILLED");
         assertThat(states(queuedSegment)).containsExactly("COLLECTED");
 
-        assertThatCode(() -> pledge(project, confirmedBacker, null, "DRAFT"))
+        assertThatCode(() -> jdbc.update(
+                        """
+                        INSERT INTO pledges (id, project_id, backer_id, state, base_amount, reservation_expires_at)
+                        VALUES (?, ?, ?, 'DRAFT', 25.00, now() + interval '5 minutes')
+                        """,
+                        UUID.randomUUID(), project, confirmedBacker))
                 .as("an expired legacy pledge no longer stops its backer pledging again")
                 .doesNotThrowAnyException();
 
