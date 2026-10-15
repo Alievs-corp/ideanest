@@ -58,7 +58,18 @@ export function HomeHero({ onBrowse, onStart }: HomeHeroProps) {
   return (
     <FadeUp index={0}>
       <View style={styles.hero}>
-        <Display accessibilityRole="header" style={styles.title}>
+        {/*
+          Two lines, as on the web: at a large system font the heading shrinks to fit them rather
+          than taking a third, and its name stays whole for a screen reader.
+        */}
+        <Display
+          accessibilityRole="header"
+          accessibilityLabel={t('title')}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.6}
+          style={styles.title}
+        >
           {t('title')}
         </Display>
         <HeroLoopCard
@@ -67,10 +78,10 @@ export function HomeHero({ onBrowse, onStart }: HomeHeroProps) {
         />
         <View style={styles.actions}>
           <View style={styles.action}>
-            <Pill label={t('browse')} size="lg" fullWidth wrap onPress={onBrowse} />
+            <Pill label={t('browse')} size="lg" fullWidth fit onPress={onBrowse} />
           </View>
           <View style={styles.action}>
-            <Pill label={t('start')} variant="outline" size="lg" fullWidth wrap onPress={onStart} />
+            <Pill label={t('start')} variant="outline" size="lg" fullWidth fit onPress={onStart} />
           </View>
         </View>
       </View>
@@ -225,13 +236,20 @@ export function HomeEmpty({ onOpenFeed }: { readonly onOpenFeed: () => void }) {
   );
 }
 
+/** The web hero's phone heading is `text-3xl`, 30px: three quarters of the display size. */
+const PHONE_TITLE = 0.75;
+
 /** An accent tile's floor: the card's own minimum, so a long name grows it rather than clips. */
 const TILE_HEIGHT = 120;
 
 const styles = StyleSheet.create({
-  hero: { gap: spacing[4], paddingTop: spacing[4] },
-  /* The web's phone heading, 30px there: the nearest step on the scale, so it takes two lines. */
-  title: { fontSize: fontSize.h1, lineHeight: lineHeight.h1, letterSpacing: tracking.h1 },
+  hero: { gap: spacing[6], paddingTop: spacing[4] },
+  /* The web's phone heading: the display style at three quarters, 30px, so it takes two lines. */
+  title: {
+    fontSize: fontSize.display * PHONE_TITLE,
+    lineHeight: Math.round(lineHeight.display * PHONE_TITLE),
+    letterSpacing: tracking.display * PHONE_TITLE,
+  },
   actions: { flexDirection: 'row', gap: spacing[2] },
   action: { flex: 1 },
   section: { gap: spacing[4] },

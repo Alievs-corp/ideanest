@@ -95,9 +95,9 @@ export function HeroLoopCard({ lines, label }: { readonly lines: HeroLines; read
       ) : null}
       <EdgeFade color={colors.surface2} height={side * FADE} />
       {moving ? (
-        lines.map((line, index) => <Line key={line} text={line} index={index} clock={clock} />)
+        lines.map((line, index) => <Line key={line} text={line} index={index} clock={clock} small={side < SMALL_CARD} />)
       ) : (
-        <StillLine text={lines[lines.length - 1] ?? ''} />
+        <StillLine text={lines[lines.length - 1] ?? ''} small={side < SMALL_CARD} />
       )}
     </View>
   );
@@ -108,13 +108,15 @@ const CYCLE_MS = HERO_LOOP_MS * 2;
 const BEATS = 4;
 /** The fade under the lines, as a share of the card's side. */
 const FADE = 0.38;
-/** The smallest card that still reads; below it the actions move under the fold instead. */
-const MIN_SIDE = 260;
+/** The smallest card, the web's: below it the actions move under the fold instead. */
+const MIN_SIDE = 304;
 /**
- * Everything on Home's first screen that is not the card: the header, the title's two lines, the
- * gaps and the actions.
+ * Everything on Home's first screen that is not the card: the header, the 30px title's two
+ * lines, the gaps and the 48px actions.
  */
-const RESERVED = 56 + spacing[4] + lineHeight.h1 * 2 + spacing[4] * 2 + spacing[12] + spacing[4];
+const RESERVED = 56 + spacing[4] + Math.round(lineHeight.display * 0.75) * 2 + spacing[6] * 2 + spacing[12] + spacing[4];
+/** Below this side the lines step down from 18 to 16, as the web card's container query does. */
+const SMALL_CARD = 320;
 
 function useCardSide(): number {
   const { width, height } = useWindowDimensions();
@@ -125,7 +127,17 @@ function useCardSide(): number {
   return Math.round(Math.min(across, Math.max(MIN_SIDE, down)));
 }
 
-function Line({ text, index, clock }: { readonly text: string; readonly index: number; readonly clock: SharedValue<number> }) {
+function Line({
+  text,
+  index,
+  clock,
+  small,
+}: {
+  readonly text: string;
+  readonly index: number;
+  readonly clock: SharedValue<number>;
+  readonly small: boolean;
+}) {
   const style = useAnimatedStyle(() => {
     const beat = (((clock.value % 1) * BEATS - index) % BEATS + BEATS) % BEATS;
     return {
@@ -137,7 +149,7 @@ function Line({ text, index, clock }: { readonly text: string; readonly index: n
     <Animated.Text
       importantForAccessibility="no"
       accessibilityElementsHidden
-      style={[styles.line, style]}
+      style={[styles.line, small && styles.lineSmall, style]}
       testID={`hero-loop-line-${index}`}
     >
       {text}
@@ -145,9 +157,14 @@ function Line({ text, index, clock }: { readonly text: string; readonly index: n
   );
 }
 
-function StillLine({ text }: { readonly text: string }) {
+function StillLine({ text, small }: { readonly text: string; readonly small: boolean }) {
   return (
-    <Animated.Text importantForAccessibility="no" accessibilityElementsHidden style={styles.line} testID="hero-loop-still">
+    <Animated.Text
+      importantForAccessibility="no"
+      accessibilityElementsHidden
+      style={[styles.line, small && styles.lineSmall]}
+      testID="hero-loop-still"
+    >
       {text}
     </Animated.Text>
   );
@@ -165,13 +182,20 @@ const styles = StyleSheet.create({
   video: { backgroundColor: 'transparent' },
   line: {
     position: 'absolute',
+    left: spacing[5],
+    right: spacing[5],
+    bottom: spacing[5],
+    ...font.semibold,
+    fontSize: fontSize.lg,
+    lineHeight: Math.round(fontSize.lg * 1.375),
+    textAlign: 'center',
+    color: colors.textPrimary,
+  },
+  lineSmall: {
     left: spacing[4],
     right: spacing[4],
     bottom: spacing[4],
-    ...font.semibold,
-    fontSize: fontSize.lg,
-    lineHeight: lineHeight.h3,
-    textAlign: 'center',
-    color: colors.textPrimary,
+    fontSize: fontSize.base,
+    lineHeight: Math.round(fontSize.base * 1.375),
   },
 });

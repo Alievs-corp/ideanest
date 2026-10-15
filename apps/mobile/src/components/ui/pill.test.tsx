@@ -2,7 +2,7 @@ import { createRef } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { StyleSheet, Text, type View } from 'react-native';
 import { Glyphs } from '../../icons';
-import { colors, size } from '../../theme';
+import { colors, fontSize, size, spacing } from '../../theme';
 import { MotionBudgetProvider } from './motion-budget';
 import { AccentScopeProvider, Pill } from './pill';
 import { SurfaceProvider } from './surface';
@@ -45,6 +45,19 @@ describe('Pill', () => {
     const text = wrapped.getByText(label, { includeHiddenElements: true });
     expect(text.props.numberOfLines).toBeUndefined();
     expect(StyleSheet.flatten(text.props.style).textAlign).toBe('center');
+  });
+
+  it('fits a paired label on one line at the web hero size, shrinking rather than breaking a word', async () => {
+    const label = 'Kampaniyalara baxın';
+    const { getByRole, getByText } = await render(<Pill label={label} size="lg" fullWidth fit onPress={noop} />);
+    const text = getByText(label, { includeHiddenElements: true });
+
+    expect(text.props.numberOfLines).toBe(1);
+    expect(text.props.adjustsFontSizeToFit).toBe(true);
+    expect(text.props.minimumFontScale).toBeGreaterThan(0.5);
+    expect(StyleSheet.flatten(text.props.style).fontSize).toBe(fontSize.sm);
+    expect(styleOf(getByRole('button')).paddingHorizontal).toBe(spacing[2]);
+    expect(styleOf(getByRole('button')).minHeight).toBe(48);
   });
 
   it('is white with near-black text when primary — the default, and not lime', async () => {
