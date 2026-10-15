@@ -11,7 +11,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
+import { Avatar, MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
 import { campaignAccent } from '@ideanest/discovery/category-look';
 import { ACCENT_SURFACE } from '../browse/accent-surface';
 import { CAMPAIGN_CARD_SIZES } from '../../lib/images/sizes';
@@ -88,10 +88,10 @@ const URGENT_DAYS = 2;
  * `live`); it is here because the record is keyed by every status, and it matches the tag below.
  */
 const BADGES: Record<DiscoveryStatus, ReactNode> = {
-  upcoming: <CalendarClock className="size-2.5" />,
-  live: <CircleDot className="size-2.5" />,
-  extended: <CalendarPlus className="size-2.5" />,
-  successful: <CircleCheck className="size-2.5" />,
+  upcoming: <CalendarClock className="size-2.5 max-sm:size-3" />,
+  live: <CircleDot className="size-2.5 max-sm:size-3" />,
+  extended: <CalendarPlus className="size-2.5 max-sm:size-3" />,
+  successful: <CircleCheck className="size-2.5 max-sm:size-3 max-sm:text-success" />,
 };
 
 /**
@@ -100,8 +100,8 @@ const BADGES: Record<DiscoveryStatus, ReactNode> = {
  * "Closing soon" is an hourglass, not lime, which stays the one "hurry" element on the card — the
  * last-48-hours countdown. Each is an icon plus a word, so colour never carries the meaning alone.
  */
-const CLOSING_SOON: ReactNode = <Hourglass className="size-2.5" />;
-const EXTENDED: ReactNode = <CalendarPlus className="size-2.5" />;
+const CLOSING_SOON: ReactNode = <Hourglass className="size-2.5 max-sm:size-3 max-sm:text-warning" />;
+const EXTENDED: ReactNode = <CalendarPlus className="size-2.5 max-sm:size-3" />;
 
 /**
  * The card's tags, one rung down from `Tag`'s own 26px / 12px (#368).
@@ -110,7 +110,8 @@ const EXTENDED: ReactNode = <CalendarPlus className="size-2.5" />;
  * scale: 22px high, 11px type — docs/ui-kit.md §5.2's `--text-2xs`, the size the kit gives a
  * badge, and the smallest it allows. The lime urgency pill below wears the same box.
  */
-const CARD_TAG = 'h-5.5 gap-1 px-2 text-[11px]';
+const CARD_TAG =
+  'h-5.5 gap-1 px-2 text-[11px] max-sm:h-auto max-sm:min-h-[26px] max-sm:rounded-full max-sm:px-2.5 max-sm:py-0.5 max-sm:text-xs';
 
 /**
  * The completion figure, read as a decimal and never as a number.
@@ -192,7 +193,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
   return (
     <article
       data-on-accent=""
-      className={`group relative flex h-full flex-col rounded-xl p-2.5 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
+      className={`group relative flex h-full flex-col rounded-xl p-2.5 max-sm:p-4 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
     >
       {/*
         HOVER LIFTS THE CARD AND LEANS INTO THE COVER (#341): a 4px rise and a 5%
@@ -247,7 +248,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         18 → 16px, body 14 → 12px, meta 12 → 11px (docs/ui-kit.md §5.2's floor), padding,
         gaps and icons one Tailwind step each. Colour, contrast and motion are unchanged.
       */}
-      <div className="flex flex-1 flex-col gap-2.5 px-1.5 pt-3.5 pb-1.5">
+      <div className="flex flex-1 flex-col gap-2.5 px-1.5 pt-3.5 pb-1.5 max-sm:gap-2 max-sm:px-0 max-sm:pt-2 max-sm:pb-0">
         <div className="flex flex-wrap items-center gap-1.5">
           {badge !== null && (
             <Tag variant="onAccent" className={CARD_TAG}>
@@ -288,13 +289,13 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               data-on-lime=""
               className={`inline-flex items-center rounded-sm bg-lime-500 font-medium text-on-lime ${CARD_TAG}`}
             >
-              <Clock aria-hidden="true" className="size-2.5" />
+              <Clock aria-hidden="true" className="size-2.5 max-sm:size-3" />
               {daysLeftLabel(days, copy, locale)}
             </span>
           )}
         </div>
 
-        <h3 className="text-base font-medium tracking-[-0.02em] break-words text-on-accent">
+        <h3 className="text-base font-medium tracking-[-0.02em] break-words text-on-accent max-sm:leading-[21px] max-sm:tracking-[-0.36px]">
           {/*
             The whole card is reachable through this one link rather than
             through three — a stretched anchor keeps the pointer target the size
@@ -309,16 +310,23 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           </Link>
         </h3>
 
-        <p className="text-xs text-on-accent/72">
-          {fillNodes(copy.by, {
-            creator: <span className="font-medium text-on-accent">{card.creator.name}</span>,
-          })}
+        <p className="text-xs text-on-accent/72 max-sm:flex max-sm:items-center max-sm:gap-2 max-sm:text-sm max-sm:leading-[21px]">
+          <span aria-hidden="true" className="hidden shrink-0 max-sm:inline-flex">
+            <Avatar name={card.creator.name} src={card.creator.avatarUrl ?? undefined} size="xs" />
+          </span>
+          <span>
+            {fillNodes(copy.by, {
+              creator: (
+                <span className="font-medium text-on-accent max-sm:font-normal">{card.creator.name}</span>
+              ),
+            })}
+          </span>
         </p>
 
         {completion !== null ? (
-          <div className="mt-auto flex flex-col gap-1.5 pt-1.5">
+          <div className="mt-auto flex flex-col gap-1.5 pt-1.5 max-sm:gap-1 max-sm:pt-1">
             <ProgressBar
-              className="h-1.25"
+              className="h-1.25 max-sm:h-1.5"
               value={
                 /*
                  * A width, not an amount. The figure a reader acts on is the
@@ -329,7 +337,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               }
               label={fillPlaceholders(copy.progressLabel, { percent })}
             />
-            <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1 text-xs">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1 text-xs max-sm:gap-x-3 max-sm:text-sm max-sm:leading-[21px]">
               <span className="font-medium text-on-accent tabular-nums">
                 {formatMoney(card.pledged)}
               </span>
@@ -343,9 +351,9 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               track: a mark at 80% would be a second meaning the bar carries in colour and
               position alone (ui-kit §9.2), and the discovery budget allows no motion to explain it.
             */}
-            <p className="text-[11px] text-on-accent/72">{copy.rule}</p>
+            <p className="text-[11px] text-on-accent/72 max-sm:text-xs max-sm:leading-[21px]">{copy.rule}</p>
             {card.goal != null && (
-              <p className="text-[11px] text-on-accent/72 tabular-nums">
+              <p className="text-[11px] text-on-accent/72 tabular-nums max-sm:text-xs max-sm:leading-[21px]">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}
               </p>
             )}
@@ -354,9 +362,9 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           <p className="mt-auto pt-1.5 text-xs text-on-accent/72">{copy.notOpen}</p>
         )}
 
-        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[11px] text-on-accent/72">
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[11px] text-on-accent/72 max-sm:gap-x-4 max-sm:text-xs max-sm:leading-[21px]">
           <span className="inline-flex items-center gap-1">
-            <Users aria-hidden="true" className="size-3" />
+            <Users aria-hidden="true" className="size-3 max-sm:size-3.5" />
             <span className="tabular-nums">
               {pluralise(locale, copy.backers, card.backersCount)}
             </span>
@@ -369,7 +377,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           */}
           {!urgent && showDays && days !== null && (
             <span className="inline-flex items-center gap-1">
-              <Clock aria-hidden="true" className="size-3" />
+              <Clock aria-hidden="true" className="size-3 max-sm:size-3.5" />
               <span className="tabular-nums">{daysLeftLabel(days, copy, locale)}</span>
             </span>
           )}

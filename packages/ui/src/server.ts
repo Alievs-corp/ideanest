@@ -35,6 +35,7 @@
 export { Card, CardTitle, CardSubtitle, CardFooter, type CardProps } from './components/Card/Card';
 export { Pill, type PillProps } from './components/Pill/Pill';
 export { Tag, type TagProps } from './components/Tag/Tag';
+export { Avatar, type AvatarProps } from './components/Avatar/Avatar';
 export { ProgressBar, type ProgressBarProps } from './components/ProgressBar/ProgressBar';
 /* Stateless, and needed by the server-rendered browse pages the public web epic added — the
    home page, the category landing pages and the search results all have a "nothing here"

@@ -301,13 +301,25 @@ describe('ProjectCard', () => {
       expect(container.querySelector('h3')).toHaveClass('text-base');
       expect(container.querySelector('h3')).not.toHaveClass('text-lg');
 
-      const sizes = [...container.querySelectorAll('[class]')].flatMap((element) =>
-        [...element.classList].filter((name) => /^text-\[\d+px\]$/.test(name)),
-      );
+      // The decorative creator avatar's initials are the kit's own `xs` size, not card type.
+      const sizes = [...container.querySelectorAll('[class]')]
+        .filter((element) => element.closest('[aria-hidden="true"]') === null)
+        .flatMap((element) => [...element.classList].filter((name) => /^text-\[\d+px\]$/.test(name)));
       expect(sizes.length).toBeGreaterThan(0);
       for (const size of sizes) {
         expect(Number(size.slice('text-['.length, -'px]'.length))).toBeGreaterThanOrEqual(11);
       }
+    });
+
+    it('matches the app card at phone width', () => {
+      const { container } = renderCard({ badge: 'live', closingSoon: true });
+      const tag = screen.getByText(/live/i).closest('span');
+
+      expect(container.querySelector('article')).toHaveClass('max-sm:p-4');
+      expect(tag).toHaveClass('max-sm:min-h-[26px]', 'max-sm:rounded-full', 'max-sm:text-xs');
+      expect(container.querySelector('h3')).toHaveClass('max-sm:leading-[21px]');
+      expect(container.querySelector('[role="progressbar"]')).toHaveClass('max-sm:h-1.5');
+      expect(container.querySelector('p span[aria-hidden="true"]')).toHaveClass('hidden', 'max-sm:inline-flex');
     });
 
     it('lets its own tag size win over the shared tag', () => {
