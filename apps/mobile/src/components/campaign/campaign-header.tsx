@@ -7,7 +7,7 @@ import { fillNodes } from '@ideanest/messages/placeholders';
 import type { CampaignPage } from '../../lib/campaign-page';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, size, spacing, tracking } from '../../theme';
-import { Body } from '../text';
+import { Body, HEADLINE_SCALE, WordFitText } from '../text';
 import { PressableScale, Tag, useFocusRing, type IconComponent, type TagVariant } from '../ui';
 
 /**
@@ -127,9 +127,9 @@ export function CampaignHeader({
       </View>
 
       <View style={styles.titleBlock}>
-        <Text accessibilityRole="header" style={styles.title} testID="campaign-title">
+        <WordFitText accessibilityRole="header" style={styles.title} testID="campaign-title">
           {campaign.title}
-        </Text>
+        </WordFitText>
         {campaign.blurb === null ? null : <Body tone="reading">{campaign.blurb}</Body>}
       </View>
 
@@ -204,9 +204,9 @@ const styles = StyleSheet.create({
   titleBlock: { gap: spacing[2] },
   title: {
     ...font.semibold,
-    fontSize: fontSize.h1,
-    lineHeight: lineHeight.h1,
-    letterSpacing: tracking.h1,
+    fontSize: fontSize.h1 * HEADLINE_SCALE,
+    lineHeight: Math.round(lineHeight.h1 * HEADLINE_SCALE),
+    letterSpacing: tracking.h1 * HEADLINE_SCALE,
     color: colors.textPrimary,
   },
   byline: {

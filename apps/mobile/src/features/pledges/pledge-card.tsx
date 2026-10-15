@@ -44,9 +44,8 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
       : pledge.confirmedAt != null
         ? t('list.confirmedAt', { time: formatDateTime(pledge.confirmedAt, locale) })
         : null;
-  const byline = [creator == null ? null : t('list.byCreator', { creator }), moment]
-    .filter((part): part is string => part !== null)
-    .join(' · ');
+  const byline = creator == null ? null : t('list.byCreator', { creator });
+  const details = [byline, moment].filter((part): part is string => part !== null);
   const id = pledge.pledgeId;
   const refundPending = pledge.refundAwaitingBankTransfer != null;
 
@@ -62,7 +61,7 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
         refundPending ? t('list.refundPending') : null,
         note === null ? null : t(`list.${note}`),
         pledge.rewardTitle ?? t('list.noReward'),
-        byline === '' ? null : byline,
+        ...details,
       ]
         .filter((part): part is string => part !== null)
         .join(', ')}
@@ -77,20 +76,36 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
           <Avatar name={title} src={pledge.project?.coverImage?.url} decorative />
           <View style={styles.text}>
             <CardTitle numberOfLines={2}>{title}</CardTitle>
-            <Body numberOfLines={2}>{pledge.rewardTitle ?? t('list.noReward')}</Body>
-            {byline === '' ? null : <Meta tone="tertiary">{byline}</Meta>}
-          </View>
-          <View style={styles.amount}>
-            <CardTitle style={styles.total}>{total}</CardTitle>
-            {note === null ? null : <Meta tone="tertiary">{t(`list.${note}`)}</Meta>}
+            <Body numberOfLines={1}>{pledge.rewardTitle ?? t('list.noReward')}</Body>
           </View>
         </View>
-        <View style={styles.tags}>
-          <Tag label={stateLabel} variant={tone} icon={STATE_ICON[tone]} />
-          {pledge.isAnonymous === true ? <Tag label={t('anonymous')} icon={Glyphs.EyeSlash} /> : null}
-          {refundPending ? (
-            <Tag label={t('list.refundPending')} variant="warning" icon={Glyphs.MoneyRecive} />
-          ) : null}
+        {details.length === 0 ? null : (
+          <View style={styles.details}>
+            {details.map((line) => (
+              <Meta key={line} tone="tertiary" numberOfLines={2}>
+                {line}
+              </Meta>
+            ))}
+          </View>
+        )}
+        <View style={styles.footer}>
+          <View style={styles.tags}>
+            <Tag label={stateLabel} variant={tone} icon={STATE_ICON[tone]} />
+            {pledge.isAnonymous === true ? <Tag label={t('anonymous')} icon={Glyphs.EyeSlash} /> : null}
+            {refundPending ? (
+              <Tag label={t('list.refundPending')} variant="warning" icon={Glyphs.MoneyRecive} />
+            ) : null}
+          </View>
+          <View style={styles.amount}>
+            <CardTitle numberOfLines={1} style={styles.total}>
+              {total}
+            </CardTitle>
+            {note === null ? null : (
+              <Meta tone="tertiary" numberOfLines={1}>
+                {t(`list.${note}`)}
+              </Meta>
+            )}
+          </View>
         </View>
       </View>
     </Card>
@@ -99,9 +114,11 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
 
 const styles = StyleSheet.create({
   inner: { gap: spacing[3] },
-  top: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3] },
+  top: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   text: { flex: 1, gap: spacing[1] },
-  amount: { alignItems: 'flex-end', gap: spacing[1], flexShrink: 0, maxWidth: '40%' },
+  details: { gap: spacing[1] },
+  footer: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: spacing[3] },
+  tags: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
+  amount: { alignItems: 'flex-end', gap: spacing[1], flexShrink: 0 },
   total: { fontVariant: ['tabular-nums'] },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
 });

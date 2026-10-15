@@ -36,6 +36,7 @@ import {
 } from './api';
 import { AvatarField } from './avatar-field';
 import {
+  carryEdits,
   characterCount,
   draftFrom,
   editFrom,
@@ -85,6 +86,7 @@ function ProfileEditor() {
     queryKey: queryKeys.ownProfile(),
     queryFn: ({ signal }) => readOwnProfile(signal),
     enabled: signedIn,
+    refetchOnMount: 'always',
   });
   // A second read whose failure is not this screen's: the picker becomes a sentence.
   const locations = useQuery({
@@ -94,8 +96,10 @@ function ProfileEditor() {
     staleTime: 60 * 60_000,
   });
 
-  const [baseline, setBaseline] = useState<OwnProfile | null>(null);
-  const [draft, setDraft] = useState<ProfileDraft | null>(null);
+  const [baseline, setBaseline] = useState<OwnProfile | null>(() => query.data ?? null);
+  const [draft, setDraft] = useState<ProfileDraft | null>(() =>
+    query.data === undefined ? null : draftFrom(query.data),
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -103,22 +107,18 @@ function ProfileEditor() {
   const inFlight = useRef(false);
 
   /*
-   * Only a read made since this screen opened seeds the form: the cache can be days old, and a
-   * save of `socialLinks` replaces the whole list, so a stale baseline would delete a link added
-   * on the web. Offline (the read paused) the cached copy is shown, read-only.
+   * The cached copy is shown at once and a fresh read always follows (`refetchOnMount`): the cache
+   * can be days old, and a save of `socialLinks` replaces the whole list, so Save waits for the
+   * fresh read. An edit made meanwhile is carried onto the fresh answer, not dropped.
    */
-  const ready =
-    query.data !== undefined && (query.isFetchedAfterMount || query.fetchStatus === 'paused');
+  const ready = query.data !== undefined;
   const cachedOnly = !query.isFetchedAfterMount;
 
   useEffect(() => {
     if (!ready || query.data === undefined || query.data === baseline) return;
-    // A newer answer replaces the form only while nothing in it has been changed.
-    const untouched =
-      baseline === null || draft === null || Object.keys(editFrom(baseline, draft)).length === 0;
-    if (!untouched) return;
+    const fresh = draftFrom(query.data);
     setBaseline(query.data);
-    setDraft(draftFrom(query.data));
+    setDraft(baseline === null || draft === null ? fresh : carryEdits(draftFrom(baseline), draft, fresh));
   }, [ready, query.data, baseline, draft]);
 
   const savedWords =
@@ -174,7 +174,7 @@ function ProfileEditor() {
   }
 
   const profile = baseline;
-  const readOnly = saving || !online || cachedOnly;
+  const readOnly = saving || !online || query.fetchStatus === 'paused';
   const address = profilePath(profile.slug);
   const profileHref = { pathname: '/u/[slug]', params: { slug: profile.slug } } as const;
 
@@ -384,7 +384,7 @@ function ProfileEditor() {
           <Pill
             label={saving ? t('saving') : t('save')}
             busy={saving}
-            disabled={readOnly}
+            disabled={readOnly || cachedOnly}
             onPress={() => void submit()}
             testID="profile-save"
           />

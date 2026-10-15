@@ -259,7 +259,7 @@ describe('TextInput', () => {
     const input = getByLabelText('Title');
     expect(frameOf(input)).toMatchObject({
       backgroundColor: colors.whiteMuted,
-      borderColor: tint(colors.black, 0.08),
+      borderColor: tint(colors.black, 0.24),
       borderRadius: radius.lg,
     });
     expect(flat(input).color).toBe(colors.textOnWhite);
@@ -274,7 +274,7 @@ describe('TextInput', () => {
     );
     await fireEvent(getByLabelText('Title'), 'focus');
     expect(frameOf(getByLabelText('Title'))).toMatchObject({
-      borderColor: tint(colors.black, 0.16),
+      borderColor: tint(colors.black, 0.48),
       outlineColor: colors.textOnWhite,
       outlineWidth: 2,
     });

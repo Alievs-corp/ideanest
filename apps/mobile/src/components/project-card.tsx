@@ -209,6 +209,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
         onFocus={ring.onFocus}
         onBlur={ring.onBlur}
         onPress={shared.launch}
+        style={styles.frame}
         contentStyle={[styles.target, ring.ring]}
         testID="campaign-card"
       >
@@ -328,6 +329,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
 }
 
 const styles = StyleSheet.create({
+  frame: { width: '90%', alignSelf: 'center' },
   // The focus ring follows the accent card's corners.
   target: { borderRadius: radius.xl },
   cover: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },

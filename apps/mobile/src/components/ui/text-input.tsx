@@ -72,11 +72,11 @@ const DARK_TONES: InputTones = {
   icon: TONES.dark.tertiary,
 };
 
-/** The dark row's hairlines, mirrored: the same 8% and 16% of near-black over white. */
+/** Near-black over white, strong enough that an empty field still reads as a field on `whiteMuted`. */
 const WHITE_TONES: InputTones = {
   fill: colors.whiteMuted,
-  border: tint(colors.black, 0.08),
-  borderFocused: tint(colors.black, 0.16),
+  border: tint(colors.black, 0.24),
+  borderFocused: tint(colors.black, 0.48),
   text: TONES.white.primary,
   placeholder: TONES.white.tertiary,
   icon: TONES.white.tertiary,
