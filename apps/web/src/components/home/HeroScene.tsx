@@ -1,3 +1,4 @@
+import { HERO_LOOP } from '@ideanest/messages/hero-loop';
 import { HeroLoop } from './HeroLoop';
 
 /**
@@ -8,7 +9,7 @@ import { HeroLoop } from './HeroLoop';
  *
  * The picture is `HeroSceneDrawing`, rendered frame by frame into three silent 6.4 s loops: a
  * 1200 × 1080 one for a desktop, 960 × 864 for a tablet and a 720 × 720 square for a phone,
- * 165 to 300 KB each in H.264. As live CSS it was about sixty compositor animations, which held
+ * 165 to 300 KB each in H.264, served from the media bucket (`@ideanest/messages/hero-loop`). As live CSS it was about sixty compositor animations, which held
  * a laptop's frame rate and fell to about 25 frames a second under a 4× CPU slowdown — a
  * phone. A video is decoded by the phone's own hardware.
  *
@@ -16,18 +17,11 @@ import { HeroLoop } from './HeroLoop';
  * say the same thing as text.
  */
 
-const BASE = '/hero/v1';
-
-const LOOP = {
-  desktop: `${BASE}/hero-scene-desktop.mp4`,
-  tablet: `${BASE}/hero-scene-tablet.mp4`,
-  phone: `${BASE}/hero-scene-phone.mp4`,
-  desktopPoster: `${BASE}/hero-scene-desktop.webp`,
-  phonePoster: `${BASE}/hero-scene-phone.webp`,
-} as const;
-
-const WIDE_SOURCES = [{ media: '(min-width: 1280px)', src: LOOP.desktop }, { src: LOOP.tablet }] as const;
-const PHONE_SOURCES = [{ src: LOOP.phone }] as const;
+const WIDE_SOURCES = [
+  { media: '(min-width: 1280px)', src: HERO_LOOP.desktop.url },
+  { src: HERO_LOOP.tablet.url },
+] as const;
+const PHONE_SOURCES = [{ src: HERO_LOOP.phone.url }] as const;
 
 /** One informational line on the phone card every 3.2 s; `hero-line` is written for four. */
 const BEAT = 3.2;
@@ -44,7 +38,7 @@ export function HeroScene({ caption }: { readonly caption: string }) {
       >
         <HeroLoop
           sources={WIDE_SOURCES}
-          poster={LOOP.desktopPoster}
+          poster={HERO_LOOP.desktop.posterUrl}
           className="absolute top-0 left-1/2 aspect-[10/9] h-full w-auto max-w-none -translate-x-1/2 object-cover"
         />
       </div>
@@ -68,7 +62,7 @@ export function HeroPhoneScene({ lines }: { readonly lines: PhoneLines }) {
       className="@container relative mx-auto aspect-square w-[clamp(304px,calc((100svh-420px)*1.38),100%)] max-w-[420px] overflow-hidden rounded-xl border border-white/8 bg-surface-2"
       data-testid="hero-phone-scene"
     >
-      <HeroLoop sources={PHONE_SOURCES} poster={LOOP.phonePoster} className="absolute inset-0 size-full object-cover" />
+      <HeroLoop sources={PHONE_SOURCES} poster={HERO_LOOP.phone.posterUrl} className="absolute inset-0 size-full object-cover" />
       <div className="absolute inset-x-0 bottom-0 h-[38%] bg-linear-to-t from-surface-2 from-35% to-transparent" />
       {lines.map((line, index) => (
         <p

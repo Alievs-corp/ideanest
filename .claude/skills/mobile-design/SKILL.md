@@ -165,6 +165,7 @@ Each has one kit primitive; build the primitive, never a one-off. Recipes and ti
 | Swipe to confirm | `SwipeToConfirm` | Final money confirmation |
 | Radial success reveal + check draw | `SuccessReveal` | After a confirmed pledge / created campaign |
 | Skeleton → content crossfade | `Skeleton` | Loading |
+| Ambient scene loop: a silent pre-rendered video with lines rising in and out over it, paused off focus, poster under Reduce Motion | `HeroLoopCard` | Home hero only (#490) |
 
 A new pattern is a change to this skill, made in its own PR, not a screen's local idea.
 
