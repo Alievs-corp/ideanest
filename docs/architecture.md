@@ -941,14 +941,12 @@ sequenceDiagram
 > of these hold, and the pair is composed in exactly one place —
 > `PledgeService.requireEditable`:
 >
-> 1. **The pledge is `DRAFT` or `CONFIRMED`** (`PledgeState.EDITABLE`). A draft is
->    a checkout in progress; a confirmed pledge is PL-09's real case, a backer who
->    committed and has since changed their mind. `EXPIRED` and the two cancelled
+> 1. **The pledge is `DRAFT`** (`PledgeState.EDITABLE`). A draft is a checkout in
+>    progress; a paid pledge is raised instead (#171). `EXPIRED` and the two cancelled
 >    states are over, and a pledge that ended cannot be edited back into existence
 >    — the backer's move is to pledge again, which §7.2's partial index permits
->    precisely because those states are not active. `CHARGE_PENDING` onwards are
->    past the campaign's close, where money is moving or has moved: changing an
->    amount there is a refund or a second charge, not an edit.
+>    precisely because those states are not active. From `COLLECTED` on, money has
+>    moved: changing an amount there is a refund or a second charge, not an edit.
 > 2. **The campaign is still accepting pledges** — launched, `LIVE`, and before its
 >    deadline. This is not a second rule that could drift from the checkout's; it
 >    is `PledgeAcceptance`, the same call `POST /v1/pledges/draft` makes, so a
@@ -973,12 +971,8 @@ sequenceDiagram
 > **Cancellation refunds nothing, because nothing was collected** (§9.7). There is
 > no refund path on `DELETE /v1/pledges/{id}` and there should not be one; the
 > refund of a pledge that really was collected is #67's. What cancellation does
-> move is stock, and *which* stock depends on the pledge: a `DRAFT` gives back a
-> **reserved** place and a `CONFIRMED` pledge gives back a **claimed** one. They
-> are separate statements against separate columns, because releasing the wrong one
-> leaves the tier counting a place nobody holds while it is short of one somebody
-> does — and the sum, which is what the limit is checked against, still looks
-> correct.
+> move is stock: only a `DRAFT` can be cancelled, and it gives back a **reserved**
+> place.
 >
 > **Add-ons move the same two columns (#203), and an edit moves the difference.**
 > Cancelling gives back every place the pledge held — the reward's and each add-on's
@@ -998,7 +992,7 @@ sequenceDiagram
 > backer may raise a paid pledge — a better tier, more add-ons, a larger contribution, or a
 > destination that costs more — and the difference is charged at once, the way the confirmation
 > charge is. Never lowered, never withdrawn.** IDN-EXT-01 (#39) had made almost every pledge
-> `COLLECTED` the moment it was made, and PL-09's `PATCH` only moves `DRAFT` and `CONFIRMED`, so
+> `COLLECTED` the moment it was made, and PL-09's `PATCH` only moves `DRAFT`, so
 > until #171 the screens promised a raise no endpoint performed.
 >
 > The flow is the confirmation's, in the same two requests:
@@ -1007,7 +1001,7 @@ sequenceDiagram
 >    with their Merge-Patch meaning, the page's `language`, `successUrl` and `errorUrl`, and
 >    `expectedAmount` — the difference the backer was shown. In one transaction, holding the
 >    pledge's row lock: the pledge must be the caller's and `COLLECTED` (`PLEDGE_NOT_RAISABLE`
->    otherwise, naming `PATCH` for a draft or a legacy `CONFIRMED` pledge), the campaign must be
+>    otherwise, naming `PATCH` for a draft), the campaign must be
 >    taking pledges (`PROJECT_NOT_LIVE`, from the same `PledgeAcceptance` as the draft), no other
 >    raise may be waiting for its payment (`PLEDGE_RAISE_IN_PROGRESS`), the new selection is priced
 >    by the checkout's own `selectionFor`, and it must cost more (`PLEDGE_DECREASE_NOT_ALLOWED`
@@ -1090,8 +1084,7 @@ sequenceDiagram
 > campaign that succeeds pays out every settled charge on it, the applied raises among them (§9.5's
 > `PayoutGateway.fundsOf`).
 >
-> **What did not change.** A draft is still edited with `PATCH` and paid for once; a legacy
-> `CONFIRMED` pledge is still edited with `PATCH` and charged nothing (#35's rule); a pledge still
+> **What did not change.** A draft is still edited with `PATCH` and paid for once; a pledge still
 > cannot be cancelled; and once the campaign stops taking pledges the raise is refused and §4.8's
 > PM-09 and PM-10 routes behave exactly as before — recorded beside the pledge, not charged. While
 > the campaign runs those two routes answer `CAMPAIGN_STILL_TAKING_PLEDGES` with `meta.use` naming
@@ -1913,8 +1906,8 @@ Preferences are per category and per channel, with a digest option.
 > **The half that matters is what happens to the pledges**, and the creator's own
 > cancellation had exactly the same gap until this issue. Both halts record a
 > `project.suspended` / `project.canceled` event through §8.3's outbox in the transaction
-> that performs the transition, and the pledge module's listener ends every `DRAFT` and
-> `CONFIRMED` pledge as `CANCELED_BY_PROJECT` and gives every place they hold back to the
+> that performs the transition, and the pledge module's listener ends every `DRAFT`
+> pledge as `CANCELED_BY_PROJECT` and gives every place they hold back to the
 > tier. Without it a campaign taken down while holding four hundred places would hold
 > them for ever, on a campaign nobody can back.
 >
@@ -1924,11 +1917,10 @@ Preferences are per category and per channel, with a digest option.
 > be a cycle `ModuleBoundaryTests` fails the build over. The outbox is what makes the
 > halt and the release one commit and still leaves them in two modules.
 >
-> **A pledge whose money has moved is left alone** — `CHARGE_PENDING`, `CHARGE_FAILED`,
-> `COLLECTED`. Marking one `CANCELED_BY_PROJECT` would say the money was never taken;
-> §6.2 gives the honest edge a different name, `COLLECTED → REFUNDED`, which is #67's and
-> needs a provider behind it. None of those states can exist today, so the release counts
-> them and logs a warning naming the campaign rather than acting on them.
+> **A pledge whose money has moved is left alone** — `COLLECTED`. Marking one
+> `CANCELED_BY_PROJECT` would say the money was never taken; §6.2 gives the honest edge a
+> different name, `COLLECTED → REFUNDED`, which the campaign-level refund performs. The
+> release counts them and logs a warning naming the campaign rather than acting on them.
 >
 > **Nobody is notified yet.** §4.10 has no notification type for a campaign that was
 > stopped, and inventing one inside this issue would be a fan-out to every backer written
@@ -2187,8 +2179,7 @@ is withdrawn.
 > outbox event.
 >
 > **The copies are the point.** `projects.pledged_amount` is denormalised from
-> the pledge ledger and keeps moving after the deadline: a card is refused, a
-> retry window elapses, a pledge is `DROPPED` (§6.2), a charge is refunded or
+> the pledge ledger and keeps moving after the deadline: a charge is refunded or
 > charged back (§9.7, §9.8). A campaign that closed at 105% of its goal and then
 > lost eight percent of its collections would, read from the live total, appear
 > to have failed — and would appear to have failed *retroactively*, on a page a
@@ -2799,9 +2790,9 @@ stateDiagram-v2
 > an edge — the pledge stays `COLLECTED`. During the campaign its selection and total change once
 > the difference is paid (#171, §4.5); after the campaign it gains a supplement (§4.8). Stage 4
 > (#45) removed every edge into the four — the `confirm` route and the collection at close —
-> but the states stay in `PledgeState` and `pledges_state_known`: a pledge confirmed before
-> IDN-EXT-01 can still be `CONFIRMED`, and what to do with those backers is a decision rather
-> than a cleanup. The notes below record why each was added.
+> and V107 (#470) removed the states: the owner decided a pledge still in one of them, never
+> charged, ends as `EXPIRED` and gives every place it held back. The notes below record why
+> each edge was added.
 >
 > **`DRAFT --> CANCELED_BY_BACKER` is new, and #56 added it while building
 > PL-10.** The diagram had one edge out of a draft that ends it —
@@ -2817,19 +2808,16 @@ stateDiagram-v2
 > one cause of it. The `state` column is what distinguishes them.
 >
 > **`DRAFT --> CANCELED_BY_PROJECT` is new too, and #103 added it** while building the
-> halt. The diagram draws `CONFIRMED --> CANCELED_BY_PROJECT` and stops there, which
-> leaves a checkout in progress on a campaign that has just been suspended with nowhere
+> halt. Without it a checkout in progress on a campaign that has just been suspended with nowhere
 > to go: it would sit as a `DRAFT` holding a limited tier's place for the rest of its
 > five minutes, on a campaign nobody can back. Recording it as `EXPIRED` would say a
 > timer ran out, and as `CANCELED_BY_BACKER` that the backer decided something. The
-> release walks the same two states either way -- see §4.11's AD-02 for what it
+> release walks drafts only -- see §4.11's AD-02 for what it
 > deliberately does *not* touch.
 >
 > **An edit is not on this diagram, deliberately.** PL-09 changes what a pledge is
-> for, not what state it is in: a draft that is edited is still a draft and a
-> confirmed pledge that is edited is still confirmed. Sending a confirmed pledge
-> back to `DRAFT` to re-price it would put a committed backer behind a
-> five-minute timer and hand their place to §8.4's sweep.
+> for, not what state it is in: a draft that is edited is still a draft, and a paid
+> pledge that is raised is still `COLLECTED`.
 
 ### 6.3 Payout
 
@@ -5075,8 +5063,8 @@ POST   /v1/projects/{id}/save               # C-09 (#90); requires a token despi
 DELETE /v1/projects/{id}/save
 GET    /v1/projects/{id}/viewer             # #137; requires a token despite the block. saved, reminded,
                                             # followingCreator, backed: the caller's own, no-store, 404 when not public.
-                                            # backed = a pledge in CONFIRMED, CHARGE_PENDING, CHARGE_FAILED, COLLECTED
-                                            # or FULFILLED; a DRAFT is a checkout in progress, not a backing
+                                            # backed = a pledge in COLLECTED or FULFILLED;
+                                            # a DRAFT is a checkout in progress, not a backing
 POST   /v1/projects/{id}/remind
 DELETE /v1/projects/{id}/remind
 POST   /v1/projects/{id}/report
