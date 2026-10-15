@@ -127,7 +127,7 @@ export default async function HomePage() {
         */}
         <section className="grid items-center gap-8 pt-10 pb-14 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,600px)] lg:gap-6">
           <FadeUpSection>
-            <h1 className="max-w-[16ch] text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white sm:text-6xl">
+            <h1 className="max-w-[16ch] text-3xl font-semibold leading-[1.05] tracking-[-0.04em] text-white sm:text-6xl">
               {t('hero.title')}
             </h1>
             {/*
