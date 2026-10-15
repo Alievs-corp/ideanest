@@ -26,6 +26,13 @@
 --   one per reward tier plus their add-on and supplement quantities.
 -- ---------------------------------------------------------------------------
 
+-- ---------------------------------------------------------------------------
+-- Contract: the contract half of V106's (#45) expand. #469 stopped every read and
+-- write of the dropped columns and every edge into the four states; that release
+-- has been deployed everywhere since 2026-10-14 (through #495), so no node still
+-- maps them.
+-- ---------------------------------------------------------------------------
+
 LOCK TABLE reward_tiers, pledges, backer_segments IN ACCESS EXCLUSIVE MODE;
 
 CREATE TEMPORARY TABLE v107_retired_pledges ON COMMIT DROP AS
