@@ -138,7 +138,7 @@ export default async function HomePage() {
               {t('hero.standfirst')}
             </p>
 
-            <div className="mt-8 sm:hidden">
+            <div className="mt-6 sm:hidden">
               <HeroPhoneScene
                 lines={[
                   t('hero.phoneLines.creator'),
@@ -152,14 +152,14 @@ export default async function HomePage() {
             <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-9 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
               <Link
                 href="/discover"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-3 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-2 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
               >
                 {t('hero.browse')}
                 <ArrowRight aria-hidden="true" className="size-4 shrink-0 max-sm:hidden" />
               </Link>
               <Link
                 href="/projects/new"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-white/16 px-3 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-white/16 px-2 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
               >
                 {t('hero.start')}
               </Link>
