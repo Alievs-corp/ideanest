@@ -220,7 +220,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         same campaign, and there is nothing this component could invent that
         the creator did not write.
       */}
-      <MediaFrame ratio="16/9" radius="lg">
+      <MediaFrame ratio="16/9" narrowRatio="2/1" radius="lg">
         {card.image != null && (
           <Image
             src={card.image.url}

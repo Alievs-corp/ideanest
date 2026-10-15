@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 
 /**
@@ -49,6 +49,8 @@ export const MEDIA_RATIOS = {
   '3/2': '3 / 2',
   /** Denser cards where a 16:9 strip reads as a letterbox. */
   '4/3': '4 / 3',
+  /** Campaign cards at phone width, where 16:9 makes a single column too tall. */
+  '2/1': '2 / 1',
   /** Avatars, tiles, anything square. */
   '1/1': '1 / 1',
 } as const;
@@ -109,6 +111,8 @@ export interface MediaFrameProps
   extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'placeholder'> {
   /** A crop token, or the image's own `{ width, height }` when it is shown whole. */
   ratio: MediaRatio;
+  /** The crop below the `sm` breakpoint, when it differs from `ratio`. */
+  narrowRatio?: MediaRatioToken;
   radius?: MediaRadius;
   /**
    * A low-quality image placeholder as a `data:image/…;base64,…` URI, painted
@@ -122,6 +126,7 @@ export interface MediaFrameProps
 
 export function MediaFrame({
   ratio,
+  narrowRatio,
   radius = 'none',
   placeholder,
   className,
@@ -129,6 +134,13 @@ export function MediaFrame({
   children,
   ...props
 }: MediaFrameProps) {
+  const crop: CSSProperties =
+    narrowRatio === undefined
+      ? { aspectRatio: aspectRatioOf(ratio) }
+      : ({
+          '--media-ratio': aspectRatioOf(ratio),
+          '--media-ratio-narrow': MEDIA_RATIOS[narrowRatio],
+        } as CSSProperties);
   const usablePlaceholder =
     placeholder !== undefined && isPlaceholderUri(placeholder) ? placeholder : null;
 
@@ -140,8 +152,13 @@ export function MediaFrame({
        * absolutely against the nearest positioned ancestor, and this is it.
        * `overflow-hidden` clips both the image and the scaled-up placeholder.
        */
-      className={cn('relative w-full overflow-hidden bg-surface-3', RADIUS[radius], className)}
-      style={{ aspectRatio: aspectRatioOf(ratio), ...style }}
+      className={cn(
+        'relative w-full overflow-hidden bg-surface-3',
+        narrowRatio !== undefined && 'aspect-(--media-ratio) max-sm:aspect-(--media-ratio-narrow)',
+        RADIUS[radius],
+        className,
+      )}
+      style={{ ...crop, ...style }}
       {...props}
     >
       {usablePlaceholder !== null && (
