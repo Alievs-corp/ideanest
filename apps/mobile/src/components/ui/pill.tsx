@@ -68,6 +68,8 @@ const LABEL: Record<PillSize, number> = {
   lg: fontSize.base,
 };
 const ICON: Record<PillSize, number> = { sm: 14, md: 16, lg: 18 };
+/** How far a `fit` label may shrink at a large font before it would rather truncate. */
+const FIT_MIN_SCALE = 0.7;
 
 /**
  * How much of `--danger` a pressed danger control keeps. Pressing darkens, and at 0.85 over the
@@ -159,6 +161,12 @@ export interface PillProps {
    * label is long in some languages and must be read whole at a large font (#162's device test).
    */
   readonly wrap?: boolean;
+  /**
+   * One of two pills sharing a row at phone width — the web hero's actions (#490): the size's
+   * height, a 14px label and an 8px side padding, and the label kept on one line, shrinking to
+   * fit at a large font rather than breaking a word or truncating.
+   */
+  readonly fit?: boolean;
   readonly disabled?: boolean;
   /**
    * Drawn and announced as disabled — 40% opacity and `accessibilityState.disabled` — but still
@@ -199,6 +207,7 @@ export function Pill({
   iconRight,
   fullWidth = false,
   wrap = false,
+  fit = false,
   disabled = false,
   softDisabled = false,
   busy = false,
@@ -243,7 +252,7 @@ export function Pill({
         testID={testID}
         style={({ pressed }) => [
           styles.pill,
-          { minHeight: height, paddingHorizontal: PADDING[size] },
+          { minHeight: height, paddingHorizontal: fit ? spacing[2] : PADDING[size] },
           pressed && !blocked && !softDisabled ? skin.pressed : skin.rest,
           (blocked || softDisabled) && styles.blocked,
           ring,
@@ -256,8 +265,10 @@ export function Pill({
           <Icon icon={iconLeft} size={ICON[size]} color={skin.text} />
         ) : null}
         <Text
-          style={[styles.label, wrap && styles.wrapped, { fontSize: LABEL[size], color: skin.text }]}
-          numberOfLines={wrap ? undefined : 1}
+          style={[styles.label, wrap && styles.wrapped, { fontSize: fit ? fontSize.sm : LABEL[size], color: skin.text }]}
+          numberOfLines={wrap && !fit ? undefined : 1}
+          adjustsFontSizeToFit={fit}
+          minimumFontScale={fit ? FIT_MIN_SCALE : undefined}
           // The pill owns the announcement; its text must not be a second stop.
           accessibilityElementsHidden
           importantForAccessibility="no"
