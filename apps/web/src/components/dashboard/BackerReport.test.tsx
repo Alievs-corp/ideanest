@@ -22,7 +22,7 @@ function backer(overrides: Partial<Backer> & Pick<Backer, 'pledgeId'>): Backer {
     email: 'aysel@example.com',
     anonymous: false,
     amount: { amount: '50.00', currency: 'AZN' },
-    state: 'CONFIRMED',
+    state: 'COLLECTED',
     backedAt: '2026-08-01T10:00:00.000Z',
     ...overrides,
   };

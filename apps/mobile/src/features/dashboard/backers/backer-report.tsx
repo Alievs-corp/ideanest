@@ -390,7 +390,6 @@ function Report({ projectId }: { readonly projectId: string }) {
               <Chip
                 key={state}
                 label={t(`dashboard.states.${state}`)}
-                icon={state === 'CHARGE_FAILED' ? Glyphs.Danger : undefined}
                 selected={filter.states.includes(state)}
                 onPress={() => applyFilter(toggleState(filter, state))}
                 testID={`backers-state-${state}`}

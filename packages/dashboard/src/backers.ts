@@ -21,19 +21,13 @@ type ContractList = components['schemas']['BackerListResponse'];
 type ContractSegment = components['schemas']['BackerSegmentResponse'];
 
 /**
- * The five pledge states the report covers.
+ * The two pledge states the report covers.
  *
- * Narrowed from the contract's twelve by hand, because springdoc publishes the whole
- * `PledgeState` enum — the service refuses the other seven with a 400, and a filter control
+ * Narrowed from the contract's eight by hand, because springdoc publishes the whole
+ * `PledgeState` enum — the service refuses the other six with a 400, and a filter control
  * offering a state that cannot be asked for would be a control that only ever fails.
  */
-export const REPORTED_STATES = [
-  'CONFIRMED',
-  'CHARGE_PENDING',
-  'CHARGE_FAILED',
-  'COLLECTED',
-  'FULFILLED',
-] as const;
+export const REPORTED_STATES = ['COLLECTED', 'FULFILLED'] as const;
 
 export type ReportedState = (typeof REPORTED_STATES)[number];
 
@@ -211,7 +205,7 @@ export function backerOf(backer: ContractBacker): Backer {
     rewardTierId: backer.rewardTierId,
     rewardTitle: backer.rewardTitle,
     amount: backer.amount as Money,
-    state: (backer.state ?? 'CONFIRMED') as ReportedState,
+    state: (backer.state ?? 'COLLECTED') as ReportedState,
     country: backer.country,
     backedAt: backer.backedAt ?? '',
   };

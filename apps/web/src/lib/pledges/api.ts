@@ -201,15 +201,14 @@ export async function payForPledge(
  * Two things decide whether an edit is allowed, and they are owned by two different modules
  * (`PledgeService#requireEditable` composes them):
  *
- *   - the **pledge's** state is `DRAFT` or `CONFIRMED` — anything else is
- *     `PLEDGE_NOT_EDITABLE` (409), carrying `meta.state`;
+ *   - the **pledge's** state is `DRAFT` — anything else is `PLEDGE_NOT_EDITABLE` (409),
+ *     carrying `meta.state`;
  *   - the **campaign** is live and before its deadline — anything else is `PROJECT_NOT_LIVE`
  *     (409), carrying `meta.deadline`, which is the same code and body the draft endpoint
  *     gives, so one fact has one answer wherever it is asked.
  *
- * And IDN-EXT-01 (#35) adds one rule of its own: a `CONFIRMED` pledge may only be raised. An edit
- * that would lower its total is `PLEDGE_DECREASE_NOT_ALLOWED` (409), carrying `meta.current` and
- * `meta.requested`. There is no cancel call here any more — a backer cannot withdraw a pledge.
+ * A paid pledge is not edited here at all: under IDN-EXT-01 (#35) it may only be raised, through
+ * `raisePledge` below. There is no cancel call here any more — a backer cannot withdraw a pledge.
  *
  * A draft whose five minutes have run out is `RESERVATION_EXPIRED` (409): editing it would
  * re-price a place the tier has already promised to give back. Every one of these is worded

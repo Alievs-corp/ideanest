@@ -56,7 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function PledgesPage() {
   // Words, not data: the list is a client island behind a bearer token, so the route resolves
-  // its sentences and the twelve pledge states, and hands them down.
+  // its sentences and the eight pledge states, and hands them down.
   const [t, copy] = await Promise.all([
     getTranslations('account.pages.pledges'),
     pledgeListCopy(),

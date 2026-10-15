@@ -134,7 +134,7 @@ export async function readUser(id: string, signal?: AbortSignal): Promise<AdminU
  */
 export interface AdminUserPledge {
   pledgeId: string;
-  /** One of §6.2's twelve. All twelve appear: a cancelled pledge is a fact about the person. */
+  /** One of §6.2's eight. All eight appear: a cancelled pledge is a fact about the person. */
   state: string;
   /** The generated column, never a sum computed here. §10.3 makes it a string. */
   amounts: { total: { amount: string; currency: string } };

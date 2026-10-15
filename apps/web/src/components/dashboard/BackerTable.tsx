@@ -39,7 +39,7 @@ export interface BackerTableProps {
   readonly backers: readonly Backer[];
   /** Names the scroll region, so the tab stop it introduces is explained. */
   readonly label: string;
-  /** The six column headings, the anonymity note and the five pledge states — #79. */
+  /** The six column headings, the anonymity note and the two pledge states — #79. */
   readonly copy: BackerTableCopy;
 }
 
@@ -113,9 +113,9 @@ export function BackerTable({ backers, label, copy }: BackerTableProps) {
  * A pledge state in words a creator uses used to be a `switch` here, in English — #79.
  *
  * It is `dashboard.states` in the catalogue now, and the report's filter chips read the same
- * five words: the wire constant is `CHARGE_FAILED`, what a creator needs to read is "Payment
- * failed", and a second spelling of that beside the first is how a filter stops looking like
- * it selects what this column says. Not prettified generically, then or now — "collected" and
+ * two words: the wire constant is `COLLECTED`, what a creator needs to read is "Collected" in
+ * their own language, and a second spelling of that beside the first is how a filter stops
+ * looking like it selects what this column says. Not prettified generically, then or now — "collected" and
  * "fulfilled" are different facts about money, and upper-casing a first letter would make
  * them look like the same kind of thing.
  */

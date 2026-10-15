@@ -410,14 +410,10 @@
     "pledges": {
       "states": {
         "DRAFT": "Not finished",
-        "CONFIRMED": "Confirmed",
         "EXPIRED": "Expired",
         "CANCELED_BY_BACKER": "Cancelled by you",
         "CANCELED_BY_PROJECT": "Cancelled by the creator",
-        "CHARGE_PENDING": "Payment in progress",
-        "CHARGE_FAILED": "Payment failed",
         "COLLECTED": "Paid",
-        "DROPPED": "Dropped",
         "REFUNDED": "Refunded",
         "CHARGEBACK": "Charged back",
         "FULFILLED": "Delivered"
@@ -1723,14 +1719,10 @@
         "campaignGone": "The campaign is gone",
         "pledgeState": {
           "DRAFT": "Not finished",
-          "CONFIRMED": "Confirmed",
           "EXPIRED": "Expired",
           "CANCELED_BY_BACKER": "Cancelled by the backer",
           "CANCELED_BY_PROJECT": "Cancelled by the creator",
-          "CHARGE_PENDING": "Charge pending",
-          "CHARGE_FAILED": "Charge failed",
           "COLLECTED": "Collected",
-          "DROPPED": "Collection abandoned",
           "REFUNDED": "Refunded",
           "CHARGEBACK": "Charged back",
           "FULFILLED": "Fulfilled"
@@ -5739,9 +5731,6 @@
       "noCampaign": "That campaign does not exist, or it is not one you work on."
     },
     "states": {
-      "CONFIRMED": "Confirmed",
-      "CHARGE_PENDING": "Awaiting collection",
-      "CHARGE_FAILED": "Payment failed",
       "COLLECTED": "Collected",
       "FULFILLED": "Fulfilled"
     },
