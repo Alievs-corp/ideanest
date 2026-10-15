@@ -46,6 +46,18 @@ export function draftFrom(profile: OwnProfile): ProfileDraft {
   };
 }
 
+/** `fresh`, with every field the reader changed from `before` kept as they left it. */
+export function carryEdits(before: ProfileDraft, draft: ProfileDraft, fresh: ProfileDraft): ProfileDraft {
+  return {
+    name: draft.name === before.name ? fresh.name : draft.name,
+    bio: draft.bio === before.bio ? fresh.bio : draft.bio,
+    avatarUrl: draft.avatarUrl === before.avatarUrl ? fresh.avatarUrl : draft.avatarUrl,
+    websiteUrl: draft.websiteUrl === before.websiteUrl ? fresh.websiteUrl : draft.websiteUrl,
+    locationSlug: draft.locationSlug === before.locationSlug ? fresh.locationSlug : draft.locationSlug,
+    socialLinks: linksMatch(draft.socialLinks, before.socialLinks) ? fresh.socialLinks : draft.socialLinks,
+  };
+}
+
 /** An emptied box clears the field, which on this endpoint is `null` and never `""`. */
 function clearedOrTrimmed(value: string): string | null {
   const trimmed = value.trim();

@@ -181,7 +181,7 @@ describe('states', () => {
 describe('a profile already in memory', () => {
   const STALE = { ...PROFILE, name: 'Old Name', socialLinks: [] };
 
-  it('waits for the read made on this visit and seeds the form from it, not from the cache', async () => {
+  it('replaces the cached copy with the read made on this visit before anything is saved', async () => {
     await show(STALE);
     expect(screen.getByTestId('profile-name').props.value).toBe(PROFILE.name);
     expect(screen.getByLabelText('Instagram address')).toBeTruthy();
@@ -193,7 +193,7 @@ describe('a profile already in memory', () => {
     expect(sendJson).toHaveBeenCalledWith('PATCH', '/v1/me/profile', {});
   });
 
-  it('takes a newer answer while untouched, and keeps an edit in progress', async () => {
+  it('takes a newer answer, keeping only the fields being edited', async () => {
     await show();
     mockGet.mockResolvedValueOnce({ ...PROFILE, bio: 'Edited on the web.' });
     await act(async () => {
@@ -209,7 +209,35 @@ describe('a profile already in memory', () => {
     });
     await settle();
     expect(screen.getByTestId('profile-name').props.value).toBe('Typing here');
-    expect(screen.getByTestId('profile-bio').props.value).toBe('Edited on the web.');
+    expect(screen.getByTestId('profile-bio').props.value).toBe('Edited again.');
+  });
+
+  it('opens on the cached copy at once and reads it again, even while the cache is fresh', async () => {
+    let answer: (value: unknown) => void = () => {};
+    mockGet.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 60_000 } } });
+    queryClient.setQueryData(['settings', 'profile'], STALE);
+    await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <QueryClientProvider client={queryClient}>
+          <IntlProvider locale="en" messages={en}>
+            <ProfileSettingsScreen />
+          </IntlProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>,
+    );
+    await settle();
+    expect(screen.queryByTestId('profile-loading')).toBeNull();
+    expect(screen.getByTestId('profile-name').props.value).toBe('Old Name');
+    expect(screen.getByTestId('profile-save').props.accessibilityState.disabled).toBe(true);
+    expect(mockGet).toHaveBeenCalledWith('/v1/me/profile', expect.anything());
+
+    await fireEvent.changeText(screen.getByTestId('profile-bio'), 'Written meanwhile');
+    await act(async () => answer(PROFILE));
+    await settle();
+    expect(screen.getByTestId('profile-name').props.value).toBe(PROFILE.name);
+    expect(screen.getByTestId('profile-bio').props.value).toBe('Written meanwhile');
+    expect(screen.getByTestId('profile-save').props.accessibilityState.disabled).toBe(false);
   });
 
   it('shows the cached copy read-only when the read is paused offline', async () => {
