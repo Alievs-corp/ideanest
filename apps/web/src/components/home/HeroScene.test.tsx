@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { HeroPhoneScene, HeroScene } from './HeroScene';
+import { HeroSceneDrawing } from './HeroSceneDrawing';
 
 afterEach(cleanup);
 
@@ -14,7 +15,7 @@ const LINES = [
   CAPTION,
 ] as const;
 
-describe('HeroScene (#337)', () => {
+describe('HeroScene (#337, #490)', () => {
   it('hides the picture from assistive technology and keeps the caption as text', () => {
     render(<HeroScene caption={CAPTION} />);
 
@@ -22,8 +23,19 @@ describe('HeroScene (#337)', () => {
     expect(screen.getByText(CAPTION).tagName).toBe('FIGCAPTION');
   });
 
-  it('starts every animation only for a reader who has not asked for reduced motion', () => {
+  it('plays a video loop, and fetches nothing but its poster from the markup', () => {
     const { container } = render(<HeroScene caption={CAPTION} />);
+    const video = container.querySelector('video');
+
+    expect(video).toHaveAttribute('preload', 'none');
+    expect(video).toHaveAttribute('poster', expect.stringMatching(/\.webp$/));
+    expect(video).not.toHaveAttribute('src');
+  });
+});
+
+describe('HeroSceneDrawing, the source of the loops (#337)', () => {
+  it('starts every animation only for a reader who has not asked for reduced motion', () => {
+    const { container } = render(<HeroSceneDrawing className="" />);
     const animated = [...container.querySelectorAll('[class*="animate-"]')];
 
     expect(animated.length).toBeGreaterThan(40);
@@ -36,7 +48,7 @@ describe('HeroScene (#337)', () => {
 
   it('names only keyframes that exist, and keeps every keyframe literal', () => {
     const css = readFileSync(join(import.meta.dirname, '../../app/globals.css'), 'utf8');
-    const { container } = render(<HeroScene caption={CAPTION} />);
+    const { container } = render(<HeroSceneDrawing className="" />);
     const used = new Set(
       [...container.innerHTML.matchAll(/animate-\[(hero-[a-z-]+)_/g)].map(([, name]) => name),
     );
