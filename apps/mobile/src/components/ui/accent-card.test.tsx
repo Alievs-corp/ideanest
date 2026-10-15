@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo, StyleSheet } from 'react-native';
 import { Glyphs } from '../../icons';
 import { Body } from '../text';
-import { accent, colors, tint } from '../../theme';
+import { accent, colors, spacing, tint } from '../../theme';
 import { AccentCard } from './accent-card';
 import { EdgeFade } from './edge-fade';
 import { IconButton } from './icon-button';
@@ -28,6 +28,17 @@ describe('AccentCard', () => {
     expect(style.boxShadow).toEqual([
       expect.objectContaining({ color: accent.sky.glow }),
     ]);
+  });
+
+  it('draws tighter padding and gaps when compact', async () => {
+    await render(
+      <AccentCard accent="mint" compact>
+        <Body>Garden kit</Body>
+      </AccentCard>,
+    );
+    const style = StyleSheet.flatten(screen.getByText('Garden kit').parent?.props.style);
+    expect(style.padding).toBe(spacing[4]);
+    expect(style.gap).toBe(spacing[2]);
   });
 
   it('puts its text in the accent tones: near-black, never the dark-canvas white', async () => {
