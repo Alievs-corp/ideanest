@@ -101,7 +101,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     @DisplayName("the report lists the campaign's backers, newest first, with what each paid")
     void theReportListsBackers() {
         Campaign campaign = liveCampaign();
-        UUID early = backer(campaign, "Aysel Mammadova", "50.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+        UUID early = backer(campaign, "Aysel Mammadova", "50.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
         UUID late = backer(campaign, "Rashad Aliyev", "120.00", "DE", "COLLECTED", "2026-03-05T10:00:00Z");
 
         Map<String, Object> body = backers(campaign, "").getBody();
@@ -127,7 +127,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     @DisplayName("a reservation and a cancelled pledge are not backers")
     void onlyReportedStatesAreBackers() {
         Campaign campaign = liveCampaign();
-        backer(campaign, "A committed backer", "30.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+        backer(campaign, "A committed backer", "30.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
         draft(campaign, "Somebody mid-checkout");
         backer(campaign, "Somebody who withdrew", "30.00", "AZ", "CANCELED_BY_BACKER", "2026-03-02T10:00:00Z");
 
@@ -144,7 +144,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     @DisplayName("an anonymous backer is named to their own creator, and flagged")
     void anAnonymousBackerIsNamedToTheCreator() {
         Campaign campaign = liveCampaign();
-        UUID pledge = backer(campaign, "Nigar Huseynova", "75.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+        UUID pledge = backer(campaign, "Nigar Huseynova", "75.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
         jdbc().update("UPDATE pledges SET is_anonymous = true WHERE id = ?", pledge);
 
         Map<String, Object> row = rowsOf(backers(campaign, "").getBody()).get(0);
@@ -160,7 +160,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     void theReportFilters() {
         Campaign campaign = liveCampaign();
         UUID tier = tier(campaign, "An early copy", "25.00");
-        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z", tier);
+        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z", tier);
         backer(campaign, "Rashad Aliyev", "40.00", "DE", "COLLECTED", "2026-03-02T10:00:00Z", null);
 
         assertThat(matchedIn(campaign, "?state=COLLECTED")).isEqualTo(1);
@@ -180,7 +180,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     @DisplayName("a wildcard in the search is a character and not a wildcard")
     void aWildcardInTheSearchIsEscaped() {
         Campaign campaign = liveCampaign();
-        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
 
         // The failure this prevents is a search box that silently returns everybody,
         // which reads as "no filter applied" rather than as a bug.
@@ -197,7 +197,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
 
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(refused.getBody()).containsEntry("code", "BACKER_FILTER_INVALID");
-        assertThat(refused.getBody().get("detail")).asString().contains("CONFIRMED");
+        assertThat(refused.getBody().get("detail")).asString().contains("COLLECTED");
     }
 
     @Test
@@ -208,7 +208,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
         // skip one of these or return it twice, and on a fulfilment list that is a reward
         // nobody posts.
         for (int i = 0; i < 5; i++) {
-            backer(campaign, "Backer " + i, "10.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+            backer(campaign, "Backer " + i, "10.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
         }
 
         List<String> seen = new ArrayList<>();
@@ -231,8 +231,8 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     void aForeignCursorAnswersNothing() {
         Campaign mine = liveCampaign();
         Campaign theirs = liveCampaign();
-        backer(mine, "My backer", "10.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
-        UUID theirPledge = backer(theirs, "Their backer", "10.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+        backer(mine, "My backer", "10.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
+        UUID theirPledge = backer(theirs, "Their backer", "10.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
 
         Map<String, Object> body = backers(mine, "?cursor=" + theirPledge).getBody();
 
@@ -271,10 +271,10 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     void theBreakdownSplitsByTierAndDestination() {
         Campaign campaign = liveCampaign();
         UUID tier = tier(campaign, "An early copy", "25.00");
-        backer(campaign, "Aysel", "25.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z", tier);
+        backer(campaign, "Aysel", "25.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z", tier);
         backer(campaign, "Rashad", "35.00", "DE", "COLLECTED", "2026-03-02T10:00:00Z", tier);
         // §4.5's PL-02: support with no reward, and no destination either.
-        backer(campaign, "Leyla", "40.00", null, "CONFIRMED", "2026-03-03T10:00:00Z", null);
+        backer(campaign, "Leyla", "40.00", null, "COLLECTED", "2026-03-03T10:00:00Z", null);
 
         Map<String, Object> body = breakdown(campaign).getBody();
 
@@ -327,7 +327,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     void theExportIsACsv() {
         Campaign campaign = liveCampaign();
         UUID tier = tier(campaign, "An early copy", "25.00");
-        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z", tier);
+        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z", tier);
 
         ResponseEntity<String> exported = export(campaign, null);
 
@@ -351,7 +351,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
         Campaign campaign = liveCampaign();
         // A display name is the most attacker-controlled string on the platform, and the
         // person who opens the file is the creator.
-        backer(campaign, "=1+1", "25.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+        backer(campaign, "=1+1", "25.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
 
         String csv = export(campaign, null).getBody();
 
@@ -363,7 +363,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     @DisplayName("the export honours the filter it was given")
     void theExportHonoursItsFilter() {
         Campaign campaign = liveCampaign();
-        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
         backer(campaign, "Rashad Aliyev", "40.00", "DE", "COLLECTED", "2026-03-02T10:00:00Z");
 
         ResponseEntity<String> exported = export(campaign, Map.of("filter", Map.of("countries", List.of("DE"))));
@@ -380,7 +380,7 @@ class BackerReportApiTests extends AbstractIntegrationTest {
     @DisplayName("a segment is saved, listed, applied to the report, and deleted")
     void aSegmentIsSavedAndApplied() {
         Campaign campaign = liveCampaign();
-        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "CONFIRMED", "2026-03-01T10:00:00Z");
+        backer(campaign, "Aysel Mammadova", "25.00", "AZ", "COLLECTED", "2026-03-01T10:00:00Z");
         backer(campaign, "Rashad Aliyev", "40.00", "DE", "COLLECTED", "2026-03-02T10:00:00Z");
 
         ResponseEntity<Map<String, Object>> saved = saveSegment(

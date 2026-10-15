@@ -70,8 +70,7 @@ public class PublicBackers {
      * <p><strong>And the difference is DRAFT.</strong> A draft is a reservation with a
      * five-minute life (§4.5's PL-13), not a commitment. Counting one would make the
      * public backer count rise every time somebody opened a checkout and fall again
-     * when they wandered off. {@code CHARGE_FAILED} stays in: §5.1 is still retrying
-     * it and the backer is still committed.
+     * when they wandered off.
      */
     public static final Set<PledgeState> COUNTED = counted();
 

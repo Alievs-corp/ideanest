@@ -22,14 +22,14 @@ FROM (
            sum(pl.total_amount) AS total,
            count(DISTINCT pl.backer_id) AS backers
     FROM pledges pl
-    WHERE pl.state IN ('CONFIRMED', 'CHARGE_PENDING', 'CHARGE_FAILED', 'COLLECTED', 'FULFILLED')
+    WHERE pl.state IN ('COLLECTED', 'FULFILLED')
     GROUP BY pl.project_id
 ) agg
 WHERE agg.project_id = p.id;
 
 UPDATE projects SET pledged_amount = 0, backers_count = 0
 WHERE id NOT IN (SELECT DISTINCT project_id FROM pledges
-                 WHERE state IN ('CONFIRMED', 'CHARGE_PENDING', 'CHARGE_FAILED', 'COLLECTED', 'FULFILLED'))
+                 WHERE state IN ('COLLECTED', 'FULFILLED'))
   AND (pledged_amount <> 0 OR backers_count <> 0);
 
 -- ── The frozen outcome ──────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ FROM (
     SELECT pl.reward_tier_id, count(*)::int AS claimed
     FROM pledges pl
     WHERE pl.reward_tier_id IS NOT NULL
-      AND pl.state IN ('CONFIRMED', 'CHARGE_PENDING', 'CHARGE_FAILED', 'COLLECTED', 'FULFILLED')
+      AND pl.state IN ('COLLECTED', 'FULFILLED')
     GROUP BY pl.reward_tier_id
 ) agg
 WHERE agg.reward_tier_id = rt.id;

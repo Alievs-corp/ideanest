@@ -153,7 +153,7 @@ class SurveyApiTests extends AbstractIntegrationTest {
     void sendingASurveyNotifiesEveryBacker() {
         Account creator = account("send-creator");
         UUID project = liveCampaign(creator);
-        UUID first = backer(project, "CONFIRMED", "AZ", null);
+        UUID first = backer(project, "COLLECTED", "AZ", null);
         UUID second = backer(project, "COLLECTED", "DE", null);
 
         UUID survey = surveyOn(project, creator, List.of(question("What size?", "CHOICE", true, sizes(), null)));
@@ -205,9 +205,9 @@ class SurveyApiTests extends AbstractIntegrationTest {
     void anAudienceAboveTheCeilingIsReportedAsTruncated() {
         Account creator = account("ceiling-creator");
         UUID project = liveCampaign(creator);
-        backer(project, "CONFIRMED", "AZ", null);
-        backer(project, "CONFIRMED", "AZ", null);
-        backer(project, "CONFIRMED", "AZ", null);
+        backer(project, "COLLECTED", "AZ", null);
+        backer(project, "COLLECTED", "AZ", null);
+        backer(project, "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(project, creator, List.of(question("What size?", "CHOICE", true, sizes(), null)));
         ResponseEntity<Map<String, Object>> sent = send(survey, creator);
@@ -222,7 +222,7 @@ class SurveyApiTests extends AbstractIntegrationTest {
     void sendingASurveyIsAudited() {
         Account creator = account("audit-creator");
         UUID project = liveCampaign(creator);
-        backer(project, "CONFIRMED", "AZ", null);
+        backer(project, "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(
                 project, creator, List.of(question("A secret internal question", "TEXT", false, List.of(), null)));
@@ -302,7 +302,7 @@ class SurveyApiTests extends AbstractIntegrationTest {
         Account creator = account("answer-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("answer-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ", null);
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(project, creator, List.of(question("What size?", "CHOICE", true, sizes(), null)));
         send(survey, creator);
@@ -336,9 +336,9 @@ class SurveyApiTests extends AbstractIntegrationTest {
         UUID shirtTier = rewardTier(project, creator, "Shirt");
 
         Account shirtBacker = account("shirt-backer");
-        UUID shirtPledge = pledgeFor(project, shirtBacker.id(), "CONFIRMED", "AZ", shirtTier);
+        UUID shirtPledge = pledgeFor(project, shirtBacker.id(), "COLLECTED", "AZ", shirtTier);
         Account posterBacker = account("poster-backer");
-        UUID posterPledge = pledgeFor(project, posterBacker.id(), "CONFIRMED", "AZ", null);
+        UUID posterPledge = pledgeFor(project, posterBacker.id(), "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(
                 project,
@@ -372,7 +372,7 @@ class SurveyApiTests extends AbstractIntegrationTest {
         Account creator = account("option-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("option-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ", null);
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(project, creator, List.of(question("What size?", "CHOICE", true, sizes(), null)));
         send(survey, creator);
@@ -390,7 +390,7 @@ class SurveyApiTests extends AbstractIntegrationTest {
         Account creator = account("required-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("required-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ", null);
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(project, creator, List.of(question("What size?", "CHOICE", true, sizes(), null)));
         send(survey, creator);
@@ -418,7 +418,7 @@ class SurveyApiTests extends AbstractIntegrationTest {
         Account creator = account("cutoff-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("cutoff-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ", null);
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(project, creator, List.of(question("What size?", "CHOICE", true, sizes(), null)));
         send(survey, creator);
@@ -452,7 +452,7 @@ class SurveyApiTests extends AbstractIntegrationTest {
         Account creator = account("draft-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("draft-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ", null);
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(project, creator, List.of(question("What size?", "CHOICE", true, sizes(), null)));
 
@@ -472,7 +472,7 @@ class SurveyApiTests extends AbstractIntegrationTest {
         Account creator = account("read-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("read-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ", null);
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ", null);
 
         UUID survey = surveyOn(project, creator, List.of(question("What size?", "CHOICE", true, sizes(), null)));
         send(survey, creator);

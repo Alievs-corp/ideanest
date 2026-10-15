@@ -96,8 +96,8 @@ public record PledgeConfirmedEvent(
      *     that did not happen
      */
     public static PledgeConfirmedEvent of(Pledge pledge) {
-        // COLLECTED too since IDN-EXT-01 (#39): a paid-for pledge is confirmed by being paid for.
-        if (!(pledge.isConfirmed() || pledge.getState() == PledgeState.COLLECTED) || pledge.getConfirmedAt() == null) {
+        // IDN-EXT-01 (#39): a pledge is confirmed by being paid for.
+        if (pledge.getState() != PledgeState.COLLECTED || pledge.getConfirmedAt() == null) {
             throw new IllegalStateException("A pledge in " + pledge.getState() + " has not been confirmed");
         }
         return new PledgeConfirmedEvent(

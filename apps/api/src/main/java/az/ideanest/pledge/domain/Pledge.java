@@ -53,12 +53,8 @@ import org.hibernate.generator.EventType;
  * it; #76 adds {@link #upgradeTo}, which moves no state at all; #40 and #175 add
  * {@link #refunded} and {@link #chargedBack}.
  *
- * <p><strong>The stored-card model's edges are gone (#45).</strong> {@code DRAFT -->
- * CONFIRMED} and the collection at close — {@code CONFIRMED → CHARGE_PENDING →
- * COLLECTED}, the {@code CHARGE_FAILED} loop and {@code DROPPED} — were removed with the
- * collection run. The four states stay in {@link PledgeState}, because pledges confirmed
- * before IDN-EXT-01 may still be in {@code CONFIRMED} and every row has to stay readable;
- * nothing moves a pledge into any of them any more. Setters that let any caller move the
+ * <p><strong>The stored-card model's edges and states are gone</strong> (#45, #470): V107
+ * ended every pledge still in them as {@code EXPIRED}. Setters that let any caller move the
  * state would be a state machine with no rules in it.
  */
 @Entity
@@ -320,7 +316,7 @@ public class Pledge {
      * paid.
      *
      * <p>One instant for both columns, because under the charge-now model they are one event: the
-     * pledge is confirmed by being paid for. {@code CONFIRMED} is never passed through.
+     * pledge is confirmed by being paid for.
      */
     public void paid(Instant at) {
         if (state != PledgeState.DRAFT) {
@@ -425,8 +421,7 @@ public class Pledge {
     }
 
     /**
-     * §6.2's {@code CONFIRMED --> CANCELED_BY_BACKER}, and the same edge from a
-     * {@code DRAFT}. §4.5's PL-10.
+     * {@code DRAFT --> CANCELED_BY_BACKER}. §4.5's PL-10.
      *
      * <p><strong>Nothing is refunded, because nothing was collected.</strong> §9.7 is
      * explicit for this row — "backer changes their mind while live: cancel, nothing
@@ -484,15 +479,14 @@ public class Pledge {
      *     this is the entity holding its own invariant against a caller that did not ask
      */
     public void upgradeTo(UUID rewardTierId) {
-        if (state != PledgeState.CONFIRMED && state != PledgeState.CHARGE_PENDING && state != PledgeState.COLLECTED) {
+        if (state != PledgeState.COLLECTED) {
             throw new IllegalStateException("A pledge in " + state + " cannot be upgraded");
         }
         this.rewardTierId = Objects.requireNonNull(rewardTierId, "An upgrade is to some tier");
     }
 
     /**
-     * §6.2's {@code CONFIRMED --> CANCELED_BY_PROJECT}, and the same edge from a
-     * {@code DRAFT} — #103.
+     * {@code DRAFT --> CANCELED_BY_PROJECT} — #103.
      *
      * <p>What happens to every pledge on a campaign the creator cancelled or trust and
      * safety suspended. The backer did nothing; the campaign stopped, and the state
@@ -519,7 +513,7 @@ public class Pledge {
      *     holding its own invariant against a caller that did not ask
      */
     public void cancelByProject(Instant at) {
-        if (state != PledgeState.DRAFT && state != PledgeState.CONFIRMED) {
+        if (state != PledgeState.DRAFT) {
             throw new IllegalStateException("A pledge in " + state + " cannot be canceled by its campaign");
         }
         this.state = PledgeState.CANCELED_BY_PROJECT;
@@ -529,11 +523,6 @@ public class Pledge {
     /** Whether this pledge is still holding a place. */
     public boolean isDraft() {
         return state == PledgeState.DRAFT;
-    }
-
-    /** Whether the backer has committed, which is what decides how their place is counted. */
-    public boolean isConfirmed() {
-        return state == PledgeState.CONFIRMED;
     }
 
     /** Whether this backer has already withdrawn this pledge. See {@code PledgeService#cancel}. */

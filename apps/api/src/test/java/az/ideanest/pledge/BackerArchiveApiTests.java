@@ -292,7 +292,7 @@ class BackerArchiveApiTests extends AbstractIntegrationTest {
 
         Map<String, Object> row = rows(parse(myPledges(backer, null, null))).get(0);
 
-        assertThat(row.get("state")).isEqualTo("CONFIRMED");
+        assertThat(row.get("state")).isEqualTo("COLLECTED");
         assertThat(row.get("rewardTierId")).isEqualTo(tier.toString());
         // From the reward module rather than from a join: reward_tiers is that module's
         // table, and a list showing "b1f2-..." beside a pledge is a list nobody can use.
@@ -413,7 +413,7 @@ class BackerArchiveApiTests extends AbstractIntegrationTest {
     }
 
     private UUID confirmed(UUID projectId, UUID backerId, String amount, UUID rewardTierId, boolean anonymous) {
-        return pledge(projectId, backerId, "CONFIRMED", amount, rewardTierId, anonymous);
+        return pledge(projectId, backerId, "COLLECTED", amount, rewardTierId, anonymous);
     }
 
     /**

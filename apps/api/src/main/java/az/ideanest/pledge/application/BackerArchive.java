@@ -103,8 +103,7 @@ public class BackerArchive {
      * §6.2's states in which a pledge is somebody having backed a campaign, by name.
      *
      * <p>Derived from {@link PublicBackers#COUNTED} rather than written out. That set is
-     * where the rule is argued — {@code CHARGE_FAILED} is in because §5.1 is still retrying
-     * and the backer is still committed; {@code DRAFT} is out because it is a reservation —
+     * where the rule is argued — {@code DRAFT} is out because it is a reservation —
      * and a second literal here would be the copy that falls behind. The archive and the
      * public backer count must answer the same question, or a campaign's page and a backer's
      * page disagree about whether that person backed it.

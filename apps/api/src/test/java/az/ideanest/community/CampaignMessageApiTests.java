@@ -93,7 +93,7 @@ class CampaignMessageApiTests extends AbstractIntegrationTest {
     void aMessageToEveryBackerReachesEveryBacker() {
         Account creator = account("msg-creator");
         UUID project = liveCampaign(creator);
-        UUID first = backer(project, "CONFIRMED", "DE");
+        UUID first = backer(project, "COLLECTED", "DE");
         UUID second = backer(project, "COLLECTED", "AZ");
 
         ResponseEntity<Map<String, Object>> sent = send(project, creator, null, "We shipped", "Thank you all.");
@@ -114,8 +114,8 @@ class CampaignMessageApiTests extends AbstractIntegrationTest {
     void aMessageToASegmentReachesOnlyThatSegment() {
         Account creator = account("seg-creator");
         UUID project = liveCampaign(creator);
-        UUID german = backer(project, "CONFIRMED", "DE");
-        UUID local = backer(project, "CONFIRMED", "AZ");
+        UUID german = backer(project, "COLLECTED", "DE");
+        UUID local = backer(project, "COLLECTED", "AZ");
         UUID segment = segment(project, creator, "Germany", "DE");
 
         ResponseEntity<Map<String, Object>> sent =
@@ -133,7 +133,7 @@ class CampaignMessageApiTests extends AbstractIntegrationTest {
     void theNotificationSubjectIsTheMessage() {
         Account creator = account("subject-creator");
         UUID project = liveCampaign(creator);
-        backer(project, "CONFIRMED", "AZ");
+        backer(project, "COLLECTED", "AZ");
 
         UUID messageId = UUID.fromString(
                 (String) send(project, creator, null, "Hello", "A short note.").getBody().get("id"));
@@ -148,7 +148,7 @@ class CampaignMessageApiTests extends AbstractIntegrationTest {
     void theSenderIsNotARecipient() {
         Account creator = account("self-creator");
         UUID project = liveCampaign(creator);
-        UUID backer = backer(project, "CONFIRMED", "AZ");
+        UUID backer = backer(project, "COLLECTED", "AZ");
 
         send(project, creator, null, "Hello", "A short note.");
         relay.run();
@@ -186,7 +186,7 @@ class CampaignMessageApiTests extends AbstractIntegrationTest {
     void theSegmentNameIsFrozenAtSendTime() {
         Account creator = account("frozen-creator");
         UUID project = liveCampaign(creator);
-        backer(project, "CONFIRMED", "DE");
+        backer(project, "COLLECTED", "DE");
         UUID segment = segment(project, creator, "Germany", "DE");
 
         send(project, creator, segment, "A note", "Body.");
@@ -205,7 +205,7 @@ class CampaignMessageApiTests extends AbstractIntegrationTest {
     void deletingASegmentLeavesTheMessage() {
         Account creator = account("deleted-creator");
         UUID project = liveCampaign(creator);
-        backer(project, "CONFIRMED", "DE");
+        backer(project, "COLLECTED", "DE");
         UUID segment = segment(project, creator, "Germany", "DE");
 
         send(project, creator, segment, "A note", "Body.");
@@ -225,7 +225,7 @@ class CampaignMessageApiTests extends AbstractIntegrationTest {
     void messagingASegmentIsAudited() {
         Account creator = account("audit-creator");
         UUID project = liveCampaign(creator);
-        backer(project, "CONFIRMED", "DE");
+        backer(project, "COLLECTED", "DE");
         UUID segment = segment(project, creator, "Germany", "DE");
 
         send(project, creator, segment, "A confidential subject", "A confidential body.");
@@ -265,7 +265,7 @@ class CampaignMessageApiTests extends AbstractIntegrationTest {
     void anUnknownSegmentIsNotFound() {
         Account creator = account("nosegment-creator");
         UUID project = liveCampaign(creator);
-        backer(project, "CONFIRMED", "AZ");
+        backer(project, "COLLECTED", "AZ");
 
         ResponseEntity<Map<String, Object>> refused =
                 send(project, creator, UUID.randomUUID(), "Hello", "Body.");

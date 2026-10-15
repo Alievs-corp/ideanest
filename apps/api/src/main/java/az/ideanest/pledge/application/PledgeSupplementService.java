@@ -69,14 +69,10 @@ public class PledgeSupplementService {
      *
      * <p>A backing that is still going somewhere. {@link PledgeState#DRAFT} is out
      * because a draft is a checkout in progress and the thing to do with it is finish
-     * it; the cancellations, the expiry and {@link PledgeState#DROPPED} are out because
-     * there is no reward to add to; {@link PledgeState#CHARGE_FAILED} is out because
-     * selling more to somebody whose card has already been refused is how a small
-     * problem becomes a large one; and {@link PledgeState#FULFILLED} is out because the
-     * parcel has gone.
+     * it; the cancellations and the expiry are out because there is no reward to add to;
+     * and {@link PledgeState#FULFILLED} is out because the parcel has gone.
      */
-    private static final List<PledgeState> SUPPLEMENTABLE =
-            List.of(PledgeState.CONFIRMED, PledgeState.CHARGE_PENDING, PledgeState.COLLECTED);
+    private static final List<PledgeState> SUPPLEMENTABLE = List.of(PledgeState.COLLECTED);
 
     private final PledgeRepository pledges;
     private final PledgeSupplementRepository supplements;

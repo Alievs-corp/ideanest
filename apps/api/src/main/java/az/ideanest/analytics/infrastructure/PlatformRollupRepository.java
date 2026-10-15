@@ -117,7 +117,7 @@ public class PlatformRollupRepository {
      * Friday is two rows there and one person here.
      *
      * <p>Counted over the pledge states that represent a real backer. A draft is a basket
-     * somebody abandoned, and the cancelled and dropped states are people who are no longer
+     * somebody abandoned, and the cancelled and expired states are people who are no longer
      * backing anything — {@code PledgeState.ACTIVE} is this set plus {@code DRAFT}. The
      * values are spelled out because SQL cannot name a Java constant;
      * {@code PlatformAnalyticsTests} asserts the two agree.
@@ -132,7 +132,7 @@ public class PlatformRollupRepository {
                 SELECT COUNT(DISTINCT p.backer_id)
                   FROM pledges p
                  WHERE p.created_at >= :from AND p.created_at < :to
-                   AND p.state IN ('CONFIRMED', 'CHARGE_PENDING', 'COLLECTED', 'FULFILLED')
+                   AND p.state IN ('COLLECTED', 'FULFILLED')
                 """,
                 Map.of("from", java.sql.Timestamp.from(from), "to", java.sql.Timestamp.from(to)));
     }

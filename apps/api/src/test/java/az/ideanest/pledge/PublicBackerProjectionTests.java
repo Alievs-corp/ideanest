@@ -54,12 +54,7 @@ class PublicBackerProjectionTests {
         // checked against each other, is worth more than one statement and a
         // derivation that cannot disagree because nobody reads it.
         assertThat(PublicBackers.COUNTED)
-                .containsExactlyInAnyOrder(
-                        PledgeState.CONFIRMED,
-                        PledgeState.CHARGE_PENDING,
-                        PledgeState.CHARGE_FAILED,
-                        PledgeState.COLLECTED,
-                        PledgeState.FULFILLED);
+                .containsExactlyInAnyOrder(PledgeState.COLLECTED, PledgeState.FULFILLED);
     }
 
     @Test
@@ -79,7 +74,7 @@ class PublicBackerProjectionTests {
     @Test
     @DisplayName("a pledge that has ended is not a backing")
     void endedPledgesAreNotCounted() {
-        // The six states in which the commitment between this backer and this campaign
+        // The five states in which the commitment between this backer and this campaign
         // is over. A campaign that went on counting a refunded pledge would be
         // advertising money it gave back.
         assertThat(PublicBackers.COUNTED)
@@ -87,7 +82,6 @@ class PublicBackerProjectionTests {
                         PledgeState.EXPIRED,
                         PledgeState.CANCELED_BY_BACKER,
                         PledgeState.CANCELED_BY_PROJECT,
-                        PledgeState.DROPPED,
                         PledgeState.REFUNDED,
                         PledgeState.CHARGEBACK);
     }

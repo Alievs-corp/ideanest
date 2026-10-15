@@ -11,7 +11,6 @@ INSERT INTO projects (
     id, creator_id, slug, title, blurb, category_id, subcategory_id, location_id,
     state, goal_amount, currency, duration_days, scheduled_launch_at, launched_at, deadline,
     story, risks, cover_image_url, cover_image_width, cover_image_height,
-    late_pledge_enabled, late_pledge_ends_at,
     finalized_at, outcome_goal_amount, outcome_pledged_amount, outcome_backers_count,
     created_at)
 VALUES
@@ -33,7 +32,7 @@ VALUES
          'Göndərmə və komissiyalar — 3 000 AZN']),
  'Radio modulunun tədarükü ən zəif nöqtədir. İki alternativ modul sınaqdan keçirilib və hər ikisi işləyir.',
  seed_photo('photo-1625246333195-78d9c38ad449', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '25 days'),
+ NULL, NULL, NULL, NULL, now() - interval '25 days'),
 
 (seed_id('project:divar'), seed_id('user:aysu'), 'divar-arxivi', 'Divar: Bakı küçə sənəti arxivi',
  'On ildə çəkilmiş 4000 fotoşəkil, xəritələnmiş və açıq lisenziya ilə paylaşılan arxiv.',
@@ -52,7 +51,7 @@ VALUES
          'Komissiyalar — 1 500 AZN']),
  'Bəzi rəsmlərin müəllifləri naməlumdur. Müəllif tapılmadıqda foto arxivdə qeydlə saxlanılır və çap albomuna daxil edilmir.',
  seed_photo('photo-1533174072545-7a4b6ad7a6c3', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '30 days'),
+ NULL, NULL, NULL, NULL, now() - interval '30 days'),
 
 (seed_id('project:gece'), seed_id('user:aysu'), 'gece-baki', 'Gecə Bakı: uzun ekspozisiya albomu',
  'İki il boyunca gecələr çəkilmiş 90 fotoşəkil. Böyük format çap albomu.',
@@ -70,7 +69,7 @@ VALUES
          'Qablaşdırma və göndərmə — 3 000 AZN']),
  'Böyük format çapda rəng uyğunluğu risklidir. İki mətbəədən nümunə alınıb və biri seçilib.',
  seed_photo('photo-1470813740244-df37b8c1edcb', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '18 days'),
+ NULL, NULL, NULL, NULL, now() - interval '18 days'),
 
 (seed_id('project:seyyah'), seed_id('user:sevinc'), 'seyyah-komiks', 'Səyyah: qrafik novella',
  'İpək Yolu boyunca səyahət edən bir xəritəçinin hekayəsi. 120 səhifə, tam rəngli.',
@@ -88,7 +87,7 @@ VALUES
          'Göndərmə — 4 000 AZN']),
  'Keçən kampaniya hədəfə çatmadı. Bu dəfə hədəf aşağıdır və işin yarısı artıq görülüb.',
  seed_photo('photo-1595535873420-a599195b3f4a', 1600, 1000), 1600, 1000,
- true, now() + interval '48 days', NULL, NULL, NULL, NULL, now() - interval '40 days'),
+ NULL, NULL, NULL, NULL, now() - interval '40 days'),
 
 (seed_id('project:sebeke'), seed_id('user:elnur'), 'sebeke-desti', 'Şəbəkə: pəncərə sənəti dəsti',
  'Şəkidəki şəbəkə ustaları ilə hazırlanan, yapışqansız yığılan pəncərə dəsti.',
@@ -106,7 +105,7 @@ VALUES
          'Qablaşdırma və göndərmə — 3 000 AZN']),
  'Rəngli şüşə xaricdən gətirilir və qırılma faizi yüksəkdir. Hər dəstə ehtiyat parçalar əlavə edilir.',
  seed_photo('photo-1504609773096-104ff2c73ba4', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '12 days'),
+ NULL, NULL, NULL, NULL, now() - interval '12 days'),
 
 (seed_id('project:yalli'), seed_id('user:gunel'), 'yalli-sened', 'Yallı: rəqsin sənədli filmi',
  'Naxçıvan və Şərur yallılarının 50 dəqiqəlik sənədli filmi və hərəkət arxivi.',
@@ -124,7 +123,7 @@ VALUES
          'Arxiv və subtitr — 6 000 AZN']),
  'Çəkiliş mövsümdən asılıdır. Yallı əsasən yaz bayramlarında və toylarda ifa olunur.',
  seed_photo('photo-1508700115892-45ecd05ae2ad', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '22 days')
+ NULL, NULL, NULL, NULL, now() - interval '22 days')
 
 ON CONFLICT (id) DO NOTHING;
 

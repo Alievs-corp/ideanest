@@ -11,7 +11,6 @@ INSERT INTO projects (
     id, creator_id, slug, title, blurb, category_id, subcategory_id, location_id,
     state, goal_amount, currency, duration_days, scheduled_launch_at, launched_at, deadline,
     story, risks, cover_image_url, cover_image_width, cover_image_height,
-    late_pledge_enabled, late_pledge_ends_at,
     finalized_at, outcome_goal_amount, outcome_pledged_amount, outcome_backers_count,
     created_at)
 VALUES
@@ -35,7 +34,7 @@ VALUES
          'Platforma və ödəniş komissiyaları — 2 500 AZN']),
  'Ən böyük risk gömrükdür: kağız idxalı gecikərsə istehsal iki-üç həftə sürüşə bilər. Ehtiyat tədarükçü ilə də danışıqlar aparılıb.',
  seed_photo('photo-1531297484001-80022131f5a1', 1600, 1000), 1600, 1000,
- true, now() + interval '37 days', NULL, NULL, NULL, NULL, now() - interval '52 days'),
+ NULL, NULL, NULL, NULL, now() - interval '52 days'),
 
 (seed_id('project:qala'), seed_id('user:orxan'), 'qala-oyunu', 'Qala: Qafqaz mifologiyası əsasında strategiya',
  'Şəhər qururuq, əjdaha ilə danışırıq. Azərbaycan nağıllarından bəhrələnən növbəli strategiya.',
@@ -54,7 +53,7 @@ VALUES
          'Test və nəşr — 8 000 AZN']),
  'Oyun tərtibatı proqnozlaşdırılması çətin işdir. Buraxılış tarixini altı ay ehtiyatla göstərmişik, lakin gecikmə ehtimalı realdır.',
  seed_photo('photo-1511512578047-dfb367046420', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '44 days'),
+ NULL, NULL, NULL, NULL, now() - interval '44 days'),
 
 (seed_id('project:qehve'), seed_id('user:tural'), 'sirdas-qehve', 'Sirdaş: Bakıda qovrulan tək mənşəli qəhvə',
  'Efiopiya və Kolumbiyadan gətirilən dənələr, Bakıda həftəlik kiçik partiyalarla qovrulur.',
@@ -73,7 +72,7 @@ VALUES
          'Komissiyalar — 1 500 AZN']),
  'Dünya qəhvə qiymətləri dəyişkəndir. Kəskin artım olarsa porsiya çəkisini deyil, abunə qiymətini yenidən nəzərdən keçirəcəyik və dəstəkçilərə əvvəlcədən bildirəcəyik.',
  seed_photo('photo-1524758631624-e2822e304c36', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '35 days'),
+ NULL, NULL, NULL, NULL, now() - interval '35 days'),
 
 (seed_id('project:naringi'), seed_id('user:sevinc'), 'naringi-kitab', 'Narıncı: uşaqlar üçün Azərbaycan nağılları',
  'Yeddi klassik nağıl, yenidən danışılıb və əl ilə çəkilmiş 60 illüstrasiya ilə nəşr olunur.',
@@ -92,7 +91,7 @@ VALUES
          'Göndərmə — 1 500 AZN']),
  'Çap keyfiyyəti üçün iki mətbəədən nümunə alınıb. Rəng uyğunsuzluğu olarsa çap gecikə bilər — bu halda dəstəkçilərə yeni tarix bildiriləcək.',
  seed_photo('photo-1481627834876-b7833e8f5570', 1600, 1000), 1600, 1000,
- true, now() + interval '41 days', NULL, NULL, NULL, NULL, now() - interval '40 days'),
+ NULL, NULL, NULL, NULL, now() - interval '40 days'),
 
 (seed_id('project:tar'), seed_id('user:ramin'), 'elektro-tar', 'Elektro tar: klassik alət, yeni səs',
  'Tarın səsini itirmədən onu gücləndirici və effektlərlə işləyə bilən hala gətirən adapter.',
@@ -111,7 +110,7 @@ VALUES
          'Qablaşdırma və göndərmə — 2 500 AZN']),
  'Komponent tədarükü qlobal çatışmazlıqdan asılıdır. Əsas mikroçip üçün iki alternativ tədarükçü təsdiqlənib.',
  seed_photo('photo-1452587925148-ce544e77e70d', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '30 days'),
+ NULL, NULL, NULL, NULL, now() - interval '30 days'),
 
 (seed_id('project:ipek'), seed_id('user:gunel'), 'ipek-yolu-film', 'İpək Yolu: sənədli film',
  'Şəki, Basqal və Ordubadda ipəkçiliyin son ustaları haqqında 80 dəqiqəlik sənədli film.',
@@ -130,7 +129,7 @@ VALUES
          'Festival və subtitr — 10 000 AZN']),
  'İştirakçılardan biri səhhəti səbəbindən əlavə çəkilişə razı olmaya bilər. Bu halda mövcud materialdan istifadə ediləcək.',
  seed_photo('photo-1470071459604-3b5ec3a7fe05', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '33 days'),
+ NULL, NULL, NULL, NULL, now() - interval '33 days'),
 
 (seed_id('project:kelagayi'), seed_id('user:creator'), 'kelagayi-kolleksiya', 'Kəlağayı: gündəlik geyim kolleksiyası',
  'Basqal kəlağayısının naxışları ilə hazırlanan ipək köynək və şərf kolleksiyası.',
@@ -149,7 +148,7 @@ VALUES
          'Göndərmə və komissiyalar — 2 500 AZN']),
  'Təbii boyama partiyadan partiyaya kiçik rəng fərqi yaradır. Bunu qüsur deyil, xüsusiyyət kimi göstəririk və hər məhsulun fotosu ayrıca çəkilir.',
  seed_photo('photo-1523381210434-271e8be1f52b', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '20 days'),
+ NULL, NULL, NULL, NULL, now() - interval '20 days'),
 
 -- ── Ended, and finalised ────────────────────────────────────────────────────
 
@@ -169,7 +168,7 @@ VALUES
          'Tərcümə və subtitr — 6 000 AZN']),
  'Bəzi ustalar çəkilişdən imtina edə bilər. On beş nəfərlə danışılıb, on ikisi razılıq verib.',
  seed_photo('photo-1503676260728-1c00da094a0b', 1600, 1000), 1600, 1000,
- false, NULL, now() - interval '75 days', 30000, 33600, 214, now() - interval '140 days'),
+ now() - interval '75 days', 30000, 33600, 214, now() - interval '140 days'),
 
 (seed_id('project:foto'), seed_id('user:creator'), 'baki-foto-albom', 'Bakı 1990: foto albom',
  'Şəxsi arxivlərdən toplanmış 180 fotoşəkil, ilk dəfə çap olunur.',
@@ -187,7 +186,7 @@ VALUES
          'Göndərmə — 2 000 AZN']),
  'Bəzi fotoların müəllif hüquqları aydın deyil. Hüquq sahibi tapılmayan fotolar albomdan çıxarılıb.',
  seed_photo('photo-1516035069371-29a1b244cc32', 1600, 1000), 1600, 1000,
- false, NULL, now() - interval '170 days', 9000, 11250, 143, now() - interval '215 days'),
+ now() - interval '170 days', 9000, 11250, 143, now() - interval '215 days'),
 
 (seed_id('project:komiks'), seed_id('user:sevinc'), 'qorqud-komiks', 'Qorqud: qrafik roman',
  'Dədə Qorqud boylarının müasir qrafik roman uyğunlaşması. İlk cild, 140 səhifə.',
@@ -205,7 +204,7 @@ VALUES
          'Çap — 7 000 AZN']),
  'Hədəf məbləğ yüksək idi. Növbəti cəhddə daha kiçik hədəflə və hazır materialla qayıdacağıq.',
  seed_photo('photo-1516450360452-9312f5e86fc7', 1600, 1000), 1600, 1000,
- false, NULL, now() - interval '115 days', 40000, 8940, 61, now() - interval '175 days'),
+ now() - interval '115 days', 40000, 8940, 61, now() - interval '175 days'),
 
 -- ── Money in motion ─────────────────────────────────────────────────────────
 
@@ -226,7 +225,7 @@ VALUES
          'Göndərmə — 2 000 AZN']),
  'Vinil çapı Avropada növbə ilə aparılır və altı aya qədər gözləmə mümkündür.',
  seed_photo('photo-1513364776144-60967b0f800f', 1600, 1000), 1600, 1000,
- false, NULL, now() - interval '6 days', 22000, 24860, 178, now() - interval '60 days'),
+ now() - interval '6 days', 22000, 24860, 178, now() - interval '60 days'),
 
 (seed_id('project:qab'), seed_id('user:orxan'), 'ag-qab', 'Ağ Qab: ağıllı su qabı',
  'İçdiyiniz suyu ölçən, telefona ehtiyac duymayan və bataryası altı ay dözən su qabı.',
@@ -245,7 +244,7 @@ VALUES
          'Göndərmə — 7 000 AZN']),
  'Kalıp istehsalı bir dəfəlik xərcdir və gecikməsi bütün cədvəli sürüşdürür. Bu risk gerçəkləşdi və göndərmə bir ay gecikdi.',
  seed_photo('photo-1518770660439-4636190af475', 1600, 1000), 1600, 1000,
- false, NULL, now() - interval '105 days', 55000, 71400, 486, now() - interval '170 days'),
+ now() - interval '105 days', 55000, 71400, 486, now() - interval '170 days'),
 
 (seed_id('project:lampa'), seed_id('user:creator'), 'xalca-lampa', 'Xalça lampa',
  'Xalça naxışını divara işıqla salan, əl ilə yığılan masa lampası.',
@@ -263,7 +262,7 @@ VALUES
          'Qablaşdırma və göndərmə — 5 000 AZN']),
  'Metal qiymətləri artdı, lakin ehtiyat büdcə bunu qarşıladı.',
  seed_photo('photo-1558618666-fcd25c85cd64', 1600, 1000), 1600, 1000,
- false, NULL, now() - interval '270 days', 16000, 19200, 152, now() - interval '320 days'),
+ now() - interval '270 days', 16000, 19200, 152, now() - interval '320 days'),
 
 (seed_id('project:masa'), seed_id('user:orxan'), 'oyun-masasi', 'Novruz: masaüstü oyun',
  'İki-dörd nəfər üçün, qırx dəqiqəlik, Novruz adətləri üzərində qurulan masaüstü oyun.',
@@ -281,7 +280,7 @@ VALUES
          'Göndərmə — 7 000 AZN']),
  'Karton komponentlərin istehsalı Çindədir və nəqliyyat müddəti dəyişkəndir.',
  seed_photo('photo-1550745165-9bc0b252726f', 1600, 1000), 1600, 1000,
- true, now() + interval '10 days', now() - interval '30 days', 35000, 41300, 297, now() - interval '90 days'),
+ now() - interval '30 days', 35000, 41300, 297, now() - interval '90 days'),
 
 -- ── Before launch ───────────────────────────────────────────────────────────
 
@@ -301,7 +300,7 @@ VALUES
          'Dekor və işıq — 6 000 AZN']),
  'Zal kirayəsi ilkin razılaşma əsasındadır və müqavilə hələ imzalanmayıb.',
  seed_photo('photo-1493225457124-a3eb161ffa5f', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '9 days'),
+ NULL, NULL, NULL, NULL, now() - interval '9 days'),
 
 (seed_id('project:kurs'), seed_id('user:creator'), 'dizayn-kurs', 'Naxış: onlayn dizayn kursu',
  NULL,
@@ -310,7 +309,7 @@ VALUES
  NULL,
  NULL,
  NULL, NULL, NULL,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '4 days'),
+ NULL, NULL, NULL, NULL, now() - interval '4 days'),
 
 (seed_id('project:arxiv'), seed_id('user:ramin'), 'ses-arxivi', 'Səs arxivi: kənd toylarının musiqisi',
  'Otuz kənddə toy musiqisinin sahə yazıları. Açıq arxiv, pulsuz yüklənə bilən.',
@@ -328,7 +327,7 @@ VALUES
          'Arxiv və hostinq — 3 000 AZN']),
  'Sahə yazıları hava və mövsümdən asılıdır. Toy mövsümü yaz və payıza düşür.',
  seed_photo('photo-1524678606370-a47ad25cb82a', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '14 days'),
+ NULL, NULL, NULL, NULL, now() - interval '14 days'),
 
 (seed_id('project:bazar'), seed_id('user:tural'), 'qis-bazari', 'Qış Bazarı: yerli istehsalçılar üçün meydança',
  'Bakıda üç həftəlik qış bazarı: qırx yerli istehsalçı, bir dam altında.',
@@ -346,7 +345,7 @@ VALUES
          'Tanıtım — 6 000 AZN']),
  'Qış havası açıq sahə üçün risklidir. Ehtiyat olaraq örtülü variant da razılaşdırılıb.',
  seed_photo('photo-1414235077428-338989a2e8c0', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '18 days'),
+ NULL, NULL, NULL, NULL, now() - interval '18 days'),
 
 -- ── What the console has to deal with ───────────────────────────────────────
 
@@ -364,7 +363,7 @@ VALUES
    ARRAY['Sifariş — 50 000 AZN']),
  'Yoxdur.',
  seed_photo('photo-1511707171634-5f897ff02aa9', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '32 days'),
+ NULL, NULL, NULL, NULL, now() - interval '32 days'),
 
 (seed_id('project:legv'), seed_id('user:tural'), 'kend-suexanasi', 'Kənd südxanası',
  'Quba rayonunda kiçik pendir istehsalı. Yaradıcı tərəfindən ləğv edilib.',
@@ -381,7 +380,7 @@ VALUES
          'Tikili — 10 000 AZN']),
  'Tikili üçün müqavilə imzalanmamışdı. Bu, layihənin dayandırılmasının səbəbi oldu.',
  seed_photo('photo-1550009158-9ebf69173e03', 1600, 1000), 1600, 1000,
- false, NULL, NULL, NULL, NULL, NULL, now() - interval '110 days')
+ NULL, NULL, NULL, NULL, now() - interval '110 days')
 
 ON CONFLICT (id) DO NOTHING;
 

@@ -327,13 +327,12 @@ class PublicBackerApiTests extends AbstractIntegrationTest {
      * <p>The draft through HTTP rather than by writing the row, because the property under
      * test is that the flag a client sends to {@code POST /v1/pledges/draft} is the flag
      * these counts are taken over — a fixture that wrote {@code is_anonymous} itself
-     * would prove the count works on data the application never produced. The confirmation
-     * is the stored-card model's, which no route performs since #45; a pledge made before
-     * IDN-EXT-01 can still be in that state and is counted.
+     * would prove the count works on data the application never produced. The payment is
+     * written by hand, because no provider runs in this suite.
      */
     private UUID back(Account backer, UUID projectId, UUID rewardTierId, String contribution, boolean anonymous) {
         UUID pledgeId = draft(backer, projectId, rewardTierId, contribution, anonymous);
-        Pledges.confirmDraft(dataSource, pledgeId);
+        Pledges.payDraft(dataSource, pledgeId);
         return pledgeId;
     }
 

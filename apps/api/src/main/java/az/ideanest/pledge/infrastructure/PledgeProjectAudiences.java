@@ -27,9 +27,8 @@ import org.springframework.stereotype.Component;
  *
  * <h2>Which states are backers, and why it is not the active set</h2>
  *
- * <p>V17 defines an <em>active</em> pledge as one of six states, and this is five of them:
- * {@code CONFIRMED}, {@code CHARGE_PENDING}, {@code CHARGE_FAILED}, {@code COLLECTED},
- * {@code FULFILLED}.
+ * <p>V107 defines an <em>active</em> pledge as one of three states, and this is two of them:
+ * {@code COLLECTED} and {@code FULFILLED}.
  *
  * <p><strong>{@code DRAFT} is in V17's active set and is deliberately not a backer.</strong> The
  * two definitions are answering different questions. V17's exists to stop one person holding two
@@ -78,8 +77,7 @@ public class PledgeProjectAudiences implements ProjectAudienceSource {
      * and not an input — and because an {@code IN} list of literals is what lets the planner use
      * {@code pledges_project_backer_active_key}.
      */
-    private static final String BACKING_STATES =
-            "'CONFIRMED', 'CHARGE_PENDING', 'CHARGE_FAILED', 'COLLECTED', 'FULFILLED'";
+    private static final String BACKING_STATES = "'COLLECTED', 'FULFILLED'";
 
     /**
      * Distinct, although the unique index very nearly guarantees it.

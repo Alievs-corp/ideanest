@@ -355,7 +355,7 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a draft and a legacy confirmed pledge are changed with the edit, exactly as before")
+    @DisplayName("a draft is changed with the edit, and a paid pledge is raised")
     void draftsAndConfirmedPledgesAreEdited() {
         Scenario draft = aCampaign("raise-draft");
         UUID draftId = draft(draft, draft.backer(), "25.00");
@@ -377,26 +377,6 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
                 "contribution", azn("27.00")));
         assertThat(loweredDraft.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(amount(loweredDraft.getBody(), "total")).isEqualTo("27.00");
-
-        Account legacy = account("raise-confirmed-backer");
-        UUID confirmedId = draft(draft, legacy, "25.00");
-        paidPledges.add(confirmedId);
-        // Confirmed the stored-card way, as a pledge made before IDN-EXT-01 is. No route does it since #45.
-        Pledges.confirmDraft(dataSource, confirmedId);
-        assertThat(state(confirmedId)).isEqualTo("CONFIRMED");
-
-        ResponseEntity<Map<String, Object>> legacyRaise = raise(
-                legacy, confirmedId, UUID.randomUUID().toString(), Map.of(
-                        "contribution", azn("30.00"), "expectedAmount", azn("5.00")));
-        assertThat(legacyRaise.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(meta(legacyRaise.getBody())).containsEntry("state", "CONFIRMED");
-
-        ResponseEntity<Map<String, Object>> raisedByEdit = patch(legacy, confirmedId, Map.of("contribution", azn("35.00")));
-        assertThat(raisedByEdit.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(amount(raisedByEdit.getBody(), "total")).isEqualTo("35.00");
-        assertThat(patch(legacy, confirmedId, Map.of("contribution", azn("30.00"))).getBody())
-                .containsEntry("code", "PLEDGE_DECREASE_NOT_ALLOWED");
-        assertThat(pagesFor(confirmedId)).as("an edit charges nothing").isZero();
 
         // And a paid pledge is not edited: it is raised.
         Scenario paid = aPaidPledge("raise-not-patched");

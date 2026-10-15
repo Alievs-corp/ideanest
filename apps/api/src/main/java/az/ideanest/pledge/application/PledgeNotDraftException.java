@@ -19,7 +19,7 @@ import java.util.UUID;
  * that a transition happened when it did not.
  *
  * <p>The state is carried because the client's next move depends on it: a
- * {@code CONFIRMED} pledge is shown, an {@code EXPIRED} one is started again.
+ * {@code COLLECTED} pledge is shown, an {@code EXPIRED} one is started again.
  */
 public class PledgeNotDraftException extends RuntimeException {
 

@@ -114,8 +114,8 @@ class NotificationAudienceTests extends AbstractIntegrationTest {
     @Test
     @DisplayName("goal reached tells the creator and every backer")
     void goalReachedTellsTheCreatorAndTheBackers() {
-        UUID first = backer("CONFIRMED");
-        UUID second = backer("COLLECTED");
+        UUID first = backer("COLLECTED");
+        UUID second = backer("FULFILLED");
 
         goalReached();
 
@@ -138,7 +138,7 @@ class NotificationAudienceTests extends AbstractIntegrationTest {
     @Test
     @DisplayName("a draft is not a backer")
     void aDraftIsNotABacker() {
-        UUID confirmed = backer("CONFIRMED");
+        UUID confirmed = backer("COLLECTED");
         UUID drafting = draftingBacker();
 
         goalReached();
@@ -155,7 +155,6 @@ class NotificationAudienceTests extends AbstractIntegrationTest {
                 backer("EXPIRED"),
                 backer("CANCELED_BY_BACKER"),
                 backer("CANCELED_BY_PROJECT"),
-                backer("DROPPED"),
                 backer("REFUNDED"),
                 backer("CHARGEBACK"));
 
@@ -167,19 +166,16 @@ class NotificationAudienceTests extends AbstractIntegrationTest {
         assertThat(recipients()).doesNotContainAnyElementsOf(gone);
     }
 
-    /** And the four states after confirmation that are, so the set is asserted from both sides. */
+    /** And the states after payment that are, so the set is asserted from both sides. */
     @Test
-    @DisplayName("a pledge still in flight is a backer, whatever stage it has reached")
-    void aPledgeStillInFlightIsABacker() {
-        UUID pending = backer("CHARGE_PENDING");
-        UUID failed = backer("CHARGE_FAILED");
+    @DisplayName("a paid pledge is a backer, whatever stage it has reached")
+    void aPaidPledgeIsABacker() {
+        UUID collected = backer("COLLECTED");
         UUID fulfilled = backer("FULFILLED");
 
         goalReached();
 
-        assertThat(recipients())
-                .as("a refused card is a backer the platform is still trying to charge")
-                .containsExactlyInAnyOrder(creatorId, pending, failed, fulfilled);
+        assertThat(recipients()).containsExactlyInAnyOrder(creatorId, collected, fulfilled);
     }
 
     /**
@@ -193,7 +189,7 @@ class NotificationAudienceTests extends AbstractIntegrationTest {
     @Test
     @DisplayName("a creator who backed their own campaign is told once")
     void aCreatorWhoBackedTheirOwnCampaignIsToldOnce() {
-        pledge(creatorId, "CONFIRMED");
+        pledge(creatorId, "COLLECTED");
 
         goalReached();
 
@@ -218,7 +214,7 @@ class NotificationAudienceTests extends AbstractIntegrationTest {
     void anAudienceOverTheBoundIsTruncatedAndTheCreatorSurvives() {
         int ceiling = properties.maxRecipients();
         for (int backer = 0; backer < ceiling + 2; backer++) {
-            backer("CONFIRMED");
+            backer("COLLECTED");
         }
 
         goalReached();
@@ -250,9 +246,9 @@ class NotificationAudienceTests extends AbstractIntegrationTest {
     @Test
     @DisplayName("the audience port answers in a stable order, bounded, distinct")
     void thePortAnswersInAStableOrder() {
-        backer("CONFIRMED");
-        backer("CONFIRMED");
-        backer("CONFIRMED");
+        backer("COLLECTED");
+        backer("COLLECTED");
+        backer("COLLECTED");
 
         List<UUID> once = audiences.membersOf(projectId, ProjectAudience.BACKERS, 2);
         List<UUID> again = audiences.membersOf(projectId, ProjectAudience.BACKERS, 2);
@@ -317,20 +313,12 @@ class NotificationAudienceTests extends AbstractIntegrationTest {
         new JdbcTemplate(dataSource)
                 .update(
                         """
-                        INSERT INTO pledges (id, project_id, backer_id, state, base_amount,
-                                             next_charge_attempt_at, charge_window_ends_at)
-                        VALUES (?, ?, ?, ?, 25.00,
-                                CASE WHEN ? IN ('CHARGE_PENDING', 'CHARGE_FAILED') THEN now() END,
-                                CASE WHEN ? IN ('CHARGE_PENDING', 'CHARGE_FAILED') THEN now() + interval '7 days' END)
+                        INSERT INTO pledges (id, project_id, backer_id, state, base_amount)
+                        VALUES (?, ?, ?, ?, 25.00)
                         """,
                         Identifiers.newIdentifier(),
                         projectId,
                         backerId,
-                        state,
-                        // V42's pledges_collection_schedule_is_whole: a pledge queued for
-                        // collection has §9.6's schedule on it, because one without is a
-                        // pledge no sweep will ever pick up.
-                        state,
                         state);
     }
 

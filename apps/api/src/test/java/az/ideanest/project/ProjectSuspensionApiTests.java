@@ -171,17 +171,15 @@ class ProjectSuspensionApiTests extends AbstractIntegrationTest {
         UUID tier = reward(creator, project, "A boxed set", "25.00", 5);
         Campaigns.launch(dataSource, project);
 
-        Account backer = account("susp-backer");
-        UUID confirmed = confirmedPledge(project, backer, tier);
-        Account second = account("susp-drafter");
-        UUID draft = draftPledge(project, second, tier);
+        UUID first = draftPledge(project, account("susp-backer"), tier);
+        UUID draft = draftPledge(project, account("susp-drafter"), tier);
 
         assertThat(committed(tier)).isEqualTo(2);
 
         suspend(project, moderator(), "Counterfeit product photographs.");
         relay.run();
 
-        assertThat(pledgeState(confirmed)).isEqualTo("CANCELED_BY_PROJECT");
+        assertThat(pledgeState(first)).isEqualTo("CANCELED_BY_PROJECT");
         assertThat(pledgeState(draft))
                 .as("a checkout in progress on a suspended campaign is not going to be finished")
                 .isEqualTo("CANCELED_BY_PROJECT");
@@ -197,7 +195,7 @@ class ProjectSuspensionApiTests extends AbstractIntegrationTest {
         UUID project = project(creator);
         UUID tier = reward(creator, project, "A boxed set", "25.00", 5);
         Campaigns.launch(dataSource, project);
-        UUID pledge = confirmedPledge(project, account("canc-backer"), tier);
+        UUID pledge = draftPledge(project, account("canc-backer"), tier);
 
         ResponseEntity<Map<String, Object>> canceled = exchange(
                 "/v1/projects/" + project + "/cancel",
@@ -219,13 +217,7 @@ class ProjectSuspensionApiTests extends AbstractIntegrationTest {
         UUID project = project(creator);
         UUID tier = reward(creator, project, "A boxed set", "25.00", 5);
         Campaigns.launch(dataSource, project);
-        UUID pledge = confirmedPledge(project, account("susp-collected-backer"), tier);
-
-        // Written by hand: nothing collects anything until epic #59, which is blocked
-        // on choosing a payment provider. What is being asserted is that the release
-        // will not touch these rows when they start existing.
-        new JdbcTemplate(dataSource)
-                .update("UPDATE pledges SET state = 'COLLECTED', collected_at = now() WHERE id = ?", pledge);
+        UUID pledge = paidPledge(project, account("susp-collected-backer"), tier);
 
         suspend(project, moderator(), "Counterfeit product photographs.");
         relay.run();
@@ -242,7 +234,7 @@ class ProjectSuspensionApiTests extends AbstractIntegrationTest {
         UUID project = project(creator);
         UUID tier = reward(creator, project, "A boxed set", "25.00", 5);
         Campaigns.launch(dataSource, project);
-        UUID pledge = confirmedPledge(project, account("susp-redeliver-backer"), tier);
+        UUID pledge = draftPledge(project, account("susp-redeliver-backer"), tier);
 
         suspend(project, moderator(), "Counterfeit product photographs.");
         relay.run();
@@ -374,10 +366,9 @@ class ProjectSuspensionApiTests extends AbstractIntegrationTest {
         return UUID.fromString((String) created.getBody().get("id"));
     }
 
-    /** A pledge confirmed the stored-card way, as one made before IDN-EXT-01 is; no route does it since #45. */
-    private UUID confirmedPledge(UUID project, Account backer, UUID tier) {
+    private UUID paidPledge(UUID project, Account backer, UUID tier) {
         UUID pledge = draftPledge(project, backer, tier);
-        Pledges.confirmDraft(dataSource, pledge);
+        Pledges.payDraft(dataSource, pledge);
         return pledge;
     }
 

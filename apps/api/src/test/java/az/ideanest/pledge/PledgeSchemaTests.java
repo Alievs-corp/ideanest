@@ -9,6 +9,7 @@ import az.ideanest.shared.Identifiers;
 import az.ideanest.support.AbstractIntegrationTest;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
@@ -137,24 +138,7 @@ class PledgeSchemaTests extends AbstractIntegrationTest {
      * DRAFT, which is a rule this fixture is not the place to argue with.
      */
     private void setState(UUID pledgeId, PledgeState state) {
-        // V42's pledges_collection_schedule_is_whole pairs the two collecting states with
-        // §9.6's schedule, in both directions: a queued pledge with no next attempt is one
-        // no sweep will ever pick up, and a collected pledge that kept its schedule would
-        // be charged again. The fixture therefore writes the schedule with the state
-        // rather than leaving the constraint to be argued with here.
-        boolean collecting = state == PledgeState.CHARGE_PENDING || state == PledgeState.CHARGE_FAILED;
-        jdbc().update(
-                        """
-                        UPDATE pledges
-                           SET state = ?,
-                               next_charge_attempt_at = CASE WHEN ? THEN now() END,
-                               charge_window_ends_at = CASE WHEN ? THEN now() + interval '7 days' END
-                         WHERE id = ?
-                        """,
-                        state.name(),
-                        collecting,
-                        collecting,
-                        pledgeId);
+        jdbc().update("UPDATE pledges SET state = ? WHERE id = ?", state.name(), pledgeId);
     }
 
     private int count(String table, String column, UUID value) {
@@ -232,7 +216,7 @@ class PledgeSchemaTests extends AbstractIntegrationTest {
         // statement about the time the backer was given, and requiring every
         // transition to clear it would be a rule with no reader.
         UUID draft = insertDraft(projectId, backerId, null);
-        assertThatCode(() -> jdbc().update("UPDATE pledges SET state = 'CONFIRMED' WHERE id = ?", draft))
+        assertThatCode(() -> jdbc().update("UPDATE pledges SET state = 'COLLECTED' WHERE id = ?", draft))
                 .doesNotThrowAnyException();
         assertThat(jdbc().queryForObject(
                         "SELECT reservation_expires_at FROM pledges WHERE id = ?", Instant.class, draft))
@@ -240,7 +224,7 @@ class PledgeSchemaTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("§6.2: the state is one of the twelve, and nothing else")
+    @DisplayName("§6.2: the state is one of the eight, and nothing else")
     void theStateIsFromSixTwosVocabulary() {
         UUID projectId = insertProject();
         UUID pledgeId = insertDraft(projectId, insertUser(), null);
@@ -252,9 +236,11 @@ class PledgeSchemaTests extends AbstractIntegrationTest {
         }
 
         // A state outside §6.2 is a pledge nothing in the platform knows how to
-        // collect, refund, or fulfil.
-        assertThatThrownBy(() -> jdbc().update("UPDATE pledges SET state = 'PAID' WHERE id = ?", pledgeId))
-                .isInstanceOf(DataIntegrityViolationException.class);
+        // collect, refund, or fulfil. The stored-card states left with V107.
+        for (String retired : List.of("PAID", "CONFIRMED", "CHARGE_PENDING", "CHARGE_FAILED", "DROPPED")) {
+            assertThatThrownBy(() -> jdbc().update("UPDATE pledges SET state = ? WHERE id = ?", retired, pledgeId))
+                    .isInstanceOf(DataIntegrityViolationException.class);
+        }
     }
 
     // -----------------------------------------------------------------------

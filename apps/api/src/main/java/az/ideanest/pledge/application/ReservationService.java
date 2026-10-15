@@ -304,13 +304,8 @@ public class ReservationService {
      * and the add-on rows either all happen or none do. That is what lets the
      * refusal above be a genuine no-op rather than a promise.
      *
-     * <p><strong>Which column moves depends on the pledge, not on the tier.</strong>
-     * A {@code DRAFT} holds <em>reserved</em> places and a {@code CONFIRMED} pledge
-     * holds <em>claimed</em> ones, so an edit moves like for like — see
-     * {@link RewardStock#claimPlaces} and
-     * {@link RewardStock#releaseClaimedPlaces}. Moving a confirmed backer's place
-     * through {@code reserved_quantity} would leave a reservation against a pledge
-     * that is not a draft, which is exactly the row §8.4's sweep hunts for.
+     * <p>Only a {@code DRAFT} is edited, and it holds <em>reserved</em> places, so
+     * every place an edit moves is a reserved one.
      *
      * <p><strong>An add-on's quantity moves the difference, in the same two
      * passes (#203).</strong> The places the pledge holds before and after are two
@@ -343,14 +338,6 @@ public class ReservationService {
     public Pledge edit(Pledge pledge, EditPledge command, List<PledgeAddon> existingAddons) {
         PlannedSelection planned = plan(pledge, command, existingAddons);
         PledgeQuote quote = planned.quote();
-
-        // IDN-EXT-01 (#35): a confirmed pledge may only be raised. Checked against the quote and
-        // before any place moves, so a refused edit leaves the pledge and every counter exactly as
-        // they were. A draft is still being chosen and is not held to it.
-        if (pledge.getState() == PledgeState.CONFIRMED
-                && quote.totalAmount().compareTo(pledge.getTotalAmount()) < 0) {
-            throw new PledgeDecreaseNotAllowedException(pledge.getId(), pledge.getTotalAmount(), quote.totalAmount());
-        }
 
         moveThePlaces(pledge, planned.places(), existingAddons);
 
@@ -553,9 +540,7 @@ public class ReservationService {
      * <p>A draft holds <em>reserved</em> places and a paid pledge holds <em>claimed</em> ones. The
      * sum never changes, so no other checkout sees a place appear or disappear —
      * {@code RewardTierRepository#commitPlaces} carries the argument for why a release followed by
-     * a claim is wrong in both orders. Until #45 the stored-card model's {@code confirm} made the
-     * same commit and stopped at {@code CONFIRMED}; under the charge-now model a pledge is
-     * confirmed by being paid for.
+     * a claim is wrong in both orders. A pledge is confirmed by being paid for.
      */
     public Pledge collect(Pledge pledge, List<PledgeAddon> heldAddons, Instant now) {
         for (Map.Entry<UUID, Integer> line : HeldPlaces.heldBy(pledge, heldAddons).entrySet()) {
@@ -575,12 +560,8 @@ public class ReservationService {
      * §4.5's PL-10: the backer withdraws, and every place they held goes back. #56,
      * extended by #203.
      *
-     * <p><strong>Which places go back depends on what the pledge was holding.</strong>
-     * A {@code DRAFT} gives back <em>reserved</em> places and a {@code CONFIRMED}
-     * pledge gives back <em>claimed</em> ones. They are different statements against
-     * different columns, and releasing the wrong one leaves the tier counting a place
-     * nobody holds while it is short of one somebody does — with the sum, which is
-     * what the limit is checked against, still looking correct.
+     * <p>Only a {@code DRAFT} is withdrawn, so the places that go back are
+     * <em>reserved</em> ones.
      *
      * <p><strong>Nothing is refunded, because nothing was collected.</strong> §9.7's
      * row for this case says so in terms, and §9.2 puts the only collection at the
@@ -602,12 +583,9 @@ public class ReservationService {
     @Transactional
     public void cancel(Pledge pledge, List<PledgeAddon> heldAddons, Instant now) {
         SortedMap<UUID, Integer> held = HeldPlaces.heldBy(pledge, heldAddons);
-        // Read before the transition, because it is the old state that says which
-        // column the places are counted in.
-        boolean committed = pledge.isConfirmed();
 
         pledge.cancelByBacker(now);
-        releaseTheHeldPlaces(pledge, held, committed);
+        releaseTheHeldPlaces(pledge, held, false);
         pledges.saveAndFlush(pledge);
     }
 
@@ -622,19 +600,16 @@ public class ReservationService {
      * campaign was taken down" are different facts on every screen that reports why a
      * place came back.
      *
-     * @param pledge a {@code DRAFT} or a {@code CONFIRMED} pledge, already established to
+     * @param pledge a {@code DRAFT}, already established to
      *     be one by {@code PledgeCancellationService} — which skips the states a halt
      *     does not end rather than refusing them
      */
     @Transactional
     public void cancelByProject(Pledge pledge, List<PledgeAddon> heldAddons, Instant now) {
         SortedMap<UUID, Integer> held = HeldPlaces.heldBy(pledge, heldAddons);
-        // Read before the transition, because it is the old state that says which column
-        // the places are counted in.
-        boolean committed = pledge.isConfirmed();
 
         pledge.cancelByProject(now);
-        releaseTheHeldPlaces(pledge, held, committed);
+        releaseTheHeldPlaces(pledge, held, false);
         pledges.saveAndFlush(pledge);
     }
 
@@ -707,12 +682,8 @@ public class ReservationService {
             return;
         }
 
-        // Read before the state changes, because it decides which of the two columns
-        // this pledge's places live in.
-        boolean committed = pledge.isConfirmed();
-
-        takeThePlaces(pledge.getProjectId(), HeldPlaces.extraIn(wanted, held), committed);
-        releaseTheHeldPlaces(pledge, HeldPlaces.extraIn(held, wanted), committed);
+        takeThePlaces(pledge.getProjectId(), HeldPlaces.extraIn(wanted, held), false);
+        releaseTheHeldPlaces(pledge, HeldPlaces.extraIn(held, wanted), false);
     }
 
     /**
@@ -726,8 +697,8 @@ public class ReservationService {
      * <p>The map is sorted, and every caller here passes one, for the deadlock reason
      * {@link HeldPlaces} carries.
      *
-     * @param claimed true when the pledge is already {@code CONFIRMED}, so the places
-     *     are taken as claimed ones rather than reserved. See
+     * @param claimed true when the places are bought outright rather than held for a
+     *     checkout, so they are taken as claimed ones rather than reserved. See
      *     {@link RewardStock#claimPlaces}
      * @throws RewardSoldOutException naming the first tier that refused. The
      *     transaction rolls back, so the tiers before it in the order give their places
