@@ -65,7 +65,7 @@ export function HeroPhoneScene({ lines }: { readonly lines: PhoneLines }) {
   return (
     <div
       aria-hidden="true"
-      className="@container relative mx-auto aspect-square w-[clamp(264px,calc((100svh-420px)*1.2),100%)] max-w-[420px] overflow-hidden rounded-xl border border-white/8 bg-surface-2"
+      className="@container relative mx-auto aspect-square w-[clamp(304px,calc((100svh-420px)*1.38),100%)] max-w-[420px] overflow-hidden rounded-xl border border-white/8 bg-surface-2"
       data-testid="hero-phone-scene"
     >
       <HeroLoop sources={PHONE_SOURCES} poster={LOOP.phonePoster} className="absolute inset-0 size-full object-cover" />
