@@ -139,13 +139,13 @@ export function AccountMenu({ session, onSignOut, copy }: AccountMenuProps) {
           with the name, which is right when it stands alone; inside a control that already
           says the name it would be announced twice. §9.4 asks for an accessible name on an
           icon-only control, and the answer is to make it not icon-only rather than to label
-          it twice. The name is always rendered for the same reason — initials are ambiguous
-          for two people who share them, at every viewport width.
+          it twice. Below `sm` the name is visually hidden at the owner's request (avatar only) but
+          stays in the button's accessible name.
         */}
         <span aria-hidden="true">
           <Avatar name={session.name} size="sm" />
         </span>
-        <span className="max-w-[8ch] truncate sm:max-w-[12ch]">{session.name}</span>
+        <span className="max-sm:sr-only sm:max-w-[12ch] sm:truncate">{session.name}</span>
         <ChevronDown aria-hidden="true" className="size-4 text-white/40" />
       </button>
 
