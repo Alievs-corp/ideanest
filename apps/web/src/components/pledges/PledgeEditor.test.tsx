@@ -40,7 +40,7 @@ function pledge(overrides: Partial<PledgeResponse> = {}): PledgeResponse {
   return {
     id: 'pledge-1',
     projectId: 'project-1',
-    state: 'CONFIRMED',
+    state: 'COLLECTED',
     rewardTierId: 'tier-mug',
     addons: [{ rewardTierId: 'addon-track', quantity: 2 }],
     amounts: {

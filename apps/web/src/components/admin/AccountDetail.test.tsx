@@ -105,7 +105,7 @@ const CAMPAIGN: DirectoryCampaign = {
 
 const PLEDGE: AdminUserPledge = {
   pledgeId: 'cccccccc-0000-4000-8000-000000000001',
-  state: 'CONFIRMED',
+  state: 'COLLECTED',
   amounts: { total: { amount: '45.00', currency: 'AZN' } },
   confirmedAt: '2026-08-25T09:00:00.000Z',
   canceledAt: null,
@@ -194,7 +194,7 @@ describe('the account detail screen — issue #404', () => {
 
   it('says a pledge was never confirmed instead of drawing a blank date', async () => {
     readUserPledgesMock.mockResolvedValue({
-      pledges: [{ ...PLEDGE, state: 'CHARGE_FAILED', confirmedAt: null }],
+      pledges: [{ ...PLEDGE, state: 'CANCELED_BY_BACKER', confirmedAt: null, canceledAt: '2026-08-25T09:05:00.000Z' }],
       nextCursor: null,
     });
 
@@ -204,15 +204,15 @@ describe('the account detail screen — issue #404', () => {
 
     /*
      * Worded for a moderator rather than for the backer — `lib/pledges/backer.ts` says
-     * "Payment failed" to the person it happened to.
+     * "Cancelled by you" to the person who did it.
      *
      * Read through a local rather than inline, because `pledgeState` is an open record and
      * `noUncheckedIndexedAccess` types the lookup as possibly absent. The throw is the
      * assertion that the catalogue carries a word for this state at all.
      */
-    const failed = COPY.pledgeState['CHARGE_FAILED'];
-    if (failed === undefined) throw new Error('the catalogue has no word for CHARGE_FAILED');
-    expect(screen.getByText(failed)).toBeInTheDocument();
+    const cancelled = COPY.pledgeState['CANCELED_BY_BACKER'];
+    if (cancelled === undefined) throw new Error('the catalogue has no word for CANCELED_BY_BACKER');
+    expect(screen.getByText(cancelled)).toBeInTheDocument();
   });
 
   it('keeps the page when one panel fails, because they are three reads and not one', async () => {

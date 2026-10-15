@@ -208,9 +208,8 @@ public class PledgeService {
      *
      * <ol>
      *   <li><strong>The pledge's state.</strong> {@code PledgeState.EDITABLE} — a
-     *       {@code DRAFT} that is still being assembled, or a {@code CONFIRMED}
-     *       pledge whose backer has changed their mind. That constant carries why the
-     *       other ten states are out.
+     *       {@code DRAFT} that is still being assembled. That constant carries why the
+     *       other states are out.
      *   <li><strong>The campaign.</strong> Launched, {@code LIVE}, and before its
      *       deadline — which is exactly {@link PledgeAcceptance}, the same question
      *       {@code POST /v1/pledges/draft} asks and the only part of the project

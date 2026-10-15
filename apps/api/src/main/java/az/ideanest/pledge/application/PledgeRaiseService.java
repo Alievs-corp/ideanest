@@ -39,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <h2>Why this exists</h2>
  *
  * <p>IDN-EXT-01 (#39) charges a pledge when it is made, so almost every pledge a backer holds is
- * {@code COLLECTED}, and §4.5's PL-09 edit only moves {@code DRAFT} and {@code CONFIRMED} ones. The
+ * {@code COLLECTED}, and §4.5's PL-09 edit only moves {@code DRAFT} ones. The
  * screens have promised since #35 that a pledge can be raised while the campaign runs; this is the
  * half of that promise that takes money. The owner's decision, recorded in §4.5: a paid pledge may be
  * raised — a better tier, more add-ons, a larger contribution — never lowered and never withdrawn,

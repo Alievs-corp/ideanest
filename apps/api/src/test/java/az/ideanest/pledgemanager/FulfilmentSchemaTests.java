@@ -180,7 +180,7 @@ class FulfilmentSchemaTests extends AbstractIntegrationTest {
         jdbc().update(
                         """
                         INSERT INTO pledges (id, project_id, backer_id, state, base_amount, confirmed_at)
-                        VALUES (?, ?, ?, 'CONFIRMED', 25.00, now())
+                        VALUES (?, ?, ?, 'COLLECTED', 25.00, now())
                         """,
                         id,
                         project,

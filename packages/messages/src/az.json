@@ -410,14 +410,10 @@
     "pledges": {
       "states": {
         "DRAFT": "Tamamlanmayıb",
-        "CONFIRMED": "Təsdiqlənib",
         "EXPIRED": "Vaxtı bitib",
         "CANCELED_BY_BACKER": "Sizin tərəfinizdən ləğv edilib",
         "CANCELED_BY_PROJECT": "Müəllif tərəfindən ləğv edilib",
-        "CHARGE_PENDING": "Ödəniş gedir",
-        "CHARGE_FAILED": "Ödəniş alınmadı",
         "COLLECTED": "Ödənilib",
-        "DROPPED": "Baş tutmayıb",
         "REFUNDED": "Geri qaytarılıb",
         "CHARGEBACK": "Geri tələb edilib",
         "FULFILLED": "Çatdırılıb"
@@ -1723,14 +1719,10 @@
         "campaignGone": "Kampaniya artıq yoxdur",
         "pledgeState": {
           "DRAFT": "Tamamlanmayıb",
-          "CONFIRMED": "Təsdiqlənib",
           "EXPIRED": "Vaxtı keçib",
           "CANCELED_BY_BACKER": "Dəstəkçi ləğv edib",
           "CANCELED_BY_PROJECT": "Müəllif ləğv edib",
-          "CHARGE_PENDING": "Ödəniş gözləyir",
-          "CHARGE_FAILED": "Ödəniş alınmadı",
           "COLLECTED": "Yığılıb",
-          "DROPPED": "Yığımdan imtina edilib",
           "REFUNDED": "Geri qaytarılıb",
           "CHARGEBACK": "Geri tələb edilib",
           "FULFILLED": "Yerinə yetirilib"
@@ -5739,9 +5731,6 @@
       "noCampaign": "Belə bir kampaniya yoxdur və ya o, sizin işlədiyiniz kampaniya deyil."
     },
     "states": {
-      "CONFIRMED": "Təsdiqlənib",
-      "CHARGE_PENDING": "Tutulma gözlənilir",
-      "CHARGE_FAILED": "Ödəniş alınmadı",
       "COLLECTED": "Tutulub",
       "FULFILLED": "Yerinə yetirilib"
     },

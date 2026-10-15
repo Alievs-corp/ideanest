@@ -44,7 +44,7 @@ function pledge(extra: Partial<PledgeResponse> = {}): PledgeResponse {
   return {
     id: 'pl-1',
     projectId: 'p1',
-    state: 'CONFIRMED',
+    state: 'COLLECTED',
     rewardTierId: 'r1',
     addons: [],
     amounts: {
@@ -265,7 +265,7 @@ describe('which controls a state offers', () => {
     );
     await settle();
 
-    const editable = state === 'DRAFT' || state === 'CONFIRMED';
+    const editable = state === 'DRAFT';
     expect(editor.mock.calls.length > 0).toBe(editable);
     expect(screen.queryByTestId('pledge-locked') !== null).toBe(!editable);
     expect(screen.queryByTestId('dispute-open') !== null).toBe(state === 'COLLECTED');

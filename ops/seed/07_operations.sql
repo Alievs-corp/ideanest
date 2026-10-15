@@ -656,10 +656,10 @@ ON CONFLICT (collaborator_id, capability) DO NOTHING;
 INSERT INTO backer_segments (id, project_id, name, states, reward_tier_ids, countries, term,
                              created_by, created_at, updated_at) VALUES
   (seed_id('segment:tumar:all'), seed_id('project:tumar'), 'Bütün dəstəkçilər',
-   ARRAY['CONFIRMED', 'COLLECTED'], NULL, NULL, NULL,
+   ARRAY['COLLECTED'], NULL, NULL, NULL,
    seed_id('user:creator'), now() - interval '20 days', now() - interval '20 days'),
   (seed_id('segment:tumar:ucluk'), seed_id('project:tumar'), 'Üçlük dəst alanlar',
-   ARRAY['CONFIRMED'], ARRAY[seed_id('tier:tumar:ucluk')], NULL, NULL,
+   ARRAY['COLLECTED'], ARRAY[seed_id('tier:tumar:ucluk')], NULL, NULL,
    seed_id('user:creator'), now() - interval '12 days', now() - interval '12 days'),
   (seed_id('segment:qab:xarici'), seed_id('project:qab'), 'Xaricə göndərilənlər',
    ARRAY['FULFILLED'], NULL, ARRAY['TR', 'GE', 'DE'], NULL,

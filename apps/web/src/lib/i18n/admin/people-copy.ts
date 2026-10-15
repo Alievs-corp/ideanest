@@ -350,8 +350,8 @@ export function supportConsoleCopyFrom(
  * step with the first.
  *
  * <p>`pledgeState` is this screen's own, and it has to be. `lib/pledges/backer.ts` carries a
- * table for the same twelve states written for the person who made the pledge —
- * "Cancelled by you", "Payment failed" — and a moderator is not that person. `CANCELED_BY_BACKER`
+ * table for the same eight states written for the person who made the pledge —
+ * "Cancelled by you", "Paid" — and a moderator is not that person. `CANCELED_BY_BACKER`
  * reads "Cancelled by the backer" here, which is the same fact from the other side of the
  * console. (That table is also untranslated English in a client module, which is a defect of
  * its own and not this one's to fix.)

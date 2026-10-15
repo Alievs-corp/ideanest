@@ -54,7 +54,7 @@ function backer(id: string, extra: Partial<Backer> = {}): Backer {
     rewardTierId: 'tier-1',
     rewardTitle: 'Early bird',
     amount: { amount: '45.00', currency: 'AZN' },
-    state: 'CONFIRMED',
+    state: 'COLLECTED',
     country: 'DE',
     backedAt: '2026-09-30T10:00:00Z',
     ...extra,
@@ -221,7 +221,7 @@ describe('the cards', () => {
 
     expect(screen.getByTestId('backer-card-a').props.accessibilityLabel).toBe(
       'Backer: Backer a, a@example.com, Not named publicly, Reward: Early bird, Pledged: 45.00 AZN, ' +
-        'State: Confirmed, Destination: DE, Backed: 30 Sept 2026',
+        'State: Collected, Destination: DE, Backed: 30 Sept 2026',
     );
     expect(screen.getByText(en.dashboard.table.anonymous)).toBeTruthy();
     // The count is the campaign's, not the page's.
@@ -247,14 +247,14 @@ describe('the filter', () => {
     api.listBackers.mockResolvedValue(page([backer('a')]));
     await show();
 
-    await fireEvent.press(screen.getByTestId('backers-state-CHARGE_FAILED'));
+    await fireEvent.press(screen.getByTestId('backers-state-FULFILLED'));
     await settle();
-    expect(lastListCall()).toEqual({ filter: { ...NO_FILTER, states: ['CHARGE_FAILED'] }, cursor: undefined });
-    expect(screen.getByTestId('backers-state-CHARGE_FAILED').props.accessibilityState).toEqual(
+    expect(lastListCall()).toEqual({ filter: { ...NO_FILTER, states: ['FULFILLED'] }, cursor: undefined });
+    expect(screen.getByTestId('backers-state-FULFILLED').props.accessibilityState).toEqual(
       expect.objectContaining({ selected: true }),
     );
-    // "Payment failed" is a word as well as a danger icon.
-    expect(screen.getByLabelText(en.dashboard.states.CHARGE_FAILED)).toBeTruthy();
+    // The chip is named by the catalogue's word, not the wire constant.
+    expect(screen.getByLabelText(en.dashboard.states.FULFILLED)).toBeTruthy();
   });
 
   it('searches when the keyboard’s search key or the Search button is pressed', async () => {
@@ -306,11 +306,11 @@ describe('the filter', () => {
 describe('segments', () => {
   it('offers to save only a narrowed filter, with a lime button in near-black text', async () => {
     api.listBackers.mockResolvedValue(page([backer('a')]));
-    api.saveSegment.mockResolvedValue(segment('s9', 'Failed'));
+    api.saveSegment.mockResolvedValue(segment('s9', 'Fulfilled'));
     await show();
     expect(screen.queryByTestId('backers-segment-save')).toBeNull();
 
-    await fireEvent.press(screen.getByTestId('backers-state-CHARGE_FAILED'));
+    await fireEvent.press(screen.getByTestId('backers-state-FULFILLED'));
     await settle();
     const save = screen.getByTestId('backers-segment-save');
     expect(save).toBeDisabled();
@@ -318,12 +318,12 @@ describe('segments', () => {
       color: colors.textOnLime,
     });
 
-    await fireEvent.changeText(screen.getByTestId('backers-segment-name'), 'Failed');
+    await fireEvent.changeText(screen.getByTestId('backers-segment-name'), 'Fulfilled');
     await fireEvent.press(save);
     await settle();
 
-    expect(api.saveSegment).toHaveBeenCalledWith(PROJECT, 'Failed', { ...NO_FILTER, states: ['CHARGE_FAILED'] });
-    expect(screen.getByTestId('backers-notice')).toHaveTextContent('Saved “Failed”.');
+    expect(api.saveSegment).toHaveBeenCalledWith(PROJECT, 'Fulfilled', { ...NO_FILTER, states: ['FULFILLED'] });
+    expect(screen.getByTestId('backers-notice')).toHaveTextContent('Saved “Fulfilled”.');
     expect(screen.getByTestId('backers-segment-s9')).toBeTruthy();
   });
 

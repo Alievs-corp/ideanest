@@ -17,13 +17,9 @@ import java.util.Set;
  * run inside a transaction on older servers, and the check constraint gives the
  * same refusal without that.
  *
- * <p><strong>Four of these are the retired stored-card model's</strong> — {@link #CONFIRMED},
- * {@link #CHARGE_PENDING}, {@link #CHARGE_FAILED} and {@link #DROPPED}. IDN-EXT-01 charges a
- * pledge when it is made ({@code DRAFT → COLLECTED}), and #45 removed everything that moved a
- * pledge into them: the {@code confirm} route and the collection at close. They stay here
- * because a pledge confirmed before IDN-EXT-01 may still be {@code CONFIRMED}, and a row whose
- * state this enum cannot name cannot be read at all. Retiring them is a data decision about
- * those backers, not a code cleanup.
+ * <p>The stored-card model's {@code CONFIRMED}, {@code CHARGE_PENDING}, {@code CHARGE_FAILED}
+ * and {@code DROPPED} are gone (#470): IDN-EXT-01 charges a pledge when it is made
+ * ({@code DRAFT → COLLECTED}), and V107 ended every pledge still in them as {@link #EXPIRED}.
  */
 public enum PledgeState {
 
@@ -33,9 +29,6 @@ public enum PledgeState {
      */
     DRAFT,
 
-    /** The stored-card model's commitment: no money has moved. Nothing enters it since #45. */
-    CONFIRMED,
-
     /** The reservation TTL elapsed before the backer confirmed. The place was released. */
     EXPIRED,
 
@@ -43,15 +36,7 @@ public enum PledgeState {
 
     CANCELED_BY_PROJECT,
 
-    /** The stored-card model's queue for collection at close. Nothing enters it since #45. */
-    CHARGE_PENDING,
-
     COLLECTED,
-
-    CHARGE_FAILED,
-
-    /** The stored-card model's end for a card never charged. Nothing enters it since #45. */
-    DROPPED,
 
     REFUNDED,
 
@@ -67,33 +52,27 @@ public enum PledgeState {
      * project". Duplicated here on purpose and not derived from anything: the
      * database is where the rule is enforced, and this is how the application can
      * say why a request was refused before the index refuses it. V17 carries the
-     * argument for which six are in and which six are out.
+     * argument, and V107 took the stored-card states out of both.
      *
      * <p>The two lists disagreeing is the failure mode worth naming, and
      * {@code PledgeSchemaTests} is what stops it: it asserts the index against this
      * set rather than against a copy of it.
      */
-    public static final Set<PledgeState> ACTIVE =
-            Set.of(DRAFT, CONFIRMED, CHARGE_PENDING, CHARGE_FAILED, COLLECTED, FULFILLED);
+    public static final Set<PledgeState> ACTIVE = Set.of(DRAFT, COLLECTED, FULFILLED);
 
     /**
      * The states a backer may still change or withdraw. §4.5's PL-09 and PL-10.
      *
-     * <p><strong>Two, and the argument for each is different.</strong> A
-     * {@link #DRAFT} is a checkout in progress: changing it is what the backer is in
-     * the middle of doing, and withdrawing it is abandoning a purchase nobody has
-     * been charged for. A {@link #CONFIRMED} pledge is PL-09's real case — the backer
-     * committed, the campaign is still running, and they have changed their mind
-     * about the tier or the destination. §9.7 puts cancellation in the same place:
-     * "backer changes their mind while live — cancel, nothing was collected".
+     * <p><strong>One.</strong> A {@link #DRAFT} is a checkout in progress: changing it
+     * is what the backer is in the middle of doing, and withdrawing it is abandoning a
+     * purchase nobody has been charged for. A paid pledge is changed by a raise.
      *
      * <p><strong>Every other state is out, and none of them is an oversight.</strong>
      * {@link #EXPIRED} and the two cancellations are over; a pledge that ended cannot
      * be edited back into existence, and the backer's move is to pledge again, which
      * {@code pledges_project_backer_active_key} now permits precisely because those
-     * states are not active. {@link #CHARGE_PENDING} onwards are past the campaign's
-     * close, where money is moving or has moved: changing the amount then is a
-     * refund or a second charge, which is #67's and epic #59's, not an edit.
+     * states are not active. {@link #COLLECTED} onwards money has moved: changing the
+     * amount then is a refund or a second charge, not an edit.
      *
      * <p><strong>This set is half of the rule, not the whole of it.</strong> The
      * other half is the campaign — PL-09 says "until the deadline" — and it cannot
@@ -102,7 +81,7 @@ public enum PledgeState {
      * {@code PledgeService#edit} composes the two, and it is the only place that
      * does.
      */
-    public static final Set<PledgeState> EDITABLE = Set.of(DRAFT, CONFIRMED);
+    public static final Set<PledgeState> EDITABLE = Set.of(DRAFT);
 
     /** Whether a pledge in this state still stands between its backer and a second one. */
     public boolean isActive() {

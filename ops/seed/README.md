@@ -128,7 +128,7 @@ as the live ones.
 - **Campaign pages**: cover image, story document, reward tiers (sold out,
   limited, early-bird expired, add-on, secret), FAQ, updates including a
   backers-only one, and a two-level comment tree with creator replies.
-- **Money**: charges, a failed charge behind every `CHARGE_FAILED` pledge,
+- **Money**: charges, a failed charge behind every `EXPIRED` pledge,
   balanced double-entry ledger postings, refunds in all three states, four
   disputes across four states, and five payouts including one waiting on a
   second approver and one the bank declined.

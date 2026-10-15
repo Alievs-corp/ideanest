@@ -39,10 +39,10 @@ import { chargeNoteOf as chargeNoteKey, pledgeTone } from '@ideanest/checkout/pl
  *
  * <h2>State is a word, never a colour</h2>
  *
- * `Tag` carries the hue and `pledgeStateLabel` carries the word (docs/ui-kit.md §9.2), and
- * `CHARGE_FAILED` is the only one that takes `--danger` — because it is the only one a backer
- * has to act on. Nothing here is lime: a pledge already made is not urgent, and lime on a list
- * of somebody's own commitments would read as "hurry" against every one of them (§8.1).
+ * `Tag` carries the hue and `pledgeStateLabel` carries the word (docs/ui-kit.md §9.2), and no
+ * state takes `--danger`: none of them is one a backer has to act on. Nothing here is lime: a
+ * pledge already made is not urgent, and lime on a list of somebody's own commitments would read
+ * as "hurry" against every one of them (§8.1).
  *
  * <h2>Motion: none</h2>
  *
@@ -76,11 +76,9 @@ function momentOf(pledge: BackerPledgeSummary, copy: PledgeListCopy, locale: Loc
  * charged".
  *
  * <strong>Every other state says nothing here, deliberately.</strong> Refunded, charged back,
- * payment in progress, payment failed, dropped, cancelled by the creator: the state tag beside
- * the title already names each one, and a second word under the total would either repeat it
- * or guess. `CONFIRMED` is the retired stored-card model's (stage 4, #45, removes it) and is
- * left to its tag for the same reason. The one thing this line must never do again is promise
- * a later collection.
+ * cancelled by the creator: the state tag beside the title already names each one, and a second
+ * word under the total would either repeat it or guess. The one thing this line must never do
+ * again is promise a later collection.
  */
 export function chargeNoteOf(state: string, copy: PledgeListCopy): string | null {
   const key = chargeNoteKey(state);

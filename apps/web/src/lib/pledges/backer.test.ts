@@ -25,7 +25,7 @@ const authorizedMock = vi.mocked(authorizedFetch);
 function summary(pledgeId: string) {
   return {
     pledgeId,
-    state: 'CONFIRMED',
+    state: 'COLLECTED',
     amounts: {
       base: { amount: '45.00', currency: 'AZN' },
       addons: { amount: '0.00', currency: 'AZN' },
@@ -144,7 +144,7 @@ describe('findMyPledge', () => {
 });
 
 /*
- * The twelve words, built from `messages/en.json` with the builder the route calls — #81.
+ * The eight words, built from `messages/en.json` with the builder the route calls — #81.
  *
  * Retyping them here would give a test that passes whatever the catalogue says, and would
  * still be green with the message file empty. `src/test-copy.ts` carries the argument.

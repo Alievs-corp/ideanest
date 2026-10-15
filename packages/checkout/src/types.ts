@@ -122,7 +122,7 @@ export interface PublicRewardList {
  * ---------------------------------------------------------------------- */
 
 /**
- * The twelve states of docs/architecture.md §6.2, no more.
+ * The eight states of docs/architecture.md §6.2, no more.
  *
  * Checkout only ever produces the first two and only ever renders the first
  * three; the rest exist because a `PledgeResponse` read back later carries them,
@@ -133,14 +133,10 @@ export interface PublicRewardList {
  */
 export type PledgeState =
   | 'DRAFT'
-  | 'CONFIRMED'
   | 'EXPIRED'
   | 'CANCELED_BY_BACKER'
   | 'CANCELED_BY_PROJECT'
-  | 'CHARGE_PENDING'
-  | 'CHARGE_FAILED'
   | 'COLLECTED'
-  | 'DROPPED'
   | 'REFUNDED'
   | 'CHARGEBACK'
   | 'FULFILLED';

@@ -22,7 +22,7 @@ export default async function BackerReportPage({
   readonly params: Promise<{ readonly id: string }>;
 }) {
   // Words, not data: the report is a client island, so the route resolves its sentences — the
-  // chips, the table's headings and the five pledge states — and hands them down.
+  // chips, the table's headings and the two pledge states — and hands them down.
   const [{ id }, copy] = await Promise.all([params, backerReportCopy()]);
 
   return <BackerReport projectId={id} copy={copy} />;

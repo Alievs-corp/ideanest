@@ -6,8 +6,7 @@ import java.util.UUID;
 /**
  * #171: only a paid pledge is raised by paying the difference.
  *
- * <p>A {@code DRAFT} is still a checkout and is changed with PL-09's edit and paid for once; a legacy
- * {@code CONFIRMED} pledge was never charged and is changed with the edit too; and anything else has
+ * <p>A {@code DRAFT} is still a checkout and is changed with PL-09's edit and paid for once; and anything else has
  * ended or is past the point where a backer changes it. The state is carried so the refusal can name
  * the way that does apply.
  *

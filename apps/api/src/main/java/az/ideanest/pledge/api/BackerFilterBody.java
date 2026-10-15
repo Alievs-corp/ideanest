@@ -32,7 +32,7 @@ import java.util.UUID;
  * @param term a name or an email address, or part of one
  */
 public record BackerFilterBody(
-        @Size(max = 5, message = "A filter names at most five states") List<PledgeState> states,
+        @Size(max = 2, message = "A filter names at most two states") List<PledgeState> states,
         @Size(max = BackerFilter.MAX_REWARD_TIERS, message = "A filter names at most 200 reward tiers")
                 List<UUID> rewardTierIds,
         @Size(max = BackerFilter.MAX_COUNTRIES, message = "A filter names at most 250 destinations")

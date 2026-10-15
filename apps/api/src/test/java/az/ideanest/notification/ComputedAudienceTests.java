@@ -296,7 +296,7 @@ class ComputedAudienceTests extends AbstractIntegrationTest {
                 .update(
                         """
                         INSERT INTO pledges (id, project_id, backer_id, state, base_amount)
-                        VALUES (?, ?, ?, 'CONFIRMED', 25.00)
+                        VALUES (?, ?, ?, 'COLLECTED', 25.00)
                         """,
                         Identifiers.newIdentifier(),
                         projectId,

@@ -12,13 +12,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * subject is not the checkout should not depend on the reservation TTL, the rate limiter
  * and an account per pledge to reach a state that is a precondition rather than a subject.
  *
- * <p><strong>{@code CONFIRMED} has no request left that produces it.</strong> It was the
- * stored-card model's commitment, which IDN-EXT-01 replaced with paying when the pledge is
- * made, and #45 removed the {@code confirm} route. Pledges confirmed before then can still
- * be in it, and the rules for them still hold — raised only, never cancelled — so the
- * suites that check those rules make one here.
+ * <p>A confirmed pledge is a paid one: IDN-EXT-01 confirms a pledge by charging it, so what
+ * is made here is {@code COLLECTED}.
  *
- * <p>What is written is what confirmation writes — the state, the instant, the amounts —
+ * <p>What is written is what payment writes — the state, the instants, the amounts —
  * so the row that results is one the application could have produced, and every check
  * constraint on {@code pledges} still applies.
  *
@@ -40,7 +37,7 @@ public final class Pledges {
     private Pledges() {}
 
     /**
-     * A confirmed pledge on a campaign, with its own backer.
+     * A paid pledge on a campaign, with its own backer.
      *
      * <p>The amount goes entirely into {@code base_amount}: the five components exist so
      * that a receipt can be itemised, and every collection charges {@code total_amount},
@@ -62,8 +59,9 @@ public final class Pledges {
         new JdbcTemplate(dataSource)
                 .update(
                         """
-                        INSERT INTO pledges (id, project_id, backer_id, state, base_amount, currency, confirmed_at)
-                        VALUES (?, ?, ?, 'CONFIRMED', ?, 'AZN', now())
+                        INSERT INTO pledges (id, project_id, backer_id, state, base_amount, currency,
+                                             confirmed_at, collected_at)
+                        VALUES (?, ?, ?, 'COLLECTED', ?, 'AZN', now(), now())
                         """,
                         pledgeId,
                         projectId,
@@ -73,14 +71,13 @@ public final class Pledges {
     }
 
     /**
-     * Confirms a backer's draft the way the stored-card model's {@code confirm} did, before #45
-     * removed it: the places the draft holds go from reserved to claimed, and the pledge
-     * becomes {@code CONFIRMED} with nothing charged.
+     * Marks a backer's draft paid without a provider: the places the draft holds go from
+     * reserved to claimed, and the pledge becomes {@code COLLECTED}.
      *
-     * <p>For a test about a pledge confirmed before IDN-EXT-01. One statement per table, like
-     * {@code RewardTierRepository#commitPlaces}: the sum of the two counters never moves.
+     * <p>One statement per table, like {@code RewardTierRepository#commitPlaces}: the sum of
+     * the two counters never moves.
      */
-    public static void confirmDraft(DataSource dataSource, UUID pledgeId) {
+    public static void payDraft(DataSource dataSource, UUID pledgeId) {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         jdbc.update(
                 """
@@ -99,10 +96,11 @@ public final class Pledges {
                 pledgeId,
                 pledgeId);
         int updated = jdbc.update(
-                "UPDATE pledges SET state = 'CONFIRMED', confirmed_at = now() WHERE id = ? AND state = 'DRAFT'",
+                "UPDATE pledges SET state = 'COLLECTED', confirmed_at = now(), collected_at = now()"
+                        + " WHERE id = ? AND state = 'DRAFT'",
                 pledgeId);
         if (updated != 1) {
-            throw new IllegalStateException("No draft " + pledgeId + " to confirm");
+            throw new IllegalStateException("No draft " + pledgeId + " to pay");
         }
     }
 }

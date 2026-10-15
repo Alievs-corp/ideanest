@@ -16,14 +16,10 @@ import type { PledgeRaise } from './types';
 
 const STATES = [
   'DRAFT',
-  'CONFIRMED',
   'EXPIRED',
   'CANCELED_BY_BACKER',
   'CANCELED_BY_PROJECT',
-  'CHARGE_PENDING',
-  'CHARGE_FAILED',
   'COLLECTED',
-  'DROPPED',
   'REFUNDED',
   'CHARGEBACK',
   'FULFILLED',
@@ -43,9 +39,9 @@ function raise(state: string, holdExpiresAt = '2026-10-02T12:10:00Z'): PledgeRai
 }
 
 describe('which controls a pledge offers', () => {
-  it('is editable only while DRAFT or CONFIRMED', () => {
+  it('is editable only while DRAFT', () => {
     for (const state of STATES) {
-      expect(isEditable(state)).toBe(state === 'DRAFT' || state === 'CONFIRMED');
+      expect(isEditable(state)).toBe(state === 'DRAFT');
     }
   });
 
@@ -56,15 +52,13 @@ describe('which controls a pledge offers', () => {
   it('is raisable only when COLLECTED and the service says so', () => {
     expect(isRaisable({ state: 'COLLECTED', raisable: true })).toBe(true);
     expect(isRaisable({ state: 'COLLECTED' })).toBe(false);
-    expect(isRaisable({ state: 'CONFIRMED', raisable: true })).toBe(false);
+    expect(isRaisable({ state: 'FULFILLED', raisable: true })).toBe(false);
   });
 });
 
 describe('pledgeTone and chargeNoteOf', () => {
   it('maps the web tones', () => {
     expect(pledgeTone('DRAFT')).toBe('warning');
-    expect(pledgeTone('CHARGE_PENDING')).toBe('warning');
-    expect(pledgeTone('CHARGE_FAILED')).toBe('danger');
     expect(pledgeTone('COLLECTED')).toBe('success');
     expect(pledgeTone('FULFILLED')).toBe('success');
     expect(pledgeTone('REFUNDED')).toBe('default');
@@ -78,7 +72,7 @@ describe('pledgeTone and chargeNoteOf', () => {
     expect(chargeNoteOf('EXPIRED')).toBe('notCharged');
     expect(chargeNoteOf('CANCELED_BY_BACKER')).toBe('notCharged');
     expect(chargeNoteOf('REFUNDED')).toBeNull();
-    expect(chargeNoteOf('CONFIRMED')).toBeNull();
+    expect(chargeNoteOf('CHARGEBACK')).toBeNull();
   });
 });
 

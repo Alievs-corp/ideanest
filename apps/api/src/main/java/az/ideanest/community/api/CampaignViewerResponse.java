@@ -32,10 +32,9 @@ public record CampaignViewerResponse(
                 boolean followingCreator,
         @Schema(
                         requiredMode = Schema.RequiredMode.REQUIRED,
-                        description = "This account holds a pledge on the campaign in CONFIRMED,"
-                                + " CHARGE_PENDING, CHARGE_FAILED, COLLECTED or FULFILLED. A DRAFT"
-                                + " (a checkout in progress) is not a backing, and neither is a"
-                                + " pledge that EXPIRED, was cancelled, DROPPED, REFUNDED or"
+                        description = "This account holds a pledge on the campaign in COLLECTED"
+                                + " or FULFILLED. A DRAFT (a checkout in progress) is not a backing,"
+                                + " and neither is a pledge that EXPIRED, was cancelled, REFUNDED or"
                                 + " charged back.")
                 boolean backed) {
 

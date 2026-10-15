@@ -87,7 +87,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         Campaigns.launch(dataSource, project);
 
         Account backer = account("sup-backer");
-        UUID pledge = confirmedPledge(project, backer, standard, "25.00");
+        UUID pledge = paidPledge(project, backer, standard, "25.00");
         closeTheCampaign(project);
 
         ResponseEntity<Map<String, Object>> upgraded = upgrade(pledge, backer, deluxe);
@@ -123,7 +123,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         Campaigns.launch(dataSource, project);
 
         Account backer = account("sup-stock-backer");
-        UUID pledge = confirmedPledge(project, backer, standard, "25.00");
+        UUID pledge = paidPledge(project, backer, standard, "25.00");
         closeTheCampaign(project);
 
         upgrade(pledge, backer, deluxe);
@@ -142,7 +142,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         Campaigns.launch(dataSource, project);
 
         Account backer = account("sup-down-backer");
-        UUID pledge = confirmedPledge(project, backer, standard, "25.00");
+        UUID pledge = paidPledge(project, backer, standard, "25.00");
         closeTheCampaign(project);
 
         ResponseEntity<Map<String, Object>> refused = upgrade(pledge, backer, cheaper);
@@ -154,7 +154,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("while the campaign is running, the edit is the way to change a pledge")
+    @DisplayName("while the campaign is running, the raise is the way to change a paid pledge")
     void whileTheCampaignRunsTheEditIsTheWayToDoThis() {
         Account creator = account("sup-live");
         UUID project = project(creator);
@@ -163,7 +163,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         Campaigns.launch(dataSource, project);
 
         Account backer = account("sup-live-backer");
-        UUID pledge = confirmedPledge(project, backer, standard, "25.00");
+        UUID pledge = paidPledge(project, backer, standard, "25.00");
 
         ResponseEntity<Map<String, Object>> refused = upgrade(pledge, backer, deluxe);
 
@@ -171,7 +171,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         assertThat(refused.getBody()).containsEntry("code", "CAMPAIGN_STILL_TAKING_PLEDGES");
         assertThat(meta(refused.getBody()))
                 .as("a refusal that does not name the alternative is one a client hides a button over")
-                .containsEntry("use", "PATCH /v1/pledges/{id}");
+                .containsEntry("use", "POST /v1/pledges/{id}/raise");
     }
 
     @Test
@@ -184,7 +184,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         Campaigns.launch(dataSource, project);
 
         Account backer = account("sup-guard-backer");
-        UUID pledge = confirmedPledge(project, backer, standard, "25.00");
+        UUID pledge = paidPledge(project, backer, standard, "25.00");
         closeTheCampaign(project);
 
         assertThat(upgrade(pledge, account("sup-stranger"), deluxe).getStatusCode())
@@ -205,7 +205,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         Campaigns.launch(dataSource, project);
 
         Account backer = account("sup-addon-backer");
-        UUID pledge = confirmedPledge(project, backer, standard, "25.00");
+        UUID pledge = paidPledge(project, backer, standard, "25.00");
         closeTheCampaign(project);
 
         ResponseEntity<Map<String, Object>> bought = buyAddons(pledge, backer, Map.of(mug, 2));
@@ -234,9 +234,9 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         Campaigns.launch(dataSource, project);
 
         Account backer = account("sup-limited-backer");
-        UUID pledge = confirmedPledge(project, backer, standard, "25.00");
+        UUID pledge = paidPledge(project, backer, standard, "25.00");
         Account second = account("sup-limited-second");
-        UUID otherPledge = confirmedPledge(project, second, standard, "25.00");
+        UUID otherPledge = paidPledge(project, second, standard, "25.00");
         closeTheCampaign(project);
 
         assertThat(buyAddons(pledge, backer, Map.of(mug, 1)).getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -280,7 +280,7 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         Campaigns.launch(dataSource, project);
 
         Account backer = account("sup-idem-backer");
-        UUID pledge = confirmedPledge(project, backer, standard, "25.00");
+        UUID pledge = paidPledge(project, backer, standard, "25.00");
         closeTheCampaign(project);
 
         String key = UUID.randomUUID().toString();
@@ -368,10 +368,9 @@ class PledgeSupplementApiTests extends AbstractIntegrationTest {
         return UUID.fromString((String) created.getBody().get("id"));
     }
 
-    /** A pledge confirmed the stored-card way, as one made before IDN-EXT-01 is; no route does it since #45. */
-    private UUID confirmedPledge(UUID project, Account backer, UUID rewardTierId, String contribution) {
+    private UUID paidPledge(UUID project, Account backer, UUID rewardTierId, String contribution) {
         UUID pledge = draftPledge(project, backer, rewardTierId, contribution);
-        Pledges.confirmDraft(dataSource, pledge);
+        Pledges.payDraft(dataSource, pledge);
         return pledge;
     }
 

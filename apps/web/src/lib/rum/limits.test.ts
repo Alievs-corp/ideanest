@@ -107,11 +107,13 @@ describe('bucketKey', () => {
   });
 
   it('does not contain the address it was built from', () => {
-    expect(bucketKey('203.0.113.7', newSalt())).not.toContain('203');
+    const key = bucketKey('203.0.113.7', newSalt());
+    expect(key).toMatch(/^[0-9a-f]{1,8}$/);
+    expect(key).not.toContain('203.0.113.7');
   });
 
   it('changes with the salt, so a key does not outlive the process', () => {
-    expect(bucketKey('203.0.113.7', newSalt())).not.toBe(bucketKey('203.0.113.7', newSalt()));
+    expect(bucketKey('203.0.113.7', 'a'.repeat(32))).not.toBe(bucketKey('203.0.113.7', 'b'.repeat(32)));
   });
 });
 

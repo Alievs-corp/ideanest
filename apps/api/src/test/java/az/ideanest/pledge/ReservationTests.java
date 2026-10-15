@@ -417,16 +417,17 @@ class ReservationTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a pledge confirmed before its window closed is not expired by the sweep")
-    void theSweepLeavesConfirmedPledgesAlone() {
+    @DisplayName("a pledge paid before its window closed is not expired by the sweep")
+    void theSweepLeavesPaidPledgesAlone() {
         clock.freeze();
         UUID projectId = insertProject();
         UUID tierId = insertTier(projectId, 1);
 
         Pledge held = reservations.reserve(projectId, insertBacker(), tierId);
-        // What #52's confirmation will do. Written here because the endpoint does not
-        // exist yet and the property being checked is the sweep's, not its.
-        jdbc().update("UPDATE pledges SET state = 'CONFIRMED', confirmed_at = now() WHERE id = ?", held.getId());
+        // Written by hand: the property being checked is the sweep's, not the payment's.
+        jdbc().update(
+                "UPDATE pledges SET state = 'COLLECTED', confirmed_at = now(), collected_at = now() WHERE id = ?",
+                held.getId());
 
         clock.advance(ttl().plusSeconds(1));
 
@@ -434,7 +435,7 @@ class ReservationTests extends AbstractIntegrationTest {
         // never be expired out from under them by a timer, and its place must not be
         // handed to somebody else.
         assertThat(cleaner.releaseExpiredReservations(clock.instant())).isZero();
-        assertThat(state(held.getId())).isEqualTo("CONFIRMED");
+        assertThat(state(held.getId())).isEqualTo("COLLECTED");
         assertThat(reservedQuantity(tierId)).isEqualTo(1);
     }
 

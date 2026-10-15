@@ -7,6 +7,7 @@ import az.ideanest.payment.PaymentProperties;
 import az.ideanest.payment.application.CampaignRefundJob;
 import az.ideanest.payment.application.DisputeService;
 import az.ideanest.payment.application.PayoutGateway;
+import az.ideanest.payment.application.ProviderCircuitBreaker;
 import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentTransaction;
 import az.ideanest.payment.domain.ProviderName;
@@ -87,6 +88,9 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private PaymentProperties paymentProperties;
+
+    @Autowired
+    private ProviderCircuitBreaker breaker;
 
     private final List<UUID> paidPledges = new ArrayList<>();
     private final List<UUID> projects = new ArrayList<>();
@@ -387,6 +391,38 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
         assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
     }
 
+    @Test
+    @DisplayName("#470: while the provider's breaker is open a campaign refund is not recorded, and goes once it closes")
+    void anOpenBreakerDefersACampaignRefund() {
+        Paid paid = aPaidPledge("breaker-campaign", "25.00");
+        end(paid.projectId(), "UNSUCCESSFUL");
+        openBreaker();
+
+        job.refundDue(Instant.now());
+
+        assertThat(sentFor(paid.pledgeId())).isEmpty();
+        assertThat(refundStates(paid.pledgeId())).isEmpty();
+
+        breaker.reset();
+        job.refundDue(Instant.now());
+
+        assertThat(sentFor(paid.pledgeId())).hasSize(1);
+        assertThat(refundStates(paid.pledgeId())).containsExactly("SUCCEEDED");
+    }
+
+    @Test
+    @DisplayName("#470: a staff refund while the provider's breaker is open is not sent, and fails as not sent")
+    void anOpenBreakerFailsAStaffRefundAsNotSent() {
+        Paid paid = aPaidPledge("breaker-staff", "25.00");
+        openBreaker();
+
+        ResponseEntity<Map<String, Object>> refused = staffRefund(paid.pledgeId(), null, "BACKER_REQUEST");
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refused.getBody()).containsEntry("state", "FAILED").containsEntry("failureCode", "not_sent");
+        assertThat(sentFor(paid.pledgeId())).isEmpty();
+    }
+
     // ------------------------------------------------------------------
     // #183: whatever release wrote it, and whatever else is waiting
     // ------------------------------------------------------------------
@@ -621,6 +657,13 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
                 """,
                 state,
                 projectId);
+    }
+
+    /** As many unreachable answers from the scripted provider as the profile's threshold takes. */
+    private void openBreaker() {
+        while (breaker.isAvailable(ProviderName.AZERICARD)) {
+            breaker.recordUnavailable(ProviderName.AZERICARD);
+        }
     }
 
     private List<RefundRequest> sentFor(UUID pledgeId) {

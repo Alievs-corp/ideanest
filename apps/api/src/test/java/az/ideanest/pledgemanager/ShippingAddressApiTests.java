@@ -86,7 +86,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("addr-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("addr-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
 
         ResponseEntity<Map<String, Object>> saved = save(pledge, backer, address("AZ"));
 
@@ -107,7 +107,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("empty-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("empty-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
 
         // The pledge exists and the address does not, which is a different fact from
         // "no such pledge" and the one a form needs in order to render itself blank.
@@ -120,7 +120,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("blank-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("blank-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
 
         Map<String, Object> body = address("AZ");
         body.put("line2", "   ");
@@ -137,7 +137,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("required-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("required-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
 
         Map<String, Object> body = address("AZ");
         body.remove("line1");
@@ -166,7 +166,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("crypto-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("crypto-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
 
         save(pledge, backer, address("AZ"));
 
@@ -198,7 +198,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("nonce-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("nonce-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
 
         save(pledge, backer, address("AZ"));
         byte[] first = nonceOf(pledge);
@@ -219,7 +219,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("dest-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("dest-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
 
         ResponseEntity<Map<String, Object>> refused = save(pledge, backer, address("DE"));
 
@@ -234,7 +234,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("digital-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("digital-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", null);
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", null);
 
         ResponseEntity<Map<String, Object>> refused = save(pledge, backer, address("AZ"));
 
@@ -252,7 +252,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("lock-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("lock-backer");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
         save(pledge, backer, address("AZ"));
 
         ResponseEntity<Map<String, Object>> locked = lock(project, creator);
@@ -274,7 +274,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("relock-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("relock-backer");
-        save(pledgeFor(project, backer.id(), "CONFIRMED", "AZ"), backer, address("AZ"));
+        save(pledgeFor(project, backer.id(), "COLLECTED", "AZ"), backer, address("AZ"));
 
         lock(project, creator);
 
@@ -289,7 +289,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("auditlock-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("auditlock-backer");
-        save(pledgeFor(project, backer.id(), "CONFIRMED", "AZ"), backer, address("AZ"));
+        save(pledgeFor(project, backer.id(), "COLLECTED", "AZ"), backer, address("AZ"));
 
         long writes = auditRows(project, AuditAction.PROJECT_ADDRESSES_LOCKED).size();
         assertThat(writes).as("a backer changing their own data is not a privileged action").isZero();
@@ -311,7 +311,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         Account creator = account("progress-creator");
         UUID project = liveCampaign(creator);
         Account backer = account("progress-backer");
-        save(pledgeFor(project, backer.id(), "CONFIRMED", "AZ"), backer, address("AZ"));
+        save(pledgeFor(project, backer.id(), "COLLECTED", "AZ"), backer, address("AZ"));
 
         ResponseEntity<Map<String, Object>> progress = exchange(
                 "/v1/projects/" + project + "/shipping-addresses/progress",
@@ -335,7 +335,7 @@ class ShippingAddressApiTests extends AbstractIntegrationTest {
         UUID project = liveCampaign(creator);
         Account backer = account("guard-backer");
         Account stranger = account("guard-stranger");
-        UUID pledge = pledgeFor(project, backer.id(), "CONFIRMED", "AZ");
+        UUID pledge = pledgeFor(project, backer.id(), "COLLECTED", "AZ");
         save(pledge, backer, address("AZ"));
 
         assertThat(read(pledge, stranger).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);

@@ -19,13 +19,13 @@ BEGIN;
 
 CREATE TEMP TABLE seed_targets (project_key text, pct numeric, pledge_state text) ON COMMIT DROP;
 INSERT INTO seed_targets VALUES
-  ('tumar',    1.42, 'CONFIRMED'),
-  ('qala',     0.78, 'CONFIRMED'),
-  ('qehve',    0.96, 'CONFIRMED'),
-  ('naringi',  1.18, 'CONFIRMED'),
-  ('tar',      0.41, 'CONFIRMED'),
-  ('ipek',     0.63, 'CONFIRMED'),
-  ('kelagayi', 0.34, 'CONFIRMED'),
+  ('tumar',    1.42, 'COLLECTED'),
+  ('qala',     0.78, 'COLLECTED'),
+  ('qehve',    0.96, 'COLLECTED'),
+  ('naringi',  1.18, 'COLLECTED'),
+  ('tar',      0.41, 'COLLECTED'),
+  ('ipek',     0.63, 'COLLECTED'),
+  ('kelagayi', 0.34, 'COLLECTED'),
   ('usta',     1.12, 'COLLECTED'),
   ('foto',     1.25, 'COLLECTED'),
   ('komiks',   0.22, 'EXPIRED'),
@@ -33,15 +33,15 @@ INSERT INTO seed_targets VALUES
   ('qab',      1.30, 'FULFILLED'),
   ('lampa',    1.20, 'FULFILLED'),
   ('masa',     1.18, 'COLLECTED'),
-  ('saxta',    0.04, 'CONFIRMED'),
+  ('saxta',    0.04, 'COLLECTED'),
   ('legv',     0.19, 'CANCELED_BY_PROJECT'),
   -- The six 02b adds. A campaign three days old should not be at 90%.
-  ('torpaq',   0.58, 'CONFIRMED'),
-  ('divar',    0.71, 'CONFIRMED'),
-  ('gece',     0.29, 'CONFIRMED'),
-  ('seyyah',   1.06, 'CONFIRMED'),
-  ('sebeke',   0.11, 'CONFIRMED'),
-  ('yalli',    0.44, 'CONFIRMED');
+  ('torpaq',   0.58, 'COLLECTED'),
+  ('divar',    0.71, 'COLLECTED'),
+  ('gece',     0.29, 'COLLECTED'),
+  ('seyyah',   1.06, 'COLLECTED'),
+  ('sebeke',   0.11, 'COLLECTED'),
+  ('yalli',    0.44, 'COLLECTED');
 
 CREATE TEMP TABLE seed_pledge_plan ON COMMIT DROP AS
 WITH targets AS (
@@ -104,17 +104,15 @@ ORDER BY ch.project_id, ch.backer_id, cu.cw;
 INSERT INTO pledges (
     id, project_id, backer_id, reward_tier_id, state,
     base_amount, addons_amount, bonus_amount, shipping_amount, tax_amount, currency,
-    shipping_country, is_anonymous, is_late_pledge, referrer_code, idempotency_key,
+    shipping_country, is_anonymous, referrer_code, idempotency_key,
     reservation_expires_at, confirmed_at, collected_at, canceled_at,
-    next_charge_attempt_at, charge_window_ends_at, charge_attempts,
     version, created_at, updated_at)
 SELECT
     seed_id('pledge:' || pp.slug || ':' || pp.backer_id::text),
     pp.project_id,
     pp.backer_id,
     pp.tier_id,
-    -- The stored-card collection at close, and its CHARGE_PENDING and CHARGE_FAILED
-    -- pledges, went with #45: a pledge is paid when it is made.
+    -- A pledge is paid when it is made (IDN-EXT-01).
     pp.pledge_state,
     pp.amount,
     0,
@@ -131,8 +129,6 @@ SELECT
               THEN (ARRAY['TR', 'GE', 'DE'])[1 + (pp.rn % 3)]
          ELSE 'AZ' END,
     pp.rn % 12 = 0,
-    -- No late pledges (IDN-EXT-01, #45).
-    false,
     CASE WHEN pp.rn % 5 = 0
          THEN (ARRAY['instagram', 'telegram', 'newsletter', 'friend'])[1 + (pp.rn % 4)]
          ELSE NULL END,
@@ -140,11 +136,9 @@ SELECT
     NULL,
     pp.launched_at + (pp.deadline - pp.launched_at) * seed_rand('when:' || pp.slug || pp.backer_id::text),
     CASE WHEN pp.pledge_state IN ('COLLECTED', 'FULFILLED')
-         THEN pp.deadline + interval '2 days' ELSE NULL END,
+         THEN pp.launched_at + (pp.deadline - pp.launched_at) * seed_rand('when:' || pp.slug || pp.backer_id::text)
+         ELSE NULL END,
     CASE WHEN pp.pledge_state = 'CANCELED_BY_PROJECT' THEN pp.deadline ELSE NULL END,
-    NULL,
-    NULL,
-    0,
     1,
     pp.launched_at + (pp.deadline - pp.launched_at) * seed_rand('when:' || pp.slug || pp.backer_id::text),
     now()
@@ -179,9 +173,8 @@ WHERE a.pledge_id = p.id AND p.addons_amount <> a.total;
 INSERT INTO pledges (
     id, project_id, backer_id, reward_tier_id, state,
     base_amount, addons_amount, bonus_amount, shipping_amount, tax_amount, currency,
-    shipping_country, is_anonymous, is_late_pledge, referrer_code, idempotency_key,
+    shipping_country, is_anonymous, referrer_code, idempotency_key,
     reservation_expires_at, confirmed_at, collected_at, canceled_at,
-    next_charge_attempt_at, charge_window_ends_at, charge_attempts,
     version, created_at, updated_at)
 SELECT
     seed_id('pledge:demo:' || d.account || ':' || d.campaign),
@@ -197,46 +190,44 @@ SELECT
     'AZN',
     CASE WHEN rt.shipping_type IN ('NONE', 'DIGITAL') THEN NULL ELSE 'AZ' END,
     false,
-    d.state = 'COLLECTED' AND d.campaign = 'masa',
     d.referrer,
     'seed-demo-' || d.account || '-' || d.campaign,
     NULL,
     p.launched_at + (p.deadline - p.launched_at) * 0.4,
-    CASE WHEN d.state IN ('COLLECTED', 'FULFILLED') THEN p.deadline + interval '2 days' END,
+    CASE WHEN d.state IN ('COLLECTED', 'FULFILLED') THEN p.launched_at + (p.deadline - p.launched_at) * 0.4 END,
     NULL,
-    NULL, NULL, 0,
     1,
     p.launched_at + (p.deadline - p.launched_at) * 0.4,
     now()
 FROM (VALUES
     -- Nurlan is the demo backer: six pledges spread so that every account
     -- screen has something on it -- live pledges, a delivery, a survey.
-    ('backer',  'tumar',   'tier:tumar:bir',        'CONFIRMED', 10, 'instagram'),
-    ('backer',  'qala',    'tier:qala:kolleksiya',  'CONFIRMED',  0, NULL),
+    ('backer',  'tumar',   'tier:tumar:bir',        'COLLECTED', 10, 'instagram'),
+    ('backer',  'qala',    'tier:qala:kolleksiya',  'COLLECTED',  0, NULL),
     ('backer',  'qab',     'tier:qab:bir',          'FULFILLED',  0, NULL),
     ('backer',  'albom',   'tier:albom:vinil',      'COLLECTED',  5, 'telegram'),
     ('backer',  'lampa',   'tier:lampa:bir',        'FULFILLED',  0, NULL),
     ('backer',  'masa',    'tier:masa:oyun',        'COLLECTED',  0, NULL),
     -- Aygün's support ticket is about a double charge on the album, so she has
     -- to have backed the album.
-    ('aygun',   'naringi', 'tier:naringi:ikilik',   'CONFIRMED',  0, NULL),
+    ('aygun',   'naringi', 'tier:naringi:ikilik',   'COLLECTED',  0, NULL),
     ('aygun',   'albom',   'tier:albom:vinil',      'COLLECTED',  0, NULL),
     ('aygun',   'usta',    'tier:usta:usb',         'COLLECTED',  0, 'newsletter'),
-    ('lale',    'qala',    'tier:qala:reqemsal',    'CONFIRMED',  0, NULL),
+    ('lale',    'qala',    'tier:qala:reqemsal',    'COLLECTED',  0, NULL),
     ('lale',    'masa',    'tier:masa:deluxe',      'COLLECTED',  0, NULL),
-    ('lale',    'seyyah',  'tier:seyyah:cap',       'CONFIRMED',  0, NULL),
+    ('lale',    'seyyah',  'tier:seyyah:cap',       'COLLECTED',  0, NULL),
     -- Fərid's ticket is about an undelivered Ağ Qab parcel. Same reason.
     ('ferid',   'qab',     'tier:qab:bir',          'FULFILLED',  0, NULL),
-    ('ferid',   'qehve',   'tier:qehve:abune3',     'CONFIRMED',  0, NULL),
-    ('nezrin',  'tar',     'tier:tar:adapter',      'CONFIRMED',  0, NULL),
+    ('ferid',   'qehve',   'tier:qehve:abune3',     'COLLECTED',  0, NULL),
+    ('nezrin',  'tar',     'tier:tar:adapter',      'COLLECTED',  0, NULL),
     ('nezrin',  'albom',   'tier:albom:konsert',    'COLLECTED',  0, NULL),
-    ('emin',    'qala',    'tier:qala:beta',        'CONFIRMED',  0, NULL),
-    ('emin',    'torpaq',  'tier:torpaq:bir',       'CONFIRMED',  0, NULL),
-    ('zaur',    'qehve',   'tier:qehve:torba',      'CONFIRMED',  0, NULL),
+    ('emin',    'qala',    'tier:qala:beta',        'COLLECTED',  0, NULL),
+    ('emin',    'torpaq',  'tier:torpaq:bir',       'COLLECTED',  0, NULL),
+    ('zaur',    'qehve',   'tier:qehve:torba',      'COLLECTED',  0, NULL),
     ('zaur',    'foto',    'tier:foto:albom',       'COLLECTED',  0, NULL),
-    ('samir',   'qala',    'tier:qala:reqemsal',    'CONFIRMED',  0, NULL),
-    ('samir',   'divar',   'tier:divar:cap',        'CONFIRMED',  0, NULL),
-    ('collab',  'tumar',   'tier:tumar:ucluk',      'CONFIRMED',  0, NULL)
+    ('samir',   'qala',    'tier:qala:reqemsal',    'COLLECTED',  0, NULL),
+    ('samir',   'divar',   'tier:divar:cap',        'COLLECTED',  0, NULL),
+    ('collab',  'tumar',   'tier:tumar:ucluk',      'COLLECTED',  0, NULL)
 ) AS d(account, campaign, tier, state, bonus, referrer)
 JOIN projects p ON p.id = seed_id('project:' || d.campaign)
 JOIN reward_tiers rt ON rt.id = seed_id(d.tier)
@@ -244,8 +235,9 @@ ON CONFLICT (id) DO NOTHING;
 
 -- ── Charges ─────────────────────────────────────────────────────────────────
 --
--- One succeeded charge per pledge whose money actually moved, plus the failed
--- attempts sitting behind every CHARGE_FAILED pledge. The payments console
+-- One succeeded charge per pledge whose money actually moved, plus a failed
+-- payment behind every EXPIRED pledge -- the checkout that lapsed after the card
+-- was refused. The payments console
 -- reads this table directly, and a console with only successes in it is a
 -- console nobody has ever debugged with.
 
@@ -270,11 +262,11 @@ SELECT
     seed_id('txn:failed:' || p.id::text), p.id, p.project_id, 'CHARGE', 'FAILED',
     p.total_amount, p.currency, 'PAYRIFF',
     'ch_' || substr(md5('f' || p.id::text), 1, 24),
-    'insufficient_funds', 'Kartda kifayət qədər vəsait yoxdur.', 2,
+    'insufficient_funds', 'Kartda kifayət qədər vəsait yoxdur.', 1,
     'charge-failed-' || substr(md5(p.id::text), 1, 24),
     now() - interval '2 days'
 FROM pledges p
-WHERE p.state = 'CHARGE_FAILED'
+WHERE p.state = 'EXPIRED'
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Double entry ────────────────────────────────────────────────────────────

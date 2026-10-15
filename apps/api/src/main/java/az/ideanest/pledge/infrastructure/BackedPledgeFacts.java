@@ -34,8 +34,7 @@ public class BackedPledgeFacts implements BackedPledges {
      * are a constant of this class and an {@code IN} list of literals is what lets
      * the planner use {@code pledges_project_backer_active_key}.
      */
-    private static final String BACKING_STATES =
-            "'CONFIRMED', 'CHARGE_PENDING', 'CHARGE_FAILED', 'COLLECTED', 'FULFILLED'";
+    private static final String BACKING_STATES = "'COLLECTED', 'FULFILLED'";
 
     private static final String COLUMNS = "id, project_id, backer_id, reward_tier_id, shipping_country";
 

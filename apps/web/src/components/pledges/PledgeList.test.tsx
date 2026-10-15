@@ -126,12 +126,8 @@ describe('the word under a pledge’s total', () => {
     ['DRAFT', COPY.notCharged],
     ['EXPIRED', COPY.notCharged],
     ['CANCELED_BY_BACKER', COPY.notCharged],
-    ['CONFIRMED', null],
-    ['CHARGE_PENDING', null],
-    ['CHARGE_FAILED', null],
     ['REFUNDED', null],
     ['CHARGEBACK', null],
-    ['DROPPED', null],
     ['CANCELED_BY_PROJECT', null],
   ])('is right for %s', (state, expected) => {
     expect(chargeNoteOf(state, COPY)).toBe(expected);

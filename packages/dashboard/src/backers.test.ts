@@ -30,15 +30,15 @@ function headers(values: Record<string, string>) {
 }
 
 const NARROW: BackerFilter = {
-  states: ['CHARGE_FAILED'],
+  states: ['FULFILLED'],
   rewardTierIds: ['tier-1'],
   countries: ['DE'],
   term: '  anna ',
 };
 
 describe('the reported states', () => {
-  it('are the five the report covers, in the order the chips are drawn', () => {
-    expect(REPORTED_STATES).toEqual(['CONFIRMED', 'CHARGE_PENDING', 'CHARGE_FAILED', 'COLLECTED', 'FULFILLED']);
+  it('are the two the report covers, in the order the chips are drawn', () => {
+    expect(REPORTED_STATES).toEqual(['COLLECTED', 'FULFILLED']);
   });
 });
 
@@ -49,7 +49,7 @@ describe('isNarrowed', () => {
   });
 
   it.each([
-    ['a state', { states: ['CONFIRMED'] }],
+    ['a state', { states: ['COLLECTED'] }],
     ['a tier', { rewardTierIds: ['tier-1'] }],
     ['a country', { countries: ['AZ'] }],
     ['a term', { term: 'anna' }],
@@ -61,9 +61,9 @@ describe('isNarrowed', () => {
 describe('toggleState', () => {
   it('adds a state that is off and removes one that is on, keeping the others in order', () => {
     const one = toggleState(NO_FILTER, 'COLLECTED');
-    const two = toggleState(one, 'CONFIRMED');
-    expect(two.states).toEqual(['COLLECTED', 'CONFIRMED']);
-    expect(toggleState(two, 'COLLECTED').states).toEqual(['CONFIRMED']);
+    const two = toggleState(one, 'FULFILLED');
+    expect(two.states).toEqual(['COLLECTED', 'FULFILLED']);
+    expect(toggleState(two, 'COLLECTED').states).toEqual(['FULFILLED']);
   });
 });
 
@@ -71,12 +71,12 @@ describe('filterBody', () => {
   it('omits every empty axis', () => {
     expect(filterBody(NO_FILTER)).toEqual({});
     expect(filterBody({ ...NO_FILTER, term: '  ' })).toEqual({});
-    expect(Object.keys(filterBody({ ...NO_FILTER, states: ['CONFIRMED'] }))).toEqual(['states']);
+    expect(Object.keys(filterBody({ ...NO_FILTER, states: ['COLLECTED'] }))).toEqual(['states']);
   });
 
   it('sends every narrowed axis, the term trimmed', () => {
     expect(filterBody(NARROW)).toEqual({
-      states: ['CHARGE_FAILED'],
+      states: ['FULFILLED'],
       rewardTierIds: ['tier-1'],
       countries: ['DE'],
       term: 'anna',
@@ -114,7 +114,7 @@ describe('backerQuery', () => {
 
   it('repeats the list axes and leaves the empty ones out', () => {
     expect(backerQuery({ filter: NARROW, size: 50 })).toEqual({
-      state: ['CHARGE_FAILED'],
+      state: ['FULFILLED'],
       rewardTier: ['tier-1'],
       country: ['DE'],
       q: 'anna',
@@ -160,7 +160,7 @@ describe('narrowing the contract', () => {
       rewardTierId: undefined,
       rewardTitle: undefined,
       amount: { amount: '10.00', currency: 'AZN' },
-      state: 'CONFIRMED',
+      state: 'COLLECTED',
       country: undefined,
       backedAt: '',
     });

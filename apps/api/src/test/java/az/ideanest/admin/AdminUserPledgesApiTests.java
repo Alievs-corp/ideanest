@@ -103,7 +103,7 @@ class AdminUserPledgesApiTests extends AbstractIntegrationTest {
 
         assertThat(pledges).hasSize(1);
         assertThat(pledges.get(0).get("pledgeId")).isNotNull();
-        assertThat(pledges.get(0)).containsEntry("state", "CONFIRMED");
+        assertThat(pledges.get(0)).containsEntry("state", "COLLECTED");
 
         @SuppressWarnings("unchecked")
         Map<String, Object> campaign = (Map<String, Object>) pledges.get(0).get("project");

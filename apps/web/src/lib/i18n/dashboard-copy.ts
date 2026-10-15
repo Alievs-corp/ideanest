@@ -19,7 +19,7 @@ import type { PluralForms } from './plurals';
  *
  * `dashboard` in the catalogue, read once per route by the builder that route needs. The
  * charts page does not ship the survey builder's vocabulary and the survey page does not ship
- * the ledger's; what they do share — the five pledge states, the two refusals that mean the
+ * the ledger's; what they do share — the two pledge states, the two refusals that mean the
  * same thing on every panel — is one group read by both rather than two spellings that agree
  * until somebody edits one.
  *
@@ -86,20 +86,15 @@ export function dashboardNavCopyFrom(t: DashboardTranslator): DashboardNavCopy {
 /**
  * §4.5's pledge states, in the words a creator uses.
  *
- * The wire constant is `CHARGE_FAILED`; what a creator needs to read is "Payment failed". The
- * report's filter chips and the table's own column draw from this one group, because they are
- * the same five facts and a second spelling of "Awaiting collection" beside the first is how a
- * filter stops looking like it selects what the column says.
+ * The wire constant is `COLLECTED`; what a creator needs to read is "Collected", in their own
+ * language. The report's filter chips and the table's own column draw from this one group,
+ * because they are the same two facts and a second spelling of "Fulfilled" beside the first is
+ * how a filter stops looking like it selects what the column says.
  */
-export type PledgeStatesCopy = Readonly<
-  Record<'CONFIRMED' | 'CHARGE_PENDING' | 'CHARGE_FAILED' | 'COLLECTED' | 'FULFILLED', string>
->;
+export type PledgeStatesCopy = Readonly<Record<'COLLECTED' | 'FULFILLED', string>>;
 
 function pledgeStatesFrom(t: DashboardTranslator): PledgeStatesCopy {
   return {
-    CONFIRMED: t('states.CONFIRMED'),
-    CHARGE_PENDING: t('states.CHARGE_PENDING'),
-    CHARGE_FAILED: t('states.CHARGE_FAILED'),
     COLLECTED: t('states.COLLECTED'),
     FULFILLED: t('states.FULFILLED'),
   };

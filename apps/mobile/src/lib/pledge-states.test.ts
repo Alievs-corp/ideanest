@@ -38,7 +38,7 @@ describe('pledge state labels', () => {
 
   it('read the Java enum rather than nothing', () => {
     expect(JAVA).toContain('CHARGEBACK');
-    expect(JAVA.length).toBeGreaterThanOrEqual(12);
+    expect(JAVA.length).toBeGreaterThanOrEqual(8);
   });
 
   it.each(SUPPORTED_LOCALES)('cover exactly the Java enum in %s', (locale) => {
@@ -66,7 +66,7 @@ describe('readablePledgeState', () => {
 
   it("uses the device's language by default", () => {
     // `jest.setup.ts` gives the device Azerbaijani.
-    expect(readablePledgeState('CONFIRMED')).toBe('Təsdiqlənib');
+    expect(readablePledgeState('COLLECTED')).toBe('Ödənilib');
   });
 
   it('prints a state this build does not know as itself', () => {

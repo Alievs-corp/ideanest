@@ -8549,7 +8549,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "DRAFT", "CONFIRMED", "EXPIRED", "CANCELED_BY_BACKER", "CANCELED_BY_PROJECT", "CHARGE_PENDING", "COLLECTED", "CHARGE_FAILED", "DROPPED", "REFUNDED", "CHARGEBACK", "FULFILLED" ]
+              "enum" : [ "DRAFT", "EXPIRED", "CANCELED_BY_BACKER", "CANCELED_BY_PROJECT", "COLLECTED", "REFUNDED", "CHARGEBACK", "FULFILLED" ]
             }
           }
         }, {
@@ -11374,9 +11374,9 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "DRAFT", "CONFIRMED", "EXPIRED", "CANCELED_BY_BACKER", "CANCELED_BY_PROJECT", "CHARGE_PENDING", "COLLECTED", "CHARGE_FAILED", "DROPPED", "REFUNDED", "CHARGEBACK", "FULFILLED" ]
+              "enum" : [ "DRAFT", "EXPIRED", "CANCELED_BY_BACKER", "CANCELED_BY_PROJECT", "COLLECTED", "REFUNDED", "CHARGEBACK", "FULFILLED" ]
             },
-            "maxItems" : 5,
+            "maxItems" : 2,
             "minItems" : 0
           },
           "term" : {
@@ -12019,7 +12019,7 @@
         "properties" : {
           "backed" : {
             "type" : "boolean",
-            "description" : "This account holds a pledge on the campaign in CONFIRMED, CHARGE_PENDING, CHARGE_FAILED, COLLECTED or FULFILLED. A DRAFT (a checkout in progress) is not a backing, and neither is a pledge that EXPIRED, was cancelled, DROPPED, REFUNDED or charged back."
+            "description" : "This account holds a pledge on the campaign in COLLECTED or FULFILLED. A DRAFT (a checkout in progress) is not a backing, and neither is a pledge that EXPIRED, was cancelled, REFUNDED or charged back."
           },
           "followingCreator" : {
             "type" : "boolean",

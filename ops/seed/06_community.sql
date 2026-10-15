@@ -271,7 +271,7 @@ SELECT
          THEN p.created_at + interval '3 hours' ELSE NULL END
 FROM pledges p
 JOIN projects pr ON pr.id = p.project_id
-WHERE p.state IN ('CONFIRMED', 'COLLECTED', 'FULFILLED')
+WHERE p.state IN ('COLLECTED', 'FULFILLED')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO notifications (id, recipient_id, type, category, channel, event_id, subject_type, subject_id,
@@ -288,7 +288,7 @@ SELECT
 FROM project_updates u
 JOIN projects pr ON pr.id = u.project_id
 JOIN pledges p ON p.project_id = u.project_id
-                AND p.state IN ('CONFIRMED', 'COLLECTED', 'FULFILLED')
+                AND p.state IN ('COLLECTED', 'FULFILLED')
 WHERE seed_rand('notifu:' || u.id::text || p.backer_id::text) < 0.35
 ON CONFLICT (id) DO NOTHING;
 

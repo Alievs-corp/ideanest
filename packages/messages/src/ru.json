@@ -410,14 +410,10 @@
     "pledges": {
       "states": {
         "DRAFT": "Не завершён",
-        "CONFIRMED": "Подтверждён",
         "EXPIRED": "Истёк",
         "CANCELED_BY_BACKER": "Отменён вами",
         "CANCELED_BY_PROJECT": "Отменён автором",
-        "CHARGE_PENDING": "Идёт оплата",
-        "CHARGE_FAILED": "Платёж не прошёл",
         "COLLECTED": "Оплачен",
-        "DROPPED": "Не состоялся",
         "REFUNDED": "Возвращён",
         "CHARGEBACK": "Оспорен через банк",
         "FULFILLED": "Доставлен"
@@ -1723,14 +1719,10 @@
         "campaignGone": "Кампании больше нет",
         "pledgeState": {
           "DRAFT": "Не завершён",
-          "CONFIRMED": "Подтверждён",
           "EXPIRED": "Истёк",
           "CANCELED_BY_BACKER": "Отменён бэкером",
           "CANCELED_BY_PROJECT": "Отменён автором",
-          "CHARGE_PENDING": "Списание в процессе",
-          "CHARGE_FAILED": "Списание не прошло",
           "COLLECTED": "Собран",
-          "DROPPED": "Списание прекращено",
           "REFUNDED": "Возвращён",
           "CHARGEBACK": "Оспорен",
           "FULFILLED": "Исполнен"
@@ -5739,9 +5731,6 @@
       "noCampaign": "Такой кампании нет — или это не та, над которой вы работаете."
     },
     "states": {
-      "CONFIRMED": "Подтверждён",
-      "CHARGE_PENDING": "Ожидает списания",
-      "CHARGE_FAILED": "Платёж не прошёл",
       "COLLECTED": "Списан",
       "FULFILLED": "Выполнен"
     },

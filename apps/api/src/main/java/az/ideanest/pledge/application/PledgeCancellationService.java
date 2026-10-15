@@ -29,8 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <h2>What is deliberately not cancelled</h2>
  *
- * <p>A pledge whose money has moved or is moving: {@link PledgeState#CHARGE_PENDING},
- * {@link PledgeState#CHARGE_FAILED} and {@link PledgeState#COLLECTED}. Marking a
+ * <p>A pledge whose money has moved: {@link PledgeState#COLLECTED}. Marking a
  * collected pledge {@code CANCELED_BY_PROJECT} would say the money was never taken, and
  * §6.2 gives the honest edge a different name — {@code COLLECTED → REFUNDED}, which is
  * #67's and needs a payment provider behind it.
@@ -56,15 +55,14 @@ public class PledgeCancellationService {
     /**
      * The states a halt can end.
      *
-     * <p>The two that hold stock and no money: a checkout in progress and a backer who
-     * committed. Everything else is either already over or is a payment, and the second
-     * of those is a refund rather than a cancellation.
+     * <p>The one that holds stock and no money: a checkout in progress. Everything else is
+     * either already over or is a payment, and the second of those is a refund rather than
+     * a cancellation.
      */
-    private static final Set<PledgeState> ENDABLE = Set.of(PledgeState.DRAFT, PledgeState.CONFIRMED);
+    private static final Set<PledgeState> ENDABLE = Set.of(PledgeState.DRAFT);
 
-    /** The states in which money has moved, or is about to. See the class comment. */
-    private static final Set<PledgeState> OWED_A_REFUND =
-            Set.of(PledgeState.CHARGE_PENDING, PledgeState.CHARGE_FAILED, PledgeState.COLLECTED);
+    /** The states in which money has moved. See the class comment. */
+    private static final Set<PledgeState> OWED_A_REFUND = Set.of(PledgeState.COLLECTED);
 
     private final PledgeRepository pledges;
     private final PledgeAddonRepository addons;

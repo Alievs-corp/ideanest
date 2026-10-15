@@ -480,7 +480,7 @@ class FulfilmentApiTests extends AbstractIntegrationTest {
                         """
                         INSERT INTO pledges
                             (id, project_id, backer_id, state, base_amount, shipping_country, confirmed_at)
-                        VALUES (?, ?, ?, 'CONFIRMED', 25.00, 'AZ', now())
+                        VALUES (?, ?, ?, 'COLLECTED', 25.00, 'AZ', now())
                         """,
                         pledgeId,
                         project,
