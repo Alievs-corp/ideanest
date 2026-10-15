@@ -45,6 +45,8 @@ export const MEDIA_RATIOS = {
   '3/2': 3 / 2,
   /** Denser cards, where a 16:9 strip reads as a letterbox. */
   '4/3': 4 / 3,
+  /** Compact campaign cards. */
+  '2/1': 2,
   /** Avatars, tiles, anything square. */
   '1/1': 1,
 } as const;

@@ -30,6 +30,7 @@ export interface AccentCardProps {
    * (`CardStack` fades the glows in after the cards settle).
    */
   readonly glow?: boolean;
+  readonly compact?: boolean;
   /** The pressable card itself, for a parent that moves screen-reader focus onto it. */
   readonly pressableRef?: Ref<View>;
   readonly testID?: string;
@@ -50,6 +51,7 @@ export function AccentCard({
   action,
   style,
   glow = true,
+  compact = false,
   pressableRef,
   testID,
 }: AccentCardProps) {
@@ -58,6 +60,7 @@ export function AccentCard({
   const tone = accents[accent];
   const skin = [
     styles.card,
+    compact ? styles.compact : null,
     {
       backgroundColor: tone.surface,
       boxShadow: glow ? accentGlow(accent) : undefined,
@@ -108,5 +111,6 @@ const styles = StyleSheet.create({
     gap: spacing[3],
     minHeight: 120,
   },
+  compact: { padding: spacing[4], gap: spacing[2] },
   action: { position: 'absolute', top: 0, right: spacing[4] },
 });

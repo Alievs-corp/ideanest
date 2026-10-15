@@ -213,14 +213,14 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
         contentStyle={[styles.target, ring.ring]}
         testID="campaign-card"
       >
-        <AccentCard accent={campaignAccent(card)}>
+        <AccentCard accent={campaignAccent(card)} compact>
           {/*
             The 16:9 box is reserved whether or not there is a cover, so every card in a list is the
             same height before anything decodes. The cover is decorative: the card's name already
             says what it is a picture of.
           */}
           <Animated.View {...shared.props}>
-          <MediaFrame ratio="16/9" radius="lg">
+          <MediaFrame ratio="2/1" radius="lg">
             {cover === null ? null : (
               <Image
                 source={{ uri: cover }}
@@ -264,7 +264,9 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
             </View>
           ) : null}
 
-          <CardTitle numberOfLines={2}>{title}</CardTitle>
+          <CardTitle numberOfLines={2} style={styles.title}>
+            {title}
+          </CardTitle>
 
           {creator === '' ? null : (
             <View style={styles.creatorRow}>
@@ -337,7 +339,8 @@ const styles = StyleSheet.create({
   creatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   byline: { flexShrink: 1, fontSize: fontSize.sm, lineHeight: lineHeight.small },
   creator: { color: INK.primary },
-  funding: { gap: spacing[2], paddingTop: spacing[2] },
+  title: { fontSize: fontSize.base, lineHeight: Math.round(fontSize.base * 1.3) },
+  funding: { gap: spacing[1], paddingTop: spacing[1] },
   figures: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -360,7 +363,7 @@ const styles = StyleSheet.create({
     color: INK.secondary,
     fontVariant: ['tabular-nums'],
   },
-  small: { ...font.regular },
+  small: { ...font.regular, lineHeight: lineHeight.small },
   tabular: { fontVariant: ['tabular-nums'] },
   notOpen: { fontSize: fontSize.sm, lineHeight: lineHeight.small, paddingTop: spacing[2] },
   footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing[4] },
