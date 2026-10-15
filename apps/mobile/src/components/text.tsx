@@ -1,4 +1,11 @@
-import { StyleSheet, Text as RNText, type TextProps as RNTextProps } from 'react-native';
+import { useState } from 'react';
+import {
+  StyleSheet,
+  Text as RNText,
+  type TextLayoutLine,
+  type TextProps as RNTextProps,
+  type TextStyle,
+} from 'react-native';
 import { colors, font, fontSize, lineHeight, readingMeasure, tracking } from '../theme';
 import { TONES, useSurface, type RelativeTone, type Surface } from './ui/surface';
 
@@ -58,12 +65,50 @@ export interface TextProps extends RNTextProps {
   readonly tone?: Tone;
 }
 
+export const HEADLINE_SCALE = 0.95;
+
+const MIN_FIT = 0.6;
+const FIT_STEP = 0.92;
+
+export function breaksMidWord(lines: readonly Pick<TextLayoutLine, 'text'>[]): boolean {
+  return lines.slice(0, -1).some((line) => !/[\s/-]$/u.test(line.text));
+}
+
+export function WordFitText({ style, onTextLayout, children, ...rest }: RNTextProps) {
+  const [fit, setFit] = useState({ text: children, scale: 1 });
+  const scale = fit.text === children ? fit.scale : 1;
+  const flat: TextStyle = StyleSheet.flatten(style) ?? {};
+  const scaled =
+    scale === 1
+      ? null
+      : {
+          fontSize: (flat.fontSize ?? 0) * scale,
+          lineHeight: flat.lineHeight === undefined ? undefined : flat.lineHeight * scale,
+          letterSpacing: flat.letterSpacing === undefined ? undefined : flat.letterSpacing * scale,
+        };
+  return (
+    <RNText
+      {...rest}
+      android_hyphenationFrequency="none"
+      style={[style, scaled]}
+      onTextLayout={(event) => {
+        onTextLayout?.(event);
+        if (scale > MIN_FIT && breaksMidWord(event.nativeEvent.lines)) {
+          setFit({ text: children, scale: Math.max(MIN_FIT, scale * FIT_STEP) });
+        }
+      }}
+    >
+      {children}
+    </RNText>
+  );
+}
+
 const styles = StyleSheet.create({
   display: {
     ...font.semibold,
-    fontSize: fontSize.display,
-    lineHeight: lineHeight.display,
-    letterSpacing: tracking.display,
+    fontSize: fontSize.display * HEADLINE_SCALE,
+    lineHeight: Math.round(lineHeight.display * HEADLINE_SCALE),
+    letterSpacing: tracking.display * HEADLINE_SCALE,
   },
   heading: {
     ...font.semibold,
@@ -117,15 +162,16 @@ const styles = StyleSheet.create({
   },
 });
 
-function role(style: object, defaultTone: Tone) {
+function role(style: object, defaultTone: Tone, fitWords = false) {
+  const Base = fitWords ? WordFitText : RNText;
   return function Role({ tone = defaultTone, style: override, ...rest }: TextProps) {
     const surface = useSurface();
-    return <RNText {...rest} style={[style, { color: toneColor(tone, surface) }, override]} />;
+    return <Base {...rest} style={[style, { color: toneColor(tone, surface) }, override]} />;
   };
 }
 
 /** The one figure a screen leads with. §7.7's headline figure. */
-export const Display = role(styles.display, 'primary');
+export const Display = role(styles.display, 'primary', true);
 
 /** A section heading, and a screen's title: 24pt is the web's screen H1 at phone width. */
 export const Heading = role(styles.heading, 'primary');
