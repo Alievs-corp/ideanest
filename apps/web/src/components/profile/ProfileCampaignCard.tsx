@@ -70,17 +70,17 @@ import type { ProfileCardCopy } from '../../lib/i18n/profile-copy';
  * itself rather than as an empty tag or a crash.
  */
 const STATE: Record<string, { readonly icon: ReactNode; readonly variant: 'default' | 'success' | 'warning' }> = {
-  PRELAUNCH: { icon: <CalendarClock className="size-2.5" />, variant: 'default' },
-  SCHEDULED: { icon: <CalendarClock className="size-2.5" />, variant: 'default' },
-  LIVE: { icon: <CircleDot className="size-2.5" />, variant: 'default' },
-  SUCCESSFUL: { icon: <CircleCheck className="size-2.5" />, variant: 'success' },
-  UNSUCCESSFUL: { icon: <CircleSlash className="size-2.5" />, variant: 'default' },
-  FULFILLING: { icon: <Package className="size-2.5" />, variant: 'default' },
-  COMPLETED: { icon: <CircleCheck className="size-2.5" />, variant: 'success' },
+  PRELAUNCH: { icon: <CalendarClock className="size-2.5 lg:size-3" />, variant: 'default' },
+  SCHEDULED: { icon: <CalendarClock className="size-2.5 lg:size-3" />, variant: 'default' },
+  LIVE: { icon: <CircleDot className="size-2.5 lg:size-3" />, variant: 'default' },
+  SUCCESSFUL: { icon: <CircleCheck className="size-2.5 lg:size-3" />, variant: 'success' },
+  UNSUCCESSFUL: { icon: <CircleSlash className="size-2.5 lg:size-3" />, variant: 'default' },
+  FULFILLING: { icon: <Package className="size-2.5 lg:size-3" />, variant: 'default' },
+  COMPLETED: { icon: <CircleCheck className="size-2.5 lg:size-3" />, variant: 'success' },
 };
 
 /** The state tag, one rung down from `Tag`'s 26px / 12px with the rest of the card (#368). */
-const CARD_TAG = 'h-5.5 gap-1 px-2 text-[11px]';
+const CARD_TAG = 'h-5.5 gap-1 px-2 text-[11px] lg:h-6 lg:px-2.5 lg:text-xs';
 
 
 /**
@@ -190,7 +190,7 @@ export function ProfileCampaignCard({
           </div>
         )}
 
-        <h3 className="text-base font-medium tracking-[-0.02em] break-words text-white">
+        <h3 className="text-base lg:text-lg font-medium tracking-[-0.02em] break-words text-white">
           {/* One link for the whole card: one tab stop and one announcement per campaign,
               with the pointer target still the size of the card. */}
           <Link
@@ -202,7 +202,7 @@ export function ProfileCampaignCard({
         </h3>
 
         {card.blurb !== null && card.blurb !== '' && (
-          <p className="line-clamp-2 text-xs text-white/64">{card.blurb}</p>
+          <p className="line-clamp-2 text-xs lg:text-sm text-white/64">{card.blurb}</p>
         )}
 
         {funding === 'shown' && completion !== null && pledged !== null ? (
@@ -214,14 +214,14 @@ export function ProfileCampaignCard({
               value={completion.toNumber()}
               label={fillPlaceholders(copy.progressLabel, { percent })}
             />
-            <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1 text-xs">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1 text-xs lg:text-sm">
               <span className="font-medium tabular-nums text-white">{formatMoney(pledged)}</span>
               <span className="tabular-nums text-white/64">
                 {fillPlaceholders(copy.funded, { percent })}
               </span>
             </div>
             {goal !== null && (
-              <p className="text-[11px] tabular-nums text-white/40">
+              <p className="text-[11px] lg:text-xs tabular-nums text-white/40">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(goal) })}
               </p>
             )}
@@ -236,9 +236,9 @@ export function ProfileCampaignCard({
           about the person whose profile this is, and is what makes the row legible as a
           campaign rather than as a title on its own.
         */}
-        <div className="flex items-center gap-3.5 text-[11px] text-white/40">
+        <div className="flex items-center gap-3.5 text-[11px] lg:text-xs text-white/40">
           <span className="inline-flex items-center gap-1">
-            <Users aria-hidden="true" className="size-3" />
+            <Users aria-hidden="true" className="size-3 lg:size-3.5" />
             <span className="tabular-nums">
               {pluralise(locale, copy.backers, card.backersCount)}
             </span>
