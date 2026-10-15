@@ -311,6 +311,15 @@ describe('ProjectCard', () => {
       }
     });
 
+    it('raises its type a rung from laptop width up', () => {
+      const { container } = renderCard({ badge: 'live', closingSoon: true });
+      const tag = screen.getByText(/live/i).closest('span');
+
+      expect(container.querySelector('h3')).toHaveClass('lg:text-lg');
+      expect(tag).toHaveClass('lg:h-6', 'lg:text-xs');
+      expect(container.querySelector('p')).toHaveClass('lg:text-sm');
+    });
+
     it('matches the app card at phone width', () => {
       const { container } = renderCard({ badge: 'live', closingSoon: true });
       const tag = screen.getByText(/live/i).closest('span');
