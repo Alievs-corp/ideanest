@@ -39,11 +39,15 @@ import type { CSSProperties } from 'react';
  * <h2>Size</h2>
  *
  * The scene is drawn at 600 × 540 and scaled as a whole, so the 3D geometry is the same at every
- * width. It is not drawn on a phone at all: there the hero's text fills the first screen, and the
- * campaigns below it are what a visitor came for.
+ * width. A phone gets `HeroPhoneScene` below instead: the same drawing in a square card.
  */
 
 const CYCLE = 6.4;
+
+/** One informational line on the phone card every 3.2 s; `hero-line` is written for four. */
+const BEAT = 3.2;
+
+type PhoneLines = readonly [string, string, string, string];
 
 type Accent = 'sun' | 'mint' | 'sky';
 
@@ -119,43 +123,79 @@ export function HeroScene({ caption }: { readonly caption: string }) {
         className="relative h-[302px] w-full overflow-hidden [contain-intrinsic-size:auto_302px] [content-visibility:auto] sm:h-[432px] sm:[contain-intrinsic-size:auto_432px] xl:h-[540px] xl:[contain-intrinsic-size:auto_540px]"
         data-testid="hero-scene"
       >
-        <div className="absolute top-0 left-1/2 h-[540px] w-[600px] origin-top -translate-x-1/2 scale-[0.56] sm:scale-[0.8] xl:scale-100">
-          <div className="absolute inset-0 [perspective-origin:50%_62%] [perspective:900px]">
-            <div className={FLOOR_PLANE} style={FLOOR} />
-            <div className={FLOOR_PLANE}>
-              {LANES.map((lane, index) => (
-                <Walker key={lane.angle} lane={lane} delay={delayOf(index)} />
-              ))}
-            </div>
-          </div>
-
-          <div className="absolute top-[29%] left-1/2 -ml-px h-[33%] w-0.5 bg-linear-to-b from-white/50 to-transparent opacity-35" />
-
-          {LANES.map((lane, index) => (
-            <span
-              key={lane.angle}
-              className="absolute top-[62%] left-1/2 -mt-[5px] -ml-[5px] size-2.5 rounded-full bg-current opacity-0 shadow-[0_0_12px_3px_currentColor] motion-safe:animate-[hero-rise_6.4s_ease-in_infinite]"
-              style={{ color: COLOUR[lane.accent], animationDelay: delayOf(index) }}
-            />
-          ))}
-
-          <div className="absolute top-[29%] left-1/2 size-0">
-            <span
-              className="absolute -m-[130px] size-[260px] rounded-full opacity-70 motion-safe:animate-[hero-brighten_6.4s_linear_infinite]"
-              style={HALO}
-            />
-            <span className="absolute -m-12 size-24 rounded-full border-[3px] border-white opacity-0 motion-safe:animate-[hero-bloom_6.4s_ease-out_infinite]" />
-            <span className="absolute -m-12 size-24 rounded-full border-2 border-white/70 opacity-0 motion-safe:animate-[hero-pulse_0.8s_ease-out_infinite] [animation-delay:-0.2s]" />
-            <span
-              className="absolute -m-12 size-24 rounded-full border border-white/35 motion-safe:animate-[hero-grow_6.4s_ease-out_infinite]"
-              style={CORE}
-            />
-          </div>
-        </div>
+        <Stage className="top-0 scale-[0.56] sm:scale-[0.8] xl:scale-100" />
       </div>
 
       <figcaption className="mt-2 max-w-[40ch] text-center text-[15px] text-white/64">{caption}</figcaption>
     </figure>
+  );
+}
+
+/**
+ * The same scene on a phone, as a square card (#490). The hero's informational lines play
+ * over it one at a time, each fading up in and out, one every 3.2 s: two cycles of the scene
+ * for the four of them. The lines are decoration here too — the page carries the same words as
+ * text for a screen reader — and under reduced motion only the last one stands, over the still
+ * composition.
+ */
+export function HeroPhoneScene({ lines }: { readonly lines: PhoneLines }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="relative mx-auto aspect-square w-full max-w-[420px] overflow-hidden rounded-xl border border-white/8 bg-surface-2 [contain-intrinsic-size:auto_335px] [content-visibility:auto]"
+      data-testid="hero-phone-scene"
+    >
+      <Stage className="-top-[4%] scale-[0.47] min-[360px]:scale-[0.53] min-[400px]:scale-[0.6] min-[440px]:scale-[0.7]" />
+      <div className="absolute inset-x-0 bottom-0 h-[38%] bg-linear-to-t from-surface-2 from-35% to-transparent" />
+      {lines.map((line, index) => (
+        <p
+          key={line}
+          className={`absolute inset-x-5 bottom-5 m-0 text-center text-lg leading-snug font-semibold tracking-[-0.01em] text-white opacity-0 motion-safe:animate-[hero-line_12.8s_ease-in-out_infinite] ${index === lines.length - 1 ? 'motion-reduce:opacity-100' : ''}`}
+          style={{ animationDelay: `${index * BEAT}s` }}
+        >
+          {line}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/** The 600 × 540 drawing itself, scaled as a whole by the caller. */
+function Stage({ className }: { readonly className: string }) {
+  return (
+    <div className={`absolute left-1/2 h-[540px] w-[600px] origin-top -translate-x-1/2 ${className}`}>
+      <div className="absolute inset-0 [perspective-origin:50%_62%] [perspective:900px]">
+        <div className={FLOOR_PLANE} style={FLOOR} />
+        <div className={FLOOR_PLANE}>
+          {LANES.map((lane, index) => (
+            <Walker key={lane.angle} lane={lane} delay={delayOf(index)} />
+          ))}
+        </div>
+      </div>
+
+      <div className="absolute top-[29%] left-1/2 -ml-px h-[33%] w-0.5 bg-linear-to-b from-white/50 to-transparent opacity-35" />
+
+      {LANES.map((lane, index) => (
+        <span
+          key={lane.angle}
+          className="absolute top-[62%] left-1/2 -mt-[5px] -ml-[5px] size-2.5 rounded-full bg-current opacity-0 shadow-[0_0_12px_3px_currentColor] motion-safe:animate-[hero-rise_6.4s_ease-in_infinite]"
+          style={{ color: COLOUR[lane.accent], animationDelay: delayOf(index) }}
+        />
+      ))}
+
+      <div className="absolute top-[29%] left-1/2 size-0">
+        <span
+          className="absolute -m-[130px] size-[260px] rounded-full opacity-70 motion-safe:animate-[hero-brighten_6.4s_linear_infinite]"
+          style={HALO}
+        />
+        <span className="absolute -m-12 size-24 rounded-full border-[3px] border-white opacity-0 motion-safe:animate-[hero-bloom_6.4s_ease-out_infinite]" />
+        <span className="absolute -m-12 size-24 rounded-full border-2 border-white/70 opacity-0 motion-safe:animate-[hero-pulse_0.8s_ease-out_infinite] [animation-delay:-0.2s]" />
+        <span
+          className="absolute -m-12 size-24 rounded-full border border-white/35 motion-safe:animate-[hero-grow_6.4s_ease-out_infinite]"
+          style={CORE}
+        />
+      </div>
+    </div>
   );
 }
 

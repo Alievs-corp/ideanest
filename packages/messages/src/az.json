@@ -3635,6 +3635,11 @@
       "title": "Hələ mövcud olmayanı maliyyələşdirin",
       "standfirst": "Müəlliflər hədəfi və son tarixi olan kampaniya yerləşdirir. Dəstəkçilər dəstək olur. Kampaniya hədəfinin 80%-ində uğurlu sayılır.",
       "sceneCaption": "Kiçik dəstəklər birləşəndə böyük ideyalar reallaşır.",
+      "phoneLines": {
+        "creator": "Müəllif ideyasını hədəf və son tarixlə paylaşır",
+        "backers": "Dəstəkçilər hər tərəfdən qoşulur",
+        "success": "Hədəfin 80%-i toplananda kampaniya uğurlu sayılır"
+      },
       "browse": "Kampaniyalara baxın",
       "start": "Kampaniya başladın"
     },

@@ -360,3 +360,25 @@
     transform: scale(0.625);
   }
 }
+
+/*
+ * The phone card's informational lines (#490): four of them on a 12.8 s cycle, each delayed
+ * 3.2 s after the last, so each owns a quarter of it — rises in over 0.4 s, holds, and lifts
+ * away before the next arrives.
+ */
+@keyframes hero-line {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  3%,
+  21% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  24.5%,
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
