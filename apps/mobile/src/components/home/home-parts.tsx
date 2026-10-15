@@ -4,7 +4,7 @@ import { Link, type Href } from 'expo-router';
 import { Glyphs } from '../../icons';
 import type { Category } from '../../api/queries';
 import { useT } from '../../lib/i18n';
-import { font, fontSize, lineHeight, radius, size, spacing } from '../../theme';
+import { font, fontSize, lineHeight, radius, size, spacing, tracking } from '../../theme';
 import { FadeUp } from '../motion';
 import { categoryLook } from '@ideanest/discovery/category-look';
 import { categoryGlyph } from '../browse/category-look';
@@ -22,6 +22,7 @@ import {
   useFocusRing,
 } from '../ui';
 import { BLOCK } from '../ui/surface';
+import { HeroLoopCard } from './hero-loop';
 
 /**
  * The pieces of the Home tab — the web home's inline hero and `HomeSection` (issue #153), in the
@@ -47,17 +48,30 @@ export interface HomeHeroProps {
   readonly onStart: () => void;
 }
 
-/** A heading, the 80% rule in a sentence, and two actions. Static copy, so it draws at once. */
+/**
+ * The web home's hero at phone width (#490): the heading, the scene card with the standfirst's
+ * facts playing over it, and the two actions side by side. The standfirst is the card's accessible
+ * name rather than a paragraph on screen. Static copy, so it draws at once.
+ */
 export function HomeHero({ onBrowse, onStart }: HomeHeroProps) {
   const t = useT('home.hero');
   return (
     <FadeUp index={0}>
       <View style={styles.hero}>
-        <Display accessibilityRole="header">{t('title')}</Display>
-        <Body>{t('standfirst')}</Body>
+        <Display accessibilityRole="header" style={styles.title}>
+          {t('title')}
+        </Display>
+        <HeroLoopCard
+          label={t('standfirst')}
+          lines={[t('phoneLines.creator'), t('phoneLines.backers'), t('phoneLines.success'), t('sceneCaption')]}
+        />
         <View style={styles.actions}>
-          <Pill label={t('browse')} iconRight={Glyphs.ArrowRight} size="lg" onPress={onBrowse} />
-          <Pill label={t('start')} variant="outline" size="lg" onPress={onStart} />
+          <View style={styles.action}>
+            <Pill label={t('browse')} size="lg" fullWidth wrap onPress={onBrowse} />
+          </View>
+          <View style={styles.action}>
+            <Pill label={t('start')} variant="outline" size="lg" fullWidth wrap onPress={onStart} />
+          </View>
         </View>
       </View>
     </FadeUp>
@@ -216,7 +230,10 @@ const TILE_HEIGHT = 120;
 
 const styles = StyleSheet.create({
   hero: { gap: spacing[4], paddingTop: spacing[4] },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3], paddingTop: spacing[2] },
+  /* The web's phone heading, 30px there: the nearest step on the scale, so it takes two lines. */
+  title: { fontSize: fontSize.h1, lineHeight: lineHeight.h1, letterSpacing: tracking.h1 },
+  actions: { flexDirection: 'row', gap: spacing[2] },
+  action: { flex: 1 },
   section: { gap: spacing[4] },
   titles: { gap: spacing[2] },
   linkRow: { flexDirection: 'row' },

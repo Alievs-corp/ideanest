@@ -3635,6 +3635,11 @@
       "title": "Henüz var olmayanı fonlayın",
       "standfirst": "Yaratıcılar hedefi ve son tarihi olan bir kampanya yayımlar. Destekçiler destek verir. Bir kampanya hedefinin %80'inde başarılı sayılır.",
       "sceneCaption": "Küçük destekler bir araya geldiğinde büyük fikirler gerçeğe dönüşür.",
+      "phoneLines": {
+        "creator": "Yaratıcı fikrini bir hedef ve son tarihle paylaşır",
+        "backers": "Destekçiler her yönden katılır",
+        "success": "Hedefin %80'ine ulaşınca kampanya başarılı sayılır"
+      },
       "browse": "Kampanyalara göz atın",
       "start": "Kampanya başlatın"
     },

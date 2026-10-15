@@ -138,7 +138,9 @@
 }
 
 /**
- * The home page hero scene — `components/home/HeroScene.tsx`, issue #337.
+ * The home page hero scene's drawing — `components/home/HeroSceneDrawing.tsx`, issues #337 and
+ * #490. The page plays it as pre-rendered video now; these keyframes are what the video is
+ * rendered from.
  *
  * WRITTEN HERE for the WhatsApp launcher's reason: the scene renders on the server with no
  * script, and a library would cost the home page the first-load budget it has 6 KiB left of.
@@ -358,5 +360,27 @@
   }
   100% {
     transform: scale(0.625);
+  }
+}
+
+/*
+ * The phone card's informational lines (#490): four of them on a 12.8 s cycle, each delayed
+ * 3.2 s after the last, so each owns a quarter of it — rises in over 0.4 s, holds, and lifts
+ * away before the next arrives.
+ */
+@keyframes hero-line {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  3%,
+  21% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  24.5%,
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
   }
 }

@@ -7,7 +7,7 @@ import { ACCENT_SURFACE } from '../../../components/browse/accent-surface';
 import { CategoryIcon } from '../../../components/browse/CategoryLook';
 import { categoryLook } from '@ideanest/discovery/category-look';
 import { FadeUpSection } from '../../../components/motion/FadeUpSection';
-import { HeroScene } from '../../../components/home/HeroScene';
+import { HeroPhoneScene, HeroScene } from '../../../components/home/HeroScene';
 import { StructuredData } from '../../../components/seo/StructuredData';
 import { fetchCategories, fetchDiscoveryFeed } from '../../../lib/api/server';
 import { categoryPath } from '../../../lib/categories/api';
@@ -127,24 +127,39 @@ export default async function HomePage() {
         */}
         <section className="grid items-center gap-8 pt-10 pb-14 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,600px)] lg:gap-6">
           <FadeUpSection>
-            <h1 className="max-w-[16ch] text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white sm:text-6xl">
+            <h1 className="max-w-[16ch] text-3xl font-semibold leading-[1.05] tracking-[-0.04em] text-white sm:text-6xl">
               {t('hero.title')}
             </h1>
-            <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-white/64">
+            {/*
+              On a phone the standfirst is read, not shown: its facts play one at a time over
+              the square scene below it instead (#490), which is decoration for a screen reader.
+            */}
+            <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-white/64 max-sm:sr-only">
               {t('hero.standfirst')}
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div className="mt-6 sm:hidden">
+              <HeroPhoneScene
+                lines={[
+                  t('hero.phoneLines.creator'),
+                  t('hero.phoneLines.backers'),
+                  t('hero.phoneLines.success'),
+                  t('hero.sceneCaption'),
+                ]}
+              />
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-9 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
               <Link
                 href="/discover"
-                className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-2 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
               >
                 {t('hero.browse')}
-                <ArrowRight aria-hidden="true" className="size-4" />
+                <ArrowRight aria-hidden="true" className="size-4 shrink-0 max-sm:hidden" />
               </Link>
               <Link
                 href="/projects/new"
-                className="inline-flex h-12 items-center rounded-full border border-white/16 px-6 text-base font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-white/16 px-2 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
               >
                 {t('hero.start')}
               </Link>
@@ -155,9 +170,8 @@ export default async function HomePage() {
             THE RIGHT HALF IS THE IDEA THE PAGE IS ABOUT (#337): people walking in from every
             side, an orb that grows with each of them. Server-rendered CSS, no script, outside
             the `FadeUp` because it carries its own motion — `HeroScene` says how it stays on
-            the compositor and what it does under reduced motion. Below the text on a tablet,
-            and absent on a phone, where the text alone already fills the first screen and
-            §5's "content immediately" outranks the picture.
+            the compositor and what it does under reduced motion. Below the text on a tablet.
+            A phone gets `HeroPhoneScene` instead, the square card above the actions.
           */}
           <HeroScene caption={t('hero.sceneCaption')} />
         </section>

@@ -484,10 +484,20 @@ decisions.
 > `opacity` only, every keyframe a literal, because a `var()` inside a keyframe
 > keeps the animation on the main thread; about sixty animations, cut from a
 > hundred after measuring that the cost scaled with their number; `content-visibility:
-> auto`, so it costs nothing once scrolled away; not drawn on a phone, where the
-> text fills the first screen; and a still composition under reduced motion.
-> Measured on the development laptop it holds frame rate at normal speed and
-> drops frames under a 2× CPU slowdown — the reason it is not on phones.
+> auto`, so it costs nothing once scrolled away; and a still composition under
+> reduced motion. Measured on the development laptop it held frame rate at
+> normal speed and dropped frames under a 2× CPU slowdown.
+>
+> **Since #490 it plays as video, on every size and in the app.** The CSS
+> drawing (`HeroSceneDrawing`) is rendered frame by frame into three silent
+> 6.4 s H.264 loops — 1200×1080, 960×864 and a 720×720 square for phones,
+> 165–300 KB — served from the media bucket. Measured on a 390px viewport at
+> device scale 3 under a 4× CPU slowdown, the page ran at about 2.5 frames a
+> second with the CSS scene, 10–14 with the video and 17–18 with neither. A
+> hidden copy downloads nothing but its poster, a loop pauses off screen (and in
+> the app off focus), and reduced motion keeps the poster. On a phone the
+> standfirst's facts play over the square card one at a time — the one place
+> text animates in the hero — and the standfirst itself is read, not shown.
 
 > **The site shell's one animation is §4.7's, and the mobile drawer is not a
 > second one.** WS-03's off-canvas panel is an overlay and takes §4.11.1's

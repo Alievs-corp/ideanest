@@ -3635,6 +3635,11 @@
       "title": "Fund what does not exist yet",
       "standfirst": "Creators publish a campaign with a goal and a deadline. Backers pledge. A campaign succeeds at 80% of its goal.",
       "sceneCaption": "When small pledges come together, big ideas become real.",
+      "phoneLines": {
+        "creator": "A creator shares an idea with a goal and a deadline",
+        "backers": "Backers join in from every side",
+        "success": "At 80% of its goal, the campaign succeeds"
+      },
       "browse": "Browse campaigns",
       "start": "Start a campaign"
     },
