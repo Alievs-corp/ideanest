@@ -59,14 +59,13 @@ export function HeroScene({ caption }: { readonly caption: string }) {
  * at a time, each fading up in and out, one every 3.2 s: two loops of the scene for the four of
  * them. They are decoration here too — the page carries the same words as text for a screen
  * reader — and under reduced motion only the last one stands, over the poster. Its side is
- * capped by the screen's height, so the two actions below it are still on the first screen,
- * above the WhatsApp launcher.
+ * capped by the screen's height, so the two actions below it are still on the first screen.
  */
 export function HeroPhoneScene({ lines }: { readonly lines: PhoneLines }) {
   return (
     <div
       aria-hidden="true"
-      className="@container relative mx-auto aspect-square w-[clamp(220px,calc(100svh-420px),100%)] max-w-[420px] overflow-hidden rounded-xl border border-white/8 bg-surface-2"
+      className="@container relative mx-auto aspect-square w-[clamp(264px,calc((100svh-420px)*1.2),100%)] max-w-[420px] overflow-hidden rounded-xl border border-white/8 bg-surface-2"
       data-testid="hero-phone-scene"
     >
       <HeroLoop sources={PHONE_SOURCES} poster={LOOP.phonePoster} className="absolute inset-0 size-full object-cover" />
