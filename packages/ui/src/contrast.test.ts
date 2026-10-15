@@ -155,11 +155,10 @@ describe('contrast', () => {
     expect(ratio(onAccent(0.72), surface)).toBeGreaterThanOrEqual(BODY);
   });
 
-  /** `Tag variant="onAccent"`: near-black words on a 10% black tint over the accent. */
+  /** `Tag variant="onAccent"`: white words on a solid near-black pill, set apart from the accent. */
   it.each(ACCENTS)('reads the onAccent tag on %s', (_name, surface) => {
-    const tinted = composite(parse(onAccent(0.1)), parse(surface));
-    const background = `rgba(${tinted.red}, ${tinted.green}, ${tinted.blue}, 1)`;
-    expect(ratio(colors.textOnAccent, background)).toBeGreaterThanOrEqual(BODY);
+    expect(ratio(colors.textPrimary, colors.textOnAccent)).toBeGreaterThanOrEqual(BODY);
+    expect(ratio(colors.textOnAccent, surface)).toBeGreaterThanOrEqual(BODY);
   });
 
   /** `data-on-accent` turns the ring near-black; lime on sun or mint is under 3:1. */
