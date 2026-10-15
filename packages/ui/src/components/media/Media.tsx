@@ -154,7 +154,7 @@ export function MediaFrame({
        */
       className={cn(
         'relative w-full overflow-hidden bg-surface-3',
-        narrowRatio !== undefined && 'aspect-(--media-ratio) max-sm:aspect-(--media-ratio-narrow)',
+        narrowRatio !== undefined && 'aspect-[var(--media-ratio)] max-sm:aspect-[var(--media-ratio-narrow)]',
         RADIUS[radius],
         className,
       )}
