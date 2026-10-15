@@ -47,18 +47,21 @@ public class HostedPaymentPage implements PaymentPage {
     private final ReturnUrls returnUrls;
     private final ObjectMapper json;
     private final RefundTerms terms;
+    private final ProviderCircuitBreaker breaker;
 
     public HostedPaymentPage(
             PaymentProviders providers,
             PaymentTransactionRepository transactions,
             ReturnUrls returnUrls,
             ObjectMapper json,
-            RefundTerms terms) {
+            RefundTerms terms,
+            ProviderCircuitBreaker breaker) {
         this.providers = providers;
         this.transactions = transactions;
         this.returnUrls = returnUrls;
         this.json = json;
         this.terms = terms;
+        this.breaker = breaker;
     }
 
     @Override
@@ -68,17 +71,20 @@ public class HostedPaymentPage implements PaymentPage {
         PaymentProvider provider = providers
                 .primary()
                 .orElseThrow(() -> new PaymentPageUnavailableException("No payment provider is configured."));
+        if (!breaker.isAvailable(provider.name())) {
+            throw new PaymentPageUnavailableException("The circuit breaker for " + provider.name() + " is open.");
+        }
 
         HostedPaymentSession session;
         try {
-            session = provider.beginHostedPayment(new HostedPaymentRequest(
+            session = breaker.call(provider.name(), () -> provider.beginHostedPayment(new HostedPaymentRequest(
                     pledge.pledgeId(),
                     pledge.total(),
                     "IdeyaNest pledge " + pledge.pledgeId(),
                     language,
                     successUrl,
                     errorUrl,
-                    idempotencyKey));
+                    idempotencyKey)));
         } catch (UnsupportedOperationException e) {
             throw new PaymentPageUnavailableException(provider.name() + " does not take payments on a hosted page.", e);
         } catch (ProviderUnavailableException e) {

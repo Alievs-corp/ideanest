@@ -4323,7 +4323,8 @@ single-file change.
 > environment, `CollectionRun` refused to collect when it found none, and that single
 > refusal kept the batching, the circuit breaker, §9.6's schedule and the ledger posting
 > inert until there was something real behind them. #45 removed `CollectionRun` with the
-> rest of the stored-card collection.
+> rest of the stored-card collection; since #470 the circuit breaker counts the live calls
+> instead: payment pages, refunds, the sweeps' look-ups and payouts.
 > `PaymentProviderBoundaryTests` asserts both halves — that no adapter is on the
 > production classpath, and that no module outside `payment` names a request or result
 > type, which is the checkable form of "changing provider is a single-file change".

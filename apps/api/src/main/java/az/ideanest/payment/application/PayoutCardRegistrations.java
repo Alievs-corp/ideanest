@@ -45,18 +45,21 @@ public class PayoutCardRegistrations implements PaymentEventHandler {
     private final Outbox outbox;
     private final Clock clock;
     private final ReturnUrls returnUrls;
+    private final ProviderCircuitBreaker breaker;
 
     public PayoutCardRegistrations(
             PaymentProviders providers,
             PayoutCardRegistrationRepository registrations,
             Outbox outbox,
             Clock clock,
-            ReturnUrls returnUrls) {
+            ReturnUrls returnUrls,
+            ProviderCircuitBreaker breaker) {
         this.providers = providers;
         this.registrations = registrations;
         this.outbox = outbox;
         this.clock = clock;
         this.returnUrls = returnUrls;
+        this.breaker = breaker;
     }
 
     /**
@@ -72,11 +75,14 @@ public class PayoutCardRegistrations implements PaymentEventHandler {
         PaymentProvider provider = providers
                 .primary()
                 .orElseThrow(() -> new PayoutCardsUnavailableException("No payment provider is configured"));
+        if (!breaker.isAvailable(provider.name())) {
+            throw new PayoutCardsUnavailableException("The circuit breaker for " + provider.name() + " is open");
+        }
 
         PayoutCardSession session;
         try {
-            session = provider.beginPayoutCardRegistration(
-                    new PayoutCardRequest(creatorId, "IdeyaNest payout card", language, successUrl, errorUrl));
+            session = breaker.call(provider.name(), () -> provider.beginPayoutCardRegistration(
+                    new PayoutCardRequest(creatorId, "IdeyaNest payout card", language, successUrl, errorUrl)));
         } catch (UnsupportedOperationException refused) {
             throw new PayoutCardsUnavailableException(provider.name() + " does not register payout cards", refused);
         } catch (ProviderUnavailableException unavailable) {

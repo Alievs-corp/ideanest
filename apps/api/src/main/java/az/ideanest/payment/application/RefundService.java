@@ -3,6 +3,7 @@ package az.ideanest.payment.application;
 import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentProvider;
 import az.ideanest.payment.domain.PaymentTransaction;
+import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.payment.domain.ProviderOutcome;
 import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.domain.Refund;
@@ -88,6 +89,7 @@ public class RefundService {
     private final RefundRecords records;
     private final PlatformStaff staff;
     private final RefundWindows windows;
+    private final ProviderCircuitBreaker breaker;
     private final Clock clock;
 
     public RefundService(
@@ -97,6 +99,7 @@ public class RefundService {
             RefundRecords records,
             PlatformStaff staff,
             RefundWindows windows,
+            ProviderCircuitBreaker breaker,
             Clock clock) {
         this.refunds = refunds;
         this.transactions = transactions;
@@ -104,6 +107,7 @@ public class RefundService {
         this.records = records;
         this.staff = staff;
         this.windows = windows;
+        this.breaker = breaker;
         this.clock = clock;
     }
 
@@ -241,6 +245,9 @@ public class RefundService {
      * refund the provider refuses as too old is not failed: both wait for the backer's bank account.
      * Checked before the provider is looked up, because a charge that cannot be refunded through the
      * provider does not need the provider to be configured.
+     *
+     * <p>A provider whose {@link ProviderCircuitBreaker} is open is not asked, and the refund is
+     * {@code FAILED} as not sent: nothing reached it.
      */
     private Refund send(Refund refund) {
         Optional<PaymentTransaction> found = transactions.findById(refund.chargeTransactionId());
@@ -260,15 +267,19 @@ public class RefundService {
                     refund, NOT_SENT, "No payment provider is configured for " + charge.getProvider() + ".");
         }
         PaymentProvider provider = configured.get();
+        if (!breaker.isAvailable(provider.name())) {
+            return records.settleFailure(
+                    refund, NOT_SENT, "The circuit breaker for " + provider.name() + " is open.");
+        }
 
         RefundResult result;
         try {
-            result = provider.refund(new RefundRequest(
+            result = breaker.call(provider.name(), () -> provider.refund(new RefundRequest(
                     refund.pledgeId(),
                     charge.getProviderTransactionId(),
                     refund.amount(),
                     refund.reason().name(),
-                    refund.idempotencyKey()));
+                    refund.idempotencyKey())));
         } catch (ProviderUnavailableException e) {
             // Unknown, not failed (#176): the reversal may have happened. Left REQUESTED for reconcile().
             log.warn(
@@ -308,9 +319,17 @@ public class RefundService {
      * and the key is unique per attempt. A refund whose outcome was lost is never re-sent blind —
      * {@link #reconcile} asks the provider what the payment is first.
      *
-     * @return the settled refund, or empty when nothing remained to refund
+     * <p>Nothing is recorded while the charge's provider is out of service ({@link ProviderCircuitBreaker}),
+     * so the next pass offers the charge again.
+     *
+     * @return the settled refund, or empty when nothing remained to refund or the provider is out of service
      */
     public Optional<Refund> issueForCharge(UUID chargeId, UUID pledgeId, RefundReason reason) {
+        Optional<ProviderName> through = transactions.findById(chargeId).map(PaymentTransaction::getProvider);
+        if (through.isPresent() && !breaker.isAvailable(through.get())) {
+            log.info("Refund of charge {} waits: the circuit breaker for {} is open.", chargeId, through.get());
+            return Optional.empty();
+        }
         String prefix = reason == RefundReason.RAISE_NOT_APPLIED ? "raise-refund:" : "campaign-refund:";
         String key = prefix + chargeId + ":" + (refunds.countAgainstCharge(chargeId) + 1);
         return records.recordForCharge(chargeId, reason, key).map(this::send);
@@ -341,9 +360,13 @@ public class RefundService {
         PaymentTransaction charge = found.get();
         PaymentProvider provider = configured.get();
 
+        if (!breaker.isAvailable(provider.name())) {
+            log.info("Refund {} stays unresolved: the circuit breaker for {} is open.", refund.id(), provider.name());
+            return refund;
+        }
         PaymentLookup lookup;
         try {
-            lookup = provider.lookUpPayment(charge.getProviderTransactionId());
+            lookup = breaker.call(provider.name(), () -> provider.lookUpPayment(charge.getProviderTransactionId()));
         } catch (UnsupportedOperationException | ProviderUnavailableException e) {
             log.info("Refund {} stays unresolved: {}", refund.id(), e.getMessage());
             return refund;

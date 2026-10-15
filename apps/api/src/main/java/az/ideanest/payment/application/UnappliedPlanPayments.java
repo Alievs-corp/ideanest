@@ -49,6 +49,7 @@ public class UnappliedPlanPayments {
     private final PlatformStaff staff;
     private final AuditLog audit;
     private final TransactionTemplate transaction;
+    private final ProviderCircuitBreaker breaker;
     private final Clock clock;
 
     public UnappliedPlanPayments(
@@ -58,6 +59,7 @@ public class UnappliedPlanPayments {
             PlatformStaff staff,
             AuditLog audit,
             PlatformTransactionManager transactionManager,
+            ProviderCircuitBreaker breaker,
             Clock clock) {
         this.charges = charges;
         this.providers = providers;
@@ -65,6 +67,7 @@ public class UnappliedPlanPayments {
         this.staff = staff;
         this.audit = audit;
         this.transaction = new TransactionTemplate(transactionManager);
+        this.breaker = breaker;
         this.clock = clock;
     }
 
@@ -103,15 +106,19 @@ public class UnappliedPlanPayments {
         PaymentProvider provider = providers.byName(charge.getProvider())
                 .orElseThrow(() -> new PlanRefundRefusedException(
                         PlanRefundRefusedException.Reason.PROVIDER_UNAVAILABLE, chargeId, "no adapter"));
+        if (!breaker.isAvailable(provider.name())) {
+            throw new PlanRefundRefusedException(
+                    PlanRefundRefusedException.Reason.PROVIDER_UNAVAILABLE, chargeId, "circuit breaker open");
+        }
 
         RefundResult result;
         try {
-            result = provider.refund(new RefundRequest(
+            result = breaker.call(provider.name(), () -> provider.refund(new RefundRequest(
                     chargeId,
                     charge.getProviderTransactionId(),
                     charge.getAmount(),
                     REASON_CODE,
-                    "plan-refund-" + chargeId));
+                    "plan-refund-" + chargeId)));
         } catch (ProviderUnavailableException e) {
             throw new PlanRefundRefusedException(
                     PlanRefundRefusedException.Reason.PROVIDER_UNAVAILABLE, chargeId, e.getMessage());
