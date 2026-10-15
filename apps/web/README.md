@@ -50,6 +50,7 @@ the browser half of the auth flow work at all.
 | `build` / `start` | Production build and server |
 | `typecheck` | `tsc --noEmit` — runs in CI |
 | `test` | Vitest, behaviour and accessibility — runs in CI |
+| `node scripts/hero-loop/render.mjs` | Renders the home hero's scene loops from `HeroSceneDrawing`; `scripts/hero-loop/upload.py` publishes them (#490) |
 
 ## Routes
 

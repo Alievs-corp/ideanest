@@ -138,7 +138,9 @@
 }
 
 /**
- * The home page hero scene — `components/home/HeroScene.tsx`, issue #337.
+ * The home page hero scene's drawing — `components/home/HeroSceneDrawing.tsx`, issues #337 and
+ * #490. The page plays it as pre-rendered video now; these keyframes are what the video is
+ * rendered from.
  *
  * WRITTEN HERE for the WhatsApp launcher's reason: the scene renders on the server with no
  * script, and a library would cost the home page the first-load budget it has 6 KiB left of.

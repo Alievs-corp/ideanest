@@ -9,9 +9,11 @@ import { HeroLoop } from './HeroLoop';
  *
  * The picture is `HeroSceneDrawing`, rendered frame by frame into three silent 6.4 s loops: a
  * 1200 × 1080 one for a desktop, 960 × 864 for a tablet and a 720 × 720 square for a phone,
- * 165 to 300 KB each in H.264, served from the media bucket (`@ideanest/messages/hero-loop`). As live CSS it was about sixty compositor animations, which held
- * a laptop's frame rate and fell to about 25 frames a second under a 4× CPU slowdown — a
- * phone. A video is decoded by the phone's own hardware.
+ * 165 to 300 KB each in H.264, served from the media bucket (`@ideanest/messages/hero-loop`).
+ *
+ * As live CSS it was about sixty compositor animations. On a 390px viewport at device scale 3
+ * under a 4× CPU slowdown — a phone — the page ran at about 2.5 frames a second with it, 10 to 14
+ * with the video and 17 to 18 with neither. A video is decoded by the phone's own hardware.
  *
  * The scene is `aria-hidden` decoration either way; the caption, and on a phone the standfirst,
  * say the same thing as text.

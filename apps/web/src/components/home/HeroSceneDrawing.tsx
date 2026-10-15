@@ -6,9 +6,21 @@ import type { CSSProperties } from 'react';
  *
  * <h2>Not on the page</h2>
  *
- * The hero plays it as a video (`HeroScene`), because as live CSS it dropped to about 25 frames a
- * second on a phone-class CPU. This is the source those videos are rendered from, frame by
- * frame with the animations paused, and the place to change the picture.
+ * The hero plays it as a video (`HeroScene`), because as live CSS the page dropped to about 2.5
+ * frames a second on a phone-class CPU. This is the source those videos are rendered from, and the place
+ * to change the picture.
+ *
+ * <h2>Rendering the loops</h2>
+ *
+ * With the web app running, from `apps/web`:
+ *
+ *     node scripts/hero-loop/render.mjs http://localhost:3000
+ *     PROMO_S3_CREDENTIALS=<file> python scripts/hero-loop/upload.py <version> <folder it printed>
+ *
+ * then bump `HERO_LOOP_VERSION` (`@ideanest/messages/hero-loop`). The script draws this component
+ * over a page of the running app, which supplies the stylesheet, pauses every animation and steps
+ * `currentTime` through one 6.4 s cycle at 30 fps, so the loop has no seam; `render.mjs` says the
+ * rest.
  *
  * <h2>What it shows</h2>
  *
