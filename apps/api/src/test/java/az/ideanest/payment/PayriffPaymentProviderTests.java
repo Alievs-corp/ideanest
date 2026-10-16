@@ -234,6 +234,9 @@ class PayriffPaymentProviderTests {
         AtomicReference<String> sent = new AtomicReference<>();
         Wire wire = new Wire();
         wire.expect(HttpMethod.POST, "/refund")
+                // The refund's key, as a name-based UUID: every retry of the same refund is the same request.
+                .andExpect(header("X-REQUEST-RRN",
+                        UUID.nameUUIDFromBytes("refund-key-1".getBytes(StandardCharsets.UTF_8)).toString()))
                 .andExpect(request -> sent.set(((MockClientHttpRequest) request).getBodyAsString()))
                 .andRespond(withSuccess("""
                         {"code":"00000","message":"Refunded","responseId":"r-3"}

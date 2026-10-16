@@ -215,7 +215,10 @@ public class PayriffPaymentProvider implements PaymentProvider {
         body.put("amount", request.amount().amount());
         body.put("refundReason", request.reasonCode());
 
-        JsonNode answer = exchange(post("/refund", body), "refund a payment");
+        // The request's key as its RRN, as a payment carries one: every retry of the same refund names the
+        // same request, so a Payriff that has already carried it out can recognise it.
+        JsonNode answer = exchange(
+                post("/refund", body).header("X-REQUEST-RRN", requestRrn(request.idempotencyKey())), "refund a payment");
         String code = text(answer, "code");
         if (AUTHENTICATION.contains(code)) {
             throw unavailable("Payriff refused the secret key while refunding: " + text(answer, "message"));
