@@ -14,7 +14,7 @@ import {
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import type { ModerationQueueCopy } from '../../lib/i18n/admin/content-copy';
-import type { Decision } from './DecisionDialog';
+import type { ReportDecision } from './DecisionDialog';
 import type { Locale } from '../../lib/i18n/locale';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { EntityName } from '../admin/ConsoleIdentity';
@@ -42,12 +42,11 @@ export interface ReportCardProps {
    * target, belong on a page rather than on a row in a queue somebody is skimming.
    */
   readonly detailHref?: string;
-  readonly onDecide: (report: QueuedReport, decision: Decision) => void;
+  readonly onDecide: (report: QueuedReport, decision: ReportDecision) => void;
   readonly copy: ModerationQueueCopy;
 }
 
 const REPORT_OUTCOMES = ['uphold', 'dismiss'] as const;
-const CAMPAIGN_OUTCOMES = ['approve', 'request-changes', 'reject'] as const;
 
 /**
  * The state word, with a token that means what the word means.
@@ -228,7 +227,12 @@ export function ReportCard({
             <p className="mt-1 text-sm text-white/64">
               {fillNodes(copy.moderation.decidedBy[report.state], {
                 moderator: (
-                  <span className="font-mono">{shortId(report.resolution.moderatorId)}</span>
+                  <EntityName
+                    id={report.resolution.moderatorId}
+                    names={names}
+                    kind="account"
+                    copy={copy.identity}
+                  />
                 ),
                 at: (
                   <time dateTime={report.resolution.at}>
@@ -246,7 +250,7 @@ export function ReportCard({
         )}
 
         {open && (
-          <div className="mt-5 space-y-4">
+          <div className="mt-5">
             <div role="group" aria-label={fillPlaceholders(copy.decideGroup, { target })}>
               <p className="text-xs font-medium uppercase tracking-wide text-white/40">
                 {copy.decideHeading}
@@ -276,41 +280,6 @@ export function ReportCard({
                 ))}
               </div>
             </div>
-
-            {/*
-              The campaign outcomes, and only for a campaign. Deciding a report
-              does not act on what was reported, so these are a second, separate
-              privileged action — said in words, because a moderator who thinks
-              one button did both stops half way through the job.
-
-              There is no `GET /v1/admin/moderation/queue` in the service, so a
-              report about a campaign is the only place these three are
-              reachable from.
-            */}
-            {report.target.type === 'PROJECT' && (
-              <div role="group" aria-label={fillPlaceholders(copy.actGroup, { target })}>
-                <p className="text-xs font-medium uppercase tracking-wide text-white/40">
-                  {copy.actHeading}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {CAMPAIGN_OUTCOMES.map((outcome) => (
-                    <Pill
-                      key={outcome}
-                      variant="outline"
-                      size="sm"
-                      disabled={busy}
-                      aria-label={fillPlaceholders(copy.actLabel, {
-                        outcome: copy.moderation.campaignOutcome[outcome],
-                        target,
-                      })}
-                      onClick={() => onDecide(report, { kind: 'campaign', outcome })}
-                    >
-                      {copy.moderation.campaignOutcome[outcome]}
-                    </Pill>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </Card>

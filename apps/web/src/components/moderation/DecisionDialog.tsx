@@ -20,13 +20,15 @@ export type Decision =
   | { readonly kind: 'report'; readonly outcome: ReportOutcome }
   | { readonly kind: 'campaign'; readonly outcome: CampaignOutcome };
 
+export type ReportDecision = Extract<Decision, { readonly kind: 'report' }>;
+
 /** What the note may hold — the `@Size` both request bodies carry. */
 export const NOTE_MAX_CHARACTERS = 2000;
 
 interface Copy {
   readonly title: string;
   readonly description: string;
-  readonly body: string;
+  readonly body: string | null;
   readonly confirmLabel: string;
   readonly busyLabel: string;
   readonly noteLabel: string;
@@ -67,13 +69,12 @@ function copyFor(decision: Decision, subject: DecisionSubject, copy: ModerationC
           kind: copy.target[subject.targetType],
           id: shortId(subject.targetId),
         })
-      : fillPlaceholders(copy.campaignName, { id: shortId(subject.targetId) });
+      : subject.title ?? fillPlaceholders(copy.campaignName, { id: shortId(subject.targetId) });
 
   return {
     title: verb.title,
     description: fillPlaceholders(verb.description, { name }),
-    /* The three campaign verbs share one sentence about what they leave undecided. */
-    body: verb.body ?? copy.decision.campaignBody,
+    body: verb.body ?? null,
     confirmLabel: verb.confirmLabel,
     busyLabel: verb.busyLabel,
     noteLabel: verb.noteLabel,
@@ -101,6 +102,7 @@ export interface DecisionSubject {
   readonly key: string;
   readonly targetType: ReportTargetType;
   readonly targetId: string;
+  readonly title?: string;
 }
 
 export interface DecisionDialogProps {
@@ -208,9 +210,9 @@ export function DecisionDialog({
         </>
       }
     >
-      <p className="text-sm text-on-white/72">{copy.body}</p>
+      {copy.body !== null && <p className="mb-4 text-sm text-on-white/72">{copy.body}</p>}
 
-      <div className="mt-4">
+      <div>
         <Field
           label={copy.noteLabel}
           required={copy.noteRequired}

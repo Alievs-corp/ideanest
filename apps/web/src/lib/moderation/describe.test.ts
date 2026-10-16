@@ -5,8 +5,8 @@ import type { QueuedReport } from './api';
 import {
   DEFAULT_FILTERS,
   OVERDUE_AFTER_MS,
+  campaignStateWord,
   formatRelativeTime,
-  humaniseState,
   isOverdue,
   isRefined,
   isRepeated,
@@ -167,9 +167,19 @@ describe('moderation/describe', () => {
     });
   });
 
-  describe('humaniseState', () => {
-    it('turns a service constant into a sentence fragment', () => {
-      expect(humaniseState('CHANGES_REQUESTED')).toBe('changes requested');
+  describe('campaignStateWord', () => {
+    it("names a campaign state in the reader's language, as a fragment of a sentence", () => {
+      const az = moderationCopyFrom(translatorFor('admin', 'az'), 'Ləğv et');
+      const en = moderationCopyFrom(translatorFor('admin'), 'Cancel');
+
+      expect(campaignStateWord('CHANGES_REQUESTED', az, 'az')).toBe('dəyişiklik tələb olunub');
+      expect(campaignStateWord('APPROVED', en, 'en')).toBe('approved');
+    });
+
+    it("falls back to the service's own spelling for a state the catalogue does not know", () => {
+      const en = moderationCopyFrom(translatorFor('admin'), 'Cancel');
+
+      expect(campaignStateWord('SOMETHING_NEW', en, 'en')).toBe('something new');
     });
   });
 

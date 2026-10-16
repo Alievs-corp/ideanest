@@ -191,35 +191,37 @@ export function CampaignDirectory({ copy }: CampaignDirectoryProps) {
         box is the control.
       */}
       <form
-        className="mt-4 flex flex-wrap items-end gap-3"
+        className="mt-4"
         onSubmit={(event) => {
           event.preventDefault();
           setSearch(term.trim());
         }}
       >
-        <Field label={copy.searchLabel} hint={copy.searchHint} className="min-w-[260px] flex-1">
-          <TextInput
-            type="search"
-            value={term}
-            onChange={(event) => setTerm(event.target.value)}
-          />
+        <Field label={copy.searchLabel} hint={copy.searchHint}>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-[220px] flex-1">
+              <TextInput
+                type="search"
+                value={term}
+                onChange={(event) => setTerm(event.target.value)}
+              />
+            </div>
+            <Pill type="submit" variant="ghost">
+              {copy.search}
+            </Pill>
+            {search !== '' && (
+              <Pill
+                variant="ghost"
+                onClick={() => {
+                  setTerm('');
+                  setSearch('');
+                }}
+              >
+                {copy.clearSearch}
+              </Pill>
+            )}
+          </div>
         </Field>
-        <Pill type="submit" variant="ghost" size="sm" className="mb-1">
-          {copy.search}
-        </Pill>
-        {search !== '' && (
-          <Pill
-            variant="ghost"
-            size="sm"
-            className="mb-1"
-            onClick={() => {
-              setTerm('');
-              setSearch('');
-            }}
-          >
-            {copy.clearSearch}
-          </Pill>
-        )}
       </form>
 
       {/* Every chip here reaches the service — see the docblock on why nothing is narrowed

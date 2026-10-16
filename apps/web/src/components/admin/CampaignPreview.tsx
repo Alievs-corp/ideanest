@@ -143,6 +143,21 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
     );
   }
 
+  if (status === 'failed' && campaign === null) {
+    return (
+      <>
+        {error !== null && (
+          <InlineAlert variant="danger" title={copy.errorTitle}>
+            {error}
+          </InlineAlert>
+        )}
+        <Pill variant="ghost" size="sm" className="mt-4" onClick={() => setAttempt((n) => n + 1)}>
+          {copy.tryAgain}
+        </Pill>
+      </>
+    );
+  }
+
   if (notFound || campaign === null) {
     return (
       <EmptyState
@@ -160,12 +175,6 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
 
   return (
     <div>
-      {error !== null && (
-        <InlineAlert variant="danger" title={copy.errorTitle} className="mb-4">
-          {error}
-        </InlineAlert>
-      )}
-
       {/*
         First, and never dismissible. This screen renders drafts, and a member of staff who
         has lost track of which tab they are in is one screenshot away from publishing
@@ -308,12 +317,6 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
       <p className="mt-8">
         <BackToDirectory label={copy.backToDirectory} />
       </p>
-
-      {status === 'failed' && (
-        <Pill variant="ghost" size="sm" className="mt-4" onClick={() => setAttempt((n) => n + 1)}>
-          {copy.tryAgain}
-        </Pill>
-      )}
     </div>
   );
 }

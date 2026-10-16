@@ -3,7 +3,8 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import type { QueuedReport, ReportQueuePage } from '../../lib/moderation/api';
-import { decideCampaign, getReport, listReports, resolveReport } from '../../lib/moderation/api';
+import { getReport, listReports, resolveReport } from '../../lib/moderation/api';
+import { lookUpNames } from '../../lib/admin/directory';
 import { ModerationQueue } from './ModerationQueue';
 import { translatorFor } from '../../test-copy';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
@@ -27,14 +28,18 @@ vi.mock('../../lib/moderation/api', async (importOriginal) => {
     listReports: vi.fn(),
     getReport: vi.fn(),
     resolveReport: vi.fn(),
-    decideCampaign: vi.fn(),
   };
 });
 
+vi.mock('../../lib/admin/directory', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/admin/directory')>()),
+  lookUpNames: vi.fn(),
+}));
+
 const listReportsMock = vi.mocked(listReports);
+const lookUpNamesMock = vi.mocked(lookUpNames);
 const getReportMock = vi.mocked(getReport);
 const resolveReportMock = vi.mocked(resolveReport);
-const decideCampaignMock = vi.mocked(decideCampaign);
 
 const PROJECT_ID = 'a1b2c3d4-0000-4000-8000-000000000001';
 const ACCOUNT_ID = 'u9u8u7u6-0000-4000-8000-000000000002';
@@ -71,12 +76,13 @@ function page(reports: QueuedReport[], nextCursor?: string): ReportQueuePage {
 beforeEach(() => {
   vi.clearAllMocks();
   listReportsMock.mockResolvedValue(page([CAMPAIGN_REPORT, ACCOUNT_REPORT]));
+  lookUpNamesMock.mockResolvedValue({ accounts: [], projects: [] });
 });
 
 /**
  * Appearance is reviewed in Storybook. These cover BEHAVIOUR and
  * ACCESSIBILITY — the wiring that breaks silently and still ships. Every one of
- * the five decisions here is privileged and irreversible, so the tests that
+ * the two decisions here is privileged and irreversible, so the tests that
  * matter most are the ones about a decision that did NOT go through.
  */
 describe('ModerationQueue', () => {
@@ -150,16 +156,16 @@ describe('ModerationQueue', () => {
       ).toBeInTheDocument();
     });
 
-    it('offers the three campaign outcomes only for a report about a campaign', async () => {
+    it('offers no campaign outcomes, which only the review queue can reach', async () => {
       render(<ModerationQueue copy={COPY} />);
       await screen.findByText('Fraud');
 
-      const campaign = screen.getByRole('group', { name: 'Act on campaign a1b2c3d4' });
-      expect(within(campaign).getByRole('button', { name: /^Approve/ })).toBeInTheDocument();
-      expect(within(campaign).getByRole('button', { name: /^Reject/ })).toBeInTheDocument();
-      expect(within(campaign).getByRole('button', { name: /^Request changes/ })).toBeInTheDocument();
-
-      expect(screen.queryByRole('group', { name: 'Act on account u9u8u7u6' })).toBeNull();
+      // Approve, request changes and reject move a campaign out of review. A reported campaign
+      // is almost always live, where all three are refused, so a card offering them offered
+      // three buttons that could only fail.
+      expect(screen.queryByRole('button', { name: /^Approve/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Request changes/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Reject/ })).toBeNull();
     });
 
     it('marks a report that has waited too long in words, not only in colour', async () => {
@@ -191,6 +197,30 @@ describe('ModerationQueue', () => {
       expect(screen.getByText('Confirmed against the original listing.')).toBeInTheDocument();
       // A decided report has no buttons that would decide it again.
       expect(screen.queryByRole('button', { name: /^Uphold/ })).toBeNull();
+    });
+
+    it('names the moderator who decided, as the detail screen does', async () => {
+      lookUpNamesMock.mockResolvedValue({
+        accounts: [{ id: 'mod-1234-cccc', name: 'Leyla Moderator', slug: 'leyla' }],
+        projects: [],
+      });
+      listReportsMock.mockResolvedValue(
+        page([
+          {
+            ...ACCOUNT_REPORT,
+            state: 'DISMISSED',
+            resolution: { moderatorId: 'mod-1234-cccc', at: '2026-08-14T09:30:00.000Z' },
+          },
+        ]),
+      );
+      render(<ModerationQueue copy={COPY} />);
+
+      expect(await screen.findByText('Leyla Moderator')).toBeInTheDocument();
+      expect(lookUpNamesMock).toHaveBeenCalledWith(
+        expect.arrayContaining(['mod-1234-cccc']),
+        [],
+        expect.anything(),
+      );
     });
   });
 
@@ -435,75 +465,42 @@ describe('ModerationQueue', () => {
     });
   });
 
-  describe('deciding the campaign', () => {
-    it('will not send a rejection with no reason on it', async () => {
+  describe('triage on a decided tab', () => {
+    it('drops the overdue chip, because only an open report can be overdue', async () => {
       const user = userEvent.setup();
       render(<ModerationQueue copy={COPY} />);
       await screen.findByText('Fraud');
+      expect(screen.getByRole('button', { name: 'Open over 48 hours' })).toBeInTheDocument();
 
-      await user.click(screen.getByRole('button', { name: 'Reject for campaign a1b2c3d4' }));
-      const dialog = await screen.findByRole('dialog');
-      await user.click(within(dialog).getByRole('button', { name: 'Reject campaign' }));
+      listReportsMock.mockResolvedValue(page([]));
+      await user.click(screen.getByRole('button', { name: 'Upheld' }));
 
-      expect(decideCampaignMock).not.toHaveBeenCalled();
-      const note = within(dialog).getByRole('textbox', { name: 'Why' });
-      expect(note).toHaveAttribute('aria-invalid', 'true');
-      expect(within(dialog).getByText(/Say why/)).toBeInTheDocument();
+      await screen.findByText('No upheld reports');
+      expect(screen.queryByRole('button', { name: 'Open over 48 hours' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'More than one report' })).toBeInTheDocument();
     });
 
-    it('sends the campaign back with the note, and says the report is still open', async () => {
+    it('does not carry the overdue filter onto a tab where it would empty the list', async () => {
       const user = userEvent.setup();
-      decideCampaignMock.mockResolvedValue({
-        id: PROJECT_ID,
-        slug: 'a-campaign',
-        state: 'CHANGES_REQUESTED',
-        title: 'A campaign',
-      });
       render(<ModerationQueue copy={COPY} />);
       await screen.findByText('Fraud');
+      await user.click(screen.getByRole('button', { name: 'Open over 48 hours' }));
 
-      await user.click(
-        screen.getByRole('button', { name: 'Request changes for campaign a1b2c3d4' }),
+      listReportsMock.mockResolvedValue(
+        page([{ ...ACCOUNT_REPORT, state: 'UPHELD', createdAt: hoursAgo(96) }]),
       );
-      const dialog = await screen.findByRole('dialog');
-      await user.type(
-        within(dialog).getByRole('textbox', { name: 'What has to change' }),
-        'Replace the prototype photographs.',
-      );
-      await user.click(within(dialog).getByRole('button', { name: 'Request changes' }));
+      await user.click(screen.getByRole('button', { name: 'Upheld' }));
 
-      await waitFor(() => {
-        expect(decideCampaignMock).toHaveBeenCalledWith(
-          PROJECT_ID,
-          'request-changes',
-          'Replace the prototype photographs.',
-        );
-      });
-      expect(screen.getByRole('status')).toHaveTextContent('is now changes requested');
-      expect(screen.getByRole('status')).toHaveTextContent('The report is still open');
-      // The complaint was not decided by this, so its buttons are still there.
-      expect(
-        screen.getByRole('button', { name: 'Uphold the report about campaign a1b2c3d4' }),
-      ).toBeInTheDocument();
-    });
+      expect(await screen.findByText('Spam')).toBeInTheDocument();
+      expect(screen.queryByText('Nothing matches these filters')).toBeNull();
 
-    it('explains a transition the campaign’s state does not allow', async () => {
-      const user = userEvent.setup();
-      decideCampaignMock.mockRejectedValue(
-        new ApiError(409, {
-          code: 'PROJECT_TRANSITION_NOT_ALLOWED',
-          detail: 'Not allowed.',
-          meta: { state: 'LIVE', allowed: [] },
-        }),
-      );
-      render(<ModerationQueue copy={COPY} />);
+      listReportsMock.mockResolvedValue(page([CAMPAIGN_REPORT, ACCOUNT_REPORT]));
+      await user.click(screen.getByRole('button', { name: 'Open' }));
       await screen.findByText('Fraud');
-
-      await user.click(screen.getByRole('button', { name: 'Approve for campaign a1b2c3d4' }));
-      const dialog = await screen.findByRole('dialog');
-      await user.click(within(dialog).getByRole('button', { name: 'Approve campaign' }));
-
-      expect(await within(dialog).findByText(/That campaign is live/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Open over 48 hours' })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      );
     });
   });
 
