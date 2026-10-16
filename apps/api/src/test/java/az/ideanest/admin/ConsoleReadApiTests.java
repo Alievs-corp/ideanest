@@ -484,6 +484,35 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
                 .isNotEqualTo(postingsIn(firstPage).get(0).get("transactionId"));
     }
 
+    @Test
+    @DisplayName("an account and a campaign together page over that campaign, not the account")
+    void anAccountOnACampaignPagesInTheDatabase() {
+        Fixture asked = campaignWithPledge("ledger-pair-asked");
+        Fixture other = campaignWithPledge("ledger-pair-other");
+        UUID older = charge(asked, "SUCCEEDED", "100.00", 1, null, null);
+        post(older, asked.projectId(), "100.00");
+        // Newer escrow postings on somebody else's campaign. Paging by account and dropping
+        // other campaigns afterwards spent the whole page on these and answered nothing,
+        // with a cursor -- which the screen read as "no postings match".
+        post(charge(other, "SUCCEEDED", "10.00", 1, null, null), other.projectId(), "10.00");
+        post(charge(other, "SUCCEEDED", "20.00", 2, null, null), other.projectId(), "20.00");
+
+        ResponseEntity<Map<String, Object>> first = get(
+                "/v1/admin/ledger?account=escrow&projectId=" + asked.projectId() + "&limit=1",
+                staff().accessToken());
+
+        assertThat(postingsIn(first)).extracting(posting -> posting.get("transactionId"))
+                .containsExactly(older.toString());
+        assertThat(first.getBody().get("nextCursor")).isNotNull();
+
+        ResponseEntity<Map<String, Object>> second = get(
+                "/v1/admin/ledger?account=escrow&projectId=" + asked.projectId() + "&limit=1&after="
+                        + first.getBody().get("nextCursor"),
+                staff().accessToken());
+        assertThat(postingsIn(second)).isEmpty();
+        assertThat(second.getBody()).doesNotContainKey("nextCursor");
+    }
+
     // ------------------------------------------------------------------
     // Who may read, and what that leaves behind
     // ------------------------------------------------------------------

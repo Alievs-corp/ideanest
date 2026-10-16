@@ -86,7 +86,7 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, Long> 
     boolean existsByTransactionId(UUID transactionId);
 
     /*
-     * The nine below are AD-05's ledger explorer -- #305.
+     * The eleven below are AD-05's ledger explorer -- #305.
      *
      * The screen shows both sides of every entry together, which is what makes the paging
      * two queries rather than one: the first pages over postings, the second loads every
@@ -147,10 +147,8 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, Long> 
     /**
      * The newest postings that touched one account.
      *
-     * <p>Backed by {@code ledger_entries_account_idx}, which leads on {@code account}. A
-     * caller wanting one account on one campaign narrows the second half in Java rather
-     * than in a fourth pair of queries here: the index has already done the expensive part,
-     * and the two filters are rarely both set.
+     * <p>Backed by {@code ledger_entries_account_idx}, which leads on {@code account}. One
+     * account on one campaign is the pair below, not this one narrowed afterwards.
      */
     @Query(
             """
@@ -174,6 +172,42 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, Long> 
             """)
     List<PostingHead> newestPostingsOfAccountBefore(
             @Param("account") String account, @Param("before") Long before, Pageable limit);
+
+    /**
+     * The newest postings that touched one account on one campaign.
+     *
+     * <p>Both filters in SQL. This used to be the account query with the campaign applied
+     * in Java to the page it returned, which made a page a page of the account's postings
+     * with the other campaigns' removed afterwards: a page could come back short, or empty
+     * with a cursor, and the screen read the empty one as "nothing matches" while the
+     * campaign's postings sat further down the account.
+     */
+    @Query(
+            """
+            SELECT new az.ideanest.ledger.application.PostingHead(e.transactionId, MAX(e.id))
+            FROM LedgerEntry e
+            WHERE e.account = :account AND e.projectId = :projectId
+            GROUP BY e.transactionId
+            ORDER BY MAX(e.id) DESC
+            """)
+    List<PostingHead> newestPostingsOfAccountOnProject(
+            @Param("account") String account, @Param("projectId") UUID projectId, Pageable limit);
+
+    /** The page after {@code before}, within one account on one campaign. */
+    @Query(
+            """
+            SELECT new az.ideanest.ledger.application.PostingHead(e.transactionId, MAX(e.id))
+            FROM LedgerEntry e
+            WHERE e.account = :account AND e.projectId = :projectId
+            GROUP BY e.transactionId
+            HAVING MAX(e.id) < :before
+            ORDER BY MAX(e.id) DESC
+            """)
+    List<PostingHead> newestPostingsOfAccountOnProjectBefore(
+            @Param("account") String account,
+            @Param("projectId") UUID projectId,
+            @Param("before") Long before,
+            Pageable limit);
 
     /**
      * Every entry of these postings, oldest first.
