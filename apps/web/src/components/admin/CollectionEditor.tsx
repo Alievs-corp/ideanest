@@ -16,7 +16,6 @@ import {
   TextInput,
 } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
-import { listCampaigns, type DirectoryCampaign } from '../../lib/admin/campaigns';
 import {
   COLLECTION_KINDS,
   addProject,
@@ -29,8 +28,10 @@ import {
   removeProject,
   reorderProjects,
   replaceCollection,
+  searchCampaigns,
   unpublishCollection,
   type AdminCollection,
+  type CampaignMatch,
   type CollectionCopy,
   type CollectionKind,
   type CollectionMember,
@@ -475,7 +476,7 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
 }
 
 type Pending =
-  | { readonly kind: 'add'; readonly campaign: DirectoryCampaign }
+  | { readonly kind: 'add'; readonly campaign: CampaignMatch }
   | { readonly kind: 'remove'; readonly member: CollectionMember }
   | { readonly kind: 'publish' }
   | { readonly kind: 'unpublish' };
@@ -640,11 +641,11 @@ function CampaignPicker({
 }: {
   readonly members: readonly CollectionMember[];
   readonly copy: CollectionEditorCopy;
-  readonly onPick: (campaign: DirectoryCampaign) => void;
+  readonly onPick: (campaign: CampaignMatch) => void;
 }) {
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [results, setResults] = useState<readonly DirectoryCampaign[] | null>(null);
+  const [results, setResults] = useState<readonly CampaignMatch[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
 
   async function search(event: React.FormEvent): Promise<void> {
@@ -655,8 +656,7 @@ function CampaignPicker({
     setSearching(true);
     setFailure(null);
     try {
-      const page = await listCampaigns({ query: term, limit: PICKER_LIMIT });
-      setResults(page.campaigns);
+      setResults(await searchCampaigns(term, PICKER_LIMIT));
     } catch (cause) {
       setResults(null);
       setFailure(consoleMessageFor(cause, copy.searchSubject, copy.refusals));

@@ -6,9 +6,10 @@ import {
   listCollections,
   readCollection,
   replaceCollection,
+  searchCampaigns,
   type AdminCollection,
+  type CampaignMatch,
 } from '../../lib/admin/curation';
-import { listCampaigns, type DirectoryCampaign } from '../../lib/admin/campaigns';
 import {
   createSubcategory,
   editTaxonomyEntry,
@@ -55,12 +56,8 @@ vi.mock('../../lib/admin/curation', async (importOriginal) => {
     replaceCollection: vi.fn(),
     createCollection: vi.fn(),
     addProject: vi.fn(),
+    searchCampaigns: vi.fn(),
   };
-});
-
-vi.mock('../../lib/admin/campaigns', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../lib/admin/campaigns')>();
-  return { ...actual, listCampaigns: vi.fn() };
 });
 
 vi.mock('../../lib/admin/taxonomy', async (importOriginal) => {
@@ -79,7 +76,7 @@ const listCollectionsMock = vi.mocked(listCollections);
 const readCollectionMock = vi.mocked(readCollection);
 const replaceCollectionMock = vi.mocked(replaceCollection);
 const addProjectMock = vi.mocked(addProject);
-const listCampaignsMock = vi.mocked(listCampaigns);
+const searchCampaignsMock = vi.mocked(searchCampaigns);
 const readTaxonomyMock = vi.mocked(readTaxonomy);
 const readTaxonomyTagsMock = vi.mocked(readTaxonomyTags);
 const editTaxonomyEntryMock = vi.mocked(editTaxonomyEntry);
@@ -100,16 +97,12 @@ function collection(overrides: Partial<AdminCollection> = {}): AdminCollection {
   };
 }
 
-function campaign(overrides: Partial<DirectoryCampaign> = {}): DirectoryCampaign {
+function campaign(overrides: Partial<CampaignMatch> = {}): CampaignMatch {
   return {
     projectId: PROJECT_ID,
     title: 'Solar lamp',
     slug: 'solar-lamp',
     state: 'LIVE',
-    createdAt: '2026-10-01T00:00:00.000Z',
-    pledged: { amount: '0.00', currency: 'AZN' },
-    backersCount: 0,
-    creatorId: 'u-9',
     creatorName: 'Leyla',
     ...overrides,
   };
@@ -307,7 +300,7 @@ describe('the collection editor', () => {
   it('finds a campaign by its title rather than asking for its identifier', async () => {
     const user = userEvent.setup();
     readCollectionMock.mockResolvedValue(collection({ projects: [] }));
-    listCampaignsMock.mockResolvedValue({ campaigns: [campaign()], nextCursor: null });
+    searchCampaignsMock.mockResolvedValue([campaign()]);
     addProjectMock.mockResolvedValue(
       collection({
         projects: [
@@ -319,7 +312,7 @@ describe('the collection editor', () => {
 
     await user.type(await screen.findByRole('searchbox', { name: EDITOR.addLabel }), 'solar');
     await user.click(screen.getByRole('button', { name: EDITOR.search }));
-    expect(listCampaignsMock).toHaveBeenCalledWith(expect.objectContaining({ query: 'solar' }));
+    expect(searchCampaignsMock).toHaveBeenCalledWith('solar', 8);
 
     await user.click(await screen.findByRole('button', { name: 'Add Solar lamp' }));
     const dialog = await screen.findByRole('dialog');

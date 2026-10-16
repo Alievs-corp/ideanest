@@ -110,6 +110,29 @@ interface CollectionIndex {
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
 
+/**
+ * A campaign as the collection editor's search shows it.
+ *
+ * <p>A narrow read of `GET /v1/admin/projects` rather than `lib/admin/campaigns`, whose module
+ * brings the public campaign page's parser with it — 29 KiB on a screen that needs a title.
+ */
+export interface CampaignMatch {
+  projectId: string;
+  title: string;
+  slug: string;
+  state: string;
+  creatorName?: string | null;
+}
+
+/** Campaigns whose title, path, creator or identifier match, in every state. */
+export async function searchCampaigns(query: string, limit: number): Promise<CampaignMatch[]> {
+  const params = new URLSearchParams({ query: query.trim(), limit: String(limit) });
+  const response = await authorizedFetch(`/v1/admin/projects?${params}`);
+  if (!response.ok) throw await errorFrom(response);
+
+  return ((await response.json()) as { campaigns: CampaignMatch[] }).campaigns;
+}
+
 /** Every collection, published or not, in placement order. */
 export async function listCollections(signal?: AbortSignal): Promise<AdminCollection[]> {
   const response = await authorizedFetch('/v1/admin/collections', { signal });
