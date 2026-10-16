@@ -65,7 +65,7 @@ public class FeeScheduleController {
     public ResponseEntity<FeeScheduleResponses.History> history(@AuthenticationPrincipal Jwt accessToken) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(FeeScheduleResponses.History.of(fees.history(callerOf(accessToken))));
+                .body(FeeScheduleResponses.History.of(fees.history(callerOf(accessToken)), fees.defaultTerms()));
     }
 
     /** Closes what is in force for this scope and opens the terms in the body. */

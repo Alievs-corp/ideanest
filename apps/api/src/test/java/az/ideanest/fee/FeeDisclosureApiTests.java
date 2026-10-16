@@ -133,6 +133,62 @@ class FeeDisclosureApiTests extends AbstractIntegrationTest {
         assertThat(answer.getHeaders().getCacheControl()).contains("public");
     }
 
+    @Test
+    @DisplayName("an exception for a category or campaign that does not exist is refused, and a real one opens")
+    void anExceptionMustNameSomethingThatExists() {
+        ResponseEntity<Map<String, Object>> category = openException("CATEGORY", UUID.randomUUID());
+        assertThat(category.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(category.getBody()).containsEntry("code", "FEE_SCOPE_UNKNOWN");
+        assertThat(category.getBody().get("meta")).isEqualTo(Map.of("scope", "CATEGORY"));
+
+        ResponseEntity<Map<String, Object>> campaign = openException("PROJECT", UUID.randomUUID());
+        assertThat(campaign.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(campaign.getBody().get("meta")).isEqualTo(Map.of("scope", "PROJECT"));
+
+        assertThat(new JdbcTemplate(dataSource).queryForObject("SELECT count(*) FROM fee_schedules", Long.class))
+                .as("nothing was opened for an identifier that names nothing")
+                .isZero();
+
+        UUID real = new JdbcTemplate(dataSource).queryForObject("SELECT id FROM categories LIMIT 1", UUID.class);
+        assertThat(openException("CATEGORY", real).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("the console's history carries the default terms, so a new schedule starts from what is charged")
+    void theHistoryCarriesTheDefaults() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(adminToken());
+        ResponseEntity<Map<String, Object>> history = rest.exchange(
+                "/v1/admin/fees",
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        assertThat(history.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(history.getBody().get("defaults"))
+                .isEqualTo(Map.of("platformRate", "0.15", "processingRate", "0", "currency", "AZN"));
+    }
+
+    private ResponseEntity<Map<String, Object>> openException(String scope, UUID scopeRef) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(adminToken());
+        return rest.exchange(
+                "/v1/admin/fees",
+                HttpMethod.POST,
+                new HttpEntity<>(
+                        Map.of(
+                                "scope", scope,
+                                "scopeRef", scopeRef.toString(),
+                                "platformRate", "0.05",
+                                "processingRate", "0",
+                                "processingFixed", "0",
+                                "currency", "AZN",
+                                "note", "Set by FeeDisclosureApiTests."),
+                        headers),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
     private Map<String, Object> disclosure() {
         ResponseEntity<Map<String, Object>> answer = rest.exchange(
                 "/v1/fees/disclosure",
