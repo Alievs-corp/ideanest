@@ -997,7 +997,7 @@
         "metaTitle": "Yaratıcı ödemeleri",
         "metaDescription": "Her yaratıcıya ne borçlu olunduğu, hangi bekletme altında olduğu ve gitmeden önceki imzalar.",
         "title": "Yaratıcı ödemeleri",
-        "intro": "Rakamlar bir ödeme hesaplandığında dondurulur ve asla yeniden hesaplanmaz — iki kişinin onayladığı ödeme, gönderilen ödeme olmalıdır. İmzalamak, göndermek ve iptal etmek ödeme onaylama yetkisi gerektirir; finans rolü bunu bilerek içermez."
+        "intro": "Kampanya parasının yaratıcılara aktarımı: hesaplanır, iki kişi imzalar, sonra gönderilir. İmzalamak, göndermek ve iptal etmek ödeme onaylama yetkisi gerektirir; finans rolü bunu bilerek içermez."
       },
       "payoutDestinations": {
         "metaTitle": "Ödeme hesapları",

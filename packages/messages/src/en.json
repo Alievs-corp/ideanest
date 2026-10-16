@@ -997,7 +997,7 @@
         "metaTitle": "Payouts",
         "metaDescription": "What each creator is owed, the hold it is under, and the signatures before it leaves.",
         "title": "Payouts",
-        "intro": "Figures are frozen when a payout is calculated and never recomputed — the payout two people approved has to be the one that is sent. Signing, sending and cancelling need the payout-approval permission, which the finance role deliberately does not include."
+        "intro": "Campaign money on its way to creators: calculated, signed by two people, then sent. Signing, sending and cancelling need the payout-approval permission, which the finance role deliberately does not include."
       },
       "payoutDestinations": {
         "metaTitle": "Payout destinations",

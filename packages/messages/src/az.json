@@ -997,7 +997,7 @@
         "metaTitle": "Müəllif köçürmələri",
         "metaDescription": "Hər müəllifə nə borcludur, hansı saxlama altındadır və getməzdən əvvəl hansı imzalar lazımdır.",
         "title": "Müəllif köçürmələri",
-        "intro": "Rəqəmlər ödəniş hesablananda dondurulur və heç vaxt yenidən hesablanmır — iki nəfərin təsdiqlədiyi ödəniş göndərilən ödəniş olmalıdır. İmzalamaq, göndərmək və ləğv etmək üçün ödənişləri təsdiqləmə icazəsi lazımdır və maliyyə rolu bunu bilərəkdən daxil etmir."
+        "intro": "Kampaniya pulunun müəlliflərə köçürülməsi: hesablanır, iki nəfər imzalayır, sonra göndərilir. İmzalamaq, göndərmək və ləğv etmək üçün köçürmələri təsdiqləmə icazəsi lazımdır və maliyyə rolu bunu bilərəkdən daxil etmir."
       },
       "payoutDestinations": {
         "metaTitle": "Köçürmə rekvizitləri",
