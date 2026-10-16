@@ -1,7 +1,7 @@
 import type { DisputeState, EvidenceKind } from '../../admin/disputes';
 import type { FeeScope } from '../../admin/fees';
 import type { DestinationKind, DestinationRejectionReason } from '../../admin/api';
-import type { TransactionStatus, TransactionType } from '../../admin/payments';
+import type { ProviderName, TransactionStatus, TransactionType } from '../../admin/payments';
 import type { DestinationStanding, PayoutState, VerificationStanding } from '../../admin/payouts';
 import type { RefundReason, RefundState } from '../../admin/refunds';
 import type { PaymentMethod } from '../../admin/revenue';
@@ -25,10 +25,11 @@ import type { BackerTicketCopy, RefundBankDetailsCopy } from './people-copy';
  * label beside a number and never the number, which is what keeps §10.3's rule about money
  * crossing the API as a string true all the way to the screen.
  *
- * <p>Three vocabularies stay in the service's own spelling on purpose: a provider name
- * (`PAYRIFF`), a card network's reason code, and the currency. Each is a value somebody quotes
- * into a support conversation or a dispute, and a translated copy of one would be a word the
- * provider does not recognise.
+ * <p>Two vocabularies stay in the service's own spelling on purpose: a card network's reason
+ * code and the currency. Each is a value somebody quotes into a support conversation or a
+ * dispute, and a translated copy of one would be a word the provider does not recognise. A
+ * provider is named the way the provider names itself (`Payriff`, not `PAYRIFF`), and the two
+ * values that are not providers at all, the sandbox and a bank transfer, are words.
  */
 
 /** What every money screen says about the ledger's accounts. */
@@ -87,9 +88,24 @@ export interface PaymentLogCopy extends ConsoleChromeCopy {
   readonly pledgePart: string;
   /** Carries `{number}`. */
   readonly attemptPart: string;
+  /** A pending or failed call with no reference: it may have reached the provider. */
   readonly noReference: string;
+  /** A succeeded call with no reference. Neutral: the call plainly reached the provider. */
+  readonly noReferenceSettled: string;
   readonly type: Readonly<Record<TransactionType, string>>;
   readonly status: Readonly<Record<TransactionStatus, string>>;
+  /** The provider's name as staff say it, keyed by the service's enum. */
+  readonly provider: Readonly<Record<ProviderName, string>>;
+  /**
+   * A refusal in the reader's language, keyed by the `failureCode` the service writes —
+   * `payment_failed`, `provider_unreachable` and the adapters' fallbacks. A provider's own
+   * code (a card network's `51`) is not in here and falls to {@link failureUnknown}.
+   */
+  readonly failure: Readonly<Record<string, string>>;
+  /** Beside a code this table has no sentence for, which is printed after it as it came. */
+  readonly failureUnknown: string;
+  /** Under the identifier box, when what was typed is not a UUID. Nothing is sent. */
+  readonly invalidId: string;
 }
 
 export function paymentLogCopyFrom(
@@ -119,8 +135,13 @@ export function paymentLogCopyFrom(
     pledgePart: String(t.raw('screens.payments.pledgePart')),
     attemptPart: String(t.raw('screens.payments.attemptPart')),
     noReference: t('screens.payments.noReference'),
+    noReferenceSettled: t('screens.payments.noReferenceSettled'),
     type: t.raw('screens.payments.type') as Readonly<Record<TransactionType, string>>,
     status: t.raw('screens.payments.status') as Readonly<Record<TransactionStatus, string>>,
+    provider: t.raw('screens.payments.provider') as Readonly<Record<ProviderName, string>>,
+    failure: t.raw('screens.payments.failure') as Readonly<Record<string, string>>,
+    failureUnknown: t('screens.payments.failureUnknown'),
+    invalidId: t('screens.payments.invalidId'),
   };
 }
 
@@ -157,6 +178,10 @@ export interface LedgerExplorerCopy extends ConsoleChromeCopy {
   readonly doesNotBalance: string;
   readonly debit: string;
   readonly credit: string;
+  /** Under the campaign box, when what was typed is not a UUID. Nothing is sent. */
+  readonly invalidId: string;
+  /** A page with nothing on it that still has a next page — never the "nothing matches" state. */
+  readonly emptyPageMore: string;
 }
 
 export function ledgerExplorerCopyFrom(
@@ -188,6 +213,8 @@ export function ledgerExplorerCopyFrom(
     doesNotBalance: t('screens.ledger.doesNotBalance'),
     debit: t('screens.ledger.debit'),
     credit: t('screens.ledger.credit'),
+    invalidId: t('screens.ledger.invalidId'),
+    emptyPageMore: t('screens.ledger.emptyPageMore'),
   };
 }
 
@@ -205,6 +232,8 @@ export interface ReconciliationCopy extends ConsoleChromeCopy {
   readonly readFailed: string;
   readonly runFailedTitle: string;
   readonly runForbidden: string;
+  /** "Check again" refused with a 401: the session expired, which is not lost permission. */
+  readonly runSignedOut: string;
   readonly neverRunTitle: string;
   readonly neverRunBody: string;
   readonly unbalancedTitle: string;
@@ -257,6 +286,7 @@ export function reconciliationCopyFrom(
     readFailed: t('screens.reconciliation.readFailed'),
     runFailedTitle: t('screens.reconciliation.runFailedTitle'),
     runForbidden: t('screens.reconciliation.runForbidden'),
+    runSignedOut: t('screens.reconciliation.runSignedOut'),
     neverRunTitle: t('screens.reconciliation.neverRunTitle'),
     neverRunBody: t('screens.reconciliation.neverRunBody'),
     unbalancedTitle: t('screens.reconciliation.unbalancedTitle'),
@@ -1284,6 +1314,15 @@ export interface RevenueReportCopy extends ConsoleChromeCopy {
   readonly entries: PluralForms;
   readonly emptyTitle: string;
   readonly emptyBody: string;
+  /** Nothing in the period under a plan code or method filter: the filter, not the period. */
+  readonly filteredTitle: string;
+  readonly filteredBody: string;
+  /** The payment list, when it has nothing to list. */
+  readonly listEmpty: string;
+  /** `INVALID_REVENUE_PERIOD`, and the same check made before sending: the end before the start. */
+  readonly periodBackwards: string;
+  /** `INVALID_REVENUE_PERIOD`: longer than the service's 400 days. */
+  readonly periodTooLong: string;
 
   readonly listHeading: string;
   readonly loadingList: string;
@@ -1347,6 +1386,11 @@ export function revenueReportCopyFrom(t: AdminTranslator, chrome: ConsoleChromeC
     entries: forms('entries'),
     emptyTitle: word('emptyTitle'),
     emptyBody: word('emptyBody'),
+    filteredTitle: word('filteredTitle'),
+    filteredBody: word('filteredBody'),
+    listEmpty: word('listEmpty'),
+    periodBackwards: word('periodBackwards'),
+    periodTooLong: word('periodTooLong'),
 
     listHeading: word('listHeading'),
     loadingList: word('loadingList'),

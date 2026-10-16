@@ -2015,13 +2015,31 @@
           "REFUND": "İade",
           "CHARGEBACK": "Ters ibraz",
           "CHARGEBACK_REVERSAL": "Ters ibraz iptali",
-          "PAYOUT": "Ödeme"
+          "PAYOUT": "Yaratıcıya ödeme"
         },
         "status": {
           "PENDING": "Beklemede",
           "SUCCEEDED": "Başarılı",
           "FAILED": "Başarısız"
-        }
+        },
+        "provider": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Test ortamı",
+          "BANK_TRANSFER": "Banka havalesi"
+        },
+        "noReferenceSettled": "Sağlayıcı bir referans döndürmedi.",
+        "failure": {
+          "payment_failed": "Sağlayıcı ödemenin başarısız olduğunu bildirdi.",
+          "provider_unreachable": "Sağlayıcıya ulaşılamadı, yanıt gelmedi. Para yine de hareket etmiş olabilir; sağlayıcının panelini kontrol edin.",
+          "refund_refused": "Sağlayıcı iadeyi reddetti.",
+          "reverse_refused": "Sağlayıcı ödemeyi geri almayı reddetti.",
+          "payout_refused": "Sağlayıcı yaratıcıya ödemeyi reddetti.",
+          "refund_window_closed": "Sağlayıcı bu ödeme için iade süresinin dolduğunu bildirdi."
+        },
+        "failureUnknown": "Sağlayıcı reddetti",
+        "invalidId": "Bu tam bir tanımlayıcı değil. 8-4-4-4-12 biçiminde bir UUID girin."
       },
       "ledger": {
         "subject": "defteri",
@@ -2050,7 +2068,9 @@
         "postingLine": "işlem {transaction} · kampanya {campaign}",
         "doesNotBalance": "Denkleşmiyor",
         "debit": "borç",
-        "credit": "alacak"
+        "credit": "alacak",
+        "invalidId": "Bu tam bir tanımlayıcı değil. 8-4-4-4-12 biçiminde bir UUID girin.",
+        "emptyPageMore": "Bu sayfada eşleşen bir şey yok. Aramaya devam etmek için daha fazla yükleyin."
       },
       "reconciliation": {
         "subject": "mutabakatı",
@@ -2063,7 +2083,7 @@
         "unbalancedTitle": "Defterler denkleşmiyor",
         "unbalancedBody": "{positions} üzerinde {findings}, kontrol {at}. {note}",
         "unbalancedEmphasis": "Hiçbir şey otomatik olarak düzeltilmedi",
-        "unbalancedNote": "{emphasis} — bunu düzeltecek kayıt, onlarca olasılıktan hangisinin gerçekleştiğine bağlıdır, bu yüzden bu bir süpürme değil bir karardır.",
+        "unbalancedNote": "{emphasis} — düzeltici kayıt, onlarca olasılıktan hangisinin gerçekleştiğine bağlıdır; bu yüzden bunu otomatik değil, bir insanın kararıyla düzeltmek gerekir.",
         "balancedTitle": "Defterler denkleşiyor",
         "balancedBody": "{positions} kontrol edildi {at}, yerinde olmayan bir şey yok.",
         "nothingHeld": "Platform henüz hiçbir hesapta para tutmuyor, ki bu kontrol edilmemiş değil denk demektir.",
@@ -2088,7 +2108,7 @@
         },
         "checkAgain": "Şimdi yeniden kontrol et",
         "checking": "Kontrol ediliyor…",
-        "runNote": "Tüm platform üzerinde iki sorgu. Hiçbir şey okumaz ve yazmaz, bu yüzden onu istediğiniz zaman çalıştırmak güvenlidir — ve konuştuğunuz kopyadan yanıt almanın tek yolu budur.",
+        "runNote": "Tüm platform üzerinde iki sorgu. Yalnızca okur ve hiçbir şeyi değiştirmez; bu yüzden onu istediğiniz zaman çalıştırmak güvenlidir — ve konuştuğunuz kopyadan yanıt almanın tek yolu budur.",
         "findingTitle": {
           "UNBALANCED": "Defter sıfıra toplanmıyor",
           "IMPOSSIBLE_SIGN": "Bir hesap taşıyamayacağı bir bakiye taşıyor",
@@ -2098,7 +2118,8 @@
           "UNBALANCED": "PostgreSQL borçları ve alacakları farklı olan bir kaydı reddeder, dolayısıyla bir satır hem uygulamayı hem de o tetikleyiciyi geçmiş. Bu platformda başka hiçbir şey bunu üretemez.",
           "IMPOSSIBLE_SIGN": "Sıfırın altında emanet, hiç alınmamış ama ödenmiş paradır; sıfırın üstünde bir yaratıcı hesabı, hak ettiğinden fazla ödenmiş bir yaratıcıdır. Hiçbiri toplam tarafından yakalanmaz, çünkü ters işaretli iki hata kusursuzca denkleşir.",
           "DISAGREES_WITH_PAYMENTS": "Defterin tuttuğu ile işlemlerin hareket ettiğini söylediği aynı rakam değil. Bu, uygulamanın hiç yapmadığı bir kaydı yakalayan tek kontroldür."
-        }
+        },
+        "runSignedOut": "Oturumunuzun süresi doldu. Kontrolü çalıştırmak için yeniden giriş yapın."
       },
       "payouts": {
         "subject": "ödeme kuyruğunu",
@@ -2796,7 +2817,7 @@
         "periodLegend": "Dönem",
         "fromLabel": "Başlangıç",
         "toLabel": "Bitiş",
-        "toHint": "Bu gün dahil. Günler Bakü saatine göre sayılır.",
+        "toHint": "Son gün de dahildir. Günler Bakü saatine göre sayılır.",
         "thisMonth": "Bu ay",
         "lastMonth": "Geçen ay",
         "show": "Göster",
@@ -2843,7 +2864,7 @@
         "reversal": "İade",
         "closedAccount": "Kapatılmış hesap",
         "receivedOn": "Geldi: {date}",
-        "recordedOn": "kaydedildi: {date}",
+        "recordedOn": "Kaydedildi: {date}",
         "reference": "Referans: {reference}",
         "exportCsv": "CSV indir",
         "exporting": "Dosya hazırlanıyor",
@@ -2853,7 +2874,12 @@
           "many": "{count} ödeme indirildi.",
           "other": "{count} ödeme indirildi."
         },
-        "truncated": "Dosya eksik: dönemin ödemelerinden yalnızca ilk {count} tanesini içeriyor. Dönemi daraltın ve kalanını ayrıca indirin."
+        "truncated": "Dosya eksik: dönemin ödemelerinden yalnızca ilk {count} tanesini içeriyor. Dönemi daraltın ve kalanını ayrıca indirin.",
+        "filteredTitle": "Bu filtrelere uyan ödeme yok",
+        "filteredBody": "Bu dönemde seçilen plan koduna veya ödeme yöntemine uyan bir ödeme yok. Plan kodunu kontrol edin ya da filtreleri temizleyin.",
+        "listEmpty": "Bu dönem ve filtreler için listelenecek ödeme yok.",
+        "periodBackwards": "Son gün, başlangıç gününden önce olamaz.",
+        "periodTooLong": "Bir dönem en fazla 400 gün kapsayabilir. Bir yıl veya daha kısa bir dönem seçin."
       },
       "backerDisputes": {
         "subject": "destekçi itirazları kuyruğu",
@@ -2934,14 +2960,15 @@
         "planHeading": "Bu ayın planları",
         "revenue": "Gelir",
         "subscriptions": "Abonelikler",
-        "reversals": "Ödeme iadeleri",
+        "reversals": "İadeler",
         "dateColumn": "Tarih",
         "monthColumn": "Ay",
         "planColumn": "Plan",
         "nothingRecorded": "Kayıt yok",
         "dailyCaption": "Bu ayın günlerine göre gelir ve abonelikler",
         "monthlyCaption": "Aylara göre gelir ve abonelikler",
-        "planCaption": "Bu ayın planlarına göre gelir ve abonelikler"
+        "planCaption": "Bu ayın planlarına göre gelir ve abonelikler",
+        "zoneNoteBaku": "Tarihler ve aylar Bakü saatine göredir."
       },
       "maintenance": {
         "subject": "bakım pencerelerini",

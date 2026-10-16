@@ -110,8 +110,10 @@ export interface PartnerStatisticsCopy extends ConsoleChromeCopy {
   /** Carries `{percentage}`. Said once in the page header, for a partner, and never repeated per figure. */
   readonly partnerLine: string;
   readonly realLine: string;
-  /** Carries `{zone}`. */
+  /** Carries `{zone}`. For a zone {@link zoneNoteBaku} does not name. */
   readonly zoneNote: string;
+  /** The same note for `Asia/Baku`, in words rather than as a time zone identifier. */
+  readonly zoneNoteBaku: string;
   readonly loadingStatistics: string;
   readonly notConfiguredTitle: string;
   readonly notConfiguredBody: string;
@@ -142,6 +144,7 @@ export function partnerStatisticsCopyFrom(t: AdminTranslator, chrome: ConsoleChr
     partnerLine: template('partnerLine'),
     realLine: word('realLine'),
     zoneNote: template('zoneNote'),
+    zoneNoteBaku: word('zoneNoteBaku'),
     loadingStatistics: word('loadingStatistics'),
     notConfiguredTitle: word('notConfiguredTitle'),
     notConfiguredBody: word('notConfiguredBody'),

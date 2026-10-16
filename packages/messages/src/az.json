@@ -2015,13 +2015,31 @@
           "REFUND": "Geri qaytarma",
           "CHARGEBACK": "Geri tələb",
           "CHARGEBACK_REVERSAL": "Geri tələbin ləğvi",
-          "PAYOUT": "Ödəniş"
+          "PAYOUT": "Müəllifə köçürmə"
         },
         "status": {
           "PENDING": "Gözləyir",
           "SUCCEEDED": "Uğurlu",
           "FAILED": "Uğursuz"
-        }
+        },
+        "provider": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Sınaq",
+          "BANK_TRANSFER": "Bank köçürməsi"
+        },
+        "noReferenceSettled": "Provayder istinad qaytarmayıb.",
+        "failure": {
+          "payment_failed": "Provayder ödənişin uğursuz olduğunu bildirdi.",
+          "provider_unreachable": "Provayderə çatmaq olmadı, cavab gəlmədi. Pul yenə də tutulmuş ola bilər, provayderin panelində yoxlayın.",
+          "refund_refused": "Provayder geri qaytarmanı rədd etdi.",
+          "reverse_refused": "Provayder ödənişin ləğvini rədd etdi.",
+          "payout_refused": "Provayder müəllifə köçürməni rədd etdi.",
+          "refund_window_closed": "Provayder bu ödəniş üçün geri qaytarma müddətinin bitdiyini bildirdi."
+        },
+        "failureUnknown": "Provayder rədd etdi",
+        "invalidId": "Bu tam identifikator deyil. 8-4-4-4-12 formatında UUID daxil edin."
       },
       "ledger": {
         "subject": "baş kitabı",
@@ -2050,7 +2068,9 @@
         "postingLine": "tranzaksiya {transaction} · kampaniya {campaign}",
         "doesNotBalance": "Balanslaşmır",
         "debit": "debet",
-        "credit": "kredit"
+        "credit": "kredit",
+        "invalidId": "Bu tam identifikator deyil. 8-4-4-4-12 formatında UUID daxil edin.",
+        "emptyPageMore": "Bu səhifədə uyğun yazılış yoxdur. Axtarışı davam etdirmək üçün davamını yükləyin."
       },
       "reconciliation": {
         "subject": "uzlaşdırmanı",
@@ -2063,7 +2083,7 @@
         "unbalancedTitle": "Kitablar balanslaşmır",
         "unbalancedBody": "{positions} üzrə {findings}, yoxlanılıb {at}. {note}",
         "unbalancedEmphasis": "Heç nə avtomatik düzəldilməyib",
-        "unbalancedNote": "{emphasis} — bunu düzəldəcək yazılış onlarla səbəbdən hansının baş verdiyindən asılıdır, ona görə bu, süpürgə deyil, qərardır.",
+        "unbalancedNote": "{emphasis} — düzəldici yazılış onlarla mümkün səbəbdən hansının baş verdiyindən asılıdır, ona görə bunu avtomatik yox, insan qərarı ilə düzəltmək lazımdır.",
         "balancedTitle": "Kitablar balanslaşır",
         "balancedBody": "{positions} yoxlanılıb {at}, yerində olmayan heç nə yoxdur.",
         "nothingHeld": "Platforma hələ heç bir hesabda pul saxlamır, bu da yoxlanılmamış deyil, balanslaşmış deməkdir.",
@@ -2088,7 +2108,7 @@
         },
         "checkAgain": "İndi yenidən yoxla",
         "checking": "Yoxlanılır…",
-        "runNote": "Bütün platforma üzrə iki sorğu. Heç nə oxumur və yazmır, ona görə onu istənilən vaxt işlətmək təhlükəsizdir — və danışdığınız replikadan cavab almağın yeganə yolu budur.",
+        "runNote": "Bütün platforma üzrə iki sorğu. Yalnız oxuyur və heç nəyi dəyişmir, ona görə onu istənilən vaxt işlətmək təhlükəsizdir — və danışdığınız replikadan cavab almağın yeganə yolu budur.",
         "findingTitle": {
           "UNBALANCED": "Baş kitab sıfıra yığılmır",
           "IMPOSSIBLE_SIGN": "Hesab daşıya bilməyəcəyi qalığı daşıyır",
@@ -2098,7 +2118,8 @@
           "UNBALANCED": "PostgreSQL debetləri və kreditləri fərqlənən yazılışı rədd edir, deməli bir sətir həm tətbiqi, həm də həmin triggeri keçib. Bu platformada başqa heç nə bunu yarada bilməz.",
           "IMPOSSIBLE_SIGN": "Sıfırdan aşağı eskrou heç vaxt alınmamış, amma ödənilmiş puldur; sıfırdan yuxarı müəllif hesabı qazandığından çox ödənilmiş müəllifdir. Heç biri cəm tərəfindən tutulmur, çünki əks işarəli iki səhv mükəmməl balanslaşır.",
           "DISAGREES_WITH_PAYMENTS": "Baş kitabın saxladığı və tranzaksiyaların hərəkət etdiyini dediyi eyni rəqəm deyil. Bu, tətbiqin heç vaxt etmədiyi yazılışı tutan yeganə yoxlamadır."
-        }
+        },
+        "runSignedOut": "Sessiyanın vaxtı bitib. Yoxlamanı işlətmək üçün yenidən daxil olun."
       },
       "payouts": {
         "subject": "ödəniş növbəsini",
@@ -2796,7 +2817,7 @@
         "periodLegend": "Dövr",
         "fromLabel": "Başlanğıc",
         "toLabel": "Son",
-        "toHint": "Bu gün də daxil olmaqla. Günlər Bakı vaxtı ilə sayılır.",
+        "toHint": "Son gün də daxildir. Günlər Bakı vaxtı ilə sayılır.",
         "thisMonth": "Bu ay",
         "lastMonth": "Keçən ay",
         "show": "Göstər",
@@ -2843,7 +2864,7 @@
         "reversal": "Geri qaytarma",
         "closedAccount": "Hesab bağlanıb",
         "receivedOn": "Daxil olub: {date}",
-        "recordedOn": "qeyd edilib: {date}",
+        "recordedOn": "Qeyd edilib: {date}",
         "reference": "İstinad: {reference}",
         "exportCsv": "CSV yüklə",
         "exporting": "Fayl hazırlanır",
@@ -2853,7 +2874,12 @@
           "many": "{count} ödəniş yükləndi.",
           "other": "{count} ödəniş yükləndi."
         },
-        "truncated": "Fayl natamamdır: dövrün ödənişlərindən yalnız ilk {count} ödəniş daxildir. Dövrü daraldın və qalanını ayrıca yükləyin."
+        "truncated": "Fayl natamamdır: dövrün ödənişlərindən yalnız ilk {count} ödəniş daxildir. Dövrü daraldın və qalanını ayrıca yükləyin.",
+        "filteredTitle": "Bu filtrlərə uyğun ödəniş yoxdur",
+        "filteredBody": "Bu dövrdə seçilmiş plan koduna və ya ödəniş üsuluna uyğun heç bir ödəniş daxil olmayıb. Plan kodunu yoxlayın və ya filtrləri təmizləyin.",
+        "listEmpty": "Bu dövr və filtrlər üçün siyahıda ödəniş yoxdur.",
+        "periodBackwards": "Son gün başlanğıc günündən əvvəl ola bilməz.",
+        "periodTooLong": "Dövr ən çox 400 gün ola bilər. Bir il və ya daha qısa dövr seçin."
       },
       "backerDisputes": {
         "subject": "dəstəkçi etirazları növbəsi",
@@ -2934,14 +2960,15 @@
         "planHeading": "Bu ayın planları",
         "revenue": "Gəlir",
         "subscriptions": "Abunəliklər",
-        "reversals": "Ödənişin ləğvləri",
+        "reversals": "Geri qaytarmalar",
         "dateColumn": "Tarix",
         "monthColumn": "Ay",
         "planColumn": "Plan",
         "nothingRecorded": "Heç nə qeyd olunmayıb",
         "dailyCaption": "Bu ayın günləri üzrə gəlir və abunəliklər",
         "monthlyCaption": "Aylar üzrə gəlir və abunəliklər",
-        "planCaption": "Bu ayın planları üzrə gəlir və abunəliklər"
+        "planCaption": "Bu ayın planları üzrə gəlir və abunəliklər",
+        "zoneNoteBaku": "Tarixlər və aylar Bakı vaxtı ilədir."
       },
       "maintenance": {
         "subject": "texniki xidmət pəncərələrini",

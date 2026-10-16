@@ -2015,13 +2015,31 @@
           "REFUND": "Refund",
           "CHARGEBACK": "Chargeback",
           "CHARGEBACK_REVERSAL": "Chargeback reversal",
-          "PAYOUT": "Payout"
+          "PAYOUT": "Payout to creator"
         },
         "status": {
           "PENDING": "Pending",
           "SUCCEEDED": "Succeeded",
           "FAILED": "Failed"
-        }
+        },
+        "provider": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Sandbox",
+          "BANK_TRANSFER": "Bank transfer"
+        },
+        "noReferenceSettled": "The provider returned no reference.",
+        "failure": {
+          "payment_failed": "The provider reported that the payment failed.",
+          "provider_unreachable": "The provider could not be reached and never answered. Money may still have moved, so check the provider’s dashboard.",
+          "refund_refused": "The provider refused the refund.",
+          "reverse_refused": "The provider refused to reverse the payment.",
+          "payout_refused": "The provider refused the payout to the creator.",
+          "refund_window_closed": "The provider says the refund window for this payment has closed."
+        },
+        "failureUnknown": "Refused by the provider",
+        "invalidId": "That is not a whole identifier. Enter a UUID in the 8-4-4-4-12 form."
       },
       "ledger": {
         "subject": "the ledger",
@@ -2050,7 +2068,9 @@
         "postingLine": "transaction {transaction} · campaign {campaign}",
         "doesNotBalance": "Does not balance",
         "debit": "debit",
-        "credit": "credit"
+        "credit": "credit",
+        "invalidId": "That is not a whole identifier. Enter a UUID in the 8-4-4-4-12 form.",
+        "emptyPageMore": "Nothing on this page matched. Load more to keep looking."
       },
       "reconciliation": {
         "subject": "the reconciliation",
@@ -2063,7 +2083,7 @@
         "unbalancedTitle": "The books do not balance",
         "unbalancedBody": "{findings} across {positions}, checked {at}. {note}",
         "unbalancedEmphasis": "Nothing has been corrected automatically",
-        "unbalancedNote": "{emphasis} — the entry that would fix this depends on which of a dozen things went wrong, so it is a decision rather than a sweep.",
+        "unbalancedNote": "{emphasis} — the correcting entry depends on which of a dozen things went wrong, so a person has to decide it rather than a job.",
         "balancedTitle": "The books balance",
         "balancedBody": "{positions} checked {at}, nothing out of place.",
         "nothingHeld": "The platform holds no money in any account yet, which is balanced rather than unchecked.",
@@ -2088,7 +2108,7 @@
         },
         "checkAgain": "Check again now",
         "checking": "Checking…",
-        "runNote": "Two queries over the whole platform. It reads and writes nothing, so running it is safe at any time — and it is the only way to get an answer from the replica you are talking to.",
+        "runNote": "Two queries over the whole platform. It only reads and changes nothing, so running it is safe at any time — and it is the only way to get an answer from the replica you are talking to.",
         "findingTitle": {
           "UNBALANCED": "The ledger does not sum to zero",
           "IMPOSSIBLE_SIGN": "An account holds a balance it cannot hold",
@@ -2098,7 +2118,8 @@
           "UNBALANCED": "PostgreSQL refuses a posting whose debits and credits differ, so a row got past both the application and that trigger. Nothing else on this platform can produce it.",
           "IMPOSSIBLE_SIGN": "Escrow below zero is money paid out that was never taken; a creator’s account above zero is a creator paid more than they earned. Neither is caught by the sum, because two errors of opposite sign balance perfectly.",
           "DISAGREES_WITH_PAYMENTS": "What the ledger holds and what the transactions say moved are not the same figure. This is the only check that catches a posting the application never made at all."
-        }
+        },
+        "runSignedOut": "Your session has expired. Sign in again to run the check."
       },
       "payouts": {
         "subject": "the payout queue",
@@ -2796,7 +2817,7 @@
         "periodLegend": "Period",
         "fromLabel": "From",
         "toLabel": "To",
-        "toHint": "Inclusive. Days are counted in Baku time.",
+        "toHint": "The end day is included. Days are counted in Baku time.",
         "thisMonth": "This month",
         "lastMonth": "Last month",
         "show": "Show",
@@ -2843,7 +2864,7 @@
         "reversal": "Reversal",
         "closedAccount": "Closed account",
         "receivedOn": "Received {date}",
-        "recordedOn": "recorded {date}",
+        "recordedOn": "Recorded {date}",
         "reference": "Reference {reference}",
         "exportCsv": "Download CSV",
         "exporting": "Preparing the file",
@@ -2853,7 +2874,12 @@
           "many": "Downloaded {count} payments.",
           "other": "Downloaded {count} payments."
         },
-        "truncated": "The file is incomplete: it holds only the first {count} payments of the period. Narrow the period and download the rest separately."
+        "truncated": "The file is incomplete: it holds only the first {count} payments of the period. Narrow the period and download the rest separately.",
+        "filteredTitle": "No payments match these filters",
+        "filteredBody": "No payment in this period matches the chosen plan code or payment method. Check the plan code, or clear the filters.",
+        "listEmpty": "No payments to list for this period and these filters.",
+        "periodBackwards": "The end day cannot be before the start day.",
+        "periodTooLong": "A period can cover at most 400 days. Choose a year or less."
       },
       "backerDisputes": {
         "subject": "the backer dispute queue",
@@ -2941,7 +2967,8 @@
         "nothingRecorded": "Nothing recorded",
         "dailyCaption": "Revenue and subscriptions by day this month",
         "monthlyCaption": "Revenue and subscriptions by month",
-        "planCaption": "Revenue and subscriptions by plan this month"
+        "planCaption": "Revenue and subscriptions by plan this month",
+        "zoneNoteBaku": "Dates and months are in Baku time."
       },
       "maintenance": {
         "subject": "the maintenance windows",
