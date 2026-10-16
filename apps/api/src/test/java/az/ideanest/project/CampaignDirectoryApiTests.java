@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.shared.EmailAddress;
+import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.user.infrastructure.UserRepository;
@@ -52,6 +53,8 @@ class CampaignDirectoryApiTests extends AbstractIntegrationTest {
 
     private static final String DIRECTORY = "/v1/admin/projects";
 
+    private static final String ROLE_FIXTURE_NOTE = "CampaignDirectoryApiTests fixture";
+
     private static Account STAFF;
 
     @Autowired
@@ -76,6 +79,7 @@ class CampaignDirectoryApiTests extends AbstractIntegrationTest {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         jdbc.update("DELETE FROM project_state_transitions");
         jdbc.update("DELETE FROM projects");
+        jdbc.update("DELETE FROM staff_role_grants WHERE note = ?", ROLE_FIXTURE_NOTE);
     }
 
     // ------------------------------------------------------------------
@@ -381,6 +385,40 @@ class CampaignDirectoryApiTests extends AbstractIntegrationTest {
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
+    @Test
+    @DisplayName("a curator can search the list, because curating a campaign starts with finding it")
+    void aCuratorCanSearchTheDirectory() {
+        Account creator = creator();
+        UUID id = submitted(creator, "Pottery kiln for the village");
+        Account curator = staff("directory-curator", StaffRole.CURATOR);
+
+        ResponseEntity<Map<String, Object>> found = get(DIRECTORY + "?query=kiln", curator.accessToken());
+
+        assertThat(found.getStatusCode()).as("%s", found.getBody()).isEqualTo(HttpStatus.OK);
+        assertThat(idsIn(found.getBody())).containsExactly(id.toString());
+    }
+
+    @Test
+    @DisplayName("a curator still cannot read the preview, which is everything a creator wrote")
+    void aCuratorCannotReadThePreview() {
+        UUID id = submitted(creator(), "Not for curators to read in full");
+        Account curator = staff("directory-curator", StaffRole.CURATOR);
+
+        ResponseEntity<Map<String, Object>> refused = get(DIRECTORY + "/" + id, curator.accessToken());
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("staff who neither moderate nor curate are still refused the list")
+    void financeIsRefusedTheDirectory() {
+        Account finance = staff("directory-finance", StaffRole.FINANCE);
+
+        ResponseEntity<Map<String, Object>> refused = get(DIRECTORY, finance.accessToken());
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
     // ------------------------------------------------------------------
     // The staff preview — #399
     // ------------------------------------------------------------------
@@ -560,6 +598,35 @@ class CampaignDirectoryApiTests extends AbstractIntegrationTest {
 
         STAFF = new Account(accessToken, id);
         return STAFF;
+    }
+
+    /** Somebody holding one role, granted with SQL for the reason {@code ConsoleReadApiTests} gives. */
+    private Account staff(String slug, StaffRole role) {
+        EmailAddress email = EmailAddress.of(slug + "@ideanest.test");
+        if (users.findByEmailAndDeletedAtIsNull(email).isEmpty()) {
+            rest.postForEntity(
+                    "/v1/auth/register",
+                    Map.of("email", email.value(), "password", PASSWORD, "name", "Test " + role.name()),
+                    String.class);
+        }
+
+        UUID id = users.findByEmailAndDeletedAtIsNull(email).orElseThrow().getId();
+        new JdbcTemplate(dataSource)
+                .update(
+                        """
+                        INSERT INTO staff_role_grants (account_id, role, granted_by, note)
+                        VALUES (?, ?, ?, ?)
+                        ON CONFLICT DO NOTHING
+                        """,
+                        id,
+                        role.name(),
+                        staff().id(),
+                        ROLE_FIXTURE_NOTE);
+
+        String accessToken = tokens.issue(
+                        id, UUID.randomUUID(), new AccessTokenIssuer.AccountStanding(true, false), false, Instant.now())
+                .value();
+        return new Account(accessToken, id);
     }
 
     /** A draft §5.3 is satisfied with — see {@code SubmissionQueueApiTests} for the order. */

@@ -66,7 +66,7 @@ export function useCollections(subject: string, refusals: ConsoleRefusalsCopy): 
     const controller = new AbortController();
 
     async function load(): Promise<void> {
-      setStatus('loading');
+      setStatus((current) => (current === 'ready' ? current : 'loading'));
       try {
         const loaded = await listCollections(controller.signal);
         if (controller.signal.aborted) return;

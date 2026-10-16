@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CharacterCount, Field, Pill, Textarea } from '@ideanest/ui';
 import { Modal } from '@ideanest/ui/motion';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { NoteDialogCopy } from '../../lib/i18n/admin/common-copy';
 
 /** The `@Size` the curation request bodies carry, matching the moderation notes. */
@@ -19,6 +20,8 @@ export interface NoteDialogProps {
   readonly busyLabel: string;
   /** Draws the confirm control in `--danger`. For a change that takes something away. */
   readonly destructive?: boolean;
+  /** A confirmation without a reason, for a change whose endpoint has nowhere to keep one. */
+  readonly noteless?: boolean;
   readonly busy: boolean;
   /** A refusal from the service. Keeps the dialog open — nothing has changed. */
   readonly error: string | null;
@@ -66,12 +69,14 @@ export function NoteDialog({
   confirmLabel,
   busyLabel,
   destructive = false,
+  noteless = false,
   busy,
   error,
   onCancel,
   onConfirm,
   copy,
 }: NoteDialogProps) {
+  const locale = useRouteLocale();
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState<string | null>(null);
 
@@ -94,6 +99,11 @@ export function NoteDialog({
   const count = Array.from(note).length;
 
   function confirm(): void {
+    if (noteless) {
+      onConfirm('');
+      return;
+    }
+
     const trimmed = note.trim();
 
     if (trimmed === '') {
@@ -133,22 +143,30 @@ export function NoteDialog({
     >
       {body !== undefined && <p className="text-sm text-on-white/72">{body}</p>}
 
-      <div className="mt-4">
-        <Field label={copy.why} required hint={copy.hint} error={noteError}>
-          {/*
-            No `maxLength`. A hard cap silently truncates a pasted note and takes the
-            counter's only useful message away — "3 characters too many" is actionable,
-            losing three words is not.
-          */}
-          <Textarea
-            rows={4}
-            value={note}
-            disabled={busy}
-            onChange={(event) => setNote(event.target.value)}
+      {!noteless && (
+        <div className="mt-4">
+          <Field label={copy.why} required hint={copy.hint} error={noteError}>
+            {/*
+              No `maxLength`. A hard cap silently truncates a pasted note and takes the
+              counter's only useful message away — "3 characters too many" is actionable,
+              losing three words is not.
+            */}
+            <Textarea
+              rows={4}
+              value={note}
+              disabled={busy}
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </Field>
+          <CharacterCount
+            count={count}
+            limit={NOTE_MAX_CHARACTERS}
+            copy={copy.counter}
+            locale={locale}
+            className="mt-1"
           />
-        </Field>
-        <CharacterCount count={count} limit={NOTE_MAX_CHARACTERS} className="mt-1" />
-      </div>
+        </div>
+      )}
 
       {error !== null && (
         <p role="alert" className="mt-4 text-sm text-danger">

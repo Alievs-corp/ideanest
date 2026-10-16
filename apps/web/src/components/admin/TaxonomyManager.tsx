@@ -10,6 +10,7 @@ import {
   SkeletonGroup,
   TextInput,
 } from '@ideanest/ui';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import {
   createCategory,
   createSubcategory,
@@ -20,7 +21,7 @@ import {
   type TaxonomyBranch,
   type TaxonomyEntry,
 } from '../../lib/admin/taxonomy';
-import type { Locale } from '../../lib/i18n/locale';
+import { LOCALE_NAMES, type Locale } from '../../lib/i18n/locale';
 import { consoleMessageFor } from '../../lib/admin/refusals';
 import { pluralise } from '../../lib/i18n/plurals';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
@@ -71,45 +72,27 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
     [],
   );
 
-  const [slug, setSlug] = useState('');
-  const [nameAz, setNameAz] = useState('');
-  const [nameEn, setNameEn] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   if (tree.status === 'signed-out' || tree.status === 'forbidden') {
     return <ConsoleRefusal status={tree.status} capability={tree.capability} subject={copy.subject} copy={copy.refusals} />;
   }
 
-  async function act(work: () => Promise<unknown>): Promise<void> {
+  async function act(work: () => Promise<unknown>): Promise<string | null> {
     setBusy(true);
-    setError(null);
     try {
       await work();
       tree.reload();
+      return null;
     } catch (cause) {
-      setError(consoleMessageFor(cause, copy.subject, copy.refusals));
+      return consoleMessageFor(cause, copy.subject, copy.refusals);
     } finally {
       setBusy(false);
     }
   }
 
-  async function addCategory(event: React.FormEvent): Promise<void> {
-    event.preventDefault();
-    if (slug.trim() === '' || nameAz.trim() === '' || nameEn.trim() === '') return;
-
-    await act(async () => {
-      await createCategory({
-        slug: slug.trim(),
-        nameAz: nameAz.trim(),
-        nameEn: nameEn.trim(),
-        sortOrder: (tree.data?.branches.length ?? 0) * 10,
-      });
-      setSlug('');
-      setNameAz('');
-      setNameEn('');
-    });
-  }
+  const branches = tree.data?.branches ?? [];
+  const allTags = tags.data?.tags ?? [];
 
   return (
     <div className="flex flex-col gap-10">
@@ -120,9 +103,12 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
       <section aria-labelledby="tree-heading">
         <h2 id="tree-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
           {copy.categories}
+          {tree.data !== null && (
+            <span className="ml-2 text-xs font-normal text-white/40">{branches.length}</span>
+          )}
         </h2>
 
-        {tree.status === 'loading' && (
+        {tree.status === 'loading' && tree.data === null && (
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <div className="space-y-3">
               {[0, 1, 2].map((row) => (
@@ -145,7 +131,7 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
           </>
         )}
 
-        {tree.status === 'ready' && tree.data !== null && tree.data.branches.length === 0 && (
+        {tree.data !== null && tree.status !== 'failed' && branches.length === 0 && (
           <EmptyState
             className="mt-4"
             variant="empty"
@@ -154,9 +140,9 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
           />
         )}
 
-        {tree.status === 'ready' && tree.data !== null && tree.data.branches.length > 0 && (
+        {tree.data !== null && tree.status !== 'failed' && branches.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-3">
-            {tree.data.branches.map((branch) => (
+            {branches.map((branch) => (
               <Branch
                 key={branch.category.id}
                 branch={branch}
@@ -168,34 +154,17 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
             ))}
           </ul>
         )}
-
-        {error && (
-          <InlineAlert variant="danger" title={copy.failedTitle} className="mt-4">
-            {error}
-          </InlineAlert>
-        )}
       </section>
 
-      <section aria-labelledby="add-category-heading">
-        <h2 id="add-category-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
-          {copy.addCategoryHeading}
-        </h2>
-
-        <form onSubmit={(event) => void addCategory(event)} className="mt-4 flex flex-wrap items-end gap-3">
-          <Field label={copy.handleLabel} hint={copy.handleHint} className="min-w-[200px]">
-            <TextInput value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="games" />
-          </Field>
-          <Field label={copy.azLabel} className="min-w-[180px]">
-            <TextInput value={nameAz} onChange={(event) => setNameAz(event.target.value)} />
-          </Field>
-          <Field label={copy.enLabel} className="min-w-[180px]">
-            <TextInput value={nameEn} onChange={(event) => setNameEn(event.target.value)} />
-          </Field>
-          <Pill type="submit" variant="outline" size="sm" className="mb-1" disabled={busy}>
-            {copy.add}
-          </Pill>
-        </form>
-      </section>
+      <NewEntry
+        heading={copy.addCategoryHeading}
+        hint={copy.handleHint}
+        copy={copy}
+        busy={busy}
+        onCreate={(entry) =>
+          act(() => createCategory({ ...entry, sortOrder: nextOrder(branches.map((b) => b.category)) }))
+        }
+      />
 
       <section aria-labelledby="tags-heading">
         <h2 id="tags-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
@@ -203,16 +172,36 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.tagsIntro}</p>
 
-        {tags.status === 'ready' && tags.data !== null && (
-          <ul className="mt-4 flex list-none flex-wrap gap-2">
-            {tags.data.tags.slice(0, 60).map((tag) => (
-              <li key={tag.id} className="rounded-md border border-white/8 px-2.5 py-1.5 text-xs text-white/64">
-                {tag.label} <span className="text-white/40">{tag.usageCount}</span>
-              </li>
-            ))}
-          </ul>
+        {tags.status === 'loading' && (
+          <SkeletonGroup label={copy.loadingList} className="mt-4">
+            <Skeleton height="1.75rem" width="60%" />
+          </SkeletonGroup>
         )}
-        {tags.status === 'ready' && tags.data !== null && tags.data.tags.length === 0 && (
+        {tags.status === 'failed' && (
+          <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
+            {tags.error}
+          </InlineAlert>
+        )}
+        {tags.status === 'ready' && allTags.length > 0 && (
+          <>
+            <ul className="mt-4 flex list-none flex-wrap gap-2">
+              {allTags.slice(0, TAG_LIMIT).map((tag) => (
+                <li key={tag.id} className="rounded-md border border-white/8 px-2.5 py-1.5 text-xs text-white/64">
+                  {tag.label} <span className="text-white/40">{tag.usageCount}</span>
+                </li>
+              ))}
+            </ul>
+            {allTags.length > TAG_LIMIT && (
+              <p className="mt-2 text-xs text-white/40">
+                {fillPlaceholders(copy.tagsShown, {
+                  shown: String(TAG_LIMIT),
+                  total: String(allTags.length),
+                })}
+              </p>
+            )}
+          </>
+        )}
+        {tags.status === 'ready' && allTags.length === 0 && (
           <p className="mt-4 text-sm text-white/48">{copy.noTags}</p>
         )}
       </section>
@@ -220,7 +209,26 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
   );
 }
 
-/** One category, its subcategories, and the two things that can be changed about each. */
+const TAG_LIMIT = 60;
+
+/** The other two of §21.1's languages, which live in the translations table rather than on the row. */
+const TRANSLATED_LOCALES = ['ru', 'tr'] as const satisfies readonly Locale[];
+
+type Act = (work: () => Promise<unknown>) => Promise<string | null>;
+
+function nextOrder(entries: readonly TaxonomyEntry[]): number {
+  return entries.reduce((highest, entry) => Math.max(highest, entry.sortOrder), 0) + 10;
+}
+
+/** The entry's name in the reader's language, by the chain the public site uses. */
+function nameIn(entry: TaxonomyEntry, locale: Locale): string {
+  if (locale === 'az') return entry.nameAz;
+  if (locale === 'en') return entry.nameEn;
+  const translated = entry.translations[locale];
+  return translated != null && translated !== '' ? translated : entry.nameEn;
+}
+
+/** One category, its subcategories, and the names of each. */
 function Branch({
   branch,
   busy,
@@ -232,200 +240,281 @@ function Branch({
   readonly busy: boolean;
   readonly copy: TaxonomyManagerCopy;
   readonly locale: Locale;
-  readonly onAct: (work: () => Promise<unknown>) => Promise<void>;
+  readonly onAct: Act;
 }) {
   const [open, setOpen] = useState(false);
+  const panelId = `category-${branch.category.id}`;
 
   return (
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-white">
-          {branch.category.nameEn}
-          <span className="ml-2 font-mono text-xs text-white/40">{branch.category.slug}</span>
-        </p>
-        <Pill variant="ghost" size="sm" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[15px] text-white">
+            {nameIn(branch.category, locale)}
+            <span className="ml-2 font-mono text-xs text-white/40">{branch.category.slug}</span>
+          </p>
+          <p className="mt-1 text-xs text-white/48">
+            {branch.subcategories.length > 0
+              ? pluralise(locale, copy.subcategories, branch.subcategories.length)
+              : copy.noSubcategories}
+          </p>
+        </div>
+        <Pill
+          variant="ghost"
+          size="sm"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-controls={panelId}
+        >
           {open ? copy.done : copy.edit}
         </Pill>
       </div>
 
-      <p className="mt-1 text-xs text-white/48">
-        {branch.category.nameAz}
-        {branch.subcategories.length > 0
-          ? ` · ${pluralise(locale, copy.subcategories, branch.subcategories.length)}`
-          : ` · ${copy.noSubcategories}`}
-      </p>
-
       {open && (
-        <div className="mt-4 border-t border-white/8 pt-4">
-          <EntryEditor
-            entry={branch.category}
-            kind="categories"
-            busy={busy}
-            copy={copy}
-            onAct={onAct}
-          />
+        <div id={panelId} className="mt-4 border-t border-white/8 pt-4">
+          <EntryEditor entry={branch.category} kind="categories" busy={busy} copy={copy} onAct={onAct} />
 
-          <ul className="mt-4 flex list-none flex-col gap-2 border-l border-white/8 pl-4">
-            {branch.subcategories.map((subcategory) => (
-              <li key={subcategory.id}>
-                <EntryEditor
-                  entry={subcategory}
-                  kind="subcategories"
-                  busy={busy}
-                  copy={copy}
-                  onAct={onAct}
-                />
-              </li>
-            ))}
-          </ul>
+          {branch.subcategories.length > 0 && (
+            <>
+              <h3 className="mt-6 text-sm font-medium text-white">{copy.subcategoriesHeading}</h3>
+              <ul className="mt-3 flex list-none flex-col gap-2 border-l border-white/8 pl-4">
+                {branch.subcategories.map((subcategory) => (
+                  <li key={subcategory.id}>
+                    <EntryEditor
+                      entry={subcategory}
+                      kind="subcategories"
+                      busy={busy}
+                      copy={copy}
+                      onAct={onAct}
+                      heading={nameIn(subcategory, locale)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
-          <NewSubcategory
-            categoryId={branch.category.id}
-            busy={busy}
-            copy={copy}
-            onAct={onAct}
-          />
+          <div className="mt-6 border-t border-white/8 pt-4">
+            <NewEntry
+              heading={copy.newSubcategoryLabel}
+              hint={copy.newSubcategoryHint}
+              copy={copy}
+              busy={busy}
+              compact
+              onCreate={(entry) =>
+                onAct(() =>
+                  createSubcategory(branch.category.id, {
+                    ...entry,
+                    sortOrder: nextOrder(branch.subcategories),
+                  }),
+                )
+              }
+            />
+          </div>
         </div>
       )}
     </li>
   );
 }
 
-/** Renaming and translating one entry. The handle is not here, deliberately. */
+/**
+ * Every name an entry has, in one form.
+ *
+ * <p>Azerbaijani and English live on the row and travel together, so they are one `PATCH`;
+ * Russian and Turkish are translations, one `PUT` each, sent only when they changed. There is
+ * no endpoint that removes a translation, so emptying one is not offered as a change.
+ */
 function EntryEditor({
   entry,
   kind,
   busy,
   copy,
   onAct,
+  heading,
 }: {
   readonly entry: TaxonomyEntry;
   readonly kind: 'categories' | 'subcategories';
   readonly busy: boolean;
   readonly copy: TaxonomyManagerCopy;
-  readonly onAct: (work: () => Promise<unknown>) => Promise<void>;
+  readonly onAct: Act;
+  readonly heading?: string;
 }) {
   const [nameAz, setNameAz] = useState(entry.nameAz);
   const [nameEn, setNameEn] = useState(entry.nameEn);
-  const [locale, setLocale] = useState('ru');
-  const [translation, setTranslation] = useState('');
+  const [translations, setTranslations] = useState<Record<string, string>>(() =>
+    Object.fromEntries(TRANSLATED_LOCALES.map((code) => [code, entry.translations[code] ?? ''])),
+  );
+  const [outcome, setOutcome] = useState<{ readonly ok: boolean; readonly message: string } | null>(
+    null,
+  );
+
+  const renamed = nameAz.trim() !== entry.nameAz || nameEn.trim() !== entry.nameEn;
+  const retranslated = TRANSLATED_LOCALES.filter((code) => {
+    const value = (translations[code] ?? '').trim();
+    return value !== '' && value !== (entry.translations[code] ?? '');
+  });
+  const blank = nameAz.trim() === '' || nameEn.trim() === '';
+
+  async function save(event: React.FormEvent): Promise<void> {
+    event.preventDefault();
+    if (blank || (!renamed && retranslated.length === 0)) return;
+
+    setOutcome(null);
+    const failure = await onAct(async () => {
+      if (renamed) {
+        await editTaxonomyEntry(kind, entry.id, {
+          nameAz: nameAz.trim(),
+          nameEn: nameEn.trim(),
+          sortOrder: entry.sortOrder,
+        });
+      }
+      for (const code of retranslated) {
+        await translateTaxonomyEntry(kind, entry.id, code, (translations[code] ?? '').trim());
+      }
+    });
+    setOutcome(failure === null ? { ok: true, message: copy.savedNotice } : { ok: false, message: failure });
+  }
 
   return (
-    <div className="rounded-md border border-white/8 p-3">
-      <p className="font-mono text-xs text-white/40">{entry.slug}</p>
+    <form onSubmit={(event) => void save(event)} className="rounded-md border border-white/8 p-3">
+      <p className="text-sm text-white">
+        {heading !== undefined && <span className="mr-2">{heading}</span>}
+        <span className="font-mono text-xs text-white/40">{entry.slug}</span>
+      </p>
 
-      <div className="mt-2 flex flex-wrap items-end gap-2">
-        <Field label={copy.azLabel} className="min-w-[160px] flex-1">
-          <TextInput value={nameAz} onChange={(event) => setNameAz(event.target.value)} />
+      <div className="mt-3 grid items-start gap-3 sm:grid-cols-2">
+        <Field label={LOCALE_NAMES.az} required>
+          <TextInput lang="az" value={nameAz} onChange={(event) => setNameAz(event.target.value)} />
         </Field>
-        <Field label={copy.enLabel} className="min-w-[160px] flex-1">
-          <TextInput value={nameEn} onChange={(event) => setNameEn(event.target.value)} />
+        <Field label={LOCALE_NAMES.en} required>
+          <TextInput lang="en" value={nameEn} onChange={(event) => setNameEn(event.target.value)} />
         </Field>
-        <Pill
-          variant="ghost"
-          size="sm"
-          className="mb-1"
-          disabled={busy}
-          onClick={() =>
-            void onAct(() =>
-              editTaxonomyEntry(kind, entry.id, {
-                nameAz: nameAz.trim(),
-                nameEn: nameEn.trim(),
-                sortOrder: entry.sortOrder,
-              }),
-            )
-          }
-        >
-          {copy.rename}
-        </Pill>
+        {TRANSLATED_LOCALES.map((code) => (
+          <Field key={code} label={LOCALE_NAMES[code]} hint={copy.translationHint}>
+            <TextInput
+              lang={code}
+              value={translations[code] ?? ''}
+              placeholder={entry.nameEn}
+              onChange={(event) => setTranslations({ ...translations, [code]: event.target.value })}
+            />
+          </Field>
+        ))}
       </div>
 
-      <div className="mt-2 flex flex-wrap items-end gap-2">
-        <Field label={copy.localeLabel} className="w-[90px]">
-          <TextInput value={locale} onChange={(event) => setLocale(event.target.value)} />
-        </Field>
-        <Field label={copy.translationLabel} className="min-w-[200px] flex-1">
-          <TextInput value={translation} onChange={(event) => setTranslation(event.target.value)} />
-        </Field>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <Pill
-          variant="ghost"
+          type="submit"
+          variant="outline"
           size="sm"
-          className="mb-1"
-          disabled={busy || translation.trim() === ''}
-          onClick={() =>
-            void onAct(async () => {
-              await translateTaxonomyEntry(kind, entry.id, locale.trim(), translation.trim());
-              setTranslation('');
-            })
-          }
+          disabled={busy || blank || (!renamed && retranslated.length === 0)}
         >
-          {copy.translate}
+          {copy.save}
         </Pill>
+        <span role="status" aria-live="polite" className="text-sm empty:hidden">
+          {outcome !== null && (
+            <span className={outcome.ok ? 'text-success' : 'text-danger'}>{outcome.message}</span>
+          )}
+        </span>
       </div>
-
-      {Object.keys(entry.translations).length > 0 && (
-        <p className="mt-2 text-xs text-white/40">
-          {Object.entries(entry.translations)
-            .map(([code, name]) => `${code}: ${name}`)
-            .join(' · ')}
-        </p>
-      )}
-    </div>
+    </form>
   );
 }
 
-/** Adding a subcategory. The parent is fixed by where the form is. */
-function NewSubcategory({
-  categoryId,
-  busy,
+/** A category, or a subcategory under the one it is drawn in. The handle is permanent. */
+function NewEntry({
+  heading,
+  hint,
   copy,
-  onAct,
+  busy,
+  compact = false,
+  onCreate,
 }: {
-  readonly categoryId: string;
-  readonly busy: boolean;
+  readonly heading: string;
+  readonly hint: string;
   readonly copy: TaxonomyManagerCopy;
-  readonly onAct: (work: () => Promise<unknown>) => Promise<void>;
+  readonly busy: boolean;
+  readonly compact?: boolean;
+  readonly onCreate: (entry: { slug: string; nameAz: string; nameEn: string }) => Promise<string | null>;
 }) {
   const [slug, setSlug] = useState('');
   const [nameAz, setNameAz] = useState('');
   const [nameEn, setNameEn] = useState('');
+  const [handleError, setHandleError] = useState<string | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const incomplete = slug.trim() === '' || nameAz.trim() === '' || nameEn.trim() === '';
+
+  async function submit(event: React.FormEvent): Promise<void> {
+    event.preventDefault();
+    if (incomplete) return;
+
+    const handle = slug.trim();
+    if (!TAXONOMY_HANDLE.test(handle)) {
+      setHandleError(copy.handleInvalid);
+      return;
+    }
+
+    setHandleError(null);
+    setFailure(null);
+    const refused = await onCreate({ slug: handle, nameAz: nameAz.trim(), nameEn: nameEn.trim() });
+    if (refused !== null) {
+      setFailure(refused);
+      return;
+    }
+    setSlug('');
+    setNameAz('');
+    setNameEn('');
+  }
+
+  const Heading = compact ? 'h3' : 'h2';
 
   return (
-    <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-white/8 pt-4">
-      <Field
-        label={copy.newSubcategoryLabel}
-        hint={copy.newSubcategoryHint}
-        className="min-w-[160px]"
-      >
-        <TextInput value={slug} onChange={(event) => setSlug(event.target.value)} />
-      </Field>
-      <Field label={copy.azLabel} className="min-w-[140px]">
-        <TextInput value={nameAz} onChange={(event) => setNameAz(event.target.value)} />
-      </Field>
-      <Field label={copy.enLabel} className="min-w-[140px]">
-        <TextInput value={nameEn} onChange={(event) => setNameEn(event.target.value)} />
-      </Field>
-      <Pill
-        variant="ghost"
-        size="sm"
-        className="mb-1"
-        disabled={busy || slug.trim() === '' || nameEn.trim() === ''}
-        onClick={() =>
-          void onAct(async () => {
-            await createSubcategory(categoryId, {
-              slug: slug.trim(),
-              nameAz: nameAz.trim(),
-              nameEn: nameEn.trim(),
-              sortOrder: 0,
-            });
-            setSlug('');
-            setNameAz('');
-            setNameEn('');
-          })
+    <section>
+      <Heading
+        className={
+          compact
+            ? 'text-sm font-medium text-white'
+            : 'text-lg font-medium tracking-[-0.02em] text-white'
         }
       >
-        {copy.add}
-      </Pill>
-    </div>
+        {heading}
+      </Heading>
+
+      <form onSubmit={(event) => void submit(event)} className="mt-3">
+        <div className="grid items-start gap-3 sm:grid-cols-3">
+          <Field label={copy.handleLabel} required hint={hint} error={handleError}>
+            <TextInput
+              value={slug}
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder={compact ? 'board-games' : 'games'}
+              onChange={(event) => {
+                setSlug(event.target.value);
+                setHandleError(null);
+              }}
+            />
+          </Field>
+          <Field label={LOCALE_NAMES.az} required>
+            <TextInput lang="az" value={nameAz} onChange={(event) => setNameAz(event.target.value)} />
+          </Field>
+          <Field label={LOCALE_NAMES.en} required>
+            <TextInput lang="en" value={nameEn} onChange={(event) => setNameEn(event.target.value)} />
+          </Field>
+        </div>
+
+        {failure !== null && (
+          <InlineAlert variant="danger" title={copy.failedTitle} className="mt-3">
+            {failure}
+          </InlineAlert>
+        )}
+
+        <Pill type="submit" variant="outline" size="sm" className="mt-3" disabled={busy || incomplete}>
+          {copy.add}
+        </Pill>
+      </form>
+    </section>
   );
 }
+
+/** `TaxonomyAdminController.CreateCategoryRequest`'s pattern, so a bad handle is caught before the request. */
+const TAXONOMY_HANDLE = /^[a-z][a-z0-9-]{1,62}[a-z0-9]$/;

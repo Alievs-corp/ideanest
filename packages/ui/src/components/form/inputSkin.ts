@@ -25,6 +25,9 @@ export const inputSkin = cva(
     'transition-[background-color,border-color] duration-150 ease-in-out',
     'hover:border-white/16 focus:border-white/16',
     'disabled:pointer-events-none disabled:opacity-40',
+    'in-data-on-white:bg-on-white/4 in-data-on-white:text-on-white',
+    'in-data-on-white:border-on-white/16 in-data-on-white:placeholder:text-on-white/48',
+    'in-data-on-white:hover:border-on-white/32 in-data-on-white:focus:border-on-white/32',
   ],
   {
     variants: {
@@ -34,7 +37,7 @@ export const inputSkin = cva(
         lg: 'h-12 px-4 text-[15px]',
       },
       invalid: {
-        true: 'border-danger hover:border-danger focus:border-danger',
+        true: 'border-danger hover:border-danger focus:border-danger in-data-on-white:border-danger in-data-on-white:hover:border-danger in-data-on-white:focus:border-danger',
         false: '',
       },
     },

@@ -3,7 +3,13 @@
 import { useState } from 'react';
 import { Link } from '../../i18n/navigation';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
-import { bodyOf, collectionTitle, isPublished, replaceCollection } from '../../lib/admin/curation';
+import {
+  bodyOf,
+  collectionTitle,
+  isPublished,
+  placementChanges,
+  replaceCollection,
+} from '../../lib/admin/curation';
 import { consoleMessageFor } from '../../lib/admin/refusals';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { PlacementEditorCopy } from '../../lib/i18n/admin/curation-copy';
@@ -32,12 +38,13 @@ import { useCollections } from './useCollections';
  * that expressible without anybody having to know what the current numbers are, or that they
  * are allowed to have gaps.
  *
- * <p><strong>A move is two requests, and the screen says when it has done one of them.</strong>
- * The endpoint replaces one collection at a time, so swapping two positions is two `PUT`s.
- * They are sent in sequence and the second failing leaves the first applied — which is a real
- * state, not a bug to hide: the list is then in an order somebody did not ask for, and the
- * honest response is to say so and re-read rather than to guess at a rollback the API cannot
- * make atomic.
+ * <p><strong>A move is several requests, and the screen says when it has done only some.</strong>
+ * The endpoint replaces one collection at a time, so swapping two positions is two `PUT`s —
+ * and more when collections share a number, which every one created before placement was set
+ * does: swapping two equal numbers changes nothing, so `placementChanges` renumbers the list in
+ * tens instead. They are sent in sequence and a failure part way leaves the earlier ones
+ * applied, which is a real state rather than a bug to hide: the honest response is to say so
+ * and re-read rather than to guess at a rollback the API cannot make atomic.
  *
  * <h2>Unpublished collections are shown and are not hidden from the order</h2>
  *
@@ -56,7 +63,7 @@ export interface PlacementEditorProps {
 }
 
 export function PlacementEditor({ copy }: PlacementEditorProps) {
-  const { status, collections, error, capability, reload, setError } = useCollections(
+  const { status, collections, error, capability, apply, reload, setError } = useCollections(
     copy.subject,
     copy.refusals,
   );
@@ -79,14 +86,21 @@ export function PlacementEditor({ copy }: PlacementEditorProps) {
 
   async function swap(index: number, direction: -1 | 1): Promise<void> {
     const first = ordered[index];
-    const second = ordered[index + direction];
-    if (first === undefined || second === undefined || busy) return;
+    const changes = placementChanges(ordered, index, direction);
+    if (first === undefined || changes.length === 0 || busy) return;
 
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
-      await replaceCollection(first.slug, { ...bodyOf(first), sortOrder: second.sortOrder });
-      await replaceCollection(second.slug, { ...bodyOf(second), sortOrder: first.sortOrder });
+      for (const change of changes) {
+        apply(
+          await replaceCollection(change.collection.slug, {
+            ...bodyOf(change.collection),
+            sortOrder: change.sortOrder,
+          }),
+        );
+      }
       setNotice(
         fillPlaceholders(direction === -1 ? copy.movedUp : copy.movedDown, {
           title: collectionTitle(first),
@@ -94,14 +108,13 @@ export function PlacementEditor({ copy }: PlacementEditorProps) {
       );
     } catch (cause) {
       setError(`${consoleMessageFor(cause, copy.subject, copy.refusals)} ${copy.partial}`);
-    } finally {
-      setBusy(false);
       /*
-       * Re-read either way. On success because both numbers changed, on failure because the
-       * screen does not know how far it got — and a placement editor showing an order the
+       * The screen does not know how far it got, and a placement editor showing an order the
        * service does not have is the one failure this screen must not have.
        */
       reload();
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -165,8 +178,8 @@ export function PlacementEditor({ copy }: PlacementEditorProps) {
                   {collectionTitle(collection)}
                 </Link>
                 <p className="mt-1 text-xs text-white/40">
-                  <span className="font-mono">{collection.sortOrder}</span>{' '}
-                  · {copy.curation.kind[collection.kind]}
+                  <span className="font-mono">{index + 1}</span> ·{' '}
+                  {copy.curation.kind[collection.kind]}
                 </p>
               </div>
 

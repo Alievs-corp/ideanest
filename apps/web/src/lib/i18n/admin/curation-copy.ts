@@ -1,6 +1,7 @@
 import type { AdminTranslator } from '../admin-copy';
 import type { PluralForms } from '../plurals';
-import type { CollectionKind } from '../../admin/curation';
+import type { CollectionKind, HandleProblem } from '../../admin/curation';
+import type { ProjectState } from '../../projects/api';
 import type { ConsoleChromeCopy } from './common-copy';
 
 /**
@@ -102,8 +103,9 @@ export interface CollectionManagerCopy extends CurationChromeCopy {
   readonly unpublishedNotice: string;
   readonly publish: string;
   readonly takeDown: string;
-  /** Carries `{order}`. */
-  readonly placement: string;
+  readonly manage: string;
+  /** Keyed by `HandleProblem`, shown on the handle field before anything is sent. */
+  readonly handleErrors: Readonly<Record<HandleProblem, string>>;
   /** Carries `{title}`. */
   readonly publishTitle: string;
   /** Carries `{title}`. */
@@ -140,7 +142,8 @@ export function collectionManagerCopyFrom(
     unpublishedNotice: String(t.raw('screens.collections.unpublishedNotice')),
     publish: t('screens.collections.publish'),
     takeDown: t('screens.collections.takeDown'),
-    placement: String(t.raw('screens.collections.placement')),
+    manage: t('screens.collections.manage'),
+    handleErrors: t.raw('screens.collections.handleErrors') as Readonly<Record<HandleProblem, string>>,
     publishTitle: String(t.raw('screens.collections.publishTitle')),
     unpublishTitle: String(t.raw('screens.collections.unpublishTitle')),
     publishDescription: t('screens.collections.publishDescription'),
@@ -164,9 +167,6 @@ export interface CollectionEditorCopy extends CurationChromeCopy {
   readonly notFoundTitle: string;
   readonly notFoundBody: string;
   readonly backToCollections: string;
-  readonly placement: string;
-  readonly languages: string;
-  readonly noLanguages: string;
   readonly campaigns: string;
   /** Carries `{count}` in every form but `one`, which writes the word out. */
   readonly hidden: PluralForms;
@@ -190,6 +190,36 @@ export interface CollectionEditorCopy extends CurationChromeCopy {
   readonly removeBadgeBody: string;
   readonly adding: string;
   readonly removing: string;
+  readonly publish: string;
+  readonly takeDown: string;
+  readonly publishTitle: string;
+  readonly unpublishTitle: string;
+  readonly publishDescription: string;
+  readonly unpublishDescription: string;
+  readonly publishBadgeBody: string;
+  readonly publishing: string;
+  readonly takingDown: string;
+  readonly publishedNotice: string;
+  readonly unpublishedNotice: string;
+  readonly emptyBeforePublish: string;
+  readonly detailsHeading: string;
+  readonly detailsIntro: string;
+  readonly kindLabel: string;
+  readonly titleLabel: string;
+  readonly descriptionLabel: string;
+  readonly titleMissing: string;
+  readonly save: string;
+  readonly savedNotice: string;
+  readonly searchSubject: string;
+  readonly search: string;
+  readonly searching: string;
+  readonly searchFailedTitle: string;
+  readonly noResults: string;
+  readonly resultsLabel: string;
+  readonly alreadyIn: string;
+  readonly addCampaignLabel: string;
+  /** Borrowed from the campaign directory, so a state reads the same on both screens. */
+  readonly campaignState: Readonly<Record<ProjectState, string>>;
 }
 
 export function collectionEditorCopyFrom(
@@ -203,9 +233,6 @@ export function collectionEditorCopyFrom(
     notFoundTitle: t('screens.collectionEditor.notFoundTitle'),
     notFoundBody: t('screens.collectionEditor.notFoundBody'),
     backToCollections: t('screens.collectionEditor.backToCollections'),
-    placement: t('screens.collectionEditor.placement'),
-    languages: t('screens.collectionEditor.languages'),
-    noLanguages: t('screens.collectionEditor.noLanguages'),
     campaigns: t('screens.collectionEditor.campaigns'),
     hidden: t.raw('screens.collectionEditor.hidden') as PluralForms,
     addLabel: t('screens.collectionEditor.addLabel'),
@@ -215,9 +242,9 @@ export function collectionEditorCopyFrom(
     emptyBody: t('screens.collectionEditor.emptyBody'),
     remove: t('screens.collectionEditor.remove'),
     removeLabel: String(t.raw('screens.collectionEditor.removeLabel')),
-    addedNotice: t('screens.collectionEditor.addedNotice'),
+    addedNotice: String(t.raw('screens.collectionEditor.addedNotice')),
     removedNotice: String(t.raw('screens.collectionEditor.removedNotice')),
-    addTitle: t('screens.collectionEditor.addTitle'),
+    addTitle: String(t.raw('screens.collectionEditor.addTitle')),
     removeTitle: String(t.raw('screens.collectionEditor.removeTitle')),
     addDescription: t('screens.collectionEditor.addDescription'),
     removeDescription: t('screens.collectionEditor.removeDescription'),
@@ -225,6 +252,35 @@ export function collectionEditorCopyFrom(
     removeBadgeBody: t('screens.collectionEditor.removeBadgeBody'),
     adding: t('screens.collectionEditor.adding'),
     removing: t('screens.collectionEditor.removing'),
+    publish: t('screens.collections.publish'),
+    takeDown: t('screens.collections.takeDown'),
+    publishTitle: String(t.raw('screens.collections.publishTitle')),
+    unpublishTitle: String(t.raw('screens.collections.unpublishTitle')),
+    publishDescription: t('screens.collections.publishDescription'),
+    unpublishDescription: t('screens.collections.unpublishDescription'),
+    publishBadgeBody: t('screens.collections.publishBadgeBody'),
+    publishing: t('screens.collections.publishing'),
+    takingDown: t('screens.collections.takingDown'),
+    publishedNotice: String(t.raw('screens.collections.publishedNotice')),
+    unpublishedNotice: String(t.raw('screens.collections.unpublishedNotice')),
+    emptyBeforePublish: t('screens.collectionEditor.emptyBeforePublish'),
+    detailsHeading: t('screens.collectionEditor.detailsHeading'),
+    detailsIntro: t('screens.collectionEditor.detailsIntro'),
+    kindLabel: t('screens.collections.kindLabel'),
+    titleLabel: t('screens.collectionEditor.titleLabel'),
+    descriptionLabel: t('screens.collectionEditor.descriptionLabel'),
+    titleMissing: t('screens.collectionEditor.titleMissing'),
+    save: t('screens.collectionEditor.save'),
+    savedNotice: String(t.raw('screens.collectionEditor.savedNotice')),
+    searchSubject: t('screens.collectionEditor.searchSubject'),
+    search: t('screens.collectionEditor.search'),
+    searching: t('screens.collectionEditor.searching'),
+    searchFailedTitle: t('screens.collectionEditor.searchFailedTitle'),
+    noResults: t('screens.collectionEditor.noResults'),
+    resultsLabel: t('screens.collectionEditor.resultsLabel'),
+    alreadyIn: t('screens.collectionEditor.alreadyIn'),
+    addCampaignLabel: String(t.raw('screens.collectionEditor.addCampaignLabel')),
+    campaignState: t.raw('screens.campaignDirectory.state') as Readonly<Record<ProjectState, string>>,
   };
 }
 
@@ -240,6 +296,9 @@ export interface BadgeManagerCopy extends CurationChromeCopy {
   readonly loadingList: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
+  readonly noCollectionsTitle: string;
+  readonly noCollectionsBody: string;
+  readonly toCollections: string;
   readonly restHeading: string;
   readonly restIntro: string;
   readonly allGrant: string;
@@ -272,6 +331,9 @@ export function badgeManagerCopyFrom(
     loadingList: t('screens.badges.loadingList'),
     emptyTitle: t('screens.badges.emptyTitle'),
     emptyBody: t('screens.badges.emptyBody'),
+    noCollectionsTitle: t('screens.badges.noCollectionsTitle'),
+    noCollectionsBody: t('screens.badges.noCollectionsBody'),
+    toCollections: t('screens.badges.toCollections'),
     restHeading: t('screens.badges.restHeading'),
     restIntro: t('screens.badges.restIntro'),
     allGrant: t('screens.badges.allGrant'),
@@ -314,6 +376,7 @@ export interface OpenCallManagerCopy extends CurationChromeCopy {
   readonly opensHint: string;
   readonly closesLabel: string;
   readonly closesHint: string;
+  readonly closesBeforeOpens: string;
   readonly saveWindow: string;
   readonly utcNote: string;
 }
@@ -338,6 +401,7 @@ export function openCallManagerCopyFrom(
     opensHint: t('screens.openCalls.opensHint'),
     closesLabel: t('screens.openCalls.closesLabel'),
     closesHint: t('screens.openCalls.closesHint'),
+    closesBeforeOpens: t('screens.openCalls.closesBeforeOpens'),
     saveWindow: t('screens.openCalls.saveWindow'),
     utcNote: t('screens.openCalls.utcNote'),
   };
@@ -403,22 +467,23 @@ export interface TaxonomyManagerCopy extends CurationChromeCopy {
   readonly addCategoryHeading: string;
   readonly handleLabel: string;
   readonly handleHint: string;
-  readonly azLabel: string;
-  readonly enLabel: string;
+  readonly handleInvalid: string;
   readonly add: string;
   readonly edit: string;
   readonly done: string;
   readonly noSubcategories: string;
   /** Carries `{count}`. */
   readonly subcategories: PluralForms;
-  readonly rename: string;
-  readonly localeLabel: string;
-  readonly translationLabel: string;
-  readonly translate: string;
+  readonly subcategoriesHeading: string;
+  readonly translationHint: string;
+  readonly save: string;
+  readonly savedNotice: string;
   readonly newSubcategoryLabel: string;
   readonly newSubcategoryHint: string;
   readonly tagsHeading: string;
   readonly tagsIntro: string;
+  /** Carries `{shown}` and `{total}`. */
+  readonly tagsShown: string;
   readonly noTags: string;
 }
 
@@ -440,21 +505,21 @@ export function taxonomyManagerCopyFrom(
     addCategoryHeading: t('screens.taxonomy.addCategoryHeading'),
     handleLabel: t('screens.taxonomy.handleLabel'),
     handleHint: t('screens.taxonomy.handleHint'),
-    azLabel: t('screens.taxonomy.azLabel'),
-    enLabel: t('screens.taxonomy.enLabel'),
+    handleInvalid: t('screens.taxonomy.handleInvalid'),
     add: t('screens.taxonomy.add'),
     edit: t('screens.taxonomy.edit'),
     done: t('screens.taxonomy.done'),
     noSubcategories: t('screens.taxonomy.noSubcategories'),
     subcategories: t.raw('screens.taxonomy.subcategories') as PluralForms,
-    rename: t('screens.taxonomy.rename'),
-    localeLabel: t('screens.taxonomy.localeLabel'),
-    translationLabel: t('screens.taxonomy.translationLabel'),
-    translate: t('screens.taxonomy.translate'),
+    subcategoriesHeading: t('screens.taxonomy.subcategoriesHeading'),
+    translationHint: t('screens.taxonomy.translationHint'),
+    save: t('screens.taxonomy.save'),
+    savedNotice: t('screens.taxonomy.savedNotice'),
     newSubcategoryLabel: t('screens.taxonomy.newSubcategoryLabel'),
     newSubcategoryHint: t('screens.taxonomy.newSubcategoryHint'),
     tagsHeading: t('screens.taxonomy.tagsHeading'),
     tagsIntro: t('screens.taxonomy.tagsIntro'),
+    tagsShown: String(t.raw('screens.taxonomy.tagsShown')),
     noTags: t('screens.taxonomy.noTags'),
   };
 }

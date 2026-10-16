@@ -212,6 +212,8 @@ function OpenCallRow({
   const published = isPublished(collection);
   const running = isWindowOpen(collection, now);
   const notYet = collection.opensAt != null && new Date(collection.opensAt) > now;
+  const changed = opens !== dayOf(collection.opensAt) || closes !== dayOf(collection.closesAt);
+  const backwards = opens !== '' && closes !== '' && closes <= opens;
 
   return (
     <li className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
@@ -240,23 +242,37 @@ function OpenCallRow({
       )}
 
       <form
-        className="mt-4 flex flex-wrap items-end gap-3"
+        className="mt-4"
         onSubmit={(event) => {
           event.preventDefault();
+          if (backwards) return;
           onSave(instantOf(opens), instantOf(closes));
         }}
       >
-        <Field label={copy.opensLabel} hint={copy.opensHint} className="min-w-[180px]">
-          <TextInput type="date" value={opens} onChange={(event) => setOpens(event.target.value)} />
-        </Field>
-        <Field label={copy.closesLabel} hint={copy.closesHint} className="min-w-[180px]">
-          <TextInput
-            type="date"
-            value={closes}
-            onChange={(event) => setCloses(event.target.value)}
-          />
-        </Field>
-        <Pill type="submit" variant="outline" size="sm" disabled={busy} className="mb-1">
+        <div className="grid items-start gap-3 sm:grid-cols-2">
+          <Field label={copy.opensLabel} hint={copy.opensHint}>
+            <TextInput type="date" value={opens} onChange={(event) => setOpens(event.target.value)} />
+          </Field>
+          <Field
+            label={copy.closesLabel}
+            hint={copy.closesHint}
+            error={backwards ? copy.closesBeforeOpens : undefined}
+          >
+            <TextInput
+              type="date"
+              value={closes}
+              min={opens === '' ? undefined : opens}
+              onChange={(event) => setCloses(event.target.value)}
+            />
+          </Field>
+        </div>
+        <Pill
+          type="submit"
+          variant="outline"
+          size="sm"
+          disabled={busy || !changed || backwards}
+          className="mt-4"
+        >
           {busy ? copy.curation.saving : copy.saveWindow}
         </Pill>
       </form>

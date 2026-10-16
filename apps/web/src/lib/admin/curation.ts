@@ -320,3 +320,69 @@ export function isWindowOpen(collection: AdminCollection, now: Date): boolean {
   if (collection.closesAt != null && new Date(collection.closesAt).getTime() <= at) return false;
   return true;
 }
+
+/** The static screens beside `/admin/curation/[slug]`; a collection with one of these handles could never be opened. */
+export const RESERVED_HANDLES: readonly string[] = Object.freeze(['badges', 'open-calls', 'placements']);
+
+export type HandleProblem = 'shape' | 'length' | 'reserved';
+
+/** What is wrong with a handle before the service is asked, mirroring V14's checks. */
+export function handleProblem(handle: string): HandleProblem | null {
+  if (handle.length < 2 || handle.length > 80) return 'length';
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(handle)) return 'shape';
+  if (RESERVED_HANDLES.includes(handle)) return 'reserved';
+  return null;
+}
+
+/** A placement after every existing one, so a new collection does not jump to the top. */
+export function nextSortOrder(collections: readonly AdminCollection[]): number {
+  return collections.reduce((highest, collection) => Math.max(highest, collection.sortOrder), 0) + 10;
+}
+
+export interface PlacementChange {
+  readonly collection: AdminCollection;
+  readonly sortOrder: number;
+}
+
+/**
+ * The writes that move one collection a step, given the list in its current order.
+ *
+ * <p>Swapping the two numbers is enough only when the whole list is strictly increasing. Two
+ * collections sharing a number — every collection created before placement was set — swap to
+ * the same order they started in, so then the list is renumbered in tens instead.
+ */
+export function placementChanges(
+  ordered: readonly AdminCollection[],
+  index: number,
+  direction: -1 | 1,
+): PlacementChange[] {
+  const first = ordered[index];
+  const second = ordered[index + direction];
+  if (first === undefined || second === undefined) return [];
+
+  const increasing = ordered.every(
+    (collection, i) => i === 0 || (ordered[i - 1]?.sortOrder ?? 0) < collection.sortOrder,
+  );
+  if (increasing) {
+    return [
+      { collection: first, sortOrder: second.sortOrder },
+      { collection: second, sortOrder: first.sortOrder },
+    ];
+  }
+
+  const moved = [...ordered];
+  moved[index] = second;
+  moved[index + direction] = first;
+  return moved
+    .map((collection, i) => ({ collection, sortOrder: (i + 1) * 10 }))
+    .filter((change) => change.collection.sortOrder !== change.sortOrder);
+}
+
+/** The collection's copy in one locale, or empty strings for a locale it has none in. */
+export function copyIn(
+  collection: AdminCollection,
+  locale: string,
+): { title: string; description: string } {
+  const copy = collection.copy[locale];
+  return { title: copy?.title ?? '', description: copy?.description ?? '' };
+}

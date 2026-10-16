@@ -87,10 +87,8 @@ export function BadgeManager({ copy, note }: BadgeManagerProps) {
        * and the placement.
        *
        * There is no note on this request — `PUT /v1/admin/collections/{slug}` does not take
-       * one, unlike publishing. The dialog still asks for a reason, because the decision is
-       * worth pausing over; what it cannot do is send it, and pretending otherwise would be
-       * a form that discards what somebody typed. So the note is the confirmation step and
-       * the screen says as much.
+       * one, unlike publishing — so the dialog confirms without asking for a reason it would
+       * only throw away.
        */
       const updated = await replaceCollection(pending.slug, {
         ...bodyOf(pending),
@@ -147,7 +145,24 @@ export function BadgeManager({ copy, note }: BadgeManagerProps) {
         </SkeletonGroup>
       )}
 
-      {status === 'ready' && granting.length === 0 && (
+      {status === 'ready' && collections.length === 0 && (
+        <EmptyState
+          className="mt-4"
+          variant="empty"
+          title={copy.noCollectionsTitle}
+          description={copy.noCollectionsBody}
+          action={
+            <Link
+              href="/admin/curation"
+              className="rounded-lg text-sm text-white/64 underline underline-offset-2 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            >
+              {copy.toCollections}
+            </Link>
+          }
+        />
+      )}
+
+      {status === 'ready' && collections.length > 0 && granting.length === 0 && (
         <EmptyState
           className="mt-4"
           variant="empty"
@@ -172,7 +187,7 @@ export function BadgeManager({ copy, note }: BadgeManagerProps) {
         </ul>
       )}
 
-      {status === 'ready' && (
+      {status === 'ready' && collections.length > 0 && (
         <>
           <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-white">
             {copy.restHeading}
@@ -218,6 +233,7 @@ export function BadgeManager({ copy, note }: BadgeManagerProps) {
           pending?.grantsBadge === true ? copy.stopDescription : copy.grantDescription
         }
         body={copy.dialogBody}
+        noteless
         confirmLabel={pending?.grantsBadge === true ? copy.stopConfirm : copy.grantConfirm}
         busyLabel={copy.curation.saving}
         destructive={pending?.grantsBadge === true}
@@ -265,7 +281,11 @@ function BadgeRow({
             turned the grant on and saw no badges would otherwise reasonably think it failed.
           */}
           <Tag variant={published ? 'success' : 'default'}>
-            {published ? copy.curation.published : copy.unpublishedBadgesNothing}
+            {published
+              ? copy.curation.published
+              : collection.grantsBadge
+                ? copy.unpublishedBadgesNothing
+                : copy.curation.unpublished}
           </Tag>
         </div>
       </div>
