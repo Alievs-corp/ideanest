@@ -2307,7 +2307,7 @@
       "refunds": {
         "subject": "geri qaytarma jurnalını",
         "issueHeading": "Pulu geri göndər",
-        "issueIntro": "Dəstəkdə qalan hər şeyi geri qaytarmaq üçün məbləği boş buraxın. Səbəb kodu geri qaytarmaların sayıldığı şeydir; qeyd isə növbəti adamın oxuduğudur.",
+        "issueIntro": "Dəstəkdə qalanın hamısını qaytarmaq üçün məbləği boş saxlayın. Səbəb hesabatlarda sayılır, qeydi isə bu qaytarmaya sonra baxan əməkdaş oxuyur.",
         "pledgeLabel": "Dəstək",
         "pledgeHint": "Tam identifikator.",
         "amountLabel": "Məbləğ",
