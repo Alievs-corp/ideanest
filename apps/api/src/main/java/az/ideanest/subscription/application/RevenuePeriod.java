@@ -88,7 +88,11 @@ public record RevenuePeriod(Instant from, Instant to) {
             return monthOf(clock.instant());
         }
         if (from == null) {
-            return new RevenuePeriod(startOfMonth(to), to);
+            // The month containing the window's last instant rather than `to` itself: `to`
+            // is exclusive, so "until 1 October" means September, and starting from the
+            // month `to` falls in would make both ends 1 October -- an empty window refused
+            // as backwards for what was a perfectly ordinary question.
+            return new RevenuePeriod(startOfMonth(to.minusNanos(1)), to);
         }
         if (to == null) {
             return new RevenuePeriod(from, startOfNextMonth(from));

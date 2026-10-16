@@ -15,8 +15,12 @@ import org.springframework.stereotype.Component;
  * <p>The owner's decision of 2026-10-13: when a campaign ends below 80%, is suspended or is cancelled,
  * the backer is refunded the charge less the payment provider's fee, because the provider keeps its
  * commission on a refunded charge (#387) and refunding it in full pays that commission out of the
- * platform's own account. The platform's own fee is never deducted. Staff refunds and disputes keep
- * their own amounts.
+ * platform's own account. The platform's own fee is never deducted.
+ *
+ * <p>The rule follows the reason, not who issues the refund: a member of staff refunding under
+ * {@code CAMPAIGN_FAILED} or {@code CAMPAIGN_HALTED} keeps the same fee back as the platform's own sweep
+ * ({@code RefundRecords#record}), so a backer's refund does not depend on who triggered it. Every other
+ * reason — a backer's request, a duplicate charge, a dispute upheld or conceded — returns the whole amount.
  *
  * <h2>The cut-over follows the words, not a date</h2>
  *

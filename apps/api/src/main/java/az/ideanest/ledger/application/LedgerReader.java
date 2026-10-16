@@ -53,15 +53,11 @@ public class LedgerReader {
     @Transactional(readOnly = true)
     public LedgerView page(LedgerScope scope, Long before, int limit) {
         List<PostingHead> heads = headsFor(scope, before, limit);
-        List<LedgerPosting> postings = heads.isEmpty() ? List.of() : postingsOf(heads, scope);
+        List<LedgerPosting> postings = heads.isEmpty() ? List.of() : postingsOf(heads);
 
-        /*
-         * The cursor comes from the heads and not from the postings, and the difference
-         * matters when the account filter is combined with a campaign filter: the
-         * narrowing below can drop a posting from the page, and a cursor taken from what
-         * survived would make the next page repeat the postings that did not. The heads
-         * are what the query walked, so they are what the cursor has to describe.
-         */
+        // The cursor comes from the heads, which are what the query walked. Every filter is
+        // applied in SQL, so each head is a posting on the page and a full page of heads is
+        // a full page of postings.
         Long nextCursor = heads.size() < limit ? null : heads.get(heads.size() - 1).lastEntryId();
         return new LedgerView(scope, postings, nextCursor, balancesFor(scope));
     }
@@ -101,6 +97,12 @@ public class LedgerReader {
 
     private List<PostingHead> headsFor(LedgerScope scope, Long before, int limit) {
         PageRequest page = PageRequest.ofSize(limit);
+        if (scope.account() != null && scope.projectId() != null) {
+            String account = scope.account().name();
+            return before == null
+                    ? entries.newestPostingsOfAccountOnProject(account, scope.projectId(), page)
+                    : entries.newestPostingsOfAccountOnProjectBefore(account, scope.projectId(), before, page);
+        }
         if (scope.account() != null) {
             String account = scope.account().name();
             return before == null
@@ -123,13 +125,8 @@ public class LedgerReader {
      * its position in that list. A {@link LinkedHashMap} keeps the order the heads
      * established, which is the order the screen renders in — a {@code HashMap} here would
      * shuffle the page on every request.
-     *
-     * @param scope applied a second time when it names both an account and a campaign:
-     *     {@link LedgerEntryRepository} pages by account only, so the campaign half of a
-     *     combined filter is narrowed here. See its note on why there is no fourth pair of
-     *     queries
      */
-    private List<LedgerPosting> postingsOf(List<PostingHead> heads, LedgerScope scope) {
+    private List<LedgerPosting> postingsOf(List<PostingHead> heads) {
         List<UUID> transactionIds = heads.stream().map(PostingHead::transactionId).toList();
 
         Map<UUID, List<LedgerEntry>> byTransaction = new LinkedHashMap<>();
@@ -140,10 +137,8 @@ public class LedgerReader {
             byTransaction.get(entry.getTransactionId()).add(entry);
         }
 
-        boolean narrowByProject = scope.account() != null && scope.projectId() != null;
         return byTransaction.values().stream()
                 .filter(lines -> !lines.isEmpty())
-                .filter(lines -> !narrowByProject || lines.getFirst().getProjectId().equals(scope.projectId()))
                 .map(LedgerReader::postingOf)
                 .toList();
     }

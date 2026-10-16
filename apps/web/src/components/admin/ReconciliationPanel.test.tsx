@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
+import { lookUpNames } from '../../lib/admin/directory';
 import { readReconciliation, runReconciliation } from '../../lib/admin/reconciliation';
 import type { ReconciliationReport } from '../../lib/admin/reconciliation';
 import { ReconciliationPanel } from './ReconciliationPanel';
@@ -44,6 +45,11 @@ vi.mock('../../lib/admin/reconciliation', async (importOriginal) => {
   return { ...actual, readReconciliation: vi.fn(), runReconciliation: vi.fn() };
 });
 
+vi.mock('../../lib/admin/directory', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/admin/directory')>();
+  return { ...actual, lookUpNames: vi.fn() };
+});
+
 const readMock = vi.mocked(readReconciliation);
 const runMock = vi.mocked(runReconciliation);
 
@@ -61,6 +67,7 @@ function report(overrides: Partial<ReconciliationReport> = {}): ReconciliationRe
 beforeEach(() => {
   readMock.mockReset();
   runMock.mockReset();
+  vi.mocked(lookUpNames).mockReset().mockResolvedValue({ accounts: [], projects: [] });
 });
 
 describe('the reconciliation panel', () => {
@@ -223,6 +230,47 @@ describe('the reconciliation panel', () => {
     // Still there. Blanking a discrepancy because a retry failed would hide the one thing
     // the reader came for.
     expect(screen.getByText(/does not sum to zero in AZN: net 0\.01 AZN/)).toBeInTheDocument();
+  });
+
+  it('names the creator a finding is about, the way the ledger does', async () => {
+    const creator = '0199a777-8888-7999-8aaa-bbbbccccdddd';
+    vi.mocked(lookUpNames).mockResolvedValue({
+      accounts: [{ id: creator, name: 'Tural Hüseynov', slug: 'tural-huseynov' }],
+      projects: [],
+    });
+    readMock.mockResolvedValue(
+      report({
+        balanced: false,
+        findings: [
+          {
+            kind: 'IMPOSSIBLE_SIGN',
+            code: 'CREATOR_OVERPAID',
+            account: 'creator:' + creator,
+            currency: 'AZN',
+            amount: '150.00',
+            detail: 'creator:' + creator + ' is positive at 150.00',
+          },
+        ],
+      }),
+    );
+
+    render(<ReconciliationPanel copy={COPY} />);
+
+    // Not "Creator 0199a777": the directory knows who this is.
+    expect(await screen.findByText(/Tural Hüseynov/)).toBeInTheDocument();
+    expect(screen.queryByText(/0199a777/)).not.toBeInTheDocument();
+  });
+
+  it('says an expired session is an expired session, not lost permission', async () => {
+    readMock.mockResolvedValue(report());
+    runMock.mockRejectedValue(new ApiError(401, null));
+
+    render(<ReconciliationPanel copy={COPY} />);
+    await screen.findByText(/The books balance/i);
+    await userEvent.click(screen.getByRole('button', { name: COPY.checkAgain }));
+
+    expect(await screen.findByText(COPY.runSignedOut)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.runForbidden)).not.toBeInTheDocument();
   });
 
   it('refuses honestly when the account may not read finance', async () => {

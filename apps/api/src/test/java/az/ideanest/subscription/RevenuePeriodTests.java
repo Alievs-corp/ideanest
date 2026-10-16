@@ -56,6 +56,22 @@ class RevenuePeriodTests {
     }
 
     @Test
+    @DisplayName("only an end at a month boundary means the month before it, not an empty window")
+    void anEndOnAMonthBoundaryIsTheMonthItCloses() {
+        Clock clock = Clock.fixed(Instant.parse("2026-12-15T12:00:00Z"), ZoneOffset.UTC);
+
+        // Midnight on 1 October in Baku. `to` is exclusive, so this is "until the end of
+        // September" -- and taking the month `to` itself falls in made both ends equal and
+        // answered a 400.
+        Instant firstOfOctober = Instant.parse("2026-09-30T20:00:00Z");
+        RevenuePeriod period = RevenuePeriod.of(null, firstOfOctober, clock);
+
+        assertThat(period.from()).isEqualTo(Instant.parse("2026-08-31T20:00:00Z"));
+        assertThat(period.to()).isEqualTo(firstOfOctober);
+        assertThat(period.label()).isEqualTo("2026-09-01_2026-09-30");
+    }
+
+    @Test
     @DisplayName("an explicit pair is taken as given, and not moved into Baku's calendar")
     void explicitBoundsAreNotReinterpreted() {
         Instant from = Instant.parse("2026-05-02T03:04:05Z");

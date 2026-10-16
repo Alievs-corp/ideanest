@@ -276,6 +276,21 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("the administrators' queue says what upholding would refund, and whose pledge it is")
+    void theQueueCarriesTheRefundableAmountAndTheBacker() {
+        Campaign campaign = aWithdrawnCampaign("dispute-queue-amount");
+        Object disputeId = dispute(campaign.first()).getBody().get("id");
+
+        Map<String, Object> queued = get("/v1/admin/backer-disputes", admin().accessToken()).stream()
+                .filter(row -> disputeId.equals(row.get("id")))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(queued.get("refundable")).isEqualTo(Map.of("amount", "25.00", "currency", "AZN"));
+        assertThat(queued.get("backerId")).isEqualTo(campaign.first().account().id().toString());
+    }
+
+    @Test
     @DisplayName("rejected: nothing moves, and a decided dispute cannot be decided again")
     void aRejectedDisputeMovesNothing() {
         Campaign campaign = aWithdrawnCampaign("dispute-rejected");

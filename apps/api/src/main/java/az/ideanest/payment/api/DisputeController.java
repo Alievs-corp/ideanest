@@ -1,12 +1,14 @@
 package az.ideanest.payment.api;
 
 import az.ideanest.payment.application.DisputeService;
+import az.ideanest.payment.application.PledgeBackers;
 import az.ideanest.payment.domain.DisputeState;
 import az.ideanest.payment.domain.EvidenceKind;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -45,9 +47,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class DisputeController {
 
     private final DisputeService disputes;
+    private final PledgeBackers backers;
 
-    public DisputeController(DisputeService disputes) {
+    public DisputeController(DisputeService disputes, PledgeBackers backers) {
         this.disputes = disputes;
+        this.backers = backers;
     }
 
     /**
@@ -64,8 +68,7 @@ public class DisputeController {
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(PaymentAdminResponses.DisputePage.of(
-                        disputes.queue(callerOf(accessToken), page), page, 50));
+                .body(pageOf(disputes.queue(callerOf(accessToken), page), page));
     }
 
     /** Everything, newest first, optionally narrowed to one state. */
@@ -77,8 +80,7 @@ public class DisputeController {
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(PaymentAdminResponses.DisputePage.of(
-                        disputes.list(callerOf(accessToken), state, page), page, 50));
+                .body(pageOf(disputes.list(callerOf(accessToken), state, page), page));
     }
 
     /** One case with its evidence, oldest piece first. */
@@ -90,7 +92,16 @@ public class DisputeController {
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(PaymentAdminResponses.Dispute.of(found.dispute(), found.evidence()));
+                .body(PaymentAdminResponses.Dispute.of(
+                        found.dispute(),
+                        found.evidence(),
+                        backers.of(List.of(found.dispute().pledgeId())).get(found.dispute().pledgeId())));
+    }
+
+    /** A page, each case naming its backer so the console can say whose money it is. */
+    private PaymentAdminResponses.DisputePage pageOf(List<az.ideanest.payment.domain.Dispute> listed, int page) {
+        return PaymentAdminResponses.DisputePage.of(
+                listed, backers.of(listed.stream().map(az.ideanest.payment.domain.Dispute::pledgeId).toList()), page, 50);
     }
 
     /** Adds a piece to the argument. Assembled, not sent — {@link #submit} sends. */

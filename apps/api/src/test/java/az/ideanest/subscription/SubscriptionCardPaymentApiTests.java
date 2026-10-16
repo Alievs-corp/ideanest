@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.payment.application.HostedChargeSweepJob;
+import az.ideanest.payment.application.ProviderCircuitBreaker;
 import az.ideanest.payment.domain.HostedPaymentRequest;
 import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.shared.EmailAddress;
@@ -68,6 +69,9 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private HostedChargeSweepJob sweep;
+
+    @Autowired
+    private ProviderCircuitBreaker breaker;
 
     @AfterEach
     void clear() {
@@ -404,6 +408,10 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
         assertThat(refused.getBody().get("code")).isEqualTo("PLAN_REFUND_PROVIDER_REFUSED");
         assertThat(jdbc().queryForObject("SELECT status FROM subscription_charges WHERE id = ?", String.class, charge))
                 .isEqualTo("UNAPPLIED");
+        assertThat(jdbc().queryForObject(
+                        "SELECT card_refund_started_at FROM subscription_charges WHERE id = ?", Object.class, charge))
+                .as("a definite refusal clears the claim, so the bank transfer is open again")
+                .isNull();
 
         // A paid page is not unapplied money, and is not returned from here.
         Account paid = active();
@@ -412,6 +420,89 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
                         .getBody()
                         .get("code"))
                 .isEqualTo("PLAN_REFUND_NOT_UNAPPLIED");
+    }
+
+    @Test
+    @DisplayName("a card refund whose answer was lost is confirmed from the provider on retry, never sent twice")
+    void anUnansweredRefundIsSettledFromTheProvider() {
+        breaker.reset();
+        Account creator = subscribed();
+        unappliedPayment(creator);
+        UUID charge = chargeId(creator);
+        int before = provider.refunds().size();
+        provider.nextRefundAppliedButUnreachable();
+
+        ResponseEntity<Map<String, Object>> lost =
+                post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of());
+        assertThat(lost.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(lost.getBody().get("code")).isEqualTo("PLAN_REFUND_UNCONFIRMED");
+        assertThat(jdbc().queryForObject("SELECT status FROM subscription_charges WHERE id = ?", String.class, charge))
+                .isEqualTo("UNAPPLIED");
+
+        // The list says a refund may be on its way, and the bank transfer -- the second payment -- is refused.
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> listed = (List<Map<String, Object>>)
+                get("/v1/admin/plan-payments/unapplied", admin().accessToken()).getBody().get("payments");
+        assertThat(listed).anySatisfy(row -> {
+            assertThat(row.get("id")).isEqualTo(charge.toString());
+            assertThat(row.get("cardRefundStartedAt")).isInstanceOf(String.class);
+        });
+        ResponseEntity<Map<String, Object>> byBank = post(
+                "/v1/admin/plan-payments/" + charge + "/bank-transfer",
+                admin().accessToken(),
+                Map.of("bankReference", "KAP-2026-119"));
+        assertThat(byBank.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(byBank.getBody().get("code")).isEqualTo("PLAN_REFUND_CARD_REFUND_UNSETTLED");
+
+        // A press while the attempt may still be running is turned away rather than sent alongside it.
+        assertThat(post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of())
+                        .getBody()
+                        .get("code"))
+                .isEqualTo("PLAN_REFUND_IN_PROGRESS");
+
+        jdbc().update(
+                "UPDATE subscription_charges SET card_refund_started_at = card_refund_started_at - interval '5 minutes'"
+                        + " WHERE id = ?",
+                charge);
+        ResponseEntity<Map<String, Object>> settled =
+                post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of());
+
+        assertThat(settled.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(provider.refunds()).as("the provider already returned it; nothing is sent again").hasSize(before + 1);
+        Map<String, Object> row = jdbc().queryForMap(
+                "SELECT status, refund_method FROM subscription_charges WHERE id = ?", charge);
+        assertThat(row.get("status")).isEqualTo("REFUNDED");
+        assertThat(row.get("refund_method")).isEqualTo("CARD");
+    }
+
+    @Test
+    @DisplayName("a card refund that never reached the provider is sent again under the same key")
+    void anUnansweredRefundThatDidNotHappenIsSentAgain() {
+        breaker.reset();
+        Account creator = subscribed();
+        unappliedPayment(creator);
+        UUID charge = chargeId(creator);
+        int before = provider.refunds().size();
+        provider.nextRefundUnreachableAndNotApplied();
+
+        assertThat(post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of())
+                        .getBody()
+                        .get("code"))
+                .isEqualTo("PLAN_REFUND_UNCONFIRMED");
+        jdbc().update(
+                "UPDATE subscription_charges SET card_refund_started_at = card_refund_started_at - interval '5 minutes'"
+                        + " WHERE id = ?",
+                charge);
+
+        ResponseEntity<Map<String, Object>> sent =
+                post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of());
+
+        assertThat(sent.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(provider.refunds()).hasSize(before + 2);
+        assertThat(provider.refunds().get(before).idempotencyKey())
+                .isEqualTo(provider.refunds().get(before + 1).idempotencyKey());
+        assertThat(jdbc().queryForObject("SELECT status FROM subscription_charges WHERE id = ?", String.class, charge))
+                .isEqualTo("REFUNDED");
     }
 
     private String unappliedPayment(Account creator) {

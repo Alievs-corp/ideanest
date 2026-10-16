@@ -225,10 +225,14 @@ function DestinationDecision({
   const [error, setError] = useState<string | null>(null);
 
   const words = copy.decision;
-  const nameMismatch = destination.standing === 'NAME_MISMATCH';
+  // The row's own state where the service sends it: a waived row reports WAIVED as its standing
+  // whatever it is, and a waived row whose holder's name does not match is still refused a verify.
+  const state = destination.reviewState ?? destination.standing;
+  const nameMismatch = state === 'NAME_MISMATCH';
+  const rejected = state === 'REJECTED';
   // A waiver is not a verification, so verifying under one is still offered.
-  const mayVerify = destination.standing !== 'VERIFIED' && !nameMismatch;
-  const mayReject = destination.standing !== 'REJECTED';
+  const mayVerify = state !== 'VERIFIED' && !nameMismatch;
+  const mayReject = state !== 'REJECTED';
 
   function refusalOf(cause: unknown): string {
     const code = cause instanceof ApiError ? cause.problem?.code : undefined;
@@ -259,6 +263,8 @@ function DestinationDecision({
   return (
     <div className="flex flex-col gap-3">
       {nameMismatch && <p className="max-w-[62ch] text-sm text-white/64">{words.nameMismatch}</p>}
+      {/* The service verifies a rejected account, which reverses the rejection; said before anybody presses it. */}
+      {rejected && mayVerify && <p className="max-w-[62ch] text-sm text-white/64">{words.verifyRejected}</p>}
 
       {error !== null && (
         <InlineAlert variant="danger" title={words.failedTitle}>
@@ -283,7 +289,9 @@ function DestinationDecision({
 
       {mode === 'confirm-verify' && (
         <div role="group" aria-label={words.verify} className="flex flex-col gap-2">
-          <p className="max-w-[62ch] text-sm text-white">{words.confirmVerify}</p>
+          <p className="max-w-[62ch] text-sm text-white">
+            {rejected ? words.confirmVerifyRejected : words.confirmVerify}
+          </p>
           <div className="flex flex-wrap gap-2">
             <Pill
               size="sm"

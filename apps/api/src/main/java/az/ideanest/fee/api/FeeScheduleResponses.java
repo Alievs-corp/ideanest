@@ -1,5 +1,6 @@
 package az.ideanest.fee.api;
 
+import az.ideanest.fee.application.DefaultFeeTerms;
 import az.ideanest.fee.domain.FeeSchedule;
 import az.ideanest.fee.domain.FeeScope;
 import java.math.BigDecimal;
@@ -71,11 +72,24 @@ public final class FeeScheduleResponses {
         }
     }
 
-    /** Every window ever written. Unpaged — see {@code FeeScheduleRepository.history}. */
-    public record History(List<Schedule> schedules) {
+    /**
+     * The terms a payout is priced at when no platform schedule is open — §5.2's default, from
+     * {@code ideanest.fee}. Sent beside the history so the console starts a new platform schedule from
+     * what is actually charged today, and so its empty state can say what that is rather than "nothing".
+     */
+    public record Defaults(String platformRate, String processingRate, String currency) {
 
-        public static History of(List<FeeSchedule> schedules) {
-            return new History(schedules.stream().map(Schedule::of).toList());
+        public static Defaults of(DefaultFeeTerms terms) {
+            return new Defaults(
+                    terms.platformRate().toPlainString(), terms.processingRate().toPlainString(), terms.currency());
+        }
+    }
+
+    /** Every window ever written. Unpaged — see {@code FeeScheduleRepository.history}. */
+    public record History(List<Schedule> schedules, Defaults defaults) {
+
+        public static History of(List<FeeSchedule> schedules, DefaultFeeTerms defaults) {
+            return new History(schedules.stream().map(Schedule::of).toList(), Defaults.of(defaults));
         }
     }
 }

@@ -9,7 +9,8 @@ import {
   type ReconciliationFinding,
   type ReconciliationReport,
 } from '../../lib/admin/reconciliation';
-import { accountLabel } from '../../lib/admin/ledger';
+import { accountLabel, creatorIdsIn } from '../../lib/admin/ledger';
+import type { DirectoryNames } from '../../lib/admin/directory';
 import { formatMoney } from '../../lib/money';
 import { consoleMessageFor, statusFor } from '../../lib/admin/refusals';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -20,6 +21,7 @@ import type { Locale } from '../../lib/i18n/locale';
 import type { ReconciliationCopy } from '../../lib/i18n/admin/money-copy';
 import { ConsoleRefusal } from './ConsoleRefusal';
 import { useConsoleResource } from './useConsoleResource';
+import { useDirectoryNames } from './useDirectoryNames';
 
 /**
  * §4.11's AD-05: do the platform's books add up? — issue #106.
@@ -75,6 +77,17 @@ export function ReconciliationPanel({ copy }: ReconciliationPanelProps) {
   const [running, setRunning] = useState(false);
   const [runFailure, setRunFailure] = useState<string | null>(null);
 
+  /*
+   * The creators a finding names, so a creator's account reads as the person, the way the
+   * ledger names it, rather than as "Creator 0199a777".
+   */
+  const names = useDirectoryNames(
+    creatorIdsIn(
+      (report.data?.findings ?? []).flatMap((finding) => (finding.account == null ? [] : [finding.account])),
+    ),
+    [],
+  );
+
   async function check(): Promise<void> {
     if (running) return;
     setRunning(true);
@@ -82,11 +95,15 @@ export function ReconciliationPanel({ copy }: ReconciliationPanelProps) {
     try {
       report.set(await runReconciliation());
     } catch (cause) {
+      // Three different answers. A 401 is a session that expired, fixed by signing in; telling
+      // that reader their permission was taken away sends them to an administrator for nothing.
       const status = statusFor(cause);
       setRunFailure(
         status === 'failed'
           ? consoleMessageFor(cause, copy.subject, copy.refusals)
-          : copy.runForbidden,
+          : status === 'signed-out'
+            ? copy.runSignedOut
+            : copy.runForbidden,
       );
     } finally {
       setRunning(false);
@@ -152,6 +169,7 @@ export function ReconciliationPanel({ copy }: ReconciliationPanelProps) {
                   <FindingCard
                     key={`${finding.code}:${finding.currency}:${index}`}
                     finding={finding}
+                    names={names}
                     copy={copy}
                   />
                 ))}
@@ -259,12 +277,16 @@ function groupByKind(
  * <p>A code this catalogue has no sentence for falls back to the service's, which is worse to
  * read and better than blank.
  */
-function describe(finding: ReconciliationFinding, copy: ReconciliationCopy): string {
+function describe(
+  finding: ReconciliationFinding,
+  names: DirectoryNames,
+  copy: ReconciliationCopy,
+): string {
   const sentence = copy.finding[finding.code];
   if (sentence === undefined) return finding.detail;
 
   return fillPlaceholders(sentence, {
-    account: finding.account == null ? '' : accountLabel(finding.account, copy.money),
+    account: finding.account == null ? '' : accountLabel(finding.account, copy.money, names),
     amount: formatMoney({ amount: finding.amount, currency: finding.currency }),
     other:
       finding.otherAmount == null
@@ -276,9 +298,11 @@ function describe(finding: ReconciliationFinding, copy: ReconciliationCopy): str
 
 function FindingCard({
   finding,
+  names,
   copy,
 }: {
   readonly finding: ReconciliationFinding;
+  readonly names: DirectoryNames;
   readonly copy: ReconciliationCopy;
 }) {
   return (
@@ -289,7 +313,7 @@ function FindingCard({
             one, and it is what somebody scans the list by. */}
         <Tag>{finding.currency}</Tag>
       </div>
-      <p className="mt-2 break-words text-sm text-white/64">{describe(finding, copy)}</p>
+      <p className="mt-2 break-words text-sm text-white/64">{describe(finding, names, copy)}</p>
     </li>
   );
 }

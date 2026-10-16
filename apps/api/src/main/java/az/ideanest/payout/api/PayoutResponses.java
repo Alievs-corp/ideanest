@@ -45,6 +45,10 @@ public final class PayoutResponses {
      *     {@code bankTransferStartedBy} who. Set on an {@code APPROVED} payout while the transfer is
      *     in progress, and kept once it is recorded
      * @param bankTransferredOn the value date of the transfer that paid it, from the statement
+     * @param debtWithheld what was kept back towards the creator's debts (IDN-EXT-01, #43). Sent so the
+     *     breakdown adds up on the screen: gross less fees, refunds, tax and this is the net
+     * @param sendUnconfirmedAt when a send through the provider went unanswered, so the money may have
+     *     moved. Null otherwise. The console offers the two resolutions from the provider's statement
      */
     public record PayoutSummary(
             UUID id,
@@ -54,6 +58,7 @@ public final class PayoutResponses {
             Money platformFee,
             Money processingFee,
             Money taxWithheld,
+            Money debtWithheld,
             Money refunded,
             Money net,
             UUID feeScheduleId,
@@ -66,6 +71,7 @@ public final class PayoutResponses {
             String failureMessage,
             Instant calculatedAt,
             Instant sentAt,
+            Instant sendUnconfirmedAt,
             VerificationStanding creatorStanding,
             boolean heldForVerification,
             DestinationStanding destinationStanding,
@@ -100,6 +106,7 @@ public final class PayoutResponses {
                     payout.platformFee(),
                     payout.processingFee(),
                     payout.taxWithheld(),
+                    payout.debtWithheld(),
                     payout.refunded(),
                     payout.net(),
                     payout.feeScheduleId(),
@@ -112,6 +119,7 @@ public final class PayoutResponses {
                     payout.failureMessage(),
                     payout.calculatedAt(),
                     payout.sentAt(),
+                    payout.sendUnconfirmedSince(),
                     standing,
                     !standing.releasesPayout() && payout.state().isInFlight(),
                     destination,

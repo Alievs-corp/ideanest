@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import type { RevenueReport, SubscriptionPayment, SubscriptionPaymentList } from '../../lib/admin/revenue';
 import { exportSubscriptionPayments, readRevenue, readSubscriptionPayments } from '../../lib/admin/revenue';
 import { RevenueReportView } from './RevenueReportView';
+import { ApiError } from '../../lib/api/problem';
 import { translatorFor } from '../../test-copy';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
 import { revenueReportCopyFrom } from '../../lib/i18n/admin/money-copy';
@@ -122,6 +123,111 @@ describe('the totals', () => {
     render(<RevenueReportView copy={COPY} />);
 
     expect(await screen.findByText(COPY.emptyTitle)).toBeInTheDocument();
+    // The list says it is empty rather than leaving its section blank.
+    expect(await screen.findByText(COPY.listEmpty)).toBeInTheDocument();
+  });
+
+  it('blames the filter, not the period, when a plan code or a method finds nothing', async () => {
+    render(<RevenueReportView copy={COPY} />);
+    await screen.findByText('98.00 AZN');
+
+    revenueMock.mockResolvedValue({ ...SEPTEMBER, filter: { planCode: 'NOPE' }, currencies: [], plans: [], methods: [] });
+    paymentsMock.mockResolvedValue({ payments: [], nextCursor: null });
+    fireEvent.change(screen.getByLabelText(COPY.planLabel), { target: { value: 'NOPE' } });
+    await userEvent.click(screen.getByRole('button', { name: COPY.show }));
+
+    expect(await screen.findByText(COPY.filteredTitle)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.emptyTitle)).not.toBeInTheDocument();
+  });
+});
+
+describe('a new question', () => {
+  it('says it is working, and does not leave the previous answer on screen while it does', async () => {
+    render(<RevenueReportView copy={COPY} />);
+    await screen.findByText('98.00 AZN');
+
+    revenueMock.mockReturnValue(new Promise<RevenueReport>(() => undefined));
+    paymentsMock.mockReturnValue(new Promise<SubscriptionPaymentList>(() => undefined));
+    fireEvent.change(screen.getByLabelText(COPY.fromLabel), { target: { value: '2026-08-10' } });
+    await userEvent.click(screen.getByRole('button', { name: COPY.show }));
+
+    const button = await screen.findByRole('button', { name: COPY.loading });
+    expect(button).toBeDisabled();
+    // September's figures are not the answer to the question now on screen.
+    expect(screen.queryByText('98.00 AZN')).not.toBeInTheDocument();
+    expect(screen.queryByText('gunel@ideanest.az')).not.toBeInTheDocument();
+  });
+
+  it('says a refusal once, in the reader’s words, when both reads refuse the period', async () => {
+    render(<RevenueReportView copy={COPY} />);
+    await screen.findByText('98.00 AZN');
+
+    const refusal = new ApiError(400, {
+      code: 'INVALID_REVENUE_PERIOD',
+      detail: 'A period covers at most 400 days; ask for a year at a time',
+    });
+    revenueMock.mockRejectedValue(refusal);
+    paymentsMock.mockRejectedValue(refusal);
+    // Only an end at a month boundary: nothing for the screen to refuse before sending.
+    fireEvent.change(screen.getByLabelText(COPY.fromLabel), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(COPY.toLabel), { target: { value: '2026-09-30' } });
+    await userEvent.click(screen.getByRole('button', { name: COPY.show }));
+
+    expect(await screen.findByText(COPY.periodBackwards)).toBeInTheDocument();
+    expect(screen.getAllByText(COPY.periodBackwards)).toHaveLength(1);
+    expect(screen.queryByText(/400 days; ask/)).not.toBeInTheDocument();
+  });
+
+  it('refuses a period that ends before it begins without asking the service', async () => {
+    render(<RevenueReportView copy={COPY} />);
+    await screen.findByText('98.00 AZN');
+    const asked = revenueMock.mock.calls.length;
+
+    fireEvent.change(screen.getByLabelText(COPY.fromLabel), { target: { value: '2026-08-20' } });
+    fireEvent.change(screen.getByLabelText(COPY.toLabel), { target: { value: '2026-08-10' } });
+    await userEvent.click(screen.getByRole('button', { name: COPY.show }));
+
+    expect(await screen.findByText(COPY.periodBackwards)).toBeInTheDocument();
+    expect(revenueMock.mock.calls.length).toBe(asked);
+  });
+
+  it('drops a later page that belonged to the previous question', async () => {
+    render(<RevenueReportView copy={COPY} />);
+    await screen.findByText('gunel@ideanest.az');
+
+    // The next page of September is slow to arrive...
+    let late: (page: SubscriptionPaymentList) => void = () => undefined;
+    paymentsMock.mockReturnValueOnce(new Promise<SubscriptionPaymentList>((resolve) => (late = resolve)));
+    await userEvent.click(screen.getByRole('button', { name: COPY.loadMore }));
+
+    // ...and the reader asks about August before it does.
+    paymentsMock.mockResolvedValue({ payments: [payment({ id: '00000000-0000-4000-8000-0000000000aa', accountEmail: 'august@ideanest.az' })], nextCursor: null });
+    fireEvent.change(screen.getByLabelText(COPY.fromLabel), { target: { value: '2026-08-01' } });
+    fireEvent.change(screen.getByLabelText(COPY.toLabel), { target: { value: '2026-08-31' } });
+    await userEvent.click(screen.getByRole('button', { name: COPY.show }));
+    await screen.findByText('august@ideanest.az');
+
+    await act(async () =>
+      late({ payments: [payment({ id: '00000000-0000-4000-8000-0000000000bb', accountEmail: 'stale@ideanest.az' })], nextCursor: 'september-3' }),
+    );
+
+    expect(screen.queryByText('stale@ideanest.az')).not.toBeInTheDocument();
+    // And no cursor from September survives to be sent with August.
+    expect(screen.queryByRole('button', { name: COPY.loadMore })).not.toBeInTheDocument();
+  });
+
+  it('does not keep the previous question’s cursor when the new one fails', async () => {
+    render(<RevenueReportView copy={COPY} />);
+    await screen.findByRole('button', { name: COPY.loadMore });
+
+    revenueMock.mockRejectedValue(new Error('offline'));
+    paymentsMock.mockRejectedValue(new Error('offline'));
+    fireEvent.change(screen.getByLabelText(COPY.fromLabel), { target: { value: '2026-08-01' } });
+    await userEvent.click(screen.getByRole('button', { name: COPY.show }));
+
+    expect(await screen.findByText(COPY.refusals.unreachable)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.loadMore })).not.toBeInTheDocument();
+    expect(screen.queryByText('gunel@ideanest.az')).not.toBeInTheDocument();
   });
 });
 
@@ -135,6 +241,8 @@ describe('the payment list', () => {
     expect(within(list).getByText(COPY.reversal)).toBeInTheDocument();
     expect(within(list).getByText(COPY.closedAccount)).toBeInTheDocument();
     expect(within(list).getByText('gunel@ideanest.az')).toBeInTheDocument();
+    // The person, by name, beside the address.
+    expect(within(list).getAllByText('Günəl').length).toBeGreaterThan(0);
   });
 
   it('hands the cursor back verbatim for the next page', async () => {

@@ -721,7 +721,7 @@
       "/admin/payments": "Ödeme günlüğü",
       "/admin/ledger": "Defter",
       "/admin/reconciliation": "Mutabakat",
-      "/admin/payouts": "Ödemeler",
+      "/admin/payouts": "Yaratıcı ödemeleri",
       "/admin/payout-destinations": "Ödeme hesapları",
       "/admin/refunds": "İadeler",
       "/admin/disputes": "Ters ibrazlar",
@@ -844,7 +844,10 @@
       "collectionSlugTaken": "Bu kısa adı zaten bir koleksiyon kullanıyor. Kısa adlar kalıcıdır, bu yüzden başka birini seçin.",
       "curationRejected": "Servis koleksiyondaki bu değişikliği reddetti.",
       "refused": "Servis isteği reddetti. Yeniden deneyin.",
-      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+      "needsCapabilityToAct": "Bu işlem için {capability} yetkisi gerekir, rolleriniz ise bunu içermiyor. Bunu bir yönetici verebilir.",
+      "capabilityNamed": "«{name}» ({capability})",
+      "invalidRequest": "Hizmet isteği okuyamadı. Alanları kontrol edip yeniden deneyin."
     },
     "note": {
       "why": "Gerekçe",
@@ -929,7 +932,7 @@
         "metaTitle": "Ters ibrazlar",
         "metaDescription": "Bir kart ağının açtığı vakalar, onlara karşı deliller ve her birinin nasıl bittiği.",
         "title": "Ters ibrazlar",
-        "intro": "Son tarihe göre sıralı, en yakın önce. Bir anlaşmazlıkla ilgili diğer her şey sonradan sağlayıcıdan yeniden kurulabilir; geçmiş bir son tarih kurulamaz ve sessizce kaybetmek, kaybetmenin pahalı yoludur."
+        "intro": "Kart ağlarının açtığı ters ibrazlar, son tarihi en yakın olan önce. Son tarih geçince vakaya yanıt verilemez ve vaka otomatik olarak kaybedilir; bu yüzden en acil olanlardan başlayın."
       },
       "emailTemplates": {
         "metaTitle": "E-posta şablonları",
@@ -946,7 +949,7 @@
         "metaTitle": "Ücretler",
         "metaDescription": "Platform ve işlem oranları, istisnaları ve platformun uyguladığı her koşul kümesi.",
         "title": "Ücretler",
-        "intro": "Bir ücreti değiştirmek, şimdiden başlayan yeni koşullar açar. Kapananlar ekranda kalır, çünkü «martta ne aldık» sorusuna §22.1 bir saklama kuralı bağlar."
+        "intro": "Bir ücreti değiştirmek, şimdiden başlayan yeni koşullar açar. Kapanan koşullar ekranda kalır, çünkü geçmiş bir ödemeden ne kesildiği sorusu her zaman yanıtlanabilmelidir."
       },
       "plans": {
         "metaTitle": "Planlar",
@@ -991,16 +994,16 @@
         "intro": "Platformun bir ödeme sağlayıcısına yaptığı her çağrı, en yenisi başta, reddedilenler dahil. Bir durum asla yerinden oynamaz: sonradan tamamlanan bekleyen bir çağrı ikinci bir satırdır, bu yüzden tek bir destek için dört satır, dört ödeme değil bir deneme geçmişidir."
       },
       "payouts": {
-        "metaTitle": "Ödemeler",
+        "metaTitle": "Yaratıcı ödemeleri",
         "metaDescription": "Her yaratıcıya ne borçlu olunduğu, hangi bekletme altında olduğu ve gitmeden önceki imzalar.",
-        "title": "Ödemeler",
-        "intro": "Rakamlar bir ödeme hesaplandığında dondurulur ve asla yeniden hesaplanmaz — iki kişinin onayladığı ödeme, gönderilen ödeme olmalıdır. Onaylamak APPROVE_PAYOUT gerektirir ve finans rolü bunu bilerek vermez."
+        "title": "Yaratıcı ödemeleri",
+        "intro": "Kampanya parasının yaratıcılara aktarımı: hesaplanır, iki kişi imzalar, sonra gönderilir. İmzalamak, göndermek ve iptal etmek ödeme onaylama yetkisi gerektirir; finans rolü bunu bilerek içermez."
       },
       "payoutDestinations": {
         "metaTitle": "Ödeme hesapları",
         "metaDescription": "Yaratıcıların ödeme almak istediği ve henüz kimsenin doğrulamadığı banka hesapları ve kartlar.",
         "title": "Ödeme hesapları",
-        "intro": "Yaratıcıların ödeme almak istediği ve hesabın onlara ait olduğunu henüz kimsenin onaylamadığı hesaplar, en eskisi önce. Her birini burada doğrulayın veya reddedin; ikisi de VERIFY_PAYOUT_DESTINATION gerektirir ve finans rolü bunu bilerek vermez. Tam IBAN'ı göstermek READ_BANK_DETAILS gerektirir ve her gösterim denetim kaydına yazılır."
+        "intro": "Yaratıcıların ödeme almak istediği ve hesabın onlara ait olduğunu henüz kimsenin onaylamadığı hesaplar, en eskisi önce. Her birini burada doğrulayın veya reddedin; ikisi de ödeme hesaplarını inceleme yetkisi gerektirir ve finans rolü bunu bilerek içermez. Tam IBAN'ı göstermek banka bilgilerini görme yetkisi gerektirir ve her gösterim denetim kaydına yazılır."
       },
       "reconciliation": {
         "metaTitle": "Mutabakat",
@@ -1012,7 +1015,7 @@
         "metaTitle": "İadeler",
         "metaDescription": "Sebep kodlarıyla tam ve kısmi iadeler ve platformun yaptığı her biri.",
         "title": "İadeler",
-        "intro": "Bu listeyi okumak VIEW_FINANCE gerektirir; bir iade yapmak ISSUE_REFUND. Hatalar kıyaslanabilir değil, bu yüzden bunlar iki ayrı yetkidir."
+        "intro": "Platformun destekçilere geri gönderdiği her iade burada kayıtlıdır — çalışanların yaptıkları da, bir kampanya başarısız olduğunda platformun kendisinin yaptıkları da. Para buradan karta ya da banka havalesiyle iade edilir."
       },
       "staff": {
         "metaTitle": "Ekip ve roller",
@@ -2015,13 +2018,31 @@
           "REFUND": "İade",
           "CHARGEBACK": "Ters ibraz",
           "CHARGEBACK_REVERSAL": "Ters ibraz iptali",
-          "PAYOUT": "Ödeme"
+          "PAYOUT": "Yaratıcıya ödeme"
         },
         "status": {
           "PENDING": "Beklemede",
           "SUCCEEDED": "Başarılı",
           "FAILED": "Başarısız"
-        }
+        },
+        "provider": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Test ortamı",
+          "BANK_TRANSFER": "Banka havalesi"
+        },
+        "noReferenceSettled": "Sağlayıcı bir referans döndürmedi.",
+        "failure": {
+          "payment_failed": "Sağlayıcı ödemenin başarısız olduğunu bildirdi.",
+          "provider_unreachable": "Sağlayıcıya ulaşılamadı, yanıt gelmedi. Para yine de hareket etmiş olabilir; sağlayıcının panelini kontrol edin.",
+          "refund_refused": "Sağlayıcı iadeyi reddetti.",
+          "reverse_refused": "Sağlayıcı ödemeyi geri almayı reddetti.",
+          "payout_refused": "Sağlayıcı yaratıcıya ödemeyi reddetti.",
+          "refund_window_closed": "Sağlayıcı bu ödeme için iade süresinin dolduğunu bildirdi."
+        },
+        "failureUnknown": "Sağlayıcı reddetti",
+        "invalidId": "Bu tam bir tanımlayıcı değil. 8-4-4-4-12 biçiminde bir UUID girin."
       },
       "ledger": {
         "subject": "defteri",
@@ -2050,7 +2071,9 @@
         "postingLine": "işlem {transaction} · kampanya {campaign}",
         "doesNotBalance": "Denkleşmiyor",
         "debit": "borç",
-        "credit": "alacak"
+        "credit": "alacak",
+        "invalidId": "Bu tam bir tanımlayıcı değil. 8-4-4-4-12 biçiminde bir UUID girin.",
+        "emptyPageMore": "Bu sayfada eşleşen bir şey yok. Aramaya devam etmek için daha fazla yükleyin."
       },
       "reconciliation": {
         "subject": "mutabakatı",
@@ -2063,7 +2086,7 @@
         "unbalancedTitle": "Defterler denkleşmiyor",
         "unbalancedBody": "{positions} üzerinde {findings}, kontrol {at}. {note}",
         "unbalancedEmphasis": "Hiçbir şey otomatik olarak düzeltilmedi",
-        "unbalancedNote": "{emphasis} — bunu düzeltecek kayıt, onlarca olasılıktan hangisinin gerçekleştiğine bağlıdır, bu yüzden bu bir süpürme değil bir karardır.",
+        "unbalancedNote": "{emphasis} — düzeltici kayıt, onlarca olasılıktan hangisinin gerçekleştiğine bağlıdır; bu yüzden bunu otomatik değil, bir insanın kararıyla düzeltmek gerekir.",
         "balancedTitle": "Defterler denkleşiyor",
         "balancedBody": "{positions} kontrol edildi {at}, yerinde olmayan bir şey yok.",
         "nothingHeld": "Platform henüz hiçbir hesapta para tutmuyor, ki bu kontrol edilmemiş değil denk demektir.",
@@ -2088,7 +2111,7 @@
         },
         "checkAgain": "Şimdi yeniden kontrol et",
         "checking": "Kontrol ediliyor…",
-        "runNote": "Tüm platform üzerinde iki sorgu. Hiçbir şey okumaz ve yazmaz, bu yüzden onu istediğiniz zaman çalıştırmak güvenlidir — ve konuştuğunuz kopyadan yanıt almanın tek yolu budur.",
+        "runNote": "Tüm platform üzerinde iki sorgu. Yalnızca okur ve hiçbir şeyi değiştirmez; bu yüzden onu istediğiniz zaman çalıştırmak güvenlidir — ve konuştuğunuz kopyadan yanıt almanın tek yolu budur.",
         "findingTitle": {
           "UNBALANCED": "Defter sıfıra toplanmıyor",
           "IMPOSSIBLE_SIGN": "Bir hesap taşıyamayacağı bir bakiye taşıyor",
@@ -2098,7 +2121,8 @@
           "UNBALANCED": "PostgreSQL borçları ve alacakları farklı olan bir kaydı reddeder, dolayısıyla bir satır hem uygulamayı hem de o tetikleyiciyi geçmiş. Bu platformda başka hiçbir şey bunu üretemez.",
           "IMPOSSIBLE_SIGN": "Sıfırın altında emanet, hiç alınmamış ama ödenmiş paradır; sıfırın üstünde bir yaratıcı hesabı, hak ettiğinden fazla ödenmiş bir yaratıcıdır. Hiçbiri toplam tarafından yakalanmaz, çünkü ters işaretli iki hata kusursuzca denkleşir.",
           "DISAGREES_WITH_PAYMENTS": "Defterin tuttuğu ile işlemlerin hareket ettiğini söylediği aynı rakam değil. Bu, uygulamanın hiç yapmadığı bir kaydı yakalayan tek kontroldür."
-        }
+        },
+        "runSignedOut": "Oturumunuzun süresi doldu. Kontrolü çalıştırmak için yeniden giriş yapın."
       },
       "payouts": {
         "subject": "ödeme kuyruğunu",
@@ -2106,11 +2130,11 @@
         "calculateHeading": "Bir kampanyanın ne borçlandığını hesapla",
         "calculateIntro": "Rakamlar bu anda dondurulur ve asla yeniden hesaplanmaz — iki kişinin onayladığı ödeme, gönderilen ödeme olmalıdır. Tahsilatlar ya da iadeler sonradan değişirse gönderim reddedilir ve yeni bir hesaplama onun yerini alır.",
         "campaignLabel": "Kampanya",
-        "campaignHint": "Tanımlayıcının tamamı.",
+        "campaignHint": "Kampanyanın tam kimliği.",
         "calculate": "Hesapla",
         "working": "Çalışıyor",
         "calculatedTitle": "Hesaplandı",
-        "calculatedNotice": "{id} için {amount} hesaplandı. Bekletme {date} tarihine kadar sürüyor.",
+        "calculatedNotice": "{campaign} için {amount} hesaplandı. Bekletme {date} tarihinde biter.",
         "failedTitle": "Bu işe yaramadı",
         "queueHeading": "Yolda",
         "loadingList": "Ödeme kuyruğu yükleniyor",
@@ -2132,7 +2156,7 @@
         "needsTwo": "Eşiğin üzerinde, bu yüzden iki farklı kişi gerekiyor.",
         "approvalLine": "{approver}, {date}",
         "stillHeldTitle": "Hâlâ bekletiliyor",
-        "stillHeldBody": "§9'un bekletmesi {date} tarihine kadar sürüyor. Para gitmeden önce iadelerin ve ters ibrazların gelmesi için var, bu yüzden şimdi verilecek bir imza, kimsenin daha doğru olduğunu bilemeyeceği bir rakama atılmış imza olurdu.",
+        "stillHeldBody": "Bekletme {date} tarihinde biter. Para çıkmadan önce iadelerin ve ters ibrazların gelmesi içindir; şimdi atılan imza, doğruluğunu henüz kimsenin bilemeyeceği bir rakama atılmış olur.",
         "noteLabel": "Not",
         "noteHint": "Gerekçe, ikinci onaylayan için.",
         "approve": "Onayla",
@@ -2180,8 +2204,8 @@
           "intro": "Bu kurucuya ödeme banka hesabına yapılır, bu yüzden sağlayıcı üzerinden hiçbir şey gönderilmez. Net tutarı IdeyaNest banka hesabından kendiniz havale eder, ardından havaleyi banka ekstresine göre burada kaydedersiniz.",
           "inProgressTag": "Havale sürüyor",
           "notApproved": "Havale, ödeme onaylandıktan ve gereken tüm imzaları aldıktan sonra başlatılabilir.",
-          "needsApprovePayout": "Bu ödemeyi yalnızca APPROVE_PAYOUT yetkisi olan bir çalışan havale edebilir.",
-          "needsReadBankDetails": "Havaleyi başlatmak kurucunun hesabını açar; bunun için READ_BANK_DETAILS de gerekir.",
+          "needsApprovePayout": "Bu ödemeyi yalnızca ödemeleri onaylayabilen personel aktarabilir.",
+          "needsReadBankDetails": "Aktarımı başlatmak yaratıcının hesabını açar; bunun için banka bilgilerini görme yetkisi de gerekir.",
           "audited": "Hesabın her açılışı denetim kaydına sizin adınızla yazılır. Gizledikten ya da bu sayfadan çıktıktan sonra saklanmaz.",
           "startTransfer": "Havaleyi başlat",
           "starting": "Hesap açılıyor…",
@@ -2218,7 +2242,9 @@
           "abandonNoteLabel": "Havalenin yapılmadığını nereden biliyorsunuz",
           "confirmAbandon": "Vazgeç",
           "abandoning": "Vazgeçiliyor…",
-          "paidOn": "Banka havalesiyle ödendi, valör tarihi: {date}."
+          "paidOn": "Banka havalesiyle ödendi, valör tarihi: {date}.",
+          "paidOtherwise": "Bu ödeme {date} tarihinde ödendi.",
+          "paidUndated": "Bu ödeme ödendi."
         },
         "refusal": {
           "PAYOUT_SETTLES_THROUGH_PROVIDER": "Bu kurucunun ödeme hedefi bir banka hesabı değil, sağlayıcının jetonu. Elle havale etmek yerine gönderin.",
@@ -2227,7 +2253,7 @@
           "FIGURES_MOVED": "Ödeme hesaplandığından beri rakamlar değişti, bu yüzden ödeme iptal edildi. Kampanya için yenisini hesaplayın.",
           "PAYOUT_NOT_SENDABLE": "Bu ödeme onaylanmadı, bu yüzden ödenemez.",
           "PAYOUT_DESTINATION_NOT_VERIFIED": "Kurucunun hesabı doğrulanmadı. Para yalnızca uyum incelemecisinin doğruladığı hesaba gider.",
-          "SELF_PAID_PAYOUT": "Kimse kendi ödemesini yapmaz. Bunu APPROVE_PAYOUT yetkisi olan bir iş arkadaşınızdan isteyin.",
+          "SELF_PAID_PAYOUT": "Kimse kendi kampanyasının ödemesini imzalamaz, göndermez veya ödemez. Ödemeleri onaylayabilen bir meslektaşınızdan isteyin.",
           "PAYOUT_BANK_TRANSFER_ALREADY_RECORDED": "Bu ödemenin havalesi başka bir banka referansıyla zaten kaydedildi. Ekstreyi yeniden kontrol edin.",
           "PAYOUT_REFERENCE_TAKEN": "Bu referans zaten başka bir tamamlanmış işlemde var. Ekstreyi yeniden kontrol edin.",
           "BANK_TRANSFER_DATE_OUT_OF_RANGE": "Valör tarihi, havalenin başladığı gün ({start}) ile bugün ({today}) arasında olmalıdır.",
@@ -2235,13 +2261,83 @@
           "PAYOUT_BANK_TRANSFER_NOT_STARTED": "Bu ödeme için süren bir banka havalesi yok. Sayfa güncel olmayabilir.",
           "PAYOUT_SIGNATURES_SHORT": "Bu ödemenin henüz gereken tüm imzaları yok.",
           "CAMPAIGN_ALREADY_PAID_OUT": "Bu kampanyaya zaten ödeme yapıldı. Bir kampanyaya bir kez ödeme yapılır.",
-          "PAYOUT_SEND_UNCONFIRMED": "Bu ödemenin sağlayıcı üzerinden gönderimine yanıt gelmedi, para hareket etmiş olabilir. Önce bunu çözün."
+          "PAYOUT_SEND_UNCONFIRMED": "Bu ödemenin sağlayıcı üzerinden gönderimine yanıt gelmedi, para hareket etmiş olabilir. Önce bunu çözün.",
+          "CREATOR_NOT_VERIFIED": "Yaratıcının kimliği doğrulanmadı, bu yüzden ödeme henüz imzalanamaz. Gereken belgeler istendi.",
+          "PAYOUT_NOT_APPROVABLE": "Bu ödeme artık imza beklemiyor. Sayfa eskimiş olabilir.",
+          "PAYOUT_DESTINATION_PROVIDER_MISMATCH": "Yaratıcının kartı, ödemelerin gönderildiği sağlayıcıdan farklı bir sağlayıcıda kayıtlı. Yaratıcının kartı yeniden kaydetmesi gerekiyor.",
+          "NO_PAYOUT_PROVIDER": "Bağlı bir ödeme sağlayıcısı yok, bu yüzden sağlayıcı üzerinden hiçbir şey gönderilemez.",
+          "PAYOUT_NOT_FOUND": "Bu ödeme artık yok. Kuyruğu yenileyin.",
+          "INVALID_REQUEST": "Servis isteği kabul etmedi. Alanları kontrol edip yeniden deneyin."
+        },
+        "campaignInvalid": "Bu bir kampanya kimliği değil. 36 karakterlik tam kimliği girin.",
+        "open": "Aç",
+        "close": "Kapat",
+        "rowSummary": "{campaign} · {creator} · {amount} · {state}",
+        "taxWithheld": "Kesilen vergi",
+        "debtWithheld": "Borçlar için kesilen",
+        "alreadyApproved": "Bu ödeme gereken tüm imzaları aldı.",
+        "heldNoSign": "Bekletilen ödeme imzalanmaz; nedeni yukarıda yazıyor.",
+        "needsApprovePayout": "Ödemeleri imzalamak, göndermek ve iptal etmek ödeme onaylama yetkisi gerektirir; rolleriniz bunu içermiyor.",
+        "sendNeedsSignatures": "Göndermeden önce hâlâ gereken imza sayısı: {count}.",
+        "sendHeldForDestination": "Yaratıcının hesabı onaylanana kadar gönderilemez.",
+        "confirmSend": "{campaign} için {amount}, sağlayıcı üzerinden {creator} hesabına gönderilsin mi? Para platformdan çıkar ve bu geri alınamaz.",
+        "confirmSendAction": "Evet, gönder",
+        "sending": "Gönderiliyor…",
+        "cancelPayout": "Ödemeyi iptal et",
+        "confirmCancel": "{campaign} için {creator} hesabına {amount} ödeme iptal edilsin mi? İptal edilen ödeme yeniden açılmaz; kampanya için yeni bir hesaplama gerekir.",
+        "confirmCancelAction": "Evet, iptal et",
+        "cancelling": "İptal ediliyor…",
+        "cancelledNotice": "Ödeme iptal edildi.",
+        "back": "Geri dön",
+        "outcome": {
+          "paidTitle": "Gönderildi",
+          "paidBody": "{campaign} için {amount}, {creator} hesabına gönderildi.",
+          "failedTitle": "Sağlayıcı ödemeyi reddetti",
+          "failedBody": "{campaign} için {amount} gönderilmedi. Sağlayıcının yanıtı: {reason}. Ödeme başarısız olarak kaydedildi ve kuyruktan çıktı; aşağıdaki geçmişte duruyor. Neden giderildikten sonra kampanya için yeni bir ödeme hesaplayın.",
+          "unconfirmedTitle": "Sağlayıcı yanıt vermedi",
+          "unconfirmedBody": "{campaign} için {amount} gönderildi, ancak sağlayıcı yanıt vermedi; paranın çıkıp çıkmadığı bilinmiyor. Ödeme kuyrukta kalır ve iptal edilemez. Sağlayıcının ekstresini kontrol edin ve sonucu ödemenin dosyasına kaydedin.",
+          "noReason": "neden belirtilmedi"
+        },
+        "unconfirmed": {
+          "title": "Gönderimin sonucu bilinmiyor",
+          "body": "Sağlayıcı {date} tarihindeki gönderime yanıt vermedi. Para çıkmış olabilir, bu yüzden ödeme iptal edilemez. Sağlayıcının ekstresini kontrol edin ve gördüğünüzü kaydedin.",
+          "sent": "Gönderildi",
+          "notSent": "Gönderilmedi",
+          "transactionLabel": "Sağlayıcının işlem numarası",
+          "transactionHint": "Ekstrede göründüğü gibi, aynen.",
+          "noteLabel": "Ekstrede ne görünüyor",
+          "noteHint": "Denetim kaydında saklanır.",
+          "confirmSent": "{amount}, {reference} işlemiyle gönderilmiş olarak kaydedilsin mi? Ödeme ödenmiş sayılır ve bu geri alınamaz.",
+          "confirmNotSent": "{amount} tutarının gönderilmediği kaydedilsin mi? Ödeme başarısız sayılır ve kampanya yeniden hesaplanabilir. Para gerçekten çıktıysa bu, yaratıcıya iki kez ödeme demektir.",
+          "confirmAction": "Evet, kaydet",
+          "recording": "Kaydediliyor…",
+          "resolvedSent": "Gönderilmiş olarak kaydedildi. Ödeme ödendi.",
+          "resolvedNotSent": "Gönderilmemiş olarak kaydedildi. Ödeme başarısız; kampanya yeniden hesaplanabilir."
+        },
+        "history": {
+          "heading": "Geçmiş ödemeler",
+          "intro": "Ödenmiş, başarısız ve iptal edilmiş ödemeler, en yenisi önce.",
+          "filterLabel": "Duruma göre ödemeler",
+          "loading": "Geçmiş ödemeler yükleniyor",
+          "emptyTitle": "Burada bir şey yok",
+          "emptyBody": "Bu durumda ödeme yok.",
+          "paidOn": "Ödendi: {date}",
+          "failedOn": "Başarısız: {date}",
+          "calculatedOn": "Hesaplandı: {date}",
+          "failure": "Sağlayıcının yanıtı: {reason}"
+        },
+        "calculateRefusal": {
+          "PAYOUT_ALREADY_IN_FLIGHT": "Bu kampanyanın zaten yolda bir ödemesi var. Aşağıdaki kuyrukta bulun.",
+          "CAMPAIGN_ALREADY_PAID_OUT": "Bu kampanyaya zaten ödeme yapıldı. Bir kampanyaya bir kez ödenir.",
+          "PAYOUT_SEND_UNCONFIRMED": "Sağlayıcı bu kampanyanın önceki gönderimine hiç yanıt vermedi. Yeni ödeme hesaplamadan önce o gönderimin sonucunu kaydedin.",
+          "PROJECT_NOT_FOUND": "Bu kimlikle bir kampanya yok.",
+          "NOTHING_TO_PAY": "Ücretler ve iadelerden sonra bu kampanyaya ödenecek bir şey kalmıyor."
         }
       },
       "payoutDestinations": {
         "subject": "ödeme hesapları kuyruğunu",
         "filterLabel": "Duruma göre filtrele",
-        "everything": "Bekleyenlerin tümü",
+        "everything": "Tümü",
         "loadingList": "Doğrulama bekleyen ödeme hesapları yükleniyor",
         "emptyTitle": "Bekleyen yok",
         "emptyBody": "Kayıtlı tüm ödeme hesapları doğrulandı.",
@@ -2281,7 +2377,7 @@
           "ibanLabel": "IBAN",
           "holderLabel": "Hesap sahibi",
           "notFound": "Bu hesap için kayıtlı banka hesabı yok, bu yüzden gösterilecek IBAN yok.",
-          "forbidden": "IBAN göstermek READ_BANK_DETAILS gerektirir.",
+          "forbidden": "IBAN'ı göstermek banka bilgilerini görme yetkisi gerektirir.",
           "failed": "IBAN açılamadı. Hiçbir şey gösterilmedi."
         },
         "decision": {
@@ -2298,7 +2394,9 @@
           "nameMismatch": "Hesap sahibinin adı yaratıcının yasal adıyla eşleşmiyor, bu yüzden bu hesap doğrulanamaz. Reddedin ya da yaratıcının bilgilerini düzeltmesini bekleyin.",
           "self": "Kimse kendi ödeme hesabını doğrulamaz veya reddetmez.",
           "gone": "Bu hesapta artık bir ödeme hesabı yok.",
-          "failedTitle": "Kaydedilmedi"
+          "failedTitle": "Kaydedilmedi",
+          "verifyRejected": "Bu hesap reddedilmişti. Doğrulamak reddi geri alır ve hesaba ödemeleri açar — bunu yalnızca ret nedeni giderildikten sonra yapın.",
+          "confirmVerifyRejected": "Ret geri alınsın ve bu hesabın yaratıcıya ait olduğu onaylansın mı? Bunu kendi adınızla onaylıyorsunuz ve bu hesaba ödemeler açılır."
         }
       },
       "refunds": {
@@ -2311,8 +2409,8 @@
         "amountHint": "Boş bırakmak kalanı iade eder.",
         "reasonLabel": "Sebep",
         "noteLabel": "Not",
-        "noteHint": "Zorunlu. Bir kod asla hikâyenin tamamı değildir.",
-        "issue": "İade yap",
+        "noteHint": "Zorunlu. Nedenini kısaca açıklayın — kod her şeyi anlatmaz.",
+        "issue": "Parayı iade et",
         "sending": "Gönderiliyor",
         "sentTitle": "Gönderildi",
         "pendingTitle": "İade {state} durumunda",
@@ -2326,14 +2424,12 @@
         "emptyTitle": "Hiçbir iade yapılmadı",
         "emptyBody": "Bu kurulumda hiç para geri gitmedi. Platformun yaptığı her iade burada kaydedilir, bir sağlayıcının reddettikleri dahil.",
         "filteredTitle": "{state} iade yok",
-        "filteredBody": "Bu durumda hiçbir şey yok. REQUESTED olarak kalan bir iade takip etmeye değer; diğerleri sonuçlanmıştır.",
+        "filteredBody": "Bu durumda hiçbir şey yok. «Talep edildi» olarak kalan bir iade takip etmeye değer; diğerleri sonuçlanmıştır.",
         "full": "tam",
         "partial": "kısmi",
-        "onPledge": "{id} desteğinde {fullness}",
         "reasonAndDetail": "{reason} — {detail}",
         "requestedBy": "{by} tarafından {date} tarihinde talep edildi",
         "platform": "platform",
-        "refused": "reddedildi: {code}",
         "state": {
           "REQUESTED": "Talep edildi",
           "SUCCEEDED": "Başarılı",
@@ -2369,7 +2465,7 @@
           "hide": "Hesabı gizle",
           "audited": "Hesabın açılması denetim kaydına sizin adınızla yazılır. Gizlediğinizde ya da bu sayfadan ayrıldığınızda saklanmaz.",
           "failed": "Hesap açılamadı. Hiçbir şey gösterilmedi.",
-          "forbidden": "Destekçinin banka hesabını göstermek ISSUE_REFUND gerektirir."
+          "forbidden": "Destekçinin banka hesabını göstermek «Parayı geri göndermek» (ISSUE_REFUND) yetkisini gerektirir."
         },
         "copy": {
           "copy": "Kopyala",
@@ -2410,7 +2506,8 @@
           "BANK_REFERENCE_TAKEN": "Bu banka referansı başka bir destekçinin iadesi için zaten kayıtlı. Ekstreyi kontrol edin ve bu havalenin referansını girin.",
           "REFUND_DUTIES_NOT_SEPARATE": "Bu destekçinin banka hesabını siz kaydettiniz, bu yüzden havaleyi finans ekibinden başka biri kaydetmelidir.",
           "TRANSFER_DATE_IN_FUTURE": "Valör tarihi gelecekte. Havaleyi yapıldıktan sonra kaydedin.",
-          "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifreli depolama yapılandırılmadığı için banka bilgileri şu anda açılamıyor. Hiçbir şey gösterilmedi ya da değiştirilmedi."
+          "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifreli depolama yapılandırılmadığı için banka bilgileri şu anda açılamıyor. Hiçbir şey gösterilmedi ya da değiştirilmedi.",
+          "NOTHING_TO_REFUND": "Bu ödemede iade edilecek bir şey kalmadı: ya zaten iade edildi ya da ters ibrazla geri alındı. Listeyi yenileyin."
         },
         "planPayments": {
           "subject": "iade edilecek plan ödemeleri",
@@ -2454,15 +2551,66 @@
             "PLAN_REFUND_NOT_UNAPPLIED": "Bu ödemeyi başka biri zaten iade etti. Liste yenilendi.",
             "PLAN_REFUND_CARD_WINDOW_CLOSED": "Sağlayıcının karta iade süresi doldu. Parayı banka havalesiyle iade edin ve aşağıda kaydedin.",
             "PLAN_REFUND_PROVIDER_REFUSED": "Sağlayıcı iadeyi reddetti, hiçbir şey gönderilmedi. Parayı bunun yerine banka havalesiyle iade edin veya daha sonra tekrar deneyin.",
-            "PLAN_REFUND_PROVIDER_UNAVAILABLE": "Sağlayıcıya ulaşılamadı. Birkaç dakika sonra tekrar deneyin; tekrar denemek iki kez iade etmez."
-          }
+            "PLAN_REFUND_PROVIDER_UNAVAILABLE": "Sağlayıcıya ulaşılamadı ve hiçbir şey gönderilmedi. Birkaç dakika sonra yeniden deneyin.",
+            "PLAN_REFUND_UNCONFIRMED": "Sağlayıcı yanıt vermedi; iadenin yapılıp yapılmadığı henüz bilinmiyor. Parayı banka havalesiyle iade etmeyin. Birkaç dakika sonra karta iadeyi yeniden deneyin: önce sağlayıcıya sorulur ve hiçbir şey iki kez iade edilmez.",
+            "PLAN_REFUND_IN_PROGRESS": "Bu ödemenin iadesi zaten sürüyor. Bir iki dakika bekleyip yeniden deneyin.",
+            "PLAN_REFUND_CARD_REFUND_UNSETTLED": "Bu ödeme için karta iade gönderildi ve sonucu henüz bilinmiyor. Para iki kez iade edilmesin diye önce karta iadeyle tamamlayın.",
+            "INVALID_REQUEST": "Servis isteği kabul etmedi. Alanları kontrol edip yeniden deneyin."
+          },
+          "providerName": {
+            "PAYRIFF": "Payriff",
+            "EPOINT": "Epoint",
+            "AZERICARD": "Azericard",
+            "SANDBOX": "Test sağlayıcısı"
+          },
+          "unconfirmedTitle": "Karta iade zaten yolda olabilir",
+          "unconfirmedBody": "{date} tarihinde karta iade gönderildi ama sağlayıcı yanıt vermedi; para zaten iade edilmiş olabilir. Banka havalesiyle iade etmeyin. Karta iadeyi yeniden deneyin: önce sağlayıcıya sorulur ve hiçbir şey iki kez gönderilmez."
+        },
+        "pledgeInvalid": "Desteğin tam kimliğini girin, örneğin 00000000-0000-0000-0000-000000000000.",
+        "amountInvalid": "25,00 gibi, en fazla iki ondalık basamaklı pozitif bir tutar girin ya da kalanın tamamını iade etmek için boş bırakın.",
+        "checking": "Kontrol ediliyor…",
+        "confirmHeading": "İadeyi onaylayın",
+        "confirmIssue": "{amount} iade edilsin mi? Destekçi: {backer}, kampanya: {campaign}, destek: {pledge}. Sebep: {reason}. Para gönderildikten sonra bu geri alınamaz.",
+        "allRemaining": "kalanın tamamı ({amount})",
+        "confirmWithheld": "Sebep kampanyanın sonucu olduğu için {fee} sağlayıcı ücreti tutulur ve destekçiye iade edilmez.",
+        "confirmAction": "İadeyi onayla",
+        "unnamed": "—",
+        "partsNote": "{count} parça halinde gönderildi.",
+        "amountSent": "{amount} iade edildi",
+        "withheldNote": "{fee} sağlayıcı ücreti tutuldu",
+        "fullRefund": "Tam iade",
+        "partialRefund": "Kısmi iade",
+        "pledgeLine": "Destekçi: {backer} · Kampanya: {campaign} · Destek: {pledge}",
+        "failure": {
+          "not_sent": "Sağlayıcıya gönderilmedi: ödeme ya da sağlayıcı bulunamadı veya sağlayıcı geçici olarak hizmet dışıydı.",
+          "provider_unreachable": "Sağlayıcıya ulaşılamadı.",
+          "reverse_not_confirmed": "Sağlayıcı iadeyi onaylamadı: ödeme hâlâ ödenmiş görünüyor."
+        },
+        "failureOther": "Sağlayıcı iadeyi reddetti (kod: {code}).",
+        "detailRoutedFrom": "Sağlayıcının reddettiği {refund} iadesinin yerine banka havalesiyle.",
+        "detailChargeback": "Kart ağı bu ödemeyi ters ibrazla ({dispute}) geri aldı.",
+        "detailPlatform": {
+          "CAMPAIGN_FAILED": "Kampanya başarı eşiğinin altında bitti; platform parayı kendisi iade ediyor.",
+          "CAMPAIGN_HALTED": "Kampanya askıya alındı ya da iptal edildi; platform parayı kendisi iade ediyor.",
+          "RAISE_NOT_APPLIED": "Destekçi desteğini artırmak için ödedi ama artış uygulanamadı."
+        },
+        "routedTo": "Banka havalesine yönlendirildi: {state}.",
+        "routedAlreadyTitle": "Zaten yönlendirildi",
+        "routedAlready": "{id} desteğindeki bu iade zaten banka havalesine yönlendirildi. O iadenin durumu: {state}.",
+        "issueErrors": {
+          "REFUND_EXCEEDS_COLLECTION": "Bu tutar destekte kalandan fazla: iade edilebilecek yalnızca {remaining} kaldı.",
+          "NOTHING_TO_REFUND": "Bu destekte iade edilecek bir şey yok: ödeme alınmadı ya da tamamı zaten iade edildi. Desteğin kimliğini kontrol edin.",
+          "IDEMPOTENCY_KEY_REUSED": "Bu form daha önce başka bir iade için gönderildi ve yanıtı kayboldu. Önce aşağıdaki listede o iadenin gerçekleşip gerçekleşmediğine bakın; sonra yeniden gönderebilirsiniz — form yeni bir deneme olarak gidecek.",
+          "CURRENCY_MISMATCH": "Bu destek {currency} ile ödendi, iade de {currency} ile olmalı.",
+          "REFUND_REASON_NOT_ISSUABLE": "Çalışanlar bu sebeple iade yapamaz.",
+          "REFUND_CHARGE_DISPUTED": "Bu ödemede açık bir ters ibraz var: kart ağı parayı destekçiye zaten iade ediyor olabilir. Ters ibraz karara bağlanana kadar iade etmeyin."
         }
       },
       "disputes": {
         "subject": "ters ibraz kuyruğunu",
         "caseSubject": "bu vakayı",
         "noticeTitle": "Deliller sağlayıcı üzerinden gönderilir",
-        "noticeBody": "Burada göndermek, vakanın yanıtlandığını ve kimin yanıtladığını kaydeder. §9.3'ün sağlayıcı arayüzünde delil yükleme yoktur, bu yüzden belgelerin kendisi hâlâ sağlayıcının kendi konsolundan geçer — bu ekran ağa giden kanal değil, platformun vaka kaydıdır.",
+        "noticeBody": "«Yanıtlandı olarak işaretle» vakanın yanıtlandığını ve kimin yanıtladığını kaydeder, ama belge göndermez. Delilleri şimdilik sağlayıcının kendi panelinden yükleyin.",
         "heading": "Açık vakalar",
         "loadingList": "Ters ibraz kuyruğu yükleniyor",
         "emptyTitle": "Açık ters ibraz yok",
@@ -2482,7 +2630,7 @@
           "debit_not_authorized": "Borçlandırmaya izin verilmedi",
           "general": "Neden belirtilmedi"
         },
-        "pledgeLine": "Destek {pledge} · ücret {fee} · ",
+        "pledgeLine": "Destekçi: {backer} · Kampanya: {campaign} · Destek: {pledge} · Ücret: {fee}",
         "noDeadline": "Son tarih verilmedi",
         "deadlinePassed": "Son tarih geçti",
         "hoursLeft": "{count} saat kaldı",
@@ -2498,7 +2646,7 @@
         "showsLabel": "Neyi gösteriyor",
         "add": "Ekle",
         "markAnswered": "Yanıtlandı olarak işaretle",
-        "outcomeNote": "LOST ya da CONCEDED kaydetmek, itiraz edilen tutarı ve sağlayıcının ücretini deftere yazar. WON hiçbir şey yazmaz, çünkü hiçbir şey hareket etmedi.",
+        "outcomeNote": "«Kaybedildi» ya da «Kabul edildi» kaydetmek, itiraz edilen tutarı ve sağlayıcının ücretini deftere yazar. «Kazanıldı» hiçbir şey yazmaz, çünkü para hareket etmedi. Sonuç kaydedildikten sonra değiştirilemez.",
         "failedTitle": "Bu işe yaramadı",
         "state": {
           "OPEN": "Açık",
@@ -2515,7 +2663,39 @@
           "REFUND_POLICY": "O sırada iade politikamızın ne dediği",
           "ACTIVITY_LOG": "Destek verenin kart sahibi olduğu",
           "OTHER": "Başka bir şey"
-        }
+        },
+        "unnamed": "—",
+        "reasonOther": "Diğer sebep {code}",
+        "provider": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Test sağlayıcısı",
+          "BANK_TRANSFER": "Banka havalesi"
+        },
+        "nothingUnsent": "Gönderilecek yeni delil yok — önce delil ekleyin.",
+        "confirmHeading": "Sonucu onaylayın",
+        "confirmLoss": "Vaka «{outcome}» olarak kapatılsın mı? {amount} destekçiye iade edilmiş sayılır, {fee} sağlayıcı ücreti ise platformun gideri olarak deftere yazılır.",
+        "confirmDebt": "Kampanyanın parası yaratıcıya zaten ödendiyse, {total} yaratıcının borcu olarak kaydedilir ve yaratıcının hesabı borç ödenene kadar askıya alınır.",
+        "confirmWon": "Vaka «{outcome}» olarak kapatılsın mı? Para hareket etmez ve deftere hiçbir şey yazılmaz.",
+        "confirmFinal": "Sonuç kaydedildikten sonra değiştirilemez.",
+        "confirmAction": "Onayla",
+        "resolving": "Kaydediliyor…",
+        "resolvedNotice": "Vaka «{outcome}» olarak kapatıldı.",
+        "answeredNotice": "Vaka yanıtlandı olarak kaydedildi.",
+        "doneTitle": "Kaydedildi",
+        "errors": {
+          "NOTHING_TO_SUBMIT": "Bu vakadaki tüm deliller zaten gönderildi. Yeni delil ekleyin ya da vakayı kapatın.",
+          "NOT_A_DISPUTE_OUTCOME": "Bu bir sonuç değil. «Kazanıldı», «Kaybedildi» ya da «Kabul edildi» seçin.",
+          "DISPUTE_ALREADY_RESOLVED": "Bu vaka zaten «{state}» olarak kapatıldı ve sonuç değiştirilemez. Listeyi yenileyin.",
+          "DISPUTE_NOT_FOUND": "Bu vaka artık yok. Listeyi yenileyin."
+        },
+        "resolvedHeading": "Kapanmış vakalar",
+        "resolvedIntro": "Sonucu kaydedilmiş ters ibrazlar, en yeni önce.",
+        "resolvedSubject": "kapanmış ters ibrazları",
+        "loadingResolved": "Kapanmış vakalar yükleniyor",
+        "resolvedEmpty": "«{state}» olarak kapatılmış vaka yok.",
+        "resolvedOn": "Kapandı: {date}"
       },
       "fees": {
         "subject": "ücret çizelgesini",
@@ -2523,17 +2703,17 @@
         "noticeBody": "Düzenleme yoktur. Aşağıda göndermek, hâlihazırda yürürlükteki koşulları kapatır ve şimdiden başlayan yenilerini açar, böylece geçen ay hesaplanan bir ödeme hâlâ geçen ayın oranlarıyla fiyatlanır. Burada yapabileceğiniz hiçbir şey geçmişte ne alındığını değiştirmez.",
         "inForceHeading": "Yürürlükte",
         "loadingList": "Ücret çizelgeleri yükleniyor",
-        "emptyTitle": "Yapılandırılmış ücret çizelgesi yok",
-        "emptyBody": "Platform şu anda her ödemeyi sıfır ücretle fiyatlıyor. Bu bilinçlidir — bir ödeme çalışması kimse satır yazmadı diye durmamalıdır — ama bu, yaratıcılara tahsil edilen tutarın tamamının ödendiği anlamına gelir.",
+        "emptyTitle": "Açık bir ücret tarifesi yok",
+        "emptyBody": "Her ödeme platformun varsayılan koşullarıyla fiyatlandırılır: {platform} platform ücreti ve {processing} işlem. Değiştirmek için aşağıda yeni koşullar açın.",
         "replaceHeading": "Yeni koşullar aç",
         "scopeLabel": "Kapsam",
         "categoryLabel": "Kategori",
         "campaignLabel": "Kampanya",
-        "scopeRefHint": "Tanımlayıcının tamamı.",
+        "scopeRefHint": "Kampanyanın tam kimliği.",
         "platformRateLabel": "Platform oranı",
         "processingRateLabel": "İşlem oranı",
         "fractionHint": "Bir kesir. {percentage}",
-        "fixedLabel": "İşlem başına sabit",
+        "fixedLabel": "Ödeme başına sabit tutar",
         "whyLabel": "Gerekçe",
         "whyHint": "Zorunlu. Kimsenin açıklamadığı bir ücret değişikliği, kimsenin savunamayacağı bir değişikliktir.",
         "open": "Yeni koşullar aç",
@@ -2542,15 +2722,41 @@
         "openedNotice": "{date} tarihinden itibaren yeni {scope} koşulları yürürlükte. Önceki çizelge kapatıldı, silinmedi.",
         "failedTitle": "Bu işe yaramadı",
         "pastHeading": "Geçmiş koşullar",
-        "pastIntro": "Platformun ne aldığı ve ne zaman. §22.1 bunu bir değişiklik listesi değil, saklama kuralı olan bir kayıt yapar.",
+        "pastIntro": "Platformun ne zaman ne kestiği. Kapanan koşullar silinmez: her geçmiş ödemenin hangi koşullarla hesaplandığını gösterir.",
         "inForceTag": "Yürürlükte",
-        "rates": "Platform {platform} · işlem {processing} + {fixed}",
+        "rates": "Platform {platform} · işlem {processing} + ödeme başına {fixed}",
         "window": "{from} — {to} · {note}",
         "now": "şimdi",
         "scope": {
           "PLATFORM": "Platform",
           "CATEGORY": "Kategori",
           "PROJECT": "Kampanya"
+        },
+        "fixedHint": "Her ödemenin işlem ücretine bir kez eklenir, {currency} cinsinden.",
+        "rateInvalid": "0 ile 1 arasında bir kesir girin, örneğin %5 için 0,05.",
+        "fixedInvalid": "Negatif olmayan bir tutar girin, örneğin 0,30.",
+        "scopeRefInvalid": "Bu bir kimlik değil. 36 karakterlik tam kimliği girin.",
+        "categoryPlaceholder": "Bir kategori seçin",
+        "categoriesUnavailable": "Kategori listesi yüklenmedi. Bunun yerine kategorinin tam kimliğini girin.",
+        "campaignFound": "Kampanya: {name}",
+        "prefilledFromSchedule": "Alanlar şu an geçerli koşullarla dolduruldu. Yalnızca değişmesi gerekeni değiştirin.",
+        "prefilledFromDefault": "Bu kapsam için açık bir tarife yok; alanlar bugün böyle bir ödemeden kesilenle başlar.",
+        "scopeNamed": "{scope}: {name}",
+        "confirm": {
+          "heading": "Yeni koşulları kontrol edin",
+          "intro": "{scope} için mevcut koşullar şimdi kapanır ve bunlar bundan sonra hesaplanan her ödemeye uygulanır. Zaten hesaplanmış ödemeler kendi koşullarını korur.",
+          "was": "Şimdi",
+          "becomes": "Yeni",
+          "unchanged": "değişmiyor",
+          "action": "Evet, yeni koşulları aç",
+          "back": "Geri dön"
+        },
+        "errors": {
+          "FEE_SCHEDULE_CONFLICT": "Bu kapsam için başka bir yönetici önce koşul açtı. Liste yenilendi; geçerli olanı kontrol edip yeniden deneyin.",
+          "FEE_SCOPE_MISMATCH": "Platform koşulları bir kategori veya kampanya belirtmez; istisna ise birini belirtmelidir.",
+          "FEE_SCOPE_UNKNOWN_CATEGORY": "Bu kimlikle bir kategori yok.",
+          "FEE_SCOPE_UNKNOWN_PROJECT": "Bu kimlikle bir kampanya yok.",
+          "INVALID_REQUEST": "Servis bu koşulları kabul etmedi. Oranlar 0 ile 1 arasında kesir olmalı, sabit tutar negatif olamaz ve neden boş olamaz."
         }
       },
       "plans": {
@@ -2562,7 +2768,7 @@
         "loadingCatalogue": "Planlar yükleniyor",
         "emptyCatalogueTitle": "Hiç plan yok",
         "emptyCatalogueBody": "Yayımlamak bir plana bağlı; katalog boşken kimse kampanyasını incelemeye gönderemez. Aşağıdan bir plan ekleyin.",
-        "planSummary": "{price} {period} · aynı anda {campaigns} kampanya · {ceiling} tutarına kadar hedef",
+        "planSummary": "{price} / {period} · aynı anda {campaigns} kampanya · hedef sınırı: {ceiling}",
         "onSale": "Satışta",
         "retired": "Satıştan kaldırıldı",
         "repriceLabel": "Yeni fiyat",
@@ -2584,7 +2790,7 @@
         "unlimitedHint": "Sınır istemiyorsanız boş bırakın.",
         "addPlan": "Planı ekle",
         "queueHeading": "Ödemeler",
-        "queueIntro": "Henüz bir ödeme sağlayıcı bağlı değil; bu yüzden ücretli plan, buradaki biri havalenin geldiğini kaydettiğinde başlar. Her etkinleştirme sizin adınıza kayda geçer.",
+        "queueIntro": "Bir plan ya sağlayıcının sayfasında kartla ödenir — bu kendiliğinden kaydedilir — ya da banka havalesi, nakit veya başka bir yolla. Kartla gelmeyen ödemeyi para geldikten sonra burada kaydedin; her etkinleştirme sizin adınıza denetlenir.",
         "loadingQueue": "Abonelikler yükleniyor",
         "showAll": "Bütün abonelikleri göster",
         "showQueue": "Yalnızca bekleyenleri göster",
@@ -2593,8 +2799,8 @@
         "subscriptionSummary": "{price} · {until} tarihine kadar",
         "unknownPlan": "Bilinmeyen plan",
         "notStarted": "başlamadı",
-        "noteLabel": "Ödeme referansı",
-        "noteHint": "Havale referansı veya fatura numarası; sonradan denetlenebilsin diye.",
+        "noteLabel": "Not",
+        "noteHint": "İsteğe bağlı. Sonraki okuyucunun bilmesi gereken her şey.",
         "recordPayment": "Ödemeyi kaydet",
         "endReasonLabel": "Sonlandırma gerekçesi",
         "endReasonHint": "Zorunlu. Planı dönem sonunda değil, hemen geri alır.",
@@ -2603,8 +2809,8 @@
         "failedTitle": "Bu işe yaramadı",
         "addedNotice": "{plan} eklendi ve satışta.",
         "repricedNotice": "{plan} planının fiyatı değişti. Mevcut aboneler ödedikleri tutarda kalır.",
-        "activatedNotice": "{id} aboneliği etkin.",
-        "endedNotice": "{id} aboneliği sonlandırıldı.",
+        "activatedNotice": "{account} hesabının aboneliği etkin.",
+        "endedNotice": "{account} hesabının aboneliği sonlandırıldı.",
         "period": {
           "MONTHLY": "Aylık",
           "YEARLY": "Yıllık"
@@ -2614,6 +2820,40 @@
           "ACTIVE": "Etkin",
           "CANCELED": "Sonlandırıldı",
           "EXPIRED": "Süresi doldu"
+        },
+        "referenceLabel": "Ödeme referansı",
+        "referenceHint": "Havale veya fatura numarası, ödeme sonra kontrol edilebilsin diye.",
+        "methodLabel": "Ödeme yöntemi",
+        "method": {
+          "BANK_TRANSFER": "Banka havalesi",
+          "CARD": "Kart",
+          "CASH": "Nakit",
+          "OTHER": "Diğer"
+        },
+        "receivedLabel": "Paranın geldiği gün",
+        "receivedHint": "Bakü saatiyle. Bugünden sonra olamaz.",
+        "receivedInvalid": "Bugünden geç olmayan bir gün seçin.",
+        "confirmRecord": "{account} hesabından {plan} için {price}, {date} tarihinde alınmış olarak kaydedilsin mi (yöntem: {method})? Abonelik hemen başlar.",
+        "confirmRecordAction": "Evet, kaydet",
+        "confirmEnd": "{account} hesabının {plan} aboneliği şimdi sonlandırılsın mı? Plan hakları hemen sona erer ve bu geri alınamaz.",
+        "confirmEndAction": "Evet, sonlandır",
+        "confirmRetire": "{plan} satıştan kaldırılsın mı? Yeni yaratıcılar onu satın alamaz; şu an üzerinde olanlar kalır.",
+        "confirmRetireAction": "Evet, satıştan kaldır",
+        "confirmReprice": "{plan} fiyatı {old} yerine {new} olsun mu? Yeni fiyatı yalnızca yeni satın almalar öder.",
+        "confirmRepriceAction": "Evet, fiyatı değiştir",
+        "back": "Geri dön",
+        "priceInvalid": "Fiyatı 19,00 gibi, en fazla iki ondalıkla girin.",
+        "maxActiveInvalid": "1 veya daha büyük bir tam sayı girin ya da sınırsız için boş bırakın.",
+        "goalCeilingInvalid": "Sıfırdan büyük bir tutar girin ya da sınırsız için boş bırakın.",
+        "errors": {
+          "PLAN_CODE_TAKEN": "Bu kod zaten başka bir planda. Kodlar kalıcıdır, başka birini seçin.",
+          "INVALID_PLAN": "Servis planı kabul etmedi. Fiyatı ve sınırları kontrol edin; AZN en fazla iki ondalık kabul eder.",
+          "PLAN_NOT_FOUND": "Bu plan artık yok. Sayfayı yenileyin.",
+          "SUBSCRIPTION_NOT_FOUND": "Bu abonelik artık yok. Liste yenilendi.",
+          "SUBSCRIPTION_NOT_PENDING": "Bu abonelik artık ödeme beklemiyor: bir meslektaşınız kaydetti ya da abonelik sonlandırıldı. Liste yenilendi.",
+          "SUBSCRIPTION_NOT_OPEN": "Bu abonelik zaten sona erdi. Liste yenilendi.",
+          "PAYMENT_NOT_YET_RECEIVED": "Ödeme tarihi gelecekte olamaz.",
+          "INVALID_REQUEST": "Servis isteği kabul etmedi. Alanları kontrol edip yeniden deneyin."
         }
       },
       "submissionQueue": {
@@ -2796,7 +3036,7 @@
         "periodLegend": "Dönem",
         "fromLabel": "Başlangıç",
         "toLabel": "Bitiş",
-        "toHint": "Bu gün dahil. Günler Bakü saatine göre sayılır.",
+        "toHint": "Son gün de dahildir. Günler Bakü saatine göre sayılır.",
         "thisMonth": "Bu ay",
         "lastMonth": "Geçen ay",
         "show": "Göster",
@@ -2843,7 +3083,7 @@
         "reversal": "İade",
         "closedAccount": "Kapatılmış hesap",
         "receivedOn": "Geldi: {date}",
-        "recordedOn": "kaydedildi: {date}",
+        "recordedOn": "Kaydedildi: {date}",
         "reference": "Referans: {reference}",
         "exportCsv": "CSV indir",
         "exporting": "Dosya hazırlanıyor",
@@ -2853,26 +3093,46 @@
           "many": "{count} ödeme indirildi.",
           "other": "{count} ödeme indirildi."
         },
-        "truncated": "Dosya eksik: dönemin ödemelerinden yalnızca ilk {count} tanesini içeriyor. Dönemi daraltın ve kalanını ayrıca indirin."
+        "truncated": "Dosya eksik: dönemin ödemelerinden yalnızca ilk {count} tanesini içeriyor. Dönemi daraltın ve kalanını ayrıca indirin.",
+        "filteredTitle": "Bu filtrelere uyan ödeme yok",
+        "filteredBody": "Bu dönemde seçilen plan koduna veya ödeme yöntemine uyan bir ödeme yok. Plan kodunu kontrol edin ya da filtreleri temizleyin.",
+        "listEmpty": "Bu dönem ve filtreler için listelenecek ödeme yok.",
+        "periodBackwards": "Son gün, başlangıç gününden önce olamaz.",
+        "periodTooLong": "Bir dönem en fazla 400 gün kapsayabilir. Bir yıl veya daha kısa bir dönem seçin."
       },
       "backerDisputes": {
-        "subject": "destekçi itirazları kuyruğu",
+        "subject": "destekçi itirazları kuyruğunu",
         "heading": "Destekçi itirazları",
         "intro": "Bir ödeme bekletilirken destekçiler tarafından açılır. Kabul etmek destekçiye tutarın tamamını iade eder ve ödemeyi onsuz yeniden hesaplar; kampanya başarılı kalır. Reddetmek hiçbir şeyi değiştirmez.",
         "loadingList": "Destekçi itirazları kuyruğu yükleniyor",
         "emptyTitle": "Açık destekçi itirazı yok",
         "emptyBody": "Karar bekleyen bir şey yok. Destekçiler yalnızca kampanyalarının ödemesi bekletilirken itiraz edebilir.",
-        "pledgeLine": "Destek {pledge} · kampanya {project} · açıldı {date}",
+        "pledgeLine": "Destekçi: {backer} · Kampanya: {campaign} · Destek: {pledge} · Açıldı: {date}",
         "noteLabel": "Not",
         "noteHint": "Kararla birlikte ve denetim kaydında saklanır.",
         "uphold": "Kabul et ve iade et",
         "reject": "Reddet",
-        "confirmUphold": "Bu destekçiye tutarın tamamı iade edilsin ve ödeme yeniden hesaplansın mı?",
+        "confirmUphold": "Bu destekçiye {amount} tamamen iade edilsin ve ödeme yeniden hesaplansın mı? Para gönderildikten sonra bu geri alınamaz.",
         "confirmNow": "Tamamını iade et",
         "deciding": "Karar veriliyor…",
         "alreadyDecided": "Bu itiraz için zaten karar verildi. Liste yenilendi.",
         "refundFailed": "İade reddedildi, bu yüzden itiraz hâlâ açık. Yeniden deneyin ya da iadeye iadeler ekranından bakın.",
-        "failedTitle": "Olmadı"
+        "failedTitle": "Olmadı",
+        "unnamed": "—",
+        "refundableLine": "Kabul edilirse iade edilecek: {amount}",
+        "everythingLeft": "kalan tutar",
+        "refundAwaitingBank": "İade sağlayıcının süresini aştı ve banka havalesiyle ödenecek; itiraz o zamana kadar açık kalır. Destekçinin banka hesabını {link} sayfasında kaydedin ve havaleyi orada tamamlayın.",
+        "refundsLink": "İadeler",
+        "upheldNotice": "İtiraz kabul edildi ve destekçiye {amount} iade edildi.",
+        "upheldNoticeNoAmount": "İtiraz kabul edildi ve destekçiye tutarın tamamı iade edildi.",
+        "rejectedNotice": "İtiraz reddedildi; para hareket etmedi.",
+        "doneTitle": "Karar kaydedildi",
+        "errors": {
+          "DISPUTE_WINDOW_CLOSED": "Yaratıcının ödemesi zaten gönderildi ya da yolda, bu yüzden bu itiraz için platform üzerinden iade yapılamaz.",
+          "NOTHING_TO_DISPUTE": "Bu destekte iade edilecek para kalmadı.",
+          "DISPUTE_NOT_FOUND": "Bu itiraz artık yok. Listeyi yenileyin.",
+          "REFUND_CHARGE_DISPUTED": "Bu ödemede açık bir ters ibraz var; ters ibraz kapanana kadar iade yapılamaz. İtiraz açık kalır."
+        }
       },
       "partners": {
         "subject": "ortak listesi",
@@ -2934,14 +3194,15 @@
         "planHeading": "Bu ayın planları",
         "revenue": "Gelir",
         "subscriptions": "Abonelikler",
-        "reversals": "Ödeme iadeleri",
+        "reversals": "İadeler",
         "dateColumn": "Tarih",
         "monthColumn": "Ay",
         "planColumn": "Plan",
         "nothingRecorded": "Kayıt yok",
         "dailyCaption": "Bu ayın günlerine göre gelir ve abonelikler",
         "monthlyCaption": "Aylara göre gelir ve abonelikler",
-        "planCaption": "Bu ayın planlarına göre gelir ve abonelikler"
+        "planCaption": "Bu ayın planlarına göre gelir ve abonelikler",
+        "zoneNoteBaku": "Tarihler ve aylar Bakü saatine göredir."
       },
       "maintenance": {
         "subject": "bakım pencerelerini",

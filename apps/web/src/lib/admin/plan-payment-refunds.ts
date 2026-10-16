@@ -36,6 +36,12 @@ export interface UnappliedPlanPayment {
   readonly paidAt: string;
   /** When the provider stops taking a refund to the card; null when it names no window. */
   readonly cardRefundUntil: string | null;
+  /**
+   * When a card refund was sent and its answer never arrived. While it is set the money may already be
+   * on its way back: the bank transfer is refused, and the card refund asks the provider before it
+   * sends anything again. Absent otherwise.
+   */
+  readonly cardRefundStartedAt?: string | null;
 }
 
 export interface UnappliedPlanPaymentList {
@@ -71,9 +77,11 @@ export async function listUnappliedPlanPayments(signal?: AbortSignal): Promise<U
 /**
  * Refunds the whole payment to the card that paid it, through the provider.
  *
- * <p>No body and no idempotency key: the payment itself is the key. The service moves it out of
- * `UNAPPLIED` under a lock, so a second press answers `PLAN_REFUND_NOT_UNAPPLIED` rather than
- * sending the money twice.
+ * <p>No body and no idempotency key: the payment itself is the key. The service claims the payment
+ * under a lock before it asks the provider, sends every attempt under the same key, and on a retry of
+ * an attempt nobody answered asks the provider whether the money already went back before sending
+ * anything — so a second press never refunds twice. `PLAN_REFUND_UNCONFIRMED` is that unanswered
+ * attempt, and `PLAN_REFUND_IN_PROGRESS` a press while one may still be running.
  */
 export async function refundPlanPaymentToCard(id: string, signal?: AbortSignal): Promise<UnappliedPlanPayment> {
   const response = await authorizedFetch(`/v1/admin/plan-payments/${encodeURIComponent(id)}/refund`, {

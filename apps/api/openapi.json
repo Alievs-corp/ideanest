@@ -3239,6 +3239,42 @@
         "tags" : [ "refund-controller" ]
       }
     },
+    "/v1/admin/refunds/refundable" : {
+      "get" : {
+        "operationId" : "refundRefundable",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "pledgeId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "query",
+          "name" : "reason",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "BACKER_REQUEST",
+            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD", "RAISE_NOT_APPLIED", "CHARGEBACK" ]
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Refundable"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "refund-controller" ]
+      }
+    },
     "/v1/admin/refunds/{refundId}/bank-details" : {
       "get" : {
         "operationId" : "refundBankTransferBankDetails",
@@ -13353,6 +13389,10 @@
           "amount" : {
             "$ref" : "#/components/schemas/Money"
           },
+          "backerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "chargeTransactionId" : {
             "type" : "string",
             "format" : "uuid"
@@ -13412,6 +13452,10 @@
       "DisputeBody" : {
         "type" : "object",
         "properties" : {
+          "backerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "decidedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -13442,6 +13486,9 @@
           "refundId" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "refundable" : {
+            "$ref" : "#/components/schemas/Money"
           },
           "state" : {
             "type" : "string"
@@ -13998,6 +14045,10 @@
           "rejectionReason" : {
             "type" : "string",
             "enum" : [ "UNREADABLE", "EXPIRED_DOCUMENT", "MISMATCHED_NAME", "INCOMPLETE", "SUSPECTED_FORGERY" ]
+          },
+          "reviewState" : {
+            "type" : "string",
+            "enum" : [ "AWAITING_VERIFICATION", "NAME_MISMATCH", "REJECTED", "VERIFIED" ]
           },
           "standing" : {
             "type" : "string",
@@ -15502,6 +15553,9 @@
             "type" : "string",
             "enum" : [ "NOT_REQUIRED", "WAIVED", "VERIFIED", "NEVER_REQUESTED", "AWAITING_DOCUMENTS", "UNDER_REVIEW", "REJECTED", "EXPIRED" ]
           },
+          "debtWithheld" : {
+            "$ref" : "#/components/schemas/Money"
+          },
           "destinationKind" : {
             "type" : "string",
             "enum" : [ "PROVIDER_TOKEN", "BANK_TRANSFER" ]
@@ -15559,6 +15613,10 @@
           },
           "refunded" : {
             "$ref" : "#/components/schemas/Money"
+          },
+          "sendUnconfirmedAt" : {
+            "type" : "string",
+            "format" : "date-time"
           },
           "sentAt" : {
             "type" : "string",
@@ -16814,6 +16872,10 @@
           "amount" : {
             "$ref" : "#/components/schemas/Money"
           },
+          "backerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "bankTransfer" : {
             "$ref" : "#/components/schemas/BankTransfer"
           },
@@ -16823,6 +16885,10 @@
           },
           "detail" : {
             "type" : "string"
+          },
+          "disputeId" : {
+            "type" : "string",
+            "format" : "uuid"
           },
           "failureCode" : {
             "type" : "string"
@@ -16836,6 +16902,12 @@
           "id" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "parts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Refund"
+            }
           },
           "pledgeId" : {
             "type" : "string",
@@ -16861,6 +16933,13 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "routedFrom" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "routedTo" : {
+            "$ref" : "#/components/schemas/RoutedTo"
+          },
           "settledAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -16868,6 +16947,9 @@
           "state" : {
             "type" : "string",
             "enum" : [ "REQUESTED", "SUCCEEDED", "FAILED", "AWAITING_BANK_DETAILS", "AWAITING_TRANSFER" ]
+          },
+          "withheldFee" : {
+            "$ref" : "#/components/schemas/Money"
           }
         }
       },
@@ -16886,6 +16968,33 @@
             "items" : {
               "$ref" : "#/components/schemas/Refund"
             }
+          }
+        }
+      },
+      "Refundable" : {
+        "type" : "object",
+        "properties" : {
+          "backerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "pledgeId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "projectId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "reason" : {
+            "type" : "string",
+            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD", "RAISE_NOT_APPLIED", "CHARGEBACK" ]
+          },
+          "remaining" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "withheldFee" : {
+            "$ref" : "#/components/schemas/Money"
           }
         }
       },
@@ -17520,6 +17629,19 @@
             "items" : {
               "$ref" : "#/components/schemas/Grant"
             }
+          }
+        }
+      },
+      "RoutedTo" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "state" : {
+            "type" : "string",
+            "enum" : [ "REQUESTED", "SUCCEEDED", "FAILED", "AWAITING_BANK_DETAILS", "AWAITING_TRANSFER" ]
           }
         }
       },
@@ -19132,6 +19254,10 @@
           },
           "amount" : {
             "type" : "string"
+          },
+          "cardRefundStartedAt" : {
+            "type" : "string",
+            "format" : "date-time"
           },
           "cardRefundUntil" : {
             "type" : "string",

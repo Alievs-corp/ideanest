@@ -279,6 +279,11 @@ public class Payout {
         return sendUnconfirmedAt != null;
     }
 
+    /** When a send ended unreachable, or null when none did. The console draws it and offers the resolution. */
+    public Instant sendUnconfirmedSince() {
+        return sendUnconfirmedAt;
+    }
+
     /**
      * A member of staff has opened the creator's account to pay this by bank transfer — #397.
      *

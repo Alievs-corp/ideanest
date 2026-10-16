@@ -11,11 +11,14 @@ import {
   todayInBaku,
   type RevealedRefundBankDetails,
 } from '../../lib/admin/refund-bank-transfers';
-import { consoleMessageFor, shortId, statusFor, wasAborted } from '../../lib/admin/refusals';
+import { actionMessageFor, shortId, statusFor, wasAborted } from '../../lib/admin/refusals';
 import { bankFeeFrom } from '../../lib/admin/bank-fee';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { formatMoney } from '../../lib/money';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { Locale } from '../../lib/i18n/locale';
+import { formatDate } from '../../lib/time';
 import type { RefundBankTransferCopy, RefundConsoleCopy } from '../../lib/i18n/admin/money-copy';
 import { EntityName, Identifier } from './ConsoleIdentity';
 
@@ -63,6 +66,16 @@ import { EntityName, Identifier } from './ConsoleIdentity';
 export interface RefundRowNotice {
   readonly title: string;
   readonly body: string;
+  /** `info` for a press that found the work already done; `success` otherwise. */
+  readonly variant?: 'success' | 'info';
+}
+
+/**
+ * A calendar day the service sends without a time — a transfer's value date — in the reader's
+ * language. Read at midday UTC, so no zone between Hawaii and Kiribati moves it to the day before.
+ */
+export function formatDay(day: string, locale: Locale): string {
+  return formatDate(/^\d{4}-\d{2}-\d{2}$/.test(day) ? `${day}T12:00:00Z` : day, locale);
 }
 
 /** In fours, the way a bank prints it and the way it is read aloud to one. */
@@ -70,14 +83,17 @@ function grouped(iban: string): string {
   return iban.replace(/\s+/g, '').replace(/(.{4})(?=.)/g, '$1 ');
 }
 
-/** A refusal in the bank-transfer table's words where it has some, else in the console's. */
+/**
+ * A refusal in the bank-transfer table's words where it has some, else in the console's — as a
+ * refused act, since every caller is one: "this action needs…", never "reading … needs".
+ */
 export function bankRefusalMessage(cause: unknown, copy: RefundConsoleCopy): string {
   const code = cause instanceof ApiError ? cause.problem?.code : undefined;
   if (code !== undefined && code !== null) {
     const sentence = copy.bank.errors[code];
     if (sentence !== undefined) return sentence;
   }
-  return consoleMessageFor(cause, copy.subject, copy.refusals);
+  return actionMessageFor(cause, copy.subject, copy.refusals);
 }
 
 /** The account, the ticket and who recorded what — the facts the list carries, no reveal needed. */
@@ -90,6 +106,7 @@ export function BankTransferFacts({
   readonly names: DirectoryNames;
   readonly copy: RefundConsoleCopy;
 }) {
+  const locale = useRouteLocale();
   const person = (id: string) => <EntityName id={id} names={names} kind="account" copy={copy.identity} />;
 
   return (
@@ -103,13 +120,13 @@ export function BankTransferFacts({
       <p>
         {fillNodes(copy.bank.detailsRecordedBy, {
           by: person(transfer.detailsRecordedBy),
-          date: transfer.detailsRecordedAt.slice(0, 10),
+          date: formatDate(transfer.detailsRecordedAt, locale),
         })}
       </p>
       {transfer.transferredOn != null && transfer.bankReference != null && transfer.transferRecordedBy != null && (
         <p>
           {fillNodes(copy.bank.transferRecorded, {
-            date: transfer.transferredOn,
+            date: formatDay(transfer.transferredOn, locale),
             reference: <span className="font-mono text-white">{transfer.bankReference}</span>,
             by: person(transfer.transferRecordedBy),
           })}
@@ -294,7 +311,7 @@ function CopyValue({
         type="button"
         onClick={() => void put()}
         aria-label={label}
-        className="rounded text-xs text-white/64 underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded text-xs text-white/64 underline decoration-dotted underline-offset-2 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
       >
         {copy.copy.copy}
       </button>
@@ -317,6 +334,7 @@ function RecordTransfer({
   readonly onSettled: (notice: RefundRowNotice) => void;
 }) {
   const words = copy.bank;
+  const locale = useRouteLocale();
   const today = todayInBaku();
   const [reference, setReference] = useState('');
   const [on, setOn] = useState(today);
@@ -414,7 +432,7 @@ function RecordTransfer({
             {fillPlaceholders(words.confirmRecord, {
               amount: formatMoney(refund.amount),
               hint: transfer.ibanHint,
-              date: on,
+              date: formatDay(on, locale),
               reference: reference.trim(),
             })}
           </p>
@@ -472,13 +490,26 @@ export function RouteToBankTransfer({
     setError(null);
     try {
       const created = await routeRefundToBankTransfer(refund.id);
-      onSettled({
-        title: words.routedTitle,
-        body: fillPlaceholders(words.routedBody, {
-          amount: formatMoney(created.amount),
-          id: shortId(created.pledgeId),
-        }),
-      });
+      // A repeat answers with the bank refund it made the first time, whatever has become of it
+      // since — it may have been paid already. Said as it is, not as freshly waiting.
+      onSettled(
+        created.state === 'AWAITING_BANK_DETAILS'
+          ? {
+              title: words.routedTitle,
+              body: fillPlaceholders(words.routedBody, {
+                amount: formatMoney(created.amount),
+                id: shortId(created.pledgeId),
+              }),
+            }
+          : {
+              variant: 'info',
+              title: words.routedAlreadyTitle,
+              body: fillPlaceholders(words.routedAlready, {
+                id: shortId(created.pledgeId),
+                state: copy.state[created.state],
+              }),
+            },
+      );
     } catch (cause) {
       setError(bankRefusalMessage(cause, copy));
       setConfirming(false);

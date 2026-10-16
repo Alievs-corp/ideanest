@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
   Chip,
   ChipRow,
@@ -37,6 +37,7 @@ import { formatExactTime } from '../../lib/time';
 import type { Locale } from '../../lib/i18n/locale';
 import type { LedgerExplorerCopy } from '../../lib/i18n/admin/money-copy';
 import { creatorIdsIn } from '../../lib/admin/ledger';
+import { isUuid } from '../../lib/admin/payments';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { ConsoleCount } from './ConsoleCount';
 import { ConsoleRefusal } from './ConsoleRefusal';
@@ -75,6 +76,18 @@ import { useDirectoryNames } from './useDirectoryNames';
  * a trigger on `ledger_entries` that raises on UPDATE and DELETE, and §7.2 says corrections
  * are new rows. A ledger that can be edited is a ledger; one that cannot is evidence.
  *
+ * <h2>An empty page is not an empty ledger while there is a next one</h2>
+ *
+ * The service applies both filters in SQL, so a page with a cursor is a full page. The screen
+ * still never draws "nothing matches" over a page that has a `nextCursor`: that state is a
+ * statement about the whole ledger, and a cursor says the ledger has not been read to the end.
+ *
+ * <h2>A later page belongs to the question that asked for it</h2>
+ *
+ * Changing the account or the campaign while "load more" is in flight aborts it and drops
+ * whatever it brings back, rather than appending another question's postings and cursor to
+ * this one. The campaign box is checked to be a UUID before anything is sent.
+ *
  * <h2>Motion: none</h2>
  *
  * docs/motion-system.md §5's lowest budget, for the screen §22.1 treats as a regulatory
@@ -86,12 +99,17 @@ export interface LedgerExplorerProps {
 
 export function LedgerExplorer({ copy }: LedgerExplorerProps) {
   const locale = useRouteLocale();
+  const ids = useId();
   const [status, setStatus] = useState<ConsoleStatus>('loading');
   // #400: which of the two 403s this is. Only read while `status` is `forbidden`.
   const [capability, setCapability] = useState<string | null>(null);
   const [account, setAccount] = useState<string | null>(null);
   const [term, setTerm] = useState('');
   const [projectId, setProjectId] = useState<string | null>(null);
+  /** What was typed is not a UUID. Shown under the box, and nothing is sent. */
+  const [idError, setIdError] = useState<string | null>(null);
+  /** The load-more in flight, so a new question can abort it and ignore what it returns. */
+  const more = useRef<AbortController | null>(null);
   const [postings, setPostings] = useState<readonly LedgerPosting[]>([]);
   const [balances, setBalances] = useState<readonly LedgerBalance[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -114,6 +132,11 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
 
   useEffect(() => {
     const controller = new AbortController();
+
+    // A new question: whatever the previous one was still loading is not part of it.
+    more.current?.abort();
+    more.current = null;
+    setLoadingMore(false);
 
     async function load(): Promise<void> {
       setStatus('loading');
@@ -147,21 +170,38 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account, projectId, attempt]);
 
-  const loadMore = useCallback(async (): Promise<void> => {
-    if (cursor === null || loadingMore) return;
+  // Leaving the screen abandons a load-more as well as the first page.
+  useEffect(() => () => more.current?.abort(), []);
 
+  const loadMore = useCallback(async (): Promise<void> => {
+    if (cursor === null || more.current !== null) return;
+
+    const controller = new AbortController();
+    more.current = controller;
     setLoadingMore(true);
     setError(null);
     try {
-      const view = await readLedger({ account, projectId, after: cursor, limit: LEDGER_PAGE_SIZE });
+      const view = await readLedger({
+        account,
+        projectId,
+        after: cursor,
+        limit: LEDGER_PAGE_SIZE,
+        signal: controller.signal,
+      });
+      // The question changed while this page was on its way: it is not a page of this list.
+      if (controller.signal.aborted) return;
       setPostings((previous) => [...previous, ...view.postings]);
       setCursor(view.nextCursor ?? null);
     } catch (cause) {
+      if (controller.signal.aborted || wasAborted(cause)) return;
       setError(consoleMessageFor(cause, copy.subject, copy.refusals));
     } finally {
-      setLoadingMore(false);
+      if (more.current === controller) {
+        more.current = null;
+        setLoadingMore(false);
+      }
     }
-  }, [account, cursor, loadingMore, projectId, copy]);
+  }, [account, cursor, projectId, copy]);
 
   if (status === 'signed-out' || status === 'forbidden') {
     return <ConsoleRefusal status={status} capability={capability} subject={copy.subject} copy={copy.refusals} />;
@@ -170,9 +210,21 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
   function submit(event: React.FormEvent): void {
     event.preventDefault();
     const trimmed = term.trim();
-    setProjectId(trimmed === '' ? null : trimmed);
+    if (trimmed === '') {
+      setIdError(null);
+      setProjectId(null);
+      return;
+    }
+    if (!isUuid(trimmed)) {
+      setIdError(copy.invalidId);
+      return;
+    }
+    setIdError(null);
+    setProjectId(trimmed.toLowerCase());
   }
 
+  const hintId = `${ids}-hint`;
+  const errorId = `${ids}-error`;
   const unbalanced = postings.filter((posting) => !posting.balanced);
 
   return (
@@ -212,34 +264,52 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
           ))}
         </ChipRow>
 
-        <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
-          <Field
-            label={copy.campaignLabel}
-            hint={copy.campaignHint}
-            className="min-w-[280px] flex-1"
-          >
-            <TextInput
-              type="search"
-              value={term}
-              onChange={(event) => setTerm(event.target.value)}
-              placeholder="00000000-0000-0000-0000-000000000000"
-            />
-          </Field>
-          <Pill type="submit" variant="outline" size="sm" className="mb-1">
-            {copy.apply}
-          </Pill>
-          {projectId !== null && (
-            <Pill
-              variant="ghost"
-              size="sm"
-              className="mb-1"
-              onClick={() => {
-                setTerm('');
-                setProjectId(null);
-              }}
-            >
-              {copy.clear}
-            </Pill>
+        {/*
+          The hint and the error sit under the row rather than inside the field, so the
+          buttons line up with the box and not with the hint under it.
+        */}
+        <form onSubmit={submit} noValidate>
+          <div className="flex flex-wrap items-end gap-x-3 gap-y-3">
+            <Field label={copy.campaignLabel} className="min-w-[min(100%,280px)] flex-1">
+              <TextInput
+                type="search"
+                value={term}
+                invalid={idError !== null}
+                aria-describedby={idError === null ? hintId : `${hintId} ${errorId}`}
+                onChange={(event) => {
+                  setTerm(event.target.value);
+                  setIdError(null);
+                }}
+                placeholder="00000000-0000-0000-0000-000000000000"
+              />
+            </Field>
+            {/* As tall as the input, so the buttons are centred on the box. */}
+            <div className="flex min-h-11 items-center gap-2">
+              <Pill type="submit" variant="outline" size="sm">
+                {copy.apply}
+              </Pill>
+              {projectId !== null && (
+                <Pill
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setTerm('');
+                    setIdError(null);
+                    setProjectId(null);
+                  }}
+                >
+                  {copy.clear}
+                </Pill>
+              )}
+            </div>
+          </div>
+          <p id={hintId} className="mt-1.5 text-[13px] text-white/64">
+            {copy.campaignHint}
+          </p>
+          {idError !== null && (
+            <p id={errorId} role="alert" className="mt-1 text-[13px] text-danger">
+              {idError}
+            </p>
           )}
         </form>
       </div>
@@ -264,7 +334,15 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
         </SkeletonGroup>
       )}
 
-      {status === 'ready' && postings.length === 0 && (
+      {/*
+        A page with nothing on it and a cursor is not "nothing matches": the ledger has not been
+        read to the end. The service no longer produces one, and the screen does not trust that.
+      */}
+      {status === 'ready' && postings.length === 0 && cursor !== null && (
+        <p className="mt-4 text-sm text-white/64">{copy.emptyPageMore}</p>
+      )}
+
+      {status === 'ready' && postings.length === 0 && cursor === null && (
         <EmptyState
           className="mt-4"
           variant={account === null && projectId === null ? 'empty' : 'filtered'}

@@ -45,8 +45,88 @@ export interface FeeSchedule {
   createdBy: string;
 }
 
+/** The terms a payout is priced at when no platform schedule is open, from the service's configuration. */
+export interface DefaultFeeTerms {
+  platformRate: string;
+  processingRate: string;
+  currency: string;
+}
+
 export interface FeeHistory {
   schedules: FeeSchedule[];
+  /** Absent from a service that has not been redeployed since the console started reading it. */
+  defaults?: DefaultFeeTerms | null;
+}
+
+/** A category an exception can name, with its parent's name in front when it is a subcategory. */
+export interface CategoryChoice {
+  readonly id: string;
+  readonly name: string;
+}
+
+interface WireTaxon {
+  readonly id?: string | null;
+  readonly slug?: string | null;
+  readonly name?: string | null;
+  readonly subcategories?: readonly WireTaxon[] | null;
+}
+
+/**
+ * Every category and subcategory, named in the reader's language — `GET /v1/categories`, which the
+ * service localises by `Accept-Language`. Read here rather than through `lib/projects/api`, which would
+ * bring the campaign editor's client into the console's fee route for one list.
+ */
+export async function readCategoryChoices(signal?: AbortSignal): Promise<CategoryChoice[]> {
+  const response = await authorizedFetch('/v1/categories', { signal });
+  if (!response.ok) throw await errorFrom(response);
+
+  const tree = (await response.json()) as readonly WireTaxon[];
+  const choices: CategoryChoice[] = [];
+  for (const category of tree) {
+    if (category.id == null) continue;
+    const name = category.name ?? category.slug ?? category.id;
+    choices.push({ id: category.id, name });
+    for (const sub of category.subcategories ?? []) {
+      if (sub.id == null) continue;
+      choices.push({ id: sub.id, name: `${name} › ${sub.name ?? sub.slug ?? sub.id}` });
+    }
+  }
+  return choices;
+}
+
+/**
+ * A rate as typed, as the service takes it: a fraction from 0 to 1 with at most five decimals — the
+ * column's scale. A comma is read as the decimal mark, because that is how an Azerbaijani writes it.
+ *
+ * @returns the rate to send, or `undefined` when the input is not one
+ */
+export function rateFrom(input: string): string | undefined {
+  const typed = input.trim().replace(',', '.');
+  return /^(0(\.\d{1,5})?|1(\.0{1,5})?|\.\d{1,5})$/.test(typed) ? (typed.startsWith('.') ? `0${typed}` : typed) : undefined;
+}
+
+/** The fixed amount per payout as typed: not negative, at most four decimals — the column's scale. */
+export function fixedFrom(input: string): string | undefined {
+  const typed = input.trim().replace(',', '.');
+  return /^\d{1,15}(\.\d{1,4})?$/.test(typed) ? typed : undefined;
+}
+
+/** A stored rate without the column's trailing zeroes: `"0.15000"` reads `"0.15"`. */
+export function plainRate(rate: string): string {
+  if (!rate.includes('.')) return rate;
+  const trimmed = rate.replace(/0+$/, '').replace(/\.$/, '');
+  return trimmed === '' ? '0' : trimmed;
+}
+
+/**
+ * The fixed amount with every decimal that is not a trailing zero, and never fewer than two:
+ * `"0.3000"` is `0.30 AZN` and `"0.0025"` is `0.0025 AZN`, where `formatMoney` would print `0.00`.
+ */
+export function formatFixedAmount(amount: string, currency: string): string {
+  const [whole = '0', fraction = ''] = amount.split('.');
+  const kept = fraction.replace(/0+$/, '').padEnd(2, '0');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${grouped}.${kept} ${currency}`;
 }
 
 /** Every window ever written, newest first — closed ones included. */

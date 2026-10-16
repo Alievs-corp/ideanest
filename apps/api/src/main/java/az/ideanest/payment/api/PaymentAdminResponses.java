@@ -1,5 +1,6 @@
 package az.ideanest.payment.api;
 
+import az.ideanest.payment.application.RefundRecords;
 import az.ideanest.payment.application.RefundBankTransfers;
 import az.ideanest.payment.domain.Dispute;
 import az.ideanest.payment.domain.DisputeEvidence;
@@ -36,6 +37,20 @@ public final class PaymentAdminResponses {
      *     has been one and forever on a refund that failed before the provider answered
      * @param bankTransfer #399: the bank transfer that pays it, once support has recorded the
      *     account; null for every refund that goes through a provider
+     * @param withheldFee #436: the provider's fee this refund kept back from its charge, on a refund for
+     *     a campaign's reason of a charge taken under the rule; null when nothing was kept back.
+     *     {@code amount} is what was sent, and the two together are what it settled of the charge
+     * @param backerId whose money it is — the pledge's backer, so the console can name them; null when
+     *     the pledge has none left to name
+     * @param routedFrom the refused refund this one was sent by bank transfer in place of (#399's
+     *     fallback); null otherwise. The console words the row from it rather than from {@code detail},
+     *     which the service writes in English
+     * @param disputeId the chargeback a {@code CHARGEBACK} row records the loss of (#175); null otherwise
+     * @param routedTo on a refused refund, the bank-transfer refund it was routed to, with that refund's
+     *     state; null when it has not been, so the console offers the fallback only where it applies
+     * @param parts on the issue response only, and only when the refund was sent as more than one part
+     *     (one per charge, #171): every part, in the order sent. The fields above describe the part that
+     *     best says how it went; these are what the console adds up
      */
     public record Refund(
             UUID id,
@@ -53,7 +68,13 @@ public final class PaymentAdminResponses {
             UUID requestedBy,
             Instant requestedAt,
             Instant settledAt,
-            BankTransfer bankTransfer) {
+            BankTransfer bankTransfer,
+            Money withheldFee,
+            UUID backerId,
+            UUID routedFrom,
+            UUID disputeId,
+            RoutedTo routedTo,
+            List<Refund> parts) {
 
         public static Refund of(az.ideanest.payment.domain.Refund refund) {
             return of(refund, null);
@@ -61,6 +82,15 @@ public final class PaymentAdminResponses {
 
         public static Refund of(
                 az.ideanest.payment.domain.Refund refund, az.ideanest.payment.domain.RefundBankTransfer bank) {
+            return of(refund, bank, null, null);
+        }
+
+        public static Refund of(
+                az.ideanest.payment.domain.Refund refund,
+                az.ideanest.payment.domain.RefundBankTransfer bank,
+                az.ideanest.payment.domain.Refund routed,
+                UUID backerId) {
+            Money withheld = refund.withheldFee();
             return new Refund(
                     refund.id(),
                     refund.pledgeId(),
@@ -77,7 +107,73 @@ public final class PaymentAdminResponses {
                     refund.requestedBy(),
                     refund.requestedAt(),
                     refund.settledAt(),
-                    bank == null ? null : BankTransfer.of(bank));
+                    bank == null ? null : BankTransfer.of(bank),
+                    withheld.isPositive() ? withheld : null,
+                    backerId,
+                    RefundRecords.routedFrom(refund).orElse(null),
+                    RefundRecords.chargebackOf(refund).orElse(null),
+                    routed == null ? null : new RoutedTo(routed.id(), routed.state()),
+                    null);
+        }
+
+        /**
+         * The issue response: the part that best describes how it went, and — when there was more than
+         * one — every part, so the console can say what the whole refund came to (#171).
+         */
+        public static Refund issued(
+                az.ideanest.payment.domain.Refund primary, List<az.ideanest.payment.domain.Refund> all) {
+            Refund one = of(primary);
+            if (all.size() < 2) {
+                return one;
+            }
+            return new Refund(
+                    one.id(),
+                    one.pledgeId(),
+                    one.projectId(),
+                    one.chargeTransactionId(),
+                    one.refundTransactionId(),
+                    one.amount(),
+                    one.fullRefund(),
+                    one.reason(),
+                    one.detail(),
+                    one.state(),
+                    one.failureCode(),
+                    one.failureMessage(),
+                    one.requestedBy(),
+                    one.requestedAt(),
+                    one.settledAt(),
+                    one.bankTransfer(),
+                    one.withheldFee(),
+                    one.backerId(),
+                    one.routedFrom(),
+                    one.disputeId(),
+                    one.routedTo(),
+                    all.stream().map(Refund::of).toList());
+        }
+    }
+
+    /** Where a refused refund's money went instead: the bank-transfer refund, and how far it has got. */
+    public record RoutedTo(UUID id, RefundState state) {
+    }
+
+    /**
+     * What a refund of a pledge could send now — the console's confirmation before it issues one.
+     *
+     * @param remaining in the pledge's currency, net of {@code withheldFee}: what "the rest" means
+     * @param withheldFee the provider's fee a campaign's reason keeps back (#436); zero for any other
+     * @param projectId the pledge's campaign, and {@code backerId} its backer, so the console can name both
+     */
+    public record Refundable(
+            UUID pledgeId, RefundReason reason, Money remaining, Money withheldFee, UUID projectId, UUID backerId) {
+
+        public static Refundable of(UUID pledgeId, RefundReason reason, RefundRecords.Refundable refundable) {
+            return new Refundable(
+                    pledgeId,
+                    reason,
+                    refundable.remaining(),
+                    refundable.withheldFee(),
+                    refundable.projectId(),
+                    refundable.backerId());
         }
     }
 
@@ -160,8 +256,25 @@ public final class PaymentAdminResponses {
                 Map<UUID, az.ideanest.payment.domain.RefundBankTransfer> bank,
                 int page,
                 int size) {
+            return of(refunds, bank, Map.of(), Map.of(), page, size);
+        }
+
+        /**
+         * The same, with the bank-transfer refund each refused one was routed to (#399's fallback) and the
+         * backer of each refund's pledge, so the console can name whose money it is.
+         */
+        public static RefundPage of(
+                List<az.ideanest.payment.domain.Refund> refunds,
+                Map<UUID, az.ideanest.payment.domain.RefundBankTransfer> bank,
+                Map<UUID, az.ideanest.payment.domain.Refund> routed,
+                Map<UUID, UUID> backers,
+                int page,
+                int size) {
             return new RefundPage(
-                    refunds.stream().map(refund -> Refund.of(refund, bank.get(refund.id()))).toList(),
+                    refunds.stream()
+                            .map(refund -> Refund.of(
+                                    refund, bank.get(refund.id()), routed.get(refund.id()), backers.get(refund.pledgeId())))
+                            .toList(),
                     page,
                     refunds.size() == size);
         }
@@ -174,6 +287,8 @@ public final class PaymentAdminResponses {
      *     anybody is paged about, and null when the provider sends no deadline
      * @param fee what the provider charges for handling it, win or lose. Separate from the
      *     amount because it is the platform's cost rather than what the backer disputed
+     * @param backerId whose pledge was charged back, so the console can name them; null when the
+     *     pledge has none left to name, and on the responses to a write
      */
     public record Dispute(
             UUID id,
@@ -190,9 +305,15 @@ public final class PaymentAdminResponses {
             Instant openedAt,
             Instant resolvedAt,
             UUID handledBy,
-            List<Evidence> evidence) {
+            List<Evidence> evidence,
+            UUID backerId) {
 
         public static Dispute of(az.ideanest.payment.domain.Dispute dispute, List<DisputeEvidence> evidence) {
+            return of(dispute, evidence, null);
+        }
+
+        public static Dispute of(
+                az.ideanest.payment.domain.Dispute dispute, List<DisputeEvidence> evidence, UUID backerId) {
             return new Dispute(
                     dispute.id(),
                     dispute.chargeTransactionId(),
@@ -208,7 +329,8 @@ public final class PaymentAdminResponses {
                     dispute.openedAt(),
                     dispute.resolvedAt(),
                     dispute.handledBy(),
-                    evidence.stream().map(Evidence::of).toList());
+                    evidence.stream().map(Evidence::of).toList(),
+                    backerId);
         }
 
         /** The list shape, which carries no evidence. */
@@ -246,8 +368,18 @@ public final class PaymentAdminResponses {
 
         public static DisputePage of(
                 List<az.ideanest.payment.domain.Dispute> disputes, int page, int size) {
+            return of(disputes, Map.of(), page, size);
+        }
+
+        /** The same, naming each case's backer — by pledge, from {@code PledgeBackers}. */
+        public static DisputePage of(
+                List<az.ideanest.payment.domain.Dispute> disputes, Map<UUID, UUID> backers, int page, int size) {
             return new DisputePage(
-                    disputes.stream().map(Dispute::summary).toList(), page, disputes.size() == size);
+                    disputes.stream()
+                            .map(dispute -> Dispute.of(dispute, List.of(), backers.get(dispute.pledgeId())))
+                            .toList(),
+                    page,
+                    disputes.size() == size);
         }
     }
 }

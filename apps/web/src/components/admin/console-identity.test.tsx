@@ -5,7 +5,7 @@ import { listUsers } from '../../lib/admin/api';
 import { ApiError } from '../../lib/api/problem';
 import { lookUpNames } from '../../lib/admin/directory';
 import { readHealth } from '../../lib/admin/health';
-import { readPayout, readPayoutQueue } from '../../lib/admin/payouts';
+import { listPayouts, readPayout, readPayoutQueue } from '../../lib/admin/payouts';
 import {
   grantRole,
   readMembership,
@@ -68,7 +68,7 @@ vi.mock('../../lib/admin/api', async (importOriginal) => {
 });
 vi.mock('../../lib/admin/payouts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/payouts')>();
-  return { ...actual, readPayoutQueue: vi.fn(), readPayout: vi.fn() };
+  return { ...actual, readPayoutQueue: vi.fn(), readPayout: vi.fn(), listPayouts: vi.fn() };
 });
 vi.mock('../../lib/admin/health', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/health')>();
@@ -83,6 +83,7 @@ const revokeRoleMock = vi.mocked(revokeRole);
 const listUsersMock = vi.mocked(listUsers);
 const readPayoutQueueMock = vi.mocked(readPayoutQueue);
 const readPayoutMock = vi.mocked(readPayout);
+const listPayoutsMock = vi.mocked(listPayouts);
 const readHealthMock = vi.mocked(readHealth);
 
 const ME = '0191f2ab-1234-7000-8000-0000000000aa';
@@ -128,8 +129,10 @@ function payoutQueue(): PayoutPage {
 }
 
 function payoutFile(approvers: readonly string[]): PayoutFile {
+  const payout = payoutQueue().payouts[0]!;
   return {
-    payout: payoutQueue().payouts[0]!,
+    // Two signatures of two is what makes a payout approved; the file says so, as the service would.
+    payout: approvers.length >= 2 ? { ...payout, state: 'APPROVED' } : payout,
     approvals: approvers.map((approverId) => ({
       approverId,
       approvedAt: '2026-08-02T00:00:00.000Z',
@@ -184,6 +187,7 @@ beforeEach(() => {
   readRosterMock.mockResolvedValue({ grants: [] });
   readPayoutQueueMock.mockResolvedValue(payoutQueue());
   readPayoutMock.mockResolvedValue(payoutFile([]));
+  listPayoutsMock.mockResolvedValue({ payouts: [], page: 0, hasMore: false });
   readHealthMock.mockResolvedValue(health(0));
 });
 
@@ -297,7 +301,9 @@ describe('names on a console screen', () => {
      * asked to show. A failure here costs the names; putting an error over a payout queue
      * that loaded correctly would cost the screen.
      */
-    expect(await screen.findByText(CREATOR.slice(0, 8))).toBeInTheDocument();
+    // Every identifier in this suite shares its first eight characters, so the campaign's fragment
+    // and the creator's are the same text on the row.
+    expect((await screen.findAllByText(CREATOR.slice(0, 8))).length).toBeGreaterThan(0);
     expect(screen.queryByText(CHROME.errorTitle)).not.toBeInTheDocument();
   });
 
@@ -405,8 +411,9 @@ describe('the payout file', () => {
      * What was wrong was the screen: a control offering an action the reader cannot take is
      * indistinguishable from one whose click did not register.
      */
-    expect(await screen.findByRole('button', { name: PAYOUTS.approve })).toBeDisabled();
-    expect(screen.getByText(PAYOUTS.youHaveSigned)).toBeInTheDocument();
+    // Not drawn at all now, with the reason in its place: the money pages audit (#7).
+    expect(await screen.findByText(PAYOUTS.youHaveSigned)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: PAYOUTS.approve })).not.toBeInTheDocument();
   });
 
   it('offers to withdraw a signature only to somebody who gave one', async () => {
@@ -450,6 +457,7 @@ describe('the payout file', () => {
     // and one whose account is in a reviewer's queue are different things to do next.
     expect(await screen.findByRole('button', { name: PAYOUTS.send })).toBeDisabled();
     expect(screen.getByText(PAYOUTS.destinationHeldTitle)).toBeInTheDocument();
+    expect(screen.getByText(PAYOUTS.sendHeldForDestination)).toBeInTheDocument();
   });
 });
 

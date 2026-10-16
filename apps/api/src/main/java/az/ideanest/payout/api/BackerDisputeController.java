@@ -1,5 +1,9 @@
 package az.ideanest.payout.api;
 
+import java.util.Map;
+import az.ideanest.shared.money.Money;
+import az.ideanest.payment.application.PledgeFunds;
+import az.ideanest.payment.application.PledgeBackers;
 import az.ideanest.payout.application.BackerDisputes;
 import az.ideanest.payout.application.DisputeWindow;
 import az.ideanest.payout.domain.BackerDispute;
@@ -32,9 +36,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class BackerDisputeController {
 
     private final BackerDisputes disputes;
+    private final PledgeFunds funds;
+    private final PledgeBackers backers;
 
-    public BackerDisputeController(BackerDisputes disputes) {
+    public BackerDisputeController(BackerDisputes disputes, PledgeFunds funds, PledgeBackers backers) {
         this.disputes = disputes;
+        this.funds = funds;
+        this.backers = backers;
     }
 
     /**
@@ -61,13 +69,27 @@ public class BackerDisputeController {
                 .body(DisputeWindowBody.of(disputes.window(callerOf(accessToken), pledgeId)));
     }
 
-    /** The undecided disputes, oldest first. {@code MANAGE_DISPUTES}. */
+    /**
+     * The undecided disputes, oldest first. {@code MANAGE_DISPUTES}.
+     *
+     * <p>Each carries what upholding it would refund — {@code refundable}, everything the pledge has left,
+     * since an upheld dispute refunds in full — and the pledge's backer, so the console can say how much
+     * and to whom before anybody presses the button that sends it. A bare array of at most fifty: a page
+     * shorter than that is the last.
+     */
     @GetMapping("/v1/admin/backer-disputes")
     public ResponseEntity<List<DisputeBody>> queue(
             @AuthenticationPrincipal Jwt accessToken, @RequestParam(defaultValue = "0") int page) {
+        List<BackerDispute> queued = disputes.queue(callerOf(accessToken), page);
+        Map<UUID, UUID> backerOf = backers.of(queued.stream().map(BackerDispute::pledgeId).toList());
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(disputes.queue(callerOf(accessToken), page).stream().map(DisputeBody::of).toList());
+                .body(queued.stream()
+                        .map(dispute -> DisputeBody.of(
+                                dispute,
+                                funds.refundableOn(dispute.pledgeId()).orElse(null),
+                                backerOf.get(dispute.pledgeId())))
+                        .toList());
     }
 
     /** Upholds or rejects a dispute. Upholding refunds the backer in full and recalculates the payout. */
@@ -102,9 +124,20 @@ public class BackerDisputeController {
             String state,
             Instant openedAt,
             Instant decidedAt,
-            UUID refundId) {
+            UUID refundId,
+            Money refundable,
+            UUID backerId) {
 
         static DisputeBody of(BackerDispute dispute) {
+            return of(dispute, null, null);
+        }
+
+        /**
+         * @param refundable what the pledge has left to refund — what upholding sends; null on every
+         *     response but the administrators' queue, and when nothing is left
+         * @param backerId the pledge's backer, on the administrators' queue only
+         */
+        static DisputeBody of(BackerDispute dispute, Money refundable, UUID backerId) {
             return new DisputeBody(
                     dispute.id(),
                     dispute.pledgeId(),
@@ -114,7 +147,9 @@ public class BackerDisputeController {
                     dispute.state().name(),
                     dispute.openedAt(),
                     dispute.decidedAt(),
-                    dispute.refundId());
+                    dispute.refundId(),
+                    refundable,
+                    backerId);
         }
     }
 

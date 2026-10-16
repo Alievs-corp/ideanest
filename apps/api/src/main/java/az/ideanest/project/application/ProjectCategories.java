@@ -2,6 +2,7 @@ package az.ideanest.project.application;
 
 import az.ideanest.fee.application.CampaignCategories;
 import az.ideanest.project.domain.Project;
+import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.project.infrastructure.ProjectRepository;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,14 +27,28 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProjectCategories implements CampaignCategories {
 
     private final ProjectRepository projects;
+    private final CategoryRepository categories;
 
-    public ProjectCategories(ProjectRepository projects) {
+    public ProjectCategories(ProjectRepository projects, CategoryRepository categories) {
         this.projects = projects;
+        this.categories = categories;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<UUID> categoryOf(UUID projectId) {
         return projects.findById(projectId).map(Project::getCategoryId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean categoryExists(UUID categoryId) {
+        return categories.existsById(categoryId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean campaignExists(UUID projectId) {
+        return projects.existsById(projectId);
     }
 }

@@ -481,6 +481,9 @@ public class PayoutService {
         staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
 
         Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        // V66's rule, on the signature as well as on the hand that pays: a member of staff who is also the
+        // creator does not sign off their own campaign's money.
+        refuseOwnPayout(staffId, payout, AuditAction.PAYOUT_APPROVED);
 
         // #431: the second of the two places the gate goes. An operator may approve a
         // payout the sweep has not reached, and a gate that lived only in the sweep would
@@ -569,10 +572,10 @@ public class PayoutService {
         }
 
         audit.record(
-                AuditAction.PAYOUT_APPROVED,
+                AuditAction.PAYOUT_APPROVAL_WITHDRAWN,
                 payoutId,
                 AuditActor.moderator(staffId),
-                AuditOutcome.REFUSED,
+                AuditOutcome.SUCCEEDED,
                 "withdrawn=%s; signatures=%d/%d".formatted(removed == 1, signatures, payout.approvalsRequired()));
 
         return new PayoutFile(payout, approvals.forPayout(payoutId));
@@ -623,6 +626,7 @@ public class PayoutService {
         staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
 
         Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        refuseOwnPayout(staffId, payout, AuditAction.PAYOUT_SENT);
         if (payout.state() != PayoutState.APPROVED) {
             throw new PayoutNotSendableException(payoutId, payout.state());
         }
@@ -761,6 +765,7 @@ public class PayoutService {
         staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
 
         Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        refuseOwnPayout(staffId, payout, AuditAction.PAYOUT_SENT);
         // Or one a previous release recorded FAILED as unreachable, which V86 could not reopen.
         boolean unconfirmed = (payout.state() == PayoutState.APPROVED && payout.sendUnconfirmed())
                 || (payout.state() == PayoutState.FAILED && "provider_unreachable".equals(payout.failureCode()));
@@ -835,10 +840,10 @@ public class PayoutService {
         payout.cancelled();
 
         audit.record(
-                AuditAction.PAYOUT_SENT,
+                AuditAction.PAYOUT_CANCELLED,
                 payoutId,
                 AuditActor.moderator(staffId),
-                AuditOutcome.REFUSED,
+                AuditOutcome.SUCCEEDED,
                 "cancelled before sending");
 
         return payout;
@@ -1182,9 +1187,18 @@ public class PayoutService {
      * Audited independently, because this throws and an attempt is what an investigation looks for.
      */
     private void refuseOwnPayout(UUID staffId, Payout payout) {
+        refuseOwnPayout(staffId, payout, AuditAction.PAYOUT_BANK_TRANSFER_STARTED);
+    }
+
+    /**
+     * The same rule on the provider route: signing, sending and settling an unconfirmed send. Audited under
+     * the action that was refused, so the trail reads as "tried to approve their own payout" rather than as a
+     * bank transfer nobody started.
+     */
+    private void refuseOwnPayout(UUID staffId, Payout payout, AuditAction attempted) {
         if (staffId.equals(payout.creatorId())) {
             audit.recordIndependently(
-                    AuditAction.PAYOUT_BANK_TRANSFER_STARTED,
+                    attempted,
                     payout.id(),
                     AuditActor.moderator(staffId),
                     AuditOutcome.REFUSED,

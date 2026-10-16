@@ -1428,6 +1428,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/refunds/refundable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["refundRefundable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/refunds/{refundId}/bank-details": {
         parameters: {
             query?: never;
@@ -5302,6 +5318,8 @@ export interface components {
         Dispute: {
             amount?: components["schemas"]["Money"];
             /** Format: uuid */
+            backerId?: string;
+            /** Format: uuid */
             chargeTransactionId?: string;
             evidence?: components["schemas"]["Evidence"][];
             /** Format: date-time */
@@ -5326,6 +5344,8 @@ export interface components {
             state?: "OPEN" | "UNDER_REVIEW" | "WON" | "LOST" | "CONCEDED";
         };
         DisputeBody: {
+            /** Format: uuid */
+            backerId?: string;
             /** Format: date-time */
             decidedAt?: string;
             /** Format: uuid */
@@ -5341,6 +5361,7 @@ export interface components {
             reason?: string;
             /** Format: uuid */
             refundId?: string;
+            refundable?: components["schemas"]["Money"];
             state?: string;
         };
         DisputePage: {
@@ -5529,6 +5550,8 @@ export interface components {
             recorded?: boolean;
             /** @enum {string} */
             rejectionReason?: "UNREADABLE" | "EXPIRED_DOCUMENT" | "MISMATCHED_NAME" | "INCOMPLETE" | "SUSPECTED_FORGERY";
+            /** @enum {string} */
+            reviewState?: "AWAITING_VERIFICATION" | "NAME_MISMATCH" | "REJECTED" | "VERIFIED";
             /** @enum {string} */
             standing?: "WAIVED" | "VERIFIED" | "NONE" | "AWAITING_VERIFICATION" | "NAME_MISMATCH" | "REJECTED";
             /** Format: date-time */
@@ -6116,6 +6139,7 @@ export interface components {
             creatorId?: string;
             /** @enum {string} */
             creatorStanding?: "NOT_REQUIRED" | "WAIVED" | "VERIFIED" | "NEVER_REQUESTED" | "AWAITING_DOCUMENTS" | "UNDER_REVIEW" | "REJECTED" | "EXPIRED";
+            debtWithheld?: components["schemas"]["Money"];
             /** @enum {string} */
             destinationKind?: "PROVIDER_TOKEN" | "BANK_TRANSFER";
             /** @enum {string} */
@@ -6140,6 +6164,8 @@ export interface components {
             /** Format: uuid */
             projectId?: string;
             refunded?: components["schemas"]["Money"];
+            /** Format: date-time */
+            sendUnconfirmedAt?: string;
             /** Format: date-time */
             sentAt?: string;
             /** @enum {string} */
@@ -6607,15 +6633,20 @@ export interface components {
         };
         Refund: {
             amount?: components["schemas"]["Money"];
+            /** Format: uuid */
+            backerId?: string;
             bankTransfer?: components["schemas"]["BankTransfer"];
             /** Format: uuid */
             chargeTransactionId?: string;
             detail?: string;
+            /** Format: uuid */
+            disputeId?: string;
             failureCode?: string;
             failureMessage?: string;
             fullRefund?: boolean;
             /** Format: uuid */
             id?: string;
+            parts?: components["schemas"]["Refund"][];
             /** Format: uuid */
             pledgeId?: string;
             /** Format: uuid */
@@ -6628,16 +6659,32 @@ export interface components {
             requestedAt?: string;
             /** Format: uuid */
             requestedBy?: string;
+            /** Format: uuid */
+            routedFrom?: string;
+            routedTo?: components["schemas"]["RoutedTo"];
             /** Format: date-time */
             settledAt?: string;
             /** @enum {string} */
             state?: "REQUESTED" | "SUCCEEDED" | "FAILED" | "AWAITING_BANK_DETAILS" | "AWAITING_TRANSFER";
+            withheldFee?: components["schemas"]["Money"];
         };
         RefundPage: {
             hasMore?: boolean;
             /** Format: int32 */
             page?: number;
             refunds?: components["schemas"]["Refund"][];
+        };
+        Refundable: {
+            /** Format: uuid */
+            backerId?: string;
+            /** Format: uuid */
+            pledgeId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** @enum {string} */
+            reason?: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD" | "RAISE_NOT_APPLIED" | "CHARGEBACK";
+            remaining?: components["schemas"]["Money"];
+            withheldFee?: components["schemas"]["Money"];
         };
         RegisterDeviceRequest: {
             appVersion?: string;
@@ -6861,6 +6908,12 @@ export interface components {
         };
         Roster: {
             grants?: components["schemas"]["Grant"][];
+        };
+        RoutedTo: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            state?: "REQUESTED" | "SUCCEEDED" | "FAILED" | "AWAITING_BANK_DETAILS" | "AWAITING_TRANSFER";
         };
         RowFailureBody: {
             code?: string;
@@ -7468,6 +7521,8 @@ export interface components {
             accountId?: string;
             amount?: string;
             /** Format: date-time */
+            cardRefundStartedAt?: string;
+            /** Format: date-time */
             cardRefundUntil?: string;
             currency?: string;
             /** Format: uuid */
@@ -7850,6 +7905,7 @@ export type SchemaReferrerReportResponse = components['schemas']['ReferrerReport
 export type SchemaRefreshRequest = components['schemas']['RefreshRequest'];
 export type SchemaRefund = components['schemas']['Refund'];
 export type SchemaRefundPage = components['schemas']['RefundPage'];
+export type SchemaRefundable = components['schemas']['Refundable'];
 export type SchemaRegisterDeviceRequest = components['schemas']['RegisterDeviceRequest'];
 export type SchemaRegistrationRequest = components['schemas']['RegistrationRequest'];
 export type SchemaRejectRequest = components['schemas']['RejectRequest'];
@@ -7880,6 +7936,7 @@ export type SchemaRewardResponse = components['schemas']['RewardResponse'];
 export type SchemaRewardSlice = components['schemas']['RewardSlice'];
 export type SchemaRewardTierCountBody = components['schemas']['RewardTierCountBody'];
 export type SchemaRoster = components['schemas']['Roster'];
+export type SchemaRoutedTo = components['schemas']['RoutedTo'];
 export type SchemaRowFailureBody = components['schemas']['RowFailureBody'];
 export type SchemaSaveBackerSegmentRequest = components['schemas']['SaveBackerSegmentRequest'];
 export type SchemaSaveFlagRequest = components['schemas']['SaveFlagRequest'];
@@ -10364,6 +10421,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefundPage"];
+                };
+            };
+        };
+    };
+    refundRefundable: {
+        parameters: {
+            query: {
+                pledgeId: string;
+                reason?: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD" | "RAISE_NOT_APPLIED" | "CHARGEBACK";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refundable"];
                 };
             };
         };
