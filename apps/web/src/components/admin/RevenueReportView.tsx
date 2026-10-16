@@ -13,6 +13,7 @@ import {
   type SubscriptionPayment,
 } from '../../lib/admin/revenue';
 import { consoleMessageFor, wasAborted } from '../../lib/admin/refusals';
+import { ApiError } from '../../lib/api/problem';
 import { formatMoney } from '../../lib/money';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
@@ -122,6 +123,31 @@ function offerDownload(filename: string, csv: string): void {
   URL.revokeObjectURL(url);
 }
 
+/** The longest period the service reports on, in days — `RevenuePeriod.MAX_DAYS`. */
+const MAX_DAYS = 400;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Why a period cannot be reported on, in the reader's words, or null when it can.
+ *
+ * Checked before sending, so the reader is told at the field rather than by a refusal, and
+ * used again to word the service's own `INVALID_REVENUE_PERIOD` — which carries only an English
+ * `detail`, and is told apart here by the request that earned it rather than by its prose.
+ */
+function periodProblem(
+  from: string | null | undefined,
+  to: string | null | undefined,
+  copy: RevenueReportCopy,
+): string | null {
+  if (from == null || to == null) return null;
+  const start = Date.parse(from);
+  const end = Date.parse(to);
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  if (end <= start) return copy.periodBackwards;
+  if (end - start > MAX_DAYS * DAY_MS) return copy.periodTooLong;
+  return null;
+}
+
 export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
   const locale = useRouteLocale();
   const ids = useId();
@@ -134,15 +160,34 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
   const [method, setMethod] = useState<PaymentMethod | ''>('');
   /** What was last asked. Empty on arrival, which the service answers with this month. */
   const [request, setRequest] = useState<RevenueRequest>({});
+  /** The period as typed cannot be asked about. Shown under the dates; nothing is sent. */
+  const [periodError, setPeriodError] = useState<string | null>(null);
+
+  /*
+   * The service's refusal of a period arrives with an English `detail` and nothing else to
+   * translate it by. It is reworded here, before `useConsoleResource` turns it into the
+   * message on screen, from the request it refused.
+   */
+  const inReadersWords = (cause: unknown): unknown => {
+    if (!(cause instanceof ApiError) || cause.problem?.code !== 'INVALID_REVENUE_PERIOD') return cause;
+    const detail = periodProblem(request.from, request.to, copy) ?? copy.periodBackwards;
+    return new ApiError(cause.status, { ...cause.problem, detail });
+  };
 
   const report = useConsoleResource(
-    (signal) => readRevenue(request, signal),
+    (signal) =>
+      readRevenue(request, signal).catch((cause: unknown) => {
+        throw inReadersWords(cause);
+      }),
     copy.subject,
     copy.refusals,
     [request],
   );
   const firstPage = useConsoleResource(
-    (signal) => readSubscriptionPayments(request, {}, signal),
+    (signal) =>
+      readSubscriptionPayments(request, {}, signal).catch((cause: unknown) => {
+        throw inReadersWords(cause);
+      }),
     copy.subject,
     copy.refusals,
     [request],
@@ -171,21 +216,30 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
   const editFrom = (value: string) => {
     touched.current = true;
     setFromDay(value);
+    setPeriodError(null);
   };
   const editTo = (value: string) => {
     touched.current = true;
     setToDay(value);
+    setPeriodError(null);
   };
 
   const ask = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setRequest({
+    const next: RevenueRequest = {
       from: fromDay === '' ? null : startOfBakuDay(fromDay),
       // Inclusive on screen, exclusive on the wire: the start of the day after the last one.
       to: toDay === '' ? null : startOfBakuDay(shiftDay(toDay, 1)),
       planCode: planCode.trim() === '' ? null : planCode.trim(),
       method: method === '' ? null : method,
-    });
+    };
+    const problem = periodProblem(next.from, next.to, copy);
+    if (problem !== null) {
+      setPeriodError(problem);
+      return;
+    }
+    setPeriodError(null);
+    setRequest(next);
   };
 
   const pickMonth = (offset: number) => {
@@ -193,6 +247,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
     touched.current = true;
     setFromDay(days.from);
     setToDay(days.to);
+    setPeriodError(null);
   };
 
   /* ---- the list's later pages ------------------------------------------- */
@@ -201,28 +256,52 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
+  /** The load-more in flight, so a new question can abort it and ignore what it returns. */
+  const pending = useRef<AbortController | null>(null);
 
-  // A new first page starts the list again: pages from the previous question are not rows of
-  // this one.
+  /*
+   * A new question starts the list again, at once and not when its first page arrives. Waiting
+   * for the answer left the previous question's pages and cursor in place while it loaded — and
+   * for good when it failed — so "load more" could send the new question with the old cursor.
+   */
   useEffect(() => {
+    pending.current?.abort();
+    pending.current = null;
+    setLoadingMore(false);
     setMore([]);
     setListError(null);
+    setCursor(null);
+  }, [request]);
+
+  // The cursor is the answered first page's, and only once it is this question's answer.
+  useEffect(() => {
+    if (firstPage.status !== 'ready') return;
+    setMore([]);
     setCursor(firstPage.data?.nextCursor ?? null);
-  }, [firstPage.data]);
+  }, [firstPage.status, firstPage.data]);
+
+  useEffect(() => () => pending.current?.abort(), []);
 
   const loadMore = useCallback(async (): Promise<void> => {
-    if (cursor === null) return;
+    if (cursor === null || pending.current !== null) return;
     const controller = new AbortController();
+    pending.current = controller;
     setLoadingMore(true);
     setListError(null);
     try {
       const page = await readSubscriptionPayments(request, { after: cursor }, controller.signal);
+      // The question changed while this page was on its way: it is not a page of this list.
+      if (controller.signal.aborted) return;
       setMore((held) => [...held, ...page.payments]);
       setCursor(page.nextCursor ?? null);
     } catch (cause) {
-      if (!wasAborted(cause)) setListError(consoleMessageFor(cause, copy.subject, copy.refusals));
+      if (controller.signal.aborted || wasAborted(cause)) return;
+      setListError(consoleMessageFor(cause, copy.subject, copy.refusals));
     } finally {
-      setLoadingMore(false);
+      if (pending.current === controller) {
+        pending.current = null;
+        setLoadingMore(false);
+      }
     }
     // The copy is one object per server render — see `useConsoleResource` for the argument.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -266,9 +345,28 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
     );
   }
 
-  const data: RevenueReport | null = report.data;
-  const rows = [...(firstPage.data?.payments ?? []), ...more];
+  /*
+   * Only the answer to the question on screen is drawn. `useConsoleResource` keeps the previous
+   * answer through a reload, which suits a refresh and not a new question: September's totals
+   * under an October request that is still loading, or that failed, are figures somebody will
+   * read as October's.
+   */
+  const busy = report.status === 'loading' || firstPage.status === 'loading';
+  const data: RevenueReport | null = report.status === 'ready' ? report.data : null;
+  const listReady = firstPage.status === 'ready';
+  const rows = listReady ? [...(firstPage.data?.payments ?? []), ...more] : [];
   const lastDay = data === null ? null : bakuDay(new Date(Date.parse(data.to) - 1).toISOString());
+  const filtered = request.planCode != null || request.method != null;
+  // Both reads refused for the same reason say it once, above the figures.
+  const listFailed = firstPage.status === 'failed' && report.status !== 'failed';
+  const retry = () => {
+    report.reload();
+    firstPage.reload();
+  };
+
+  const periodHintId = `${ids}-period-hint`;
+  const periodErrorId = `${ids}-period-error`;
+  const planHintId = `${ids}-plan-hint`;
 
   return (
     <div className="flex flex-col gap-8">
@@ -278,17 +376,36 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
       {/* ---- the question -------------------------------------------------- */}
 
-      <form onSubmit={ask} className="flex flex-col gap-4">
-        <fieldset className="flex flex-col gap-3">
+      {/*
+        Hints sit under each row rather than inside a field. Inside, a field with a hint was
+        taller than the one beside it, and `items-end` then lifted its label above its
+        neighbour's and lined the buttons up with the hint instead of with the boxes. Every
+        control in a row now ends on the same line, and the presets and the submit button are
+        as tall as an input so they centre on it.
+      */}
+      <form onSubmit={ask} className="flex flex-col gap-5" noValidate>
+        <fieldset>
           <legend className="mb-2 text-sm font-medium text-white">{copy.periodLegend}</legend>
-          <div className="flex flex-wrap items-end gap-4">
-            <Field label={copy.fromLabel} className="min-w-[160px]">
-              <TextInput type="date" value={fromDay} onChange={(event) => editFrom(event.target.value)} />
+          <div className="flex flex-wrap items-end gap-3">
+            <Field label={copy.fromLabel} className="w-[calc(50%-0.375rem)] sm:w-44">
+              <TextInput
+                type="date"
+                value={fromDay}
+                invalid={periodError !== null}
+                aria-describedby={periodError === null ? periodHintId : `${periodHintId} ${periodErrorId}`}
+                onChange={(event) => editFrom(event.target.value)}
+              />
             </Field>
-            <Field label={copy.toLabel} hint={copy.toHint} className="min-w-[160px]">
-              <TextInput type="date" value={toDay} onChange={(event) => editTo(event.target.value)} />
+            <Field label={copy.toLabel} className="w-[calc(50%-0.375rem)] sm:w-44">
+              <TextInput
+                type="date"
+                value={toDay}
+                invalid={periodError !== null}
+                aria-describedby={periodError === null ? periodHintId : `${periodHintId} ${periodErrorId}`}
+                onChange={(event) => editTo(event.target.value)}
+              />
             </Field>
-            <div className="flex gap-2">
+            <div className="flex min-h-11 items-center gap-2">
               <Pill type="button" variant="ghost" size="sm" onClick={() => pickMonth(0)}>
                 {copy.thisMonth}
               </Pill>
@@ -297,31 +414,52 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
               </Pill>
             </div>
           </div>
+          <p id={periodHintId} className="mt-1.5 text-[13px] text-white/64">
+            {copy.toHint}
+          </p>
+          {periodError !== null && (
+            <p id={periodErrorId} role="alert" className="mt-1 text-[13px] text-danger">
+              {periodError}
+            </p>
+          )}
         </fieldset>
 
-        <div className="flex flex-wrap items-end gap-4">
-          <Field label={copy.planLabel} hint={copy.planHint} className="min-w-[180px]">
-            <TextInput value={planCode} onChange={(event) => setPlanCode(event.target.value)} maxLength={40} />
-          </Field>
-          <Field label={copy.methodLabel} className="min-w-[200px]">
-            <Select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod | '')}>
-              <option value="">{copy.anyMethod}</option>
-              {PAYMENT_METHODS.map((option) => (
-                <option key={option} value={option}>
-                  {copy.method[option]}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Pill type="submit" size="sm">
-            {copy.show}
-          </Pill>
+        <div>
+          <div className="flex flex-wrap items-end gap-3">
+            <Field label={copy.planLabel} className="w-full sm:w-52">
+              <TextInput
+                value={planCode}
+                aria-describedby={planHintId}
+                onChange={(event) => setPlanCode(event.target.value)}
+                maxLength={40}
+              />
+            </Field>
+            <Field label={copy.methodLabel} className="w-full sm:w-56">
+              <Select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod | '')}>
+                <option value="">{copy.anyMethod}</option>
+                {PAYMENT_METHODS.map((option) => (
+                  <option key={option} value={option}>
+                    {copy.method[option]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <div className="flex min-h-11 items-center">
+              {/* Disabled while a question is out, and says so: a second click is a second audit row. */}
+              <Pill type="submit" size="sm" disabled={busy} aria-busy={busy}>
+                {busy ? copy.loading : copy.show}
+              </Pill>
+            </div>
+          </div>
+          <p id={planHintId} className="mt-1.5 text-[13px] text-white/64">
+            {copy.planHint}
+          </p>
         </div>
       </form>
 
       {/* ---- the figures --------------------------------------------------- */}
 
-      <section aria-labelledby={`${ids}-totals`}>
+      <section aria-labelledby={`${ids}-totals`} aria-busy={report.status === 'loading'}>
         <h2 id={`${ids}-totals`} className="text-lg font-semibold text-white">
           {copy.totalsHeading}
         </h2>
@@ -334,7 +472,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
           </p>
         )}
 
-        {report.status === 'loading' && data === null && (
+        {report.status === 'loading' && (
           <SkeletonGroup label={copy.loadingTotals} className="mt-4">
             <Skeleton height="1rem" width="40%" />
             <Skeleton height="0.875rem" width="60%" className="mt-3" />
@@ -346,14 +484,21 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
             <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
               {report.error}
             </InlineAlert>
-            <Pill variant="ghost" size="sm" className="mt-4" onClick={report.reload}>
+            <Pill variant="ghost" size="sm" className="mt-4" onClick={retry}>
               {copy.tryAgain}
             </Pill>
           </>
         )}
 
         {data !== null && data.currencies.length === 0 && (
-          <EmptyState className="mt-4" variant="empty" title={copy.emptyTitle} description={copy.emptyBody} />
+          /* A plan code or a method narrows the period exactly as the dates do, so nothing under
+             one is "nothing matches", not "nothing was paid". */
+          <EmptyState
+            className="mt-4"
+            variant={filtered ? 'filtered' : 'empty'}
+            title={filtered ? copy.filteredTitle : copy.emptyTitle}
+            description={filtered ? copy.filteredBody : copy.emptyBody}
+          />
         )}
 
         {data !== null && data.currencies.length > 0 && (
@@ -439,13 +584,11 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
       {/* ---- the rows behind them ------------------------------------------ */}
 
-      <section aria-labelledby={`${ids}-payments`}>
+      <section aria-labelledby={`${ids}-payments`} aria-busy={firstPage.status === 'loading'}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id={`${ids}-payments`} className="flex items-center gap-3 text-lg font-semibold text-white">
             {copy.listHeading}
-            {firstPage.status === 'ready' && (
-              <ConsoleCount loaded={rows.length} more={cursor !== null} copy={copy.count} />
-            )}
+            {listReady && <ConsoleCount loaded={rows.length} more={cursor !== null} copy={copy.count} />}
           </h2>
           <Pill variant="ghost" size="sm" disabled={exporting} onClick={() => void download()}>
             {exporting ? copy.exporting : copy.exportCsv}
@@ -463,18 +606,25 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
           </InlineAlert>
         )}
 
-        {firstPage.status === 'loading' && firstPage.data === null && (
+        {firstPage.status === 'loading' && (
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <Skeleton height="1rem" width="50%" />
             <Skeleton height="0.875rem" width="30%" className="mt-3" />
           </SkeletonGroup>
         )}
 
-        {firstPage.status === 'failed' && (
-          <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
-            {firstPage.error}
-          </InlineAlert>
+        {listFailed && (
+          <>
+            <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
+              {firstPage.error}
+            </InlineAlert>
+            <Pill variant="ghost" size="sm" className="mt-4" onClick={firstPage.reload}>
+              {copy.tryAgain}
+            </Pill>
+          </>
         )}
+
+        {listReady && rows.length === 0 && <p className="mt-4 text-sm text-white/64">{copy.listEmpty}</p>}
 
         {rows.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-2">
@@ -490,7 +640,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
           </InlineAlert>
         )}
 
-        {cursor !== null && (
+        {listReady && cursor !== null && (
           <Pill variant="ghost" size="sm" className="mt-4" disabled={loadingMore} onClick={() => void loadMore()}>
             {loadingMore ? copy.loading : copy.loadMore}
           </Pill>
@@ -508,6 +658,9 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
  * that is lost when a row is read aloud or skimmed. It is neutral rather than lime — lime means
  * "act now", and a reversal already recorded asks nothing of anybody.
  *
+ * <p>The payer is named and then addressed: the name first, in weight, and the email beside
+ * it. A row with only an email read as an address book rather than as a person who paid.
+ *
  * <p>A closed account is named as closed rather than left blank. V73 keeps the receipt past
  * the account on purpose, and an empty cell reads as missing data rather than as a person who
  * left.
@@ -522,6 +675,8 @@ function PaymentRow({
   readonly copy: RevenueReportCopy;
 }) {
   const backdated = bakuDay(payment.receivedAt) !== bakuDay(payment.recordedAt);
+  const name = payment.accountName == null || payment.accountName === '' ? null : payment.accountName;
+  const email = payment.accountEmail == null || payment.accountEmail === '' ? null : payment.accountEmail;
 
   return (
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
@@ -536,11 +691,14 @@ function PaymentRow({
               </span>
             )}
           </p>
-          <p className="mt-1 break-all text-sm text-white/64">
-            {payment.accountEmail == null || payment.accountEmail === '' ? (
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 break-all text-sm text-white/64">
+            {name === null && email === null ? (
               <span>{copy.closedAccount}</span>
             ) : (
-              <span>{payment.accountEmail}</span>
+              <>
+                {name !== null && <span className="font-medium text-white">{name}</span>}
+                {email !== null && <span>{email}</span>}
+              </>
             )}
           </p>
         </div>
