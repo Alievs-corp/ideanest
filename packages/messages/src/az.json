@@ -2083,7 +2083,7 @@
         "unbalancedTitle": "Kitablar balanslaşmır",
         "unbalancedBody": "{positions} üzrə {findings}, yoxlanılıb {at}. {note}",
         "unbalancedEmphasis": "Heç nə avtomatik düzəldilməyib",
-        "unbalancedNote": "{emphasis} — düzəldici yazılış onlarla mümkün səbəbdən hansının baş verdiyindən asılıdır, ona görə bunu avtomatik yox, insan qərarı ilə düzəltmək lazımdır.",
+        "unbalancedNote": "{emphasis} — düzəldici yazılış onlarla mümkün səbəbdən hansının baş verdiyindən asılıdır, ona görə bunu sistem özü yox, insan qərarı ilə düzəltmək lazımdır.",
         "balancedTitle": "Kitablar balanslaşır",
         "balancedBody": "{positions} yoxlanılıb {at}, yerində olmayan heç nə yoxdur.",
         "nothingHeld": "Platforma hələ heç bir hesabda pul saxlamır, bu da yoxlanılmamış deyil, balanslaşmış deməkdir.",

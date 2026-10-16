@@ -11,6 +11,7 @@ import {
   type RevenueReport,
   type RevenueRequest,
   type SubscriptionPayment,
+  type SubscriptionPaymentList,
 } from '../../lib/admin/revenue';
 import { consoleMessageFor, wasAborted } from '../../lib/admin/refusals';
 import { ApiError } from '../../lib/api/problem';
@@ -252,38 +253,40 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
   /* ---- the list's later pages ------------------------------------------- */
 
-  const [more, setMore] = useState<readonly SubscriptionPayment[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
+  /*
+   * Later pages are held against the first page they continue. They are drawn only while that
+   * first page is the one on screen, so a new question — or a reload of this one — starts the
+   * list again in the same render, with no frame in which another answer's rows or cursor are
+   * still attached. Before, they were cleared in an effect when the new first page arrived:
+   * while it loaded, and for good when it failed, "load more" sent the new question with the
+   * previous question's cursor.
+   */
+  const [later, setLater] = useState<{
+    readonly base: SubscriptionPaymentList;
+    readonly rows: readonly SubscriptionPayment[];
+    readonly cursor: string | null;
+  } | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
   /** The load-more in flight, so a new question can abort it and ignore what it returns. */
   const pending = useRef<AbortController | null>(null);
 
-  /*
-   * A new question starts the list again, at once and not when its first page arrives. Waiting
-   * for the answer left the previous question's pages and cursor in place while it loaded — and
-   * for good when it failed — so "load more" could send the new question with the old cursor.
-   */
+  const base = firstPage.status === 'ready' ? firstPage.data : null;
+  const extra = later !== null && later.base === base ? later : null;
+  const cursor = base === null ? null : extra !== null ? extra.cursor : (base.nextCursor ?? null);
+
+  // A new question abandons a load-more that belonged to the previous one.
   useEffect(() => {
     pending.current?.abort();
     pending.current = null;
     setLoadingMore(false);
-    setMore([]);
     setListError(null);
-    setCursor(null);
   }, [request]);
-
-  // The cursor is the answered first page's, and only once it is this question's answer.
-  useEffect(() => {
-    if (firstPage.status !== 'ready') return;
-    setMore([]);
-    setCursor(firstPage.data?.nextCursor ?? null);
-  }, [firstPage.status, firstPage.data]);
 
   useEffect(() => () => pending.current?.abort(), []);
 
   const loadMore = useCallback(async (): Promise<void> => {
-    if (cursor === null || pending.current !== null) return;
+    if (base === null || cursor === null || pending.current !== null) return;
     const controller = new AbortController();
     pending.current = controller;
     setLoadingMore(true);
@@ -292,8 +295,11 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
       const page = await readSubscriptionPayments(request, { after: cursor }, controller.signal);
       // The question changed while this page was on its way: it is not a page of this list.
       if (controller.signal.aborted) return;
-      setMore((held) => [...held, ...page.payments]);
-      setCursor(page.nextCursor ?? null);
+      setLater((held) => ({
+        base,
+        rows: [...(held !== null && held.base === base ? held.rows : []), ...page.payments],
+        cursor: page.nextCursor ?? null,
+      }));
     } catch (cause) {
       if (controller.signal.aborted || wasAborted(cause)) return;
       setListError(consoleMessageFor(cause, copy.subject, copy.refusals));
@@ -305,7 +311,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
     }
     // The copy is one object per server render — see `useConsoleResource` for the argument.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cursor, request]);
+  }, [base, cursor, request]);
 
   /* ---- the file ---------------------------------------------------------- */
 
@@ -354,7 +360,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
   const busy = report.status === 'loading' || firstPage.status === 'loading';
   const data: RevenueReport | null = report.status === 'ready' ? report.data : null;
   const listReady = firstPage.status === 'ready';
-  const rows = listReady ? [...(firstPage.data?.payments ?? []), ...more] : [];
+  const rows = base === null ? [] : [...base.payments, ...(extra?.rows ?? [])];
   const lastDay = data === null ? null : bakuDay(new Date(Date.parse(data.to) - 1).toISOString());
   const filtered = request.planCode != null || request.method != null;
   // Both reads refused for the same reason say it once, above the figures.
@@ -424,9 +430,14 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
           )}
         </fieldset>
 
+        {/*
+          One wrapping row, with the plan hint as a full-width item: straight under the plan
+          box on a phone, where the row stacks, and under the whole row from `sm` up, where it
+          would otherwise lift the plan box above its neighbours.
+        */}
         <div>
           <div className="flex flex-wrap items-end gap-3">
-            <Field label={copy.planLabel} className="w-full sm:w-52">
+            <Field label={copy.planLabel} className="order-1 w-full sm:w-52">
               <TextInput
                 value={planCode}
                 aria-describedby={planHintId}
@@ -434,7 +445,10 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
                 maxLength={40}
               />
             </Field>
-            <Field label={copy.methodLabel} className="w-full sm:w-56">
+            <p id={planHintId} className="order-2 -mt-1.5 basis-full text-[13px] text-white/64 sm:order-last">
+              {copy.planHint}
+            </p>
+            <Field label={copy.methodLabel} className="order-3 w-full sm:w-56">
               <Select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod | '')}>
                 <option value="">{copy.anyMethod}</option>
                 {PAYMENT_METHODS.map((option) => (
@@ -444,16 +458,13 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
                 ))}
               </Select>
             </Field>
-            <div className="flex min-h-11 items-center">
+            <div className="order-4 flex min-h-11 items-center">
               {/* Disabled while a question is out, and says so: a second click is a second audit row. */}
               <Pill type="submit" size="sm" disabled={busy} aria-busy={busy}>
                 {busy ? copy.loading : copy.show}
               </Pill>
             </div>
           </div>
-          <p id={planHintId} className="mt-1.5 text-[13px] text-white/64">
-            {copy.planHint}
-          </p>
         </div>
       </form>
 
