@@ -949,7 +949,7 @@
         "metaTitle": "Komissiyalar",
         "metaDescription": "Platforma və emal dərəcələri, onların istisnaları və platformanın tətbiq etdiyi hər şərtlər dəsti.",
         "title": "Komissiyalar",
-        "intro": "Komissiyanı dəyişmək indidən başlayan yeni şərtlər açır. Bağlanmış şərtlər ekranda qalır, çünki keçmiş ödənişdən nə tutulduğu sualı həmişə cavablandırıla bilməlidir."
+        "intro": "Komissiyanı dəyişmək indidən başlayan yeni şərtlər açır. Bağlanmış şərtlər ekranda qalır, çünki keçmiş köçürmədən nə tutulduğu sualı həmişə cavablandırıla bilməlidir."
       },
       "plans": {
         "metaTitle": "Planlar",
@@ -2700,7 +2700,7 @@
       "fees": {
         "subject": "komissiya cədvəlini",
         "noticeTitle": "Komissiyanı dəyişmək yeni cədvəl açır",
-        "noticeBody": "Redaktə yoxdur. Aşağıda təqdim etmək hazırda qüvvədə olan şərtləri bağlayır və indidən başlayan yenilərini açır, ona görə keçən ay hesablanmış ödəniş hələ də keçən ayın dərəcələri ilə qiymətləndirilir. Burada edə biləcəyiniz heç nə keçmişdə nə tutulduğunu dəyişmir.",
+        "noticeBody": "Redaktə yoxdur. «Yeni şərtlər aç» hazırda qüvvədə olan şərtləri bağlayır və indidən başlayan yenilərini açır, ona görə keçən ay hesablanmış köçürmə hələ də keçən ayın dərəcələri ilə qiymətləndirilir. Burada edə biləcəyiniz heç nə keçmişdə nə tutulduğunu dəyişmir.",
         "inForceHeading": "Qüvvədə",
         "loadingList": "Komissiya cədvəlləri yüklənir",
         "emptyTitle": "Açıq komissiya cədvəli yoxdur",
@@ -2713,7 +2713,7 @@
         "platformRateLabel": "Platforma dərəcəsi",
         "processingRateLabel": "Emal dərəcəsi",
         "fractionHint": "Kəsr. {percentage}",
-        "fixedLabel": "Ödəniş başına sabit məbləğ",
+        "fixedLabel": "Köçürmə başına sabit məbləğ",
         "whyLabel": "Səbəb",
         "whyHint": "Məcburi. Heç kimin izah etmədiyi komissiya dəyişikliyi heç kimin müdafiə edə bilmədiyi dəyişiklikdir.",
         "open": "Yeni şərtlər aç",
@@ -2724,7 +2724,7 @@
         "pastHeading": "Keçmiş şərtlər",
         "pastIntro": "Platformanın nə vaxt nə tutduğu. Bağlanmış şərtlər silinmir: onlar hər keçmiş ödənişin hansı şərtlərlə hesablandığını göstərir.",
         "inForceTag": "Qüvvədə",
-        "rates": "Platforma {platform} · emal {processing} + ödəniş başına {fixed}",
+        "rates": "Platforma {platform} · emal {processing} + köçürmə başına {fixed}",
         "window": "{from} — {to} · {note}",
         "now": "indi",
         "scope": {
@@ -2744,7 +2744,7 @@
         "scopeNamed": "{scope}: {name}",
         "confirm": {
           "heading": "Yeni şərtləri yoxlayın",
-          "intro": "{scope} üçün indiki şərtlər indi bağlanır və bunlar indidən hesablanan hər ödənişə tətbiq olunur. Artıq hesablanmış ödənişlər öz şərtlərini saxlayır.",
+          "intro": "{scope} üçün indiki şərtlər indi bağlanır və yeniləri indidən hesablanan hər köçürməyə tətbiq olunur. Artıq hesablanmış köçürmələr öz şərtlərini saxlayır.",
           "was": "İndi",
           "becomes": "Yeni",
           "unchanged": "dəyişmir",
