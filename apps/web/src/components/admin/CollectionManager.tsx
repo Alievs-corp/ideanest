@@ -17,7 +17,9 @@ import {
   COLLECTION_KINDS,
   collectionTitle,
   createCollection,
+  handleProblem,
   isPublished,
+  nextSortOrder,
   publishCollection,
   unpublishCollection,
   type AdminCollection,
@@ -108,6 +110,7 @@ export function CollectionManager({
   const [kind, setKind] = useState<CollectionKind>('staff_selection');
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
+  const [handleError, setHandleError] = useState<string | null>(null);
 
   if (status === 'signed-out' || status === 'forbidden') {
     return <ConsoleRefusal status={status} capability={capability} subject={copy.subject} copy={copy.refusals} />;
@@ -150,6 +153,13 @@ export function CollectionManager({
     const heading = title.trim();
     if (handle === '' || heading === '') return;
 
+    const problem = handleProblem(handle);
+    if (problem !== null) {
+      setHandleError(copy.handleErrors[problem]);
+      return;
+    }
+
+    setHandleError(null);
     setCreating(true);
     setError(null);
     try {
@@ -158,7 +168,11 @@ export function CollectionManager({
        * taxonomy's resolution chain falls back to it, so a collection whose only copy is
        * English resolves to its slug for every reader who has not asked for English.
        */
-      await createCollection(handle, { kind, copy: { az: { title: heading } } });
+      await createCollection(handle, {
+        kind,
+        copy: { az: { title: heading } },
+        sortOrder: nextSortOrder(collections),
+      });
       setSlug('');
       setTitle('');
       setNotice(fillPlaceholders(copy.createdNotice, { title: heading }));
@@ -172,14 +186,54 @@ export function CollectionManager({
 
   return (
     <section aria-labelledby="collections-heading">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="collections-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
-          {copy.heading}
-          {status === 'ready' && (
-            <span className="ml-2 text-xs font-normal text-white/40">{visible.length}</span>
-          )}
-        </h2>
-      </div>
+      {allowCreate && (
+        <form
+          onSubmit={(event) => void create(event)}
+          className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
+        >
+          <h3 className="text-sm font-medium text-white">{copy.newHeading}</h3>
+          <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.newIntro}</p>
+
+          <div className="mt-4 grid items-start gap-3 sm:grid-cols-3">
+            <Field label={copy.handleLabel} required hint={copy.handleHint} error={handleError}>
+              <TextInput
+                value={slug}
+                onChange={(event) => {
+                  setSlug(event.target.value);
+                  setHandleError(null);
+                }}
+                placeholder="autumn-picks"
+                autoCapitalize="none"
+                spellCheck={false}
+              />
+            </Field>
+            <Field label={copy.titleLabel} required hint={copy.titleHint}>
+              <TextInput value={title} onChange={(event) => setTitle(event.target.value)} />
+            </Field>
+            <Field label={copy.kindLabel}>
+              <Select
+                value={kind}
+                onChange={(event) => setKind(event.target.value as CollectionKind)}
+              >
+                {COLLECTION_KINDS.map((option) => (
+                  <option key={option} value={option}>
+                    {copy.curation.kind[option]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+          <Pill
+            type="submit"
+            variant="outline"
+            size="sm"
+            disabled={creating || slug.trim() === '' || title.trim() === ''}
+            className="mt-4"
+          >
+            {creating ? copy.creating : copy.create}
+          </Pill>
+        </form>
+      )}
 
       <div role="status" aria-live="polite" className="empty:hidden">
         {notice !== null && (
@@ -195,56 +249,17 @@ export function CollectionManager({
         </InlineAlert>
       )}
 
-      {allowCreate && (
-        <form
-          onSubmit={(event) => void create(event)}
-          className="mt-6 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
-        >
-          <h3 className="text-sm font-medium text-white">{copy.newHeading}</h3>
-          <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.newIntro}</p>
-
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <Field
-              label={copy.handleLabel}
-              required
-              hint={copy.handleHint}
-              className="min-w-[220px] flex-1"
-            >
-              <TextInput
-                value={slug}
-                onChange={(event) => setSlug(event.target.value)}
-                placeholder="autumn-picks"
-              />
-            </Field>
-            <Field
-              label={copy.titleLabel}
-              required
-              hint={copy.titleHint}
-              className="min-w-[220px] flex-1"
-            >
-              <TextInput value={title} onChange={(event) => setTitle(event.target.value)} />
-            </Field>
-            <Field label={copy.kindLabel} className="min-w-[200px]">
-              <Select
-                value={kind}
-                onChange={(event) => setKind(event.target.value as CollectionKind)}
-              >
-                {COLLECTION_KINDS.map((option) => (
-                  <option key={option} value={option}>
-                    {copy.curation.kind[option]}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Pill type="submit" variant="outline" size="sm" disabled={creating} className="mb-1">
-              {creating ? copy.creating : copy.create}
-            </Pill>
-          </div>
-        </form>
-      )}
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="collections-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+          {copy.heading}
+          {status === 'ready' && (
+            <span className="ml-2 text-xs font-normal text-white/40">{visible.length}</span>
+          )}
+        </h2>
+      </div>
 
       {status === 'loading' && (
-        <SkeletonGroup label={copy.loadingList} className="mt-6">
+        <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1, 2].map((row) => (
               <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
@@ -375,9 +390,12 @@ function CollectionRow({
         <Pill variant="outline" size="sm" onClick={published ? onUnpublish : onPublish}>
           {published ? copy.takeDown : copy.publish}
         </Pill>
-        <span className="text-xs text-white/32">
-          {fillPlaceholders(copy.placement, { order: String(collection.sortOrder) })}
-        </span>
+        <Link
+          href={`/admin/curation/${encodeURIComponent(collection.slug)}`}
+          className="rounded-lg px-2 text-sm text-white/64 underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        >
+          {copy.manage}
+        </Link>
       </div>
     </li>
   );

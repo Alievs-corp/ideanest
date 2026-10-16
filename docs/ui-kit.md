@@ -606,7 +606,10 @@ to say the clock is running.
 
 Text inside is near-black, so `--text-secondary` does not apply. Use
 `--text-on-white` at reduced opacity. The panel carries `data-on-white`, which
-inverts a primary pill (§7.2) and turns the focus ring near-black (§9.3).
+inverts a primary pill (§7.2) and turns the focus ring near-black (§9.3). It also
+turns the form primitives (§7.13) inside it light: a field's label, hint and
+character count take `--text-on-white`, and the control a near-white fill, so a
+form in a modal is never white text on the white panel.
 
 ### 7.10 Navigation rail
 

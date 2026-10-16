@@ -133,7 +133,7 @@ export function CharacterCount({
       {...props}
       className={cn(
         'text-[13px] tabular-nums transition-colors duration-150 ease-in-out',
-        over ? 'text-danger' : 'text-white/40',
+        over ? 'text-danger' : 'text-white/40 in-data-on-white:text-on-white/56',
         className,
       )}
     >

@@ -108,7 +108,7 @@ public class CampaignDirectory {
     public CampaignDirectoryPage page(
             UUID staffId, ProjectState state, UUID creatorId, String query, UUID after, int limit) {
 
-        staff.requireCapability(staffId, StaffCapability.MODERATE_CONTENT);
+        requireDirectoryReader(staffId);
 
         // Blank is no search rather than a search for nothing: `?query=` is what a form
         // submits when the box has been cleared, and a pattern of "%%" would match every row
@@ -167,6 +167,22 @@ public class CampaignDirectory {
         staff.requireCapability(staffId, StaffCapability.MODERATE_CONTENT);
 
         return pages.find(projectId, locale).orElseThrow(() -> new ProjectNotFoundException(projectId));
+    }
+
+    /**
+     * {@code MODERATE_CONTENT}, or {@code CURATE} for the list alone.
+     *
+     * <p>A curator adds campaigns to collections, including ones still in review (see
+     * {@code CurationService.addProject}), and the collection editor finds them here by title.
+     * Without this the only way to curate a campaign was to know its UUID. The preview stays
+     * {@code MODERATE_CONTENT}: a list row is a title and a state, the preview is everything a
+     * creator wrote.
+     */
+    private void requireDirectoryReader(UUID staffId) {
+        if (staff.capabilitiesOf(staffId).contains(StaffCapability.CURATE)) {
+            return;
+        }
+        staff.requireCapability(staffId, StaffCapability.MODERATE_CONTENT);
     }
 
     /** The page size a request gets, clamped rather than refused. */

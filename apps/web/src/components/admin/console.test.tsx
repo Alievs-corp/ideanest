@@ -357,9 +357,8 @@ describe('the badge manager', () => {
     await screen.findByRole('button', { name: 'Grant the badge' });
 
     await user.click(screen.getByRole('button', { name: 'Grant the badge' }));
-    // The dialog asks for a reason before a change that affects every campaign in the list.
+    // The dialog confirms a change that affects every campaign in the list.
     const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByRole('textbox'), 'Selected for the autumn feature.');
     await user.click(within(dialog).getByRole('button', { name: 'Grant the badge' }));
 
     await waitFor(() => expect(replaceCollectionMock).toHaveBeenCalled());
@@ -378,6 +377,7 @@ describe('the badge manager', () => {
   });
 
   it('says an unpublished collection badges nothing yet', async () => {
+    listCollectionsMock.mockResolvedValue([collection({ grantsBadge: true })]);
     render(<BadgeManager copy={BADGES} note={NOTE} />);
 
     // A curator who turned the grant on and saw no badges would otherwise reasonably think

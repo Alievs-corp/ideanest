@@ -1,3 +1,4 @@
+import type { CharacterCountCopy, PluralForms } from '@ideanest/ui';
 import type { AdminTranslator } from '../admin-copy';
 
 /**
@@ -150,6 +151,7 @@ export interface NoteDialogCopy {
   /** Carries `{limit}`. */
   readonly tooLong: string;
   readonly cancel: string;
+  readonly counter: CharacterCountCopy;
 }
 
 /**
@@ -233,5 +235,9 @@ export function noteDialogCopyFrom(t: AdminTranslator, common: AdminTranslator):
     required: t('note.required'),
     tooLong: String(t.raw('note.tooLong')),
     cancel: common('cancel'),
+    counter: {
+      remaining: common.raw('characterCount.remaining') as PluralForms,
+      tooMany: common.raw('characterCount.tooMany') as PluralForms,
+    },
   };
 }
