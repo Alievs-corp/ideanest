@@ -1018,13 +1018,13 @@
         "metaTitle": "Staff and roles",
         "metaDescription": "Who works here, what each role confers, and what your own account may do.",
         "title": "Staff and roles",
-        "intro": "Roles are additive: an account holds the union of every role granted to it, and nothing here takes a capability away. Granting one is audited under your name."
+        "intro": "Who works here, what each role confers, and what your own account may do. Granting and withdrawing a role is audited under your name."
       },
       "support": {
         "metaTitle": "Support",
         "metaDescription": "Tickets with the account context they are about and the history of what was done.",
         "title": "Support",
-        "intro": "Most urgent first, oldest first within a priority. There is no public form behind this yet: somebody writes in, and a member of staff records the conversation against their account."
+        "intro": "Tickets, with the account they belong to and the history of what was done. There is no public form behind this yet: somebody writes in, and a member of staff records the conversation against their account."
       },
       "taxonomy": {
         "metaTitle": "Taxonomy",
@@ -1042,7 +1042,7 @@
         "metaTitle": "Account",
         "metaDescription": "One account: its standing, the campaigns it created and the pledges it made.",
         "title": "Account",
-        "intro": "One account, with everything a decision about it turns on: whether it is verified, whether it is suspended and why, what it has created, and what it has backed. Suspending is done from the directory, which is where the reason it asks for is recorded."
+        "intro": "One account, with everything a decision about it turns on: whether it is verified, whether it is suspended and why, what it has created, and what it has backed. It can be suspended and reinstated from here too — the reason is asked for and recorded."
       },
       "submissions": {
         "metaTitle": "Campaigns for review",
@@ -1662,9 +1662,9 @@
         "signedOutBody": "This browser no longer has a session. Sign in again to read the account directory.",
         "forbiddenTitle": "You do not work here",
         "forbiddenBody": "Accounts are searched and suspended by platform staff, and your account holds no platform role.",
-        "notStaff": "Your account is not on the platform moderator list, so the account directory is not yours to read.",
+        "notStaff": "Only platform staff read the account directory, and your account holds no staff role.",
         "accountNotFound": "That account no longer exists. It may have been deleted since this page was loaded.",
-        "selfSuspend": "An account cannot suspend itself. Ask another moderator.",
+        "selfSuspend": "You cannot suspend your own account. Ask another member of staff if it is needed.",
         "heading": "Accounts",
         "searchLabel": "Search",
         "searchHint": "An email address, a display name, or a profile slug.",
@@ -1686,25 +1686,18 @@
         "reinstate": "Reinstate",
         "reinstating": "Reinstating",
         "suspend": "Suspend",
-        "accountCount": {
-          "one": "{count} account",
-          "few": "{count} accounts",
-          "many": "{count} accounts",
-          "other": "{count} accounts"
-        },
-        "showing": "Showing {accounts}",
-        "andMore": ", and there are more.",
         "suspendTitle": "Suspend {name}?",
         "suspendDescription": "{email} will be signed out of every device and refused at sign-in until somebody reinstates them.",
-        "suspendBody": "Their campaigns and pledges are left exactly where they are. This is reversible, unlike suspending a campaign — but every session they hold is revoked now and is not restored by reinstating them.",
+        "suspendBody": "Their campaigns and pledges are left exactly where they are. The account can be reinstated later, but every session open now is closed and reinstating does not bring it back.",
         "suspendAccount": "Suspend account",
         "suspending": "Suspending",
         "reasonLabel": "Reason",
         "reasonHint": "The person is told this, and an appeal is answered from it.",
-        "reasonRequired": "Say why. The person is told this, and an appeal is answered from it.",
+        "reasonRequired": "Say why.",
         "reasonTooLong": "A reason may not exceed {limit} characters.",
         "suspendedNotice": "{name} is suspended, and every session they held has been revoked.",
-        "reinstatedNotice": "{name} can sign in again. Their old sessions are not restored."
+        "reinstatedNotice": "{name} can sign in again. Their old sessions are not restored.",
+        "you": "You"
       },
       "accountDetail": {
         "subject": "the account",
@@ -1796,7 +1789,7 @@
         "subject": "the support queue",
         "ticketSubject": "this ticket",
         "heading": "Open tickets",
-        "intro": "Most urgent first, oldest first within a priority. Priority is set by staff — one the person asking could choose would be urgent on every ticket within a week.",
+        "intro": "Most urgent first, oldest first within a priority. Priority is set by staff.",
         "loadingList": "Loading the support queue",
         "emptyTitle": "Nothing is waiting",
         "emptyBody": "No ticket is open or pending. Tickets are recorded here by staff when somebody writes in — there is no public form behind this screen yet.",
@@ -1820,7 +1813,7 @@
         "internalNote": "internal note, never shown to them",
         "replyLabel": "Reply",
         "send": "Send",
-        "internalLabel": "Internal note — the requester never sees this, and it does not move the ticket",
+        "internalLabel": "Internal note — the requester never sees it, and the ticket stays where it is",
         "priorityLabel": "Priority",
         "stateLabel": "State",
         "putBack": "Put back in the queue",
@@ -1897,6 +1890,18 @@
             "PLEDGE_NOT_FOUND": "No pledge has that identifier. Check it against what the backer sent.",
             "ACCOUNT_NOT_FOUND": "The backer’s account no longer exists, so no ticket can be raised in their name."
           }
+        },
+        "listHeading": "Tickets",
+        "listIntro": "Every ticket that matches the filters, newest first.",
+        "assigneePrefix": "Handled by",
+        "takeIt": "Take it",
+        "handToLabel": "Hand to a colleague",
+        "handToHint": "Search by name or email address. The search is a recorded read.",
+        "aboutLabel": "About",
+        "about": {
+          "PLEDGE": "Pledge",
+          "PROJECT": "Campaign",
+          "ACCOUNT": "Account"
         }
       },
       "staff": {
@@ -1918,13 +1923,13 @@
         "grantedBy": "Granted by {by} on {date}",
         "withdraw": "Withdraw",
         "grantHeading": "Grant a role",
-        "grantIntro": "Roles are additive: an account holds the union of every role granted to it. Nothing here takes a capability away, which is why there is no order to resolve.",
+        "grantIntro": "Roles add up: an account holds everything its roles confer, together. No role takes a capability away.",
         "roleLabel": "Role",
         "noteLabel": "Note",
         "noteHint": "Why, for the next administrator.",
         "working": "Working",
         "grant": "Grant",
-        "confers": "{role} confers: {capabilities}",
+        "confers": "{role} confers:",
         "doneTitle": "Done",
         "failedTitle": "That did not work",
         "grantedNotice": "{role} was granted to {name}.",
@@ -1971,7 +1976,17 @@
           "resultsLabel": "Matching accounts",
           "failedTitle": "The directory could not be searched"
         },
-        "chooseAccountFirst": "Choose an account before granting a role."
+        "chooseAccountFirst": "Choose an account before granting a role.",
+        "you": "You",
+        "partnerManaged": "Managed on the partner list",
+        "withdrawTitle": "Withdraw {role} from {name}?",
+        "withdrawBody": "What this role confers is closed from the next request on. The role can be granted again later.",
+        "withdrawSelfBody": "This is your own role. Withdraw it and the screens it opens close to you as well.",
+        "withdrawConfirm": "Withdraw role",
+        "errors": {
+          "ACCOUNT_IS_PARTNER": "This account is a partner and may hold no other staff role. End the partnership on the partner list first.",
+          "PARTNER_ROLE_MANAGED_ELSEWHERE": "The partner role is granted and withdrawn with its share, on the partner list only."
+        }
       },
       "payments": {
         "subject": "the payment log",
@@ -2867,7 +2882,7 @@
         "loadingRoster": "Loading partners",
         "rosterEmptyTitle": "No partners yet",
         "rosterEmptyBody": "Add one below. A partner without a percentage sees no figures.",
-        "allocation": "{allocated}% of 100% is allocated. {remaining}% is left.",
+        "allocation": "Allocated: {allocated}. Left: {remaining}.",
         "updatedLine": "Updated {date}",
         "sectionsNone": "Statistics only",
         "sectionsOpen": "Also opens: {sections}",
@@ -2890,10 +2905,19 @@
         "chooseAccountFirst": "Choose an account first.",
         "addPartner": "Add partner",
         "working": "Saving",
-        "savedNotice": "{name} now sees {percentage}% of the figures.",
+        "savedNotice": "{name} now sees {percentage} of the figures.",
         "removedNotice": "{name} is no longer a partner.",
         "doneTitle": "Done",
-        "failedTitle": "That did not work"
+        "failedTitle": "That did not work",
+        "endTitle": "End the partnership with {name}?",
+        "endBody": "Their share and the sections opened to them are removed, and the partner statistics close to them. They can be added again later.",
+        "errors": {
+          "INVALID_PARTNER_SHARE": "The percentage must be a number between 0.01 and 100, with at most two decimals.",
+          "PARTNER_SHARE_EXCEEDED": "The partners together may not go above 100%. At most {available} is left.",
+          "PARTNER_IS_SUPER_ADMIN": "A super admin cannot be a partner. Withdraw the super-admin role on Staff and roles first.",
+          "PARTNER_HOLDS_OTHER_ROLES": "This account holds a staff role: {roles}. A partner may hold no other role — withdraw those first.",
+          "PARTNER_NOT_FOUND": "This account is no longer a partner."
+        }
       },
       "partnerStatistics": {
         "subject": "the financial statistics",

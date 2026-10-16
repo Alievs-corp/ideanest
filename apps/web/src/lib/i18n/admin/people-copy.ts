@@ -21,11 +21,11 @@ import { payoutDestinationCopyFrom, type PayoutDestinationCopy } from './money-c
  *
  * <h2>The wire words that stay</h2>
  *
- * A capability is rendered as its own identifier — `ISSUE_REFUND` — with the translated
- * sentence on its `title`. That is deliberate: the identifier is what a member of staff asks an
- * administrator for and what the service's refusal names back at them, so a translated chip
- * would be a word nothing else in the system answers to. The roles, which are four and are read
- * as ordinary nouns, are translated.
+ * A capability is rendered as its translated sentence with its own identifier — `ISSUE_REFUND`
+ * — small beside it. The identifier stays because it is what a member of staff asks an
+ * administrator for and what the service's refusal names back at them; it no longer leads,
+ * because twenty-one uppercase identifiers with the sentence on a hover title was a list nobody
+ * could read. The roles, which are read as ordinary nouns, are translated.
  */
 
 /**
@@ -36,7 +36,7 @@ import { payoutDestinationCopyFrom, type PayoutDestinationCopy } from './money-c
  * and a fallback string concatenated in JSX, and the two languages that put the verb last could
  * not express either.
  */
-export interface UserDirectoryCopy extends ConsoleChromeCopy {
+export interface UserDirectoryCopy extends SuspensionCopy {
   /**
    * What the reader was trying to read, for the shared capability refusal — #400.
    *
@@ -51,8 +51,6 @@ export interface UserDirectoryCopy extends ConsoleChromeCopy {
   readonly forbiddenTitle: string;
   readonly forbiddenBody: string;
   readonly notStaff: string;
-  readonly accountNotFound: string;
-  readonly selfSuspend: string;
   readonly heading: string;
   readonly searchLabel: string;
   readonly searchHint: string;
@@ -73,14 +71,24 @@ export interface UserDirectoryCopy extends ConsoleChromeCopy {
   readonly leaving: string;
   /** Carries `{date}`. */
   readonly suspendedOn: string;
+  /** The tag on the reader's own row, which offers no suspension. */
+  readonly you: string;
+}
+
+/**
+ * Suspending and reinstating one account, from either screen that offers it.
+ *
+ * <p>Read from `admin.screens.users` on both, because it is one dialog: the account detail
+ * screen offering it is #404's context arriving at the moment the decision is taken, and a
+ * second wording of the same audited, session-revoking write would be a second thing to keep
+ * in step.
+ */
+export interface SuspensionCopy extends ConsoleChromeCopy {
+  readonly accountNotFound: string;
+  readonly selfSuspend: string;
   readonly reinstate: string;
   readonly reinstating: string;
   readonly suspend: string;
-  /** Carries `{count}`. */
-  readonly accountCount: PluralForms;
-  /** Carries `{accounts}`. */
-  readonly showing: string;
-  readonly andMore: string;
   /** Carries `{name}`. */
   readonly suspendTitle: string;
   /** Carries `{email}`. */
@@ -99,20 +107,42 @@ export interface UserDirectoryCopy extends ConsoleChromeCopy {
   readonly reinstatedNotice: string;
 }
 
+export function suspensionCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy): SuspensionCopy {
+  const at = (key: string) => `screens.users.${key}`;
+
+  return {
+    ...chrome,
+    accountNotFound: t(at('accountNotFound')),
+    selfSuspend: t(at('selfSuspend')),
+    reinstate: t(at('reinstate')),
+    reinstating: t(at('reinstating')),
+    suspend: t(at('suspend')),
+    suspendTitle: String(t.raw(at('suspendTitle'))),
+    suspendDescription: String(t.raw(at('suspendDescription'))),
+    suspendBody: t(at('suspendBody')),
+    suspendAccount: t(at('suspendAccount')),
+    suspending: t(at('suspending')),
+    reasonLabel: t(at('reasonLabel')),
+    reasonHint: t(at('reasonHint')),
+    reasonRequired: t(at('reasonRequired')),
+    reasonTooLong: String(t.raw(at('reasonTooLong'))),
+    suspendedNotice: String(t.raw(at('suspendedNotice'))),
+    reinstatedNotice: String(t.raw(at('reinstatedNotice'))),
+  };
+}
+
 export function userDirectoryCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
 ): UserDirectoryCopy {
   return {
-    ...chrome,
+    ...suspensionCopyFrom(t, chrome),
     subject: t('screens.users.subject'),
     signedOutTitle: t('screens.users.signedOutTitle'),
     signedOutBody: t('screens.users.signedOutBody'),
     forbiddenTitle: t('screens.users.forbiddenTitle'),
     forbiddenBody: t('screens.users.forbiddenBody'),
     notStaff: t('screens.users.notStaff'),
-    accountNotFound: t('screens.users.accountNotFound'),
-    selfSuspend: t('screens.users.selfSuspend'),
     heading: t('screens.users.heading'),
     searchLabel: t('screens.users.searchLabel'),
     searchHint: t('screens.users.searchHint'),
@@ -131,23 +161,7 @@ export function userDirectoryCopyFrom(
     suspendedTag: t('screens.users.suspendedTag'),
     leaving: t('screens.users.leaving'),
     suspendedOn: String(t.raw('screens.users.suspendedOn')),
-    reinstate: t('screens.users.reinstate'),
-    reinstating: t('screens.users.reinstating'),
-    suspend: t('screens.users.suspend'),
-    accountCount: t.raw('screens.users.accountCount') as PluralForms,
-    showing: String(t.raw('screens.users.showing')),
-    andMore: t('screens.users.andMore'),
-    suspendTitle: String(t.raw('screens.users.suspendTitle')),
-    suspendDescription: String(t.raw('screens.users.suspendDescription')),
-    suspendBody: t('screens.users.suspendBody'),
-    suspendAccount: t('screens.users.suspendAccount'),
-    suspending: t('screens.users.suspending'),
-    reasonLabel: t('screens.users.reasonLabel'),
-    reasonHint: t('screens.users.reasonHint'),
-    reasonRequired: t('screens.users.reasonRequired'),
-    reasonTooLong: String(t.raw('screens.users.reasonTooLong')),
-    suspendedNotice: String(t.raw('screens.users.suspendedNotice')),
-    reinstatedNotice: String(t.raw('screens.users.reinstatedNotice')),
+    you: t('screens.users.you'),
   };
 }
 
@@ -161,8 +175,12 @@ export function userDirectoryCopyFrom(
 export interface SupportConsoleCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly ticketSubject: string;
+  /** The queue's heading and its order. */
   readonly heading: string;
   readonly intro: string;
+  /** The same list once a filter is on, which is everything, newest first — not the queue. */
+  readonly listHeading: string;
+  readonly listIntro: string;
   readonly loadingList: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
@@ -193,7 +211,16 @@ export interface SupportConsoleCopy extends ConsoleChromeCopy {
    * an empty list.
    */
   readonly assigneePicker: AccountPickerCopy;
+  /** Before the assignee's name, on a row and in an opened ticket. */
+  readonly assigneePrefix: string;
   readonly unassigned: string;
+  /** Assigns the ticket to the reader. Nothing on this screen assigned a ticket to anybody. */
+  readonly takeIt: string;
+  /** The picker that hands a ticket to somebody else. */
+  readonly handTo: AccountPickerCopy;
+  readonly aboutLabel: string;
+  /** Keyed by the ticket's subject type; `NONE` draws nothing. */
+  readonly about: Readonly<Record<string, string>>;
   readonly loadingTicket: string;
   readonly ticketFailedTitle: string;
   readonly tryAgainShort: string;
@@ -286,6 +313,8 @@ export function supportConsoleCopyFrom(
     ticketSubject: t('screens.support.ticketSubject'),
     heading: t('screens.support.heading'),
     intro: t('screens.support.intro'),
+    listHeading: t('screens.support.listHeading'),
+    listIntro: t('screens.support.listIntro'),
     loadingList: t('screens.support.loadingList'),
     emptyTitle: t('screens.support.emptyTitle'),
     emptyBody: t('screens.support.emptyBody'),
@@ -303,7 +332,16 @@ export function supportConsoleCopyFrom(
       label: t('screens.support.assigneeLabel'),
       hint: t('screens.support.assigneeHint'),
     },
+    assigneePrefix: t('screens.support.assigneePrefix'),
     unassigned: t('screens.support.unassigned'),
+    takeIt: t('screens.support.takeIt'),
+    handTo: {
+      ...accountPickerCopyFrom(t, chrome.refusals),
+      label: t('screens.support.handToLabel'),
+      hint: t('screens.support.handToHint'),
+    },
+    aboutLabel: t('screens.support.aboutLabel'),
+    about: t.raw('screens.support.about') as Readonly<Record<string, string>>,
     loadingTicket: t('screens.support.loadingTicket'),
     ticketFailedTitle: t('screens.support.ticketFailedTitle'),
     tryAgainShort: t('screens.support.tryAgainShort'),
@@ -364,6 +402,8 @@ export function supportConsoleCopyFrom(
  * the account but not the pledges needs to be told which half is missing.
  */
 export interface AccountDetailCopy extends ConsoleChromeCopy {
+  /** Suspending and reinstating from this screen — the directory's dialog, word for word. */
+  readonly suspension: SuspensionCopy;
   /** What the reader was trying to read, for the shared refusals. Already inflected. */
   readonly subject: string;
   readonly backToDirectory: string;
@@ -460,6 +500,7 @@ export function accountDetailCopyFrom(
 
   return {
     ...chrome,
+    suspension: suspensionCopyFrom(t, chrome),
     subject: t(at('subject')),
     backToDirectory: t(at('backToDirectory')),
     loadingAccount: t(at('loadingAccount')),
@@ -593,8 +634,19 @@ export interface StaffRolesCopy extends ConsoleChromeCopy {
   readonly noteHint: string;
   readonly working: string;
   readonly grant: string;
-  /** Carries `{capabilities}`, `{role}`. */
+  /** Carries `{role}`. The list of what it confers follows it. */
   readonly confers: string;
+  readonly you: string;
+  /** In place of the withdraw control on a `PARTNER` grant, which is a profile as well. */
+  readonly partnerManaged: string;
+  /** Carries `{name}`, `{role}`. */
+  readonly withdrawTitle: string;
+  readonly withdrawBody: string;
+  /** Instead of `withdrawBody` when the grant is the reader's own. */
+  readonly withdrawSelfBody: string;
+  readonly withdrawConfirm: string;
+  /** Keyed by the service's `code`; anything else falls through to the refusal table. */
+  readonly errors: Readonly<Record<string, string>>;
   readonly doneTitle: string;
   readonly failedTitle: string;
   /** Carries `{name}`, `{role}`. The person, not the fragment — #402. */
@@ -638,6 +690,13 @@ export function staffRolesCopyFrom(
     working: t('screens.staff.working'),
     grant: t('screens.staff.grant'),
     confers: String(t.raw('screens.staff.confers')),
+    you: t('screens.staff.you'),
+    partnerManaged: t('screens.staff.partnerManaged'),
+    withdrawTitle: String(t.raw('screens.staff.withdrawTitle')),
+    withdrawBody: t('screens.staff.withdrawBody'),
+    withdrawSelfBody: t('screens.staff.withdrawSelfBody'),
+    withdrawConfirm: t('screens.staff.withdrawConfirm'),
+    errors: t.raw('screens.staff.errors') as Readonly<Record<string, string>>,
     doneTitle: t('screens.staff.doneTitle'),
     failedTitle: t('screens.staff.failedTitle'),
     grantedNotice: String(t.raw('screens.staff.grantedNotice')),

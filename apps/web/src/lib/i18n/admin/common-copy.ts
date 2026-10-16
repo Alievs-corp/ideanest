@@ -87,6 +87,12 @@ export interface ConsoleChromeCopy {
   readonly identity: ConsoleIdentityCopy;
   /** How a list says how many rows it is showing, on the five that page — #404. */
   readonly count: ConsoleCountCopy;
+  /**
+   * A text field's "N characters remaining", in the reader's language. The kit's counter
+   * falls back to English without it, and the account directory's reason box said
+   * "2000 characters remaining" under an Azerbaijani label.
+   */
+  readonly counter: CharacterCountCopy;
 }
 
 /**
@@ -181,6 +187,10 @@ export function consoleChromeCopyFrom(t: AdminTranslator, common: AdminTranslato
     refusals: consoleRefusalsCopyFrom(t),
     identity: consoleIdentityCopyFrom(t),
     count: consoleCountCopyFrom(t),
+    counter: {
+      remaining: common.raw('characterCount.remaining') as PluralForms,
+      tooMany: common.raw('characterCount.tooMany') as PluralForms,
+    },
   };
 }
 

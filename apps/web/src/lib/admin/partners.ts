@@ -1,5 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
+import { numberFormat } from '../i18n/formats';
+import type { Locale } from '../i18n/locale';
 
 /**
  * Partners, as the super admin manages them — #206, part of #202.
@@ -83,4 +85,43 @@ export async function removePartner(accountId: string, signal?: AbortSignal): Pr
     signal,
   });
   if (!response.ok) throw await errorFrom(response);
+}
+
+/**
+ * A share as somebody typed it, in the form the service reads — or `null` when it is not one.
+ *
+ * <p><strong>The comma is accepted.</strong> The hint in three of the four languages writes the
+ * bound as "0,01", and an operator who typed "12,5" the way the hint showed was refused with the
+ * service's English "must be a number such as 50 or 33.33". One comma becomes the point here, and
+ * nothing else is rewritten: a share is a decimal, not a free-form number, and "1.000,5" is a
+ * mistake rather than a thousand.
+ *
+ * <p>The rules are the service's — in (0, 100], at most two places — checked here so the reader
+ * is told in their own language before anything is sent. The service still checks them, and
+ * this is not a second authority: a share this accepts and the service refuses is reported in
+ * the service's terms.
+ */
+export function shareFromInput(text: string): string | null {
+  const candidate = text.trim().replace(/^(\d+),(\d+)$/, '$1.$2');
+  if (!/^\d{1,3}(\.\d{1,2})?$/.test(candidate)) return null;
+
+  const [whole = '', fraction = ''] = candidate.split('.');
+  const hundredths = Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
+  return hundredths > 0 && hundredths <= 10_000 ? candidate : null;
+}
+
+/**
+ * A share for reading, in the reader's language: "12,5%" in Azerbaijani, "%12,5" in Turkish.
+ *
+ * <p>Display only, so a float is allowed — nothing here multiplies a share by money, and the
+ * value the service holds is the string it sent. The roster printed the wire string with a
+ * point beside a hint written with a comma.
+ */
+export function formatShare(percentage: string, locale: Locale): string {
+  const value = Number(percentage);
+  if (!Number.isFinite(value)) return `${percentage}%`;
+
+  return numberFormat(locale, { style: 'percent', maximumFractionDigits: 2 }, 'partner-share').format(
+    value / 100,
+  );
 }

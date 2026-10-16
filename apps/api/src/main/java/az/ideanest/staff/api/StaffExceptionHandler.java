@@ -1,7 +1,9 @@
 package az.ideanest.staff.api;
 
+import az.ideanest.staff.application.AccountIsPartnerException;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
+import az.ideanest.staff.application.PartnerRoleManagedElsewhereException;
 import az.ideanest.staff.application.UnknownStaffAccountException;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,28 @@ public class StaffExceptionHandler {
         problem.setTitle("No such account");
         problem.setDetail("No account with that identifier.");
         problem.setProperty("code", "ACCOUNT_NOT_FOUND");
+        return problem;
+    }
+
+    /** 409: {@code PARTNER} is a profile as well as a role, and is made where the share is set. */
+    @ExceptionHandler(PartnerRoleManagedElsewhereException.class)
+    public ProblemDetail handlePartnerRole(PartnerRoleManagedElsewhereException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/partner-role-managed-elsewhere"));
+        problem.setTitle("Managed on the partner list");
+        problem.setDetail("The partner role is granted and withdrawn with its share, on the partner list.");
+        problem.setProperty("code", "PARTNER_ROLE_MANAGED_ELSEWHERE");
+        return problem;
+    }
+
+    /** 409: roles add up, and a partner's share would protect nothing beside another role. */
+    @ExceptionHandler(AccountIsPartnerException.class)
+    public ProblemDetail handleAccountIsPartner(AccountIsPartnerException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/account-is-partner"));
+        problem.setTitle("Account is a partner");
+        problem.setDetail("A partner may hold no other staff role. End the partnership first.");
+        problem.setProperty("code", "ACCOUNT_IS_PARTNER");
         return problem;
     }
 }

@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from '../../i18n/navigation';
 import { shortId } from '../../lib/admin/refusals';
+import { holds } from '../../lib/admin/staff';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import type { ConsoleIdentityCopy } from '../../lib/i18n/admin/common-copy';
+import { useConsoleMembership } from './ConsoleMembership';
 
 /**
  * How the console says who or what something is — issue #402.
@@ -94,8 +96,12 @@ export interface EntityNameProps {
  * so the link is now always a real one and the "no path, no link" case has stopped existing
  * for campaigns.
  *
- * <p>An account still links to its public profile, which is public for every account that
- * has one.
+ * <p><strong>An account links to the console's own account screen when the reader may open
+ * it.</strong> It linked to the public profile everywhere, so a support ticket's requester or a
+ * staff grant's holder — names on screens whose whole subject is that person's account — took
+ * the reader out of the console to the page every visitor sees. `/admin/users/{id}` is
+ * `ADMINISTER_ACCOUNTS`; a reader without it, finance reading the payment journal, keeps the
+ * public profile, which is public for every account that has one.
  */
 export function EntityName({
   id,
@@ -105,13 +111,16 @@ export function EntityName({
   copyable = false,
   className,
 }: EntityNameProps) {
+  const { membership } = useConsoleMembership();
   const account = kind === 'account' ? names.accounts.get(id) : undefined;
   const project = kind === 'project' ? names.projects.get(id) : undefined;
 
   const name = account?.name ?? project?.title ?? null;
   const href =
     account !== undefined
-      ? `/${account.slug}`
+      ? holds(membership, 'ADMINISTER_ACCOUNTS')
+        ? `/admin/users/${encodeURIComponent(account.id)}`
+        : `/${account.slug}`
       : project !== undefined
         ? `/admin/campaigns/${encodeURIComponent(project.id)}`
         : null;

@@ -1,19 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { EmptyState, Field, InlineAlert, Pill, Select, Skeleton, SkeletonGroup, Tag, TextInput } from '@ideanest/ui';
+import { Link } from '../../i18n/navigation';
+import { ApiError } from '../../lib/api/problem';
 import {
   ROLE_CAPABILITIES,
   grantRole,
   readMembership,
   readRoster,
   revokeRole,
+  type StaffCapability,
   type StaffGrant,
   type StaffRole,
 } from '../../lib/admin/staff';
 import type { AdminUser } from '../../lib/admin/api';
 import { consoleMessageFor } from '../../lib/admin/refusals';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { formatDate } from '../../lib/time';
 import type { StaffRolesCopy } from '../../lib/i18n/admin/people-copy';
 import { AccountPicker } from './AccountPicker';
 import { ConsoleRefusal } from './ConsoleRefusal';
@@ -22,16 +27,11 @@ import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
 
 /*
- * The five the service has, in its own order. `COMPLIANCE` was missing, so the one role that
- * can open an identity document was the one role no administrator could grant from this
- * screen — the grant existed at `PUT /v1/admin/staff/{id}/roles/COMPLIANCE` and the only way
- * to reach it was curl.
- */
-/*
  * What can be granted from here. `SUPER_ADMIN` is what `ADMINISTRATOR` was called until #212.
  * `PARTNER` is deliberately not offered: a partner needs a percentage and a list of sections,
  * and a grant without them opens nothing, so partners are made and changed only on
- * `/admin/partners`, where those are set together with the role.
+ * `/admin/partners`, where those are set together with the role. The service refuses it here
+ * as well since #501, and refuses a staff role to an account that is a partner.
  */
 const ROLES: readonly StaffRole[] = [
   'MODERATOR',
@@ -41,57 +41,83 @@ const ROLES: readonly StaffRole[] = [
   'SUPER_ADMIN',
 ];
 
+/* Fetched when it opens: `ConfirmDialog` has why. */
+const ConfirmDialog = lazy(() =>
+  import('./ConfirmDialog').then((module) => ({ default: module.ConfirmDialog })),
+);
+
+/** One person on the roster and every role they were granted, in the service's order. */
+interface Holder {
+  readonly accountId: string;
+  readonly grants: readonly StaffGrant[];
+}
+
+/*
+ * The roster grouped by person. The service answers one row per grant, and the screen drew one
+ * card per grant — so somebody holding two roles was two cards with the same name, each with its
+ * own "Withdraw", and "who may do what here" had to be assembled by the reader.
+ */
+function holdersOf(grants: readonly StaffGrant[]): readonly Holder[] {
+  const byAccount = new Map<string, StaffGrant[]>();
+  for (const grant of grants) {
+    const held = byAccount.get(grant.accountId);
+    if (held === undefined) byAccount.set(grant.accountId, [grant]);
+    else held.push(grant);
+  }
+  return [...byAccount].map(([accountId, held]) => ({ accountId, grants: held }));
+}
+
+/** What a refused grant or withdrawal says: the screen's own words where it has them. */
+function writeMessageFor(cause: unknown, copy: StaffRolesCopy): string {
+  const code = cause instanceof ApiError ? cause.problem?.code : undefined;
+  if (code !== undefined && code !== null && copy.errors[code] !== undefined) return copy.errors[code];
+  return consoleMessageFor(cause, copy.subject, copy.refusals);
+}
+
 /**
  * §4.11's role model, as a screen — issue #295.
  *
- * <h2>What was here before</h2>
- *
- * Nothing, and there could not have been. Staff identity was one comma-separated
- * environment variable, so "who works here" had no answer the platform could render and no
- * answer anybody could change without a deployment. #295's own words for the problem: that
- * list "cannot express 'may refund' against 'may moderate'".
- *
  * <h2>Two panels, and the first one is about the reader</h2>
  *
- * The console now knows what the person reading it may do, so the first thing this screen
- * shows is that — every capability they hold and the roles it came from. That is not
- * decoration: the commonest question a member of staff has about a console is why a screen
- * they were told about is not on their rail, and this answers it without anybody having to
- * ask an administrator.
+ * The console knows what the person reading it may do, so the first thing this screen shows is
+ * that — every capability they hold and the roles it came from. The commonest question a member
+ * of staff has about a console is why a screen they were told about is not on their rail, and
+ * this answers it without anybody having to ask an administrator.
+ *
+ * <p><strong>In sentences.</strong> The capabilities were twenty-one uppercase identifiers —
+ * `READ_ACCEPTANCE_RECORD`, `GRANT_COMPLIANCE_OVERRIDE` — with the sentence hidden on a hover
+ * title, which nobody on a phone and few people anywhere ever saw. The sentence leads now; the
+ * identifier stays beside it, small, because it is what somebody quotes when asking for a role
+ * and what the service names back in a refusal.
  *
  * <h2>Bootstrapped administrators are called out</h2>
  *
- * An account that is staff through `IDEANEST_STAFF_BOOTSTRAP_EMAILS` rather than through a
- * grant cannot be withdrawn from this screen — it is in a deployment's environment, and the
- * only way to remove it is to change that and restart. A roster that showed them as ordinary
- * administrators would be a list somebody would try to revoke from and quietly fail.
+ * An account that is staff through `MODERATOR_EMAILS` rather than through a grant cannot be
+ * withdrawn from this screen — it is in a deployment's environment, and the only way to remove
+ * it is to change that and restart.
  *
  * <h2>Everybody on it has a name — issue #402</h2>
  *
- * <p>This screen told the person reading it that they were signed in as `c5c5493d`, on a
- * session whose site header renders their name three centimetres above. The roster listed
- * grants by fragment, so "who may move money on this platform" could not be answered by
- * reading the screen that decides it. Both are resolved through the console directory now,
- * and the fragment stays beside each name because that is what somebody quotes to an
- * engineer.
+ * <p>Resolved through the console directory, with the fragment beside each name because that is
+ * what somebody quotes to an engineer. The grant form takes an {@link AccountPicker}, not a UUID.
  *
- * <p><strong>And the grant form no longer asks for something it cannot supply.</strong> It
- * used to take a full UUID with the help text "from the account directory", and the account
- * directory rendered no identifier anywhere — so the one privileged action on this screen
- * could not be completed inside the console at all. {@link AccountPicker} is the fix, and
- * carries the argument for why this field gets a picker and the console's other five do not.
+ * <h2>Withdrawing asks first</h2>
+ *
+ * <p>One click took a role away — the reader's own super-admin included — on the screen that
+ * decides who can move money. It is a confirmation now, which says what closes and, on the
+ * reader's own grant, that it closes for them.
  *
  * <h2>Motion: none</h2>
  *
  * docs/motion-system.md §5 gives an administrative surface 150ms of colour on a control and
- * nothing that moves. This one changes who can move money; it is the last screen on the
- * platform that should feel playful.
+ * nothing that moves, beyond the modal's own entry.
  */
 export interface StaffRolesProps {
   readonly copy: StaffRolesCopy;
 }
 
 export function StaffRoles({ copy }: StaffRolesProps) {
+  const locale = useRouteLocale();
   const me = useConsoleResource(
     (signal) => readMembership(signal),
     copy.meSubject,
@@ -111,12 +137,12 @@ export function StaffRoles({ copy }: StaffRolesProps) {
   const [busy, setBusy] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
   const [written, setWritten] = useState<string | null>(null);
+  const [withdrawing, setWithdrawing] = useState<StaffGrant | null>(null);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
   /*
    * Everybody this screen mentions: the reader, whoever holds a grant, and whoever made
-   * it. Named through the console directory since #402 — the fragments this used to render
-   * are still beside each name, because a fragment is what gets quoted and a name is what
-   * gets recognised.
+   * it. Named through the console directory since #402.
    */
   const names = useDirectoryNames(
     [
@@ -132,6 +158,8 @@ export function StaffRoles({ copy }: StaffRolesProps) {
   if (me.status === 'signed-out') {
     return <ConsoleRefusal status="signed-out" subject={copy.subject} copy={copy.refusals} />;
   }
+
+  const nameOf = (id: string) => names.accounts.get(id)?.name ?? id;
 
   async function submit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
@@ -151,7 +179,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
       setNote('');
       roster.reload();
     } catch (cause) {
-      setWriteError(consoleMessageFor(cause, copy.subject, copy.refusals));
+      setWriteError(writeMessageFor(cause, copy));
     } finally {
       setBusy(false);
     }
@@ -159,23 +187,29 @@ export function StaffRoles({ copy }: StaffRolesProps) {
 
   async function withdraw(grant: StaffGrant): Promise<void> {
     setBusy(true);
-    setWriteError(null);
+    setWithdrawError(null);
     setWritten(null);
     try {
       await revokeRole(grant.accountId, grant.role);
       setWritten(
         fillPlaceholders(copy.withdrawnNotice, {
           role: copy.role[grant.role],
-          name: names.accounts.get(grant.accountId)?.name ?? grant.accountId,
+          name: nameOf(grant.accountId),
         }),
       );
+      setWithdrawing(null);
       roster.reload();
+      // Withdrawing one's own role changes what this screen may show the reader.
+      if (grant.accountId === me.data?.accountId) me.reload();
     } catch (cause) {
-      setWriteError(consoleMessageFor(cause, copy.subject, copy.refusals));
+      // The dialog stays open with the refusal in it: nothing changed.
+      setWithdrawError(writeMessageFor(cause, copy));
     } finally {
       setBusy(false);
     }
   }
+
+  const holders = holdersOf(roster.data?.grants ?? []);
 
   return (
     <div className="flex flex-col gap-10">
@@ -229,17 +263,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
               </InlineAlert>
             )}
 
-            <ul className="mt-4 flex list-none flex-wrap gap-2">
-              {me.data.capabilities.map((capability) => (
-                <li
-                  key={capability}
-                  className="rounded-md border border-white/8 px-2.5 py-1.5 text-xs text-white/64"
-                  title={copy.capability[capability]}
-                >
-                  {capability}
-                </li>
-              ))}
-            </ul>
+            <CapabilityList capabilities={me.data.capabilities} copy={copy} className="mt-4" />
           </div>
         )}
       </section>
@@ -257,7 +281,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
           </InlineAlert>
         )}
 
-        {roster.status === 'loading' && (
+        {roster.status === 'loading' && roster.data === null && (
           <SkeletonGroup label={copy.loadingRoster} className="mt-4">
             <div className="space-y-3">
               {[0, 1].map((row) => (
@@ -280,7 +304,15 @@ export function StaffRoles({ copy }: StaffRolesProps) {
           </>
         )}
 
-        {roster.status === 'ready' && roster.data !== null && roster.data.grants.length === 0 && (
+        <div role="status" aria-live="polite" className="empty:hidden">
+          {written && (
+            <InlineAlert variant="success" title={copy.doneTitle} className="mt-4">
+              {written}
+            </InlineAlert>
+          )}
+        </div>
+
+        {roster.status !== 'failed' && roster.data !== null && holders.length === 0 && (
           <EmptyState
             className="mt-4"
             variant="empty"
@@ -289,43 +321,77 @@ export function StaffRoles({ copy }: StaffRolesProps) {
           />
         )}
 
-        {roster.status === 'ready' && roster.data !== null && roster.data.grants.length > 0 && (
+        {roster.status !== 'failed' && roster.data !== null && holders.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-2">
-            {roster.data.grants.map((grant) => (
+            {holders.map((holder) => (
               <li
-                key={`${grant.accountId}:${grant.role}`}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 p-4"
+                key={holder.accountId}
+                className="rounded-lg border border-white/8 bg-surface-1 p-4"
               >
-                <div className="min-w-0">
-                  <p className="text-sm text-white">
-                    <EntityName
-                      id={grant.accountId}
-                      names={names}
-                      kind="account"
-                      copy={copy.identity}
-                      copyable
-                    />{' '}
-                    <Tag className="ml-1">{copy.role[grant.role]}</Tag>
-                  </p>
-                  <p className="mt-1 text-xs text-white/48">
-                    {fillNodes(copy.grantedBy, {
-                      by: (
-                        <EntityName
-                          id={grant.grantedBy}
-                          names={names}
-                          kind="account"
-                          copy={copy.identity}
-                        />
-                      ),
-                      date: new Date(grant.grantedAt).toISOString().slice(0, 10),
-                    })}
-                    {grant.note ? ` — ${grant.note}` : ''}
-                  </p>
-                </div>
+                <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-white">
+                  <EntityName
+                    id={holder.accountId}
+                    names={names}
+                    kind="account"
+                    copy={copy.identity}
+                    copyable
+                  />
+                  {holder.accountId === me.data?.accountId && <Tag>{copy.you}</Tag>}
+                </p>
 
-                <Pill variant="ghost" size="sm" disabled={busy} onClick={() => void withdraw(grant)}>
-                  {copy.withdraw}
-                </Pill>
+                <ul className="mt-3 flex list-none flex-col gap-2">
+                  {holder.grants.map((grant) => (
+                    <li
+                      key={grant.role}
+                      className="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-2"
+                    >
+                      <div className="min-w-0">
+                        <Tag>{copy.role[grant.role]}</Tag>
+                        <p className="mt-1 text-xs text-white/48">
+                          {fillNodes(copy.grantedBy, {
+                            by: (
+                              <EntityName
+                                id={grant.grantedBy}
+                                names={names}
+                                kind="account"
+                                copy={copy.identity}
+                              />
+                            ),
+                            date: formatDate(grant.grantedAt, locale),
+                          })}
+                          {/* The partner grant's note is the service's own bookkeeping. */}
+                          {grant.note && grant.role !== 'PARTNER' ? ` — ${grant.note}` : ''}
+                        </p>
+                      </div>
+
+                      {/*
+                        A partner is a role and a profile together, and withdrawing the role
+                        alone left a profile whose share still counted against the hundred.
+                        The service refuses it now; this says where it is done instead.
+                      */}
+                      {grant.role === 'PARTNER' ? (
+                        <Link
+                          href="/admin/partners"
+                          className="rounded text-xs text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                        >
+                          {copy.partnerManaged}
+                        </Link>
+                      ) : (
+                        <Pill
+                          variant="ghost"
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => {
+                            setWithdrawError(null);
+                            setWithdrawing(grant);
+                          }}
+                        >
+                          {copy.withdraw}
+                        </Pill>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>
@@ -340,12 +406,6 @@ export function StaffRoles({ copy }: StaffRolesProps) {
           <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.grantIntro}</p>
 
           <form onSubmit={(event) => void submit(event)} className="mt-4 flex flex-col gap-4">
-            {/*
-              The picker, not a UUID field. #402: the identifier this asked for was not
-              obtainable from the screen its own help text named, so the grant could not be
-              completed inside the console. `AccountPicker` says why this field gets a
-              picker and the console's other five keep a text input.
-            */}
             <AccountPicker
               chosen={account}
               onChoose={setAccount}
@@ -353,58 +413,56 @@ export function StaffRoles({ copy }: StaffRolesProps) {
               disabled={busy}
             />
 
-            <div className="flex flex-wrap items-end gap-3">
-            <Field label={copy.roleLabel} className="min-w-[180px]">
-              <Select value={role} onChange={(event) => setRole(event.target.value as StaffRole)}>
-                {ROLES.map((option) => (
-                  <option key={option} value={option}>
-                    {copy.role[option]}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-
-            <Field label={copy.noteLabel} hint={copy.noteHint} className="min-w-[240px] flex-1">
-              <TextInput value={note} onChange={(event) => setNote(event.target.value)} />
-            </Field>
-
             {/*
-              Disabled until somebody is chosen, with the reason beside it — #405's rule
-              about disabled controls applies to this screen too, and "Grant" with nobody
-              to grant to is a control offering an action the reader cannot take.
+              The role and the note on one line, both labels level: the note's hint used to sit
+              inside its field, which lowered the note's label below the role's and left the
+              button floating between them.
             */}
-            <Pill
-              type="submit"
-              variant="outline"
-              size="sm"
-              className="mb-1"
-              disabled={busy || account === null}
-            >
-              {busy ? copy.working : copy.grant}
-            </Pill>
-            {account === null && (
-              <p className="mb-2 text-xs text-white/48">{copy.chooseAccountFirst}</p>
-            )}
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label={copy.roleLabel} className="min-w-[180px]">
+                <Select value={role} onChange={(event) => setRole(event.target.value as StaffRole)}>
+                  {ROLES.map((option) => (
+                    <option key={option} value={option}>
+                      {copy.role[option]}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+
+              <Field label={copy.noteLabel} className="min-w-[240px] flex-1">
+                <TextInput
+                  value={note}
+                  aria-describedby="staff-grant-note-hint"
+                  onChange={(event) => setNote(event.target.value)}
+                />
+              </Field>
+
+              {/*
+                Disabled until somebody is chosen, with the reason beside it — #405's rule
+                about disabled controls.
+              */}
+              <Pill
+                type="submit"
+                variant="outline"
+                className="mb-0.5"
+                disabled={busy || account === null}
+              >
+                {busy ? copy.working : copy.grant}
+              </Pill>
             </div>
+            <p id="staff-grant-note-hint" className="-mt-2 text-xs text-white/48">
+              {copy.noteHint}
+              {account === null && <span className="ml-1">{copy.chooseAccountFirst}</span>}
+            </p>
           </form>
 
-          <p className="mt-3 text-xs text-white/48">
-            {/*
-              The capabilities are their own identifiers, not the sentences beside them: this
-              is the list somebody quotes when asking for a role, and the service names the
-              same strings back in a refusal.
-            */}
-            {fillPlaceholders(copy.confers, {
-              role: copy.role[role],
-              capabilities: ROLE_CAPABILITIES[role].join(', '),
-            })}
-          </p>
+          <div className="mt-4 rounded-lg border border-white/8 p-4">
+            <p className="text-sm text-white/64">
+              {fillPlaceholders(copy.confers, { role: copy.role[role] })}
+            </p>
+            <CapabilityList capabilities={ROLE_CAPABILITIES[role]} copy={copy} className="mt-3" />
+          </div>
 
-          {written && (
-            <InlineAlert variant="success" title={copy.doneTitle} className="mt-4">
-              {written}
-            </InlineAlert>
-          )}
           {writeError && (
             <InlineAlert variant="danger" title={copy.failedTitle} className="mt-4">
               {writeError}
@@ -412,6 +470,50 @@ export function StaffRoles({ copy }: StaffRolesProps) {
           )}
         </section>
       )}
+
+      {withdrawing !== null && (
+        <Suspense fallback={null}>
+          <ConfirmDialog
+            title={fillPlaceholders(copy.withdrawTitle, {
+              role: copy.role[withdrawing.role],
+              name: nameOf(withdrawing.accountId),
+            })}
+            body={withdrawing.accountId === me.data?.accountId ? copy.withdrawSelfBody : copy.withdrawBody}
+            confirmLabel={copy.withdrawConfirm}
+            busyLabel={copy.working}
+            cancelLabel={copy.cancel}
+            busy={busy}
+            error={withdrawError}
+            onCancel={() => setWithdrawing(null)}
+            onConfirm={() => void withdraw(withdrawing)}
+          />
+        </Suspense>
+      )}
     </div>
+  );
+}
+
+/**
+ * What a set of capabilities lets somebody do, as sentences, with each identifier beside its
+ * own. Used for the reader's standing and for what the role in the grant form confers.
+ */
+function CapabilityList({
+  capabilities,
+  copy,
+  className,
+}: {
+  readonly capabilities: readonly StaffCapability[];
+  readonly copy: StaffRolesCopy;
+  readonly className?: string;
+}) {
+  return (
+    <ul className={`grid list-none gap-x-6 gap-y-2 sm:grid-cols-2 ${className ?? ''}`}>
+      {capabilities.map((capability) => (
+        <li key={capability} className="min-w-0 text-sm text-white/80">
+          {copy.capability[capability] ?? capability}
+          <code className="block truncate font-mono text-[11px] text-white/40">{capability}</code>
+        </li>
+      ))}
+    </ul>
   );
 }

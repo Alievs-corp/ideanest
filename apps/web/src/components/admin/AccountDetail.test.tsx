@@ -3,6 +3,8 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import {
+  banUser,
+  reinstateUser,
   readAccountLegalSubject,
   readAccountPayoutDestination,
   readAccountSubscriptions,
@@ -45,6 +47,8 @@ vi.mock('../../lib/admin/api', async (importOriginal) => {
     readAccountSubscriptions: vi.fn(),
     readAccountLegalSubject: vi.fn(),
     readAccountPayoutDestination: vi.fn(),
+    banUser: vi.fn(),
+    reinstateUser: vi.fn(),
   };
 });
 
@@ -69,6 +73,8 @@ const verifyPayoutDestinationMock = vi.mocked(verifyPayoutDestination);
 const rejectPayoutDestinationMock = vi.mocked(rejectPayoutDestination);
 const revealPayoutBankAccountMock = vi.mocked(revealPayoutBankAccount);
 const listCampaignsMock = vi.mocked(listCampaigns);
+const banUserMock = vi.mocked(banUser);
+const reinstateUserMock = vi.mocked(reinstateUser);
 
 const USER_ID = 'aaaaaaaa-0000-4000-8000-000000000001';
 
@@ -268,16 +274,65 @@ describe('the account detail screen — issue #404', () => {
     expect(await screen.findByText(COPY.noPledgesTitle)).toBeInTheDocument();
   });
 
-  it('offers no way to suspend from here, because the dialog and the reason live on the directory', async () => {
+  it("suspends from here through the directory's own dialog, reason and all", async () => {
+    const user = userEvent.setup();
+    banUserMock.mockResolvedValue({
+      ...ACCOUNT,
+      suspended: true,
+      suspendedAt: '2026-10-16T09:00:00Z',
+      suspensionReason: 'Counterfeit goods.',
+    });
     render(<AccountDetail userId={USER_ID} copy={COPY} />);
     await screen.findByText('Ayan Məmmədova');
 
     /*
-     * A second ban control would be a second path into an audited, session-revoking write,
-     * and it would be the one without the confirmation. The link back is the affordance.
+     * The reader used to be sent back to the directory to find the person again. It is the
+     * same dialog, so it is still the one path, and it still asks for the reason first.
      */
+    await user.click(screen.getByRole('button', { name: COPY.suspension.suspend }));
+    // Fetched when it opens (`React.lazy`), so the first one can take a moment.
+    const dialog = await screen.findByRole('dialog', {}, { timeout: 5000 });
+    await user.click(within(dialog).getByRole('button', { name: COPY.suspension.suspendAccount }));
+    expect(await within(dialog).findByText(COPY.suspension.reasonRequired)).toBeInTheDocument();
+    expect(banUserMock).not.toHaveBeenCalled();
+
+    await user.type(within(dialog).getByLabelText(/Reason/), 'Counterfeit goods.');
+    await user.click(within(dialog).getByRole('button', { name: COPY.suspension.suspendAccount }));
+
+    await waitFor(() => expect(banUserMock).toHaveBeenCalledWith(USER_ID, 'Counterfeit goods.'));
+    expect(await screen.findByText(/: Counterfeit goods\./)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.suspension.reinstate })).toBeInTheDocument();
+  });
+
+  it('reinstates a suspended account from here', async () => {
+    const user = userEvent.setup();
+    readUserMock.mockResolvedValue({ ...ACCOUNT, suspended: true, suspendedAt: '2026-10-01T09:00:00Z' });
+    reinstateUserMock.mockResolvedValue(ACCOUNT);
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+
+    await user.click(await screen.findByRole('button', { name: COPY.suspension.reinstate }));
+
+    await waitFor(() => expect(reinstateUserMock).toHaveBeenCalledWith(USER_ID));
+    expect(await screen.findByRole('button', { name: COPY.suspension.suspend })).toBeInTheDocument();
+  });
+
+  it("offers neither on the reader's own account, which the service refuses", async () => {
+    const membership: StaffMembership = {
+      accountId: USER_ID,
+      staff: true,
+      bootstrapped: false,
+      roles: ['SUPER_ADMIN'],
+      capabilities: [...ROLE_CAPABILITIES.SUPER_ADMIN],
+    };
+    render(
+      <ConsoleMembershipProvider given={{ status: 'ready', membership }}>
+        <AccountDetail userId={USER_ID} copy={COPY} />
+      </ConsoleMembershipProvider>,
+    );
+    await screen.findByText('Ayan Məmmədova');
+
     expect(screen.getByRole('link', { name: COPY.backToDirectory })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /suspend/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.suspension.suspend })).not.toBeInTheDocument();
   });
 });
 

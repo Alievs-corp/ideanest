@@ -33,11 +33,13 @@ import type { AdminUser } from '../../lib/admin/api';
 import { consoleMessageFor } from '../../lib/admin/refusals';
 import { pluralise } from '../../lib/i18n/plurals';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { formatDate, formatExactTime } from '../../lib/time';
 import type { SupportConsoleCopy } from '../../lib/i18n/admin/people-copy';
 import { AccountPicker } from './AccountPicker';
 import { ConsoleCount } from './ConsoleCount';
+import { useConsoleMembership } from './ConsoleMembership';
 import { ConsoleRefusal } from './ConsoleRefusal';
-import { EntityName } from './ConsoleIdentity';
+import { CopyIdentifier, EntityName } from './ConsoleIdentity';
 import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
 
@@ -92,7 +94,19 @@ export interface SupportConsoleProps {
   readonly copy: SupportConsoleCopy;
 }
 
+/**
+ * The tone a priority is drawn in. Always beside its word, never colour alone. An urgent ticket
+ * and a low one were the same grey chip, on the screen whose order is the priority.
+ */
+const PRIORITY_TONE: Readonly<Record<TicketPriority, 'danger' | 'warning' | 'default'>> = {
+  URGENT: 'danger',
+  HIGH: 'warning',
+  NORMAL: 'default',
+  LOW: 'default',
+};
+
 export function SupportConsole({ copy }: SupportConsoleProps) {
+  const locale = useRouteLocale();
   const [page, setPage] = useState(0);
   const [openTicket, setOpenTicket] = useState<string | null>(null);
   /*
@@ -151,6 +165,15 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
     narrow({ ...filter, assigneeId: null, unassigned: only });
   }
 
+  /*
+   * "Queue" clears every filter, the named assignee included. It cleared `filter` and left the
+   * picker holding a colleague, so the screen named somebody over the whole queue.
+   */
+  function backToQueue(): void {
+    setAssignee(null);
+    narrow({});
+  }
+
   const queue = useConsoleResource(
     (signal) => (filtering ? listTickets(filter, page, signal) : readTicketQueue(page, signal)),
     copy.subject,
@@ -175,18 +198,32 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
     return <ConsoleRefusal status={queue.status} capability={queue.capability} subject={copy.subject} copy={copy.refusals} />;
   }
 
+  /*
+   * What is on screen. The last answer stays while the next one is read, so that answering a
+   * ticket, which reloads this list, no longer swaps the list for a skeleton, unmounts the open
+   * ticket under the reader and throws away whatever they had typed into it. A change of filter
+   * closes the open ticket on its own, in `narrow`.
+   */
+  const tickets = queue.data?.tickets ?? null;
+  const firstRead = tickets === null && queue.status === 'loading';
+
   return (
     <div className="flex flex-col gap-8">
-      <section aria-labelledby="queue-heading">
+      <section aria-labelledby="queue-heading" aria-busy={queue.status === 'loading'}>
         <h2 id="queue-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
-          {copy.heading}
+          {/*
+            The heading said "Open tickets" and the intro "most urgent first" over every view,
+            "Resolved" included, which is neither open nor in that order. A filter reads the
+            list, newest first, and the heading says so.
+          */}
+          {filtering ? copy.listHeading : copy.heading}
           {/*
             #404 again, in miniature: this badge printed the length of the loaded page as
             though it were the population, which is the defect `ConsoleCount` exists for. The
             list pages rather than cursors, so "there are more" comes from `hasMore` — the same
             fact the pager below is built on, and the two can no longer disagree.
           */}
-          {queue.status === 'ready' && (
+          {tickets !== null && (
             <ConsoleCount
               loaded={queue.data?.tickets.length ?? 0}
               more={queue.data?.hasMore ?? false}
@@ -194,7 +231,9 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
             />
           )}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-white/64">
+          {filtering ? copy.listIntro : copy.intro}
+        </p>
 
         <Suspense fallback={null}>
           <BackerTicketForm
@@ -213,7 +252,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
           under a heading that reads as a count about the platform.
         */}
         <ChipRow aria-label={copy.stateFilterLabel} className="mt-4">
-          <Chip active={!filtering} onClick={() => narrow({})}>
+          <Chip active={!filtering} onClick={backToQueue}>
             {copy.queueOnly}
           </Chip>
           {TICKET_STATES.map((value) => (
@@ -286,7 +325,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
           className="mt-3 max-w-[420px]"
         />
 
-        {queue.status === 'loading' && (
+        {firstRead && (
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <div className="space-y-3">
               {[0, 1, 2].map((row) => (
@@ -310,7 +349,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
           </>
         )}
 
-        {queue.status === 'ready' && queue.data !== null && queue.data.tickets.length === 0 && (
+        {queue.status !== 'failed' && tickets !== null && tickets.length === 0 && (
           <EmptyState
             className="mt-4"
             /* A filtered list that is empty says nothing matched, not that there are no
@@ -321,9 +360,9 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
           />
         )}
 
-        {queue.status === 'ready' && queue.data !== null && queue.data.tickets.length > 0 && (
+        {queue.status !== 'failed' && tickets !== null && tickets.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-2">
-            {queue.data.tickets.map((ticket) => (
+            {tickets.map((ticket) => (
               <li key={ticket.id}>
                 <button
                   type="button"
@@ -334,7 +373,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="text-sm text-white">{ticket.subject}</p>
                     <span className="flex items-center gap-2">
-                      <Tag>{copy.priority[ticket.priority]}</Tag>
+                      <Tag variant={PRIORITY_TONE[ticket.priority]}>{copy.priority[ticket.priority]}</Tag>
                       <Tag>{copy.state[ticket.state]}</Tag>
                     </span>
                   </div>
@@ -350,16 +389,20 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
                       kind="account"
                       copy={copy.identity}
                     />
-                    <span>· {ticket.createdAt.slice(0, 10)} ·</span>
+                    <span>· {formatDate(ticket.createdAt, locale)} ·</span>
                     {ticket.assigneeId == null ? (
                       <span>{copy.unassigned}</span>
                     ) : (
-                      <EntityName
-                        id={ticket.assigneeId}
-                        names={names}
-                        kind="account"
-                        copy={copy.identity}
-                      />
+                      <>
+                        {/* Two names on one line read as a pair; this says which is which. */}
+                        <span>{copy.assigneePrefix}</span>
+                        <EntityName
+                          id={ticket.assigneeId}
+                          names={names}
+                          kind="account"
+                          copy={copy.identity}
+                        />
+                      </>
                     )}
                   </p>
                 </button>
@@ -372,7 +415,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
           </ul>
         )}
 
-        {queue.status === 'ready' && (page > 0 || (queue.data?.hasMore ?? false)) && (
+        {tickets !== null && (page > 0 || (queue.data?.hasMore ?? false)) && (
           <div className="mt-4 flex gap-2">
             <Pill variant="ghost" size="sm" disabled={page === 0} onClick={() => setPage((n) => n - 1)}>
               {copy.previous}
@@ -392,7 +435,22 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
   );
 }
 
-/** One ticket, its thread, and the rest of the account's history. */
+/**
+ * One ticket, its thread, who has it, and the rest of the account's history.
+ *
+ * <h2>A ticket can be picked up</h2>
+ *
+ * <p>The service has taken an assignee since #310 and the queue filters by one since #414, and
+ * nothing on this screen ever set it: the only assignment control was "Put back in the queue",
+ * offered on tickets nobody had. So every ticket stayed unassigned for ever, "Nobody yet" was
+ * always the whole list, and a colleague's name in the filter always found nothing. "Take it"
+ * assigns the reader; the picker beside it hands the ticket to somebody else.
+ *
+ * <h2>It stays open while it changes</h2>
+ *
+ * <p>The thread is re-read after every action, and the last answer stays on screen while it is,
+ * so a reply does not blank the ticket to a skeleton and back.
+ */
 function TicketDetail({
   ticketId,
   copy,
@@ -403,6 +461,7 @@ function TicketDetail({
   readonly onChanged: () => void;
 }) {
   const locale = useRouteLocale();
+  const { membership } = useConsoleMembership();
   const context = useConsoleResource(
     (signal) => readTicket(ticketId, signal),
     copy.ticketSubject,
@@ -414,6 +473,24 @@ function TicketDetail({
   const [internal, setInternal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const file = context.data?.file ?? null;
+
+  /*
+   * Everybody the thread mentions, by name: who wrote each message and who has the ticket.
+   * Every staff message used to say "Staff", so a thread with two colleagues on it could not
+   * say which of them had promised what.
+   */
+  const names = useDirectoryNames(
+    file === null
+      ? []
+      : [
+          file.ticket.requesterId,
+          file.ticket.assigneeId ?? null,
+          ...file.messages.map((message) => message.authorId),
+        ].filter((id): id is string => id != null),
+    file?.ticket.subjectType === 'PROJECT' && file.ticket.subjectRef != null ? [file.ticket.subjectRef] : [],
+  );
 
   async function act(work: () => Promise<unknown>): Promise<void> {
     setBusy(true);
@@ -429,29 +506,57 @@ function TicketDetail({
     }
   }
 
-  if (context.status === 'loading') {
+  if (file === null) {
+    if (context.status === 'loading') {
+      return (
+        <SkeletonGroup label={copy.loadingTicket} className="mt-2 rounded-lg border border-white/8 p-4">
+          <Skeleton height="0.875rem" width="60%" />
+        </SkeletonGroup>
+      );
+    }
+
     return (
-      <SkeletonGroup label={copy.loadingTicket} className="mt-2 rounded-lg border border-white/8 p-4">
-        <Skeleton height="0.875rem" width="60%" />
-      </SkeletonGroup>
+      <div className="mt-2">
+        <InlineAlert variant="danger" title={copy.ticketFailedTitle}>
+          {context.error ?? copy.tryAgainShort}
+        </InlineAlert>
+        <Pill variant="ghost" size="sm" className="mt-3" onClick={context.reload}>
+          {copy.tryAgain}
+        </Pill>
+      </div>
     );
   }
 
-  if (context.status !== 'ready' || context.data === null) {
-    return (
-      <InlineAlert variant="danger" title={copy.ticketFailedTitle} className="mt-2">
-        {context.error ?? copy.tryAgainShort}
-      </InlineAlert>
-    );
-  }
-
-  const { file, history } = context.data;
-  const others = history.filter((other) => other.id !== file.ticket.id);
-  const pledgeId =
-    file.ticket.subjectType === 'PLEDGE' && file.ticket.subjectRef != null ? file.ticket.subjectRef : null;
+  const ticket = file.ticket;
+  const history = context.data?.history ?? [];
+  const others = history.filter((other) => other.id !== ticket.id);
+  const pledgeId = ticket.subjectType === 'PLEDGE' && ticket.subjectRef != null ? ticket.subjectRef : null;
+  const me = membership?.accountId ?? null;
 
   return (
-    <div className="mt-2 rounded-lg border border-white/8 bg-surface-1 p-4">
+    <div className="mt-2 rounded-lg border border-white/8 bg-surface-1 p-4" aria-busy={busy}>
+      {/* What the conversation is about, when it is about something the console can show. */}
+      {ticket.subjectType !== 'NONE' && ticket.subjectRef != null && (
+        <p className="mb-3 flex flex-wrap items-baseline gap-x-2 text-xs text-white/48">
+          <span>{copy.aboutLabel}:</span>
+          <span className="text-white/64">{copy.about[ticket.subjectType] ?? ticket.subjectType}</span>
+          {ticket.subjectType === 'ACCOUNT' && (
+            <EntityName id={ticket.subjectRef} names={names} kind="account" copy={copy.identity} />
+          )}
+          {ticket.subjectType === 'PROJECT' && (
+            <EntityName id={ticket.subjectRef} names={names} kind="project" copy={copy.identity} />
+          )}
+          {ticket.subjectType === 'PLEDGE' && (
+            <>
+              <span className="font-mono text-white/64" title={ticket.subjectRef}>
+                {ticket.subjectRef.slice(0, 8)}
+              </span>
+              <CopyIdentifier id={ticket.subjectRef} copy={copy.identity} />
+            </>
+          )}
+        </p>
+      )}
+
       <ul className="flex list-none flex-col gap-2">
         {file.messages.map((message) => (
           <li
@@ -462,10 +567,16 @@ function TicketDetail({
                 : 'rounded-md border border-white/8 p-3'
             }
           >
-            <p className="text-xs text-white/40">
-              {message.authorSide === 'STAFF' ? copy.staff : copy.requester}
-              {message.internal ? ` · ${copy.internalNote}` : ''} ·{' '}
-              {message.createdAt.slice(0, 10)}
+            <p className="flex flex-wrap items-baseline gap-x-1 text-xs text-white/40">
+              {names.accounts.has(message.authorId) ? (
+                <EntityName id={message.authorId} names={names} kind="account" copy={copy.identity} />
+              ) : (
+                <span>{message.authorSide === 'STAFF' ? copy.staff : copy.requester}</span>
+              )}
+              {message.internal && <span>· {copy.internalNote}</span>}
+              <span>·</span>
+              {/* The minute, not only the day: a conversation is read in order. */}
+              <time dateTime={message.createdAt}>{formatExactTime(message.createdAt, locale)}</time>
             </p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-white/80">{message.body}</p>
           </li>
@@ -507,7 +618,7 @@ function TicketDetail({
       <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-white/8 pt-4">
         <Field label={copy.priorityLabel} className="min-w-[150px]">
           <Select
-            value={file.ticket.priority}
+            value={ticket.priority}
             disabled={busy}
             onChange={(event) =>
               void act(() =>
@@ -525,7 +636,7 @@ function TicketDetail({
 
         <Field label={copy.stateLabel} className="min-w-[150px]">
           <Select
-            value={file.ticket.state}
+            value={ticket.state}
             disabled={busy}
             onChange={(event) =>
               void act(() => updateTicket(ticketId, { state: event.target.value as TicketState }))
@@ -538,23 +649,60 @@ function TicketDetail({
             ))}
           </Select>
         </Field>
+      </div>
 
-        <Pill
-          variant="ghost"
-          size="sm"
-          className="mb-1"
+      <div className="mt-4 border-t border-white/8 pt-4">
+        <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-white/64">
+          <span>{copy.assigneePrefix}</span>
+          {ticket.assigneeId == null ? (
+            <span className="text-white/48">{copy.unassigned}</span>
+          ) : (
+            <EntityName id={ticket.assigneeId} names={names} kind="account" copy={copy.identity} />
+          )}
+        </p>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {me !== null && ticket.assigneeId !== me && (
+            <Pill
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() => void act(() => updateTicket(ticketId, { assigneeId: me }))}
+            >
+              {copy.takeIt}
+            </Pill>
+          )}
+          {/* Only on a ticket somebody has. Offered on one nobody had, it did nothing. */}
+          {ticket.assigneeId != null && (
+            <Pill
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => void act(() => updateTicket(ticketId, { unassign: true }))}
+            >
+              {copy.putBack}
+            </Pill>
+          )}
+        </div>
+
+        {/* Keyed by the assignee, so a hand-over clears the search that made it. */}
+        <AccountPicker
+          key={ticket.assigneeId ?? 'nobody'}
+          chosen={null}
+          onChoose={(account: AdminUser | null) => {
+            if (account !== null) void act(() => updateTicket(ticketId, { assigneeId: account.id }));
+          }}
+          copy={copy.handTo}
           disabled={busy}
-          onClick={() => void act(() => updateTicket(ticketId, { unassign: true }))}
-        >
-          {copy.putBack}
-        </Pill>
+          className="mt-3 max-w-[420px]"
+        />
       </div>
 
       {pledgeId !== null && (
         <Suspense fallback={null}>
           <RefundBankDetailsForm
             pledgeId={pledgeId}
-            ticketId={file.ticket.id}
+            ticketId={ticket.id}
             copy={copy.bankDetails}
             subject={copy.ticketSubject}
             refusals={copy.refusals}
@@ -570,7 +718,7 @@ function TicketDetail({
           <ul className="mt-2 flex list-none flex-col gap-1">
             {others.slice(0, 8).map((other: Ticket) => (
               <li key={other.id} className="text-xs text-white/48">
-                {other.createdAt.slice(0, 10)} · {other.subject} · {copy.state[other.state]}
+                {formatDate(other.createdAt, locale)} · {other.subject} · {copy.state[other.state]}
               </li>
             ))}
           </ul>

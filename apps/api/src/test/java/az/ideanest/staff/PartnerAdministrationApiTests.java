@@ -333,6 +333,46 @@ class PartnerAdministrationApiTests extends AbstractIntegrationTest {
         assertThat(roster(admin).getBody().get("partners")).isEqualTo(List.of());
     }
 
+    @Test
+    @DisplayName("a partner cannot be given a staff role afterwards through the roster")
+    void aPartnerCannotBeGivenAStaffRoleLater() {
+        // The other half of the rule above. It held in one direction only: nothing stopped a
+        // partner, once made, from being granted FINANCE on /admin/staff and reading the payment
+        // journal through it.
+        Account admin = staff("partner-admin", StaffRole.SUPER_ADMIN);
+        Account partner = account("partner-later");
+        put(partner.id(), "10", List.of(), admin);
+
+        ResponseEntity<Map<String, Object>> refused = role(HttpMethod.PUT, partner.id(), "FINANCE", admin);
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "ACCOUNT_IS_PARTNER");
+        ResponseEntity<Map<String, Object>> me = get("/v1/admin/me", partner.accessToken());
+        assertThat(me.getBody().get("roles")).isEqualTo(List.of("PARTNER"));
+        assertThat(capabilities(me)).containsExactly("VIEW_PARTNER_STATISTICS");
+    }
+
+    @Test
+    @DisplayName("the partner role is neither granted nor withdrawn through the staff roster")
+    void thePartnerRoleIsNotARosterRole() {
+        Account admin = staff("partner-admin", StaffRole.SUPER_ADMIN);
+        Account candidate = account("partner-roster");
+
+        // Granted there it opened nothing, because there was no share to scale by.
+        ResponseEntity<Map<String, Object>> granted = role(HttpMethod.PUT, candidate.id(), "PARTNER", admin);
+        assertThat(granted.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(granted.getBody()).containsEntry("code", "PARTNER_ROLE_MANAGED_ELSEWHERE");
+        assertThat(get("/v1/admin/me", candidate.accessToken()).getBody()).containsEntry("staff", false);
+
+        // Withdrawn there it left a profile whose share still counted against the hundred.
+        put(candidate.id(), "30", List.of(), admin);
+        ResponseEntity<Map<String, Object>> withdrawn = role(HttpMethod.DELETE, candidate.id(), "PARTNER", admin);
+        assertThat(withdrawn.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(withdrawn.getBody()).containsEntry("code", "PARTNER_ROLE_MANAGED_ELSEWHERE");
+        assertThat(get("/v1/admin/me", candidate.accessToken()).getBody().get("roles")).isEqualTo(List.of("PARTNER"));
+        assertThat(roster(admin).getBody()).containsEntry("allocated", "30.00");
+    }
+
     // ------------------------------------------------------------------
     // Sections
     // ------------------------------------------------------------------
@@ -509,6 +549,15 @@ class PartnerAdministrationApiTests extends AbstractIntegrationTest {
     private ResponseEntity<Map<String, Object>> delete(UUID accountId, Account as) {
         return rest.exchange(
                 "/v1/admin/partners/" + accountId, HttpMethod.DELETE, new HttpEntity<>(headers(as)), OBJECT);
+    }
+
+    /** {@code PUT} or {@code DELETE} on the staff roster's own endpoint for one role. */
+    private ResponseEntity<Map<String, Object>> role(HttpMethod method, UUID accountId, String role, Account as) {
+        return rest.exchange(
+                "/v1/admin/staff/" + accountId + "/roles/" + role,
+                method,
+                new HttpEntity<>(method == HttpMethod.PUT ? Map.of() : null, headers(as)),
+                OBJECT);
     }
 
     private ResponseEntity<Map<String, Object>> roster(Account as) {

@@ -541,6 +541,7 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
         }}
         onConfirm={(note) => void commit(note)}
         copy={copy.moderation}
+        counter={copy.counter}
       />
     </div>
   );
