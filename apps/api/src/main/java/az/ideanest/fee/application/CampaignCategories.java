@@ -30,4 +30,13 @@ public interface CampaignCategories {
      * against the platform default, which is what an uncategorised campaign should pay.
      */
     Optional<UUID> categoryOf(UUID projectId);
+
+    /**
+     * Whether a category with this identifier exists, in any state. Asked before a category exception
+     * is opened, so a mistyped identifier is refused rather than priced.
+     */
+    boolean categoryExists(UUID categoryId);
+
+    /** Whether a campaign with this identifier exists, in any state. {@link #categoryExists}'s reason. */
+    boolean campaignExists(UUID projectId);
 }

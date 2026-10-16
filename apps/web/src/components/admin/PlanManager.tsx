@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import {
   EmptyState,
   Field,
@@ -13,55 +13,55 @@ import {
   TextInput,
 } from '@ideanest/ui';
 import {
-  activateSubscription,
   addPlan,
-  cancelSubscriptionAsStaff,
   changePlan,
   readPlanCatalogue,
   readSubscriptions,
   type BillingPeriod,
-  type ConsoleSubscription,
   type Plan,
 } from '../../lib/admin/plans';
-import { consoleMessageFor, shortId } from '../../lib/admin/refusals';
+import { codedRefusalFor, refusalCode } from '../../lib/admin/coded-refusal';
+import { shortId } from '../../lib/admin/refusals';
+// The printing half only: the money module's root brings decimal.js, which nothing here needs.
+import { formatMoney } from '@ideanest/money/format';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { PlanManagerCopy } from '../../lib/i18n/admin/money-copy';
-import type { DirectoryNames } from '../../lib/admin/directory';
 import { ConsoleRefusal } from './ConsoleRefusal';
-import { EntityName } from './ConsoleIdentity';
+import { Confirm } from './ConsoleConfirm';
 import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
 
 const PERIODS: readonly BillingPeriod[] = ['MONTHLY', 'YEARLY'];
 
 /**
+ * One subscription and its forms, fetched when the queue draws a row: the payment form and the
+ * Baku-day formatting it needs put `/admin/plans` over its First Load JS budget when bundled here.
+ */
+const SubscriptionRow = lazy(() =>
+  import('./PlanSubscriptionRow').then((module) => ({ default: module.SubscriptionRow })),
+);
+
+/**
  * AD-11's second screen: the plans a creator publishes under, and who is on them.
  *
  * <h2>Two things on one screen, and they are not two screens</h2>
  *
- * The catalogue and the payment queue are here together because they are one job. Until a
- * payment provider is integrated, a plan becomes real when somebody on this screen records
- * that a transfer arrived — so the person who edits a price is the person who confirms the
- * money against it, and splitting the two would mean holding one open to work the other.
+ * The catalogue and the payment queue are one job: the person who sets a price is the person who
+ * confirms the money against it. A card payment on the provider's page records itself; a transfer,
+ * cash or anything else is recorded here, with its reference, how it was paid and the day it
+ * arrived — the revenue report reads all three.
  *
  * <h2>A plan is edited in place, and the screen says why that is safe</h2>
  *
- * The fee editor next door refuses to edit anything, because a payout was priced against a
- * rate and editing one would rewrite what a past payout should have been. This screen edits
- * freely, and an operator moving between the two is entitled to know what changed: a
- * subscriber's price is copied onto their own subscription at purchase, so nothing here can
- * reach backwards into a bill.
+ * A subscriber's price is copied onto their own subscription at purchase, so nothing here reaches
+ * backwards into a bill. The limits are read live, which the notice says.
  *
- * <p><strong>The limits are the exception and the notice says so.</strong> They are read live,
- * so lowering one applies to everybody on the plan — at their next submission, not
- * retroactively. That is the one consequence on this screen an operator cannot see from the
- * form.
+ * <h2>Everything that cannot be taken back asks first</h2>
  *
- * <h2>Unlisting, not deleting</h2>
- *
- * There is no delete control because there is no delete endpoint. Removing a plan would
- * either orphan its subscribers or take their subscription with it, and unlisting stops it
- * being sold while leaving everybody on it where they are.
+ * Repricing, taking a plan off sale, recording a payment and ending a subscription each say what is
+ * about to happen and do it on the second press. What happened, or why it did not, is said beside the
+ * control that did it rather than at the foot of the page.
  *
  * MOTION: none, like every console screen. `docs/motion-system.md` §5.
  */
@@ -69,7 +69,36 @@ export interface PlanManagerProps {
   readonly copy: PlanManagerCopy;
 }
 
+interface Said {
+  readonly variant: 'success' | 'danger';
+  readonly title: string;
+  readonly body: string;
+}
+
+/** A price as typed: at most two decimals, a comma read as the decimal mark. `undefined` when it is not one. */
+export function priceFrom(input: string): string | undefined {
+  const typed = input.trim().replace(',', '.');
+  return /^\d{1,10}(\.\d{1,2})?$/.test(typed) ? typed : undefined;
+}
+
+/** A limit on campaigns: a whole number of one or more, or empty for none. `undefined` when it is neither. */
+export function campaignLimitFrom(input: string): number | null | undefined {
+  const typed = input.trim();
+  if (typed === '') return null;
+  if (!/^\d{1,6}$/.test(typed)) return undefined;
+  const limit = Number(typed);
+  return limit >= 1 ? limit : undefined;
+}
+
+/** A goal ceiling: a positive amount, or empty for none. `undefined` when it is neither. */
+export function ceilingFrom(input: string): string | null | undefined {
+  if (input.trim() === '') return null;
+  const price = priceFrom(input);
+  return price === undefined || /^0+(\.0+)?$/.test(price) ? undefined : price;
+}
+
 export function PlanManager({ copy }: PlanManagerProps) {
+  const locale = useRouteLocale();
   const catalogue = useConsoleResource(
     (signal) => readPlanCatalogue(signal),
     copy.subject,
@@ -98,103 +127,63 @@ export function PlanManager({ copy }: PlanManagerProps) {
   const [period, setPeriod] = useState<BillingPeriod>('MONTHLY');
   const [maxActive, setMaxActive] = useState('1');
   const [goalCeiling, setGoalCeiling] = useState('');
-
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [written, setWritten] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState<Said | null>(null);
+  const [queueSaid, setQueueSaid] = useState<Said | null>(null);
 
   if (catalogue.status === 'signed-out' || catalogue.status === 'forbidden') {
     return <ConsoleRefusal status={catalogue.status} capability={catalogue.capability} subject={copy.subject} copy={copy.refusals} />;
   }
 
+  const refusalOf = (cause: unknown) =>
+    codedRefusalFor(cause, copy.errors, copy.errors['INVALID_REQUEST'] ?? copy.refusals.refused, copy.subject, copy.refusals);
+
+  const accountName = (id: string) => names.accounts.get(id)?.name ?? shortId(id);
+
+  const newPrice = priceFrom(price);
+  const newLimit = campaignLimitFrom(maxActive);
+  const newCeiling = ceilingFrom(goalCeiling);
+  const addReady =
+    code.trim() !== '' && name.trim() !== '' && newPrice !== undefined && newLimit !== undefined && newCeiling !== undefined;
+
   async function add(event: React.FormEvent): Promise<void> {
     event.preventDefault();
-    if (code.trim() === '' || name.trim() === '') return;
+    if (!addReady || newPrice === undefined || newLimit === undefined || newCeiling === undefined) return;
 
-    setBusy(true);
-    setError(null);
-    setWritten(null);
+    setAdding(true);
+    setAdded(null);
     try {
       const plan = await addPlan({
         code: code.trim().toUpperCase(),
         name: name.trim(),
         description: description.trim() === '' ? null : description.trim(),
-        price: price.trim(),
+        price: newPrice,
         currency: 'AZN',
         billingPeriod: period,
-        // An empty field is no limit, which is the same thing the wire means by null.
-        maxActiveCampaigns: maxActive.trim() === '' ? null : Number(maxActive.trim()),
-        goalCeiling: goalCeiling.trim() === '' ? null : goalCeiling.trim(),
+        maxActiveCampaigns: newLimit,
+        goalCeiling: newCeiling,
         sortOrder: (catalogue.data?.plans.length ?? 0) * 10 + 10,
       });
 
-      setWritten(fillPlaceholders(copy.addedNotice, { plan: plan.name }));
+      setAdded({ variant: 'success', title: copy.doneTitle, body: fillPlaceholders(copy.addedNotice, { plan: plan.name }) });
       setCode('');
       setName('');
       setDescription('');
       catalogue.reload();
     } catch (cause) {
-      setError(consoleMessageFor(cause, copy.subject, copy.refusals));
+      setAdded({ variant: 'danger', title: copy.failedTitle, body: refusalOf(cause) });
     } finally {
-      setBusy(false);
+      setAdding(false);
     }
   }
 
-  async function setListed(plan: Plan, listed: boolean): Promise<void> {
-    setBusy(true);
-    setError(null);
-    try {
-      await changePlan({ planId: plan.id, listed });
-      catalogue.reload();
-    } catch (cause) {
-      setError(consoleMessageFor(cause, copy.subject, copy.refusals));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function reprice(plan: Plan, next: string): Promise<void> {
-    setBusy(true);
-    setError(null);
-    try {
-      await changePlan({ planId: plan.id, price: next.trim() });
-      setWritten(fillPlaceholders(copy.repricedNotice, { plan: plan.name }));
-      catalogue.reload();
-    } catch (cause) {
-      setError(consoleMessageFor(cause, copy.subject, copy.refusals));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function recordPayment(subscription: ConsoleSubscription, note: string): Promise<void> {
-    setBusy(true);
-    setError(null);
-    try {
-      await activateSubscription(subscription.id, note);
-      setWritten(fillPlaceholders(copy.activatedNotice, { id: shortId(subscription.id) }));
+  /** A subscription write the service refused because the row moved: the list is read again. */
+  function queueRefused(cause: unknown): string {
+    const code = refusalCode(cause);
+    if (code === 'SUBSCRIPTION_NOT_PENDING' || code === 'SUBSCRIPTION_NOT_OPEN' || code === 'SUBSCRIPTION_NOT_FOUND') {
       queue.reload();
-    } catch (cause) {
-      setError(consoleMessageFor(cause, copy.subject, copy.refusals));
-    } finally {
-      setBusy(false);
     }
-  }
-
-  async function end(subscription: ConsoleSubscription, reason: string): Promise<void> {
-    if (reason.trim() === '') return;
-
-    setBusy(true);
-    setError(null);
-    try {
-      await cancelSubscriptionAsStaff(subscription.id, reason.trim());
-      setWritten(fillPlaceholders(copy.endedNotice, { id: shortId(subscription.id) }));
-      queue.reload();
-    } catch (cause) {
-      setError(consoleMessageFor(cause, copy.subject, copy.refusals));
-    } finally {
-      setBusy(false);
-    }
+    return refusalOf(cause);
   }
 
   const plans = catalogue.data?.plans ?? [];
@@ -248,9 +237,8 @@ export function PlanManager({ copy }: PlanManagerProps) {
                 key={plan.id}
                 plan={plan}
                 copy={copy}
-                busy={busy}
-                onList={(listed) => void setListed(plan, listed)}
-                onReprice={(next) => void reprice(plan, next)}
+                refusalOf={refusalOf}
+                onChanged={catalogue.reload}
               />
             ))}
           </ul>
@@ -265,7 +253,7 @@ export function PlanManager({ copy }: PlanManagerProps) {
         </h2>
 
         <form onSubmit={(event) => void add(event)} className="mt-4 flex flex-col gap-3">
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-start gap-3">
             <Field label={copy.codeLabel} hint={copy.codeHint} className="min-w-[180px]">
               <TextInput value={code} onChange={(event) => setCode(event.target.value)} maxLength={40} />
             </Field>
@@ -282,13 +270,14 @@ export function PlanManager({ copy }: PlanManagerProps) {
             />
           </Field>
 
-          <div className="flex flex-wrap items-end gap-3">
-            <Field label={copy.priceLabel} hint={copy.priceHint} className="min-w-[160px]">
-              <TextInput
-                inputMode="decimal"
-                value={price}
-                onChange={(event) => setPrice(event.target.value)}
-              />
+          <div className="flex flex-wrap items-start gap-3">
+            <Field
+              label={copy.priceLabel}
+              hint={copy.priceHint}
+              error={newPrice === undefined ? copy.priceInvalid : undefined}
+              className="min-w-[160px]"
+            >
+              <TextInput inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} />
             </Field>
 
             <Field label={copy.periodLabel} className="min-w-[160px]">
@@ -301,29 +290,37 @@ export function PlanManager({ copy }: PlanManagerProps) {
               </Select>
             </Field>
 
-            <Field label={copy.maxActiveLabel} hint={copy.unlimitedHint} className="min-w-[180px]">
-              <TextInput
-                inputMode="numeric"
-                value={maxActive}
-                onChange={(event) => setMaxActive(event.target.value)}
-              />
+            <Field
+              label={copy.maxActiveLabel}
+              hint={copy.unlimitedHint}
+              error={newLimit === undefined ? copy.maxActiveInvalid : undefined}
+              className="min-w-[180px]"
+            >
+              <TextInput inputMode="numeric" value={maxActive} onChange={(event) => setMaxActive(event.target.value)} />
             </Field>
 
-            <Field label={copy.goalCeilingLabel} hint={copy.unlimitedHint} className="min-w-[180px]">
-              <TextInput
-                inputMode="decimal"
-                value={goalCeiling}
-                onChange={(event) => setGoalCeiling(event.target.value)}
-              />
+            <Field
+              label={copy.goalCeilingLabel}
+              hint={copy.unlimitedHint}
+              error={newCeiling === undefined ? copy.goalCeilingInvalid : undefined}
+              className="min-w-[180px]"
+            >
+              <TextInput inputMode="decimal" value={goalCeiling} onChange={(event) => setGoalCeiling(event.target.value)} />
             </Field>
           </div>
 
           <div>
-            <Pill type="submit" variant="outline" size="sm" disabled={busy}>
-              {busy ? copy.saving : copy.addPlan}
+            <Pill type="submit" variant="outline" size="sm" disabled={adding || !addReady}>
+              {adding ? copy.saving : copy.addPlan}
             </Pill>
           </div>
         </form>
+
+        {added !== null && (
+          <InlineAlert variant={added.variant} title={added.title} className="mt-4">
+            {added.body}
+          </InlineAlert>
+        )}
       </section>
 
       {/* ---- the payment queue -------------------------------------------- */}
@@ -344,6 +341,12 @@ export function PlanManager({ copy }: PlanManagerProps) {
           {queueOnly ? copy.showAll : copy.showQueue}
         </Pill>
 
+        {queueSaid !== null && (
+          <InlineAlert variant={queueSaid.variant} title={queueSaid.title} className="mt-4">
+            {queueSaid.body}
+          </InlineAlert>
+        )}
+
         {queue.status === 'loading' && (
           <SkeletonGroup label={copy.loadingQueue} className="mt-4">
             <Skeleton height="1rem" width="40%" />
@@ -351,9 +354,14 @@ export function PlanManager({ copy }: PlanManagerProps) {
         )}
 
         {queue.status === 'failed' && (
-          <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
-            {queue.error}
-          </InlineAlert>
+          <>
+            <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
+              {queue.error}
+            </InlineAlert>
+            <Pill variant="ghost" size="sm" className="mt-4" onClick={queue.reload}>
+              {copy.tryAgain}
+            </Pill>
+          </>
         )}
 
         {queue.status === 'ready' && subscriptions.length === 0 && (
@@ -367,31 +375,32 @@ export function PlanManager({ copy }: PlanManagerProps) {
 
         {queue.status === 'ready' && subscriptions.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-3">
+            <Suspense
+              fallback={
+                <SkeletonGroup label={copy.loadingQueue}>
+                  <Skeleton height="1rem" width="40%" />
+                </SkeletonGroup>
+              }
+            >
             {subscriptions.map((subscription) => (
               <SubscriptionRow
                 key={subscription.id}
                 subscription={subscription}
                 names={names}
+                accountName={accountName(subscription.accountId)}
                 copy={copy}
-                busy={busy}
-                onActivate={(note) => void recordPayment(subscription, note)}
-                onEnd={(reason) => void end(subscription, reason)}
+                locale={locale}
+                refusalOf={queueRefused}
+                onDone={(body) => {
+                  setQueueSaid({ variant: 'success', title: copy.doneTitle, body });
+                  queue.reload();
+                }}
               />
             ))}
+            </Suspense>
           </ul>
         )}
       </section>
-
-      {written && (
-        <InlineAlert variant="success" title={copy.doneTitle}>
-          {written}
-        </InlineAlert>
-      )}
-      {error && (
-        <InlineAlert variant="danger" title={copy.failedTitle}>
-          {error}
-        </InlineAlert>
-      )}
     </div>
   );
 }
@@ -401,136 +410,135 @@ export function PlanManager({ copy }: PlanManagerProps) {
  * ---------------------------------------------------------------------- */
 
 interface PlanRowProps {
-  plan: Plan;
-  copy: PlanManagerCopy;
-  busy: boolean;
-  onList: (listed: boolean) => void;
-  onReprice: (price: string) => void;
+  readonly plan: Plan;
+  readonly copy: PlanManagerCopy;
+  readonly refusalOf: (cause: unknown) => string;
+  readonly onChanged: () => void;
 }
 
-function PlanRow({ plan, copy, busy, onList, onReprice }: PlanRowProps) {
+function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
   const [next, setNext] = useState(plan.price);
+  const [asking, setAsking] = useState<'none' | 'reprice' | 'retire'>('none');
+  const [busy, setBusy] = useState(false);
+  const [said, setSaid] = useState<Said | null>(null);
+  const nextPrice = priceFrom(next);
+  const money = (amount: string) => formatMoney({ amount, currency: plan.currency });
+
+  async function write(work: () => Promise<unknown>, done: string | null): Promise<void> {
+    if (busy) return;
+    setBusy(true);
+    setSaid(null);
+    try {
+      await work();
+      setAsking('none');
+      if (done !== null) setSaid({ variant: 'success', title: copy.doneTitle, body: done });
+      onChanged();
+    } catch (cause) {
+      setAsking('none');
+      setSaid({ variant: 'danger', title: copy.failedTitle, body: refusalOf(cause) });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <li className="rounded-lg border border-white/8 bg-surface-2 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[15px] text-white">
-            {plan.name} <span className="text-white/40">{plan.code}</span>
+          <p className="flex flex-wrap items-center gap-2 text-[15px] text-white">
+            {plan.name}
+            <code className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-xs text-white/64">{plan.code}</code>
           </p>
           <p className="mt-1 text-[13px] text-white/64">
             {fillPlaceholders(copy.planSummary, {
-              price: `${plan.price} ${plan.currency}`,
+              price: money(plan.price),
               period: copy.period[plan.billingPeriod],
-              campaigns:
-                plan.maxActiveCampaigns == null
-                  ? copy.unlimited
-                  : String(plan.maxActiveCampaigns),
-              ceiling: plan.goalCeiling == null ? copy.unlimited : `${plan.goalCeiling} ${plan.currency}`,
+              campaigns: plan.maxActiveCampaigns == null ? copy.unlimited : String(plan.maxActiveCampaigns),
+              ceiling: plan.goalCeiling == null ? copy.unlimited : money(plan.goalCeiling),
             })}
           </p>
         </div>
 
-        {/*
-          A tag as well as a word: an unlisted plan differs from a listed one by nothing a
-          reader can see otherwise, and colour alone would carry the meaning (ui-kit §9.2).
-        */}
-        <Tag variant={plan.listed ? 'success' : 'default'}>
-          {plan.listed ? copy.onSale : copy.retired}
-        </Tag>
+        {/* A tag as well as a word: colour alone would carry the meaning (ui-kit §9.2). */}
+        <Tag variant={plan.listed ? 'success' : 'default'}>{plan.listed ? copy.onSale : copy.retired}</Tag>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-end gap-3">
-        <Field label={copy.repriceLabel} className="min-w-[160px]">
-          <TextInput inputMode="decimal" value={next} onChange={(event) => setNext(event.target.value)} />
-        </Field>
-
-        <Pill variant="ghost" size="sm" disabled={busy} onClick={() => onReprice(next)}>
-          {copy.reprice}
-        </Pill>
-
-        <Pill variant="ghost" size="sm" disabled={busy} onClick={() => onList(!plan.listed)}>
-          {plan.listed ? copy.retire : copy.putOnSale}
-          <span className="sr-only">: {plan.name}</span>
-        </Pill>
-      </div>
-    </li>
-  );
-}
-
-/* -------------------------------------------------------------------------
- * One subscription
- * ---------------------------------------------------------------------- */
-
-interface SubscriptionRowProps {
-  subscription: ConsoleSubscription;
-  names: DirectoryNames;
-  copy: PlanManagerCopy;
-  busy: boolean;
-  onActivate: (note: string) => void;
-  onEnd: (reason: string) => void;
-}
-
-function SubscriptionRow({
-  subscription,
-  names,
-  copy,
-  busy,
-  onActivate,
-  onEnd,
-}: SubscriptionRowProps) {
-  // Two fields, two pieces of state. One shared string would put whatever somebody typed as
-  // a reason for ending a subscription into the payment reference of the one above it.
-  const [note, setNote] = useState('');
-  const [reason, setReason] = useState('');
-  const pending = subscription.state === 'PENDING_PAYMENT';
-
-  return (
-    <li className="rounded-lg border border-white/8 bg-surface-2 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[15px] text-white">
-            {subscription.planName ?? subscription.planCode ?? copy.unknownPlan}{' '}
-            <EntityName
-              id={subscription.accountId}
-              names={names}
-              kind="account"
-              copy={copy.identity}
-            />
-          </p>
-          <p className="mt-1 text-[13px] text-white/64">
-            {fillPlaceholders(copy.subscriptionSummary, {
-              price: `${subscription.price} ${subscription.currency}`,
-              until: subscription.currentPeriodEnd?.slice(0, 10) ?? copy.notStarted,
-            })}
-          </p>
+      {asking === 'reprice' && nextPrice !== undefined ? (
+        <div className="mt-3">
+          <Confirm
+            label={copy.reprice}
+            text={fillPlaceholders(copy.confirmReprice, { plan: plan.name, old: money(plan.price), new: money(nextPrice) })}
+            action={copy.confirmRepriceAction}
+            working={copy.saving}
+            back={copy.back}
+            busy={busy}
+            onConfirm={() =>
+              void write(
+                () => changePlan({ planId: plan.id, price: nextPrice }),
+                fillPlaceholders(copy.repricedNotice, { plan: plan.name }),
+              )
+            }
+            onBack={() => setAsking('none')}
+          />
         </div>
-
-        <Tag variant={subscription.entitled ? 'success' : pending ? 'warning' : 'default'}>
-          {copy.state[subscription.state]}
-        </Tag>
-      </div>
-
-      {pending && (
-        <div className="mt-3 flex flex-wrap items-end gap-3">
-          <Field label={copy.noteLabel} hint={copy.noteHint} className="min-w-[260px] flex-1">
-            <TextInput value={note} onChange={(event) => setNote(event.target.value)} maxLength={2000} />
+      ) : asking === 'retire' ? (
+        <div className="mt-3">
+          <Confirm
+            label={copy.retire}
+            text={fillPlaceholders(copy.confirmRetire, { plan: plan.name })}
+            action={copy.confirmRetireAction}
+            working={copy.saving}
+            back={copy.back}
+            busy={busy}
+            onConfirm={() => void write(() => changePlan({ planId: plan.id, listed: false }), null)}
+            onBack={() => setAsking('none')}
+          />
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-start gap-3">
+          <Field
+            label={copy.repriceLabel}
+            error={nextPrice === undefined ? copy.priceInvalid : undefined}
+            className="min-w-[160px]"
+          >
+            <TextInput inputMode="decimal" value={next} onChange={(event) => setNext(event.target.value)} />
           </Field>
-          <Pill variant="outline" size="sm" disabled={busy} onClick={() => onActivate(note.trim())}>
-            {copy.recordPayment}
+
+          <Pill
+            variant="ghost"
+            size="sm"
+            className="mt-8"
+            disabled={busy || nextPrice === undefined || nextPrice === plan.price}
+            onClick={() => setAsking('reprice')}
+          >
+            {copy.reprice}
+            <span className="sr-only">: {plan.name}</span>
           </Pill>
+
+          {plan.listed ? (
+            <Pill variant="ghost" size="sm" className="mt-8" disabled={busy} onClick={() => setAsking('retire')}>
+              {copy.retire}
+              <span className="sr-only">: {plan.name}</span>
+            </Pill>
+          ) : (
+            <Pill
+              variant="ghost"
+              size="sm"
+              className="mt-8"
+              disabled={busy}
+              onClick={() => void write(() => changePlan({ planId: plan.id, listed: true }), null)}
+            >
+              {copy.putOnSale}
+              <span className="sr-only">: {plan.name}</span>
+            </Pill>
+          )}
         </div>
       )}
 
-      {subscription.state !== 'CANCELED' && (
-        <div className="mt-3 flex flex-wrap items-end gap-3">
-          <Field label={copy.endReasonLabel} hint={copy.endReasonHint} className="min-w-[260px] flex-1">
-            <TextInput value={reason} onChange={(event) => setReason(event.target.value)} maxLength={2000} />
-          </Field>
-          <Pill variant="ghost" size="sm" disabled={busy} onClick={() => onEnd(reason)}>
-            {copy.endSubscription}
-          </Pill>
-        </div>
+      {said !== null && (
+        <InlineAlert variant={said.variant} title={said.title} className="mt-3">
+          {said.body}
+        </InlineAlert>
       )}
     </li>
   );

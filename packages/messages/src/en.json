@@ -949,7 +949,7 @@
         "metaTitle": "Fees",
         "metaDescription": "Platform and processing rates, their exceptions, and every set of terms the platform has charged.",
         "title": "Fees",
-        "intro": "Changing a fee opens new terms beginning now. The closed ones stay on the screen, because “what did we charge in March” is a question §22.1 attaches a retention rule to."
+        "intro": "Changing a fee opens new terms beginning now. Closed terms stay on the screen, because what a past payout was charged has to stay answerable."
       },
       "plans": {
         "metaTitle": "Plans",
@@ -997,13 +997,13 @@
         "metaTitle": "Payouts",
         "metaDescription": "What each creator is owed, the hold it is under, and the signatures before it leaves.",
         "title": "Payouts",
-        "intro": "Figures are frozen when a payout is calculated and never recomputed — the payout two people approved has to be the one that is sent. Approving needs APPROVE_PAYOUT, which the finance role deliberately does not confer."
+        "intro": "Figures are frozen when a payout is calculated and never recomputed — the payout two people approved has to be the one that is sent. Signing, sending and cancelling need the payout-approval permission, which the finance role deliberately does not include."
       },
       "payoutDestinations": {
         "metaTitle": "Payout destinations",
         "metaDescription": "The bank accounts and cards creators are paid to that nobody has verified yet.",
         "title": "Payout destinations",
-        "intro": "Where creators have asked to be paid and nobody has yet confirmed the account is theirs, oldest first. Verify or reject each one here; both need VERIFY_PAYOUT_DESTINATION, which the finance role deliberately does not hold. Revealing a full IBAN needs READ_BANK_DETAILS and every reveal is recorded in the audit trail."
+        "intro": "Where creators have asked to be paid and nobody has yet confirmed the account is theirs, oldest first. Verify or reject each one here; both need the permission to review payout destinations, which the finance role deliberately does not hold. Showing a full IBAN needs the permission to see bank details, and every reveal is recorded in the audit trail."
       },
       "reconciliation": {
         "metaTitle": "Reconciliation",
@@ -2130,11 +2130,11 @@
         "calculateHeading": "Work out what a campaign owes",
         "calculateIntro": "The figures are frozen at this moment and never recomputed — a payout two people approved has to be the payout that is sent. If the collections or refunds move afterwards, the send is refused and a fresh calculation replaces it.",
         "campaignLabel": "Campaign",
-        "campaignHint": "The whole identifier.",
+        "campaignHint": "The campaign's full identifier.",
         "calculate": "Calculate",
         "working": "Working",
         "calculatedTitle": "Calculated",
-        "calculatedNotice": "Calculated {amount} for {id}. The hold runs until {date}.",
+        "calculatedNotice": "{amount} worked out for {campaign}. The hold ends on {date}.",
         "failedTitle": "That did not work",
         "queueHeading": "In flight",
         "loadingList": "Loading the payout queue",
@@ -2156,7 +2156,7 @@
         "needsTwo": "It is above the threshold, so it needs two different people.",
         "approvalLine": "{approver} on {date}",
         "stillHeldTitle": "Still held",
-        "stillHeldBody": "§9's hold runs until {date}. It exists so that refunds and chargebacks land before the money leaves, so a signature given now would be a signature on a figure nobody can yet know is right.",
+        "stillHeldBody": "The hold ends on {date}. It is there so refunds and chargebacks land before money leaves; a signature given now would be on a figure nobody can yet know is right.",
         "noteLabel": "Note",
         "noteHint": "Why, for the second approver.",
         "approve": "Approve",
@@ -2204,8 +2204,8 @@
           "intro": "This creator is paid into a bank account, so nothing is sent through the provider. You transfer the net amount from IdeyaNest's bank account yourself, then record the transfer here from the bank statement.",
           "inProgressTag": "Transfer in progress",
           "notApproved": "A transfer can be started once the payout is approved and carries every signature it needs.",
-          "needsApprovePayout": "Only a member of staff who holds APPROVE_PAYOUT can transfer this payout.",
-          "needsReadBankDetails": "Starting the transfer opens the creator's account, which needs READ_BANK_DETAILS as well.",
+          "needsApprovePayout": "Only staff who may approve payouts can transfer this one.",
+          "needsReadBankDetails": "Starting the transfer opens the creator's account, which also needs the permission to see bank details.",
           "audited": "Opening the account is recorded in the audit trail under your name, every time. It is not kept once you hide it or leave this page.",
           "startTransfer": "Start the transfer",
           "starting": "Opening the account…",
@@ -2242,7 +2242,9 @@
           "abandonNoteLabel": "How you know it was not made",
           "confirmAbandon": "Abandon it",
           "abandoning": "Abandoning…",
-          "paidOn": "Paid by bank transfer, value date {date}."
+          "paidOn": "Paid by bank transfer, value date {date}.",
+          "paidOtherwise": "This payout was paid on {date}.",
+          "paidUndated": "This payout has been paid."
         },
         "refusal": {
           "PAYOUT_SETTLES_THROUGH_PROVIDER": "This creator's destination is a provider's token, not a bank account. Send it instead of transferring it by hand.",
@@ -2251,7 +2253,7 @@
           "FIGURES_MOVED": "The figures moved since this payout was calculated, so it has been cancelled. Work out a new one for the campaign.",
           "PAYOUT_NOT_SENDABLE": "This payout is not approved, so it cannot be paid.",
           "PAYOUT_DESTINATION_NOT_VERIFIED": "The creator's account is not confirmed. Money goes only to an account a compliance reviewer has confirmed.",
-          "SELF_PAID_PAYOUT": "Nobody pays their own payout. Ask a colleague who holds APPROVE_PAYOUT to handle this one.",
+          "SELF_PAID_PAYOUT": "Nobody signs, sends or pays their own campaign's payout. Ask a colleague who may approve payouts.",
           "PAYOUT_BANK_TRANSFER_ALREADY_RECORDED": "This payout's transfer is already recorded under a different bank reference. Check the statement again.",
           "PAYOUT_REFERENCE_TAKEN": "Another settled transaction already carries this reference. Check the statement again.",
           "BANK_TRANSFER_DATE_OUT_OF_RANGE": "The value date has to be between the day the transfer started ({start}) and today ({today}).",
@@ -2259,13 +2261,83 @@
           "PAYOUT_BANK_TRANSFER_NOT_STARTED": "No bank transfer of this payout is in progress. The page may be out of date.",
           "PAYOUT_SIGNATURES_SHORT": "This payout does not yet have every signature it needs.",
           "CAMPAIGN_ALREADY_PAID_OUT": "This campaign has already been paid out. A campaign is paid out once.",
-          "PAYOUT_SEND_UNCONFIRMED": "A send of this payout through the provider went unanswered, so the money may have moved. Settle that first."
+          "PAYOUT_SEND_UNCONFIRMED": "A send of this payout through the provider went unanswered, so the money may have moved. Settle that first.",
+          "CREATOR_NOT_VERIFIED": "The creator's identity is not verified, so the payout cannot be signed yet. The documents needed have been requested.",
+          "PAYOUT_NOT_APPROVABLE": "This payout is not waiting for signatures any more. The page may be out of date.",
+          "PAYOUT_DESTINATION_PROVIDER_MISMATCH": "The creator's card was registered with a different provider from the one payouts are sent through. The creator needs to register a card again.",
+          "NO_PAYOUT_PROVIDER": "No payout provider is connected, so nothing can be sent through one.",
+          "PAYOUT_NOT_FOUND": "That payout no longer exists. Reload the queue.",
+          "INVALID_REQUEST": "The service did not accept the request. Check the fields and try again."
+        },
+        "campaignInvalid": "That is not a campaign identifier. Enter the full one, 36 characters.",
+        "open": "Open",
+        "close": "Close",
+        "rowSummary": "{campaign} · {creator} · {amount} · {state}",
+        "taxWithheld": "Tax withheld",
+        "debtWithheld": "Withheld for debts",
+        "alreadyApproved": "This payout has every signature it needs.",
+        "heldNoSign": "A held payout is not signed; why it is held is said above.",
+        "needsApprovePayout": "Signing, sending and cancelling payouts need the payout-approval permission, which your roles do not include.",
+        "sendNeedsSignatures": "Signatures still needed before it can be sent: {count}.",
+        "sendHeldForDestination": "It cannot be sent until the creator's account is confirmed.",
+        "confirmSend": "Send {amount} to {creator} for {campaign} through the provider? The money leaves the platform and this cannot be undone.",
+        "confirmSendAction": "Yes, send",
+        "sending": "Sending…",
+        "cancelPayout": "Cancel payout",
+        "confirmCancel": "Cancel the {amount} payout to {creator} for {campaign}? A cancelled payout cannot be reopened; the campaign will need a new calculation.",
+        "confirmCancelAction": "Yes, cancel it",
+        "cancelling": "Cancelling…",
+        "cancelledNotice": "The payout was cancelled.",
+        "back": "Back",
+        "outcome": {
+          "paidTitle": "Sent",
+          "paidBody": "{amount} was sent to {creator} for {campaign}.",
+          "failedTitle": "The provider refused the payout",
+          "failedBody": "{amount} for {campaign} was not sent. The provider said: {reason}. The payout is recorded as failed and has left the queue; it stays in the history below. Once the reason is dealt with, calculate a new payout for the campaign.",
+          "unconfirmedTitle": "The provider did not answer",
+          "unconfirmedBody": "{amount} for {campaign} was sent, but the provider did not answer, so nobody knows whether the money left. The payout stays in the queue and cannot be cancelled. Check the provider's statement and record the outcome on the payout.",
+          "noReason": "no reason given"
+        },
+        "unconfirmed": {
+          "title": "Nobody knows yet whether this send went through",
+          "body": "The provider did not answer the send on {date}. The money may have left, so the payout cannot be cancelled. Check the provider's statement and record what it shows.",
+          "sent": "It was sent",
+          "notSent": "It was not sent",
+          "transactionLabel": "Provider's transaction number",
+          "transactionHint": "Exactly as the statement shows it.",
+          "noteLabel": "What the statement shows",
+          "noteHint": "Kept in the audit trail.",
+          "confirmSent": "Record {amount} as sent under transaction {reference}? The payout becomes paid and this cannot be undone.",
+          "confirmNotSent": "Record that {amount} was not sent? The payout becomes failed and the campaign can be calculated again. If the money did leave, this pays the creator twice.",
+          "confirmAction": "Yes, record it",
+          "recording": "Recording…",
+          "resolvedSent": "Recorded as sent. The payout is paid.",
+          "resolvedNotSent": "Recorded as not sent. The payout is failed and the campaign can be calculated again."
+        },
+        "history": {
+          "heading": "Past payouts",
+          "intro": "Paid, failed and cancelled payouts, newest first.",
+          "filterLabel": "Payouts by state",
+          "loading": "Loading past payouts",
+          "emptyTitle": "Nothing here",
+          "emptyBody": "No payout is in this state.",
+          "paidOn": "Paid on {date}",
+          "failedOn": "Failed on {date}",
+          "calculatedOn": "Calculated on {date}",
+          "failure": "The provider said: {reason}"
+        },
+        "calculateRefusal": {
+          "PAYOUT_ALREADY_IN_FLIGHT": "This campaign already has a payout on its way. Find it in the queue below.",
+          "CAMPAIGN_ALREADY_PAID_OUT": "This campaign has already been paid out. A campaign is paid once.",
+          "PAYOUT_SEND_UNCONFIRMED": "The provider never answered an earlier send for this campaign. Record that send's outcome before calculating a new payout.",
+          "PROJECT_NOT_FOUND": "No campaign has that identifier.",
+          "NOTHING_TO_PAY": "After fees and refunds there is nothing left to pay this campaign."
         }
       },
       "payoutDestinations": {
         "subject": "the payout destination queue",
         "filterLabel": "Filter by state",
-        "everything": "Everything waiting",
+        "everything": "All",
         "loadingList": "Loading the payout destinations waiting on a reviewer",
         "emptyTitle": "Nothing waiting",
         "emptyBody": "Every payout destination on file has been verified.",
@@ -2305,7 +2377,7 @@
           "ibanLabel": "IBAN",
           "holderLabel": "Account holder",
           "notFound": "There is no bank account on file for this account, so there is no IBAN to reveal.",
-          "forbidden": "Revealing an IBAN needs READ_BANK_DETAILS.",
+          "forbidden": "Showing the IBAN needs the permission to see bank details.",
           "failed": "The IBAN could not be opened. Nothing was shown."
         },
         "decision": {
@@ -2322,7 +2394,9 @@
           "nameMismatch": "The holder's name does not match the creator's legal name, so this account cannot be verified. Reject it, or wait for the creator to correct their details.",
           "self": "Nobody verifies or rejects their own payout destination.",
           "gone": "There is no payout destination on this account any more.",
-          "failedTitle": "Not saved"
+          "failedTitle": "Not saved",
+          "verifyRejected": "This account was rejected. Verifying it reverses the rejection and opens payouts to it — do so only once the reason for rejecting it is resolved.",
+          "confirmVerifyRejected": "Reverse the rejection and confirm this account belongs to the creator? You confirm it under your own name, and payouts to it open."
         }
       },
       "refunds": {
@@ -2477,8 +2551,20 @@
             "PLAN_REFUND_NOT_UNAPPLIED": "Somebody has already returned this payment. The list has been reloaded.",
             "PLAN_REFUND_CARD_WINDOW_CLOSED": "The provider’s card refund window has closed. Return the money by bank transfer and record it below.",
             "PLAN_REFUND_PROVIDER_REFUSED": "The provider refused the refund, so nothing was sent. Return the money by bank transfer instead, or try again later.",
-            "PLAN_REFUND_PROVIDER_UNAVAILABLE": "The provider could not be reached. Try again in a few minutes; trying again does not refund twice."
-          }
+            "PLAN_REFUND_PROVIDER_UNAVAILABLE": "The provider could not be reached and nothing was sent. Try again in a few minutes.",
+            "PLAN_REFUND_UNCONFIRMED": "The provider did not answer, so nobody knows yet whether the refund was made. Do not return the money by bank transfer. Try the card refund again in a couple of minutes: the provider is asked first, and nothing is refunded twice.",
+            "PLAN_REFUND_IN_PROGRESS": "A refund of this payment is already under way. Wait a minute or two and try again.",
+            "PLAN_REFUND_CARD_REFUND_UNSETTLED": "A refund to the card was sent for this payment and its outcome is not known yet. Settle it with the card refund first, so the money is not returned twice.",
+            "INVALID_REQUEST": "The service did not accept the request. Check the fields and try again."
+          },
+          "providerName": {
+            "PAYRIFF": "Payriff",
+            "EPOINT": "Epoint",
+            "AZERICARD": "Azericard",
+            "SANDBOX": "Sandbox provider"
+          },
+          "unconfirmedTitle": "A card refund may already be on its way",
+          "unconfirmedBody": "A refund to the card was sent on {date} and the provider never answered, so the money may already have been returned. Do not return it by bank transfer. Try the card refund again: the provider is asked first, and nothing is sent twice."
         },
         "pledgeInvalid": "Enter the pledge’s full identifier, like 00000000-0000-0000-0000-000000000000.",
         "amountInvalid": "Enter a positive amount like 25.00, with at most two decimal places, or leave it blank to refund the rest.",
@@ -2617,17 +2703,17 @@
         "noticeBody": "There is no edit. Submitting below closes the terms currently in force and opens new ones beginning now, so a payout calculated last month still prices against last month's rates. Nothing you can do here changes what was charged in the past.",
         "inForceHeading": "In force",
         "loadingList": "Loading fee schedules",
-        "emptyTitle": "No fee schedule is configured",
-        "emptyBody": "The platform is currently pricing every payout at zero fees. That is deliberate — a payout run must not stop because nobody wrote a row — but it means creators are being paid the full amount collected.",
+        "emptyTitle": "No fee schedule is open",
+        "emptyBody": "Every payout is priced at the platform's default terms: {platform} platform fee and {processing} processing. Open terms below to change them.",
         "replaceHeading": "Open new terms",
         "scopeLabel": "Scope",
         "categoryLabel": "Category",
         "campaignLabel": "Campaign",
-        "scopeRefHint": "The whole identifier.",
+        "scopeRefHint": "The campaign's full identifier.",
         "platformRateLabel": "Platform rate",
         "processingRateLabel": "Processing rate",
         "fractionHint": "A fraction. {percentage}",
-        "fixedLabel": "Fixed per transaction",
+        "fixedLabel": "Fixed amount per payout",
         "whyLabel": "Why",
         "whyHint": "Required. A fee change nobody explained is one nobody can defend.",
         "open": "Open new terms",
@@ -2636,15 +2722,41 @@
         "openedNotice": "New {scope} terms in force from {date}. The previous schedule is closed, not deleted.",
         "failedTitle": "That did not work",
         "pastHeading": "Past terms",
-        "pastIntro": "What the platform charged, and when. §22.1 makes this a record with a retention rule rather than a changelog.",
+        "pastIntro": "What the platform charged, and when. Closed terms are never deleted: they record what each past payout was priced at.",
         "inForceTag": "In force",
-        "rates": "Platform {platform} · processing {processing} + {fixed}",
+        "rates": "Platform {platform} · processing {processing} + {fixed} per payout",
         "window": "{from} — {to} · {note}",
         "now": "now",
         "scope": {
           "PLATFORM": "Platform",
           "CATEGORY": "Category",
           "PROJECT": "Campaign"
+        },
+        "fixedHint": "Added once to each payout's processing fee, in {currency}.",
+        "rateInvalid": "Enter a fraction between 0 and 1, such as 0.05 for 5%.",
+        "fixedInvalid": "Enter an amount that is not negative, such as 0.30.",
+        "scopeRefInvalid": "That is not an identifier. Enter the full one, 36 characters.",
+        "categoryPlaceholder": "Choose a category",
+        "categoriesUnavailable": "The category list did not load. Enter the category's full identifier instead.",
+        "campaignFound": "Campaign: {name}",
+        "prefilledFromSchedule": "Filled in with the terms in force now. Change only what should change.",
+        "prefilledFromDefault": "Nothing is open for this scope, so the fields start from what such a payout is charged today.",
+        "scopeNamed": "{scope}: {name}",
+        "confirm": {
+          "heading": "Check the new terms",
+          "intro": "The terms for {scope} close now, and these apply to every payout calculated from now on. Payouts already calculated keep their own.",
+          "was": "Now",
+          "becomes": "New",
+          "unchanged": "unchanged",
+          "action": "Yes, open the new terms",
+          "back": "Back"
+        },
+        "errors": {
+          "FEE_SCHEDULE_CONFLICT": "Another administrator opened terms for this scope first. The list has been reloaded; check what is in force and try again.",
+          "FEE_SCOPE_MISMATCH": "Platform terms name no category or campaign, and an exception must name one.",
+          "FEE_SCOPE_UNKNOWN_CATEGORY": "No category has that identifier.",
+          "FEE_SCOPE_UNKNOWN_PROJECT": "No campaign has that identifier.",
+          "INVALID_REQUEST": "The service did not accept these terms. Rates are fractions between 0 and 1, the fixed amount cannot be negative, and the reason cannot be empty."
         }
       },
       "plans": {
@@ -2656,7 +2768,7 @@
         "loadingCatalogue": "Loading plans",
         "emptyCatalogueTitle": "There are no plans",
         "emptyCatalogueBody": "Publishing is gated on a plan, so with an empty catalogue nobody can send a campaign for review. Add one below.",
-        "planSummary": "{price} {period} · {campaigns} campaigns at a time · goals up to {ceiling}",
+        "planSummary": "{price} / {period} · {campaigns} campaigns at a time · goal limit: {ceiling}",
         "onSale": "On sale",
         "retired": "Retired",
         "repriceLabel": "New price",
@@ -2678,7 +2790,7 @@
         "unlimitedHint": "Leave empty for no limit.",
         "addPlan": "Add plan",
         "queueHeading": "Payments",
-        "queueIntro": "No payment provider is integrated yet, so a paid plan starts when somebody here records that the transfer arrived. Every activation is audited under your name.",
+        "queueIntro": "A plan is paid by card on the provider's page, which records itself, or by bank transfer, in cash or otherwise. Record a payment that did not come by card here once the money has arrived; every activation is audited under your name.",
         "loadingQueue": "Loading subscriptions",
         "showAll": "Show every subscription",
         "showQueue": "Show only what is waiting",
@@ -2687,8 +2799,8 @@
         "subscriptionSummary": "{price} · runs until {until}",
         "unknownPlan": "Unknown plan",
         "notStarted": "not started",
-        "noteLabel": "Payment reference",
-        "noteHint": "The transfer reference or invoice number, so this can be checked later.",
+        "noteLabel": "Note",
+        "noteHint": "Optional. Anything the next reader needs to know.",
         "recordPayment": "Record payment",
         "endReasonLabel": "Reason for ending it",
         "endReasonHint": "Required. This takes the plan away at once rather than at the period end.",
@@ -2697,8 +2809,8 @@
         "failedTitle": "That did not work",
         "addedNotice": "{plan} was added and is on sale.",
         "repricedNotice": "{plan} was repriced. Existing subscribers keep what they were charged.",
-        "activatedNotice": "Subscription {id} is active.",
-        "endedNotice": "Subscription {id} was ended.",
+        "activatedNotice": "{account}'s subscription is active.",
+        "endedNotice": "{account}'s subscription was ended.",
         "period": {
           "MONTHLY": "Monthly",
           "YEARLY": "Yearly"
@@ -2708,6 +2820,40 @@
           "ACTIVE": "Active",
           "CANCELED": "Ended",
           "EXPIRED": "Expired"
+        },
+        "referenceLabel": "Payment reference",
+        "referenceHint": "The transfer or invoice number, so the payment can be checked later.",
+        "methodLabel": "How it was paid",
+        "method": {
+          "BANK_TRANSFER": "Bank transfer",
+          "CARD": "Card",
+          "CASH": "Cash",
+          "OTHER": "Other"
+        },
+        "receivedLabel": "Day the money arrived",
+        "receivedHint": "In Baku time. Not later than today.",
+        "receivedInvalid": "Choose a day no later than today.",
+        "confirmRecord": "Record {price} for {plan} from {account}, paid by {method} on {date}? The subscription starts at once.",
+        "confirmRecordAction": "Yes, record it",
+        "confirmEnd": "End {account}'s {plan} subscription now? Its entitlement stops at once and this cannot be undone.",
+        "confirmEndAction": "Yes, end it",
+        "confirmRetire": "Take {plan} off sale? New creators will not be able to buy it; everybody on it now stays on it.",
+        "confirmRetireAction": "Yes, take it off sale",
+        "confirmReprice": "Change {plan}'s price from {old} to {new}? Only new purchases pay the new price.",
+        "confirmRepriceAction": "Yes, change the price",
+        "back": "Back",
+        "priceInvalid": "Enter a price such as 19.00, with at most two decimals.",
+        "maxActiveInvalid": "Enter a whole number of 1 or more, or leave it empty for unlimited.",
+        "goalCeilingInvalid": "Enter an amount above zero, or leave it empty for unlimited.",
+        "errors": {
+          "PLAN_CODE_TAKEN": "That code is already another plan's. Codes are permanent, so choose another.",
+          "INVALID_PLAN": "The service did not accept the plan. Check the price and the limits; AZN takes at most two decimals.",
+          "PLAN_NOT_FOUND": "That plan no longer exists. Reload the page.",
+          "SUBSCRIPTION_NOT_FOUND": "That subscription no longer exists. The list has been reloaded.",
+          "SUBSCRIPTION_NOT_PENDING": "This subscription is no longer waiting for payment: a colleague recorded it, or it was ended. The list has been reloaded.",
+          "SUBSCRIPTION_NOT_OPEN": "This subscription has already ended. The list has been reloaded.",
+          "PAYMENT_NOT_YET_RECEIVED": "The payment cannot be dated in the future.",
+          "INVALID_REQUEST": "The service did not accept the request. Check the fields and try again."
         }
       },
       "submissionQueue": {

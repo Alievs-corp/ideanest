@@ -14,6 +14,7 @@ import az.ideanest.subscription.application.PlanCodeTakenException;
 import az.ideanest.subscription.application.PlanNotOnSaleException;
 import az.ideanest.subscription.application.SubscriptionNotAwaitingPaymentException;
 import az.ideanest.subscription.application.SubscriptionNotFoundException;
+import az.ideanest.subscription.application.SubscriptionNotOpenException;
 import az.ideanest.subscription.application.UnknownPlanException;
 import az.ideanest.user.application.AccountNotFoundException;
 import java.net.URI;
@@ -136,6 +137,18 @@ public class SubscriptionExceptionHandler {
         problem.setTitle("No such subscription");
         problem.setDetail("That subscription does not exist.");
         problem.setProperty("code", "SUBSCRIPTION_NOT_FOUND");
+        return problem;
+    }
+
+    /** 409: staff tried to end a subscription that had already expired or been ended. */
+    @ExceptionHandler(SubscriptionNotOpenException.class)
+    public ProblemDetail handleNotOpen(SubscriptionNotOpenException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/subscription-not-open"));
+        problem.setTitle("That subscription has already ended");
+        problem.setDetail("It expired or was ended while this page was open. Reload to see where it is now.");
+        problem.setProperty("code", "SUBSCRIPTION_NOT_OPEN");
+        problem.setProperty("state", exception.state().name());
         return problem;
     }
 

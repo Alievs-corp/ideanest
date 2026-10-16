@@ -1,6 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { BillingPeriod, Plan } from '../plans/api';
+import type { PaymentMethod } from './revenue';
 
 /**
  * AD-11's second half: what the platform charges a creator to publish.
@@ -36,6 +37,10 @@ import type { BillingPeriod, Plan } from '../plans/api';
  */
 
 export type { Plan, BillingPeriod } from '../plans/api';
+export type { PaymentMethod } from './revenue';
+
+/** The ways a plan can be paid that staff record, in the order the form offers them. */
+export const PLAN_PAYMENT_METHODS = ['BANK_TRANSFER', 'CASH', 'CARD', 'OTHER'] as const;
 
 export type SubscriptionState = 'PENDING_PAYMENT' | 'ACTIVE' | 'CANCELED' | 'EXPIRED';
 
@@ -167,26 +172,55 @@ export async function readSubscriptions(
 }
 
 /**
+ * What staff say about a payment that arrived for a subscription.
+ *
+ * @param method how it was paid. The service defaults to a bank transfer when it is absent, which is
+ *   why the console always sends it: a cash payment recorded as a transfer is a wrong revenue report
+ * @param receivedAt when the money arrived, as an instant. Absent means now
+ * @param reference the transfer or invoice number, which the service keeps on the payment itself
+ */
+export interface ActivateSubscriptionRequest {
+  readonly method: PaymentMethod;
+  readonly receivedAt?: string;
+  readonly reference?: string;
+  readonly note?: string;
+}
+
+/**
  * Records that a subscription's payment arrived, which is what starts the entitlement.
  *
- * <p>This exists because no payment provider is integrated. Until one is, a paid plan becomes
- * real when somebody here says the transfer landed — and the action is audited under their
- * name for exactly that reason.
+ * <p>A card payment on the provider's page records itself (#449); this is every other way a plan is
+ * paid, and the action is audited under the name of whoever recorded it.
  */
 export async function activateSubscription(
   subscriptionId: string,
-  note: string,
+  request: ActivateSubscriptionRequest,
   signal?: AbortSignal,
 ): Promise<ConsoleSubscription> {
   const response = await authorizedFetch(`/v1/admin/subscriptions/${subscriptionId}/activate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ note }),
+    body: JSON.stringify({
+      method: request.method,
+      ...(request.receivedAt === undefined ? {} : { receivedAt: request.receivedAt }),
+      ...(request.reference === undefined ? {} : { reference: request.reference }),
+      ...(request.note === undefined ? {} : { note: request.note }),
+    }),
     signal,
   });
   if (!response.ok) throw await errorFrom(response);
 
   return (await response.json()) as ConsoleSubscription;
+}
+
+/**
+ * The instant to record for money that arrived on a Baku calendar day: now when the day is today,
+ * otherwise noon in Baku that day, which no zone can move into a neighbouring day or month.
+ */
+export function receivedAtFor(day: string, today: string, now: Date = new Date()): string | undefined {
+  if (day === today) return undefined;
+  const at = new Date(`${day}T12:00:00+04:00`);
+  return Number.isNaN(at.getTime()) || at.getTime() > now.getTime() ? undefined : at.toISOString();
 }
 
 /** Ends a subscription outright — a reversed payment, a fraud finding, a mistake. */

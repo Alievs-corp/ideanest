@@ -80,6 +80,11 @@ export interface Payout {
   platformFee: Money;
   processingFee: Money;
   taxWithheld: Money;
+  /**
+   * What was kept back towards the creator's debts (IDN-EXT-01). Optional only because a service that
+   * has not been redeployed does not send it; the breakdown reads it as zero then.
+   */
+  debtWithheld?: Money | null;
   refunded: Money;
   net: Money;
   /** Which terms produced the deductions, so the arithmetic can be traced back. */
@@ -125,6 +130,11 @@ export interface Payout {
   failureMessage?: string | null;
   calculatedAt: string;
   sentAt?: string | null;
+  /**
+   * When a send through the provider went unanswered, so the money may have moved. Set on an
+   * `APPROVED` payout until somebody records what the provider's statement shows.
+   */
+  sendUnconfirmedAt?: string | null;
 }
 
 export interface PayoutApproval {
@@ -279,6 +289,53 @@ export async function cancelPayout(payoutId: string, signal?: AbortSignal): Prom
   const response = await authorizedFetch(
     `/v1/admin/payouts/${encodeURIComponent(payoutId)}/cancel`,
     { method: 'POST', signal },
+  );
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as Payout;
+}
+
+/** The states the history lists: everything that has left the queue. */
+export const SETTLED_STATES: readonly PayoutState[] = Object.freeze(['PAID', 'FAILED', 'CANCELLED']);
+
+/**
+ * Settles a send the provider never answered, from its statement: it was sent, under this transaction.
+ * The payout becomes `PAID`.
+ */
+export async function recordUnconfirmedSent(
+  payoutId: string,
+  providerTransactionId: string,
+  note: string,
+  signal?: AbortSignal,
+): Promise<Payout> {
+  const response = await authorizedFetch(
+    `/v1/admin/payouts/${encodeURIComponent(payoutId)}/unconfirmed-send/sent`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ providerTransactionId, note }),
+      signal,
+    },
+  );
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as Payout;
+}
+
+/** Settles an unanswered send as never carried out. The payout becomes `FAILED` and may be priced again. */
+export async function recordUnconfirmedNotSent(
+  payoutId: string,
+  note: string,
+  signal?: AbortSignal,
+): Promise<Payout> {
+  const response = await authorizedFetch(
+    `/v1/admin/payouts/${encodeURIComponent(payoutId)}/unconfirmed-send/not-sent`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+      signal,
+    },
   );
   if (!response.ok) throw await errorFrom(response);
 

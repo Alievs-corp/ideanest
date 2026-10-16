@@ -72,6 +72,9 @@ public class PlanPaymentRefundController {
      * @param amount a decimal string, as money is everywhere in this API
      * @param cardRefundUntil when the provider stops taking a refund to the card, or null when it
      *     names no window
+     * @param cardRefundStartedAt when a card refund was sent and its answer never arrived (V108). Null otherwise.
+     *     While it is set the money may already be on its way back: the console offers the card refund again,
+     *     which asks the provider first, and not the bank transfer
      */
     public record UnappliedPlanPayment(
             UUID id,
@@ -82,7 +85,8 @@ public class PlanPaymentRefundController {
             String provider,
             String providerTransactionId,
             Instant paidAt,
-            Instant cardRefundUntil) {
+            Instant cardRefundUntil,
+            Instant cardRefundStartedAt) {
 
         static UnappliedPlanPayment of(UnappliedPlanPayments.Unapplied payment) {
             return new UnappliedPlanPayment(
@@ -94,7 +98,8 @@ public class PlanPaymentRefundController {
                     payment.provider(),
                     payment.providerTransactionId(),
                     payment.paidAt(),
-                    payment.cardRefundUntil());
+                    payment.cardRefundUntil(),
+                    payment.cardRefundStartedAt());
         }
     }
 

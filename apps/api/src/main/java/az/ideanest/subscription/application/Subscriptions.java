@@ -372,6 +372,10 @@ public class Subscriptions {
                 .findById(subscriptionId)
                 .orElseThrow(() -> new SubscriptionNotFoundException(subscriptionId));
 
+        if (!subscription.isOpen()) {
+            throw new SubscriptionNotOpenException(subscriptionId, subscription.getState());
+        }
+
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         subscription.cancelNow(reason, now);
 

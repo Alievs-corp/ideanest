@@ -1,5 +1,6 @@
 package az.ideanest.compliance.api;
 
+import az.ideanest.compliance.domain.DestinationState;
 import az.ideanest.compliance.domain.DestinationVerificationMethod;
 import az.ideanest.compliance.domain.PayoutDestination;
 import az.ideanest.shared.compliance.BankAccount;
@@ -81,11 +82,16 @@ public final class PayoutDestinationResponses {
      *
      * <p>Still no token. A screen that displayed it would make every reviewer's browser a place
      * one had been.
+     *
+     * <p>{@code reviewState} is the row's own state, beside {@code standing}. They differ while a waiver is
+     * live: the standing reports {@code WAIVED} whatever the row says, and a reviewer offered "verify" on a
+     * waived row whose holder's name does not match would press a control the service always refuses.
      */
     public record ForStaff(
             UUID creatorId,
             boolean recorded,
             DestinationStanding standing,
+            DestinationState reviewState,
             DestinationKind kind,
             String provider,
             String holderName,
@@ -101,6 +107,7 @@ public final class PayoutDestinationResponses {
                     creatorId,
                     true,
                     standing,
+                    row.getState(),
                     row.kind(),
                     row.getProvider(),
                     row.getHolderName(),
@@ -114,7 +121,7 @@ public final class PayoutDestinationResponses {
 
         public static ForStaff none(UUID creatorId) {
             return new ForStaff(
-                    creatorId, false, DestinationStanding.NONE, null, null, null, null, null, null, null, null, null);
+                    creatorId, false, DestinationStanding.NONE, null, null, null, null, null, null, null, null, null, null);
         }
     }
 

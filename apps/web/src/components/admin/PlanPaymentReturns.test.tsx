@@ -99,7 +99,9 @@ describe('plan payments to return (#457)', () => {
 
     const open = await rowOf('ORDER-0001');
     expect(within(open).getByText(amountOf('19.00'))).toBeInTheDocument();
-    expect(within(open).getByText(/PAYRIFF/)).toBeInTheDocument();
+    // The provider as staff say it, not the service's constant.
+    expect(within(open).getByText(/Payriff/)).toBeInTheDocument();
+    expect(within(open).queryByText(/PAYRIFF/)).not.toBeInTheDocument();
     expect(within(open).getByText(/Refund to card until/)).toBeInTheDocument();
     expect(within(open).getByText(/Paid by/)).toBeInTheDocument();
 
@@ -126,7 +128,7 @@ describe('plan payments to return (#457)', () => {
     const confirm = within(row).getByRole('group', { name: WORDS.refundToCard });
     expect(
       within(confirm).getByText(
-        fillPlaceholders(WORDS.confirmRefund, { amount: amountOf('19.00'), provider: 'PAYRIFF' }),
+        fillPlaceholders(WORDS.confirmRefund, { amount: amountOf('19.00'), provider: 'Payriff' }),
       ),
     ).toBeInTheDocument();
     expect(refundMock).not.toHaveBeenCalled();
@@ -139,15 +141,15 @@ describe('plan payments to return (#457)', () => {
     expect(screen.getByText('ORDER-0002')).toBeInTheDocument();
   });
 
-  it('disables the card refund past the window and says why in words', async () => {
+  it('does not offer the card refund past the window, and says why in words', async () => {
     show([CLOSED]);
 
     const row = await rowOf('ORDER-0002');
-    const button = within(row).getByRole('button', { name: WORDS.refundToCard });
-    expect(button).toBeDisabled();
+    expect(within(row).queryByRole('button', { name: WORDS.refundToCard })).not.toBeInTheDocument();
     expect(within(row).getByText(WORDS.cardClosedReason)).toBeInTheDocument();
-    expect(button).toHaveAccessibleDescription(WORDS.cardClosedReason);
-    expect(within(row).getByRole('button', { name: WORDS.recordBankTransfer })).toBeEnabled();
+    const bank = within(row).getByRole('button', { name: WORDS.recordBankTransfer });
+    expect(bank).toBeEnabled();
+    expect(bank).toHaveAccessibleDescription(WORDS.cardClosedReason);
   });
 
   it('turns the row to the bank-transfer form when the service says the window has closed', async () => {
@@ -164,7 +166,63 @@ describe('plan payments to return (#457)', () => {
     expect(screen.getByText('ORDER-0001')).toBeInTheDocument();
 
     await user.click(within(row).getByRole('button', { name: WORDS.cancel }));
-    expect(within(row).getByRole('button', { name: WORDS.refundToCard })).toBeDisabled();
+    expect(within(row).queryByRole('button', { name: WORDS.refundToCard })).not.toBeInTheDocument();
+  });
+
+  it('keeps the bank transfer away from a payment whose card refund was never answered', async () => {
+    show([payment({ cardRefundStartedAt: '2026-10-15T08:00:00Z' })]);
+
+    const row = await rowOf('ORDER-0001');
+    expect(within(row).getByText(WORDS.unconfirmedTitle)).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: WORDS.recordBankTransfer })).not.toBeInTheDocument();
+    // Asking again is the way out: the service asks the provider before it sends anything.
+    expect(within(row).getByRole('button', { name: WORDS.refundToCard })).toBeEnabled();
+  });
+
+  it('turns to the unconfirmed state when the provider does not answer a refund', async () => {
+    const user = userEvent.setup();
+    refundMock.mockRejectedValue(new ApiError(503, { code: 'PLAN_REFUND_UNCONFIRMED', title: 'Unconfirmed' }));
+    show([payment()]);
+
+    const row = await rowOf('ORDER-0001');
+    await user.click(within(row).getByRole('button', { name: WORDS.refundToCard }));
+    await user.click(within(row).getByRole('button', { name: WORDS.confirmRefundAction }));
+
+    expect(await within(row).findByText(WORDS.errors['PLAN_REFUND_UNCONFIRMED'] ?? '')).toBeInTheDocument();
+    expect(within(row).getByText(WORDS.unconfirmedTitle)).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: WORDS.recordBankTransfer })).not.toBeInTheDocument();
+  });
+
+  it('stops offering the transfer when the service says a card refund is unsettled', async () => {
+    const user = userEvent.setup();
+    recordMock.mockRejectedValue(new ApiError(409, { code: 'PLAN_REFUND_CARD_REFUND_UNSETTLED', title: 'Unsettled' }));
+    show([CLOSED]);
+
+    const row = await rowOf('ORDER-0002');
+    await user.click(within(row).getByRole('button', { name: WORDS.recordBankTransfer }));
+    const form = within(row).getByRole('form', { name: WORDS.recordBankTransfer });
+    await user.type(within(form).getByLabelText(new RegExp(WORDS.bankReference)), 'BANK-REF-78');
+    await user.click(within(form).getByRole('button', { name: WORDS.recordBankTransfer }));
+    await user.click(within(form).getByRole('button', { name: WORDS.confirmRecordAction }));
+
+    expect(await within(row).findByText(WORDS.unconfirmedTitle)).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: WORDS.recordBankTransfer })).not.toBeInTheDocument();
+  });
+
+  it('words a request the service rejected before any code ran, never in its English', async () => {
+    const user = userEvent.setup();
+    recordMock.mockRejectedValue(new ApiError(400, { status: 400, detail: 'Invalid request content.' }));
+    show([CLOSED]);
+
+    const row = await rowOf('ORDER-0002');
+    await user.click(within(row).getByRole('button', { name: WORDS.recordBankTransfer }));
+    const form = within(row).getByRole('form', { name: WORDS.recordBankTransfer });
+    await user.type(within(form).getByLabelText(new RegExp(WORDS.bankReference)), 'BANK-REF-79');
+    await user.click(within(form).getByRole('button', { name: WORDS.recordBankTransfer }));
+    await user.click(within(form).getByRole('button', { name: WORDS.confirmRecordAction }));
+
+    expect(await within(row).findByText(WORDS.errors['INVALID_REQUEST'] ?? '')).toBeInTheDocument();
+    expect(screen.queryByText('Invalid request content.')).not.toBeInTheDocument();
   });
 
   it('records a bank transfer with its reference and note after asking', async () => {

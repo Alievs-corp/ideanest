@@ -1,6 +1,7 @@
 package az.ideanest.fee.api;
 
 import az.ideanest.fee.application.OverlappingFeeScheduleException;
+import az.ideanest.fee.application.UnknownFeeScopeException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
@@ -54,6 +55,18 @@ public class FeeExceptionHandler {
      * {@code CHECK}. Both exist: the constraint holds against a support script, and the
      * constructor gives an administrator a sentence rather than a stack trace.
      */
+    /** 400 for an exception naming a category or campaign that does not exist. {@code meta.scope} says which. */
+    @ExceptionHandler(UnknownFeeScopeException.class)
+    public ProblemDetail handleUnknownScope(UnknownFeeScopeException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/fee-scope-unknown"));
+        problem.setTitle("Nothing by that identifier");
+        problem.setDetail(exception.getMessage());
+        problem.setProperty("code", "FEE_SCOPE_UNKNOWN");
+        problem.setProperty("meta", java.util.Map.of("scope", exception.scope().name()));
+        return problem;
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleMismatch(IllegalArgumentException exception) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);

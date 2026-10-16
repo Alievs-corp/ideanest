@@ -112,6 +112,13 @@ public class SubscriptionCharge {
     @Column(name = "refund_note")
     private String refundNote;
 
+    /** When a card refund of this payment was last sent to the provider and not yet settled (V108). */
+    @Column(name = "card_refund_started_at")
+    private Instant cardRefundStartedAt;
+
+    @Column(name = "card_refund_started_by")
+    private UUID cardRefundStartedBy;
+
     protected SubscriptionCharge() {
         // Hibernate.
     }
@@ -168,6 +175,35 @@ public class SubscriptionCharge {
         this.refundedAt = Objects.requireNonNull(at);
         this.refundReference = trimmedOrNull(reference);
         this.refundNote = trimmedOrNull(note);
+    }
+
+    /**
+     * Marks a card refund as sent, before the provider is asked (V108). Until the provider's answer is
+     * recorded the money may already be on its way back, so a bank transfer is not offered beside it.
+     *
+     * @throws IllegalStateException unless it is {@link Status#UNAPPLIED}
+     */
+    public void cardRefundStarted(UUID staffId, Instant at) {
+        if (status != Status.UNAPPLIED) {
+            throw new IllegalStateException("Subscription charge " + id + " is " + status + ", not unapplied");
+        }
+        this.cardRefundStartedAt = Objects.requireNonNull(at);
+        this.cardRefundStartedBy = Objects.requireNonNull(staffId, "Somebody asked for the refund");
+    }
+
+    /** The provider definitely did not refund it, so the payment may be returned either way again (V108). */
+    public void cardRefundReleased() {
+        this.cardRefundStartedAt = null;
+        this.cardRefundStartedBy = null;
+    }
+
+    /** Whether a card refund was sent and its outcome is not yet recorded. */
+    public boolean cardRefundUnsettled() {
+        return status == Status.UNAPPLIED && cardRefundStartedAt != null;
+    }
+
+    public Instant getCardRefundStartedAt() {
+        return cardRefundStartedAt;
     }
 
     public void checked(Instant at) {

@@ -390,3 +390,39 @@ describe('the payout destination queue — issue #396', () => {
     expect(await screen.findByText(/VERIFY_PAYOUT_DESTINATION/)).toBeInTheDocument();
   });
 });
+
+describe('what a reviewer is offered on a destination', () => {
+  it('does not offer to verify a waived destination whose own state is a name mismatch', async () => {
+    readMock.mockResolvedValue(pageOf([{ ...MISMATCHED, standing: 'WAIVED', reviewState: 'NAME_MISMATCH' }]));
+    renderQueue();
+    const row = await rowOf('AZ77…0042');
+
+    expect(within(row).getByText(word(WORDS.standing, 'WAIVED'))).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: WORDS.decision.verify })).not.toBeInTheDocument();
+    expect(within(row).getByText(WORDS.decision.nameMismatch)).toBeInTheDocument();
+  });
+
+  it('says what verifying a rejected destination does, before and when it is pressed', async () => {
+    const user = userEvent.setup();
+    readMock.mockResolvedValue(pageOf([{ ...CARD, reviewState: 'REJECTED' }]));
+    renderQueue();
+    const row = await rowOf('•••• 4242');
+
+    expect(within(row).getByText(WORDS.decision.verifyRejected)).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: WORDS.decision.reject })).not.toBeInTheDocument();
+
+    await user.click(within(row).getByRole('button', { name: WORDS.decision.verify }));
+
+    expect(within(row).getByText(WORDS.decision.confirmVerifyRejected)).toBeInTheDocument();
+    expect(verifyMock).not.toHaveBeenCalled();
+  });
+
+  it('calls the unfiltered chip what it is, and names no capability in its words', async () => {
+    readMock.mockResolvedValue(pageOf([WAITING]));
+    renderQueue();
+    await screen.findByText('AZ21…1944');
+
+    expect(screen.getByRole('button', { name: COPY.everything })).toHaveAttribute('aria-pressed', 'true');
+    expect(WORDS.reveal.forbidden).not.toMatch(/READ_BANK_DETAILS/);
+  });
+});

@@ -13,8 +13,11 @@ import { bankFeeFrom } from '../../lib/admin/bank-fee';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { bankDay, bankTransferInProgress, type Payout } from '../../lib/admin/payouts';
 import { figuresMoved, payoutRefusalFor } from '../../lib/admin/payout-refusals';
+import { bakuDate, calendarDate } from '../../lib/admin/console-dates';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { wasAborted } from '../../lib/admin/refusals';
-import { formatMoney } from '../../lib/money';
+// The printing half only: the money module's root brings decimal.js, which nothing here needs.
+import { formatMoney } from '@ideanest/money/format';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { PayoutQueueCopy } from '../../lib/i18n/admin/money-copy';
 import { EntityName } from './ConsoleIdentity';
@@ -108,6 +111,7 @@ export function PayoutBankTransfer({
   onFiguresMoved,
 }: PayoutBankTransferProps) {
   const words = copy.bankTransfer;
+  const locale = useRouteLocale();
   const headingId = useId();
   const auditedId = useId();
 
@@ -145,8 +149,8 @@ export function PayoutBankTransfer({
       onUpdated(answer.payout);
     } catch (cause) {
       if (controller.signal.aborted || wasAborted(cause)) return;
-      if (figuresMoved(cause)) onFiguresMoved(payoutRefusalFor(cause, copy, payout));
-      else setError(payoutRefusalFor(cause, copy, payout));
+      if (figuresMoved(cause)) onFiguresMoved(payoutRefusalFor(cause, copy, payout, locale));
+      else setError(payoutRefusalFor(cause, copy, payout, locale));
     } finally {
       if (inFlight.current === controller) inFlight.current = null;
       setOpening(false);
@@ -163,7 +167,7 @@ export function PayoutBankTransfer({
       setInstruction(null);
       onUpdated(next);
     } catch (cause) {
-      setError(payoutRefusalFor(cause, copy, payout));
+      setError(payoutRefusalFor(cause, copy, payout, locale));
     } finally {
       setBusy(false);
     }
@@ -174,6 +178,7 @@ export function PayoutBankTransfer({
 
   const amount = instruction?.amount ?? payout.net;
   const startedOn = payout.bankTransferStartedAt == null ? null : bankDay(new Date(payout.bankTransferStartedAt));
+  const startedOnWords = payout.bankTransferStartedAt == null ? '' : bakuDate(payout.bankTransferStartedAt, locale);
   const today = bankDay();
   const fee = bankFeeFrom(bankFee);
   const recordReady =
@@ -188,7 +193,14 @@ export function PayoutBankTransfer({
 
       {payout.state === 'PAID' && payout.bankTransferredOn != null ? (
         <p className="mt-3 text-sm text-white">
-          {fillPlaceholders(words.paidOn, { date: payout.bankTransferredOn })}
+          {fillPlaceholders(words.paidOn, { date: calendarDate(payout.bankTransferredOn, locale) })}
+        </p>
+      ) : payout.state === 'PAID' ? (
+        // Paid, but not by a recorded transfer: through the provider before the creator filed an IBAN.
+        <p className="mt-3 text-sm text-white">
+          {payout.sentAt == null
+            ? words.paidUndated
+            : fillPlaceholders(words.paidOtherwise, { date: bakuDate(payout.sentAt, locale) })}
         </p>
       ) : payout.state !== 'APPROVED' ? (
         <p className="mt-3 text-xs text-white/48">
@@ -211,7 +223,7 @@ export function PayoutBankTransfer({
                     copy={copy.identity}
                   />
                 ),
-                date: startedOn ?? '',
+                date: startedOnWords,
               })}
               {readerId === payout.bankTransferStartedBy ? ` — ${copy.thisIsYou}` : ''}
             </p>
@@ -460,6 +472,7 @@ function RecordAndAbandon({
   readonly onAbandon: () => void;
 }) {
   const words = copy.bankTransfer;
+  const locale = useRouteLocale();
   const recordHeadingId = useId();
 
   if (mode === 'abandon') {
@@ -502,7 +515,7 @@ function RecordAndAbandon({
             {fillPlaceholders(words.confirmRecord, {
               amount: formatMoney(amount),
               reference: reference.trim(),
-              date: transferredOn,
+              date: calendarDate(transferredOn, locale),
             })}
           </p>
           {fee && (

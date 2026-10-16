@@ -234,6 +234,7 @@ public class FeeSchedules {
      * platform with no terms at all, and a successor that committed without the close
      * would violate the index. Both happen or neither does.
      *
+     * @throws UnknownFeeScopeException when a category or campaign exception names nothing that exists
      * @throws OverlappingFeeScheduleException when another request opened one first. V49's
      *     partial unique index is what detects it, rather than a lock: this screen is used
      *     a handful of times a year, and serialising it would be ceremony
@@ -250,6 +251,14 @@ public class FeeSchedules {
             String note) {
 
         staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
+
+        // An exception for a category or campaign that does not exist applies to nothing and still reads as a
+        // negotiated rate. A null reference is left to FeeSchedule's constructor, which refuses the mismatch.
+        if (scopeRef != null
+                && ((scope == FeeScope.CATEGORY && !categories.categoryExists(scopeRef))
+                        || (scope == FeeScope.PROJECT && !categories.campaignExists(scopeRef)))) {
+            throw new UnknownFeeScopeException(scope, scopeRef);
+        }
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
 
