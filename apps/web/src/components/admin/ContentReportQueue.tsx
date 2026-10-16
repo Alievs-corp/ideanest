@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { InlineAlert, Pill } from '@ideanest/ui';
+import { Chip, ChipRow } from '@ideanest/ui';
 import { ModerationQueue } from '../moderation/ModerationQueue';
 import type { ReportTargetType } from '../../lib/moderation/api';
 import type { ContentReportQueueCopy } from '../../lib/i18n/admin/content-copy';
@@ -56,25 +56,13 @@ export function ContentReportQueue({ copy }: ContentReportQueueProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-2">
+      <ChipRow aria-label={copy.surfaceLabel}>
         {SURFACES.map((target) => (
-          <Pill
-            key={target}
-            variant={surface === target ? 'outline' : 'ghost'}
-            size="sm"
-            aria-pressed={surface === target}
-            onClick={() => setSurface(target)}
-          >
+          <Chip key={target} active={surface === target} onClick={() => setSurface(target)}>
             {copy.surface[target]}
-          </Pill>
+          </Chip>
         ))}
-      </div>
-
-      {surface === 'PROJECT_UPDATE' && (
-        <InlineAlert variant="info" title={copy.noticeTitle}>
-          {copy.noticeBody}
-        </InlineAlert>
-      )}
+      </ChipRow>
 
       {/*
         Keyed on the surface so that switching chips remounts the queue rather than

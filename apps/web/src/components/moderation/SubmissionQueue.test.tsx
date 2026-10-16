@@ -188,6 +188,44 @@ describe('the campaign review queue', () => {
     await waitFor(() => expect(decideCampaignMock).toHaveBeenCalledWith(PROJECT_ID, 'approve', null));
     // It has left SUBMITTED, so it leaves a list the filter says is SUBMITTED.
     await waitFor(() => expect(screen.queryByText('Xari Bulbul Ceramics')).not.toBeInTheDocument());
+    // The service's state in the reader's words, not its constant.
+    expect(screen.getByRole('status')).toHaveTextContent('Xari Bulbul Ceramics is now approved.');
+  });
+
+  it('names the campaign in the dialog and says nothing about a report, because there is none', async () => {
+    const user = userEvent.setup();
+    render(<SubmissionQueue copy={COPY} />);
+    await screen.findByText('Xari Bulbul Ceramics');
+
+    await user.click(screen.getByRole('button', { name: COPY.moderation.campaignOutcome.approve }));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(dialog).toHaveTextContent('Xari Bulbul Ceramics');
+    expect(dialog).not.toHaveTextContent('a1b2c3d4');
+    expect(dialog).not.toHaveTextContent(/report/i);
+  });
+
+  it('does not say a rejected campaign is waiting, because a rejection is final', async () => {
+    const user = userEvent.setup();
+    render(<SubmissionQueue copy={COPY} />);
+    await screen.findByText('Xari Bulbul Ceramics');
+    expect(screen.getByText('Waiting 9 days')).toBeInTheDocument();
+
+    listSubmissionsMock.mockResolvedValue(
+      page({ state: 'REJECTED', submissions: [{ ...WAITING, state: 'REJECTED' }] }),
+    );
+    await user.click(screen.getByRole('button', { name: COPY.state.REJECTED }));
+
+    await screen.findByRole('heading', { name: /Refused/ });
+    expect(screen.getByText('Xari Bulbul Ceramics')).toBeInTheDocument();
+    expect(screen.queryByText(/^Waiting \d/)).toBeNull();
+  });
+
+  it('counts one day as one day', async () => {
+    listSubmissionsMock.mockResolvedValue(page({ submissions: [{ ...WAITING, waitingSince: daysAgo(1) }] }));
+    render(<SubmissionQueue copy={COPY} />);
+
+    expect(await screen.findByText('Waiting 1 day')).toBeInTheDocument();
   });
 
   it('says where the campaign actually is when somebody else decided it first', async () => {

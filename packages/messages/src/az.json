@@ -1060,7 +1060,7 @@
         "metaTitle": "Kampaniya önbaxışı",
         "metaDescription": "Bir kampaniya, səhifəsinin oxunduğu kimi, istənilən vəziyyətdə — qərar verən moderator üçün.",
         "title": "Kampaniya önbaxışı",
-        "intro": "Kampaniya, ictimai səhifəsinin göstərəcəyi kimi, hansı vəziyyətdə olmasından asılı olmayaraq. Baxış növbəsi buraya keçid verir, çünki qərar gözləyən kampaniyanın ictimai səhifəsi yoxdur — və yalnız başlıq və hədəf rəqəmi ilə verilən qərar təxmindir."
+        "intro": "Baxış növbəsi və kampaniyalar siyahısı buraya keçid verir, çünki qərar gözləyən kampaniyanın ictimai səhifəsi yoxdur — yalnız başlığa və hədəf rəqəminə baxıb verilən qərar isə təxmindir."
       },
       "legal": {
         "metaTitle": "Hüquqi sənədlər",
@@ -1389,8 +1389,6 @@
         "forbiddenTitle": "Siz burada işləmirsiniz",
         "forbiddenBody": "Şikayət növbəsini platforma işçiləri oxuyur və təmizləyir. Hesabınız isə heç bir platforma rolu daşımır.",
         "notStaff": "Hesabınız platformanın moderator siyahısında deyil, ona görə bu növbəni təmizləmək sizə aid deyil.",
-        "transitionNotAllowed": "O kampaniya bu nəticəyə keçilə bilən vəziyyətdə deyil.",
-        "transitionNotAllowedFrom": "O kampaniya {state} vəziyyətindədir və bu nəticəyə oradan keçmək olmur. Şikayətin özünü təsdiqləmək və ya rədd etmək hələ də sizin işinizdir.",
         "alreadyResolved": "Bu şikayəti başqası sizdən əvvəl qərara bağlayıb. Kart indi onun qərarını göstərir.",
         "heading": {
           "OPEN": "Açıq şikayətlər",
@@ -1419,15 +1417,14 @@
         },
         "emptyBody": {
           "OPEN": "Hər şikayət qərara bağlanıb. Yeni şikayətlər edildikcə buraya gəlir.",
-          "UPHELD": "Hələ bu şəkildə heç nə qərara bağlanmayıb.",
-          "DISMISSED": "Hələ bu şəkildə heç nə qərara bağlanmayıb."
+          "UPHELD": "Hələ heç bir şikayət təsdiqlənməyib.",
+          "DISMISSED": "Hələ heç bir şikayət rədd edilməyib."
         },
         "noticeReport": {
           "OPEN": "{target} haqqında şikayət yenidən açıldı.",
           "UPHELD": "{target} haqqında şikayət təsdiqləndi.",
           "DISMISSED": "{target} haqqında şikayət rədd edildi."
         },
-        "noticeCampaign": "{id} kampaniyası indi {state} vəziyyətindədir. Şikayət hələ açıqdır — onu ayrıca qərara bağlayın.",
         "reportedAbout": "{kind} {id} haqqında şikayət",
         "fullHistory": "Tam tarixçə",
         "fullHistoryLabel": "{target} haqqında şikayətin tam tarixçəsini aç",
@@ -1438,18 +1435,14 @@
         "targetTerm": "Hədəf",
         "decideGroup": "{target} haqqında şikayəti qərara bağla",
         "decideHeading": "Şikayəti qərara bağla",
-        "decideLabel": "{target} haqqında şikayəti {outcome}",
-        "actGroup": "{target} üzərində hərəkət et",
-        "actHeading": "Kampaniya üzərində hərəkət et — şikayətdən ayrı",
-        "actLabel": "{target} üçün {outcome}"
+        "decideLabel": "{target} haqqında şikayəti {outcome}"
       },
       "contentReports": {
         "surface": {
           "COMMENT": "Şərhlər",
           "PROJECT_UPDATE": "Yeniliklər"
         },
-        "noticeTitle": "Yeniliklər #297 ilə şikayət oluna bilən oldu",
-        "noticeBody": "Bu buraxılışa qədər yenilik haqqında şikayət etmək mümkün deyildi, ona görə bu növbə hər quraşdırmada boş başlayır və bundan sonra dolur. Ondan əvvəl edilən şikayətlər şərhlər və kampaniyalar haqqındadır və onlar digər çiplərdədir."
+        "surfaceLabel": "Nə barədə şikayət edilib"
       },
       "reportDetail": {
         "subject": "bu şikayəti",
@@ -2622,7 +2615,12 @@
           "APPROVED": "Təsdiqlənmiş kampaniyalar başlayanadək burada görünür.",
           "REJECTED": "Rədd edilmiş kampaniyalar burada qalır ki, qərar sonradan oxuna bilsin."
         },
-        "waiting": "{days} gündür gözləyir",
+        "waiting": {
+          "one": "{count} gündür gözləyir",
+          "few": "{count} gündür gözləyir",
+          "many": "{count} gündür gözləyir",
+          "other": "{count} gündür gözləyir"
+        },
         "goalLabel": "Hədəf",
         "noGoal": "Hədəf təyin edilməyib",
         "stateLabel": "Vəziyyət",
@@ -2649,7 +2647,7 @@
         "goalLabel": "Hədəf",
         "noGoal": "Hədəf təyin edilməyib",
         "raisedLabel": "Toplanıb",
-        "backersLabel": "Dəstəkçi",
+        "backersLabel": "Dəstəkçilər",
         "startedLabel": "Yaradılıb",
         "launchedLabel": "Yayımlanıb",
         "deadlineLabel": "Bitir",
@@ -2688,7 +2686,7 @@
         "backersLabel": "Dəstəkçilər",
         "filedUnder": "Kateqoriya",
         "notFiled": "Hələ təsnif edilməyib",
-        "launchedLabel": "Başlayıb",
+        "launchedLabel": "Yayımlanıb",
         "deadlineLabel": "Bitir",
         "publicPage": "İctimai səhifəni aç",
         "notPublicYet": "Bu kampaniyanın hazırkı vəziyyətində ictimai səhifəsi yoxdur.",
@@ -3037,7 +3035,6 @@
           "noteLabel": "Qeyd",
           "noteHint": "İstəyə bağlı. Növbəti moderator üçün yazılır, şikayət edən şəxs üçün deyil — heç nə onu ona göstərmir."
         },
-        "campaignBody": "Bu, kampaniyanı hərəkət etdirir. Şikayəti qərara bağlamır — o hələ açıqdır və təsdiqləmək və ya rədd etmək sizin işinizdir.",
         "approve": {
           "title": "Bu kampaniya təsdiqlənsin?",
           "description": "{name} işə salınmağa hazırdır.",

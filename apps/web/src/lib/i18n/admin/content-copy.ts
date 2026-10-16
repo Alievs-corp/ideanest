@@ -74,6 +74,8 @@ export interface ModerationCopy {
   readonly targetName: string;
   /** Carries `{id}`. Nominative, for the sentences that make the campaign the subject. */
   readonly campaignName: string;
+  /** A campaign's state as a word, for the sentences that report one back. */
+  readonly campaignState: Readonly<Record<ProjectState, string>>;
   /** The tag, never the heading. */
   readonly state: Readonly<Record<ReportState, string>>;
   readonly reportOutcome: Readonly<Record<ReportOutcome, string>>;
@@ -110,9 +112,8 @@ export interface DecisionVerbCopy {
    * What the decision does not do.
    *
    * Present on the two report outcomes, which each say something different about what they
-   * leave alone. Absent on the three campaign outcomes, which share {@link
-   * DecisionCopy.campaignBody} — all three move the campaign and none of them decides the
-   * report, and writing that sentence three times would be three chances to reword one of them.
+   * leave alone. Absent on the three campaign outcomes: they are decided from the review queue,
+   * where there is no report for them to leave undecided.
    */
   readonly body?: string;
 }
@@ -122,7 +123,6 @@ export interface DecisionCopy {
   readonly noteRequired: string;
   /** Carries `{limit}`. */
   readonly tooLong: string;
-  readonly campaignBody: string;
   /** Keyed by the outcome, across both kinds — the union the dialog switches on. */
   readonly verb: Readonly<Record<ReportOutcome | CampaignOutcome, DecisionVerbCopy>>;
 }
@@ -146,9 +146,6 @@ export interface ModerationQueueCopy extends ConsoleChromeCopy {
   readonly forbiddenTitle: string;
   readonly forbiddenBody: string;
   readonly notStaff: string;
-  readonly transitionNotAllowed: string;
-  /** Carries `{state}`, which is the service's own campaign state and stays in its spelling. */
-  readonly transitionNotAllowedFrom: string;
   readonly alreadyResolved: string;
   /** A whole heading, not a word to put in front of "reports". */
   readonly heading: Readonly<Record<ReportState, string>>;
@@ -169,8 +166,6 @@ export interface ModerationQueueCopy extends ConsoleChromeCopy {
   readonly emptyBody: Readonly<Record<ReportState, string>>;
   /** Carries `{target}`. */
   readonly noticeReport: Readonly<Record<ReportState, string>>;
-  /** Carries `{id}` and `{state}`. */
-  readonly noticeCampaign: string;
   /** Carries `{kind}` and `{id}`, the second a styled node. */
   readonly reportedAbout: string;
   readonly fullHistory: string;
@@ -186,11 +181,6 @@ export interface ModerationQueueCopy extends ConsoleChromeCopy {
   readonly decideHeading: string;
   /** Carries `{outcome}` and `{target}`. */
   readonly decideLabel: string;
-  /** Carries `{target}`. */
-  readonly actGroup: string;
-  readonly actHeading: string;
-  /** Carries `{outcome}` and `{target}`. */
-  readonly actLabel: string;
 }
 
 export interface ContentReportQueueCopy extends ConsoleChromeCopy {
@@ -198,8 +188,7 @@ export interface ContentReportQueueCopy extends ConsoleChromeCopy {
   readonly queue: ModerationQueueCopy;
   /** Keyed by the two `ReportTargetType`s this screen offers. */
   readonly surface: Readonly<Record<ReportTargetType, string>>;
-  readonly noticeTitle: string;
-  readonly noticeBody: string;
+  readonly surfaceLabel: string;
 }
 
 export interface ReportDetailCopy extends ConsoleChromeCopy {
@@ -288,6 +277,7 @@ export function moderationCopyFrom(t: AdminTranslator, cancel: string): Moderati
     targetOnThis: table<Record<ReportTargetType, string>>('targetOnThis'),
     targetName: String(t.raw('moderation.targetName')),
     campaignName: String(t.raw('moderation.campaignName')),
+    campaignState: t.raw('screens.campaignDirectory.state') as Readonly<Record<ProjectState, string>>,
     state: table<Record<ReportState, string>>('state'),
     reportOutcome: table<Record<ReportOutcome, string>>('reportOutcome'),
     campaignOutcome: table<Record<CampaignOutcome, string>>('campaignOutcome'),
@@ -301,7 +291,6 @@ export function moderationCopyFrom(t: AdminTranslator, cancel: string): Moderati
       errorTitle: t('moderation.decision.errorTitle'),
       noteRequired: t('moderation.decision.noteRequired'),
       tooLong: String(t.raw('moderation.decision.tooLong')),
-      campaignBody: t('moderation.decision.campaignBody'),
       verb: {
         uphold: verb(t, 'uphold'),
         dismiss: verb(t, 'dismiss'),
@@ -329,8 +318,6 @@ export function moderationQueueCopyFrom(
     forbiddenTitle: t(at('forbiddenTitle')),
     forbiddenBody: t(at('forbiddenBody')),
     notStaff: t(at('notStaff')),
-    transitionNotAllowed: t(at('transitionNotAllowed')),
-    transitionNotAllowedFrom: String(t.raw(at('transitionNotAllowedFrom'))),
     alreadyResolved: t(at('alreadyResolved')),
     heading: table<Record<ReportState, string>>('heading'),
     statusLabel: t(at('statusLabel')),
@@ -347,7 +334,6 @@ export function moderationQueueCopyFrom(
     emptyTitle: table<Record<ReportState, string>>('emptyTitle'),
     emptyBody: table<Record<ReportState, string>>('emptyBody'),
     noticeReport: table<Record<ReportState, string>>('noticeReport'),
-    noticeCampaign: String(t.raw(at('noticeCampaign'))),
     reportedAbout: String(t.raw(at('reportedAbout'))),
     fullHistory: t(at('fullHistory')),
     fullHistoryLabel: String(t.raw(at('fullHistoryLabel'))),
@@ -359,9 +345,6 @@ export function moderationQueueCopyFrom(
     decideGroup: String(t.raw(at('decideGroup'))),
     decideHeading: t(at('decideHeading')),
     decideLabel: String(t.raw(at('decideLabel'))),
-    actGroup: String(t.raw(at('actGroup'))),
-    actHeading: t(at('actHeading')),
-    actLabel: String(t.raw(at('actLabel'))),
   };
 }
 
@@ -381,7 +364,7 @@ export interface SubmissionQueueCopy extends ConsoleChromeCopy {
   readonly forbiddenBody: string;
   readonly notStaff: string;
   readonly transitionNotAllowed: string;
-  /** Carries `{state}`, which stays in the service's own spelling. */
+  /** Carries `{state}`. */
   readonly transitionNotAllowedFrom: string;
   readonly refused: string;
   readonly unreachable: string;
@@ -393,8 +376,8 @@ export interface SubmissionQueueCopy extends ConsoleChromeCopy {
   readonly loadingList: string;
   readonly emptyTitle: Readonly<Record<SubmissionState, string>>;
   readonly emptyBody: Readonly<Record<SubmissionState, string>>;
-  /** Carries `{days}`. The queue's one number: how long somebody has been waiting. */
-  readonly waiting: string;
+  /** Carries `{count}`, in days. The queue's one number: how long somebody has been waiting. */
+  readonly waiting: PluralForms;
   readonly goalLabel: string;
   readonly noGoal: string;
   readonly stateLabel: string;
@@ -591,7 +574,7 @@ export function submissionQueueCopyFrom(
     loadingList: t(at('loadingList')),
     emptyTitle: table<Record<SubmissionState, string>>('emptyTitle'),
     emptyBody: table<Record<SubmissionState, string>>('emptyBody'),
-    waiting: String(t.raw(at('waiting'))),
+    waiting: t.raw(at('waiting')) as PluralForms,
     goalLabel: t(at('goalLabel')),
     noGoal: t(at('noGoal')),
     stateLabel: t(at('stateLabel')),
@@ -610,8 +593,7 @@ export function contentReportQueueCopyFrom(
     ...chrome,
     queue: moderationQueueCopyFrom(t, chrome),
     surface: t.raw('screens.contentReports.surface') as Readonly<Record<ReportTargetType, string>>,
-    noticeTitle: t('screens.contentReports.noticeTitle'),
-    noticeBody: t('screens.contentReports.noticeBody'),
+    surfaceLabel: t('screens.contentReports.surfaceLabel'),
   };
 }
 

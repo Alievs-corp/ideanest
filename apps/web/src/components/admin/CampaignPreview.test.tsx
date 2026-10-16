@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import { readCampaignPreview } from '../../lib/admin/campaigns';
 import type { CampaignPage } from '../../lib/projects/publicPage';
@@ -130,6 +131,20 @@ describe('the campaign preview', () => {
     render(<CampaignPreview projectId={PROJECT_ID} copy={COPY} />);
 
     expect(await screen.findByText(COPY.notFoundTitle)).toBeInTheDocument();
+  });
+
+  it('does not call a failed read a missing campaign, and offers to try again', async () => {
+    const user = userEvent.setup();
+    readPreviewMock.mockRejectedValueOnce(new TypeError('offline'));
+
+    render(<CampaignPreview projectId={PROJECT_ID} copy={COPY} />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.refusals.unreachable);
+    expect(screen.queryByText(COPY.notFoundTitle)).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: COPY.tryAgain }));
+
+    expect(await screen.findByText('Xari Bulbul Ceramics')).toBeInTheDocument();
   });
 
   it('renders the console refusal rather than an empty screen for a caller who is not staff', async () => {

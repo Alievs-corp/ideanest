@@ -1060,7 +1060,7 @@
         "metaTitle": "Kampanya önizlemesi",
         "metaDescription": "Bir kampanya, sayfasının okunduğu hâliyle, her durumda — kararı verecek moderatör için.",
         "title": "Kampanya önizlemesi",
-        "intro": "Kampanya, herkese açık sayfasının göstereceği hâliyle, hangi durumda olursa olsun. İnceleme kuyruğu buraya bağlanır; çünkü karar bekleyen bir kampanyanın herkese açık sayfası yoktur — ve yalnızca başlığa ve hedef rakamına bakarak verilen karar bir tahmindir."
+        "intro": "İnceleme kuyruğu ve kampanya listesi buraya bağlanır; çünkü karar bekleyen bir kampanyanın herkese açık sayfası yoktur — ve yalnızca başlığa ve hedef rakamına bakarak verilen karar bir tahmindir."
       },
       "legal": {
         "metaTitle": "Hukuki belgeler",
@@ -1389,8 +1389,6 @@
         "forbiddenTitle": "Burada çalışmıyorsunuz",
         "forbiddenBody": "Şikayet kuyruğunu platform ekibi okur ve temizler, hesabınız ise hiçbir platform rolü taşımıyor.",
         "notStaff": "Hesabınız platformun moderatör listesinde değil, bu yüzden bu kuyruğu temizlemek size düşmez.",
-        "transitionNotAllowed": "O kampanya, bu sonuca geçilebilecek bir durumda değil.",
-        "transitionNotAllowedFrom": "O kampanya {state} durumunda ve bu sonuca oradan geçilemez. Şikayetin kendisini kabul etmek ya da reddetmek hâlâ size düşer.",
         "alreadyResolved": "Bu şikayeti sizden önce başkası karara bağladı. Kart artık onun kararını gösteriyor.",
         "heading": {
           "OPEN": "Açık şikayetler",
@@ -1419,15 +1417,14 @@
         },
         "emptyBody": {
           "OPEN": "Her şikayet karara bağlandı. Yeni şikayetler yapıldıkça buraya gelir.",
-          "UPHELD": "Henüz bu şekilde bir karar verilmedi.",
-          "DISMISSED": "Henüz bu şekilde bir karar verilmedi."
+          "UPHELD": "Henüz onaylanan şikayet yok.",
+          "DISMISSED": "Henüz reddedilen şikayet yok."
         },
         "noticeReport": {
           "OPEN": "{target} hakkındaki şikayet yeniden açıldı.",
           "UPHELD": "{target} hakkındaki şikayet kabul edildi.",
           "DISMISSED": "{target} hakkındaki şikayet reddedildi."
         },
-        "noticeCampaign": "{id} kampanyası artık {state} durumunda. Şikayet hâlâ açık — onu ayrıca karara bağlayın.",
         "reportedAbout": "{kind} {id} hakkında şikayet",
         "fullHistory": "Tam geçmiş",
         "fullHistoryLabel": "{target} hakkındaki şikayetin tam geçmişini aç",
@@ -1438,18 +1435,14 @@
         "targetTerm": "Hedef",
         "decideGroup": "{target} hakkındaki şikayeti karara bağla",
         "decideHeading": "Şikayeti karara bağla",
-        "decideLabel": "{target} hakkındaki şikayeti {outcome}",
-        "actGroup": "{target} üzerinde işlem yap",
-        "actHeading": "Kampanya üzerinde işlem yap — şikayetten ayrı",
-        "actLabel": "{target} için {outcome}"
+        "decideLabel": "{target} hakkındaki şikayeti {outcome}"
       },
       "contentReports": {
         "surface": {
           "COMMENT": "Yorumlar",
           "PROJECT_UPDATE": "Güncellemeler"
         },
-        "noticeTitle": "Güncellemeler #297 ile şikayet edilebilir oldu",
-        "noticeBody": "Bu sürüme kadar bir güncelleme hakkında şikayet edilemiyordu, bu yüzden bu kuyruk her kurulumda boş başlar ve buradan itibaren dolar. Ondan önce yapılan şikayetler yorumlar ve kampanyalar hakkındadır ve diğer çiplerdedir."
+        "surfaceLabel": "Neyin şikayet edildiği"
       },
       "reportDetail": {
         "subject": "bu şikayeti",
@@ -2622,7 +2615,12 @@
           "APPROVED": "Onaylanan kampanyalar yayına girene kadar burada görünür.",
           "REJECTED": "Reddedilen kampanyalar, karar sonradan okunabilsin diye burada kalır."
         },
-        "waiting": "{days} gündür bekliyor",
+        "waiting": {
+          "one": "{count} gündür bekliyor",
+          "few": "{count} gündür bekliyor",
+          "many": "{count} gündür bekliyor",
+          "other": "{count} gündür bekliyor"
+        },
         "goalLabel": "Hedef",
         "noGoal": "Hedef belirlenmemiş",
         "stateLabel": "Durum",
@@ -2649,7 +2647,7 @@
         "goalLabel": "Hedef",
         "noGoal": "Hedef belirlenmedi",
         "raisedLabel": "Toplanan",
-        "backersLabel": "Destekçi",
+        "backersLabel": "Destekçiler",
         "startedLabel": "Başlatıldı",
         "launchedLabel": "Yayımlandı",
         "deadlineLabel": "Kapanış",
@@ -2688,7 +2686,7 @@
         "backersLabel": "Destekçiler",
         "filedUnder": "Kategori",
         "notFiled": "Henüz sınıflandırılmadı",
-        "launchedLabel": "Yayına alındı",
+        "launchedLabel": "Yayımlandı",
         "deadlineLabel": "Kapanıyor",
         "publicPage": "Herkese açık sayfayı aç",
         "notPublicYet": "Bu kampanyanın mevcut durumunda herkese açık bir sayfası yok.",
@@ -3037,7 +3035,6 @@
           "noteLabel": "Not",
           "noteHint": "İsteğe bağlı. Sonraki moderatör için yazılır, şikayeti yapan kişi için değil — hiçbir şey onu ona göstermez."
         },
-        "campaignBody": "Bu, kampanyayı hareket ettirir. Şikayeti karara bağlamaz — o hâlâ açık ve kabul etmek ya da reddetmek size düşer.",
         "approve": {
           "title": "Bu kampanya onaylansın mı?",
           "description": "{name} yayına hazır.",

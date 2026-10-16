@@ -6,7 +6,6 @@ import { ApiError } from '../../lib/api/problem';
 import {
   QUEUE_PAGE_SIZE,
   REPORT_STATES,
-  decideCampaign,
   getReport,
   listReports,
   resolveReport,
@@ -15,7 +14,6 @@ import {
 } from '../../lib/moderation/api';
 import {
   DEFAULT_FILTERS,
-  humaniseState,
   isRefined,
   refine,
   shortId,
@@ -28,7 +26,7 @@ import { pluralise } from '../../lib/i18n/plurals';
 import type { ModerationQueueCopy } from '../../lib/i18n/admin/content-copy';
 import { requiredCapabilityFrom } from '../../lib/admin/refusals';
 import { ConsoleRefusal } from '../admin/ConsoleRefusal';
-import { DecisionDialog, type Decision } from './DecisionDialog';
+import { DecisionDialog, type ReportDecision } from './DecisionDialog';
 import { ReportCard } from './ReportCard';
 import { useDirectoryNames } from '../admin/useDirectoryNames';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
@@ -37,7 +35,7 @@ type Status = 'loading' | 'ready' | 'failed' | 'signed-out' | 'forbidden';
 
 interface Pending {
   readonly report: QueuedReport;
-  readonly decision: Decision;
+  readonly decision: ReportDecision;
 }
 
 /**
@@ -47,12 +45,6 @@ interface Pending {
  * values — this list stays the one place that says which three the queue offers.
  */
 const TARGET_FILTERS: readonly TargetFilter[] = ['ALL', 'PROJECT', 'USER'];
-
-/** `meta` is `Record<string, unknown>`, so it is narrowed rather than asserted. */
-function metaString(meta: Record<string, unknown> | undefined, key: string): string | null {
-  const value = meta?.[key];
-  return typeof value === 'string' ? value : null;
-}
 
 /**
  * Turns a refusal into something a moderator can act on.
@@ -66,19 +58,6 @@ function messageFor(cause: unknown, copy: ModerationQueueCopy): string {
     if (cause.status === 403) return copy.notStaff;
 
     const code = cause.problem?.code;
-
-    if (code === 'PROJECT_TRANSITION_NOT_ALLOWED') {
-      const state = metaString(cause.problem?.meta, 'state');
-      /*
-       * `humaniseState` renders the service's own campaign state — "changes requested" — and
-       * it is deliberately not translated. The sixteen states are the service's, `describe.ts`
-       * records why no client-side table of them exists, and a fifth spelling of a value the
-       * logs and the API both use would be one more thing to keep in step.
-       */
-      return state === null
-        ? copy.transitionNotAllowed
-        : fillPlaceholders(copy.transitionNotAllowedFrom, { state: humaniseState(state) });
-    }
 
     if (code === 'REPORT_ALREADY_RESOLVED') return copy.alreadyResolved;
 
@@ -125,7 +104,7 @@ export interface ModerationQueueProps {
 }
 
 /**
- * AD-02's report queue, and the five decisions that clear it.
+ * AD-02's report queue, and the two decisions that clear it.
  *
  * THE DECISIONS ARE NOT OPTIMISTIC, deliberately. Every one of them is
  * privileged, audited and terminal, and the whole card goes busy until the
@@ -171,6 +150,7 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
   const names = useDirectoryNames(
     loaded.flatMap((report) => [
       report.reporterId,
+      report.resolution?.moderatorId ?? null,
       report.target.type === 'USER' ? report.target.id : null,
     ]).filter((id): id is string => id != null),
     loaded.filter((report) => report.target.type === 'PROJECT').map((report) => report.target.id),
@@ -274,7 +254,7 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
     );
   }
 
-  function openDialog(report: QueuedReport, decision: Decision): void {
+  function openDialog(report: QueuedReport, decision: ReportDecision): void {
     setDialogError(null);
     setPending({ report, decision });
   }
@@ -302,26 +282,16 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
     markBusy(report.id, true);
 
     try {
-      if (decision.kind === 'report') {
-        const updated = await resolveReport(report.id, decision.outcome, note);
-        applyReport(updated);
-        setNotice(
-          fillPlaceholders(copy.noticeReport[updated.state], {
-            target: fillPlaceholders(copy.moderation.targetName, {
-              kind: copy.moderation.target[report.target.type],
-              id: shortId(report.target.id),
-            }),
+      const updated = await resolveReport(report.id, decision.outcome, note);
+      applyReport(updated);
+      setNotice(
+        fillPlaceholders(copy.noticeReport[updated.state], {
+          target: fillPlaceholders(copy.moderation.targetName, {
+            kind: copy.moderation.target[report.target.type],
+            id: shortId(report.target.id),
           }),
-        );
-      } else {
-        const decided = await decideCampaign(report.target.id, decision.outcome, note);
-        setNotice(
-          fillPlaceholders(copy.noticeCampaign, {
-            id: shortId(decided.id),
-            state: humaniseState(decided.state),
-          }),
-        );
-      }
+        }),
+      );
 
       setPending(null);
       /*
@@ -424,7 +394,13 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
             <Chip
               key={option}
               active={state === option}
-              onClick={() => setFilters((previous) => ({ ...previous, state: option }))}
+              onClick={() =>
+                setFilters((previous) => ({
+                  ...previous,
+                  state: option,
+                  overdueOnly: option === 'OPEN' && previous.overdueOnly,
+                }))
+              }
             >
               {copy.moderation.state[option]}
             </Chip>
@@ -451,14 +427,16 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
         )}
 
         <ChipRow aria-label={copy.triageLabel}>
-          <Chip
-            active={filters.overdueOnly}
-            onClick={() =>
-              setFilters((previous) => ({ ...previous, overdueOnly: !previous.overdueOnly }))
-            }
-          >
-            {copy.overdueOnly}
-          </Chip>
+          {state === 'OPEN' && (
+            <Chip
+              active={filters.overdueOnly}
+              onClick={() =>
+                setFilters((previous) => ({ ...previous, overdueOnly: !previous.overdueOnly }))
+              }
+            >
+              {copy.overdueOnly}
+            </Chip>
+          )}
           <Chip
             active={filters.repeatedOnly}
             onClick={() =>

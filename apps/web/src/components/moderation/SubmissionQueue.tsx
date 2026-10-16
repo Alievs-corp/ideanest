@@ -12,8 +12,9 @@ import {
   type QueuedSubmission,
   type SubmissionState,
 } from '../../lib/moderation/api';
-import { humaniseState, shortId } from '../../lib/moderation/describe';
+import { campaignStateWord, shortId } from '../../lib/moderation/describe';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralise } from '../../lib/i18n/plurals';
 import { formatMoney } from '../../lib/money';
 import type { SubmissionQueueCopy } from '../../lib/i18n/admin/content-copy';
 import { DecisionDialog, type Decision } from './DecisionDialog';
@@ -35,7 +36,7 @@ function wasAborted(cause: unknown): boolean {
   return cause instanceof DOMException && cause.name === 'AbortError';
 }
 
-function messageFor(cause: unknown, copy: SubmissionQueueCopy): string {
+function messageFor(cause: unknown, copy: SubmissionQueueCopy, locale: Locale): string {
   if (cause instanceof ApiError) {
     if (cause.status === 403) return copy.notStaff;
 
@@ -47,7 +48,9 @@ function messageFor(cause: unknown, copy: SubmissionQueueCopy): string {
        * campaign actually is, and saying so is more use than "that did not work".
        */
       return typeof state === 'string'
-        ? fillPlaceholders(copy.transitionNotAllowedFrom, { state: humaniseState(state) })
+        ? fillPlaceholders(copy.transitionNotAllowedFrom, {
+            state: campaignStateWord(state, copy.moderation, locale),
+          })
         : copy.transitionNotAllowed;
     }
     return cause.problem?.detail ?? cause.problem?.title ?? copy.refused;
@@ -137,7 +140,7 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
           setStatus('forbidden');
           return;
         }
-        setError(messageFor(cause, copy));
+        setError(messageFor(cause, copy, locale));
         setStatus('failed');
       }
     }
@@ -159,11 +162,11 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
       setLoaded((previous) => [...previous, ...page.submissions]);
       setCursor(page.nextCursor ?? null);
     } catch (cause) {
-      setError(messageFor(cause, copy));
+      setError(messageFor(cause, copy, locale));
     } finally {
       setLoadingMore(false);
     }
-  }, [cursor, loadingMore, state, copy]);
+  }, [cursor, loadingMore, state, copy, locale]);
 
   function markBusy(id: string, busy: boolean): void {
     setBusyIds((previous) => {
@@ -192,12 +195,12 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
       setNotice(
         fillPlaceholders(copy.notice, {
           title: submission.title,
-          state: humaniseState(decided.state),
+          state: campaignStateWord(decided.state, copy.moderation, locale),
         }),
       );
       setPending(null);
     } catch (cause) {
-      setDialogError(messageFor(cause, copy));
+      setDialogError(messageFor(cause, copy, locale));
     } finally {
       setDialogBusy(false);
       markBusy(submission.projectId, false);
@@ -323,6 +326,7 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
                 // only on the report branch.
                 targetType: 'PROJECT',
                 targetId: pending.submission.projectId,
+                title: pending.submission.title,
               }
         }
         busy={dialogBusy}
@@ -421,9 +425,11 @@ function SubmissionRow({
             <span className="text-white/32"> · {shortId(submission.projectId)}</span>
           </p>
         </div>
-        <span className="shrink-0 text-sm text-white/64">
-          {fillPlaceholders(copy.waiting, { days: String(days) })}
-        </span>
+        {submission.state !== 'REJECTED' && (
+          <span className="shrink-0 text-sm text-white/64">
+            {pluralise(locale, copy.waiting, days)}
+          </span>
+        )}
       </div>
 
       <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
@@ -435,7 +441,10 @@ function SubmissionRow({
         </div>
         <div className="flex gap-2">
           <dt className="text-white/40">{copy.stateLabel}</dt>
-          <dd className="text-white/80">{copy.state[submission.state as SubmissionState] ?? humaniseState(submission.state)}</dd>
+          <dd className="text-white/80">
+            {copy.state[submission.state as SubmissionState] ??
+              campaignStateWord(submission.state, copy.moderation, locale)}
+          </dd>
         </div>
       </dl>
 

@@ -220,13 +220,20 @@ const UNREADABLE_INSTANT: Readonly<Record<Locale, string>> = {
 };
 
 /**
- * A campaign state as a sentence fragment: `CHANGES_REQUESTED` → "changes
- * requested".
+ * A campaign state as a sentence fragment in the reader's language: `CHANGES_REQUESTED` →
+ * "dəyişiklik tələb olunub".
  *
- * Derived rather than tabulated, because the sixteen states are the service's
- * and a table here would be a copy to fall out of step with — the same reason
- * `lib/projects/api.ts` keeps no client-side transition table.
+ * The words are the campaign directory's, so a notice and the row it is about name the state
+ * the same way. A state the catalogue does not know yet falls back to the service's own
+ * spelling, lower-cased, rather than to nothing.
  */
-export function humaniseState(state: string): string {
-  return state.toLowerCase().replace(/_/g, ' ');
+export function campaignStateWord(
+  state: string,
+  copy: Pick<ModerationCopy, 'campaignState'>,
+  locale: Locale,
+): string {
+  const word: string | undefined = (copy.campaignState as Readonly<Record<string, string>>)[state];
+  return word === undefined
+    ? state.toLowerCase().replace(/_/g, ' ')
+    : word.toLocaleLowerCase(locale);
 }

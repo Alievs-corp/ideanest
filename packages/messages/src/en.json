@@ -1060,7 +1060,7 @@
         "metaTitle": "Campaign preview",
         "metaDescription": "One campaign as its page reads, in any state, for the moderator deciding it.",
         "title": "Campaign preview",
-        "intro": "The campaign as its public page would render it, whatever state it is in. The review queue links here because a campaign awaiting a decision has no public page — and a decision taken on a title and a goal figure is a guess."
+        "intro": "The review queue and the campaign list link here because a campaign awaiting a decision has no public page — and a decision taken on a title and a goal figure is a guess."
       },
       "legal": {
         "metaTitle": "Legal documents",
@@ -1389,8 +1389,6 @@
         "forbiddenTitle": "You do not work here",
         "forbiddenBody": "The report queue is read and cleared by platform staff, and your account holds no platform role.",
         "notStaff": "Your account is not on the platform moderator list, so this queue is not yours to clear.",
-        "transitionNotAllowed": "That campaign is not in a state this outcome can be reached from.",
-        "transitionNotAllowedFrom": "That campaign is {state}, and this outcome cannot be reached from there. The report itself is still yours to uphold or dismiss.",
         "alreadyResolved": "Somebody else decided this report first. The card now shows their decision.",
         "heading": {
           "OPEN": "Open reports",
@@ -1419,15 +1417,14 @@
         },
         "emptyBody": {
           "OPEN": "Every report has been decided. New complaints arrive here as they are made.",
-          "UPHELD": "Nothing has been decided this way yet.",
-          "DISMISSED": "Nothing has been decided this way yet."
+          "UPHELD": "No report has been upheld yet.",
+          "DISMISSED": "No report has been dismissed yet."
         },
         "noticeReport": {
           "OPEN": "Reopened the report about {target}.",
           "UPHELD": "Upheld the report about {target}.",
           "DISMISSED": "Dismissed the report about {target}."
         },
-        "noticeCampaign": "Campaign {id} is now {state}. The report is still open — decide it separately.",
         "reportedAbout": "Reported about {kind} {id}",
         "fullHistory": "Full history",
         "fullHistoryLabel": "Open the full history of the report about {target}",
@@ -1438,18 +1435,14 @@
         "targetTerm": "Target",
         "decideGroup": "Decide the report about {target}",
         "decideHeading": "Decide the complaint",
-        "decideLabel": "{outcome} the report about {target}",
-        "actGroup": "Act on {target}",
-        "actHeading": "Act on the campaign — separate from the report",
-        "actLabel": "{outcome} for {target}"
+        "decideLabel": "{outcome} the report about {target}"
       },
       "contentReports": {
         "surface": {
           "COMMENT": "Comments",
           "PROJECT_UPDATE": "Updates"
         },
-        "noticeTitle": "Updates became reportable with #297",
-        "noticeBody": "Nothing could file a complaint about an update until this release, so this queue starts empty on every deployment and fills from here. Reports filed before it are about comments and campaigns, and they are on the other chips."
+        "surfaceLabel": "What was reported"
       },
       "reportDetail": {
         "subject": "this report",
@@ -2622,7 +2615,12 @@
           "APPROVED": "Approved campaigns appear here until they launch.",
           "REJECTED": "Refused campaigns stay here so the decision can be read back."
         },
-        "waiting": "Waiting {days} days",
+        "waiting": {
+          "one": "Waiting {count} day",
+          "few": "Waiting {count} days",
+          "many": "Waiting {count} days",
+          "other": "Waiting {count} days"
+        },
         "goalLabel": "Goal",
         "noGoal": "No goal set",
         "stateLabel": "State",
@@ -3037,7 +3035,6 @@
           "noteLabel": "Note",
           "noteHint": "Optional. Written for the next moderator, not for the person who reported this — nothing shows it to them."
         },
-        "campaignBody": "This moves the campaign. It does not decide the report — that is still open, and still yours to uphold or dismiss.",
         "approve": {
           "title": "Approve this campaign?",
           "description": "{name} is cleared for launch.",
