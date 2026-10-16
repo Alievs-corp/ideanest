@@ -299,8 +299,10 @@ export interface PayoutQueueCopy extends ConsoleChromeCopy {
   readonly calculate: string;
   readonly working: string;
   readonly calculatedTitle: string;
-  /** Carries `{amount}`, `{date}`, `{id}`. */
+  /** Carries `{amount}`, `{campaign}` (a name, drawn as a node) and `{date}`. */
   readonly calculatedNotice: string;
+  /** Said beside the campaign field when what was typed is not a whole identifier. */
+  readonly campaignInvalid: string;
   readonly failedTitle: string;
   readonly queueHeading: string;
   readonly loadingList: string;
@@ -314,6 +316,13 @@ export interface PayoutQueueCopy extends ConsoleChromeCopy {
   readonly processing: string;
   readonly refunded: string;
   readonly net: string;
+  readonly taxWithheld: string;
+  readonly debtWithheld: string;
+  /** The row's toggle, shown beside a chevron. */
+  readonly open: string;
+  readonly close: string;
+  /** The toggle's accessible name after its word. Carries `{campaign}`, `{creator}`, `{amount}`, `{state}`. */
+  readonly rowSummary: string;
   readonly loadingPayout: string;
   readonly payoutFailedTitle: string;
   readonly tryAgainShort: string;
@@ -351,6 +360,34 @@ export interface PayoutQueueCopy extends ConsoleChromeCopy {
   readonly send: string;
   /** Carries `{count}`. */
   readonly needsMore: string;
+  /** Why Approve is not offered on an approved payout: it has every signature. */
+  readonly alreadyApproved: string;
+  /** Why Approve is not offered on a payout held on identity or destination. */
+  readonly heldNoSign: string;
+  /** Said instead of the controls to a reader without `APPROVE_PAYOUT`, in words rather than its name. */
+  readonly needsApprovePayout: string;
+  /** Beside a disabled Send. Carries `{count}`. */
+  readonly sendNeedsSignatures: string;
+  readonly sendHeldForDestination: string;
+  /** Carries `{amount}`, `{creator}`, `{campaign}`. */
+  readonly confirmSend: string;
+  readonly confirmSendAction: string;
+  readonly sending: string;
+  readonly cancelPayout: string;
+  /** Carries `{amount}`, `{creator}`, `{campaign}`. */
+  readonly confirmCancel: string;
+  readonly confirmCancelAction: string;
+  readonly cancelling: string;
+  readonly cancelledNotice: string;
+  readonly back: string;
+  /** What a send came back as, said above the queue because a paid or failed payout leaves it. */
+  readonly outcome: PayoutOutcomeCopy;
+  /** A send the provider never answered, and its two resolutions from the statement. */
+  readonly unconfirmed: UnconfirmedSendCopy;
+  /** Paid, failed and cancelled payouts, which the queue does not list. */
+  readonly history: PayoutHistoryCopy;
+  /** The calculate form's refusals, keyed by `code`. */
+  readonly calculateRefusal: Readonly<Record<string, string>>;
   readonly state: Readonly<Record<PayoutState, string>>;
   /**
    * Why a payout is held on identity rather than on the clock — #431.
@@ -412,7 +449,56 @@ export type PayoutRefusalKey =
   | 'PAYOUT_BANK_TRANSFER_NOT_STARTED'
   | 'PAYOUT_SIGNATURES_SHORT'
   | 'CAMPAIGN_ALREADY_PAID_OUT'
-  | 'PAYOUT_SEND_UNCONFIRMED';
+  | 'PAYOUT_SEND_UNCONFIRMED'
+  | 'CREATOR_NOT_VERIFIED'
+  | 'PAYOUT_NOT_APPROVABLE'
+  | 'PAYOUT_DESTINATION_PROVIDER_MISMATCH'
+  | 'NO_PAYOUT_PROVIDER'
+  | 'PAYOUT_NOT_FOUND'
+  | 'INVALID_REQUEST';
+
+/** A send's outcome. `paidBody` and the others carry `{amount}`, `{creator}`, `{campaign}`, `{reason}` as they need. */
+export interface PayoutOutcomeCopy {
+  readonly paidTitle: string;
+  readonly paidBody: string;
+  readonly failedTitle: string;
+  readonly failedBody: string;
+  readonly unconfirmedTitle: string;
+  readonly unconfirmedBody: string;
+  readonly noReason: string;
+}
+
+/** A send the provider never answered. `body` carries `{date}`; the confirmations `{amount}` and `{reference}`. */
+export interface UnconfirmedSendCopy {
+  readonly title: string;
+  readonly body: string;
+  readonly sent: string;
+  readonly notSent: string;
+  readonly transactionLabel: string;
+  readonly transactionHint: string;
+  readonly noteLabel: string;
+  readonly noteHint: string;
+  readonly confirmSent: string;
+  readonly confirmNotSent: string;
+  readonly confirmAction: string;
+  readonly recording: string;
+  readonly resolvedSent: string;
+  readonly resolvedNotSent: string;
+}
+
+/** The payouts that have left the queue. The dated lines carry `{date}`; `failure` carries `{reason}`. */
+export interface PayoutHistoryCopy {
+  readonly heading: string;
+  readonly intro: string;
+  readonly filterLabel: string;
+  readonly loading: string;
+  readonly emptyTitle: string;
+  readonly emptyBody: string;
+  readonly paidOn: string;
+  readonly failedOn: string;
+  readonly calculatedOn: string;
+  readonly failure: string;
+}
 
 /**
  * Paying a payout by hand from IdeyaNest's bank account — #398.
@@ -470,6 +556,9 @@ export interface PayoutBankTransferCopy {
   readonly abandoning: string;
   /** Carries `{date}`. */
   readonly paidOn: string;
+  /** A paid payout with no value date on file — paid through the provider before it moved to a bank account. Carries `{date}`. */
+  readonly paidOtherwise: string;
+  readonly paidUndated: string;
 }
 
 /** Raw rather than formatted throughout, because several carry placeholders the component fills. */
@@ -521,6 +610,8 @@ function payoutBankTransferCopyFrom(t: AdminTranslator): PayoutBankTransferCopy 
     confirmAbandon: raw('confirmAbandon'),
     abandoning: raw('abandoning'),
     paidOn: raw('paidOn'),
+    paidOtherwise: raw('paidOtherwise'),
+    paidUndated: raw('paidUndated'),
   };
 }
 
@@ -541,6 +632,7 @@ export function payoutQueueCopyFrom(
     working: t('screens.payouts.working'),
     calculatedTitle: t('screens.payouts.calculatedTitle'),
     calculatedNotice: String(t.raw('screens.payouts.calculatedNotice')),
+    campaignInvalid: t('screens.payouts.campaignInvalid'),
     failedTitle: t('screens.payouts.failedTitle'),
     queueHeading: t('screens.payouts.queueHeading'),
     loadingList: t('screens.payouts.loadingList'),
@@ -553,6 +645,11 @@ export function payoutQueueCopyFrom(
     processing: t('screens.payouts.processing'),
     refunded: t('screens.payouts.refunded'),
     net: t('screens.payouts.net'),
+    taxWithheld: t('screens.payouts.taxWithheld'),
+    debtWithheld: t('screens.payouts.debtWithheld'),
+    open: t('screens.payouts.open'),
+    close: t('screens.payouts.close'),
+    rowSummary: String(t.raw('screens.payouts.rowSummary')),
     loadingPayout: t('screens.payouts.loadingPayout'),
     payoutFailedTitle: t('screens.payouts.payoutFailedTitle'),
     tryAgainShort: t('screens.payouts.tryAgainShort'),
@@ -572,6 +669,24 @@ export function payoutQueueCopyFrom(
     withdrawMine: t('screens.payouts.withdrawMine'),
     send: t('screens.payouts.send'),
     needsMore: String(t.raw('screens.payouts.needsMore')),
+    alreadyApproved: t('screens.payouts.alreadyApproved'),
+    heldNoSign: t('screens.payouts.heldNoSign'),
+    needsApprovePayout: t('screens.payouts.needsApprovePayout'),
+    sendNeedsSignatures: String(t.raw('screens.payouts.sendNeedsSignatures')),
+    sendHeldForDestination: t('screens.payouts.sendHeldForDestination'),
+    confirmSend: String(t.raw('screens.payouts.confirmSend')),
+    confirmSendAction: t('screens.payouts.confirmSendAction'),
+    sending: t('screens.payouts.sending'),
+    cancelPayout: t('screens.payouts.cancelPayout'),
+    confirmCancel: String(t.raw('screens.payouts.confirmCancel')),
+    confirmCancelAction: t('screens.payouts.confirmCancelAction'),
+    cancelling: t('screens.payouts.cancelling'),
+    cancelledNotice: t('screens.payouts.cancelledNotice'),
+    back: t('screens.payouts.back'),
+    outcome: t.raw('screens.payouts.outcome') as PayoutOutcomeCopy,
+    unconfirmed: t.raw('screens.payouts.unconfirmed') as UnconfirmedSendCopy,
+    history: t.raw('screens.payouts.history') as PayoutHistoryCopy,
+    calculateRefusal: t.raw('screens.payouts.calculateRefusal') as Readonly<Record<string, string>>,
     state: t.raw('screens.payouts.state') as Readonly<Record<PayoutState, string>>,
     verificationHeldTitle: t('screens.payouts.verificationHeldTitle'),
     verificationHeldBody: String(t.raw('screens.payouts.verificationHeldBody')),
@@ -709,6 +824,12 @@ export interface PlanPaymentReturnsCopy {
   readonly recordedBody: string;
   readonly alreadyReturnedTitle: string;
   readonly errors: Readonly<Record<string, string>>;
+  /** A provider's name as staff say it, keyed by the service's spelling. A provider with none falls through. */
+  readonly providerName: Readonly<Record<string, string>>;
+  /** A card refund sent and never answered. */
+  readonly unconfirmedTitle: string;
+  /** Carries `{date}`. */
+  readonly unconfirmedBody: string;
 }
 
 /**
@@ -1069,6 +1190,31 @@ export interface PlanManagerCopy extends ConsoleChromeCopy {
   readonly notStarted: string;
   readonly noteLabel: string;
   readonly noteHint: string;
+  readonly referenceLabel: string;
+  readonly referenceHint: string;
+  readonly methodLabel: string;
+  readonly method: Readonly<Record<PaymentMethod, string>>;
+  readonly receivedLabel: string;
+  readonly receivedHint: string;
+  readonly receivedInvalid: string;
+  /** Carries `{price}`, `{plan}`, `{account}`, `{method}`, `{date}`. */
+  readonly confirmRecord: string;
+  readonly confirmRecordAction: string;
+  /** Carries `{account}`, `{plan}`. */
+  readonly confirmEnd: string;
+  readonly confirmEndAction: string;
+  /** Carries `{plan}`. */
+  readonly confirmRetire: string;
+  readonly confirmRetireAction: string;
+  /** Carries `{plan}`, `{old}`, `{new}`. */
+  readonly confirmReprice: string;
+  readonly confirmRepriceAction: string;
+  readonly back: string;
+  readonly priceInvalid: string;
+  readonly maxActiveInvalid: string;
+  readonly goalCeilingInvalid: string;
+  /** Keyed by the service's `code`; `INVALID_REQUEST` is a 400 Spring refused before any code ran. */
+  readonly errors: Readonly<Record<string, string>>;
   readonly recordPayment: string;
   readonly endReasonLabel: string;
   readonly endReasonHint: string;
@@ -1080,9 +1226,9 @@ export interface PlanManagerCopy extends ConsoleChromeCopy {
   readonly addedNotice: string;
   /** Carries `{plan}`. */
   readonly repricedNotice: string;
-  /** Carries `{id}`. */
+  /** Carries `{account}`. */
   readonly activatedNotice: string;
-  /** Carries `{id}`. */
+  /** Carries `{account}`. */
   readonly endedNotice: string;
 
   readonly period: Readonly<Record<'MONTHLY' | 'YEARLY', string>>;
@@ -1140,6 +1286,26 @@ export function planManagerCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCop
     notStarted: t('screens.plans.notStarted'),
     noteLabel: t('screens.plans.noteLabel'),
     noteHint: t('screens.plans.noteHint'),
+    referenceLabel: t('screens.plans.referenceLabel'),
+    referenceHint: t('screens.plans.referenceHint'),
+    methodLabel: t('screens.plans.methodLabel'),
+    method: t.raw('screens.plans.method') as Readonly<Record<PaymentMethod, string>>,
+    receivedLabel: t('screens.plans.receivedLabel'),
+    receivedHint: t('screens.plans.receivedHint'),
+    receivedInvalid: t('screens.plans.receivedInvalid'),
+    confirmRecord: String(t.raw('screens.plans.confirmRecord')),
+    confirmRecordAction: t('screens.plans.confirmRecordAction'),
+    confirmEnd: String(t.raw('screens.plans.confirmEnd')),
+    confirmEndAction: t('screens.plans.confirmEndAction'),
+    confirmRetire: String(t.raw('screens.plans.confirmRetire')),
+    confirmRetireAction: t('screens.plans.confirmRetireAction'),
+    confirmReprice: String(t.raw('screens.plans.confirmReprice')),
+    confirmRepriceAction: t('screens.plans.confirmRepriceAction'),
+    back: t('screens.plans.back'),
+    priceInvalid: t('screens.plans.priceInvalid'),
+    maxActiveInvalid: t('screens.plans.maxActiveInvalid'),
+    goalCeilingInvalid: t('screens.plans.goalCeilingInvalid'),
+    errors: t.raw('screens.plans.errors') as Readonly<Record<string, string>>,
     recordPayment: t('screens.plans.recordPayment'),
     endReasonLabel: t('screens.plans.endReasonLabel'),
     endReasonHint: t('screens.plans.endReasonHint'),
@@ -1166,6 +1332,7 @@ export interface FeeEditorCopy extends ConsoleChromeCopy {
   readonly inForceHeading: string;
   readonly loadingList: string;
   readonly emptyTitle: string;
+  /** Carries `{platform}`, `{processing}`: the default terms, as percentages. */
   readonly emptyBody: string;
   readonly replaceHeading: string;
   readonly scopeLabel: string;
@@ -1177,6 +1344,31 @@ export interface FeeEditorCopy extends ConsoleChromeCopy {
   /** Carries `{percentage}`. */
   readonly fractionHint: string;
   readonly fixedLabel: string;
+  /** Carries `{currency}`. */
+  readonly fixedHint: string;
+  readonly rateInvalid: string;
+  readonly fixedInvalid: string;
+  readonly scopeRefInvalid: string;
+  readonly categoryPlaceholder: string;
+  readonly categoriesUnavailable: string;
+  /** Carries `{name}`. */
+  readonly campaignFound: string;
+  readonly prefilledFromSchedule: string;
+  readonly prefilledFromDefault: string;
+  /** Carries `{scope}`, `{name}`. */
+  readonly scopeNamed: string;
+  /** The old-to-new step before a schedule is replaced. `intro` carries `{scope}`. */
+  readonly confirm: {
+    readonly heading: string;
+    readonly intro: string;
+    readonly was: string;
+    readonly becomes: string;
+    readonly unchanged: string;
+    readonly action: string;
+    readonly back: string;
+  };
+  /** Keyed by the service's `code`; the unknown-scope refusal is split by `meta.scope`. */
+  readonly errors: Readonly<Record<string, string>>;
   readonly whyLabel: string;
   readonly whyHint: string;
   readonly open: string;
@@ -1208,7 +1400,7 @@ export function feeEditorCopyFrom(
     inForceHeading: t('screens.fees.inForceHeading'),
     loadingList: t('screens.fees.loadingList'),
     emptyTitle: t('screens.fees.emptyTitle'),
-    emptyBody: t('screens.fees.emptyBody'),
+    emptyBody: String(t.raw('screens.fees.emptyBody')),
     replaceHeading: t('screens.fees.replaceHeading'),
     scopeLabel: t('screens.fees.scopeLabel'),
     categoryLabel: t('screens.fees.categoryLabel'),
@@ -1218,6 +1410,26 @@ export function feeEditorCopyFrom(
     processingRateLabel: t('screens.fees.processingRateLabel'),
     fractionHint: String(t.raw('screens.fees.fractionHint')),
     fixedLabel: t('screens.fees.fixedLabel'),
+    fixedHint: String(t.raw('screens.fees.fixedHint')),
+    rateInvalid: t('screens.fees.rateInvalid'),
+    fixedInvalid: t('screens.fees.fixedInvalid'),
+    scopeRefInvalid: t('screens.fees.scopeRefInvalid'),
+    categoryPlaceholder: t('screens.fees.categoryPlaceholder'),
+    categoriesUnavailable: t('screens.fees.categoriesUnavailable'),
+    campaignFound: String(t.raw('screens.fees.campaignFound')),
+    prefilledFromSchedule: t('screens.fees.prefilledFromSchedule'),
+    prefilledFromDefault: t('screens.fees.prefilledFromDefault'),
+    scopeNamed: String(t.raw('screens.fees.scopeNamed')),
+    confirm: {
+      heading: t('screens.fees.confirm.heading'),
+      intro: String(t.raw('screens.fees.confirm.intro')),
+      was: t('screens.fees.confirm.was'),
+      becomes: t('screens.fees.confirm.becomes'),
+      unchanged: t('screens.fees.confirm.unchanged'),
+      action: t('screens.fees.confirm.action'),
+      back: t('screens.fees.confirm.back'),
+    },
+    errors: t.raw('screens.fees.errors') as Readonly<Record<string, string>>,
     whyLabel: t('screens.fees.whyLabel'),
     whyHint: t('screens.fees.whyHint'),
     open: t('screens.fees.open'),
@@ -1402,6 +1614,9 @@ export interface PayoutDestinationCopy {
     readonly rejecting: string;
     readonly cancel: string;
     readonly nameMismatch: string;
+    /** Said on a rejected account, where verifying reverses the rejection. */
+    readonly verifyRejected: string;
+    readonly confirmVerifyRejected: string;
     readonly self: string;
     readonly gone: string;
     readonly failedTitle: string;
@@ -1442,6 +1657,8 @@ export function payoutDestinationCopyFrom(t: AdminTranslator): PayoutDestination
       rejecting: at('decision.rejecting'),
       cancel: at('decision.cancel'),
       nameMismatch: at('decision.nameMismatch'),
+      verifyRejected: at('decision.verifyRejected'),
+      confirmVerifyRejected: at('decision.confirmVerifyRejected'),
       self: at('decision.self'),
       gone: at('decision.gone'),
       failedTitle: at('decision.failedTitle'),

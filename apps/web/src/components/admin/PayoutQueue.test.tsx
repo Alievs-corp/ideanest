@@ -11,7 +11,20 @@ import {
   startBankTransfer,
   type BankTransferInstruction,
 } from '../../lib/admin/payout-bank-transfers';
-import { readPayout, readPayoutQueue, sendPayout, type Payout, type PayoutFile } from '../../lib/admin/payouts';
+import {
+  approvePayout,
+  calculatePayout,
+  cancelPayout,
+  listPayouts,
+  readPayout,
+  readPayoutQueue,
+  recordUnconfirmedNotSent,
+  recordUnconfirmedSent,
+  sendPayout,
+  type Payout,
+  type PayoutFile,
+} from '../../lib/admin/payouts';
+import { calendarDate } from '../../lib/admin/console-dates';
 import {
   readMembership,
   ROLE_CAPABILITIES,
@@ -37,6 +50,12 @@ vi.mock('../../lib/admin/payouts', async (importOriginal) => ({
   readPayoutQueue: vi.fn(),
   readPayout: vi.fn(),
   sendPayout: vi.fn(),
+  approvePayout: vi.fn(),
+  cancelPayout: vi.fn(),
+  calculatePayout: vi.fn(),
+  listPayouts: vi.fn(),
+  recordUnconfirmedSent: vi.fn(),
+  recordUnconfirmedNotSent: vi.fn(),
 }));
 vi.mock('../../lib/admin/payout-bank-transfers', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/admin/payout-bank-transfers')>()),
@@ -58,6 +77,12 @@ vi.mock('../../lib/admin/directory', async (importOriginal) => ({
 const queueMock = vi.mocked(readPayoutQueue);
 const fileMock = vi.mocked(readPayout);
 const sendMock = vi.mocked(sendPayout);
+const approveMock = vi.mocked(approvePayout);
+const cancelMock = vi.mocked(cancelPayout);
+const calculateMock = vi.mocked(calculatePayout);
+const historyMock = vi.mocked(listPayouts);
+const sentMock = vi.mocked(recordUnconfirmedSent);
+const notSentMock = vi.mocked(recordUnconfirmedNotSent);
 const startMock = vi.mocked(startBankTransfer);
 const revealMock = vi.mocked(readBankTransfer);
 const recordMock = vi.mocked(recordBankTransfer);
@@ -157,7 +182,19 @@ async function openFile(payout: Payout, capabilities: readonly StaffCapability[]
 beforeEach(() => {
   vi.resetAllMocks();
   namesMock.mockResolvedValue({ accounts: [], projects: [] });
+  historyMock.mockResolvedValue({ payouts: [], page: 0, hasMore: false });
 });
+
+/** The queue's own section, so a state's word on a row is not confused with the history's chip. */
+function queueSection(): HTMLElement {
+  return screen.getByRole('region', { name: new RegExp(`^${COPY.queueHeading}`) });
+}
+
+/** Send, then the confirmation it asks for — #8. */
+async function sendAndConfirm(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(await screen.findByRole('button', { name: COPY.send }));
+  await user.click(screen.getByRole('button', { name: COPY.confirmSendAction }));
+}
 
 describe('a payout paid into a bank account', () => {
   it('offers to transfer it by hand instead of Send, and opens nothing until asked', async () => {
@@ -255,7 +292,7 @@ describe('a payout paid into a bank account', () => {
 
     render(<PayoutQueue copy={COPY} />);
     await user.click(await screen.findByRole('button', { expanded: false }));
-    await user.click(await screen.findByRole('button', { name: COPY.send }));
+    await sendAndConfirm(user);
 
     expect(await screen.findByText(COPY.refusal.PAYOUT_SETTLES_BY_BANK_TRANSFER)).toBeInTheDocument();
   });
@@ -321,9 +358,9 @@ describe('the figures moved', () => {
     await waitFor(() => expect(screen.queryByRole('heading', { name: WORDS.heading })).not.toBeInTheDocument());
     expect(fileMock).toHaveBeenCalledTimes(2);
     // The row says cancelled without a second read of the queue, which would close the file.
-    expect(screen.getByText(COPY.state.CANCELLED)).toBeInTheDocument();
+    expect(within(queueSection()).getByText(COPY.state.CANCELLED)).toBeInTheDocument();
     expect(queueMock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: COPY.cancel })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.cancelPayout })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: COPY.approve })).not.toBeInTheDocument();
     expect(screen.getByText(COPY.refusal.FIGURES_MOVED)).toBeInTheDocument();
   });
@@ -339,11 +376,11 @@ describe('the figures moved', () => {
     render(<PayoutQueue copy={COPY} />);
     await user.click(await screen.findByRole('button', { expanded: false }));
     fileMock.mockResolvedValue(fileOf({ ...payout, state: 'CANCELLED' }));
-    await user.click(await screen.findByRole('button', { name: COPY.send }));
+    await sendAndConfirm(user);
 
     expect(await screen.findByText(COPY.refusal.FIGURES_MOVED)).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('button', { name: COPY.send })).not.toBeInTheDocument());
-    expect(screen.getByText(COPY.state.CANCELLED)).toBeInTheDocument();
+    expect(within(queueSection()).getByText(COPY.state.CANCELLED)).toBeInTheDocument();
     expect(queueMock).toHaveBeenCalledTimes(1);
   });
 
@@ -365,7 +402,7 @@ describe('a transfer in progress', () => {
 
     expect(screen.getByText(WORDS.inProgressTag)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: WORDS.revealIban })).toBeEnabled();
-    expect(screen.getByRole('button', { name: COPY.cancel })).toBeDisabled();
+    expect(screen.getByRole('button', { name: COPY.cancelPayout })).toBeDisabled();
     expect(screen.getByText(COPY.refusal.PAYOUT_BANK_TRANSFER_IN_PROGRESS)).toBeInTheDocument();
     const lead = WORDS.transferStarted.split('{who}')[0] ?? '';
     const started = screen.getByText(
@@ -402,7 +439,7 @@ describe('a transfer in progress', () => {
         fillPlaceholders(WORDS.confirmRecord, {
           amount: '1,250.00 AZN',
           reference: 'FT26285ABC12',
-          date: bakuToday(),
+          date: calendarDate(bakuToday(), 'en'),
         }),
       ),
     ).toBeInTheDocument();
@@ -414,7 +451,9 @@ describe('a transfer in progress', () => {
       transferredOn: bakuToday(),
       note: 'Statement line 14',
     });
-    expect(await screen.findByText(fillPlaceholders(WORDS.paidOn, { date: bakuToday() }))).toBeInTheDocument();
+    expect(
+      await screen.findByText(fillPlaceholders(WORDS.paidOn, { date: calendarDate(bakuToday(), 'en') })),
+    ).toBeInTheDocument();
   });
 
   it('records the bank fee as typed from the statement, and refuses one that is not an amount', async () => {
@@ -451,7 +490,10 @@ describe('a transfer in progress', () => {
     [
       'BANK_TRANSFER_DATE_OUT_OF_RANGE',
       400,
-      fillPlaceholders(COPY.refusal.BANK_TRANSFER_DATE_OUT_OF_RANGE, { start: bakuToday(), today: bakuToday() }),
+      fillPlaceholders(COPY.refusal.BANK_TRANSFER_DATE_OUT_OF_RANGE, {
+        start: calendarDate(bakuToday(), 'en'),
+        today: calendarDate(bakuToday(), 'en'),
+      }),
     ],
   ])('explains a record refused with %s', async (code, status, words) => {
     const user = await openFile(startedPayout());
@@ -482,5 +524,349 @@ describe('a transfer in progress', () => {
     // Back to a payout that can be started again.
     expect(await screen.findByRole('button', { name: WORDS.startTransfer })).toBeInTheDocument();
     expect(screen.queryByText(WORDS.inProgressTag)).not.toBeInTheDocument();
+  });
+});
+
+/* -------------------------------------------------------------------------
+ * The money pages audit: send outcomes, confirms, gating, history
+ * ---------------------------------------------------------------------- */
+
+const CAMPAIGN_TITLE = 'Bakı küçə kitabxanası';
+const CREATOR_NAME = 'Elvin Quliyev';
+
+/** Sent through the provider, signed by two, ready to send. */
+function providerPayout(overrides: Partial<Payout> = {}): Payout {
+  return bankPayout({ destinationKind: 'PROVIDER_TOKEN', ...overrides });
+}
+
+async function openProviderFile(
+  payout: Payout,
+  capabilities: readonly StaffCapability[] = ROLE_CAPABILITIES.SUPER_ADMIN,
+  file: PayoutFile = fileOf(payout),
+) {
+  const user = userEvent.setup();
+  namesMock.mockResolvedValue({
+    accounts: [{ id: CREATOR, name: CREATOR_NAME, slug: 'elvin' }],
+    projects: [{ id: PROJECT, title: CAMPAIGN_TITLE }],
+  });
+  queueMock.mockResolvedValue({ payouts: [payout], page: 0, hasMore: false });
+  fileMock.mockResolvedValue(file);
+  membershipMock.mockResolvedValue(reader(capabilities));
+
+  render(<PayoutQueue copy={COPY} />);
+  await screen.findAllByText(CAMPAIGN_TITLE);
+  await user.click(screen.getByRole('button', { expanded: false }));
+  await screen.findByText(COPY.signatures);
+  return user;
+}
+
+describe('a payout row', () => {
+  it('names its campaign and creator, and its toggle has a short name of its own', async () => {
+    await openProviderFile(providerPayout());
+
+    expect(within(queueSection()).getAllByText(CAMPAIGN_TITLE).length).toBeGreaterThan(0);
+    expect(within(queueSection()).getAllByText(CREATOR_NAME).length).toBeGreaterThan(0);
+    const toggle = screen.getByRole('button', { expanded: true });
+    expect(toggle).toHaveAccessibleName(
+      `${COPY.close}: ${fillPlaceholders(COPY.rowSummary, {
+        campaign: CAMPAIGN_TITLE,
+        creator: CREATOR_NAME,
+        amount: '1,250.00 AZN',
+        state: COPY.state.APPROVED,
+      })}`,
+    );
+  });
+
+  it('adds the breakdown up: tax and debt withheld are shown, zero deductions are left out', async () => {
+    queueMock.mockResolvedValue({
+      payouts: [
+        providerPayout({
+          refunded: ZERO,
+          taxWithheld: { amount: '20.00', currency: 'AZN' },
+          debtWithheld: { amount: '30.00', currency: 'AZN' },
+          net: { amount: '1200.00', currency: 'AZN' },
+        }),
+      ],
+      page: 0,
+      hasMore: false,
+    });
+    membershipMock.mockResolvedValue(reader(ROLE_CAPABILITIES.SUPER_ADMIN));
+    render(<PayoutQueue copy={COPY} />);
+
+    const statement = (await screen.findByText(COPY.collected)).closest('dl');
+    if (statement === null) throw new Error('the breakdown is not a description list');
+    expect(within(statement).getByText(COPY.taxWithheld)).toBeInTheDocument();
+    expect(within(statement).getByText('− 20.00 AZN')).toBeInTheDocument();
+    expect(within(statement).getByText(COPY.debtWithheld)).toBeInTheDocument();
+    expect(within(statement).getByText('− 30.00 AZN')).toBeInTheDocument();
+    expect(within(statement).queryByText(COPY.refunded)).not.toBeInTheDocument();
+    expect(within(statement).getByText('1,200.00 AZN')).toBeInTheDocument();
+  });
+});
+
+describe('sending', () => {
+  it('asks first, naming the amount, the creator and the campaign', async () => {
+    const user = await openProviderFile(providerPayout());
+
+    await user.click(screen.getByRole('button', { name: COPY.send }));
+
+    expect(
+      screen.getByText(
+        fillPlaceholders(COPY.confirmSend, { amount: '1,250.00 AZN', creator: CREATOR_NAME, campaign: CAMPAIGN_TITLE }),
+      ),
+    ).toBeInTheDocument();
+    expect(sendMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: COPY.back }));
+    expect(screen.getByRole('button', { name: COPY.send })).toBeInTheDocument();
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it('says a paid send was paid, closes the file, and reads the queue and the history again', async () => {
+    const user = await openProviderFile(providerPayout());
+    sendMock.mockResolvedValue(providerPayout({ state: 'PAID', sentAt: '2026-10-15T08:00:00Z' }));
+
+    await sendAndConfirm(user);
+
+    expect(await screen.findByText(COPY.outcome.paidTitle)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        fillPlaceholders(COPY.outcome.paidBody, { amount: '1,250.00 AZN', creator: CREATOR_NAME, campaign: CAMPAIGN_TITLE }),
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(queueMock).toHaveBeenCalledTimes(2));
+    expect(historyMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText(COPY.signatures)).not.toBeInTheDocument();
+  });
+
+  it('says a refused send failed and why, instead of letting it vanish from the queue', async () => {
+    const user = await openProviderFile(providerPayout());
+    sendMock.mockResolvedValue(
+      providerPayout({ state: 'FAILED', failureCode: 'card_declined', failureMessage: 'Receiver card is blocked' }),
+    );
+
+    await sendAndConfirm(user);
+
+    expect(await screen.findByText(COPY.outcome.failedTitle)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        fillPlaceholders(COPY.outcome.failedBody, {
+          amount: '1,250.00 AZN',
+          campaign: CAMPAIGN_TITLE,
+          reason: 'Receiver card is blocked (card_declined)',
+        }),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('says an unanswered send is unconfirmed and keeps its file open', async () => {
+    const user = await openProviderFile(providerPayout());
+    const unanswered = providerPayout({ sendUnconfirmedAt: '2026-10-15T08:00:00Z' });
+    sendMock.mockResolvedValue(unanswered);
+    fileMock.mockResolvedValue(fileOf(unanswered));
+
+    await sendAndConfirm(user);
+
+    expect(await screen.findByText(COPY.outcome.unconfirmedTitle)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: COPY.unconfirmed.sent })).toBeInTheDocument();
+  });
+
+  it('puts a disabled Send beside the reason rather than a button that is a sentence', async () => {
+    await openProviderFile(providerPayout(), ROLE_CAPABILITIES.SUPER_ADMIN, { ...fileOf(providerPayout()), stillNeeded: 1 });
+
+    expect(screen.getByRole('button', { name: COPY.send })).toBeDisabled();
+    expect(screen.getByText(fillPlaceholders(COPY.sendNeedsSignatures, { count: '1' }))).toBeInTheDocument();
+  });
+});
+
+describe('cancelling', () => {
+  it('asks first, then cancels and says so', async () => {
+    const user = await openProviderFile(providerPayout());
+    cancelMock.mockResolvedValue(providerPayout({ state: 'CANCELLED' }));
+
+    await user.click(screen.getByRole('button', { name: COPY.cancelPayout }));
+    expect(
+      screen.getByText(
+        fillPlaceholders(COPY.confirmCancel, { amount: '1,250.00 AZN', creator: CREATOR_NAME, campaign: CAMPAIGN_TITLE }),
+      ),
+    ).toBeInTheDocument();
+    expect(cancelMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: COPY.confirmCancelAction }));
+
+    expect(cancelMock).toHaveBeenCalledWith(PAYOUT);
+    expect(await screen.findByText(COPY.cancelledNotice)).toBeInTheDocument();
+  });
+});
+
+describe('who is offered what', () => {
+  it('draws no signing, sending or cancelling for a reader without APPROVE_PAYOUT, and says why in words', async () => {
+    await openProviderFile(providerPayout({ state: 'PENDING_APPROVAL' }), ROLE_CAPABILITIES.FINANCE, {
+      ...fileOf(providerPayout({ state: 'PENDING_APPROVAL' })),
+      approvals: [],
+      stillNeeded: 2,
+    });
+
+    expect(screen.queryByRole('button', { name: COPY.approve })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.send })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.cancelPayout })).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.needsApprovePayout)).toBeInTheDocument();
+    expect(COPY.needsApprovePayout).not.toMatch(/APPROVE_PAYOUT/);
+  });
+
+  it('does not offer a signature on a payout held for its creator, and says why', async () => {
+    const held = providerPayout({
+      state: 'PENDING_APPROVAL',
+      heldForVerification: true,
+      creatorStanding: 'AWAITING_DOCUMENTS',
+    });
+    await openProviderFile(held, ROLE_CAPABILITIES.SUPER_ADMIN, { payout: held, approvals: [], stillNeeded: 2 });
+
+    expect(screen.queryByRole('button', { name: COPY.approve })).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.heldNoSign)).toBeInTheDocument();
+  });
+
+  it('does not offer a signature on a payout that already has every signature', async () => {
+    await openProviderFile(providerPayout());
+
+    expect(screen.queryByRole('button', { name: COPY.approve })).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.alreadyApproved)).toBeInTheDocument();
+  });
+
+  it('offers a signature on a payout waiting for one, and signs with the note', async () => {
+    const waiting = providerPayout({ state: 'PENDING_APPROVAL' });
+    const user = await openProviderFile(waiting, ROLE_CAPABILITIES.SUPER_ADMIN, {
+      payout: waiting,
+      approvals: [],
+      stillNeeded: 2,
+    });
+    approveMock.mockResolvedValue({ payout: waiting, approvals: [], stillNeeded: 1 });
+
+    await user.type(screen.getByLabelText(new RegExp(`^${COPY.noteLabel}`)), 'Statement matches');
+    await user.click(screen.getByRole('button', { name: COPY.approve }));
+
+    expect(approveMock).toHaveBeenCalledWith(PAYOUT, 'Statement matches');
+  });
+});
+
+describe('a send the provider never answered', () => {
+  const unanswered = () => providerPayout({ sendUnconfirmedAt: '2026-10-15T08:00:00Z' });
+
+  it('blocks cancelling and records it as sent from the statement, after asking', async () => {
+    const user = await openProviderFile(unanswered());
+    sentMock.mockResolvedValue(providerPayout({ state: 'PAID' }));
+
+    expect(screen.getByRole('button', { name: COPY.cancelPayout })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: COPY.unconfirmed.sent }));
+    const form = screen.getByRole('form', { name: COPY.unconfirmed.sent });
+    await user.type(within(form).getByLabelText(new RegExp(COPY.unconfirmed.transactionLabel)), 'PRF-1');
+    await user.type(within(form).getByLabelText(new RegExp(COPY.unconfirmed.noteLabel)), 'Line 4 of the statement');
+    await user.click(within(form).getByRole('button', { name: COPY.unconfirmed.sent }));
+
+    expect(sentMock).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(fillPlaceholders(COPY.unconfirmed.confirmSent, { amount: '1,250.00 AZN', reference: 'PRF-1' })),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: COPY.unconfirmed.confirmAction }));
+
+    expect(sentMock).toHaveBeenCalledWith(PAYOUT, 'PRF-1', 'Line 4 of the statement');
+    expect(await screen.findByText(COPY.unconfirmed.resolvedSent)).toBeInTheDocument();
+  });
+
+  it('records it as not sent after warning that a sent payout would be paid twice', async () => {
+    const user = await openProviderFile(unanswered());
+    notSentMock.mockResolvedValue(providerPayout({ state: 'FAILED', failureCode: 'confirmed_not_sent' }));
+
+    await user.click(screen.getByRole('button', { name: COPY.unconfirmed.notSent }));
+    const form = screen.getByRole('form', { name: COPY.unconfirmed.notSent });
+    await user.type(within(form).getByLabelText(new RegExp(COPY.unconfirmed.noteLabel)), 'No debit on the statement');
+    await user.click(within(form).getByRole('button', { name: COPY.unconfirmed.notSent }));
+    expect(
+      screen.getByText(fillPlaceholders(COPY.unconfirmed.confirmNotSent, { amount: '1,250.00 AZN' })),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: COPY.unconfirmed.confirmAction }));
+
+    expect(notSentMock).toHaveBeenCalledWith(PAYOUT, 'No debit on the statement');
+    expect(await screen.findByText(COPY.unconfirmed.resolvedNotSent)).toBeInTheDocument();
+  });
+});
+
+describe('the history', () => {
+  it('lists paid payouts first and failed ones under their chip, with the reason', async () => {
+    const user = userEvent.setup();
+    queueMock.mockResolvedValue({ payouts: [], page: 0, hasMore: false });
+    membershipMock.mockResolvedValue(reader(ROLE_CAPABILITIES.SUPER_ADMIN));
+    historyMock.mockImplementation(async (state) => ({
+      payouts:
+        state === 'FAILED'
+          ? [providerPayout({ state: 'FAILED', failureCode: 'card_declined', sentAt: '2026-07-02T10:00:00Z' })]
+          : [],
+      page: 0,
+      hasMore: false,
+    }));
+
+    render(<PayoutQueue copy={COPY} />);
+    await screen.findByText(COPY.history.emptyTitle);
+    expect(historyMock).toHaveBeenCalledWith('PAID', 0, expect.any(AbortSignal));
+
+    await user.click(screen.getByRole('button', { name: COPY.state.FAILED }));
+
+    expect(await screen.findByText(fillPlaceholders(COPY.history.failure, { reason: 'card_declined' }))).toBeInTheDocument();
+    expect(historyMock).toHaveBeenCalledWith('FAILED', 0, expect.any(AbortSignal));
+  });
+});
+
+describe('working out a payout', () => {
+  async function calculateFor(id: string) {
+    const user = userEvent.setup();
+    queueMock.mockResolvedValue({ payouts: [], page: 0, hasMore: false });
+    membershipMock.mockResolvedValue(reader(ROLE_CAPABILITIES.SUPER_ADMIN));
+    render(<PayoutQueue copy={COPY} />);
+    await screen.findByText(COPY.emptyTitle);
+    await user.type(screen.getByLabelText(new RegExp(`^${COPY.campaignLabel}`)), id);
+    await user.click(screen.getByRole('button', { name: COPY.calculate }));
+    return user;
+  }
+
+  it('refuses something that is not an identifier without asking the service', async () => {
+    await calculateFor('gence-senetkarliq');
+
+    expect(screen.getByText(COPY.campaignInvalid)).toBeInTheDocument();
+    expect(calculateMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'PAYOUT_ALREADY_IN_FLIGHT',
+    'CAMPAIGN_ALREADY_PAID_OUT',
+    'PAYOUT_SEND_UNCONFIRMED',
+    'PROJECT_NOT_FOUND',
+    'NOTHING_TO_PAY',
+  ])('words %s in the reader language', async (code) => {
+    calculateMock.mockRejectedValue(refusal(code === 'PROJECT_NOT_FOUND' ? 404 : 409, code));
+
+    await calculateFor(PROJECT);
+
+    expect(await screen.findByText(COPY.calculateRefusal[code] ?? '')).toBeInTheDocument();
+  });
+
+  it('words a request the service rejected before any code ran, never in its English', async () => {
+    calculateMock.mockRejectedValue(
+      new ApiError(400, { status: 400, title: 'Bad Request', detail: 'Invalid request content.' }),
+    );
+
+    await calculateFor(PROJECT);
+
+    expect(await screen.findByText(COPY.refusal.INVALID_REQUEST)).toBeInTheDocument();
+    expect(screen.queryByText('Invalid request content.')).not.toBeInTheDocument();
+  });
+
+  it('names the campaign it worked out, not its identifier', async () => {
+    namesMock.mockResolvedValue({ accounts: [], projects: [{ id: PROJECT, title: CAMPAIGN_TITLE }] });
+    calculateMock.mockResolvedValue(providerPayout({ state: 'CALCULATED', payableAt: '2026-10-28T18:00:00Z' }));
+
+    await calculateFor(PROJECT);
+
+    await screen.findByText(COPY.calculatedTitle);
+    expect(await screen.findByText(CAMPAIGN_TITLE)).toBeInTheDocument();
   });
 });
