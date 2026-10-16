@@ -13999,6 +13999,10 @@
             "type" : "string",
             "enum" : [ "UNREADABLE", "EXPIRED_DOCUMENT", "MISMATCHED_NAME", "INCOMPLETE", "SUSPECTED_FORGERY" ]
           },
+          "reviewState" : {
+            "type" : "string",
+            "enum" : [ "AWAITING_VERIFICATION", "NAME_MISMATCH", "REJECTED", "VERIFIED" ]
+          },
           "standing" : {
             "type" : "string",
             "enum" : [ "WAIVED", "VERIFIED", "NONE", "AWAITING_VERIFICATION", "NAME_MISMATCH", "REJECTED" ]
@@ -15502,6 +15506,9 @@
             "type" : "string",
             "enum" : [ "NOT_REQUIRED", "WAIVED", "VERIFIED", "NEVER_REQUESTED", "AWAITING_DOCUMENTS", "UNDER_REVIEW", "REJECTED", "EXPIRED" ]
           },
+          "debtWithheld" : {
+            "$ref" : "#/components/schemas/Money"
+          },
           "destinationKind" : {
             "type" : "string",
             "enum" : [ "PROVIDER_TOKEN", "BANK_TRANSFER" ]
@@ -15559,6 +15566,10 @@
           },
           "refunded" : {
             "$ref" : "#/components/schemas/Money"
+          },
+          "sendUnconfirmedAt" : {
+            "type" : "string",
+            "format" : "date-time"
           },
           "sentAt" : {
             "type" : "string",
@@ -19132,6 +19143,10 @@
           },
           "amount" : {
             "type" : "string"
+          },
+          "cardRefundStartedAt" : {
+            "type" : "string",
+            "format" : "date-time"
           },
           "cardRefundUntil" : {
             "type" : "string",

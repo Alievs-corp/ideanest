@@ -5530,6 +5530,8 @@ export interface components {
             /** @enum {string} */
             rejectionReason?: "UNREADABLE" | "EXPIRED_DOCUMENT" | "MISMATCHED_NAME" | "INCOMPLETE" | "SUSPECTED_FORGERY";
             /** @enum {string} */
+            reviewState?: "AWAITING_VERIFICATION" | "NAME_MISMATCH" | "REJECTED" | "VERIFIED";
+            /** @enum {string} */
             standing?: "WAIVED" | "VERIFIED" | "NONE" | "AWAITING_VERIFICATION" | "NAME_MISMATCH" | "REJECTED";
             /** Format: date-time */
             updatedAt?: string;
@@ -6116,6 +6118,7 @@ export interface components {
             creatorId?: string;
             /** @enum {string} */
             creatorStanding?: "NOT_REQUIRED" | "WAIVED" | "VERIFIED" | "NEVER_REQUESTED" | "AWAITING_DOCUMENTS" | "UNDER_REVIEW" | "REJECTED" | "EXPIRED";
+            debtWithheld?: components["schemas"]["Money"];
             /** @enum {string} */
             destinationKind?: "PROVIDER_TOKEN" | "BANK_TRANSFER";
             /** @enum {string} */
@@ -6140,6 +6143,8 @@ export interface components {
             /** Format: uuid */
             projectId?: string;
             refunded?: components["schemas"]["Money"];
+            /** Format: date-time */
+            sendUnconfirmedAt?: string;
             /** Format: date-time */
             sentAt?: string;
             /** @enum {string} */
@@ -7467,6 +7472,8 @@ export interface components {
             /** Format: uuid */
             accountId?: string;
             amount?: string;
+            /** Format: date-time */
+            cardRefundStartedAt?: string;
             /** Format: date-time */
             cardRefundUntil?: string;
             currency?: string;
