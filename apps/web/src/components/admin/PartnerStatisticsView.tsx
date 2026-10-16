@@ -18,7 +18,11 @@ import {
   type CurrencyFigures,
   type PartnerStatistics,
 } from '../../lib/admin/partnerStatistics';
+import { capitalised, dateTimeFormat, numberFormat } from '../../lib/i18n/formats';
+import type { Locale } from '../../lib/i18n/locale';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { formatDate } from '../../lib/time';
 import type { PartnerStatisticsCopy } from '../../lib/i18n/admin/partner-copy';
 import { formatMoney } from '../../lib/money';
 import { ConsoleRefusal } from './ConsoleRefusal';
@@ -56,6 +60,7 @@ export interface PartnerStatisticsViewProps {
 }
 
 export function PartnerStatisticsView({ copy }: PartnerStatisticsViewProps) {
+  const locale = useRouteLocale();
   const resource = useConsoleResource(
     (signal) => readPartnerStatistics(signal),
     copy.subject,
@@ -107,16 +112,27 @@ export function PartnerStatisticsView({ copy }: PartnerStatisticsViewProps) {
   const statistics = resource.data?.kind === 'ready' ? resource.data.statistics : null;
   if (statistics === null) return null;
 
-  return <Statistics statistics={statistics} copy={copy} />;
+  return <Statistics statistics={statistics} copy={copy} locale={locale} />;
+}
+
+/** How the three columns of every figure are written, for this reader and this view. */
+interface Formatting {
+  readonly locale: Locale;
+  readonly view: PartnerStatistics['view'];
 }
 
 function Statistics({
   statistics,
   copy,
+  locale,
 }: {
   readonly statistics: PartnerStatistics;
   readonly copy: PartnerStatisticsCopy;
+  readonly locale: Locale;
 }) {
+  const formatting: Formatting = { locale, view: statistics.view };
+  const currencies = currenciesIn(statistics);
+
   return (
     <div className="flex flex-col gap-10">
       <div>
@@ -129,23 +145,28 @@ function Statistics({
             ? fillPlaceholders(copy.partnerLine, { percentage: trimPercent(statistics.sharePercentage) })
             : copy.realLine}
         </p>
-        <p className="mt-2 text-xs text-white/48">{fillPlaceholders(copy.zoneNote, { zone: statistics.timeZone })}</p>
+        {/* "Baku time", not "Asia/Baku": the identifier is for a computer. */}
+        <p className="mt-2 text-xs text-white/48">
+          {statistics.timeZone === BAKU
+            ? copy.zoneNoteBaku
+            : fillPlaceholders(copy.zoneNote, { zone: statistics.timeZone })}
+        </p>
       </div>
 
       <section aria-labelledby="stats-today-heading">
         <h2 id="stats-today-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
           {copy.todayHeading}
         </h2>
-        <p className="mt-1 text-xs text-white/48">{statistics.today.date}</p>
-        <Figures figures={statistics.today.currencies} copy={copy} />
+        <p className="mt-1 text-xs text-white/48">{dayLabel(statistics.today.date, locale)}</p>
+        <Figures figures={statistics.today.currencies} formatting={formatting} copy={copy} />
       </section>
 
       <section aria-labelledby="stats-month-heading">
         <h2 id="stats-month-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
           {copy.monthHeading}
         </h2>
-        <p className="mt-1 text-xs text-white/48">{statistics.thisMonth.month}</p>
-        <Figures figures={statistics.thisMonth.currencies} copy={copy} />
+        <p className="mt-1 text-xs text-white/48">{monthLabel(statistics.thisMonth.month, locale)}</p>
+        <Figures figures={statistics.thisMonth.currencies} formatting={formatting} copy={copy} />
       </section>
 
       <section aria-labelledby="stats-daily-heading">
@@ -155,9 +176,14 @@ function Statistics({
         <FiguresTable
           caption={copy.dailyCaption}
           firstColumn={copy.dateColumn}
+          formatting={formatting}
           copy={copy}
           rows={statistics.daily.flatMap((day) =>
-            day.currencies.map((figures) => ({ key: `${day.date}-${figures.currency}`, label: day.date, figures })),
+            day.currencies.map((figures) => ({
+              key: `${day.date}-${figures.currency}`,
+              label: dayLabel(day.date, locale),
+              figures,
+            })),
           )}
         />
       </section>
@@ -166,14 +192,21 @@ function Statistics({
         <h2 id="stats-monthly-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
           {copy.monthlyHeading}
         </h2>
+        {/*
+          Twelve months means twelve rows. The service sends a month nobody paid in as an empty
+          list, and it used to vanish from the table, so "the last twelve months" showed seven
+          and a quiet month read as a gap in the data. It is a row of zeroes in every currency
+          the rest of the year was paid in.
+        */}
         <FiguresTable
           caption={copy.monthlyCaption}
           firstColumn={copy.monthColumn}
+          formatting={formatting}
           copy={copy}
           rows={statistics.monthly.flatMap((month) =>
-            month.currencies.map((figures) => ({
+            (month.currencies.length > 0 ? month.currencies : currencies.map(nothingIn)).map((figures) => ({
               key: `${month.month}-${figures.currency}`,
-              label: month.month,
+              label: monthLabel(month.month, locale),
               figures,
             })),
           )}
@@ -187,6 +220,7 @@ function Statistics({
         <FiguresTable
           caption={copy.planCaption}
           firstColumn={copy.planColumn}
+          formatting={formatting}
           copy={copy}
           rows={statistics.byPlan.map((plan) => ({
             key: `${plan.planCode}-${plan.planName}-${plan.currency}`,
@@ -207,9 +241,11 @@ function Statistics({
 /** One period's figures, per currency, as a description list: a term and what it is. */
 function Figures({
   figures,
+  formatting,
   copy,
 }: {
   readonly figures: readonly CurrencyFigures[];
+  readonly formatting: Formatting;
   readonly copy: PartnerStatisticsCopy;
 }) {
   if (figures.length === 0) {
@@ -228,11 +264,15 @@ function Figures({
           </div>
           <div>
             <dt className="text-xs text-white/48">{copy.subscriptions}</dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">{row.subscriptions}</dd>
+            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">
+              {formatCount(row.subscriptions, formatting)}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-white/48">{copy.reversals}</dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">{row.reversals}</dd>
+            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">
+              {formatCount(row.reversals, formatting)}
+            </dd>
           </div>
         </dl>
       ))}
@@ -251,11 +291,13 @@ function FiguresTable({
   caption,
   firstColumn,
   rows,
+  formatting,
   copy,
 }: {
   readonly caption: string;
   readonly firstColumn: string;
   readonly rows: readonly FiguresRow[];
+  readonly formatting: Formatting;
   readonly copy: PartnerStatisticsCopy;
 }) {
   if (rows.length === 0) {
@@ -279,13 +321,64 @@ function FiguresTable({
             <TableCell align="right">
               {formatMoney({ amount: row.figures.revenue, currency: row.figures.currency })}
             </TableCell>
-            <TableCell align="right">{row.figures.subscriptions}</TableCell>
-            <TableCell align="right">{row.figures.reversals}</TableCell>
+            <TableCell align="right">{formatCount(row.figures.subscriptions, formatting)}</TableCell>
+            <TableCell align="right">{formatCount(row.figures.reversals, formatting)}</TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
   );
+}
+
+const BAKU = 'Asia/Baku';
+
+/**
+ * Every currency the response mentions, in the order first seen — the currencies an empty month
+ * is drawn as zero in. Empty when nothing was paid all year, and then the table says so.
+ */
+function currenciesIn(statistics: PartnerStatistics): string[] {
+  const seen = new Set<string>();
+  for (const month of statistics.monthly) for (const row of month.currencies) seen.add(row.currency);
+  for (const row of statistics.thisMonth.currencies) seen.add(row.currency);
+  return [...seen];
+}
+
+function nothingIn(currency: string): CurrencyFigures {
+  return { currency, revenue: '0.00', subscriptions: '0.00', reversals: '0.00' };
+}
+
+/**
+ * A `YYYY-MM-DD` Baku day in the reader's words. Formatted at noon UTC, which is the same
+ * calendar day in every zone from UTC−11 to UTC+11.
+ */
+function dayLabel(day: string, locale: Locale): string {
+  return formatDate(`${day}T12:00:00Z`, locale);
+}
+
+/** A `YYYY-MM` Baku month as its name and year: "Oktyabr 2026", not "2026-10". */
+function monthLabel(month: string, locale: Locale): string {
+  const at = new Date(`${month}-15T12:00:00Z`);
+  if (Number.isNaN(at.getTime())) return month;
+  const written = dateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }, 'stats-month').format(at);
+  return capitalised(written, locale);
+}
+
+/**
+ * A count, which the service sends as a two-place decimal string.
+ *
+ * <p>The real view's counts are whole — "14.00" is fourteen subscriptions — so they are drawn
+ * as whole numbers. A partner's are scaled by their share and can be fractional ("3.50"), so
+ * they keep both places, with the reader's decimal separator. Parsed only to be formatted: the
+ * value has two places and a double holds that exactly enough to print it back.
+ */
+function formatCount(value: string, { locale, view }: Formatting): string {
+  const whole = /^-?\d+(\.0+)?$/.test(value);
+  const number = Number(value);
+  if (Number.isNaN(number)) return value;
+  if (view === 'REAL' && whole) {
+    return numberFormat(locale, { maximumFractionDigits: 0 }, 'stats-count-whole').format(number);
+  }
+  return numberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }, 'stats-count-share').format(number);
 }
 
 /** `"50.00"` reads as `50`; `"33.33"` stays. A percentage is not money and two trailing zeros are noise. */

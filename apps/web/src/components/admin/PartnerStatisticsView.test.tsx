@@ -15,6 +15,12 @@ const COPY = partnerStatisticsCopyFrom(
   consoleChromeCopyFrom(translatorFor('admin'), translatorFor('common')),
 );
 
+let routeLocale = 'en';
+vi.mock('next/navigation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
+  useParams: () => ({ locale: routeLocale }),
+}));
+
 vi.mock('../../lib/admin/partnerStatistics', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/admin/partnerStatistics')>()),
   readPartnerStatistics: vi.fn(),
@@ -93,15 +99,75 @@ describe('the partner statistics', () => {
     render(<PartnerStatisticsView copy={COPY} />);
     await screen.findByText(COPY.todayHeading);
 
+    // Days and months in words, never the wire's 2050-06-03 and 2050-05.
     const daily = screen.getByRole('table', { name: COPY.dailyCaption });
-    expect(within(daily).getByText('2050-06-03')).toBeInTheDocument();
+    expect(within(daily).getByText('3 Jun 2050')).toBeInTheDocument();
     expect(within(daily).getByText('200.00 AZN')).toBeInTheDocument();
+    expect(within(daily).queryByText('2050-06-03')).not.toBeInTheDocument();
 
     const monthly = screen.getByRole('table', { name: COPY.monthlyCaption });
-    expect(within(monthly).getByText('2050-05')).toBeInTheDocument();
+    expect(within(monthly).getByText('May 2050')).toBeInTheDocument();
+    expect(within(monthly).queryByText('2050-05')).not.toBeInTheDocument();
 
     const plans = screen.getByRole('table', { name: COPY.planCaption });
     expect(within(plans).getByText('Growth')).toBeInTheDocument();
+  });
+
+  it("draws a super admin's counts as whole numbers, and a partner's in the reader's notation", async () => {
+    readMock.mockResolvedValue({
+      kind: 'ready',
+      statistics: { ...REAL_VIEW, thisMonth: { month: '2050-06', currencies: [figures('686.00', '14.00', '1.00')] } },
+    });
+
+    const { unmount } = render(<PartnerStatisticsView copy={COPY} />);
+    const month = (await screen.findByRole('heading', { name: COPY.monthHeading })).closest('section') as HTMLElement;
+    // Fourteen subscriptions, not 14.00 of them.
+    expect(within(month).getByText('14')).toBeInTheDocument();
+    expect(within(month).queryByText('14.00')).not.toBeInTheDocument();
+    unmount();
+
+    // A partner's scaled count keeps its fraction, with the Azerbaijani decimal comma.
+    routeLocale = 'az';
+    try {
+      readMock.mockResolvedValue({ kind: 'ready', statistics: PARTNER_VIEW });
+      render(<PartnerStatisticsView copy={COPY} />);
+      const scaled = (await screen.findByRole('heading', { name: COPY.monthHeading })).closest('section') as HTMLElement;
+      expect(within(scaled).getByText('3,50')).toBeInTheDocument();
+    } finally {
+      routeLocale = 'en';
+    }
+  });
+
+  it('names Baku time in words rather than as a time zone identifier', async () => {
+    readMock.mockResolvedValue({ kind: 'ready', statistics: PARTNER_VIEW });
+
+    render(<PartnerStatisticsView copy={COPY} />);
+
+    expect(await screen.findByText(COPY.zoneNoteBaku)).toBeInTheDocument();
+    expect(screen.queryByText(/Asia\/Baku/)).not.toBeInTheDocument();
+  });
+
+  it('keeps a month nobody paid in as a row of zeroes rather than dropping it', async () => {
+    readMock.mockResolvedValue({
+      kind: 'ready',
+      statistics: {
+        ...PARTNER_VIEW,
+        monthly: [
+          { month: '2050-04', currencies: [] },
+          { month: '2050-05', currencies: [figures('49.00', '1.00')] },
+          { month: '2050-06', currencies: [figures('250.00', '3.50', '0.50')] },
+        ],
+      },
+    });
+
+    render(<PartnerStatisticsView copy={COPY} />);
+    await screen.findByText(COPY.todayHeading);
+
+    const monthly = screen.getByRole('table', { name: COPY.monthlyCaption });
+    // Three months, three rows: April is there, and it is zero.
+    expect(within(monthly).getAllByRole('row')).toHaveLength(4);
+    const april = within(monthly).getByText('April 2050').closest('tr') as HTMLElement;
+    expect(within(april).getByText('0.00 AZN')).toBeInTheDocument();
   });
 
   it('draws no transaction, payer or reference, because the response has none to draw', async () => {
