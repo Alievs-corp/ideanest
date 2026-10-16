@@ -433,7 +433,7 @@ function CaseDetail({
 
       {canManage && !closed && (
         <>
-          <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="mt-4 flex flex-wrap items-start gap-3">
             <Field label={copy.kindLabel} className="min-w-[220px]">
               <Select value={kind} onChange={(event) => setKind(event.target.value as EvidenceKind)}>
                 {EVIDENCE_KINDS.map((option) => (
@@ -456,7 +456,7 @@ function CaseDetail({
             <Pill
               variant="ghost"
               size="sm"
-              className="mb-1"
+              className="sm:mt-8"
               disabled={description.trim() === ''}
               aria-disabled={busy}
               onClick={() =>
