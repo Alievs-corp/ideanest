@@ -461,6 +461,78 @@ class PayoutBankTransferTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("nobody signs or sends their own campaign's payout either, and the attempt is audited")
+    void nobodySignsOrSendsTheirOwnPayout() {
+        Funded funded = aFundedCampaign("self-sign");
+        Account admin = administrator();
+        UUID payout = approvedToABankAccount(funded, admin);
+        grantSuperAdmin(funded.creator(), admin);
+
+        ResponseEntity<Map<String, Object>> send = post("/v1/admin/payouts/" + payout + "/send", funded.creator().accessToken(), null);
+        assertThat(send.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(send.getBody()).containsEntry("code", "SELF_PAID_PAYOUT");
+        assertThat(state(payout)).isEqualTo("APPROVED");
+        assertThat(auditDetail("payout.sent", payout)).isEqualTo("ownPayout");
+
+        jdbc().update("DELETE FROM payout_approvals WHERE payout_id = ?", payout);
+        jdbc().update("UPDATE payouts SET state = 'PENDING_APPROVAL' WHERE id = ?", payout);
+        ResponseEntity<Map<String, Object>> sign = post(
+                "/v1/admin/payouts/" + payout + "/approvals", funded.creator().accessToken(), Map.of("note", "mine"));
+        assertThat(sign.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(sign.getBody()).containsEntry("code", "SELF_PAID_PAYOUT");
+        assertThat(jdbc().queryForObject("SELECT count(*) FROM payout_approvals WHERE payout_id = ?", Long.class, payout))
+                .isZero();
+        assertThat(auditDetail("payout.approved", payout)).isEqualTo("ownPayout");
+
+        // The rule is about the creator, not the payout: a colleague is not refused as the payee, whatever
+        // else the fixture's creator still owes the identity gate.
+        assertThat(post("/v1/admin/payouts/" + payout + "/approvals", admin.accessToken(), Map.of()).getBody())
+                .doesNotContainEntry("code", "SELF_PAID_PAYOUT");
+    }
+
+    @Test
+    @DisplayName("a withdrawn signature and a cancellation are audited as what they are, and the file carries the debt")
+    void withdrawalAndCancellationAreAuditedAsThemselves() {
+        Funded funded = aFundedCampaign("audit-words");
+        Account admin = administrator();
+        UUID payout = approvedToABankAccount(funded, admin);
+
+        ResponseEntity<Map<String, Object>> file = get("/v1/admin/payouts/" + payout, admin.accessToken());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> summary = (Map<String, Object>) file.getBody().get("payout");
+        assertThat(summary).containsKey("debtWithheld").doesNotContainKey("sendUnconfirmedAt");
+
+        assertThat(exchange(HttpMethod.DELETE, "/v1/admin/payouts/" + payout + "/approvals", admin.accessToken(), null)
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(auditDetail("payout.approval_withdrawn", payout)).startsWith("withdrawn=true");
+
+        assertThat(post("/v1/admin/payouts/" + payout + "/cancel", admin.accessToken(), null).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(state(payout)).isEqualTo("CANCELLED");
+        assertThat(auditDetail("payout.cancelled", payout)).isEqualTo("cancelled before sending");
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM audit_logs WHERE action = 'payout.sent' AND entity_id = ?", Long.class, payout))
+                .as("a cancellation is no longer written as a refused send")
+                .isZero();
+    }
+
+    @Test
+    @DisplayName("an unanswered send is on the payout's file, so the console can offer its resolution")
+    void anUnconfirmedSendIsSerialised() {
+        Funded funded = aFundedCampaign("unconfirmed-file");
+        Account admin = administrator();
+        UUID payout = approvedToABankAccount(funded, admin);
+        jdbc().update("UPDATE payouts SET send_unconfirmed_at = now() WHERE id = ?", payout);
+
+        ResponseEntity<Map<String, Object>> file = get("/v1/admin/payouts/" + payout, admin.accessToken());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> summary = (Map<String, Object>) file.getBody().get("payout");
+        assertThat(summary.get("sendUnconfirmedAt")).isInstanceOf(String.class);
+    }
+
+    @Test
     @DisplayName("a start after the figures moved cancels the payout, and the cancellation is kept")
     void aStartAfterTheFiguresMovedCancels() {
         Funded funded = aFundedCampaign("bank-moved");

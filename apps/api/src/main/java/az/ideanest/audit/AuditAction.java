@@ -535,6 +535,20 @@ public enum AuditAction {
     PAYOUT_SENT("payout.sent", "payout"),
 
     /**
+     * A member of staff took their own signature back off a payout before it was sent. Its own action
+     * rather than a refused {@link #PAYOUT_APPROVED}: nothing was refused, and a trail that recorded the
+     * withdrawal as a failed approval would read as somebody trying to sign and being stopped.
+     */
+    PAYOUT_APPROVAL_WITHDRAWN("payout.approval_withdrawn", "payout"),
+
+    /**
+     * A payout was cancelled before it was sent. Until this existed it was written as a refused
+     * {@link #PAYOUT_SENT}, which made a deliberate cancellation indistinguishable from a send the service
+     * turned down.
+     */
+    PAYOUT_CANCELLED("payout.cancelled", "payout"),
+
+    /**
      * A member of staff opened a creator's account to pay a payout into it by bank transfer (#397).
      *
      * <p>Beside {@link #PAYOUT_DESTINATION_ACCOUNT_REVEALED}, which the opening also writes on the
