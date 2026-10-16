@@ -12,7 +12,7 @@
     "/[locale]/account/surveys": 598,
     "/[locale]/admin": 510,
     "/[locale]/admin/analytics": 619,
-    "/[locale]/admin/audit": 588,
+    "/[locale]/admin/audit": 589,
     "/[locale]/admin/campaigns": 625,
     "/[locale]/admin/campaigns/[projectId]": 656,
     "/[locale]/admin/curation": 718,
