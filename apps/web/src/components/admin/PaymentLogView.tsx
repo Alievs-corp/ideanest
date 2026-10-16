@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
   Chip,
   ChipRow,
@@ -16,6 +16,7 @@ import {
 import {
   PAYMENT_PAGE_SIZE,
   TRANSACTION_STATUSES,
+  isUuid,
   readPaymentLog,
   statusVariant,
   type LoggedTransaction,
@@ -81,6 +82,17 @@ type Scope = 'pledge' | 'project';
  * one table with no retention rule. `UserDirectory` made the same decision for the same
  * reason.
  *
+ * What is typed is checked before it is sent. Anything that is not a whole UUID used to reach
+ * the service, which answers with Spring's own English "Failed to convert 'projectId'…" and no
+ * code to translate it by — and "Try again" sent the same string again.
+ *
+ * <h2>A later page belongs to the question that asked for it</h2>
+ *
+ * "Load more" is a second request racing the first. Changing the identifier or the outcome
+ * while it was in flight used to append the previous question's rows, and its cursor, to the
+ * new list — a page of failures under a "succeeded" chip. The pending load-more is now aborted
+ * when the question changes, and anything it brings back afterwards is dropped.
+ *
  * <h2>Money is formatted, never computed</h2>
  *
  * The amount arrives as a string because §10.3 forbids a JSON number for money, and nothing
@@ -98,12 +110,15 @@ export interface PaymentLogViewProps {
 
 export function PaymentLogView({ copy }: PaymentLogViewProps) {
   const locale = useRouteLocale();
+  const ids = useId();
   const [status, setStatus] = useState<ConsoleStatus>('loading');
   // #400: which of the two 403s this is. Only read while `status` is `forbidden`.
   const [capability, setCapability] = useState<string | null>(null);
   const [scope, setScope] = useState<Scope>('project');
   const [term, setTerm] = useState('');
   const [submitted, setSubmitted] = useState<{ scope: Scope; id: string } | null>(null);
+  /** What was typed is not a UUID. Shown under the box, and nothing is sent. */
+  const [idError, setIdError] = useState<string | null>(null);
   /*
    * #404: which outcome, or every outcome. Chips rather than part of the form above, because
    * this filter is not a search — there is nothing to type and nothing to submit, and a
@@ -117,6 +132,8 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  /** The load-more in flight, so a new question can abort it and ignore what it returns. */
+  const more = useRef<AbortController | null>(null);
 
   const filter = submitted;
 
@@ -125,6 +142,11 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
 
   useEffect(() => {
     const controller = new AbortController();
+
+    // A new question: whatever the previous one was still loading is not part of it.
+    more.current?.abort();
+    more.current = null;
+    setLoadingMore(false);
 
     async function load(): Promise<void> {
       setStatus('loading');
@@ -158,9 +180,14 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, outcome, attempt]);
 
-  const loadMore = useCallback(async (): Promise<void> => {
-    if (cursor === null || loadingMore) return;
+  // Leaving the screen abandons a load-more as well as the first page.
+  useEffect(() => () => more.current?.abort(), []);
 
+  const loadMore = useCallback(async (): Promise<void> => {
+    if (cursor === null || more.current !== null) return;
+
+    const controller = new AbortController();
+    more.current = controller;
     setLoadingMore(true);
     setError(null);
     try {
@@ -170,15 +197,22 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
         status: outcome,
         after: cursor,
         limit: PAYMENT_PAGE_SIZE,
+        signal: controller.signal,
       });
+      // The question changed while this page was on its way: it is not a page of this list.
+      if (controller.signal.aborted) return;
       setRows((previous) => [...previous, ...page.transactions]);
       setCursor(page.nextCursor ?? null);
     } catch (cause) {
+      if (controller.signal.aborted || wasAborted(cause)) return;
       setError(consoleMessageFor(cause, copy.subject, copy.refusals));
     } finally {
-      setLoadingMore(false);
+      if (more.current === controller) {
+        more.current = null;
+        setLoadingMore(false);
+      }
     }
-  }, [cursor, filter, outcome, loadingMore, copy]);
+  }, [cursor, filter, outcome, copy]);
 
   if (status === 'signed-out' || status === 'forbidden') {
     return <ConsoleRefusal status={status} capability={capability} subject={copy.subject} copy={copy.refusals} />;
@@ -187,8 +221,33 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
   function submit(event: React.FormEvent): void {
     event.preventDefault();
     const trimmed = term.trim();
-    setSubmitted(trimmed === '' ? null : { scope, id: trimmed });
+    if (trimmed === '') {
+      setIdError(null);
+      setSubmitted(null);
+      return;
+    }
+    if (!isUuid(trimmed)) {
+      setIdError(copy.invalidId);
+      return;
+    }
+    setIdError(null);
+    setSubmitted({ scope, id: trimmed.toLowerCase() });
   }
+
+  /*
+   * The radio names what the submitted identifier is, so changing it after a search asks the
+   * question again. Leaving the results in place would show a campaign's calls under a
+   * selected "pledge", with nothing on screen saying which of the two was searched.
+   */
+  function chooseScope(option: Scope): void {
+    setScope(option);
+    if (submitted !== null && submitted.scope !== option) {
+      setSubmitted({ scope: option, id: submitted.id });
+    }
+  }
+
+  const hintId = `${ids}-hint`;
+  const errorId = `${ids}-error`;
 
   return (
     <section aria-labelledby="payment-log-heading">
@@ -199,58 +258,80 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
         )}
       </h2>
 
-      <form onSubmit={submit} className="mt-4 flex flex-wrap items-end gap-3">
-        <Field
-          label={copy.identifierLabel}
-          hint={copy.identifierHint}
-          className="min-w-[280px] flex-1"
-        >
-          <TextInput
-            type="search"
-            value={term}
-            onChange={(event) => setTerm(event.target.value)}
-            placeholder="00000000-0000-0000-0000-000000000000"
-          />
-        </Field>
+      {/*
+        The hint and the error sit under the whole row rather than inside the field. Inside,
+        they made the field taller than the controls beside it, and `items-end` then lined the
+        radios and the button up with the hint instead of with the box.
+      */}
+      <form onSubmit={submit} className="mt-4" noValidate>
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+          <Field label={copy.identifierLabel} className="min-w-[min(100%,280px)] flex-1">
+            <TextInput
+              type="search"
+              value={term}
+              invalid={idError !== null}
+              aria-describedby={idError === null ? hintId : `${hintId} ${errorId}`}
+              onChange={(event) => {
+                setTerm(event.target.value);
+                setIdError(null);
+              }}
+              placeholder="00000000-0000-0000-0000-000000000000"
+            />
+          </Field>
 
-        {/*
-          Two radio buttons rather than a guess. Both identifiers are UUIDs and nothing about
-          the string says which one it is, so a screen that inferred would sometimes ask the
-          service for a campaign that is a pledge and answer with an empty page — which on
-          this surface reads as "nothing was ever charged".
-        */}
-        <fieldset className="flex items-end gap-3">
-          <legend className="sr-only">{copy.scopeLegend}</legend>
-          {(['project', 'pledge'] as const).map((option) => (
-            <label key={option} className="flex items-center gap-2 pb-2.5 text-sm text-white/64">
-              <input
-                type="radio"
-                name="payment-scope"
-                value={option}
-                checked={scope === option}
-                onChange={() => setScope(option)}
-                className="accent-[var(--lime-500)]"
-              />
-              {option === 'project' ? copy.scopeProject : copy.scopePledge}
-            </label>
-          ))}
-        </fieldset>
+          {/* As tall as the input, so everything in it is centred on the box. */}
+          <div className="flex min-h-11 flex-wrap items-center gap-x-4 gap-y-2">
+            {/*
+              Two radio buttons rather than a guess. Both identifiers are UUIDs and nothing
+              about the string says which one it is, so a screen that inferred would sometimes
+              ask the service for a campaign that is a pledge and answer with an empty page —
+              which on this surface reads as "nothing was ever charged".
+            */}
+            <fieldset className="flex items-center gap-4">
+              <legend className="sr-only">{copy.scopeLegend}</legend>
+              {(['project', 'pledge'] as const).map((option) => (
+                <label key={option} className="flex items-center gap-2 text-sm text-white/64">
+                  <input
+                    type="radio"
+                    name="payment-scope"
+                    value={option}
+                    checked={scope === option}
+                    onChange={() => chooseScope(option)}
+                    className="accent-[var(--lime-500)]"
+                  />
+                  {option === 'project' ? copy.scopeProject : copy.scopePledge}
+                </label>
+              ))}
+            </fieldset>
 
-        <Pill type="submit" variant="outline" size="sm" className="mb-1">
-          {copy.search}
-        </Pill>
-        {submitted !== null && (
-          <Pill
-            variant="ghost"
-            size="sm"
-            className="mb-1"
-            onClick={() => {
-              setTerm('');
-              setSubmitted(null);
-            }}
-          >
-            {copy.clear}
-          </Pill>
+            <div className="flex items-center gap-2">
+              <Pill type="submit" variant="outline" size="sm">
+                {copy.search}
+              </Pill>
+              {submitted !== null && (
+                <Pill
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setTerm('');
+                    setIdError(null);
+                    setSubmitted(null);
+                  }}
+                >
+                  {copy.clear}
+                </Pill>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <p id={hintId} className="mt-1.5 text-[13px] text-white/64">
+          {copy.identifierHint}
+        </p>
+        {idError !== null && (
+          <p id={errorId} role="alert" className="mt-1 text-[13px] text-danger">
+            {idError}
+          </p>
         )}
       </form>
 
@@ -349,9 +430,15 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
  * the one thing on the row somebody copies. It wraps rather than truncates for the same
  * reason: half a reference is worse than a long one.
  *
- * <p>The decline is shown in the provider's own words as well as its code. The code is what a
- * client branches on and the sentence is what a person reads, and the two frequently disagree
- * in useful ways.
+ * <p><strong>One layout, whatever the text.</strong> The amount and the type lead the first
+ * line, and the provider, the outcome and the time sit to its right from `sm` up. They used to
+ * wrap underneath or not depending on how long the line beside them was, so two rows of one
+ * list looked like two different screens. Below `sm` they always stack under it.
+ *
+ * <p>A refusal is said in the reader's language, from the code the service wrote. A code this
+ * screen has no sentence for — a card network's own reason — is printed as it came beside a
+ * plain "refused", and the provider's English message stays on the `title` for whoever has to
+ * quote it.
  */
 function TransactionRow({
   names,
@@ -364,60 +451,20 @@ function TransactionRow({
   readonly locale: Locale;
   readonly copy: PaymentLogCopy;
 }) {
+  const reference = transaction.providerTransactionId;
+  const code = transaction.failureCode;
+  const failure = code == null || code === '' ? null : (copy.failure[code] ?? null);
+
   return (
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[15px] font-medium text-white">
-            {formatMoney(transaction.amount)}{' '}
-            <span className="font-normal text-white/48">{copy.type[transaction.type]}</span>
-          </p>
-          <p className="mt-1 text-sm text-white/64">
-            {/*
-              Three fragments joined by a separator rather than one template with two optional
-              holes: the pledge is absent on a payout, and a sentence built around it would
-              leave a stray dot behind.
-            */}
-            {fillNodes(copy.campaignPart, {
-              id: (
-                <EntityName
-                  id={transaction.projectId}
-                  names={names}
-                  kind="project"
-                  copy={copy.identity}
-                />
-              ),
-            })}
-            {transaction.pledgeId != null && (
-              <>
-                {' · '}
-                {fillNodes(copy.pledgePart, {
-                  id: (
-                    <span className="inline-flex flex-wrap items-baseline gap-x-2">
-                      <span className="font-mono" title={transaction.pledgeId}>
-                        {shortId(transaction.pledgeId)}
-                      </span>
-                      {/*
-                        #402: `/admin/refunds` takes a full pledge identifier typed by hand
-                        and this is the only console screen that lists pledges at all. Every
-                        identifier the console asks somebody to type is now copyable from the
-                        screen that supplies it.
-                      */}
-                      <CopyIdentifier id={transaction.pledgeId} copy={copy.identity} />
-                    </span>
-                  ),
-                })}
-              </>
-            )}
-            {' · '}
-            {fillPlaceholders(copy.attemptPart, {
-              number: String(transaction.attemptNumber),
-            })}
-          </p>
-        </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <p className="min-w-0 text-[15px] font-medium text-white">
+          {formatMoney(transaction.amount)}{' '}
+          <span className="font-normal text-white/48">{copy.type[transaction.type]}</span>
+        </p>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Tag>{transaction.provider}</Tag>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Tag>{copy.provider[transaction.provider] ?? transaction.provider}</Tag>
           <Tag variant={statusVariant(transaction.status)}>
             {copy.status[transaction.status]}
           </Tag>
@@ -431,23 +478,71 @@ function TransactionRow({
         </div>
       </div>
 
-      {transaction.providerTransactionId != null && transaction.providerTransactionId !== '' ? (
-        <p className="mt-2 break-all font-mono text-xs text-white/40">
-          {transaction.providerTransactionId}
-        </p>
+      <p className="mt-1 text-sm text-white/64">
+        {/*
+          Three fragments joined by a separator rather than one template with two optional
+          holes: the pledge is absent on a payout, and a sentence built around it would
+          leave a stray dot behind.
+        */}
+        {fillNodes(copy.campaignPart, {
+          id: (
+            <EntityName
+              id={transaction.projectId}
+              names={names}
+              kind="project"
+              copy={copy.identity}
+            />
+          ),
+        })}
+        {transaction.pledgeId != null && (
+          <>
+            {' · '}
+            {fillNodes(copy.pledgePart, {
+              id: (
+                <span className="inline-flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-mono" title={transaction.pledgeId}>
+                    {shortId(transaction.pledgeId)}
+                  </span>
+                  {/*
+                    #402: `/admin/refunds` takes a full pledge identifier typed by hand
+                    and this is the only console screen that lists pledges at all. Every
+                    identifier the console asks somebody to type is now copyable from the
+                    screen that supplies it.
+                  */}
+                  <CopyIdentifier id={transaction.pledgeId} copy={copy.identity} />
+                </span>
+              ),
+            })}
+          </>
+        )}
+        {' · '}
+        {fillPlaceholders(copy.attemptPart, {
+          number: String(transaction.attemptNumber),
+        })}
+      </p>
+
+      {reference != null && reference !== '' ? (
+        <p className="mt-2 break-all font-mono text-xs text-white/40">{reference}</p>
       ) : (
         /*
-          A call with no reference is not a missing field. It is a request that never got an
+          A pending or failed call with no reference may be a request that never got an
           answer — a timeout — and it is on the row precisely because it may have charged
-          somebody without the platform knowing.
+          somebody without the platform knowing. A succeeded one plainly reached the
+          provider, and saying it "may have" would be absurd, so it only notes the gap.
         */
-        <p className="mt-2 text-xs text-white/32">{copy.noReference}</p>
+        <p className="mt-2 text-xs text-white/40">
+          {transaction.status === 'SUCCEEDED' ? copy.noReferenceSettled : copy.noReference}
+        </p>
       )}
 
-      {transaction.failureCode != null && (
-        <p className="mt-2 text-sm text-white/64">
-          <span className="font-mono text-white/48">{transaction.failureCode}</span>
-          {transaction.failureMessage != null && <> — {transaction.failureMessage}</>}
+      {code != null && code !== '' && (
+        <p className="mt-2 text-sm text-white/64" title={transaction.failureMessage ?? undefined}>
+          {failure ?? (
+            <>
+              {copy.failureUnknown}{' '}
+              <span className="font-mono text-white/48">{code}</span>
+            </>
+          )}
         </p>
       )}
     </li>

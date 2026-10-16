@@ -101,6 +101,20 @@ export interface PaymentLogPage {
 
 export const PAYMENT_PAGE_SIZE = 25;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Whether a typed identifier is a whole UUID — the only thing the console's identifier boxes
+ * can usefully send.
+ *
+ * <p>Checked before a request rather than left to the service. Spring answers anything else
+ * with a 400 whose only text is its own English "Failed to convert 'projectId'…", which has
+ * no `code` to translate by, and "Try again" would only send the same string again.
+ */
+export function isUuid(value: string): boolean {
+  return UUID.test(value);
+}
+
 /**
  * The three outcomes, in the order a reader thinks about them — issue #404.
  *
