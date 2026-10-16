@@ -65,6 +65,35 @@ export function requiredCapabilityFrom(cause: unknown): string | null {
   return typeof capability === 'string' ? capability : null;
 }
 
+/** How {@link consoleMessageFor} is being asked. */
+export interface ConsoleMessageOptions {
+  /**
+   * The refusal answered something the reader did — a refund, a decision, a recorded transfer —
+   * rather than a read. A capability 403 then says the act needs it, and a code-less 400 says to
+   * check the fields. Off by default, so every screen that reads keeps its sentence.
+   */
+  readonly action?: boolean;
+}
+
+/**
+ * A capability as a member of staff reads it: the roles screen's sentence for it, with its
+ * identifier beside it — `«Pulu geri qaytarmaq» (ISSUE_REFUND)`. The identifier alone where the
+ * table has no sentence for it, which is what the console printed before.
+ */
+export function capabilityLabel(capability: string, copy: ConsoleRefusalsCopy): string {
+  const name = copy.capabilityNames?.[capability];
+  if (name === undefined || copy.capabilityNamed === undefined) return capability;
+  return fillPlaceholders(copy.capabilityNamed, { name, capability });
+}
+
+/**
+ * A refusal of something the reader did, in their language — {@link consoleMessageFor} with
+ * `action` set. The money screens' writes go through this.
+ */
+export function actionMessageFor(cause: unknown, subject: string, copy: ConsoleRefusalsCopy): string {
+  return consoleMessageFor(cause, subject, copy, { action: true });
+}
+
 /**
  * Turns a refusal into something a member of staff can act on.
  *
@@ -75,11 +104,14 @@ export function requiredCapabilityFrom(cause: unknown): string | null {
  * @param copy the console's refusal table, resolved on the server and handed down as a prop.
  *     A function that reached for a catalogue itself could not run on a client, which is where
  *     every one of these failures is caught
+ * @param options `action` for a refused write — see {@link ConsoleMessageOptions}. Optional, so
+ *     every existing caller reads as it did
  */
 export function consoleMessageFor(
   cause: unknown,
   subject: string,
   copy: ConsoleRefusalsCopy,
+  options: ConsoleMessageOptions = {},
 ): string {
   if (cause instanceof ApiError) {
     if (cause.status === 403) {
@@ -88,12 +120,25 @@ export function consoleMessageFor(
       // Two different 403s since #295, and they lead somewhere different: one is fixed by
       // asking an administrator for a role, and the other cannot be fixed by the person
       // reading it. Collapsing them would send a colleague looking for a bug.
-      return capability === null
-        ? fillPlaceholders(copy.notStaff, { subject })
-        : fillPlaceholders(copy.needsCapability, { subject, capability });
+      if (capability === null) return fillPlaceholders(copy.notStaff, { subject });
+
+      // A refused write is not a refused read. "Reading the refund log needs ISSUE_REFUND"
+      // in answer to pressing "refund" names the wrong act; the sentence for an act names
+      // the act and the capability, and nothing about reading.
+      const named = capabilityLabel(capability, copy);
+      return options.action === true && copy.needsCapabilityToAct !== undefined
+        ? fillPlaceholders(copy.needsCapabilityToAct, { capability: named })
+        : fillPlaceholders(copy.needsCapability, { subject, capability: named });
     }
 
     const code = cause.problem?.code;
+
+    // Spring's own 400 for a body it could not read — a non-UUID, "25,00", a number where a
+    // string goes — carries no code and an English title. In a form that is "check the
+    // fields", which is all the service's sentence says too.
+    if (options.action === true && cause.status === 400 && (code == null || code === 'INVALID_REQUEST')) {
+      return copy.invalidRequest ?? copy.refused;
+    }
 
     if (code === 'UNKNOWN_LEDGER_ACCOUNT') {
       // Deliberately the service's own message where it sent one: it names the value that was

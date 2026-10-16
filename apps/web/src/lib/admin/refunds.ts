@@ -1,6 +1,7 @@
+import Decimal from 'decimal.js';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
-import type { Money } from '../money';
+import { toMoney, type Money } from '../money';
 
 /**
  * §4.11's AD-06: sending money back — issues #67 and #307.
@@ -97,6 +98,40 @@ export interface Refund {
   settledAt?: string | null;
   /** Once support has recorded the account it is paid into; null before that and for a card refund. */
   bankTransfer?: RefundBankTransfer | null;
+  /**
+   * #436: the provider's fee this refund kept back from its charge — a refund for a campaign's
+   * reason of a charge taken under that rule. Absent when nothing was kept back. `amount` is what
+   * was sent; the two together are what it settled of the charge.
+   */
+  withheldFee?: Money | null;
+  /** Whose money it is: the pledge's backer, for the directory to name. */
+  backerId?: string | null;
+  /**
+   * The refused refund this one replaced by bank transfer (#399's fallback). The console words
+   * the row from it rather than from `detail`, which the service writes in English.
+   */
+  routedFrom?: string | null;
+  /** The chargeback a `CHARGEBACK` row records the loss of (#175). */
+  disputeId?: string | null;
+  /** On a refused refund: the bank-transfer refund it was routed to, and how far that has got. */
+  routedTo?: { readonly id: string; readonly state: RefundState } | null;
+  /**
+   * On the issue response only, when the refund went in more than one part (one per charge,
+   * #171): every part. The fields above describe the part that best says how it went.
+   */
+  parts?: Refund[] | null;
+}
+
+/** What a refund of a pledge could send now — the confirmation before one is issued. */
+export interface RefundableAmount {
+  pledgeId: string;
+  reason: RefundReason;
+  /** In the pledge's currency, net of {@link withheldFee}: what "the rest" means. */
+  remaining: Money;
+  /** The provider's fee a campaign's reason keeps back (#436). Zero for any other reason. */
+  withheldFee: Money;
+  projectId?: string | null;
+  backerId?: string | null;
 }
 
 export interface RefundPage {
@@ -133,6 +168,55 @@ export const REFUND_REASONS: readonly RefundReason[] = Object.freeze([
  */
 export function newRefundKey(): string {
   return `refund-${crypto.randomUUID()}`;
+}
+
+/** A pledge's identifier as the service issues it — checked before anything is sent. */
+const PLEDGE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isPledgeId(value: string): boolean {
+  return PLEDGE_ID.test(value.trim());
+}
+
+/**
+ * A refund amount as typed into the form.
+ *
+ * <p>Blank is "the rest of it". A comma is read as the decimal mark, because the people typing it
+ * write Azerbaijani numbers; at most two places, because that is what the service accepts, and
+ * never zero. Anything else is refused here rather than sent — `"25,00"` used to reach the
+ * service and come back as an English "Failed to read request".
+ *
+ * @returns the decimal string to send, `null` for "the rest", or `undefined` when it is not an amount
+ */
+export function refundAmountFrom(input: string): string | null | undefined {
+  const typed = input.trim().replace(',', '.');
+  if (typed === '') return null;
+  if (!/^\d{1,12}(\.\d{1,2})?$/.test(typed)) return undefined;
+  if (new Decimal(typed).isZero()) return undefined;
+  return new Decimal(typed).toFixed(2);
+}
+
+/**
+ * What an issued refund came to: the sum of its parts when it went in more than one (#171),
+ * else its own amount. `decimal.js`, never numbers; one currency, the pledge's.
+ */
+export function issuedTotal(refund: Refund): Money {
+  const parts = refund.parts ?? [];
+  if (parts.length < 2) return refund.amount;
+  const total = parts.reduce((sum, part) => sum.plus(part.amount.amount), new Decimal(0));
+  return toMoney(total, refund.amount.currency);
+}
+
+/** What a refund of the pledge for this reason could send now. `ISSUE_REFUND`. */
+export async function readRefundable(
+  pledgeId: string,
+  reason: RefundReason,
+  signal?: AbortSignal,
+): Promise<RefundableAmount> {
+  const parameters = new URLSearchParams({ pledgeId, reason });
+  const response = await authorizedFetch(`/v1/admin/refunds/refundable?${parameters}`, { signal });
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as RefundableAmount;
 }
 
 export interface RefundListRequest {

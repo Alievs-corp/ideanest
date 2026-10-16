@@ -72,6 +72,8 @@ export interface Dispute {
   handledBy?: string | null;
   /** Empty on the list shape; populated by {@link readDispute}. */
   evidence: DisputeEvidence[];
+  /** Whose pledge was charged back, for the directory to name. Absent on the responses to a write. */
+  backerId?: string | null;
 }
 
 export interface DisputePage {

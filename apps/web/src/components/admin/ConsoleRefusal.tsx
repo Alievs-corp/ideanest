@@ -3,7 +3,7 @@
 import { InlineAlert } from '@ideanest/ui';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ConsoleRefusalsCopy } from '../../lib/i18n/admin/common-copy';
-import type { ConsoleStatus } from '../../lib/admin/refusals';
+import { capabilityLabel, type ConsoleStatus } from '../../lib/admin/refusals';
 
 export interface ConsoleRefusalProps {
   readonly status: ConsoleStatus;
@@ -69,7 +69,7 @@ export function ConsoleRefusal({ status, subject, capability, copy }: ConsoleRef
     if (capability != null && capability !== '') {
       return (
         <InlineAlert variant="info" title={copy.capabilityTitle}>
-          {`${fillPlaceholders(copy.needsCapability, { subject, capability })} ${copy.capabilityAsk}`}
+          {`${fillPlaceholders(copy.needsCapability, { subject, capability: capabilityLabel(capability, copy) })} ${copy.capabilityAsk}`}
         </InlineAlert>
       );
     }

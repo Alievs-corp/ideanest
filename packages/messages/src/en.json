@@ -844,7 +844,10 @@
       "collectionSlugTaken": "A collection already uses that handle. Handles are permanent, so pick another.",
       "curationRejected": "The service refused that change to the collection.",
       "refused": "The service refused the request. Try again.",
-      "unreachable": "The service could not be reached. Check your connection and try again."
+      "unreachable": "The service could not be reached. Check your connection and try again.",
+      "needsCapabilityToAct": "This action needs {capability}, which your roles do not include. An administrator can grant it.",
+      "capabilityNamed": "“{name}” ({capability})",
+      "invalidRequest": "The service could not read the request. Check the fields and try again."
     },
     "note": {
       "why": "Why",
@@ -929,7 +932,7 @@
         "metaTitle": "Chargebacks",
         "metaDescription": "Cases a card network raised, the evidence against them, and how each ended.",
         "title": "Chargebacks",
-        "intro": "Ordered by deadline, soonest first. Everything else about a dispute can be reconstructed from the provider afterwards; a deadline that has passed cannot, and losing by default is the expensive way to lose."
+        "intro": "Chargebacks card networks have raised, nearest deadline first. Once a deadline passes the case can no longer be answered and is lost by default, so start with the most urgent."
       },
       "emailTemplates": {
         "metaTitle": "Email templates",
@@ -1012,7 +1015,7 @@
         "metaTitle": "Refunds",
         "metaDescription": "Full and partial refunds with reason codes, and every one the platform has issued.",
         "title": "Refunds",
-        "intro": "Reading this list needs VIEW_FINANCE; issuing one needs ISSUE_REFUND. The mistakes are not comparable, which is why they are two different authorities."
+        "intro": "Every refund the platform sends back to a backer is recorded here — the ones staff issue and the ones the platform makes itself when a campaign fails. From here money goes back to the card or by bank transfer."
       },
       "staff": {
         "metaTitle": "Staff and roles",
@@ -2311,8 +2314,8 @@
         "amountHint": "Blank refunds the rest.",
         "reasonLabel": "Reason",
         "noteLabel": "Note",
-        "noteHint": "Required. A code is never the whole story.",
-        "issue": "Issue refund",
+        "noteHint": "Required. Say briefly why — the code never tells the whole story.",
+        "issue": "Refund",
         "sending": "Sending",
         "sentTitle": "Sent",
         "pendingTitle": "The refund is {state}",
@@ -2326,14 +2329,12 @@
         "emptyTitle": "Nothing has been refunded",
         "emptyBody": "No money has gone back on this deployment. Every refund the platform issues is recorded here, including the ones a provider refused.",
         "filteredTitle": "No {state} refunds",
-        "filteredBody": "Nothing is in that state. A refund that stays REQUESTED is one worth chasing; the others are settled.",
+        "filteredBody": "Nothing is in that state. A refund that stays “Requested” is one worth chasing; the others are settled.",
         "full": "full",
         "partial": "partial",
-        "onPledge": "{fullness} on pledge {id}",
         "reasonAndDetail": "{reason} — {detail}",
         "requestedBy": "Requested by {by} on {date}",
         "platform": "the platform",
-        "refused": "refused: {code}",
         "state": {
           "REQUESTED": "Requested",
           "SUCCEEDED": "Succeeded",
@@ -2369,7 +2370,7 @@
           "hide": "Hide account",
           "audited": "Revealing the account is recorded in the audit trail under your name. It is not kept once you hide it or leave this page.",
           "failed": "The account could not be opened. Nothing was shown.",
-          "forbidden": "Revealing a backer’s bank account needs ISSUE_REFUND."
+          "forbidden": "Revealing a backer’s bank account needs “Send money back” (ISSUE_REFUND)."
         },
         "copy": {
           "copy": "Copy",
@@ -2410,7 +2411,8 @@
           "BANK_REFERENCE_TAKEN": "That bank reference is already recorded for another backer’s refund. Check the statement and enter the reference of this transfer.",
           "REFUND_DUTIES_NOT_SEPARATE": "You recorded this backer’s bank account, so somebody else in finance must record the transfer.",
           "TRANSFER_DATE_IN_FUTURE": "The value date is in the future. Record a transfer once it has been made.",
-          "ENCRYPTED_STORAGE_UNAVAILABLE": "Bank details cannot be opened right now because encrypted storage is not configured. Nothing was shown or changed."
+          "ENCRYPTED_STORAGE_UNAVAILABLE": "Bank details cannot be opened right now because encrypted storage is not configured. Nothing was shown or changed.",
+          "NOTHING_TO_REFUND": "Nothing is left on this charge to refund: it has been refunded already or taken back by a chargeback. Reload the list."
         },
         "planPayments": {
           "subject": "the plan payments to return",
@@ -2456,13 +2458,52 @@
             "PLAN_REFUND_PROVIDER_REFUSED": "The provider refused the refund, so nothing was sent. Return the money by bank transfer instead, or try again later.",
             "PLAN_REFUND_PROVIDER_UNAVAILABLE": "The provider could not be reached. Try again in a few minutes; trying again does not refund twice."
           }
+        },
+        "pledgeInvalid": "Enter the pledge’s full identifier, like 00000000-0000-0000-0000-000000000000.",
+        "amountInvalid": "Enter a positive amount like 25.00, with at most two decimal places, or leave it blank to refund the rest.",
+        "checking": "Checking…",
+        "confirmHeading": "Confirm the refund",
+        "confirmIssue": "Refund {amount}? Backer: {backer}, campaign: {campaign}, pledge: {pledge}. Reason: {reason}. Once the money is sent this cannot be undone.",
+        "allRemaining": "everything left ({amount})",
+        "confirmWithheld": "Because the reason is the campaign’s outcome, the provider’s fee of {fee} is kept back and not returned to the backer.",
+        "confirmAction": "Confirm refund",
+        "unnamed": "—",
+        "partsNote": "Sent in {count} parts.",
+        "amountSent": "{amount} returned",
+        "withheldNote": "provider fee of {fee} kept back",
+        "fullRefund": "Full refund",
+        "partialRefund": "Partial refund",
+        "pledgeLine": "Backer: {backer} · Campaign: {campaign} · Pledge: {pledge}",
+        "failure": {
+          "not_sent": "Not sent to the provider: the charge or the provider could not be found, or the provider was out of service.",
+          "provider_unreachable": "The provider could not be reached.",
+          "reverse_not_confirmed": "The provider did not confirm the refund: the payment still shows as paid."
+        },
+        "failureOther": "The provider refused the refund (code: {code}).",
+        "detailRoutedFrom": "By bank transfer, in place of refund {refund}, which the provider refused.",
+        "detailChargeback": "The card network took this charge back (chargeback {dispute}).",
+        "detailPlatform": {
+          "CAMPAIGN_FAILED": "The campaign ended below its success threshold; the platform refunds on its own.",
+          "CAMPAIGN_HALTED": "The campaign was suspended or cancelled; the platform refunds on its own.",
+          "RAISE_NOT_APPLIED": "The backer paid to raise their pledge and the raise could not be applied."
+        },
+        "routedTo": "Routed to a bank transfer: {state}.",
+        "routedAlreadyTitle": "Already routed",
+        "routedAlready": "This refund on pledge {id} was already routed to a bank transfer. That refund is now: {state}.",
+        "issueErrors": {
+          "REFUND_EXCEEDS_COLLECTION": "That is more than the pledge has left: only {remaining} is left to refund.",
+          "NOTHING_TO_REFUND": "Nothing on this pledge can be refunded: no payment was taken, or all of it has gone back already. Check the pledge’s identifier.",
+          "IDEMPOTENCY_KEY_REUSED": "This form was sent before for another refund and its answer was lost. First check in the list below whether that refund went through; then you can send again — the form will go as a new attempt.",
+          "CURRENCY_MISMATCH": "This pledge was paid in {currency}, so the refund must be in {currency} too.",
+          "REFUND_REASON_NOT_ISSUABLE": "Staff cannot issue a refund for that reason.",
+          "REFUND_CHARGE_DISPUTED": "This payment is in an open chargeback: the card network may already be returning the money to the backer. Do not refund it until the chargeback is decided."
         }
       },
       "disputes": {
         "subject": "the chargeback queue",
         "caseSubject": "this case",
         "noticeTitle": "Evidence is sent through the provider",
-        "noticeBody": "Submitting here records that the case was answered and by whom. §9.3's provider interface has no evidence upload, so the documents themselves still go through the provider's own console — this screen is the platform's record of the case, not the channel to the network.",
+        "noticeBody": "“Mark answered” records that the case was answered and by whom, but does not send any documents. Upload the evidence itself through the provider’s own dashboard for now.",
         "heading": "Open cases",
         "loadingList": "Loading the chargeback queue",
         "emptyTitle": "No open chargebacks",
@@ -2482,7 +2523,7 @@
           "debit_not_authorized": "The debit was not authorised",
           "general": "No reason given"
         },
-        "pledgeLine": "Pledge {pledge} · fee {fee} · ",
+        "pledgeLine": "Backer: {backer} · Campaign: {campaign} · Pledge: {pledge} · Fee: {fee}",
         "noDeadline": "No deadline given",
         "deadlinePassed": "Deadline passed",
         "hoursLeft": "{count}h left",
@@ -2498,7 +2539,7 @@
         "showsLabel": "What it shows",
         "add": "Add",
         "markAnswered": "Mark answered",
-        "outcomeNote": "Recording LOST or CONCEDED posts the disputed amount and the provider's fee to the ledger. WON posts nothing, because nothing moved.",
+        "outcomeNote": "Recording “Lost” or “Conceded” posts the disputed amount and the provider’s fee to the ledger. “Won” posts nothing, because no money moved. Once recorded, the outcome cannot be changed.",
         "failedTitle": "That did not work",
         "state": {
           "OPEN": "Open",
@@ -2515,7 +2556,39 @@
           "REFUND_POLICY": "What our refund policy said at the time",
           "ACTIVITY_LOG": "That the cardholder was the one who pledged",
           "OTHER": "Something else"
-        }
+        },
+        "unnamed": "—",
+        "reasonOther": "Other reason {code}",
+        "provider": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Test provider",
+          "BANK_TRANSFER": "Bank transfer"
+        },
+        "nothingUnsent": "There is no new evidence to send — add some first.",
+        "confirmHeading": "Confirm the outcome",
+        "confirmLoss": "Close the case as “{outcome}”? {amount} is counted as returned to the backer, and the provider’s fee of {fee} is posted to the ledger as the platform’s cost.",
+        "confirmDebt": "If the campaign has already been paid out, {total} is recorded as the creator’s debt and the creator’s account is suspended until it is repaid.",
+        "confirmWon": "Close the case as “{outcome}”? No money moves and nothing is posted to the ledger.",
+        "confirmFinal": "Once recorded, the outcome cannot be changed.",
+        "confirmAction": "Confirm",
+        "resolving": "Recording…",
+        "resolvedNotice": "The case was closed as “{outcome}”.",
+        "answeredNotice": "The case was recorded as answered.",
+        "doneTitle": "Recorded",
+        "errors": {
+          "NOTHING_TO_SUBMIT": "Every piece of evidence on this case has already been sent. Add new evidence or close the case.",
+          "NOT_A_DISPUTE_OUTCOME": "That is not an outcome. Choose “Won”, “Lost” or “Conceded”.",
+          "DISPUTE_ALREADY_RESOLVED": "This case was already closed as “{state}”, and the outcome cannot be changed. Reload the list.",
+          "DISPUTE_NOT_FOUND": "This case no longer exists. Reload the list."
+        },
+        "resolvedHeading": "Closed cases",
+        "resolvedIntro": "Chargebacks with an outcome recorded, newest first.",
+        "resolvedSubject": "the closed chargebacks",
+        "loadingResolved": "Loading closed cases",
+        "resolvedEmpty": "No case has been closed as “{state}”.",
+        "resolvedOn": "Closed: {date}"
       },
       "fees": {
         "subject": "the fee schedule",
@@ -2862,17 +2935,32 @@
         "loadingList": "Loading the backer dispute queue",
         "emptyTitle": "No open backer disputes",
         "emptyBody": "Nothing is waiting for a decision. Backers can dispute only while a payout for their campaign is held.",
-        "pledgeLine": "Pledge {pledge} · campaign {project} · opened {date}",
+        "pledgeLine": "Backer: {backer} · Campaign: {campaign} · Pledge: {pledge} · Opened: {date}",
         "noteLabel": "Note",
         "noteHint": "Recorded with the decision, and in the audit log.",
         "uphold": "Uphold and refund",
         "reject": "Reject",
-        "confirmUphold": "Refund this backer in full and recalculate the payout?",
+        "confirmUphold": "Refund this backer {amount} in full and recalculate the payout? Once the money is sent this cannot be undone.",
         "confirmNow": "Refund in full",
         "deciding": "Deciding…",
         "alreadyDecided": "Somebody has already decided this dispute. The list has been reloaded.",
         "refundFailed": "The refund was refused, so the dispute is still open. Try again, or look at the refund on the refunds screen.",
-        "failedTitle": "That did not work"
+        "failedTitle": "That did not work",
+        "unnamed": "—",
+        "refundableLine": "Upholding refunds: {amount}",
+        "everythingLeft": "everything left",
+        "refundAwaitingBank": "The refund is past the provider’s window and will be paid by bank transfer; the dispute stays open until then. Record the backer’s bank account on the {link} page and complete the transfer there.",
+        "refundsLink": "Refunds",
+        "upheldNotice": "The dispute was upheld and {amount} was refunded to the backer.",
+        "upheldNoticeNoAmount": "The dispute was upheld and the backer was refunded in full.",
+        "rejectedNotice": "The dispute was rejected; no money moved.",
+        "doneTitle": "Decision recorded",
+        "errors": {
+          "DISPUTE_WINDOW_CLOSED": "The creator’s payout has already been sent or is on its way, so this dispute can no longer be refunded through the platform.",
+          "NOTHING_TO_DISPUTE": "Nothing is left on this pledge to refund.",
+          "DISPUTE_NOT_FOUND": "This dispute no longer exists. Reload the list.",
+          "REFUND_CHARGE_DISPUTED": "This payment is in an open chargeback; it cannot be refunded until the chargeback is closed. The dispute stays open."
+        }
       },
       "partners": {
         "subject": "the partner list",

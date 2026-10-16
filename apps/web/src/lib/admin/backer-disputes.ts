@@ -1,5 +1,6 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
+import type { Money } from '../money';
 
 /**
  * The administrators' backer dispute queue — IDN-EXT-01 (#43, #44).
@@ -21,7 +22,20 @@ export interface BackerDispute {
   openedAt: string;
   decidedAt?: string | null;
   refundId?: string | null;
+  /**
+   * What upholding would refund: everything the pledge has left, since an upheld dispute refunds
+   * in full. On the administrators' queue only; absent when nothing is left.
+   */
+  refundable?: Money | null;
+  /** The pledge's backer, on the administrators' queue only. */
+  backerId?: string | null;
 }
+
+/**
+ * The queue's page size. The endpoint answers a bare array of at most this many, so a page
+ * shorter than it is the last one.
+ */
+export const BACKER_DISPUTE_PAGE_SIZE = 50;
 
 export type BackerDisputeOutcome = 'UPHOLD' | 'REJECT';
 
