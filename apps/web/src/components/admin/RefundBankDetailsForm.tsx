@@ -7,7 +7,7 @@ import { checkIban, ibanDefectOf, reformatIban } from '@ideanest/account/iban';
 import { ApiError } from '../../lib/api/problem';
 import { recordRefundBankDetails } from '../../lib/admin/refund-bank-details';
 import type { Refund } from '../../lib/admin/refunds';
-import { consoleMessageFor } from '../../lib/admin/refusals';
+import { actionMessageFor } from '../../lib/admin/refusals';
 import { formatMoney, toMoney } from '../../lib/money';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ConsoleRefusalsCopy } from '../../lib/i18n/admin/common-copy';
@@ -143,7 +143,7 @@ export function RefundBankDetailsForm({
         setIbanError(copy.ibanDefect[defect]);
       } else {
         const code = problem?.code;
-        setError((code != null ? copy.errors[code] : undefined) ?? consoleMessageFor(cause, subject, refusals));
+        setError((code != null ? copy.errors[code] : undefined) ?? actionMessageFor(cause, subject, refusals));
       }
     } finally {
       setSaving(false);

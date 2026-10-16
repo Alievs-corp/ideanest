@@ -192,14 +192,17 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("#175: a case resolved against the platform twice moves the money once, and answers both times")
+    @DisplayName("#175: a case resolved a second time is refused, and the money moved once")
     void aDisputeResolvedTwiceMovesTheMoneyOnce() {
         Paid paid = aPaidPledge("chargeback-twice", "25.00");
         UUID dispute = chargeback(paid, "25.00");
         Account admin = admin();
 
         assertThat(resolve(dispute, "LOST", admin).getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(resolve(dispute, "CONCEDED", admin).getStatusCode()).isEqualTo(HttpStatus.OK);
+        ResponseEntity<Map<String, Object>> again = resolve(dispute, "CONCEDED", admin);
+        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(again.getBody()).containsEntry("code", "DISPUTE_ALREADY_RESOLVED");
+        assertThat(again.getBody().get("meta")).isEqualTo(Map.of("state", "LOST"));
 
         assertThat(jdbc().queryForObject(
                         "SELECT count(*) FROM refunds WHERE idempotency_key = ?", Long.class, "chargeback-" + dispute))
@@ -209,6 +212,121 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
                 .isEqualTo(1L);
         assertThat(state(paid.pledgeId())).isEqualTo("CHARGEBACK");
         assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    @Test
+    @DisplayName("a case lost cannot be resolved as won afterwards: the loss, and what it cost, stand")
+    void aLostCaseIsNotWonAfterwards() {
+        Paid paid = aPaidPledge("chargeback-lost-then-won", "25.00");
+        UUID dispute = chargeback(paid, "25.00");
+        Account admin = admin();
+        resolve(dispute, "LOST", admin);
+
+        ResponseEntity<Map<String, Object>> won = resolve(dispute, "WON", admin);
+
+        assertThat(won.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(won.getBody()).containsEntry("code", "DISPUTE_ALREADY_RESOLVED");
+        assertThat(jdbc().queryForObject("SELECT state FROM disputes WHERE id = ?", String.class, dispute))
+                .isEqualTo("LOST");
+        assertThat(state(paid.pledgeId())).isEqualTo("CHARGEBACK");
+    }
+
+    @Test
+    @DisplayName("a state that is not an outcome is refused as one, and nothing moves")
+    void anOpenStateIsNotAnOutcome() {
+        Paid paid = aPaidPledge("chargeback-not-outcome", "25.00");
+        UUID dispute = chargeback(paid, "25.00");
+
+        ResponseEntity<Map<String, Object>> refused = resolve(dispute, "UNDER_REVIEW", admin());
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(refused.getBody()).containsEntry("code", "NOT_A_DISPUTE_OUTCOME");
+        assertThat(jdbc().queryForObject("SELECT state FROM disputes WHERE id = ?", String.class, dispute))
+                .isEqualTo("OPEN");
+    }
+
+    @Test
+    @DisplayName("staff cannot refund through the provider while the charge is in an open chargeback")
+    void aStaffRefundWaitsForAnOpenChargeback() {
+        Paid paid = aPaidPledge("chargeback-open-staff", "25.00");
+        UUID dispute = chargeback(paid, "25.00");
+
+        ResponseEntity<Map<String, Object>> refused = staffRefund(paid.pledgeId(), null, "BACKER_REQUEST");
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "REFUND_CHARGE_DISPUTED");
+        assertThat(sentFor(paid.pledgeId())).isEmpty();
+        assertThat(jdbc().queryForObject("SELECT count(*) FROM refunds WHERE pledge_id = ?", Long.class, paid.pledgeId()))
+                .as("nothing recorded either: the refusal rolls the intent back")
+                .isZero();
+
+        resolve(dispute, "WON", admin());
+        assertThat(staffRefund(paid.pledgeId(), null, "BACKER_REQUEST").getStatusCode())
+                .as("once the case is won the charge stood, and staff may refund it")
+                .isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("a chargeback after a partial refund books only what the charge had left")
+    void aChargebackAfterARefundIsCappedByWhatWasLeft() {
+        Paid paid = aPaidPledge("chargeback-after-refund", "25.00");
+        assertThat(staffRefund(paid.pledgeId(), azn("10.00"), "BACKER_REQUEST").getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        UUID dispute = chargeback(paid, "25.00");
+
+        assertThat(resolve(dispute, "LOST", admin()).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        assertThat(jdbc().queryForObject(
+                        "SELECT amount FROM refunds WHERE idempotency_key = ?", BigDecimal.class, "chargeback-" + dispute))
+                .as("15.00 was left on the charge; the refund rows add up to what was collected, not more")
+                .isEqualByComparingTo("15.00");
+        assertThat(jdbc().queryForObject(
+                        "SELECT sum(amount) FROM refunds WHERE pledge_id = ? AND state = 'SUCCEEDED'",
+                        BigDecimal.class,
+                        paid.pledgeId()))
+                .isEqualByComparingTo("25.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("CHARGEBACK");
+        assertThat(staffRefund(paid.pledgeId(), null, "BACKER_REQUEST").getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    @DisplayName("a refund in a currency that is not the pledge's is refused as such, naming the pledge's")
+    void aRefundInAnotherCurrencyIsRefusedAsSuch() {
+        Paid paid = aPaidPledge("refund-currency", "25.00");
+
+        ResponseEntity<Map<String, Object>> refused =
+                staffRefund(paid.pledgeId(), Map.of("amount", "5.00", "currency", "USD"), "BACKER_REQUEST");
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(refused.getBody()).containsEntry("code", "CURRENCY_MISMATCH");
+        assertThat(refused.getBody().get("meta")).isEqualTo(Map.of("currency", "AZN"));
+        assertThat(sentFor(paid.pledgeId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a refund sent in parts answers with every part, and the list says where a refused one went")
+    void theListSaysWhereARefusedRefundWent() {
+        Paid paid = aPaidPledge("refund-routed", "25.00");
+        provider.willRefuseRefunds("15400");
+        ResponseEntity<Map<String, Object>> refused = staffRefund(paid.pledgeId(), null, "BACKER_REQUEST");
+        assertThat(refused.getBody()).containsEntry("state", "FAILED");
+        String refusedId = (String) refused.getBody().get("id");
+        provider.reset();
+
+        ResponseEntity<Map<String, Object>> routed =
+                post("/v1/admin/refunds/" + refusedId + "/bank-transfer", admin().accessToken(), null, null);
+        assertThat(routed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(routed.getBody()).containsEntry("routedFrom", refusedId);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) get(
+                        "/v1/admin/refunds/by-pledge/" + paid.pledgeId(), admin().accessToken())
+                .getBody()
+                .get("refunds");
+        Map<String, Object> failed = rows.stream().filter(row -> refusedId.equals(row.get("id"))).findFirst().orElseThrow();
+        assertThat(failed.get("routedTo"))
+                .isEqualTo(Map.of("id", routed.getBody().get("id"), "state", "AWAITING_BANK_DETAILS"));
+        assertThat(failed.get("backerId")).as("the list names whose money it is").isNotNull();
     }
 
     @Test
@@ -628,6 +746,13 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
 
     private ResponseEntity<Map<String, Object>> resolve(UUID disputeId, String outcome, Account admin) {
         return post("/v1/admin/disputes/" + disputeId + "/resolve", admin.accessToken(), null, Map.of("outcome", outcome));
+    }
+
+    private ResponseEntity<Map<String, Object>> get(String path, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        return rest.exchange(
+                path, HttpMethod.GET, new HttpEntity<>(headers), new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
     private ResponseEntity<Map<String, Object>> staffRefund(UUID pledgeId, Map<String, Object> amount, String reason) {

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { issueRefund, listRefunds } from '../../lib/admin/refunds';
-import type { Refund } from '../../lib/admin/refunds';
+import { issueRefund, listRefunds, readRefundable } from '../../lib/admin/refunds';
+import type { Refund, RefundableAmount } from '../../lib/admin/refunds';
 import { RefundConsole } from './RefundConsole';
+import { formatDay } from './RefundBankTransfer';
 import { translatorFor } from '../../test-copy';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
 import { refundConsoleCopyFrom } from '../../lib/i18n/admin/money-copy';
@@ -16,7 +17,9 @@ import {
 import { ROLE_CAPABILITIES, type StaffMembership, type StaffRole } from '../../lib/admin/staff';
 import { ApiError } from '../../lib/api/problem';
 import { formatMoney } from '../../lib/money';
+import { formatDate } from '../../lib/time';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { capabilityLabel } from '../../lib/admin/refusals';
 import { ConsoleMembershipProvider } from './ConsoleMembership';
 import { raiseBackerTicket, type Ticket } from '../../lib/admin/tickets';
 import { recordRefundBankDetails } from '../../lib/admin/refund-bank-details';
@@ -35,7 +38,7 @@ const COPY = refundConsoleCopyFrom(
 
 vi.mock('../../lib/admin/refunds', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/refunds')>();
-  return { ...actual, listRefunds: vi.fn(), issueRefund: vi.fn() };
+  return { ...actual, listRefunds: vi.fn(), issueRefund: vi.fn(), readRefundable: vi.fn() };
 });
 
 vi.mock('../../lib/admin/refund-bank-transfers', async (importOriginal) => {
@@ -63,11 +66,13 @@ vi.mock('../../lib/admin/plan-payment-refunds', async (importOriginal) => ({
 
 const listMock = vi.mocked(listRefunds);
 const issueMock = vi.mocked(issueRefund);
+const refundableMock = vi.mocked(readRefundable);
 const revealMock = vi.mocked(revealRefundBankDetails);
 const recordMock = vi.mocked(recordRefundBankTransfer);
 const routeMock = vi.mocked(routeRefundToBankTransfer);
 
 const PLEDGE = '11111111-2222-3333-4444-555555555555';
+const OTHER_PLEDGE = '66666666-7777-4888-9999-aaaaaaaaaaaa';
 
 function refund(overrides: Partial<Refund> = {}): Refund {
   return {
@@ -84,18 +89,62 @@ function refund(overrides: Partial<Refund> = {}): Refund {
   };
 }
 
-async function issue(): Promise<void> {
-  const user = userEvent.setup();
-  render(<RefundConsole copy={COPY} />);
-  await user.type(screen.getByPlaceholderText('00000000-0000-0000-0000-000000000000'), PLEDGE);
-  await user.type(screen.getByRole('textbox', { name: new RegExp(COPY.noteLabel, 'i') }), 'Asked by email');
+function refundable(overrides: Partial<RefundableAmount> = {}): RefundableAmount {
+  return {
+    pledgeId: PLEDGE,
+    reason: 'BACKER_REQUEST',
+    remaining: { amount: '40.00', currency: 'AZN' },
+    withheldFee: { amount: '0.00', currency: 'AZN' },
+    projectId: 'bbbbbbbb-0000-0000-0000-000000000001',
+    ...overrides,
+  };
+}
+
+const ME = '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0';
+const SUPPORT_PERSON = 'dddddddd-0000-4000-8000-000000000001';
+const IBAN = 'AZ21NABZ00000000137010001944';
+
+function reader(roles: readonly StaffRole[], accountId = ME): StaffMembership {
+  const capabilities = new Set(roles.flatMap((role) => ROLE_CAPABILITIES[role]));
+  return { accountId, staff: true, bootstrapped: false, roles: [...roles], capabilities: [...capabilities] };
+}
+
+function renderConsole(membership: StaffMembership = reader(['FINANCE'])) {
+  return render(
+    <ConsoleMembershipProvider given={{ status: 'ready', membership }}>
+      <RefundConsole copy={COPY} />
+    </ConsoleMembershipProvider>,
+  );
+}
+
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Fills the form and presses the first of the two buttons. */
+async function fill(user: User, { pledge = PLEDGE, amount = '' }: { pledge?: string; amount?: string } = {}): Promise<void> {
+  const field = await screen.findByPlaceholderText('00000000-0000-0000-0000-000000000000');
+  await user.clear(field);
+  await user.type(field, pledge);
+  const amountField = screen.getByRole('textbox', { name: new RegExp(`^${COPY.amountLabel}`) });
+  await user.clear(amountField);
+  if (amount !== '') await user.type(amountField, amount);
+  const note = screen.getByRole('textbox', { name: new RegExp(COPY.noteLabel, 'i') });
+  if ((note as HTMLTextAreaElement).value === '') await user.type(note, 'Asked by email');
   await user.click(screen.getByRole('button', { name: COPY.issue }));
+}
+
+/** Fills, confirms. */
+async function issue(user: User = userEvent.setup(), options: { pledge?: string; amount?: string } = {}): Promise<void> {
+  renderConsole();
+  await fill(user, options);
+  await user.click(await screen.findByRole('button', { name: COPY.confirmAction }));
 }
 
 beforeEach(() => {
   listMock.mockReset();
   issueMock.mockReset();
+  refundableMock.mockReset();
   listMock.mockResolvedValue({ refunds: [], page: 0, hasMore: false });
+  refundableMock.mockResolvedValue(refundable());
 });
 
 describe('the refund console', () => {
@@ -115,20 +164,307 @@ describe('the refund console', () => {
     expect(await screen.findByText(COPY.sentTitle)).toBeInTheDocument();
     expect(screen.queryByText(new RegExp(COPY.awaitingProvider.slice(0, 40)))).not.toBeInTheDocument();
   });
+
+  it('offers the form only to a reader holding ISSUE_REFUND', async () => {
+    renderConsole(reader(['MODERATOR']));
+
+    expect(await screen.findByRole('heading', { name: COPY.logHeading })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: COPY.issueHeading })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.issue })).not.toBeInTheDocument();
+  });
+
+  it('asks before sending, naming everything left, the reason and the pledge', async () => {
+    const user = userEvent.setup();
+    issueMock.mockResolvedValue(refund());
+    renderConsole();
+
+    await fill(user);
+
+    expect(refundableMock).toHaveBeenCalledWith(PLEDGE, 'BACKER_REQUEST');
+    expect(issueMock).not.toHaveBeenCalled();
+    const confirm = await screen.findByRole('group', { name: COPY.confirmHeading });
+    expect(confirm).toHaveTextContent(
+      fillPlaceholders(COPY.allRemaining, { amount: formatMoney({ amount: '40.00', currency: 'AZN' }) }),
+    );
+    expect(confirm).toHaveTextContent(COPY.reason.BACKER_REQUEST);
+    expect(confirm).toHaveTextContent(PLEDGE.slice(0, 8));
+
+    await user.click(within(confirm).getByRole('button', { name: COPY.cancel }));
+    expect(screen.queryByRole('group', { name: COPY.confirmHeading })).not.toBeInTheDocument();
+    expect(issueMock).not.toHaveBeenCalled();
+  });
+
+  it('sends a comma amount as a decimal string in the pledge’s own currency', async () => {
+    const user = userEvent.setup();
+    refundableMock.mockResolvedValue(refundable({ remaining: { amount: '40.00', currency: 'USD' } }));
+    issueMock.mockResolvedValue(refund({ amount: { amount: '25.00', currency: 'USD' } }));
+
+    await issue(user, { amount: '25,5' });
+
+    expect(issueMock).toHaveBeenCalledWith(
+      expect.objectContaining({ pledgeId: PLEDGE, amount: { amount: '25.50', currency: 'USD' } }),
+    );
+  });
+
+  it.each([
+    ['not-a-pledge', '', 'pledgeInvalid'],
+    [PLEDGE, '25.555', 'amountInvalid'],
+    [PLEDGE, '0', 'amountInvalid'],
+  ] as const)('refuses %s / %s in the field, before asking the service', async (pledge, amount, sentence) => {
+    const user = userEvent.setup();
+    renderConsole();
+
+    await fill(user, { pledge, amount });
+
+    expect(await screen.findByText(COPY[sentence])).toBeInTheDocument();
+    expect(refundableMock).not.toHaveBeenCalled();
+  });
+
+  it('says how much is left when the amount is more than that, and asks nothing', async () => {
+    const user = userEvent.setup();
+    renderConsole();
+
+    await fill(user, { amount: '50' });
+
+    expect(
+      await screen.findByText(
+        fillPlaceholders(COPY.issueErrors['REFUND_EXCEEDS_COLLECTION'] ?? '', {
+          remaining: formatMoney({ amount: '40.00', currency: 'AZN' }),
+        }),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: COPY.confirmHeading })).not.toBeInTheDocument();
+  });
+
+  it('says the provider fee a campaign’s reason keeps back, before and after', async () => {
+    const user = userEvent.setup();
+    refundableMock.mockResolvedValue(
+      refundable({ reason: 'CAMPAIGN_FAILED', remaining: { amount: '97.00', currency: 'AZN' }, withheldFee: { amount: '3.00', currency: 'AZN' } }),
+    );
+    issueMock.mockResolvedValue(
+      refund({ reason: 'CAMPAIGN_FAILED', amount: { amount: '97.00', currency: 'AZN' }, withheldFee: { amount: '3.00', currency: 'AZN' } }),
+    );
+    renderConsole();
+    await user.selectOptions(await screen.findByRole('combobox', { name: COPY.reasonLabel }), 'CAMPAIGN_FAILED');
+    await fill(user);
+
+    const sentence = fillPlaceholders(COPY.confirmWithheld, { fee: formatMoney({ amount: '3.00', currency: 'AZN' }) });
+    expect(within(await screen.findByRole('group', { name: COPY.confirmHeading })).getByText(sentence)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: COPY.confirmAction }));
+    expect(await screen.findByText(new RegExp(sentence.slice(0, 30)))).toBeInTheDocument();
+  });
+
+  it('adds up a refund sent in parts', async () => {
+    const user = userEvent.setup();
+    issueMock.mockResolvedValue(
+      refund({
+        amount: { amount: '30.00', currency: 'AZN' },
+        parts: [
+          refund({ id: 'p1', amount: { amount: '30.00', currency: 'AZN' } }),
+          refund({ id: 'p2', amount: { amount: '10.00', currency: 'AZN' } }),
+        ],
+      }),
+    );
+
+    await issue(user);
+
+    expect(
+      await screen.findByText(
+        new RegExp(fillPlaceholders(COPY.issuedBody, { amount: formatMoney({ amount: '40.00', currency: 'AZN' }), id: '11111111' }).slice(0, 20)),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(fillPlaceholders(COPY.partsNote, { count: '2' })))).toBeInTheDocument();
+  });
+
+  it.each([
+    [new ApiError(409, { code: 'NOTHING_TO_REFUND', title: 'Nothing was collected' }), COPY.issueErrors['NOTHING_TO_REFUND']],
+    [
+      new ApiError(409, { code: 'REFUND_EXCEEDS_COLLECTION', title: 'More', meta: { remaining: '12.50 AZN' } }),
+      fillPlaceholders(COPY.issueErrors['REFUND_EXCEEDS_COLLECTION'] ?? '', {
+        remaining: formatMoney({ amount: '12.50', currency: 'AZN' }),
+      }),
+    ],
+    [
+      new ApiError(400, { code: 'CURRENCY_MISMATCH', title: 'Not the pledge’s currency', meta: { currency: 'USD' } }),
+      fillPlaceholders(COPY.issueErrors['CURRENCY_MISMATCH'] ?? '', { currency: 'USD' }),
+    ],
+    [new ApiError(400, { title: 'Bad Request', detail: 'Failed to read request' }), COPY.refusals.invalidRequest],
+    [
+      new ApiError(403, { code: 'INSUFFICIENT_STAFF_CAPABILITY', meta: { capability: 'ISSUE_REFUND' } }),
+      fillPlaceholders(COPY.refusals.needsCapabilityToAct ?? '', {
+        capability: capabilityLabel('ISSUE_REFUND', COPY.refusals),
+      }),
+    ],
+  ])('words a refused send in the reader’s language (%#)', async (refusal, sentence) => {
+    issueMock.mockRejectedValue(refusal);
+
+    await issue();
+
+    expect(sentence).toBeTruthy();
+    expect(await screen.findByText(sentence ?? '')).toBeInTheDocument();
+    expect(screen.queryByText(/Failed to read request|Not the pledge/)).not.toBeInTheDocument();
+  });
+
+  it('names the capability in words, not only as its identifier', () => {
+    expect(capabilityLabel('ISSUE_REFUND', COPY.refusals)).toContain('ISSUE_REFUND');
+    expect(capabilityLabel('ISSUE_REFUND', COPY.refusals)).not.toBe('ISSUE_REFUND');
+  });
+});
+
+describe('the idempotency key (#6)', () => {
+  function keys(): string[] {
+    return issueMock.mock.calls.map(([request]) => request.idempotencyKey);
+  }
+
+  it('is kept when the same refund is sent again after a refusal', async () => {
+    const user = userEvent.setup();
+    issueMock.mockRejectedValueOnce(new ApiError(503, { title: 'Unavailable' })).mockResolvedValue(refund());
+    await issue(user);
+    await screen.findByText(COPY.failedTitle);
+
+    await user.click(screen.getByRole('button', { name: COPY.issue }));
+    await user.click(await screen.findByRole('button', { name: COPY.confirmAction }));
+
+    expect(keys()).toHaveLength(2);
+    expect(keys()[1]).toBe(keys()[0]);
+  });
+
+  it('is new once the service refused and the pledge was changed', async () => {
+    const user = userEvent.setup();
+    issueMock
+      .mockRejectedValueOnce(new ApiError(409, { code: 'NOTHING_TO_REFUND', title: 'Nothing' }))
+      .mockResolvedValue(refund({ pledgeId: OTHER_PLEDGE }));
+    await issue(user);
+    await screen.findByText(COPY.issueErrors['NOTHING_TO_REFUND'] ?? '');
+
+    refundableMock.mockResolvedValue(refundable({ pledgeId: OTHER_PLEDGE }));
+    await fill(user, { pledge: OTHER_PLEDGE });
+    await user.click(await screen.findByRole('button', { name: COPY.confirmAction }));
+
+    expect(keys()).toHaveLength(2);
+    expect(keys()[1]).not.toBe(keys()[0]);
+  });
+
+  it('is kept when the answer was lost, even for another pledge, and renewed when the service says it is spent', async () => {
+    const user = userEvent.setup();
+    issueMock
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockRejectedValueOnce(new ApiError(409, { code: 'IDEMPOTENCY_KEY_REUSED', title: 'Used', meta: { operation: 'refund' } }))
+      .mockResolvedValue(refund({ pledgeId: OTHER_PLEDGE }));
+    await issue(user);
+    await screen.findByText(COPY.failedTitle);
+
+    refundableMock.mockResolvedValue(refundable({ pledgeId: OTHER_PLEDGE }));
+    await fill(user, { pledge: OTHER_PLEDGE });
+    await user.click(await screen.findByRole('button', { name: COPY.confirmAction }));
+    expect(await screen.findByText(COPY.issueErrors['IDEMPOTENCY_KEY_REUSED'] ?? '')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: COPY.issue }));
+    await user.click(await screen.findByRole('button', { name: COPY.confirmAction }));
+
+    expect(keys()).toHaveLength(3);
+    expect(keys()[1]).toBe(keys()[0]);
+    expect(keys()[2]).not.toBe(keys()[0]);
+  });
+});
+
+describe('the refund log', () => {
+  it('names the backer and the campaign, dates the row in the reader’s locale, and says the fee kept back', async () => {
+    listMock.mockResolvedValue({
+      refunds: [
+        refund({
+          withheldFee: { amount: '3.00', currency: 'AZN' },
+          amount: { amount: '97.00', currency: 'AZN' },
+          reason: 'CAMPAIGN_FAILED',
+          requestedBy: null,
+          backerId: 'cccccccc-0000-4000-8000-000000000001',
+          detail: 'The campaign ended below its success threshold; the backer is refunded less the fee.',
+        }),
+      ],
+      page: 0,
+      hasMore: false,
+    });
+    renderConsole();
+
+    expect(
+      await screen.findByText(
+        new RegExp(fillPlaceholders(COPY.withheldNote, { fee: formatMoney({ amount: '3.00', currency: 'AZN' }) })),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(formatDate('2026-09-29T10:00:00.000Z', 'en')))).toBeInTheDocument();
+    expect(screen.queryByText(/2026-09-29/)).not.toBeInTheDocument();
+    expect(screen.getByText(new RegExp(COPY.detailPlatform['CAMPAIGN_FAILED'] ?? '-'))).toBeInTheDocument();
+    expect(screen.queryByText(/refunded less the fee/)).not.toBeInTheDocument();
+  });
+
+  it('words a failure code rather than printing it', async () => {
+    listMock.mockResolvedValue({
+      refunds: [
+        refund({ id: 'f1', state: 'FAILED', failureCode: 'not_sent', failureMessage: 'The circuit breaker is open.' }),
+        refund({ id: 'f2', state: 'FAILED', failureCode: 'reverse_not_confirmed' }),
+      ],
+      page: 0,
+      hasMore: false,
+    });
+    renderConsole();
+
+    expect(await screen.findByText(COPY.failure['not_sent'] ?? '-')).toBeInTheDocument();
+    expect(screen.getByText(COPY.failure['reverse_not_confirmed'] ?? '-')).toBeInTheDocument();
+    expect(screen.queryByText(/not_sent|reverse_not_confirmed|circuit breaker/)).not.toBeInTheDocument();
+  });
+
+  it('words a bank-routed refund and a chargeback from their fields, not the service’s English', async () => {
+    listMock.mockResolvedValue({
+      refunds: [
+        refund({
+          id: 'r1',
+          state: 'AWAITING_BANK_DETAILS',
+          routedFrom: 'eeeeeeee-1111-4000-8000-000000000001',
+          detail: 'By bank transfer, after refund eeeeeeee-1111-4000-8000-000000000001 was refused (declined).',
+        }),
+        refund({
+          id: 'r2',
+          reason: 'CHARGEBACK',
+          disputeId: 'ffffffff-2222-4000-8000-000000000002',
+          detail: 'The card network took this charge back: dispute ffffffff (PAYRIFF case 1) was resolved LOST.',
+        }),
+      ],
+      page: 0,
+      hasMore: false,
+    });
+    renderConsole(reader(['FINANCE']));
+
+    expect(await screen.findAllByText('eeeeeeee')).not.toHaveLength(0);
+    expect(screen.queryByText(/after refund|took this charge back: dispute/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/ffffffff/)).not.toHaveLength(0);
+  });
+
+  it('stops offering the bank fallback on a refused refund once it is routed, and says where it went', async () => {
+    listMock.mockResolvedValue({
+      refunds: [refund({ id: 'refused-1', state: 'FAILED', failureCode: 'declined', routedTo: { id: 'new', state: 'SUCCEEDED' } })],
+      page: 0,
+      hasMore: false,
+    });
+    renderConsole();
+
+    expect(await screen.findByText(fillPlaceholders(COPY.bank.routedTo, { state: COPY.state.SUCCEEDED }))).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.bank.refundByBank })).not.toBeInTheDocument();
+  });
+
+  it('marks the chosen state filter as pressed', async () => {
+    const user = userEvent.setup();
+    renderConsole();
+
+    expect(await screen.findByRole('button', { name: COPY.state.REQUESTED })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(screen.getByRole('button', { name: COPY.all }));
+    expect(screen.getByRole('button', { name: COPY.all })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: COPY.state.REQUESTED })).toHaveAttribute('aria-pressed', 'false');
+  });
 });
 
 /* -------------------------------------------------------------------------
  * #400: refunds paid by bank transfer.
  * ---------------------------------------------------------------------- */
-
-const ME = '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0';
-const SUPPORT_PERSON = 'dddddddd-0000-4000-8000-000000000001';
-const IBAN = 'AZ21NABZ00000000137010001944';
-
-function reader(roles: readonly StaffRole[], accountId = ME): StaffMembership {
-  const capabilities = new Set(roles.flatMap((role) => ROLE_CAPABILITIES[role]));
-  return { accountId, staff: true, bootstrapped: false, roles: [...roles], capabilities: [...capabilities] };
-}
 
 function awaitingTransfer(overrides: Partial<Refund> = {}): Refund {
   return refund({
@@ -266,7 +602,7 @@ describe('refunds paid by bank transfer (#400)', () => {
         fillPlaceholders(BANK.confirmRecord, {
           amount: formatMoney({ amount: '1234.50', currency: 'AZN' }),
           hint: 'AZ21…1944',
-          date: todayInBaku(),
+          date: formatDay(todayInBaku(), 'en'),
           reference: 'KB-2026-0042',
         }),
       ),
@@ -356,6 +692,32 @@ describe('refunds paid by bank transfer (#400)', () => {
 
     expect(routeMock).toHaveBeenCalledWith('refused-1');
     expect(await screen.findByText(BANK.routedTitle)).toBeInTheDocument();
+  });
+
+  it('says a repeated fallback found the bank refund it made before, as it now stands', async () => {
+    const user = userEvent.setup();
+    routeMock.mockResolvedValue(refund({ id: 'new', state: 'SUCCEEDED' }));
+    showList([refund({ id: 'refused-1', state: 'FAILED', failureCode: 'declined' })]);
+
+    await user.click(await screen.findByRole('button', { name: BANK.refundByBank }));
+    await user.click(screen.getByRole('button', { name: BANK.confirmRefundByBankAction }));
+
+    expect(await screen.findByText(BANK.routedAlreadyTitle)).toBeInTheDocument();
+    expect(
+      screen.getByText(fillPlaceholders(BANK.routedAlready, { id: PLEDGE.slice(0, 8), state: COPY.state.SUCCEEDED })),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(BANK.routedTitle)).not.toBeInTheDocument();
+  });
+
+  it('words a fallback refused because nothing is left on the charge', async () => {
+    const user = userEvent.setup();
+    routeMock.mockRejectedValue(new ApiError(409, { code: 'NOTHING_TO_REFUND', title: 'Nothing was collected' }));
+    showList([refund({ id: 'refused-1', state: 'FAILED' })]);
+
+    await user.click(await screen.findByRole('button', { name: BANK.refundByBank }));
+    await user.click(screen.getByRole('button', { name: BANK.confirmRefundByBankAction }));
+
+    expect(await screen.findByText(BANK.errors['NOTHING_TO_REFUND'] ?? '-')).toBeInTheDocument();
   });
 
   it('words a refused fallback', async () => {

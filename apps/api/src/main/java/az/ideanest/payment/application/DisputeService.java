@@ -283,19 +283,31 @@ public class DisputeService {
      * <p>The ledger is written only for the two outcomes where money is gone. A won
      * dispute posts nothing, because nothing moved — the charge stood.
      *
+     * <p><strong>Once per presentment.</strong> A case already resolved is refused
+     * ({@link DisputeAlreadyResolvedException}): a {@code WON} pressed after a {@code LOST} would leave the
+     * loss posted, the creator's debt recorded and their account suspended under a case that says it was
+     * won. A case the provider raises again is reopened by {@link #notified} and is then resolved afresh.
+     *
      * @param outcome {@code WON}, {@code LOST} or {@code CONCEDED}
-     * @throws IllegalArgumentException for a state that is not an outcome
+     * @throws NotADisputeOutcomeException for a state that is not an outcome
+     * @throws DisputeAlreadyResolvedException when the case is already resolved
      */
     @Transactional
     public Dispute resolve(UUID staffId, UUID disputeId, DisputeState outcome) {
         staff.requireCapability(staffId, StaffCapability.MANAGE_DISPUTES);
+        if (outcome == null || !outcome.isResolved()) {
+            throw new NotADisputeOutcomeException(outcome);
+        }
         Dispute dispute = disputes.findById(disputeId).orElseThrow(() -> new DisputeNotFoundException(disputeId));
+        if (dispute.state().isResolved()) {
+            throw new DisputeAlreadyResolvedException(disputeId, dispute.state());
+        }
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         dispute.resolved(outcome, staffId, now);
 
-        // A case resolved against the platform twice (LOST, then CONCEDED; or lost again after a reopening)
-        // moved the money once: the second resolution posts nothing and recovers nothing (#175's review).
+        // A case lost again after the provider reopened it moved the money once: the second resolution
+        // posts nothing and recovers nothing (#175's review).
         if (outcome != DisputeState.WON && postLoss(dispute, staffId, now)) {
             recoverFromCreatorIfPaidOut(dispute, staffId, now);
         }
@@ -383,17 +395,49 @@ public class DisputeService {
             return;
         }
         String currency = dispute.amount().currency();
-        boolean tookTheRest = transactions
+        Money zero = Money.zero(currency);
+        // What the charge still had left to refund: its amount less every refund not failed against it,
+        // a withheld fee included (#436). Null when the charge is gone, which records the whole amount.
+        Money left = transactions
                 .findById(dispute.chargeTransactionId())
-                .map(charge -> !charge.getAmount()
+                .map(charge -> charge.getAmount()
                         .minus(Money.of(refunds.refundedAgainstCharge(charge.getId()), currency))
-                        .isGreaterThan(dispute.amount()))
-                .orElse(false);
+                        .max(zero))
+                .orElse(null);
+        // Booked no higher than that. The network took what it took, and the posting above says so; but the
+        // refund row is what every path reads to decide what of a charge can still go back, and a row larger
+        // than the charge's remainder would count money as returned twice — the second time in the sums.
+        Money booked = left == null ? dispute.amount() : dispute.amount().min(left);
+        if (booked.isLessThan(dispute.amount())) {
+            log.error(
+                    "Dispute {} took {} back on charge {} of pledge {}, which had only {} left to refund: the backer"
+                            + " was refunded before the chargeback and has now been paid twice. Recover the difference"
+                            + " by hand.",
+                    dispute.id(),
+                    dispute.amount(),
+                    dispute.chargeTransactionId(),
+                    dispute.pledgeId(),
+                    booked);
+        }
+        if (booked.isPositive()) {
+            boolean tookTheRest = left != null && !left.isGreaterThan(booked);
+            saveChargeback(dispute, staffId, loss, now, key, booked, tookTheRest);
+        }
+
+        Money collected = Money.of(transactions.collectedOn(dispute.pledgeId()), currency);
+        Money returned = Money.of(refunds.succeededAgainst(dispute.pledgeId()), currency);
+        if (collected.isPositive() && !collected.isGreaterThan(returned)) {
+            pledges.recordChargedBack(dispute.pledgeId());
+        }
+    }
+
+    private void saveChargeback(
+            Dispute dispute, UUID staffId, PaymentTransaction loss, Instant now, String key, Money booked, boolean tookTheRest) {
         refunds.save(Refund.chargeback(
                 dispute.pledgeId(),
                 dispute.projectId(),
                 dispute.chargeTransactionId(),
-                dispute.amount(),
+                booked,
                 tookTheRest,
                 "The card network took this charge back: dispute %s (%s case %s) was resolved %s."
                         .formatted(dispute.id(), dispute.provider(), dispute.providerDisputeId(), dispute.state()),
@@ -402,12 +446,6 @@ public class DisputeService {
                 loss.getId(),
                 now));
         refunds.flush();
-
-        Money collected = Money.of(transactions.collectedOn(dispute.pledgeId()), currency);
-        Money returned = Money.of(refunds.succeededAgainst(dispute.pledgeId()), currency);
-        if (collected.isPositive() && !collected.isGreaterThan(returned)) {
-            pledges.recordChargedBack(dispute.pledgeId());
-        }
     }
 
     /**

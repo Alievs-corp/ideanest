@@ -836,7 +836,7 @@
       "forbiddenTitle": "Siz burada işləmirsiniz",
       "forbiddenBody": "Konsolu platforma işçiləri oxuyur və hesabınız heç bir platforma rolu daşımır. Bu, səhv deyil — xidmət bunun arxasındakı hər ekranı rədd edir.",
       "notStaff": "Hesabınız bu platformada işləmir, ona görə {subject} oxumaq sizə aid deyil.",
-      "needsCapability": "{subject} oxumaq üçün {capability} lazımdır, rollarınız isə onu daxil etmir.",
+      "needsCapability": "{subject} oxumaq üçün {capability} səlahiyyəti lazımdır, rollarınız isə onu daxil etmir.",
       "capabilityTitle": "Bu ekran sizə aid deyil",
       "capabilityAsk": "Bunu administrator verə bilər.",
       "unknownLedgerAccount": "Bu, platformanın baş kitab hesablarından biri deyil.",
@@ -844,7 +844,10 @@
       "collectionSlugTaken": "Bu qısa adı artıq bir kolleksiya istifadə edir. Qısa adlar daimidir, ona görə başqasını seçin.",
       "curationRejected": "Xidmət kolleksiyaya edilən bu dəyişikliyi rədd etdi.",
       "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
-      "unreachable": "Xidmətə çatmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin."
+      "unreachable": "Xidmətə çatmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
+      "needsCapabilityToAct": "Bu əməliyyat üçün {capability} səlahiyyəti lazımdır, rollarınız isə onu daxil etmir. Bunu administrator verə bilər.",
+      "capabilityNamed": "«{name}» ({capability})",
+      "invalidRequest": "Xidmət sorğunu oxuya bilmədi. Sahələri yoxlayıb yenidən cəhd edin."
     },
     "note": {
       "why": "Səbəb",
@@ -929,7 +932,7 @@
         "metaTitle": "Geri tələblər",
         "metaDescription": "Kart şəbəkəsinin qaldırdığı işlər, onlara qarşı sübutlar və hər birinin necə bitdiyi.",
         "title": "Geri tələblər",
-        "intro": "Son tarixə görə sıralanıb, ən yaxını əvvəldə. Mübahisə haqqında qalan hər şeyi sonradan provayderdən bərpa etmək olar; keçmiş son tarixi isə yox, susmaqla uduzmaq da uduzmağın bahalı yoludur."
+        "intro": "Kart şəbəkələrinin açdığı geri tələblər, son tarixi ən yaxın olan birinci. Son tarix keçəndən sonra işə cavab vermək olmur və iş avtomatik uduzulur, ona görə ən təcili işlərdən başlayın."
       },
       "emailTemplates": {
         "metaTitle": "E-poçt şablonları",
@@ -1012,7 +1015,7 @@
         "metaTitle": "Geri qaytarmalar",
         "metaDescription": "Səbəb kodları ilə tam və qismən geri qaytarmalar və platformanın etdiyi hər biri.",
         "title": "Geri qaytarmalar",
-        "intro": "Bu siyahını oxumaq üçün VIEW_FINANCE lazımdır; birini vermək üçün ISSUE_REFUND. Səhvlər müqayisə oluna bilməz, ona görə də bunlar iki ayrı səlahiyyətdir."
+        "intro": "Platformanın dəstəkçilərə qaytardığı hər pul burada qeyd olunur: əməkdaşların verdikləri də, kampaniya uğursuz olanda platformanın özünün qaytardıqları da. Pul buradan karta və ya bank köçürməsi ilə qaytarılır."
       },
       "staff": {
         "metaTitle": "İşçilər və rollar",
@@ -2325,15 +2328,15 @@
       "refunds": {
         "subject": "geri qaytarma jurnalını",
         "issueHeading": "Pulu geri göndər",
-        "issueIntro": "Dəstəkdə qalan hər şeyi geri qaytarmaq üçün məbləği boş buraxın. Səbəb kodu geri qaytarmaların sayıldığı şeydir; qeyd isə növbəti adamın oxuduğudur.",
+        "issueIntro": "Dəstəkdə qalanın hamısını qaytarmaq üçün məbləği boş saxlayın. Səbəb hesabatlarda sayılır, qeydi isə bu qaytarmaya sonra baxan əməkdaş oxuyur.",
         "pledgeLabel": "Dəstək",
         "pledgeHint": "Tam identifikator.",
         "amountLabel": "Məbləğ",
         "amountHint": "Boş qalanı geri qaytarır.",
         "reasonLabel": "Səbəb",
         "noteLabel": "Qeyd",
-        "noteHint": "Məcburi. Kod heç vaxt hekayənin hamısı deyil.",
-        "issue": "Geri qaytarma ver",
+        "noteHint": "Məcburi. Səbəbi qısa izah edin — kod hər şeyi demir.",
+        "issue": "Pulu qaytar",
         "sending": "Göndərilir",
         "sentTitle": "Göndərildi",
         "pendingTitle": "Geri qaytarma {state} vəziyyətindədir",
@@ -2347,14 +2350,12 @@
         "emptyTitle": "Heç nə geri qaytarılmayıb",
         "emptyBody": "Bu quraşdırmada heç bir pul geri getməyib. Platformanın verdiyi hər geri qaytarma burada qeyd olunur, provayderin rədd etdikləri də daxil olmaqla.",
         "filteredTitle": "{state} geri qaytarma yoxdur",
-        "filteredBody": "Bu vəziyyətdə heç nə yoxdur. REQUESTED olaraq qalan geri qaytarma izlənməyə dəyər; qalanları həll olunub.",
+        "filteredBody": "Bu vəziyyətdə heç nə yoxdur. «Tələb olunub» vəziyyətində qalan qaytarma izlənməyə dəyər; qalanları həll olunub.",
         "full": "tam",
         "partial": "qismən",
-        "onPledge": "{id} dəstəyində {fullness}",
         "reasonAndDetail": "{reason} — {detail}",
         "requestedBy": "{by} tərəfindən {date} tarixində tələb olunub",
         "platform": "platforma",
-        "refused": "rədd edildi: {code}",
         "state": {
           "REQUESTED": "Tələb olunub",
           "SUCCEEDED": "Uğurlu",
@@ -2390,7 +2391,7 @@
           "hide": "Hesabı gizlət",
           "audited": "Hesabın açılması audit jurnalında sizin adınızla qeydə alınır. Gizlətdikdən və ya bu səhifədən çıxdıqdan sonra saxlanmır.",
           "failed": "Hesab açılmadı. Heç nə göstərilmədi.",
-          "forbidden": "Dəstəkçinin bank hesabını göstərmək üçün ISSUE_REFUND lazımdır."
+          "forbidden": "Dəstəkçinin bank hesabını göstərmək üçün «Pulu geri qaytarmaq» (ISSUE_REFUND) səlahiyyəti lazımdır."
         },
         "copy": {
           "copy": "Kopyala",
@@ -2431,7 +2432,8 @@
           "BANK_REFERENCE_TAKEN": "Bu bank istinadı artıq başqa dəstəkçinin geri ödənişi üçün qeyd edilib. Çıxarışı yoxlayın və bu köçürmənin istinadını daxil edin.",
           "REFUND_DUTIES_NOT_SEPARATE": "Bu dəstəkçinin bank hesabını siz qeyd etmisiniz, ona görə köçürməni maliyyə komandasından başqası qeyd etməlidir.",
           "TRANSFER_DATE_IN_FUTURE": "Valyutalaşma tarixi gələcəkdədir. Köçürməni yalnız edildikdən sonra qeyd edin.",
-          "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifrəli saxlama sazlanmadığı üçün bank rekvizitlərini indi açmaq mümkün deyil. Heç nə göstərilmədi və dəyişdirilmədi."
+          "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifrəli saxlama sazlanmadığı üçün bank rekvizitlərini indi açmaq mümkün deyil. Heç nə göstərilmədi və dəyişdirilmədi.",
+          "NOTHING_TO_REFUND": "Bu ödənişdə qaytarılacaq heç nə qalmayıb: ya artıq qaytarılıb, ya da geri tələblə geri alınıb. Siyahını yeniləyin."
         },
         "planPayments": {
           "subject": "qaytarılacaq plan ödənişləri",
@@ -2477,13 +2479,52 @@
             "PLAN_REFUND_PROVIDER_REFUSED": "Provayder qaytarmanı rədd etdi, heç nə göndərilmədi. Pulu bunun əvəzinə bank köçürməsi ilə qaytarın və ya bir az sonra yenidən cəhd edin.",
             "PLAN_REFUND_PROVIDER_UNAVAILABLE": "Provayderlə əlaqə qurmaq mümkün olmadı. Bir neçə dəqiqədən sonra yenidən cəhd edin; təkrar cəhd pulu iki dəfə qaytarmır."
           }
+        },
+        "pledgeInvalid": "Dəstəyin tam identifikatorunu daxil edin, məsələn 00000000-0000-0000-0000-000000000000.",
+        "amountInvalid": "25,00 kimi, ən çox iki onluq rəqəmli müsbət məbləğ daxil edin və ya qalanın hamısını qaytarmaq üçün boş saxlayın.",
+        "checking": "Yoxlanılır…",
+        "confirmHeading": "Qaytarmanı təsdiqləyin",
+        "confirmIssue": "{amount} geri qaytarılsın? Dəstəkçi: {backer}, kampaniya: {campaign}, dəstək: {pledge}. Səbəb: {reason}. Pul göndəriləndən sonra bunu geri almaq olmur.",
+        "allRemaining": "qalanın hamısı ({amount})",
+        "confirmWithheld": "Səbəb kampaniyanın nəticəsi olduğu üçün {fee} provayder haqqı saxlanılır və dəstəkçiyə qaytarılmır.",
+        "confirmAction": "Təsdiqlə və qaytar",
+        "unnamed": "—",
+        "partsNote": "{count} hissədə göndərildi.",
+        "amountSent": "{amount} qaytarıldı",
+        "withheldNote": "{fee} provayder haqqı saxlanıldı",
+        "fullRefund": "Tam qaytarma",
+        "partialRefund": "Qismən qaytarma",
+        "pledgeLine": "Dəstəkçi: {backer} · Kampaniya: {campaign} · Dəstək: {pledge}",
+        "failure": {
+          "not_sent": "Provayderə göndərilmədi: ödəniş və ya provayder tapılmadı, ya da provayder müvəqqəti işləmirdi.",
+          "provider_unreachable": "Provayderə çatmaq mümkün olmadı.",
+          "reverse_not_confirmed": "Provayder qaytarmanı təsdiqləmədi: ödəniş hələ də ödənilmiş görünür."
+        },
+        "failureOther": "Provayder qaytarmanı rədd etdi (kod: {code}).",
+        "detailRoutedFrom": "Provayderin rədd etdiyi {refund} qaytarmasının əvəzinə bank köçürməsi ilə.",
+        "detailChargeback": "Kart şəbəkəsi bu ödənişi geri tələblə ({dispute}) geri aldı.",
+        "detailPlatform": {
+          "CAMPAIGN_FAILED": "Kampaniya uğur həddinə çatmadan bitdi; platforma pulu özü qaytarır.",
+          "CAMPAIGN_HALTED": "Kampaniya dayandırıldı və ya ləğv edildi; platforma pulu özü qaytarır.",
+          "RAISE_NOT_APPLIED": "Dəstəkçi dəstəyini artırmaq üçün ödədi, amma artırma tətbiq oluna bilmədi."
+        },
+        "routedTo": "Bank köçürməsinə yönləndirilib: {state}.",
+        "routedAlreadyTitle": "Artıq yönləndirilib",
+        "routedAlready": "{id} dəstəyi üzrə bu qaytarma artıq bank köçürməsinə yönləndirilib. O qaytarmanın vəziyyəti: {state}.",
+        "issueErrors": {
+          "REFUND_EXCEEDS_COLLECTION": "Bu məbləğ dəstəkdə qalandan çoxdur: qaytarmaq üçün yalnız {remaining} qalıb.",
+          "NOTHING_TO_REFUND": "Bu dəstək üzrə qaytarılacaq heç nə yoxdur: ya ödəniş tutulmayıb, ya da hamısı artıq qaytarılıb. Dəstəyin identifikatorunu yoxlayın.",
+          "IDEMPOTENCY_KEY_REUSED": "Bu forma əvvəl başqa bir qaytarma üçün göndərilib və cavabı itib. Əvvəlcə aşağıdakı siyahıda o qaytarmanın keçib-keçmədiyini yoxlayın; sonra yenidən göndərə bilərsiniz — forma yeni cəhd kimi göndəriləcək.",
+          "CURRENCY_MISMATCH": "Bu dəstək {currency} ilə ödənilib, qaytarma da {currency} ilə olmalıdır.",
+          "REFUND_REASON_NOT_ISSUABLE": "Bu səbəblə əməkdaş qaytarma verə bilməz.",
+          "REFUND_CHARGE_DISPUTED": "Bu ödəniş üzrə açıq geri tələb var: kart şəbəkəsi pulu artıq dəstəkçiyə qaytarmaqda ola bilər. Geri tələb üzrə qərar verilənə qədər qaytarmayın."
         }
       },
       "disputes": {
         "subject": "geri tələb növbəsini",
         "caseSubject": "bu işi",
         "noticeTitle": "Sübutlar provayder vasitəsilə göndərilir",
-        "noticeBody": "Burada təqdim etmək işin cavablandırıldığını və kimin cavablandırdığını qeyd edir. §9.3-ün provayder interfeysində sübut yükləmə yoxdur, ona görə sənədlərin özü hələ də provayderin öz konsolundan keçir — bu ekran şəbəkəyə kanal deyil, platformanın işi haqqında qeydidir.",
+        "noticeBody": "«Cavablandı kimi işarələ» işin cavablandırıldığını və kimin cavablandırdığını qeyd edir, amma sənədləri göndərmir. Sübut sənədlərini hələlik provayderin öz panelindən yükləyin.",
         "heading": "Açıq işlər",
         "loadingList": "Geri tələb növbəsi yüklənir",
         "emptyTitle": "Açıq geri tələb yoxdur",
@@ -2503,7 +2544,7 @@
           "debit_not_authorized": "Tutulma icazəsizdir",
           "general": "Səbəb bildirilməyib"
         },
-        "pledgeLine": "Dəstək {pledge} · komissiya {fee} · ",
+        "pledgeLine": "Dəstəkçi: {backer} · Kampaniya: {campaign} · Dəstək: {pledge} · Komissiya: {fee}",
         "noDeadline": "Son tarix verilməyib",
         "deadlinePassed": "Son tarix keçib",
         "hoursLeft": "{count} saat qalıb",
@@ -2519,7 +2560,7 @@
         "showsLabel": "Nəyi göstərir",
         "add": "Əlavə et",
         "markAnswered": "Cavablandı kimi işarələ",
-        "outcomeNote": "LOST və ya CONCEDED qeyd etmək mübahisəli məbləği və provayderin komissiyasını baş kitaba yazır. WON heç nə yazmır, çünki heç nə hərəkət etməyib.",
+        "outcomeNote": "«Uduzulub» və ya «Güzəşt edilib» qeyd etmək mübahisəli məbləği və provayderin komissiyasını baş kitaba yazır. «Udulub» heç nə yazmır, çünki pul yerindən tərpənməyib. Nəticə qeyd ediləndən sonra dəyişdirilmir.",
         "failedTitle": "Bu alınmadı",
         "state": {
           "OPEN": "Açıq",
@@ -2536,7 +2577,39 @@
           "REFUND_POLICY": "O zaman geri qaytarma siyasətimizin nə dediyi",
           "ACTIVITY_LOG": "Dəstək verənin kart sahibi olduğu",
           "OTHER": "Başqa bir şey"
-        }
+        },
+        "unnamed": "—",
+        "reasonOther": "Digər səbəb {code}",
+        "provider": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Sınaq provayderi",
+          "BANK_TRANSFER": "Bank köçürməsi"
+        },
+        "nothingUnsent": "Göndəriləcək yeni sübut yoxdur — əvvəlcə sübut əlavə edin.",
+        "confirmHeading": "Nəticəni təsdiqləyin",
+        "confirmLoss": "İş «{outcome}» kimi bağlansın? {amount} dəstəkçiyə qaytarılmış sayılır, {fee} provayder komissiyası isə platformanın xərci kimi baş kitaba yazılır.",
+        "confirmDebt": "Kampaniyanın pulu artıq müəllifə ödənilibsə, {total} müəllifin borcu kimi qeyd olunur və müəllifin hesabı borc qaytarılana qədər bloklanır.",
+        "confirmWon": "İş «{outcome}» kimi bağlansın? Pul yerindən tərpənmir və baş kitaba heç nə yazılmır.",
+        "confirmFinal": "Nəticə qeyd ediləndən sonra dəyişdirilmir.",
+        "confirmAction": "Təsdiqlə",
+        "resolving": "Qeyd edilir…",
+        "resolvedNotice": "İş «{outcome}» kimi bağlandı.",
+        "answeredNotice": "İş cavablandırılmış kimi qeyd edildi.",
+        "doneTitle": "Qeyd edildi",
+        "errors": {
+          "NOTHING_TO_SUBMIT": "Bu işdəki bütün sübutlar artıq göndərilib. Yeni sübut əlavə edin və ya işi bağlayın.",
+          "NOT_A_DISPUTE_OUTCOME": "Bu, işin nəticəsi deyil. «Udulub», «Uduzulub» və ya «Güzəşt edilib» seçin.",
+          "DISPUTE_ALREADY_RESOLVED": "Bu iş artıq «{state}» kimi bağlanıb və nəticə dəyişdirilmir. Siyahını yeniləyin.",
+          "DISPUTE_NOT_FOUND": "Bu iş artıq mövcud deyil. Siyahını yeniləyin."
+        },
+        "resolvedHeading": "Bağlanmış işlər",
+        "resolvedIntro": "Nəticəsi qeyd edilmiş geri tələblər, ən yenisi birinci.",
+        "resolvedSubject": "bağlanmış geri tələbləri",
+        "loadingResolved": "Bağlanmış işlər yüklənir",
+        "resolvedEmpty": "«{state}» kimi bağlanmış iş yoxdur.",
+        "resolvedOn": "Bağlanıb: {date}"
       },
       "fees": {
         "subject": "komissiya cədvəlini",
@@ -2882,23 +2955,38 @@
         "periodTooLong": "Dövr ən çox 400 gün ola bilər. Bir il və ya daha qısa dövr seçin."
       },
       "backerDisputes": {
-        "subject": "dəstəkçi etirazları növbəsi",
+        "subject": "dəstəkçi etirazları növbəsini",
         "heading": "Dəstəkçi etirazları",
         "intro": "Ödəniş saxlanılarkən dəstəkçilər tərəfindən açılır. Qəbul etmək dəstəkçiyə məbləği tam qaytarır və ödənişi onsuz yenidən hesablayır; kampaniya uğurlu olaraq qalır. Rədd etmək heç nəyi dəyişmir.",
         "loadingList": "Dəstəkçi etirazları növbəsi yüklənir",
         "emptyTitle": "Açıq dəstəkçi etirazı yoxdur",
         "emptyBody": "Qərar gözləyən heç nə yoxdur. Dəstəkçilər yalnız kampaniyalarının ödənişi saxlanılarkən etiraz edə bilər.",
-        "pledgeLine": "Dəstək {pledge} · kampaniya {project} · açılıb {date}",
+        "pledgeLine": "Dəstəkçi: {backer} · Kampaniya: {campaign} · Dəstək: {pledge} · Açılıb: {date}",
         "noteLabel": "Qeyd",
         "noteHint": "Qərarla birlikdə və audit jurnalında saxlanılır.",
         "uphold": "Qəbul et və qaytar",
         "reject": "Rədd et",
-        "confirmUphold": "Bu dəstəkçiyə məbləğ tam qaytarılsın və ödəniş yenidən hesablansın?",
+        "confirmUphold": "Bu dəstəkçiyə {amount} tam qaytarılsın və ödəniş yenidən hesablansın? Pul göndəriləndən sonra bunu geri almaq olmur.",
         "confirmNow": "Tam qaytar",
         "deciding": "Qərar verilir…",
         "alreadyDecided": "Bu etiraz üzrə artıq qərar verilib. Siyahı yeniləndi.",
         "refundFailed": "Geri qaytarma rədd edildi, ona görə etiraz hələ açıqdır. Yenidən cəhd edin və ya qaytarmaya geri qaytarmalar ekranında baxın.",
-        "failedTitle": "Alınmadı"
+        "failedTitle": "Alınmadı",
+        "unnamed": "—",
+        "refundableLine": "Qəbul edilsə qaytarılacaq: {amount}",
+        "everythingLeft": "qalan məbləğ",
+        "refundAwaitingBank": "Qaytarma provayderin müddətindən keçib və bank köçürməsi ilə ödəniləcək; etiraz o vaxta qədər açıq qalır. Dəstəkçinin bank hesabını {link} səhifəsində qeyd edin və köçürməni orada tamamlayın.",
+        "refundsLink": "Geri qaytarmalar",
+        "upheldNotice": "Etiraz qəbul edildi və dəstəkçiyə {amount} qaytarıldı.",
+        "upheldNoticeNoAmount": "Etiraz qəbul edildi və dəstəkçiyə məbləğ tam qaytarıldı.",
+        "rejectedNotice": "Etiraz rədd edildi; pul yerindən tərpənmədi.",
+        "doneTitle": "Qərar qeyd edildi",
+        "errors": {
+          "DISPUTE_WINDOW_CLOSED": "Müəllifin ödənişi artıq göndərilib və ya yoldadır, ona görə bu etiraz üzrə platforma vasitəsilə pul qaytarmaq olmur.",
+          "NOTHING_TO_DISPUTE": "Bu dəstəkdə qaytarılacaq pul qalmayıb.",
+          "DISPUTE_NOT_FOUND": "Bu etiraz artıq mövcud deyil. Siyahını yeniləyin.",
+          "REFUND_CHARGE_DISPUTED": "Bu ödəniş üzrə açıq geri tələb var; geri tələb bağlanana qədər qaytarma edilə bilməz. Etiraz açıq qalır."
+        }
       },
       "partners": {
         "subject": "tərəfdaşların siyahısı",

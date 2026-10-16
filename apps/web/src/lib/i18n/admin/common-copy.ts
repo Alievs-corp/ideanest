@@ -142,6 +142,22 @@ export interface ConsoleRefusalsCopy {
   readonly curationRejected: string;
   readonly refused: string;
   readonly unreachable: string;
+  /**
+   * The 403 that names a capability, on something the reader tried to do rather than read —
+   * "this action needs…". Carries `{capability}`. Optional so a refusal table built by hand
+   * still type-checks; without it a refused write falls back to {@link needsCapability}.
+   */
+  readonly needsCapabilityToAct?: string;
+  /**
+   * How a capability is named inside those two sentences: its translated sentence and its own
+   * identifier together — `«Pulu geri qaytarmaq» (ISSUE_REFUND)`. Carries `{name}`, `{capability}`.
+   * The identifier stays because it is what an administrator grants and what the service names.
+   */
+  readonly capabilityNamed?: string;
+  /** `admin.screens.staff.capability`: each capability as the sentence the roles screen uses. */
+  readonly capabilityNames?: Readonly<Record<string, string>>;
+  /** A 400 with no code — Spring's "Failed to read request" — in the reader's language. */
+  readonly invalidRequest?: string;
 }
 
 /**
@@ -235,6 +251,10 @@ export function consoleRefusalsCopyFrom(t: AdminTranslator): ConsoleRefusalsCopy
     curationRejected: t('refusals.curationRejected'),
     refused: t('refusals.refused'),
     unreachable: t('refusals.unreachable'),
+    needsCapabilityToAct: String(t.raw('refusals.needsCapabilityToAct')),
+    capabilityNamed: String(t.raw('refusals.capabilityNamed')),
+    capabilityNames: t.raw('screens.staff.capability') as Readonly<Record<string, string>>,
+    invalidRequest: t('refusals.invalidRequest'),
   };
 }
 

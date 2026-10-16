@@ -19,7 +19,9 @@ import az.ideanest.shared.idempotency.IdempotencyKeyReusedException;
 import az.ideanest.shared.money.Money;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -128,6 +130,39 @@ public class RefundService {
     }
 
     /**
+     * What a refund of this pledge for this reason could send now, for the console's confirmation: the
+     * pledge's currency, the net figure "the rest" means, and the provider fee a campaign's reason keeps
+     * back (#436). {@code ISSUE_REFUND}, because it is the first half of issuing one.
+     *
+     * @throws NothingToRefundException when the pledge has no settled charge
+     */
+    public RefundRecords.Refundable refundable(UUID staffId, UUID pledgeId, RefundReason reason) {
+        staff.requireCapability(staffId, StaffCapability.ISSUE_REFUND);
+        return records.refundable(pledgeId, reason);
+    }
+
+    /**
+     * The bank-transfer refund each refused refund was routed to by hand (#399's fallback), by the refused
+     * refund's identifier — so the console stops offering the fallback on a row that has had it, and says
+     * where its money went instead.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, Refund> routedTo(List<Refund> listed) {
+        List<String> keys = listed.stream()
+                .filter(refund -> refund.state() == RefundState.FAILED)
+                .map(refund -> RefundRecords.BANK_REFUND_KEY_PREFIX + refund.id())
+                .toList();
+        if (keys.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Refund> routed = new HashMap<>();
+        for (Refund owed : refunds.byIdempotencyKeys(keys)) {
+            RefundRecords.routedFrom(owed).ifPresent(refused -> routed.put(refused, owed));
+        }
+        return routed;
+    }
+
+    /**
      * Issues a refund, and answers with the part that best describes how it went.
      *
      * <p>A refund of a raised pledge is sent as one part per charge (#171, {@link #issueParts}); the
@@ -138,7 +173,11 @@ public class RefundService {
      */
     public Refund issue(
             UUID staffId, UUID pledgeId, Money amount, RefundReason reason, String detail, String idempotencyKey) {
-        List<Refund> parts = issueParts(staffId, pledgeId, amount, reason, detail, idempotencyKey);
+        return describing(issueParts(staffId, pledgeId, amount, reason, detail, idempotencyKey));
+    }
+
+    /** The part that best describes how a refund went: the first that did not succeed, else the first. */
+    public static Refund describing(List<Refund> parts) {
         return parts.stream()
                 .filter(part -> part.state() != RefundState.SUCCEEDED)
                 .findFirst()

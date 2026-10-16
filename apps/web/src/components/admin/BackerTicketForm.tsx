@@ -4,7 +4,8 @@ import { Suspense, lazy, useId, useState, type FormEvent } from 'react';
 import { Field, InlineAlert, Pill, Textarea, TextInput } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import { raiseBackerTicket, type Ticket } from '../../lib/admin/tickets';
-import { consoleMessageFor, shortId } from '../../lib/admin/refusals';
+import { isPledgeId } from '../../lib/admin/refunds';
+import { actionMessageFor, shortId } from '../../lib/admin/refusals';
 import { holds } from '../../lib/admin/staff';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ConsoleRefusalsCopy } from '../../lib/i18n/admin/common-copy';
@@ -19,9 +20,6 @@ import type { RecordedRefundAccount } from './RefundBankDetailsForm';
 const RefundBankDetailsForm = lazy(() =>
   import('./RefundBankDetailsForm').then((module) => ({ default: module.RefundBankDetailsForm })),
 );
-
-/** A pledge's identifier as the service issues it. Checked here so a truncated paste is caught in the field. */
-const PLEDGE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * A ticket raised for a backer who wrote in somewhere else, and the refund account recorded
@@ -102,7 +100,8 @@ export function BackerTicketForm({
     setError(null);
 
     const target = pledge.trim();
-    const valid = PLEDGE_ID.test(target);
+    // Checked here so a truncated paste is caught in the field.
+    const valid = isPledgeId(target);
     setPledgeError(valid ? null : copy.pledgeInvalid);
     if (!valid || title.trim() === '' || body.trim() === '') return;
 
@@ -113,7 +112,7 @@ export function BackerTicketForm({
       onRaised?.(file.ticket);
     } catch (cause) {
       const code = cause instanceof ApiError ? cause.problem?.code : undefined;
-      setError((code != null ? copy.errors[code] : undefined) ?? consoleMessageFor(cause, subject, refusals));
+      setError((code != null ? copy.errors[code] : undefined) ?? actionMessageFor(cause, subject, refusals));
     } finally {
       setBusy(false);
     }
