@@ -267,6 +267,27 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("the campaign refund sweep waits for an open chargeback, then refunds a won one")
+    void theSweepWaitsForAnOpenChargeback() {
+        Paid paid = aPaidPledge("chargeback-open-sweep", "25.00");
+        UUID dispute = chargeback(paid, "25.00");
+
+        end(paid.projectId(), "UNSUCCESSFUL");
+        job.refundDue(Instant.now());
+
+        assertThat(sentFor(paid.pledgeId())).as("nothing sent beside the open case").isEmpty();
+        assertThat(jdbc().queryForObject("SELECT count(*) FROM refunds WHERE pledge_id = ?", Long.class, paid.pledgeId()))
+                .isZero();
+
+        resolve(dispute, "WON", admin());
+        job.refundDue(Instant.now().plus(Duration.ofDays(1)));
+
+        assertThat(sentFor(paid.pledgeId()))
+                .as("once the case is won the charge stood, and the sweep refunds it")
+                .hasSize(1);
+    }
+
+    @Test
     @DisplayName("a chargeback after a partial refund books only what the charge had left")
     void aChargebackAfterARefundIsCappedByWhatWasLeft() {
         Paid paid = aPaidPledge("chargeback-after-refund", "25.00");

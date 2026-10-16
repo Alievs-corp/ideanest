@@ -349,6 +349,12 @@ public class RefundRecords {
         // Locked before what is left is read, so a staff refund recorded at the same moment is either
         // counted here or counts this one.
         pledges.lock(pledgeId);
+        // The same rule a staff refund meets: while the card network is deciding the charge, a provider
+        // refund beside it can pay the backer twice. Nothing is recorded, so the next pass offers the
+        // charge again — a lost case leaves nothing on it, a won one leaves it to refund.
+        if (disputes.openOnCharge(charge.getId())) {
+            return Optional.empty();
+        }
         String currency = charge.getAmount().currency();
         // #436: the part of the charge's provider fee no refund has kept back yet; zero unless the charge
         // was taken under the net rule and this is a campaign's outcome.
