@@ -292,6 +292,40 @@ class SubscriptionApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("staff end a subscription once: an ended or expired one is refused and keeps its note")
+    void endingIsRefusedOnceItHasEnded() {
+        Account creator = account();
+        post("/v1/me/subscription", creator.accessToken(), Map.of("planId", idOf("GROWTH")));
+        String subscriptionId = (String) subscriptionIn(get("/v1/me/subscription", creator.accessToken()).getBody())
+                .get("id");
+        String cancel = "/v1/admin/subscriptions/" + subscriptionId + "/cancel";
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+
+        ResponseEntity<Map<String, Object>> ended = post(cancel, admin().accessToken(), Map.of("reason", "Changed plans"));
+        assertThat(ended.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ended.getBody().get("state")).isEqualTo("CANCELED");
+
+        ResponseEntity<Map<String, Object>> again = post(cancel, admin().accessToken(), Map.of("reason", "Second try"));
+        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(again.getBody().get("code")).isEqualTo("SUBSCRIPTION_NOT_OPEN");
+        assertThat(again.getBody().get("state")).isEqualTo("CANCELED");
+
+        // An expired row keeps the note it was activated with, and is not turned into a cancelled one.
+        jdbc.update("UPDATE subscriptions SET state = 'EXPIRED', note = 'KB-88123' WHERE id = ?::uuid", subscriptionId);
+        ResponseEntity<Map<String, Object>> expired = post(cancel, admin().accessToken(), Map.of("reason", "Tidy up"));
+        assertThat(expired.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(expired.getBody().get("state")).isEqualTo("EXPIRED");
+        assertThat(jdbc.queryForMap("SELECT state, note FROM subscriptions WHERE id = ?::uuid", subscriptionId))
+                .containsEntry("state", "EXPIRED")
+                .containsEntry("note", "KB-88123");
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM audit_logs WHERE action = 'subscription.canceled' AND entity_id = ?::uuid",
+                        Long.class,
+                        subscriptionId))
+                .isEqualTo(1L);
+    }
+
+    @Test
     @DisplayName("a free plan entitles at once, because there is no payment to wait for")
     void aFreePlanNeedsNoSecondStep() {
         UUID freePlan = addPlan("COMMUNITY", "0.00", 1, null);
