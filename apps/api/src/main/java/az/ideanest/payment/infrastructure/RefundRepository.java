@@ -124,6 +124,10 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     @Query("SELECT r FROM Refund r WHERE r.idempotencyKey = :key")
     Optional<Refund> byIdempotencyKey(@Param("key") String key);
 
+    /** The refunds recorded under any of these keys — the console's "routed to a bank transfer" lookup. */
+    @Query("SELECT r FROM Refund r WHERE r.idempotencyKey IN :keys")
+    List<Refund> byIdempotencyKeys(@Param("keys") java.util.Collection<String> keys);
+
     /**
      * The console's list, newest first.
      *

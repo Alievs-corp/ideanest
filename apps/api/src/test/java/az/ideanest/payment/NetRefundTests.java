@@ -306,6 +306,92 @@ class NetRefundTests extends AbstractIntegrationTest {
         assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
     }
 
+    @Test
+    @DisplayName("a staff refund under a campaign's reason keeps the fee back, as the platform's own would")
+    void aStaffRefundUnderACampaignReasonIsNet() {
+        Paid paid = aPaidPledge("net-staff-failed", "100.00", true);
+
+        ResponseEntity<Map<String, Object>> issued = staffRefund(paid.pledgeId(), null, "CAMPAIGN_FAILED");
+
+        assertThat(issued.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(asMap(issued.getBody().get("amount"))).containsEntry("amount", "97.00");
+        assertThat(asMap(issued.getBody().get("withheldFee")))
+                .as("the response says what was kept back")
+                .containsEntry("amount", "3.00")
+                .containsEntry("currency", "AZN");
+        assertThat(sentFor(paid.pledgeId())).singleElement().satisfies(sent -> assertThat(sent.amount())
+                .isEqualTo(azn("97.00")));
+        Map<String, Object> refund = refundOf(paid.pledgeId());
+        assertThat((BigDecimal) refund.get("withheld_fee")).isEqualByComparingTo("3.00");
+        assertThat(state(paid.pledgeId())).as("the fee is settled, not owed").isEqualTo("REFUNDED");
+
+        end(paid.projectId(), "UNSUCCESSFUL");
+        job.refundDue(clock.instant());
+        assertThat(sentFor(paid.pledgeId())).as("the sweep finds nothing more owed").hasSize(1);
+    }
+
+    @Test
+    @DisplayName("a partial staff refund under a campaign's reason keeps the fee back once, and the rest is net of it")
+    void aPartialStaffRefundUnderACampaignReasonKeepsTheFeeOnce() {
+        Paid paid = aPaidPledge("net-staff-partial", "100.00", true);
+
+        assertThat(staffRefund(paid.pledgeId(), Map.of("amount", "98.00", "currency", "AZN"), "CAMPAIGN_HALTED"))
+                .satisfies(refused -> {
+                    assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(refused.getBody()).containsEntry("code", "REFUND_EXCEEDS_COLLECTION");
+                    assertThat(asMap(refused.getBody().get("meta"))).containsEntry("remaining", "97.00 AZN");
+                });
+
+        assertThat(staffRefund(paid.pledgeId(), Map.of("amount", "50.00", "currency", "AZN"), "CAMPAIGN_HALTED")
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(refundable(paid.pledgeId(), "CAMPAIGN_HALTED"))
+                .as("47.00 left to send, and the fee already kept back is not kept back twice")
+                .containsEntry("remaining", Map.of("amount", "47.00", "currency", "AZN"))
+                .containsEntry("withheldFee", Map.of("amount", "0.00", "currency", "AZN"));
+
+        assertThat(staffRefund(paid.pledgeId(), null, "CAMPAIGN_HALTED").getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        List<Map<String, Object>> rows = jdbc().queryForList(
+                "SELECT amount, withheld_fee FROM refunds WHERE pledge_id = ? ORDER BY requested_at, id",
+                paid.pledgeId());
+        assertThat(rows).hasSize(2);
+        assertThat((BigDecimal) rows.get(0).get("amount")).isEqualByComparingTo("50.00");
+        assertThat((BigDecimal) rows.get(0).get("withheld_fee")).isEqualByComparingTo("3.00");
+        assertThat((BigDecimal) rows.get(1).get("amount")).isEqualByComparingTo("47.00");
+        assertThat((BigDecimal) rows.get(1).get("withheld_fee")).isEqualByComparingTo("0.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+    }
+
+    @Test
+    @DisplayName("what a refund could send is net of the fee for a campaign's reason and whole for any other")
+    void theRefundableFigureFollowsTheReason() {
+        Paid paid = aPaidPledge("net-refundable", "100.00", true);
+
+        assertThat(refundable(paid.pledgeId(), "CAMPAIGN_FAILED"))
+                .containsEntry("pledgeId", paid.pledgeId().toString())
+                .containsEntry("projectId", paid.projectId().toString())
+                .containsEntry("backerId", paid.backer().id().toString())
+                .containsEntry("remaining", Map.of("amount", "97.00", "currency", "AZN"))
+                .containsEntry("withheldFee", Map.of("amount", "3.00", "currency", "AZN"));
+        assertThat(refundable(paid.pledgeId(), "BACKER_REQUEST"))
+                .containsEntry("remaining", Map.of("amount", "100.00", "currency", "AZN"))
+                .containsEntry("withheldFee", Map.of("amount", "0.00", "currency", "AZN"));
+        assertThat(sentFor(paid.pledgeId())).as("asking sends nothing").isEmpty();
+    }
+
+    @Test
+    @DisplayName("a staff refund under a backer's request is whole, whatever the charge was taken under")
+    void aStaffRefundForAnotherReasonIsWhole() {
+        Paid paid = aPaidPledge("net-staff-whole", "100.00", true);
+
+        ResponseEntity<Map<String, Object>> issued = staffRefund(paid.pledgeId(), null, "BACKER_REQUEST");
+
+        assertThat(issued.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(asMap(issued.getBody().get("amount"))).containsEntry("amount", "100.00");
+        assertThat(issued.getBody()).doesNotContainKey("withheldFee");
+    }
+
     // ------------------------------------------------------------------
     // Past the provider's window (#399)
     // ------------------------------------------------------------------
@@ -586,10 +672,21 @@ class NetRefundTests extends AbstractIntegrationTest {
     }
 
     private ResponseEntity<Map<String, Object>> staffRefund(UUID pledgeId, Map<String, Object> amount) {
+        return staffRefund(pledgeId, amount, "BACKER_REQUEST");
+    }
+
+    private Map<String, Object> refundable(UUID pledgeId, String reason) {
+        ResponseEntity<Map<String, Object>> answer = get(
+                "/v1/admin/refunds/refundable?pledgeId=" + pledgeId + "&reason=" + reason, staff("net-issuer", "FINANCE"));
+        assertThat(answer.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return answer.getBody();
+    }
+
+    private ResponseEntity<Map<String, Object>> staffRefund(UUID pledgeId, Map<String, Object> amount, String reason) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("pledgeId", pledgeId.toString());
         body.put("amount", amount);
-        body.put("reason", "BACKER_REQUEST");
+        body.put("reason", reason);
         body.put("detail", "The backer asked, in a test.");
         return post("/v1/admin/refunds", staff("net-issuer", "FINANCE"), "refund-" + UUID.randomUUID(), body);
     }

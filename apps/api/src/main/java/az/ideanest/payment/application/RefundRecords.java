@@ -21,6 +21,7 @@ import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.payment.infrastructure.RefundBankTransferRepository;
 import az.ideanest.payment.infrastructure.RefundRepository;
 import az.ideanest.pledge.application.PledgeRefunds;
+import az.ideanest.shared.money.CurrencyMismatchException;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.outbox.Outbox;
 import java.math.BigDecimal;
@@ -75,6 +76,12 @@ public class RefundRecords {
      * refused as dated in the future.
      */
     private static final ZoneId BANK_ZONE = ZoneId.of("Asia/Baku");
+
+    /** The key a refund routed to a bank transfer by hand is recorded under, followed by the refused one's id. */
+    static final String BANK_REFUND_KEY_PREFIX = "bank-refund:";
+
+    /** The key a lost chargeback's refund row is recorded under, followed by the dispute's id — #175. */
+    static final String CHARGEBACK_KEY_PREFIX = "chargeback-";
 
     private final RefundRepository refunds;
     private final PaymentTransactionRepository transactions;
@@ -132,9 +139,22 @@ public class RefundRecords {
      * of an amount that took it first would leave the backer short by that much, because the
      * platform's refund would then find nothing left of it.
      *
+     * <p><strong>Net of the provider's fee for a campaign's reasons, whoever issues it (#436).</strong> A
+     * member of staff refunding under {@code CAMPAIGN_FAILED} or {@code CAMPAIGN_HALTED} keeps back the same
+     * fee the platform's own refund would ({@link RefundTerms}), so what a backer gets back does not depend
+     * on who pressed the button. The fee is kept back once per charge — on the first part that draws on it
+     * — and what the pledge has left is counted without it, so a refund of "the rest" is the net rest and a
+     * figure above it is refused. Every other reason returns the charge's whole remainder, as before.
+     *
+     * <p><strong>Not while the charge is in an open chargeback.</strong> The network may return that money
+     * itself; a provider refund beside it pays the backer twice. Refused with {@code REFUND_CHARGE_DISPUTED},
+     * as a bank transfer already is ({@link #settleByBankTransfer}).
+     *
      * @return the parts, newest charge first; never empty
      * @throws NothingToRefundException when the pledge has no settled charge
      * @throws RefundExceedsCollectionException when this would return more than the pledge has left
+     * @throws CurrencyMismatchException when {@code amount} is not in the pledge's currency
+     * @throws BankRefundRefusedException {@code REFUND_CHARGE_DISPUTED} when a charge it draws on is disputed
      */
     @Transactional
     List<Refund> record(
@@ -147,7 +167,12 @@ public class RefundRecords {
         }
 
         String currency = charges.getFirst().getAmount().currency();
-        Money remaining = remainingOn(pledgeId, currency);
+        if (amount != null && !amount.currency().equals(currency)) {
+            // Said in the pledge's terms: `expected` is the currency a refund of it must be in.
+            throw new CurrencyMismatchException(currency, amount.currency());
+        }
+        List<Draw> draws = drawsOn(pledgeId, reason, charges);
+        Money remaining = remainingFor(pledgeId, currency, draws);
         Money requested = amount == null ? remaining : amount;
         if (!requested.isPositive() || requested.isGreaterThan(remaining)) {
             throw new RefundExceedsCollectionException(pledgeId, requested, remaining);
@@ -155,32 +180,30 @@ public class RefundRecords {
         // "Meant to be the whole thing" (V53): the rest of the pledge, on every part of it.
         boolean full = requested.equals(remaining);
 
-        Set<String> owedBack = Set.copyOf(transactions.unappliedRaiseChargesOf(pledgeId));
-        List<PaymentTransaction> ordered = new ArrayList<>(charges);
-        // Stable: newest first within each group, the pledge's own money before money owed back.
-        ordered.sort(Comparator.comparing(charge -> owedBack.contains(charge.getId().toString())));
-
         List<Refund> parts = new ArrayList<>();
         Money unassigned = requested;
-        for (PaymentTransaction charge : ordered) {
+        for (Draw draw : draws) {
             if (!unassigned.isPositive()) {
                 break;
             }
-            Money left = remainingOnCharge(charge);
-            if (!left.isPositive()) {
+            if (!draw.left().isPositive()) {
                 continue;
             }
-            Money part = left.min(unassigned);
+            PaymentTransaction charge = draw.charge();
+            if (disputes.openOnCharge(charge.getId())) {
+                throw new BankRefundRefusedException(Reason.REFUND_CHARGE_DISPUTED, pledgeId);
+            }
+            Money part = draw.left().min(unassigned);
             String key = parts.isEmpty() ? idempotencyKey : partKey(idempotencyKey, parts.size() + 1);
             Refund refund = refunds.save(Refund.requested(
-                    pledgeId, charge.getProjectId(), charge.getId(), part, full, reason, detail, staffId, key));
+                    pledgeId, charge.getProjectId(), charge.getId(), part, draw.withheld(), full, reason, detail, staffId, key));
             audit.record(
                     AuditAction.REFUND_ISSUED,
                     refund.id(),
                     AuditActor.moderator(staffId),
                     AuditOutcome.SUCCEEDED,
-                    "pledge=%s; charge=%s; amount=%s; reason=%s; full=%s"
-                            .formatted(pledgeId, charge.getId(), part, reason, full));
+                    "pledge=%s; charge=%s; amount=%s; withheldFee=%s; reason=%s; full=%s"
+                            .formatted(pledgeId, charge.getId(), part, draw.withheld(), reason, full));
             parts.add(refund);
             unassigned = unassigned.minus(part);
         }
@@ -192,6 +215,93 @@ public class RefundRecords {
                     + " left and its charges only " + requested.minus(unassigned));
         }
         return parts;
+    }
+
+    /**
+     * What a refund of this pledge for this reason could return now, without recording anything — the
+     * console's confirmation (#8 of the money console's audit): it names the pledge's currency and, for a
+     * refund of "the rest", the figure, before anybody presses the button that sends it.
+     *
+     * <p>{@link #record}'s own arithmetic, so the two cannot disagree; read without the pledge's lock,
+     * because it decides nothing — {@link #record} checks again under the lock.
+     *
+     * @throws NothingToRefundException when the pledge has no settled charge
+     */
+    @Transactional(readOnly = true)
+    Refundable refundable(UUID pledgeId, RefundReason reason) {
+        List<PaymentTransaction> charges = transactions.settledChargesOf(pledgeId);
+        if (charges.isEmpty()) {
+            throw new NothingToRefundException(pledgeId);
+        }
+        String currency = charges.getFirst().getAmount().currency();
+        List<Draw> draws = drawsOn(pledgeId, reason, charges);
+        Money withheld = Money.zero(currency);
+        for (Draw draw : draws) {
+            if (draw.left().isPositive()) {
+                withheld = withheld.plus(draw.withheld());
+            }
+        }
+        Money remaining = remainingFor(pledgeId, currency, draws).max(Money.zero(currency));
+        return new Refundable(
+                remaining, withheld, charges.getFirst().getProjectId(), pledges.backerOf(pledgeId).orElse(null));
+    }
+
+    /**
+     * What a pledge could have refunded, and what a refund of all of it would keep back.
+     *
+     * @param remaining what would be sent, net of {@code withheldFee}
+     * @param withheldFee the provider's fee a campaign's reason keeps back (#436); zero for any other
+     * @param projectId the pledge's campaign, so the confirmation can name it
+     * @param backerId whose money it is, so the confirmation can name them; null when the pledge has none
+     */
+    public record Refundable(Money remaining, Money withheldFee, UUID projectId, UUID backerId) {
+    }
+
+    /**
+     * One charge a refund may draw on: what it has left to send, and the provider fee a refund of it keeps
+     * back first (#436) — zero unless the reason is a campaign's and the charge was taken under the rule.
+     */
+    private record Draw(PaymentTransaction charge, Money left, Money withheld) {
+    }
+
+    /**
+     * The pledge's charges in the order a refund draws on them, each with what it has left.
+     *
+     * <p>A charge that paid for a raise which could not be applied is drawn on <strong>last</strong> (#174's
+     * review) — see {@link #record}. The fee a campaign's reason keeps back is the one posted with the charge,
+     * less what a refund not failed has already kept back of it, and comes off what the charge has left.
+     */
+    private List<Draw> drawsOn(UUID pledgeId, RefundReason reason, List<PaymentTransaction> charges) {
+        Set<String> owedBack = Set.copyOf(transactions.unappliedRaiseChargesOf(pledgeId));
+        List<PaymentTransaction> ordered = new ArrayList<>(charges);
+        // Stable: newest first within each group, the pledge's own money before money owed back.
+        ordered.sort(Comparator.comparing(charge -> owedBack.contains(charge.getId().toString())));
+
+        List<Draw> draws = new ArrayList<>();
+        for (PaymentTransaction charge : ordered) {
+            String currency = charge.getAmount().currency();
+            Money onCharge = remainingOnCharge(charge);
+            Money withheld = terms.withheldOn(charge, reason)
+                    .minus(Money.of(refunds.withheldAgainstCharge(charge.getId()), currency))
+                    .max(Money.zero(currency))
+                    // Never more than the charge has left: a fee larger than the rest leaves nothing to send.
+                    .min(onCharge.max(Money.zero(currency)));
+            draws.add(new Draw(charge, onCharge.minus(withheld), withheld));
+        }
+        return draws;
+    }
+
+    /**
+     * What the pledge has left to send for this reason: everything it was charged less every refund not
+     * failed, less the fee a campaign's reason keeps back of each charge. For any other reason exactly what
+     * {@link #remainingOn} says, as before #436 reached staff refunds.
+     */
+    private Money remainingFor(UUID pledgeId, String currency, List<Draw> draws) {
+        Money remaining = remainingOn(pledgeId, currency);
+        for (Draw draw : draws) {
+            remaining = remaining.minus(draw.withheld());
+        }
+        return remaining;
     }
 
     /**
@@ -283,8 +393,7 @@ public class RefundRecords {
             return "The backer paid to raise their pledge and the raise could not be applied.";
         }
         return withheld.isPositive()
-                ? outcome + "; the backer is refunded less the payment provider's fee of " + withheld
-                        + ", which the charge was taken under (#436)."
+                ? outcome + "; the backer is refunded less the payment provider's fee of " + withheld + "."
                 : outcome + "; the backer is refunded in full.";
     }
 
@@ -414,7 +523,7 @@ public class RefundRecords {
     Refund bankRefundFor(UUID staffId, UUID refusedId) {
         Refund refused = refunds.findById(refusedId)
                 .orElseThrow(() -> new BankRefundRefusedException(Reason.REFUND_NOT_FOUND, refusedId));
-        String key = "bank-refund:" + refusedId;
+        String key = BANK_REFUND_KEY_PREFIX + refusedId;
         pledges.lock(refused.pledgeId());
         Optional<Refund> earlier = refunds.byIdempotencyKey(key);
         if (earlier.isPresent()) {
@@ -456,6 +565,32 @@ public class RefundRecords {
                         .formatted(saved.pledgeId(), charge.getId(), left, saved.reason(), saved.fullRefund(), refusedId));
         announceBankTransfer(saved, AuditActor.moderator(staffId), "refused by the provider as " + refused.failureCode());
         return saved;
+    }
+
+    /**
+     * The refused refund this one was routed from by hand ({@link #bankRefundFor}), read off its key — so the
+     * console can say so in its own words rather than show the sentence written into {@code detail}.
+     */
+    public static Optional<UUID> routedFrom(Refund refund) {
+        return idAfter(refund.idempotencyKey(), BANK_REFUND_KEY_PREFIX);
+    }
+
+    /** The dispute a {@code CHARGEBACK} refund row records the loss of, read off its key (#175). */
+    public static Optional<UUID> chargebackOf(Refund refund) {
+        return refund.reason() == RefundReason.CHARGEBACK
+                ? idAfter(refund.idempotencyKey(), CHARGEBACK_KEY_PREFIX)
+                : Optional.empty();
+    }
+
+    private static Optional<UUID> idAfter(String key, String prefix) {
+        if (key == null || !key.startsWith(prefix)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(UUID.fromString(key.substring(prefix.length())));
+        } catch (IllegalArgumentException notAnId) {
+            return Optional.empty();
+        }
     }
 
     /** The audit row, the log line and, once per pledge, the backer's notification. */

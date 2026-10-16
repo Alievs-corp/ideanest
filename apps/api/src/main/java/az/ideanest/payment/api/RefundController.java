@@ -1,5 +1,6 @@
 package az.ideanest.payment.api;
 
+import az.ideanest.payment.application.PledgeBackers;
 import az.ideanest.payment.application.RefundBankTransfers;
 import az.ideanest.payment.application.RefundService;
 import az.ideanest.payment.domain.RefundReason;
@@ -49,6 +50,7 @@ public class RefundController {
 
     private final RefundService refunds;
     private final RefundBankTransfers bankRefunds;
+    private final PledgeBackers backers;
 
     /**
      * The console's page size.
@@ -60,9 +62,10 @@ public class RefundController {
      */
     private static final int PAGE_SIZE = 50;
 
-    public RefundController(RefundService refunds, RefundBankTransfers bankRefunds) {
+    public RefundController(RefundService refunds, RefundBankTransfers bankRefunds, PledgeBackers backers) {
         this.refunds = refunds;
         this.bankRefunds = bankRefunds;
+        this.backers = backers;
     }
 
     /**
@@ -84,7 +87,7 @@ public class RefundController {
         List<az.ideanest.payment.domain.Refund> listed = refunds.list(callerOf(accessToken), state, page, PAGE_SIZE);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(PaymentAdminResponses.RefundPage.of(listed, bankRefunds.of(listed), page, PAGE_SIZE));
+                .body(pageOf(listed, page));
     }
 
     /** Every refund against one pledge. */
@@ -95,7 +98,25 @@ public class RefundController {
         List<az.ideanest.payment.domain.Refund> listed = refunds.forPledge(callerOf(accessToken), pledgeId);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(PaymentAdminResponses.RefundPage.of(listed, bankRefunds.of(listed), 0, PAGE_SIZE));
+                .body(pageOf(listed, 0));
+    }
+
+    /**
+     * What a refund of the pledge for this reason could send now — the console's confirmation, before the
+     * press that sends it: the pledge's currency, what "the rest" comes to, and the provider fee a campaign's
+     * reason keeps back (#436). {@code ISSUE_REFUND}; 409 {@code NOTHING_TO_REFUND} for a pledge with no
+     * settled charge.
+     */
+    @GetMapping("/refundable")
+    public ResponseEntity<PaymentAdminResponses.Refundable> refundable(
+            @AuthenticationPrincipal Jwt accessToken,
+            @RequestParam UUID pledgeId,
+            @RequestParam(defaultValue = "BACKER_REQUEST") RefundReason reason) {
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(PaymentAdminResponses.Refundable.of(
+                        pledgeId, reason, refunds.refundable(callerOf(accessToken), pledgeId, reason)));
     }
 
     /** Sends money back. */
@@ -105,15 +126,26 @@ public class RefundController {
             @RequestHeader("Idempotency-Key") @NotBlank @Size(min = 8, max = 200) String idempotencyKey,
             @Valid @RequestBody IssueRefundRequest request) {
 
+        List<az.ideanest.payment.domain.Refund> parts = refunds.issueParts(
+                callerOf(accessToken),
+                request.pledgeId(),
+                request.amount(),
+                request.reason(),
+                request.detail(),
+                idempotencyKey);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(PaymentAdminResponses.Refund.of(refunds.issue(
-                        callerOf(accessToken),
-                        request.pledgeId(),
-                        request.amount(),
-                        request.reason(),
-                        request.detail(),
-                        idempotencyKey)));
+                .body(PaymentAdminResponses.Refund.issued(RefundService.describing(parts), parts));
+    }
+
+    private PaymentAdminResponses.RefundPage pageOf(List<az.ideanest.payment.domain.Refund> listed, int page) {
+        return PaymentAdminResponses.RefundPage.of(
+                listed,
+                bankRefunds.of(listed),
+                refunds.routedTo(listed),
+                backers.of(listed.stream().map(az.ideanest.payment.domain.Refund::pledgeId).toList()),
+                page,
+                PAGE_SIZE);
     }
 
     /**

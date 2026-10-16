@@ -1,5 +1,6 @@
 package az.ideanest.payout.api;
 
+import az.ideanest.payment.application.BankRefundRefusedException;
 import az.ideanest.payment.application.NothingToRefundException;
 import az.ideanest.payment.application.RefundExceedsCollectionException;
 import az.ideanest.payout.application.BackerDisputeNotFoundException;
@@ -58,6 +59,21 @@ public class BackerDisputeExceptionHandler {
         // #399: the same code, so a console that does not know the flag still says the dispute is open.
         problem.setProperty("meta", java.util.Map.of("awaitingBankTransfer", exception.awaitingBankTransfer()));
         return problem;
+    }
+
+    /**
+     * Upholding refunds the pledge, and a refund is refused while its charge is in an open chargeback
+     * ({@code REFUND_CHARGE_DISPUTED}): the card network may be returning the money already. The dispute
+     * stays open; the code is the refund's own, so the console can say why.
+     */
+    @ExceptionHandler(BankRefundRefusedException.class)
+    public ProblemDetail handleRefundRefused(BankRefundRefusedException exception) {
+        BankRefundRefusedException.Reason reason = exception.reason();
+        return problem(
+                HttpStatus.valueOf(reason.status()),
+                reason.name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'),
+                reason.title(),
+                reason.name());
     }
 
     private static ProblemDetail problem(HttpStatus status, String type, String title, String code) {

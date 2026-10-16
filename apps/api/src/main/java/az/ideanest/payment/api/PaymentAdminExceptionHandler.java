@@ -2,13 +2,16 @@ package az.ideanest.payment.api;
 
 import az.ideanest.payment.application.BankRefundRefusedException;
 import az.ideanest.payment.application.PlanRefundRefusedException;
+import az.ideanest.payment.application.DisputeAlreadyResolvedException;
 import az.ideanest.payment.application.DisputeNotFoundException;
+import az.ideanest.payment.application.NotADisputeOutcomeException;
 import az.ideanest.payment.application.NothingToRefundException;
 import az.ideanest.payment.application.NothingToSubmitException;
 import az.ideanest.payment.application.RefundExceedsCollectionException;
 import az.ideanest.payment.application.RefundReasonNotIssuableException;
 import az.ideanest.payment.application.UnconfiguredProviderException;
 import az.ideanest.shared.compliance.UnacceptableIbanException;
+import az.ideanest.shared.money.CurrencyMismatchException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
@@ -183,20 +186,61 @@ public class PaymentAdminExceptionHandler {
         return problem;
     }
 
-    /**
-     * 400 for an outcome that is not one.
-     *
-     * <p>{@code Dispute.resolved} refuses a state that is not terminal. Narrow enough to
-     * catch here: neither controller does arithmetic or parsing that could throw this for
-     * another reason.
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ProblemDetail handleNotAnOutcome(IllegalArgumentException exception) {
+    /** 400 for an outcome that is not one: {@code OPEN} or {@code UNDER_REVIEW}. */
+    @ExceptionHandler(NotADisputeOutcomeException.class)
+    public ProblemDetail handleNotAnOutcome(NotADisputeOutcomeException exception) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setType(URI.create("https://ideanest.az/problems/not-a-dispute-outcome"));
         problem.setTitle("Not an outcome");
         problem.setDetail(exception.getMessage());
         problem.setProperty("code", "NOT_A_DISPUTE_OUTCOME");
+        return problem;
+    }
+
+    /**
+     * 409 for a dispute resolved a second time. {@code meta.state} is how it was resolved, so the console
+     * can say which outcome stands.
+     */
+    @ExceptionHandler(DisputeAlreadyResolvedException.class)
+    public ProblemDetail handleAlreadyResolved(DisputeAlreadyResolvedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/dispute-already-resolved"));
+        problem.setTitle("Already resolved");
+        problem.setDetail(exception.getMessage());
+        problem.setProperty("code", "DISPUTE_ALREADY_RESOLVED");
+        problem.setProperty("meta", Map.of("state", exception.state().name()));
+        return problem;
+    }
+
+    /**
+     * 400 for a refund asked for in a currency that is not the pledge's. {@code meta.currency} is the
+     * pledge's, so the console can say which one it should have been; nothing is converted (§21.2).
+     */
+    @ExceptionHandler(CurrencyMismatchException.class)
+    public ProblemDetail handleCurrencyMismatch(CurrencyMismatchException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/currency-mismatch"));
+        problem.setTitle("Not the pledge's currency");
+        problem.setDetail("A refund is made in the currency the pledge was paid in, " + exception.expected() + ".");
+        problem.setProperty("code", "CURRENCY_MISMATCH");
+        problem.setProperty("meta", Map.of("currency", exception.expected()));
+        return problem;
+    }
+
+    /**
+     * 400 for any other argument the service refused.
+     *
+     * <p>This used to answer every {@code IllegalArgumentException} as {@code NOT_A_DISPUTE_OUTCOME}, which
+     * is how a refund in the wrong currency reached the refund screen as "not an outcome". The two that
+     * have a meaning are handled above; anything else is a request the service could not use, said as such.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgument(IllegalArgumentException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/invalid-request"));
+        problem.setTitle("Invalid request");
+        problem.setDetail(exception.getMessage());
+        problem.setProperty("code", "INVALID_REQUEST");
         return problem;
     }
 }
