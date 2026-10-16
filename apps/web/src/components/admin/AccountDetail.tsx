@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
 import {
+  reinstateUser,
   readAccountLegalSubject,
   readAccountPayoutDestination,
   readAccountSubscriptions,
@@ -29,12 +30,13 @@ import {
 } from '../../lib/admin/refusals';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { AccountDetailCopy } from '../../lib/i18n/admin/people-copy';
-import { Link, localeHref } from '../../i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { formatDate } from '../../lib/time';
 import { formatMoney } from '../../lib/money';
 import type { Locale } from '../../lib/i18n/locale';
 import { holds } from '../../lib/admin/staff';
+import { suspensionMessageFor } from '../../lib/admin/suspension';
 import { ConsoleRefusal } from './ConsoleRefusal';
 import { CopyIdentifier } from './ConsoleIdentity';
 import { useConsoleMembership } from './ConsoleMembership';
@@ -70,12 +72,13 @@ import { DESTINATION_STANDING_TONE, PayoutDestinationReview } from './PayoutDest
  * together as soon as the account resolves, because they are two questions about the same
  * person and nothing about the second depends on the first.
  *
- * <h2>No suspension is decided here</h2>
+ * <h2>The suspension is decided here too</h2>
  *
- * Suspending stays on the directory, with its confirmation dialog and its required reason.
- * This screen exists so that the decision made there is an informed one; putting a second ban
- * control on it would mean two paths into an audited, session-revoking write, and the second
- * one would be the one without the dialog. The link back is the whole affordance.
+ * This screen used to send the reader back to the directory to suspend — search for the person
+ * again, find the row, press the button — on the argument that a second control would be "the
+ * one without the dialog". It is the same dialog: `SuspendDialog`, with the same required
+ * reason and the same refusals, drawn from one component. The decision is now taken where its
+ * context is, and the reader's own account offers neither control, as on the directory.
  *
  * <p>The payout destination is the exception, and #396 is why: verifying it, rejecting it and
  * revealing its IBAN are COMPLIANCE's, through `PayoutDestinationReview`, which the queue at
@@ -92,6 +95,22 @@ export interface AccountDetailProps {
   readonly userId: string;
   readonly copy: AccountDetailCopy;
 }
+
+/*
+ * The suspension dialog, fetched when it opens. Its `Modal` brings the motion library, about
+ * 120 KiB, and this route had no modal before #501 — imported directly it put the page far over
+ * its First Load JS budget. `SupportConsole` loads its forms the same way.
+ */
+const SuspendDialog = lazy(() =>
+  import('./AccountSuspension').then((module) => ({ default: module.SuspendDialog })),
+);
+
+/**
+ * A campaign's title on a row: the console's own link, with a visible focus ring. These were
+ * bare anchors with no focus style, which reloaded the whole console on every click.
+ */
+const ROW_LINK =
+  'rounded text-[15px] font-medium text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
 
 /** The day, in the reader's language. An instant to the second says more than anybody needs. */
 function day(instant: string | null | undefined, locale: Locale): string | null {
@@ -182,7 +201,7 @@ export function AccountDetail({ userId, copy }: AccountDetailProps) {
 
       {status === 'ready' && account !== null && (
         <>
-          <Standing account={account} locale={locale} copy={copy} />
+          <Standing account={account} locale={locale} copy={copy} onChanged={setAccount} />
           <PayoutDetails key={`payout-${account.id}`} userId={account.id} copy={copy} />
           {/*
             Rendered only once the account has resolved, so that a 404 for somebody who does
@@ -218,11 +237,35 @@ function Standing({
   account,
   locale,
   copy,
+  onChanged,
 }: {
   readonly account: AdminUser;
   readonly locale: Locale;
   readonly copy: AccountDetailCopy;
+  readonly onChanged: (updated: AdminUser) => void;
 }) {
+  const { membership } = useConsoleMembership();
+  const mine = membership?.accountId === account.id;
+  const [suspending, setSuspending] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function reinstate(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await reinstateUser(account.id);
+      onChanged(updated);
+      setNotice(fillPlaceholders(copy.suspension.reinstatedNotice, { name: updated.name }));
+    } catch (cause) {
+      setError(suspensionMessageFor(cause, copy.subject, copy.suspension));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <section aria-labelledby="account-standing-heading" className="mt-6">
       <div className="rounded-lg border border-white/8 bg-surface-2 p-5">
@@ -275,7 +318,59 @@ function Standing({
             })}
           </p>
         )}
+
+        {!mine && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {account.suspended ? (
+              <Pill variant="ghost" size="sm" disabled={busy} onClick={() => void reinstate()}>
+                {busy ? copy.suspension.reinstating : copy.suspension.reinstate}
+              </Pill>
+            ) : (
+              <Pill
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => {
+                  setNotice(null);
+                  setError(null);
+                  setSuspending(true);
+                }}
+              >
+                {copy.suspension.suspend}
+              </Pill>
+            )}
+          </div>
+        )}
+
+        <div role="status" aria-live="polite" className="empty:hidden">
+          {notice && (
+            <InlineAlert variant="success" className="mt-4">
+              {notice}
+            </InlineAlert>
+          )}
+        </div>
+        {error && (
+          <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
+            {error}
+          </InlineAlert>
+        )}
       </div>
+
+      {suspending && (
+        <Suspense fallback={null}>
+          <SuspendDialog
+            account={account}
+            copy={copy.suspension}
+            subject={copy.subject}
+            onClose={() => setSuspending(false)}
+            onSuspended={(updated) => {
+              onChanged(updated);
+              setNotice(fillPlaceholders(copy.suspension.suspendedNotice, { name: updated.name }));
+              setSuspending(false);
+            }}
+          />
+        </Suspense>
+      )}
     </section>
   );
 }
@@ -614,12 +709,12 @@ function CreatedCampaigns({
                 <div className="min-w-0">
                   {/* The staff preview, not the public page: half of these states have no
                       public page at all, so a public link would be a 404 by construction. */}
-                  <a
-                    href={localeHref(`/admin/campaigns/${encodeURIComponent(campaign.projectId)}`, locale)}
-                    className="text-[15px] font-medium text-white underline-offset-4 hover:underline"
+                  <Link
+                    href={`/admin/campaigns/${encodeURIComponent(campaign.projectId)}`}
+                    className={ROW_LINK}
                   >
                     {campaign.title}
-                  </a>
+                  </Link>
                   <p className="mt-1 text-sm text-white/48">
                     {fillPlaceholders(copy.startedOn, {
                       date: day(campaign.createdAt, locale) ?? copy.unknownDate,
@@ -761,15 +856,12 @@ function BackedPledges({
                   {pledge.project == null ? (
                     <p className="text-[15px] font-medium text-white/64">{copy.campaignGone}</p>
                   ) : (
-                    <a
-                      href={localeHref(
-                        `/admin/campaigns/${encodeURIComponent(pledge.project.id)}`,
-                        locale,
-                      )}
-                      className="text-[15px] font-medium text-white underline-offset-4 hover:underline"
+                    <Link
+                      href={`/admin/campaigns/${encodeURIComponent(pledge.project.id)}`}
+                      className={ROW_LINK}
                     >
                       {pledge.project.title}
-                    </a>
+                    </Link>
                   )}
                   <p className="mt-1 text-sm text-white/48">
                     {pledge.confirmedAt != null

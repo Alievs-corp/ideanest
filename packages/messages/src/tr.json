@@ -1018,13 +1018,13 @@
         "metaTitle": "Ekip ve roller",
         "metaDescription": "Burada kimin çalıştığı, her rolün ne verdiği ve kendi hesabınızın ne yapabileceği.",
         "title": "Ekip ve roller",
-        "intro": "Roller birbirinin üstüne eklenir: bir hesap kendisine verilmiş tüm rollerin birleşimini taşır ve burada hiçbir şey bir yetkiyi geri almaz. Rol vermek sizin adınıza denetime kaydedilir."
+        "intro": "Burada kim çalışıyor, her rol ne veriyor ve kendi hesabınız ne yapabilir. Rol vermek ve geri almak sizin adınıza denetime kaydedilir."
       },
       "support": {
         "metaTitle": "Destek",
         "metaDescription": "Talepler, ilgili oldukları hesap bağlamı ve ne yapıldığının geçmişiyle.",
         "title": "Destek",
-        "intro": "En acil olan başta, aynı öncelik içinde en eski başta. Bunun arkasında henüz herkese açık bir form yok: biri yazar ve bir ekip üyesi görüşmeyi onun hesabına kaydeder."
+        "intro": "Talepler, ait oldukları hesap ve yapılanların geçmişiyle birlikte. Bunun arkasında henüz herkese açık bir form yok: biri yazar ve bir ekip üyesi görüşmeyi onun hesabına kaydeder."
       },
       "taxonomy": {
         "metaTitle": "Taksonomi",
@@ -1042,7 +1042,7 @@
         "metaTitle": "Hesap",
         "metaDescription": "Tek bir hesap: durumu, oluşturduğu kampanyalar ve yaptığı destekler.",
         "title": "Hesap",
-        "intro": "Tek bir hesap ve hakkındaki kararın dayandığı her şey: doğrulanmış mı, askıya alınmış mı ve neden, ne oluşturmuş ve neyi desteklemiş. Askıya alma dizinde yapılır; gerekçe orada sorulur ve kaydedilir."
+        "intro": "Tek bir hesap ve hakkındaki kararın dayandığı her şey: doğrulanmış mı, askıya alınmış mı ve neden, ne oluşturmuş ve neyi desteklemiş. Buradan da askıya alınabilir ve yeniden açılabilir — gerekçe sorulur ve kaydedilir."
       },
       "submissions": {
         "metaTitle": "İncelemedeki kampanyalar",
@@ -1662,9 +1662,9 @@
         "signedOutBody": "Bu tarayıcının artık bir oturumu yok. Hesap dizinini okumak için yeniden giriş yapın.",
         "forbiddenTitle": "Burada çalışmıyorsunuz",
         "forbiddenBody": "Hesapları platform ekibi arar ve askıya alır, hesabınız ise hiçbir platform rolü taşımıyor.",
-        "notStaff": "Hesabınız platformun moderatör listesinde değil, bu yüzden hesap dizinini okumak size düşmez.",
+        "notStaff": "Hesap dizinini yalnızca platform ekibi okur, hesabınızın ise bir ekip rolü yok.",
         "accountNotFound": "Bu hesap artık yok. Sayfa yüklendiğinden beri silinmiş olabilir.",
-        "selfSuspend": "Bir hesap kendini askıya alamaz. Başka bir moderatöre sorun.",
+        "selfSuspend": "Kendi hesabınızı askıya alamazsınız. Gerekirse başka bir ekip üyesinden isteyin.",
         "heading": "Hesaplar",
         "searchLabel": "Arama",
         "searchHint": "Bir e-posta adresi, görünen ad ya da profil kısa adı.",
@@ -1676,60 +1676,53 @@
         "filteredBody": "Arama bir adresle, görünen adla ya da profil kısa adıyla eşleşir ve bunların içinde herhangi bir yerde eşleşir.",
         "emptyTitle": "Gösterilecek hesap yok",
         "emptyBody": "İnsanlar kaydoldukça hesaplar burada görünür.",
-        "joined": "katıldı {date}",
+        "joined": "{date} tarihinde katıldı",
         "unknownDate": "bilinmeyen bir tarihte",
         "emailVerified": "E-posta doğrulandı",
         "emailUnverified": "E-posta doğrulanmadı",
         "suspendedTag": "Askıda",
         "leaving": "Ayrılıyor",
-        "suspendedOn": "Askıya alındı {date}",
+        "suspendedOn": "{date} tarihinde askıya alındı",
         "reinstate": "Yeniden aç",
         "reinstating": "Yeniden açılıyor",
         "suspend": "Askıya al",
-        "accountCount": {
-          "one": "{count} hesap",
-          "few": "{count} hesap",
-          "many": "{count} hesap",
-          "other": "{count} hesap"
-        },
-        "showing": "{accounts} gösteriliyor",
-        "andMore": ", ve dahası var.",
         "suspendTitle": "{name} askıya alınsın mı?",
         "suspendDescription": "{email} her cihazda oturumu kapatılacak ve biri onu yeniden açana kadar girişte reddedilecek.",
-        "suspendBody": "Kampanyaları ve destekleri olduğu yerde kalır. Bu, bir kampanyayı askıya almanın aksine geri alınabilir — ama şu anda sahip oldukları her oturum iptal edilir ve yeniden açmakla geri gelmez.",
+        "suspendBody": "Kampanyaları ve destekleri olduğu gibi kalır. Hesap daha sonra yeniden açılabilir, ama şu anda açık olan her oturum kapanır ve yeniden açmak onları geri getirmez.",
         "suspendAccount": "Hesabı askıya al",
         "suspending": "Askıya alınıyor",
         "reasonLabel": "Gerekçe",
         "reasonHint": "Kişiye bu söylenir ve itiraz buna göre yanıtlanır.",
-        "reasonRequired": "Gerekçe yazın. Kişiye bu söylenir ve itiraz buna göre yanıtlanır.",
+        "reasonRequired": "Gerekçe yazın.",
         "reasonTooLong": "Bir gerekçe {limit} karakteri aşamaz.",
         "suspendedNotice": "{name} askıya alındı ve sahip olduğu her oturum iptal edildi.",
-        "reinstatedNotice": "{name} yeniden giriş yapabilir. Eski oturumları geri gelmez."
+        "reinstatedNotice": "{name} yeniden giriş yapabilir. Eski oturumları geri gelmez.",
+        "you": "Siz"
       },
       "accountDetail": {
         "subject": "hesabı",
         "backToDirectory": "Hesaplara dön",
         "loadingAccount": "Hesap yükleniyor",
-        "joined": "katıldı {date}",
+        "joined": "{date} tarihinde katıldı",
         "unknownDate": "bilinmeyen bir tarihte",
         "emailVerified": "E-posta doğrulandı",
         "emailUnverified": "E-posta doğrulanmadı",
         "suspendedTag": "Askıda",
         "leaving": "Ayrılıyor",
-        "suspendedOn": "Askıya alındı {date}",
+        "suspendedOn": "{date} tarihinde askıya alındı",
         "leavingOn": "Silinmesi {date} tarihine planlandı.",
         "campaignsHeading": "Oluşturduğu kampanyalar",
         "loadingCampaigns": "Bu hesabın kampanyaları yükleniyor",
         "campaignsFailed": "Bu hesabın kampanyaları okunamadı. Sayfadaki geri kalan her şey yazdığı gibidir.",
         "noCampaignsTitle": "Kampanya yok",
         "noCampaignsBody": "Bu hesap hiçbir durumda kampanya oluşturmamış — taslak bile.",
-        "startedOn": "başlatıldı {date}",
+        "startedOn": "{date} tarihinde başlatıldı",
         "pledgesHeading": "Yaptığı destekler",
         "loadingPledges": "Bu hesabın destekleri yükleniyor",
         "pledgesFailed": "Bu hesabın destekleri okunamadı. Sayfadaki geri kalan her şey yazdığı gibidir.",
         "noPledgesTitle": "Destek yok",
         "noPledgesBody": "Bu hesap hiçbir kampanyayı desteklememiş.",
-        "backedOn": "onaylandı {date}",
+        "backedOn": "{date} tarihinde onaylandı",
         "neverConfirmed": "Hiç onaylanmadı",
         "campaignGone": "Kampanya artık yok",
         "pledgeState": {
@@ -1796,7 +1789,7 @@
         "subject": "destek kuyruğunu",
         "ticketSubject": "bu talebi",
         "heading": "Açık talepler",
-        "intro": "En acil olan başta, aynı öncelik içinde en eski başta. Önceliği ekip belirler — soran kişinin seçebileceği bir öncelik bir hafta içinde her talepte acil olurdu.",
+        "intro": "En acil olan başta, aynı öncelik içinde en eski başta. Önceliği ekip belirler.",
         "loadingList": "Destek kuyruğu yükleniyor",
         "emptyTitle": "Bekleyen bir şey yok",
         "emptyBody": "Açık ya da bekleyen talep yok. Biri yazdığında talepleri buraya ekip kaydeder — bu ekranın arkasında henüz herkese açık bir form yok.",
@@ -1820,7 +1813,7 @@
         "internalNote": "dahili not, ona asla gösterilmez",
         "replyLabel": "Yanıt",
         "send": "Gönder",
-        "internalLabel": "Dahili not — talep eden bunu asla görmez ve bu, talebi hareket ettirmez",
+        "internalLabel": "Dahili not — talep eden görmez, durum değişmez",
         "priorityLabel": "Öncelik",
         "stateLabel": "Durum",
         "putBack": "Kuyruğa geri koy",
@@ -1897,6 +1890,18 @@
             "PLEDGE_NOT_FOUND": "Bu tanımlayıcıyla bir destek yok. Destekçinin gönderdiğiyle karşılaştırın.",
             "ACCOUNT_NOT_FOUND": "Destekçinin hesabı artık yok, bu yüzden onun adına talep açılamaz."
           }
+        },
+        "listHeading": "Talepler",
+        "listIntro": "Filtrelere uyan her talep, en yenisi başta.",
+        "assigneePrefix": "Sorumlu:",
+        "takeIt": "Üstlen",
+        "handToLabel": "Bir ekip arkadaşına ver",
+        "handToHint": "Ad veya e-posta adresiyle arayın. Arama kaydedilen bir okumadır.",
+        "aboutLabel": "Konu",
+        "about": {
+          "PLEDGE": "Destek",
+          "PROJECT": "Kampanya",
+          "ACCOUNT": "Hesap"
         }
       },
       "staff": {
@@ -1918,13 +1923,13 @@
         "grantedBy": "{by} tarafından {date} tarihinde verildi",
         "withdraw": "Geri al",
         "grantHeading": "Rol ver",
-        "grantIntro": "Roller birbirinin üstüne eklenir: bir hesap kendisine verilmiş tüm rollerin birleşimini taşır. Burada hiçbir şey bir yetkiyi geri almaz, bu yüzden çözülecek bir sıra da yoktur.",
+        "grantIntro": "Roller toplanır: bir hesap rollerinin verdiği her şeyi birlikte taşır. Hiçbir rol bir yetkiyi geri almaz.",
         "roleLabel": "Rol",
         "noteLabel": "Not",
         "noteHint": "Gerekçe, sonraki yönetici için.",
         "working": "Çalışıyor",
         "grant": "Ver",
-        "confers": "{role} şunları verir: {capabilities}",
+        "confers": "{role} şunları verir:",
         "doneTitle": "Tamam",
         "failedTitle": "Bu işe yaramadı",
         "grantedNotice": "{role} rolü {name} hesabına verildi.",
@@ -1971,7 +1976,17 @@
           "resultsLabel": "Eşleşen hesaplar",
           "failedTitle": "Dizinde arama yapılamadı"
         },
-        "chooseAccountFirst": "Rol vermeden önce bir hesap seçin."
+        "chooseAccountFirst": "Rol vermeden önce bir hesap seçin.",
+        "you": "Siz",
+        "partnerManaged": "Ortaklar sayfasında yönetilir",
+        "withdrawTitle": "{name} hesabından {role} rolü geri alınsın mı?",
+        "withdrawBody": "Bu rolün verdiği yetkiler bir sonraki istekten itibaren kapanır. Rol daha sonra yeniden verilebilir.",
+        "withdrawSelfBody": "Bu sizin kendi rolünüz. Geri alırsanız, açtığı ekranlar size de kapanır.",
+        "withdrawConfirm": "Rolü geri al",
+        "errors": {
+          "ACCOUNT_IS_PARTNER": "Bu hesap bir ortak ve başka bir ekip rolü taşıyamaz. Önce Ortaklar sayfasında ortaklığı bitirin.",
+          "PARTNER_ROLE_MANAGED_ELSEWHERE": "Ortak rolü payıyla birlikte yalnızca Ortaklar sayfasında verilir ve geri alınır."
+        }
       },
       "payments": {
         "subject": "ödeme günlüğünü",
@@ -2867,7 +2882,7 @@
         "loadingRoster": "Ortaklar yükleniyor",
         "rosterEmptyTitle": "Henüz ortak yok",
         "rosterEmptyBody": "Aşağıdan ekleyin. Yüzdesi olmayan bir ortak hiçbir gösterge görmez.",
-        "allocation": "100%’ün {allocated}%’i dağıtıldı. {remaining}% kaldı.",
+        "allocation": "Dağıtılan: {allocated}. Kalan: {remaining}.",
         "updatedLine": "Güncellendi: {date}",
         "sectionsNone": "Yalnızca istatistik",
         "sectionsOpen": "Ayrıca açık: {sections}",
@@ -2890,10 +2905,19 @@
         "chooseAccountFirst": "Önce bir hesap seçin.",
         "addPartner": "Ortak ekle",
         "working": "Kaydediliyor",
-        "savedNotice": "{name} artık göstergelerin %{percentage} kadarını görüyor.",
+        "savedNotice": "{name} artık göstergelerin {percentage} kadarını görüyor.",
         "removedNotice": "{name} artık ortak değil.",
         "doneTitle": "Tamam",
-        "failedTitle": "Olmadı"
+        "failedTitle": "Olmadı",
+        "endTitle": "{name} ile ortaklık bitirilsin mi?",
+        "endBody": "Payı ve açılan bölümler silinir, ortak istatistikleri ona kapanır. Daha sonra yeniden eklenebilir.",
+        "errors": {
+          "INVALID_PARTNER_SHARE": "Yüzde, 0,01 ile 100 arasında ve en fazla iki ondalık basamaklı bir sayı olmalı.",
+          "PARTNER_SHARE_EXCEEDED": "Ortaklar birlikte %100’ü aşamaz. En fazla {available} kaldı.",
+          "PARTNER_IS_SUPER_ADMIN": "Süper admin ortak olamaz. Önce Ekip ve roller sayfasında süper admin rolünü geri alın.",
+          "PARTNER_HOLDS_OTHER_ROLES": "Bu hesabın bir ekip rolü var: {roles}. Ortağın başka rolü olamaz — önce bunları geri alın.",
+          "PARTNER_NOT_FOUND": "Bu hesap artık ortak değil."
+        }
       },
       "partnerStatistics": {
         "subject": "finansal istatistikler",

@@ -556,6 +556,7 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
         onCancel={closeDialog}
         onConfirm={(note) => void commit(note)}
         copy={copy.moderation}
+        counter={copy.counter}
       />
     </section>
   );

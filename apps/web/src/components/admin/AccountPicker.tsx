@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Field, InlineAlert, Pill, TextInput } from '@ideanest/ui';
 import { listUsers, type AdminUser } from '../../lib/admin/api';
 import { consoleMessageFor, shortId, wasAborted } from '../../lib/admin/refusals';
@@ -77,6 +77,22 @@ export function AccountPicker({
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef<AbortController | null>(null);
+  const hintId = useId();
+
+  /*
+   * The form around the picker clears the choice after it has used it — a role granted, a
+   * partner added, a filter reset. The last search's results used to come straight back when
+   * it did, a list of accounts under a form that had just finished with one. Adjusted during
+   * render rather than in an effect, so the stale list is never painted.
+   */
+  const [lastChosen, setLastChosen] = useState(chosen);
+  if (lastChosen !== chosen) {
+    setLastChosen(chosen);
+    if (chosen === null) {
+      setResults(null);
+      setTerm('');
+    }
+  }
 
   // A search left running past the form is a request nobody is waiting for and an audit row
   // for a question nobody asked.
@@ -143,10 +159,16 @@ export function AccountPicker({
 
   return (
     <div className={className}>
+      {/*
+        The hint under the row rather than inside the field: inside, it pushed the field's
+        bottom edge down and the search button, aligned to the row's end, hung beside the
+        hint instead of the input it belongs to.
+      */}
       <div className="flex flex-wrap items-end gap-3">
-        <Field label={copy.label} hint={copy.hint} className="min-w-[280px] flex-1">
+        <Field label={copy.label} className="min-w-[240px] flex-1">
           <TextInput
             value={term}
+            aria-describedby={hintId}
             onChange={(event) => setTerm(event.target.value)}
             /*
              * Enter searches rather than submitting the form around it. Without this a
@@ -164,14 +186,16 @@ export function AccountPicker({
         </Field>
         <Pill
           variant="outline"
-          size="sm"
-          className="mb-1"
+          className="mb-0.5"
           disabled={disabled || searching || term.trim() === ''}
           onClick={() => void search()}
         >
           {searching ? copy.searching : copy.search}
         </Pill>
       </div>
+      <p id={hintId} className="mt-2 text-xs text-white/48">
+        {copy.hint}
+      </p>
 
       {error && (
         <InlineAlert variant="danger" title={copy.failedTitle} className="mt-3">

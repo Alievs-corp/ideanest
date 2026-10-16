@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CharacterCount, Field, InlineAlert, Pill, Textarea } from '@ideanest/ui';
+import { CharacterCount, Field, InlineAlert, Pill, Textarea, type CharacterCountCopy } from '@ideanest/ui';
 import { Modal } from '@ideanest/ui/motion';
 import type { CampaignOutcome, QueuedReport, ReportOutcome, ReportTargetType } from '../../lib/moderation/api';
 import { requiresNote } from '../../lib/moderation/api';
 import { shortId } from '../../lib/moderation/describe';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { ModerationCopy } from '../../lib/i18n/admin/content-copy';
 
 /**
@@ -115,6 +116,8 @@ export interface DecisionDialogProps {
   readonly onConfirm: (note: string | null) => void;
   /** The moderation vocabulary, resolved on the server by whichever screen opened this. */
   readonly copy: ModerationCopy;
+  /** The note's counter in the reader's language. Without it the kit's counter is English. */
+  readonly counter: CharacterCountCopy;
 }
 
 /**
@@ -138,7 +141,9 @@ export function DecisionDialog({
   onCancel,
   onConfirm,
   copy: moderation,
+  counter,
 }: DecisionDialogProps) {
+  const locale = useRouteLocale();
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState<string | null>(null);
 
@@ -230,7 +235,7 @@ export function DecisionDialog({
             disabled={busy}
             onChange={(event) => setNote(event.target.value)}
           />
-          <CharacterCount count={count} limit={NOTE_MAX_CHARACTERS} />
+          <CharacterCount count={count} limit={NOTE_MAX_CHARACTERS} copy={counter} locale={locale} />
         </Field>
       </div>
 

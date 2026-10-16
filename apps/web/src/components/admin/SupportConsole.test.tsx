@@ -6,6 +6,8 @@ import {
   raiseBackerTicket,
   readTicket,
   readTicketQueue,
+  replyToTicket,
+  updateTicket,
   type Ticket,
   type TicketContext,
   type TicketPage,
@@ -39,6 +41,8 @@ vi.mock('../../lib/admin/tickets', async (importOriginal) => {
     listTickets: vi.fn(),
     readTicket: vi.fn(),
     raiseBackerTicket: vi.fn(),
+    updateTicket: vi.fn(),
+    replyToTicket: vi.fn(),
   };
 });
 
@@ -58,6 +62,8 @@ const recordDetailsMock = vi.mocked(recordRefundBankDetails);
 const listTicketsMock = vi.mocked(listTickets);
 const listUsersMock = vi.mocked(listUsers);
 const raiseMock = vi.mocked(raiseBackerTicket);
+const updateTicketMock = vi.mocked(updateTicket);
+const replyToTicketMock = vi.mocked(replyToTicket);
 
 const COLLEAGUE: AdminUser = {
   id: 'cccccccc-0000-4000-8000-000000000001',
@@ -499,5 +505,112 @@ describe('a ticket for a backer who wrote in elsewhere (#416)', () => {
 
     await screen.findByText('My card was refused four times');
     expect(screen.queryByRole('button', { name: RAISE.open })).not.toBeInTheDocument();
+  });
+});
+
+/* -------------------------------------------------------------------------
+ * Working a ticket: picking it up, handing it on, and not losing it meanwhile.
+ * ---------------------------------------------------------------------- */
+
+describe('working a ticket', () => {
+  const ME = supporter().accountId;
+
+  it('lets the reader take a ticket nobody has', async () => {
+    updateTicketMock.mockResolvedValue({ ...TICKET, assigneeId: ME });
+
+    await openTicket(TICKET);
+
+    // Nothing on this screen ever set an assignee, so every ticket stayed unassigned and the
+    // assignee filters had nothing to find.
+    await userEvent.click(await screen.findByRole('button', { name: COPY.takeIt }));
+
+    await waitFor(() => expect(updateTicketMock).toHaveBeenCalledWith(TICKET.id, { assigneeId: ME }));
+  });
+
+  it('offers "put back" only on a ticket somebody has', async () => {
+    await openTicket(TICKET);
+    await screen.findByRole('button', { name: COPY.takeIt });
+
+    // On a ticket nobody had, it was a control that did nothing.
+    expect(screen.queryByRole('button', { name: COPY.putBack })).not.toBeInTheDocument();
+  });
+
+  it('puts a taken ticket back, and does not offer the reader their own ticket again', async () => {
+    const mine: Ticket = { ...TICKET, assigneeId: ME };
+    updateTicketMock.mockResolvedValue(TICKET);
+
+    await openTicket(mine);
+    await userEvent.click(await screen.findByRole('button', { name: COPY.putBack }));
+
+    expect(screen.queryByRole('button', { name: COPY.takeIt })).not.toBeInTheDocument();
+    await waitFor(() => expect(updateTicketMock).toHaveBeenCalledWith(TICKET.id, { unassign: true }));
+  });
+
+  it('hands a ticket to a colleague found by name', async () => {
+    updateTicketMock.mockResolvedValue({ ...TICKET, assigneeId: COLLEAGUE.id });
+
+    await openTicket(TICKET);
+    await userEvent.type(await screen.findByLabelText(COPY.handTo.label), COLLEAGUE.name);
+    const searches = screen.getAllByRole('button', { name: COPY.handTo.search });
+    await userEvent.click(searches[searches.length - 1]!);
+    await userEvent.click(await screen.findByRole('button', { name: new RegExp(COLLEAGUE.email) }));
+
+    await waitFor(() =>
+      expect(updateTicketMock).toHaveBeenCalledWith(TICKET.id, { assigneeId: COLLEAGUE.id }),
+    );
+  });
+
+  it('keeps the ticket open, draft and all, while the list is read again', async () => {
+    updateTicketMock.mockResolvedValue({ ...TICKET, priority: 'LOW' });
+
+    await openTicket(TICKET);
+    const reply = await screen.findByLabelText(COPY.replyLabel);
+    await userEvent.type(reply, 'Half a reply');
+
+    // Every action re-reads the list. The list used to turn into a skeleton while it did,
+    // which unmounted the open ticket and threw the half-written reply away.
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: COPY.priorityLabel }), 'LOW');
+    await waitFor(() => expect(readTicketQueueMock.mock.calls.length).toBeGreaterThan(1));
+
+    expect(await screen.findByLabelText(COPY.replyLabel)).toHaveValue('Half a reply');
+  });
+
+  it('sends a reply and clears the field', async () => {
+    replyToTicketMock.mockResolvedValue({ ticket: { ...TICKET, state: 'PENDING' }, messages: [] });
+
+    await openTicket(TICKET);
+    await userEvent.type(await screen.findByLabelText(COPY.replyLabel), 'We are on it.');
+    await userEvent.click(screen.getByRole('button', { name: COPY.send }));
+
+    await waitFor(() => expect(replyToTicketMock).toHaveBeenCalledWith(TICKET.id, 'We are on it.', false));
+    await waitFor(() => expect(screen.getByLabelText(COPY.replyLabel)).toHaveValue(''));
+  });
+});
+
+describe('what the heading promises', () => {
+  it('names the list, and its order, once a filter is on', async () => {
+    render(<SupportConsole copy={COPY} />);
+    await screen.findByText(COPY.intro);
+
+    // "Open tickets, most urgent first" sat over "Resolved", which is neither.
+    await userEvent.click(screen.getByRole('button', { name: COPY.state.RESOLVED }));
+
+    expect(await screen.findByText(COPY.listIntro)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: new RegExp(COPY.listHeading) })).toBeInTheDocument();
+  });
+
+  it('forgets the chosen colleague when the reader goes back to the queue', async () => {
+    render(<SupportConsole copy={COPY} />);
+    await screen.findByText('My card was refused four times');
+    await pickColleague();
+    await waitFor(() =>
+      expect(listTicketsMock).toHaveBeenCalledWith(expect.objectContaining({ assigneeId: COLLEAGUE.id }), 0, expect.anything()),
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: COPY.queueOnly }));
+
+    // The picker is a search field again rather than a colleague's name over the whole queue.
+    expect(await screen.findByLabelText(COPY.assigneePicker.label)).toBeInTheDocument();
+    expect(screen.queryByText(COLLEAGUE.email)).not.toBeInTheDocument();
   });
 });

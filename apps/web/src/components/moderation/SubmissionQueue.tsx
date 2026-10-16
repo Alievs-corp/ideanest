@@ -337,6 +337,7 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
         }}
         onConfirm={(note) => void commit(note)}
         copy={copy.moderation}
+        counter={copy.counter}
       />
     </section>
   );

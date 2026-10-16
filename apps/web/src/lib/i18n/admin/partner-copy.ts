@@ -47,6 +47,17 @@ export interface PartnerManagerCopy extends ConsoleChromeCopy {
   readonly removedNotice: string;
   readonly doneTitle: string;
   readonly failedTitle: string;
+  /** Carries `{name}`. Ending a partnership asks first: it closes the statistics at once. */
+  readonly endTitle: string;
+  readonly endBody: string;
+  /**
+   * The service's refusals in the reader's language, keyed by `code`. Its own `detail` is
+   * English, and it was what an Azerbaijani screen showed. `PARTNER_SHARE_EXCEEDED` carries
+   * `{available}` and `PARTNER_HOLDS_OTHER_ROLES` carries `{roles}`.
+   */
+  readonly errors: Readonly<Record<string, string>>;
+  /** The staff roles by name, for the roles a refusal says the account already holds. */
+  readonly role: Readonly<Record<string, string>>;
 }
 
 export function partnerManagerCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy): PartnerManagerCopy {
@@ -86,6 +97,10 @@ export function partnerManagerCopyFrom(t: AdminTranslator, chrome: ConsoleChrome
     removedNotice: template('removedNotice'),
     doneTitle: word('doneTitle'),
     failedTitle: word('failedTitle'),
+    endTitle: template('endTitle'),
+    endBody: word('endBody'),
+    errors: t.raw('screens.partners.errors') as Readonly<Record<string, string>>,
+    role: t.raw('screens.staff.role') as Readonly<Record<string, string>>,
   };
 }
 

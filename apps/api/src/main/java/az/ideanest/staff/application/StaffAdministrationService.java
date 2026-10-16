@@ -89,11 +89,21 @@ public class StaffAdministrationService {
      *     administrator
      * @throws UnknownStaffAccountException when the account named does not exist, or is
      *     deleted — deliberately the same answer, following {@code AdminUserController}
+     * @throws PartnerRoleManagedElsewhereException when the role is {@code PARTNER}, which is
+     *     a profile as well as a role and is made on {@code /v1/admin/partners}
+     * @throws AccountIsPartnerException when the account is a partner, who may hold no
+     *     other role
      */
     @Transactional
     public StaffMember grant(UUID staffId, UUID accountId, StaffRole role, String note) {
         staff.requireCapability(staffId, StaffCapability.ADMINISTER_STAFF);
         requireAccount(accountId);
+        if (role == StaffRole.PARTNER) {
+            throw new PartnerRoleManagedElsewhereException(accountId);
+        }
+        if (directory.membershipOf(accountId).roles().contains(StaffRole.PARTNER)) {
+            throw new AccountIsPartnerException(accountId);
+        }
 
         int written = grants.grantIfAbsent(accountId, role.name(), staffId, note);
 
@@ -124,11 +134,17 @@ public class StaffAdministrationService {
      *
      * <p>Withdrawing a role the account does not hold is likewise not an error, for
      * {@link #grant}'s reason.
+     *
+     * @throws PartnerRoleManagedElsewhereException when the role is {@code PARTNER}: ending a
+     *     partnership removes the profile with it, on {@code /v1/admin/partners}
      */
     @Transactional
     public StaffMember revoke(UUID staffId, UUID accountId, StaffRole role) {
         staff.requireCapability(staffId, StaffCapability.ADMINISTER_STAFF);
         requireAccount(accountId);
+        if (role == StaffRole.PARTNER) {
+            throw new PartnerRoleManagedElsewhereException(accountId);
+        }
 
         int removed = grants.revoke(accountId, role);
 

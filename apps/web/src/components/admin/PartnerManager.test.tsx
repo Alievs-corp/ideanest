@@ -61,6 +61,13 @@ const CANDIDATE: AdminUser = {
   createdAt: '2026-08-01T09:00:00Z',
 };
 
+/** Search for the candidate and pick them. */
+async function choose(): Promise<void> {
+  await userEvent.type(screen.getByLabelText(COPY.picker.label), 'new');
+  await userEvent.click(screen.getByRole('button', { name: COPY.picker.search }));
+  await userEvent.click(await screen.findByRole('button', { name: /New Partner/ }));
+}
+
 function ready(partners: readonly Partner[] = [FIRST], allocated = '50.00', remaining = '50.00') {
   readMock.mockResolvedValue({ partners, allocated, remaining });
 }
@@ -72,8 +79,8 @@ describe('the partner manager', () => {
     render(<PartnerManager copy={COPY} />);
 
     // The one constraint an operator runs into is the total, so it is on the page rather than
-    // only in a refusal.
-    expect(await screen.findByText('50.00% of 100% is allocated. 50.00% is left.')).toBeInTheDocument();
+    // only in a refusal — written the reader's way rather than as the wire's "50.00".
+    expect(await screen.findByText('Allocated: 50%. Left: 50%.')).toBeInTheDocument();
   });
 
   it('shows each partner with their percentage and what else is open to them', async () => {
@@ -81,7 +88,7 @@ describe('the partner manager', () => {
 
     render(<PartnerManager copy={COPY} />);
 
-    expect(await screen.findByText('50.00%')).toBeInTheDocument();
+    expect(await screen.findByText('50%')).toBeInTheDocument();
     expect(screen.getByText(/Also opens: Curation/)).toBeInTheDocument();
   });
 
@@ -137,7 +144,41 @@ describe('the partner manager', () => {
         sections: ['HEALTH'],
       }),
     );
-    expect(await screen.findByText('New Partner now sees 30.00% of the figures.')).toBeInTheDocument();
+    expect(await screen.findByText('New Partner now sees 30% of the figures.')).toBeInTheDocument();
+  });
+
+  it('takes the comma the hint writes, and sends the point the service reads', async () => {
+    ready([]);
+    searchMock.mockResolvedValue({ users: [CANDIDATE], nextCursor: null });
+    saveMock.mockResolvedValue({ ...FIRST, accountId: CANDIDATE.id, percentage: '12.50', sections: [] });
+
+    render(<PartnerManager copy={COPY} />);
+    await screen.findByText(COPY.rosterEmptyTitle);
+    await choose();
+
+    // "12,5" was refused with the service's English "must be a number such as 50 or 33.33".
+    await userEvent.type(screen.getByLabelText(COPY.percentageLabel), '12,5');
+    await userEvent.click(screen.getByRole('button', { name: COPY.addPartner }));
+
+    await waitFor(() =>
+      expect(saveMock).toHaveBeenCalledWith({ accountId: CANDIDATE.id, percentage: '12.5', sections: [] }),
+    );
+  });
+
+  it('names a share that is not one before sending anything', async () => {
+    ready([]);
+    searchMock.mockResolvedValue({ users: [CANDIDATE], nextCursor: null });
+    saveMock.mockClear();
+
+    render(<PartnerManager copy={COPY} />);
+    await screen.findByText(COPY.rosterEmptyTitle);
+    await choose();
+
+    await userEvent.type(screen.getByLabelText(COPY.percentageLabel), '12,345');
+    await userEvent.click(screen.getByRole('button', { name: COPY.addPartner }));
+
+    expect(await screen.findByText(COPY.errors.INVALID_PARTNER_SHARE as string)).toBeInTheDocument();
+    expect(saveMock).not.toHaveBeenCalled();
   });
 
   it('saves a changed percentage and keeps the sections as they were', async () => {
@@ -145,13 +186,15 @@ describe('the partner manager', () => {
     saveMock.mockResolvedValue({ ...FIRST, percentage: '40.00' });
 
     render(<PartnerManager copy={COPY} />);
-    await screen.findByText('50.00%');
+    await screen.findByText('50%');
 
     const save = screen.getByRole('button', { name: COPY.saveChanges });
     // Nothing has changed, so there is nothing to save.
     expect(save).toBeDisabled();
 
-    const field = screen.getAllByLabelText(COPY.percentageLabel)[0] as HTMLElement;
+    // The row's field holds the share as the reader would type it: "50", not "50.00".
+    const field = screen.getAllByLabelText(COPY.percentageLabel)[0] as HTMLInputElement;
+    expect(field.value).toBe('50');
     await userEvent.clear(field);
     await userEvent.type(field, '40');
     await userEvent.click(save);
@@ -165,17 +208,45 @@ describe('the partner manager', () => {
     );
   });
 
-  it('ends a partnership', async () => {
+  it('ends a partnership only once the reader confirms it', async () => {
     ready();
+    removeMock.mockClear();
     removeMock.mockResolvedValue();
 
     render(<PartnerManager copy={COPY} />);
     await userEvent.click(await screen.findByRole('button', { name: COPY.remove }));
 
+    // One click on the row used to end it: the share, the sections and the statistics, at once.
+    // Fetched when it opens (`React.lazy`), so the first one can take a moment.
+    const dialog = await screen.findByRole('dialog', {}, { timeout: 5000 });
+    expect(within(dialog).getByText(COPY.endBody)).toBeInTheDocument();
+    expect(removeMock).not.toHaveBeenCalled();
+
+    await userEvent.click(within(dialog).getByRole('button', { name: COPY.remove }));
     await waitFor(() => expect(removeMock).toHaveBeenCalledWith(FIRST.accountId));
   });
 
-  it("passes on the service's refusal in its own words when the shares would pass 100", async () => {
+  it('says which roles stand in the way, by name', async () => {
+    ready([]);
+    searchMock.mockResolvedValue({ users: [CANDIDATE], nextCursor: null });
+    saveMock.mockRejectedValue(
+      new ApiError(409, {
+        code: 'PARTNER_HOLDS_OTHER_ROLES',
+        detail: 'A partner may hold no other staff role: roles add up.',
+        meta: { roles: 'FINANCE,MODERATOR' },
+      }),
+    );
+
+    render(<PartnerManager copy={COPY} />);
+    await screen.findByText(COPY.rosterEmptyTitle);
+    await choose();
+    await userEvent.type(screen.getByLabelText(COPY.percentageLabel), '10');
+    await userEvent.click(screen.getByRole('button', { name: COPY.addPartner }));
+
+    expect(await screen.findByText(/holds a staff role: Finance, Moderator\./)).toBeInTheDocument();
+  });
+
+  it("puts the service's refusal in the reader's words when the shares would pass 100", async () => {
     ready([]);
     searchMock.mockResolvedValue({ users: [CANDIDATE], nextCursor: null });
     saveMock.mockRejectedValue(
@@ -183,6 +254,7 @@ describe('the partner manager', () => {
         code: 'PARTNER_SHARE_EXCEEDED',
         title: 'Shares add up to more than 100',
         detail: 'At most 20.00 is left to give this partner.',
+        meta: { available: '20.00' },
       }),
     );
 
@@ -194,9 +266,11 @@ describe('the partner manager', () => {
     await userEvent.type(screen.getByLabelText(COPY.percentageLabel), '80');
     await userEvent.click(screen.getByRole('button', { name: COPY.addPartner }));
 
-    // The rule is the service's, and so is the number in it. This screen has no second copy of
-    // the arithmetic to drift out of step.
-    expect(await screen.findByText('At most 20.00 is left to give this partner.')).toBeInTheDocument();
+    // The rule is the service's, and so is the number in it: this screen has no second copy of
+    // the arithmetic. The sentence is the reader's — the service's `detail` is English.
+    expect(
+      await screen.findByText('The partners together may not go above 100%. At most 20% is left.'),
+    ).toBeInTheDocument();
   });
 
   it('refuses honestly when the reader is not a super admin', async () => {

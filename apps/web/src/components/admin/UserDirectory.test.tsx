@@ -5,6 +5,7 @@ import { ApiError } from '../../lib/api/problem';
 import type { AdminUser, AdminUserPage } from '../../lib/admin/api';
 import { banUser, listUsers, reinstateUser } from '../../lib/admin/api';
 import { UserDirectory } from './UserDirectory';
+import { ConsoleMembershipProvider } from './ConsoleMembership';
 import { translatorFor } from '../../test-copy';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
 import { userDirectoryCopyFrom } from '../../lib/i18n/admin/people-copy';
@@ -193,6 +194,26 @@ describe('UserDirectory', () => {
   });
 
   describe('suspending an account', () => {
+    it("offers no suspension on the reader's own row, and says it is theirs", async () => {
+      const membership = {
+        accountId: AYAN.id,
+        staff: true,
+        bootstrapped: false,
+        roles: ['MODERATOR' as const],
+        capabilities: ['ADMINISTER_ACCOUNTS' as const],
+      };
+      render(
+        <ConsoleMembershipProvider given={{ status: 'ready', membership }}>
+          <UserDirectory copy={COPY} />
+        </ConsoleMembershipProvider>,
+      );
+
+      // A red "Suspend" sat on the reader's own account, which the service refuses.
+      const own = (await screen.findByText('ayan@example.com')).closest('li') as HTMLElement;
+      expect(within(own).getByText(COPY.you)).toBeInTheDocument();
+      expect(within(own).queryByRole('button', { name: COPY.suspend })).not.toBeInTheDocument();
+    });
+
     it('asks before it does it, and says what the person loses', async () => {
       const user = userEvent.setup();
       render(<UserDirectory copy={COPY} />);
@@ -256,7 +277,7 @@ describe('UserDirectory', () => {
 
       // The dialog stays open with the reason still in it: nothing changed, and
       // retyping it is the last thing a refused moderator should have to do.
-      expect(await screen.findByText(/cannot suspend itself/)).toBeInTheDocument();
+      expect(await screen.findByText(/cannot suspend your own account/)).toBeInTheDocument();
       expect(screen.getByRole('dialog')).toBeInTheDocument();
       expect(screen.getByLabelText(/Reason/)).toHaveValue('A reason.');
     });

@@ -1018,13 +1018,13 @@
         "metaTitle": "İşçilər və rollar",
         "metaDescription": "Burada kim işləyir, hər rol nə verir və öz hesabınız nə edə bilər.",
         "title": "İşçilər və rollar",
-        "intro": "Rollar bir-birinin üstünə gəlir: hesab ona verilmiş bütün rolların birləşməsini daşıyır və burada heç nə səlahiyyəti geri almır. Rol vermək sizin adınıza qeyd olunur."
+        "intro": "Burada kim işləyir, hər rol nə verir və öz hesabınız nə edə bilər. Rol vermək və geri almaq sizin adınıza qeyd olunur."
       },
       "support": {
         "metaTitle": "Dəstək",
         "metaDescription": "Müraciətlər, aid olduqları hesab konteksti və nə edildiyinin tarixçəsi ilə.",
         "title": "Dəstək",
-        "intro": "Ən təcilisi əvvəldə, eyni prioritet daxilində ən köhnəsi əvvəldə. Bunun arxasında hələ ictimai forma yoxdur: kimsə yazır və işçi söhbəti onun hesabına qarşı qeyd edir."
+        "intro": "Müraciətlər, aid olduqları hesab və nə edildiyinin tarixçəsi ilə. Bunun arxasında hələ ictimai forma yoxdur: kimsə yazanda işçi söhbəti onun hesabına qarşı qeyd edir."
       },
       "taxonomy": {
         "metaTitle": "Taksonomiya",
@@ -1042,7 +1042,7 @@
         "metaTitle": "Hesab",
         "metaDescription": "Bir hesab: vəziyyəti, yaratdığı kampaniyalar və etdiyi dəstəklər.",
         "title": "Hesab",
-        "intro": "Bir hesab və onunla bağlı qərarın söykəndiyi hər şey: təsdiqlənibmi, dayandırılıbmı və niyə, nə yaradıb və nəyi dəstəkləyib. Dayandırma kataloqda edilir — səbəb orada soruşulur və qeydə alınır."
+        "intro": "Bir hesab və onunla bağlı qərar üçün lazım olan hər şey: təsdiqlənibmi, dayandırılıbmı və niyə, nə yaradıb və nəyi dəstəkləyib. Hesabı buradan da dayandırmaq və bərpa etmək olar — səbəb soruşulur və qeydə alınır."
       },
       "submissions": {
         "metaTitle": "Baxış gözləyən kampaniyalar",
@@ -1662,9 +1662,9 @@
         "signedOutBody": "Bu brauzerin artıq sessiyası yoxdur. Hesab kataloqunu oxumaq üçün yenidən daxil olun.",
         "forbiddenTitle": "Siz burada işləmirsiniz",
         "forbiddenBody": "Hesabları platforma işçiləri axtarır və dayandırır. Hesabınız isə heç bir platforma rolu daşımır.",
-        "notStaff": "Hesabınız platformanın moderator siyahısında deyil, ona görə hesab kataloqunu oxumaq sizə aid deyil.",
+        "notStaff": "Hesab kataloqunu yalnız platforma işçiləri oxuyur, hesabınızın isə işçi rolu yoxdur.",
         "accountNotFound": "Bu hesab artıq mövcud deyil. Səhifə yüklənəndən bəri silinmiş ola bilər.",
-        "selfSuspend": "Hesab özünü dayandıra bilməz. Başqa moderatordan xahiş edin.",
+        "selfSuspend": "Öz hesabınızı dayandıra bilməzsiniz. Lazımdırsa, başqa işçidən xahiş edin.",
         "heading": "Hesablar",
         "searchLabel": "Axtarış",
         "searchHint": "E-poçt ünvanı, göstərilən ad və ya profil qısa adı.",
@@ -1676,60 +1676,53 @@
         "filteredBody": "Axtarış ünvana, göstərilən ada və ya profil qısa adına uyğun gəlir və onların içində istənilən yerdə uyğunlaşır.",
         "emptyTitle": "Göstəriləcək hesab yoxdur",
         "emptyBody": "İnsanlar qeydiyyatdan keçdikcə hesablar burada görünür.",
-        "joined": "qoşulub {date}",
+        "joined": "{date} qoşulub",
         "unknownDate": "naməlum tarixdə",
         "emailVerified": "E-poçt təsdiqlənib",
         "emailUnverified": "E-poçt təsdiqlənməyib",
         "suspendedTag": "Dayandırılıb",
         "leaving": "Ayrılır",
-        "suspendedOn": "Dayandırılıb {date}",
+        "suspendedOn": "{date} dayandırılıb",
         "reinstate": "Bərpa et",
         "reinstating": "Bərpa edilir",
         "suspend": "Dayandır",
-        "accountCount": {
-          "one": "{count} hesab",
-          "few": "{count} hesab",
-          "many": "{count} hesab",
-          "other": "{count} hesab"
-        },
-        "showing": "{accounts} göstərilir",
-        "andMore": ", və daha çoxu var.",
         "suspendTitle": "{name} dayandırılsın?",
         "suspendDescription": "{email} hər cihazdan çıxarılacaq və kimsə onu bərpa edənədək girişdə rədd ediləcək.",
-        "suspendBody": "Kampaniyaları və dəstəkləri olduğu kimi qalır. Bu, kampaniyanı dayandırmaqdan fərqli olaraq geri qaytarıla biləndir — amma indi malik olduqları hər sessiya ləğv olunur və bərpa etməklə geri qaytarılmır.",
+        "suspendBody": "Kampaniyaları və dəstəkləri olduğu kimi qalır. Hesabı sonra bərpa etmək olar, amma indi açıq olan bütün sessiyaları bağlanır və bərpa ediləndə geri qayıtmır.",
         "suspendAccount": "Hesabı dayandır",
         "suspending": "Dayandırılır",
         "reasonLabel": "Səbəb",
         "reasonHint": "Şəxsə bu deyilir və şikayət buna əsasən cavablandırılır.",
-        "reasonRequired": "Səbəbini yazın. Şəxsə bu deyilir və şikayət buna əsasən cavablandırılır.",
+        "reasonRequired": "Səbəbi yazın.",
         "reasonTooLong": "Səbəb {limit} simvoldan çox ola bilməz.",
-        "suspendedNotice": "{name} dayandırıldı və malik olduğu hər sessiya ləğv edildi.",
-        "reinstatedNotice": "{name} yenidən daxil ola bilər. Köhnə sessiyaları bərpa olunmur."
+        "suspendedNotice": "{name} dayandırıldı, bütün sessiyaları bağlandı.",
+        "reinstatedNotice": "{name} yenidən daxil ola bilər. Köhnə sessiyaları bərpa olunmur.",
+        "you": "Siz"
       },
       "accountDetail": {
         "subject": "hesabı",
         "backToDirectory": "Hesablara qayıt",
         "loadingAccount": "Hesab yüklənir",
-        "joined": "qoşulub {date}",
+        "joined": "{date} qoşulub",
         "unknownDate": "naməlum tarixdə",
         "emailVerified": "E-poçt təsdiqlənib",
         "emailUnverified": "E-poçt təsdiqlənməyib",
         "suspendedTag": "Dayandırılıb",
         "leaving": "Ayrılır",
-        "suspendedOn": "Dayandırılıb {date}",
+        "suspendedOn": "{date} dayandırılıb",
         "leavingOn": "Silinmə {date} tarixinə planlaşdırılıb.",
         "campaignsHeading": "Yaratdığı kampaniyalar",
         "loadingCampaigns": "Bu hesabın kampaniyaları yüklənir",
         "campaignsFailed": "Bu hesabın kampaniyaları oxunmadı. Səhifədəki qalan hər şey yazıldığı kimidir.",
         "noCampaignsTitle": "Kampaniya yoxdur",
         "noCampaignsBody": "Bu hesab heç bir vəziyyətdə kampaniya yaratmayıb — qaralama da daxil olmaqla.",
-        "startedOn": "başlayıb {date}",
+        "startedOn": "{date} başlayıb",
         "pledgesHeading": "Etdiyi dəstəklər",
         "loadingPledges": "Bu hesabın dəstəkləri yüklənir",
         "pledgesFailed": "Bu hesabın dəstəkləri oxunmadı. Səhifədəki qalan hər şey yazıldığı kimidir.",
         "noPledgesTitle": "Dəstək yoxdur",
         "noPledgesBody": "Bu hesab heç bir kampaniyanı dəstəkləməyib.",
-        "backedOn": "təsdiqlənib {date}",
+        "backedOn": "{date} təsdiqlənib",
         "neverConfirmed": "Heç vaxt təsdiqlənməyib",
         "campaignGone": "Kampaniya artıq yoxdur",
         "pledgeState": {
@@ -1796,7 +1789,7 @@
         "subject": "dəstək növbəsini",
         "ticketSubject": "bu müraciəti",
         "heading": "Açıq müraciətlər",
-        "intro": "Ən təcilisi əvvəldə, eyni prioritet daxilində ən köhnəsi əvvəldə. Prioriteti işçilər təyin edir — soruşan şəxsin seçə biləcəyi prioritet bir həftə ərzində hər müraciətdə təcili olardı.",
+        "intro": "Ən təcilisi əvvəldə, eyni prioritet daxilində ən köhnəsi əvvəldə. Prioriteti işçilər təyin edir.",
         "loadingList": "Dəstək növbəsi yüklənir",
         "emptyTitle": "Gözləyən yoxdur",
         "emptyBody": "Heç bir müraciət açıq və ya gözləmədə deyil. Kimsə yazanda müraciətləri buraya işçilər qeyd edir — bu ekranın arxasında hələ ictimai forma yoxdur.",
@@ -1820,7 +1813,7 @@
         "internalNote": "daxili qeyd, ona heç vaxt göstərilmir",
         "replyLabel": "Cavab",
         "send": "Göndər",
-        "internalLabel": "Daxili qeyd — müraciət edən bunu heç vaxt görmür və bu, müraciəti hərəkət etdirmir",
+        "internalLabel": "Daxili qeyd — müraciət edən görmür, vəziyyət dəyişmir",
         "priorityLabel": "Prioritet",
         "stateLabel": "Vəziyyət",
         "putBack": "Növbəyə qaytar",
@@ -1897,6 +1890,18 @@
             "PLEDGE_NOT_FOUND": "Bu identifikatorla dəstək yoxdur. Onu dəstəkçinin göndərdiyi ilə yoxlayın.",
             "ACCOUNT_NOT_FOUND": "Dəstəkçinin hesabı artıq mövcud deyil, ona görə onun adından müraciət açmaq olmaz."
           }
+        },
+        "listHeading": "Müraciətlər",
+        "listIntro": "Filtrlərə uyğun hər müraciət, ən yenisi əvvəldə.",
+        "assigneePrefix": "Məsul:",
+        "takeIt": "Özüm götürürəm",
+        "handToLabel": "Başqa işçiyə ver",
+        "handToHint": "Ad və ya e-poçt ilə axtarın. Axtarış qeydə alınan oxumadır.",
+        "aboutLabel": "Mövzu",
+        "about": {
+          "PLEDGE": "Dəstək",
+          "PROJECT": "Kampaniya",
+          "ACCOUNT": "Hesab"
         }
       },
       "staff": {
@@ -1918,13 +1923,13 @@
         "grantedBy": "{by} tərəfindən {date} tarixində verilib",
         "withdraw": "Geri al",
         "grantHeading": "Rol ver",
-        "grantIntro": "Rollar bir-birinin üstünə gəlir: hesab ona verilmiş bütün rolların birləşməsini daşıyır. Burada heç nə səlahiyyəti geri almır, ona görə həll ediləcək sıra da yoxdur.",
+        "grantIntro": "Rollar toplanır: hesab ona verilmiş bütün rolların səlahiyyətlərini birlikdə daşıyır. Rol heç bir səlahiyyəti əlindən almır.",
         "roleLabel": "Rol",
         "noteLabel": "Qeyd",
         "noteHint": "Səbəb, növbəti administrator üçün.",
         "working": "İşlənir",
         "grant": "Ver",
-        "confers": "{role} bunları verir: {capabilities}",
+        "confers": "{role} rolu bunları verir:",
         "doneTitle": "Hazırdır",
         "failedTitle": "Bu alınmadı",
         "grantedNotice": "{role} rolu {name} hesabına verildi.",
@@ -1971,7 +1976,17 @@
           "resultsLabel": "Uyğun hesablar",
           "failedTitle": "Kataloqda axtarış aparıla bilmədi"
         },
-        "chooseAccountFirst": "Rol verməzdən əvvəl hesabı seçin."
+        "chooseAccountFirst": "Rol verməzdən əvvəl hesabı seçin.",
+        "you": "Siz",
+        "partnerManaged": "Tərəfdaşlar səhifəsində idarə olunur",
+        "withdrawTitle": "{name} hesabından {role} rolu geri alınsın?",
+        "withdrawBody": "Bu rolun verdiyi səlahiyyətlər növbəti sorğudan etibarən bağlanır. Rolu sonra yenidən vermək olar.",
+        "withdrawSelfBody": "Bu, sizin öz rolunuzdur. Geri alsanız, onun verdiyi ekranlar sizə də bağlanacaq.",
+        "withdrawConfirm": "Rolu geri al",
+        "errors": {
+          "ACCOUNT_IS_PARTNER": "Bu hesab tərəfdaşdır və başqa işçi rolu ala bilməz. Əvvəlcə Tərəfdaşlar səhifəsində tərəfdaşlığı bitirin.",
+          "PARTNER_ROLE_MANAGED_ELSEWHERE": "Tərəfdaş rolu payı ilə birlikdə yalnız Tərəfdaşlar səhifəsində verilir və geri alınır."
+        }
       },
       "payments": {
         "subject": "ödəniş jurnalını",
@@ -2867,7 +2882,7 @@
         "loadingRoster": "Tərəfdaşlar yüklənir",
         "rosterEmptyTitle": "Hələ tərəfdaş yoxdur",
         "rosterEmptyBody": "Aşağıda əlavə edin. Faizi olmayan tərəfdaş heç bir göstərici görmür.",
-        "allocation": "100%-in {allocated}%-i bölünüb. {remaining}% qalıb.",
+        "allocation": "Bölünüb: {allocated}. Qalıb: {remaining}.",
         "updatedLine": "Yenilənib: {date}",
         "sectionsNone": "Yalnız statistika",
         "sectionsOpen": "Əlavə olaraq açıqdır: {sections}",
@@ -2890,10 +2905,19 @@
         "chooseAccountFirst": "Əvvəlcə hesab seçin.",
         "addPartner": "Tərəfdaş əlavə et",
         "working": "Yadda saxlanılır",
-        "savedNotice": "{name} indi göstəricilərin {percentage}%-ni görür.",
+        "savedNotice": "{name} indi göstəricilərin {percentage} hissəsini görür.",
         "removedNotice": "{name} artıq tərəfdaş deyil.",
         "doneTitle": "Hazırdır",
-        "failedTitle": "Alınmadı"
+        "failedTitle": "Alınmadı",
+        "endTitle": "{name} ilə tərəfdaşlıq bitirilsin?",
+        "endBody": "Payı və açılmış bölmələri silinir, tərəfdaş statistikası ona bağlanır. Sonra yenidən əlavə etmək olar.",
+        "errors": {
+          "INVALID_PARTNER_SHARE": "Faiz 0,01 ilə 100 arasında, vergüldən sonra ən çox iki rəqəmli ədəd olmalıdır.",
+          "PARTNER_SHARE_EXCEEDED": "Tərəfdaşlar birlikdə 100%-dən çox ala bilməz. Ən çox {available} qalıb.",
+          "PARTNER_IS_SUPER_ADMIN": "Super admin tərəfdaş ola bilməz. Əvvəlcə İşçilər və rollar səhifəsində super admin rolunu geri alın.",
+          "PARTNER_HOLDS_OTHER_ROLES": "Bu hesabın işçi rolu var: {roles}. Tərəfdaşın başqa rolu ola bilməz — əvvəlcə həmin rolları geri alın.",
+          "PARTNER_NOT_FOUND": "Bu hesab artıq tərəfdaş deyil."
+        }
       },
       "partnerStatistics": {
         "subject": "maliyyə statistikası",

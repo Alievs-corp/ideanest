@@ -22,9 +22,12 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, UU
     /**
      * The queue: everything still somebody's work, most urgent first.
      *
-     * <p>The priority sort is by the enum's ordinal, which is why {@code TicketPriority} is
-     * declared from {@code LOW} to {@code URGENT}. A sort by name would put {@code HIGH}
-     * above {@code URGENT}.
+     * <p><strong>The rank is spelled out, because the column is text.</strong> This sorted
+     * by {@code t.priority DESC} on the belief that it compared the enum's ordinal, and
+     * {@code SupportTicket} maps the priority with {@code EnumType.STRING} onto V51's
+     * {@code text} column — so it compared the names, and the queue read URGENT, NORMAL,
+     * LOW, HIGH. A ticket marked high was the last thing anybody working from the front
+     * would reach.
      */
     @Query(
             """
@@ -32,7 +35,14 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, UU
             WHERE t.state IN (
                 az.ideanest.ticket.domain.TicketState.OPEN,
                 az.ideanest.ticket.domain.TicketState.PENDING)
-            ORDER BY t.priority DESC, t.createdAt ASC
+            ORDER BY
+                CASE t.priority
+                    WHEN az.ideanest.ticket.domain.TicketPriority.URGENT THEN 0
+                    WHEN az.ideanest.ticket.domain.TicketPriority.HIGH THEN 1
+                    WHEN az.ideanest.ticket.domain.TicketPriority.NORMAL THEN 2
+                    ELSE 3
+                END,
+                t.createdAt ASC
             """)
     List<SupportTicket> queue(Pageable pageable);
 

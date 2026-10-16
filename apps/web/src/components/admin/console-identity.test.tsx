@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { listUsers } from '../../lib/admin/api';
+import { ApiError } from '../../lib/api/problem';
 import { lookUpNames } from '../../lib/admin/directory';
 import { readHealth } from '../../lib/admin/health';
 import { readPayout, readPayoutQueue } from '../../lib/admin/payouts';
@@ -9,6 +10,7 @@ import {
   grantRole,
   readMembership,
   readRoster,
+  revokeRole,
   ROLE_CAPABILITIES,
   STAFF_CAPABILITIES,
 } from '../../lib/admin/staff';
@@ -52,7 +54,13 @@ vi.mock('../../lib/admin/directory', async (importOriginal) => {
 });
 vi.mock('../../lib/admin/staff', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/staff')>();
-  return { ...actual, readMembership: vi.fn(), readRoster: vi.fn(), grantRole: vi.fn() };
+  return {
+    ...actual,
+    readMembership: vi.fn(),
+    readRoster: vi.fn(),
+    grantRole: vi.fn(),
+    revokeRole: vi.fn(),
+  };
 });
 vi.mock('../../lib/admin/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/api')>();
@@ -71,6 +79,7 @@ const lookUpNamesMock = vi.mocked(lookUpNames);
 const readMembershipMock = vi.mocked(readMembership);
 const readRosterMock = vi.mocked(readRoster);
 const grantRoleMock = vi.mocked(grantRole);
+const revokeRoleMock = vi.mocked(revokeRole);
 const listUsersMock = vi.mocked(listUsers);
 const readPayoutQueueMock = vi.mocked(readPayoutQueue);
 const readPayoutMock = vi.mocked(readPayout);
@@ -202,6 +211,44 @@ describe('names on a console screen', () => {
      * dropped it would have traded one missing fact for another.
      */
     expect(screen.getAllByText(CREATOR.slice(0, 8)).length).toBeGreaterThan(0);
+  });
+
+  it("links an account to the console's own account screen for a reader who may open it", () => {
+    const names = {
+      accounts: new Map([[CREATOR, { id: CREATOR, name: 'Günel Rzayeva', slug: 'gunel-rzayeva' }]]),
+      projects: new Map(),
+    };
+    const membership = {
+      accountId: ME,
+      staff: true,
+      bootstrapped: false,
+      roles: ['MODERATOR' as const],
+      capabilities: ['ADMINISTER_ACCOUNTS' as const],
+    };
+
+    render(
+      <ConsoleMembershipProvider given={{ status: 'ready', membership }}>
+        <EntityName id={CREATOR} names={names} kind="account" copy={CHROME.identity} />
+      </ConsoleMembershipProvider>,
+    );
+
+    // A ticket's requester or a grant's holder used to take the reader out of the console to
+    // the profile every visitor sees.
+    expect(screen.getByRole('link', { name: 'Günel Rzayeva' })).toHaveAttribute(
+      'href',
+      `/en/admin/users/${CREATOR}`,
+    );
+  });
+
+  it('keeps the public profile for a reader who cannot open accounts', () => {
+    const names = {
+      accounts: new Map([[CREATOR, { id: CREATOR, name: 'Günel Rzayeva', slug: 'gunel-rzayeva' }]]),
+      projects: new Map(),
+    };
+
+    render(<EntityName id={CREATOR} names={names} kind="account" copy={CHROME.identity} />);
+
+    expect(screen.getByRole('link', { name: 'Günel Rzayeva' })).toHaveAttribute('href', '/en/gunel-rzayeva');
   });
 
   it('links a campaign to the staff preview, which renders it in any state', () => {
@@ -528,5 +575,107 @@ describe('the console index', () => {
       'href',
       expect.stringContaining('/admin/staff'),
     );
+  });
+});
+
+/**
+ * The roster, read as people — #501.
+ */
+describe('the staff roster', () => {
+  const PARTNER = '0191f2ab-1234-7000-8000-0000000000ff';
+
+  beforeEach(() => {
+    lookUpNamesMock.mockResolvedValue({
+      accounts: [
+        { id: COLLEAGUE, name: 'Kamran Əliyev', slug: 'kamran-aliyev' },
+        { id: PARTNER, name: 'Tural Partnyor', slug: 'tural' },
+      ],
+      projects: [],
+    });
+    readRosterMock.mockResolvedValue({
+      grants: [
+        { accountId: COLLEAGUE, role: 'MODERATOR', grantedAt: '2026-08-27T09:00:00Z', grantedBy: ME, note: null },
+        { accountId: COLLEAGUE, role: 'FINANCE', grantedAt: '2026-09-16T09:00:00Z', grantedBy: ME, note: null },
+        { accountId: PARTNER, role: 'PARTNER', grantedAt: '2026-10-07T09:00:00Z', grantedBy: ME, note: 'partner profile' },
+      ],
+    });
+  });
+
+  it('lists a person once, with every role they hold', async () => {
+    render(<StaffRoles copy={STAFF} />);
+
+    // One card per grant drew the same person twice, each with its own "Withdraw".
+    expect(await screen.findAllByRole('link', { name: 'Kamran Əliyev' })).toHaveLength(1);
+    const roster = within(screen.getByRole('region', { name: STAFF.rosterHeading }));
+    expect(roster.getByText(STAFF.role.MODERATOR)).toBeInTheDocument();
+    expect(roster.getByText(STAFF.role.FINANCE)).toBeInTheDocument();
+  });
+
+  it('sends a partner to the partner list rather than withdrawing half of one', async () => {
+    render(<StaffRoles copy={STAFF} />);
+    await screen.findAllByRole('link', { name: 'Tural Partnyor' });
+
+    // Withdrawing PARTNER here left a profile whose share still counted against the hundred.
+    expect(screen.getByRole('link', { name: STAFF.partnerManaged })).toHaveAttribute('href', '/en/admin/partners');
+    expect(screen.getAllByRole('button', { name: STAFF.withdraw })).toHaveLength(2);
+    expect(screen.queryByText(/partner profile/)).not.toBeInTheDocument();
+  });
+
+  it('asks before withdrawing a role', async () => {
+    const user = userEvent.setup();
+    revokeRoleMock.mockResolvedValue({ accountId: COLLEAGUE, staff: true, bootstrapped: false, roles: ['MODERATOR'], capabilities: [] });
+
+    render(<StaffRoles copy={STAFF} />);
+    await user.click((await screen.findAllByRole('button', { name: STAFF.withdraw }))[1]!);
+
+    // Fetched when it opens (`React.lazy`), so the first one can take a moment.
+    const dialog = await screen.findByRole('dialog', {}, { timeout: 5000 });
+    expect(within(dialog).getByText(STAFF.withdrawBody)).toBeInTheDocument();
+    expect(revokeRoleMock).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole('button', { name: STAFF.withdrawConfirm }));
+    await waitFor(() => expect(revokeRoleMock).toHaveBeenCalledWith(COLLEAGUE, 'FINANCE'));
+  });
+
+  it('says what the role in the form confers, in sentences', async () => {
+    render(<StaffRoles copy={STAFF} />);
+    await screen.findByRole('button', { name: STAFF.grant });
+
+    // Twenty-one uppercase identifiers, with the sentence on a hover title, was the list.
+    expect(screen.getAllByText(STAFF.capability.MODERATE_CONTENT).length).toBeGreaterThan(0);
+  });
+
+  it("refuses a staff role to a partner in the reader's words", async () => {
+    const user = userEvent.setup();
+    listUsersMock.mockResolvedValue({
+      users: [
+        {
+          id: PARTNER,
+          email: 'tural@example.az',
+          name: 'Tural Partnyor',
+          slug: 'tural',
+          emailVerified: true,
+          emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          suspended: false,
+          suspendedAt: null,
+          suspendedBy: null,
+          suspensionReason: null,
+          deletionScheduledAt: null,
+        },
+      ],
+      nextCursor: null,
+    });
+    grantRoleMock.mockRejectedValue(
+      new ApiError(409, { code: 'ACCOUNT_IS_PARTNER', detail: 'A partner may hold no other staff role.' }),
+    );
+
+    render(<StaffRoles copy={STAFF} />);
+    await user.type(await screen.findByLabelText(STAFF.picker.label), 'Tural');
+    await user.click(screen.getByRole('button', { name: STAFF.picker.search }));
+    await user.click(await screen.findByRole('button', { name: /tural@example\.az/ }));
+    await user.click(screen.getByRole('button', { name: STAFF.grant }));
+
+    expect(await screen.findByText(STAFF.errors.ACCOUNT_IS_PARTNER as string)).toBeInTheDocument();
   });
 });
