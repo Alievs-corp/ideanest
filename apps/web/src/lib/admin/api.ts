@@ -295,6 +295,12 @@ export interface AdminPayoutDestination {
   readonly creatorId: string;
   readonly recorded: boolean;
   readonly standing: DestinationStanding;
+  /**
+   * The row's own state, beside the standing. They differ while a waiver is live: the standing says
+   * `WAIVED` whatever the row is, and a waived row whose holder's name does not match still cannot be
+   * verified. Absent from a service that has not been redeployed, and when nothing is on file.
+   */
+  readonly reviewState?: 'AWAITING_VERIFICATION' | 'NAME_MISMATCH' | 'REJECTED' | 'VERIFIED' | null;
   /** Absent when nothing is on file. */
   readonly kind?: DestinationKind | null;
   readonly provider?: string | null;
