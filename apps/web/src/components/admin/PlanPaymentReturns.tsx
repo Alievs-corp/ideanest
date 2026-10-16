@@ -2,7 +2,6 @@
 
 import { useId, useState } from 'react';
 import { EmptyState, Field, InlineAlert, Pill, Skeleton, SkeletonGroup, Textarea, TextInput } from '@ideanest/ui';
-import { ApiError } from '../../lib/api/problem';
 import {
   cardWindowOpen,
   listUnappliedPlanPayments,
@@ -12,10 +11,11 @@ import {
   type UnappliedPlanPayment,
   type UnappliedPlanPaymentList,
 } from '../../lib/admin/plan-payment-refunds';
-import { consoleMessageFor, shortId } from '../../lib/admin/refusals';
+import { shortId } from '../../lib/admin/refusals';
+import { codedRefusalFor, refusalCode } from '../../lib/admin/coded-refusal';
+import { bakuDate } from '../../lib/admin/console-dates';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { formatMoney } from '../../lib/money';
-import { formatDate } from '../../lib/time';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
@@ -183,17 +183,17 @@ export function PlanPaymentReturns({ copy, canIssue, canOpenAccount }: PlanPayme
   );
 }
 
-/** A refusal's code, when the service named one. */
-function codeOf(cause: unknown): string | undefined {
-  const code = cause instanceof ApiError ? cause.problem?.code : undefined;
-  return code ?? undefined;
+const codeOf = refusalCode;
+
+/** A refusal in this section's words where it has some, else in the console's — never the service's English. */
+function planRefusalMessage(cause: unknown, copy: RefundConsoleCopy): string {
+  const words = copy.planPayments.errors;
+  return codedRefusalFor(cause, words, words['INVALID_REQUEST'] ?? copy.refusals.refused, copy.planPayments.subject, copy.refusals);
 }
 
-/** A refusal in this section's words where it has some, else in the console's. */
-function planRefusalMessage(cause: unknown, copy: RefundConsoleCopy): string {
-  const code = codeOf(cause);
-  const sentence = code === undefined ? undefined : copy.planPayments.errors[code];
-  return sentence ?? consoleMessageFor(cause, copy.planPayments.subject, copy.refusals);
+/** A provider as staff say it — `Payriff`, not `PAYRIFF`. One with no word falls through as sent. */
+function providerName(provider: string, copy: RefundConsoleCopy): string {
+  return copy.planPayments.providerName?.[provider] ?? provider;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -226,8 +226,12 @@ function PlanPaymentRow({
   const [error, setError] = useState<string | null>(null);
   /* Closed by the clock on load, or by the service's refusal after a press. */
   const [refusedAsClosed, setRefusedAsClosed] = useState<string | null>(null);
-  const windowOpen = cardWindowOpen(payment) && refusedAsClosed === null;
+  /* A card refund was sent and never answered — on load, or after a press the provider left unanswered. */
+  const [unconfirmedSince, setUnconfirmedSince] = useState<string | null>(payment.cardRefundStartedAt ?? null);
+  const unconfirmed = unconfirmedSince !== null;
+  const windowOpen = (cardWindowOpen(payment) || unconfirmed) && refusedAsClosed === null;
   const reasonId = useId();
+  const provider = providerName(payment.provider, copy);
 
   async function refund(): Promise<void> {
     if (busy) return;
@@ -251,9 +255,14 @@ function PlanPaymentRow({
         return;
       }
       if (code === 'PLAN_REFUND_CARD_WINDOW_CLOSED') {
+        setUnconfirmedSince(null);
         setRefusedAsClosed(message);
         setMode('bank');
         return;
+      }
+      if (code === 'PLAN_REFUND_UNCONFIRMED') {
+        // The money may already be on its way back: the bank transfer is not offered beside it.
+        setUnconfirmedSince((since) => since ?? new Date().toISOString());
       }
       setError(message);
       setMode('idle');
@@ -268,7 +277,7 @@ function PlanPaymentRow({
         <p className="text-sm text-white">
           <span className="tabular-nums">{amount}</span>
           <span className="ml-2 text-white/64">
-            {fillPlaceholders(words.paidOn, { date: formatDate(payment.paidAt, locale) })}
+            {fillPlaceholders(words.paidOn, { date: bakuDate(payment.paidAt, locale) })}
           </span>
         </p>
         <CardWindow payment={payment} closedByRefusal={refusedAsClosed !== null} copy={copy} locale={locale} />
@@ -276,7 +285,7 @@ function PlanPaymentRow({
 
       <p className="mt-2 text-xs text-white/64">
         {fillNodes(words.providerOrder, {
-          provider: payment.provider,
+          provider,
           order: <span className="select-all font-mono text-white">{payment.providerTransactionId}</span>,
         })}
       </p>
@@ -306,11 +315,16 @@ function PlanPaymentRow({
             </InlineAlert>
           )}
           {refusedAsClosed !== null && <InlineAlert variant="info">{refusedAsClosed}</InlineAlert>}
+          {unconfirmedSince !== null && (
+            <InlineAlert variant="warning" title={words.unconfirmedTitle}>
+              {fillPlaceholders(words.unconfirmedBody, { date: bakuDate(unconfirmedSince, locale) })}
+            </InlineAlert>
+          )}
 
           {mode === 'confirm-card' ? (
             <div role="group" aria-label={words.refundToCard} className="flex flex-col gap-2">
               <p className="max-w-[62ch] text-sm text-white">
-                {fillPlaceholders(words.confirmRefund, { amount, provider: payment.provider })}
+                {fillPlaceholders(words.confirmRefund, { amount, provider })}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Pill size="sm" autoFocus aria-disabled={busy} onClick={() => void refund()}>
@@ -327,33 +341,45 @@ function PlanPaymentRow({
               copy={copy}
               onReturned={onReturned}
               onAlreadyReturned={onAlreadyReturned}
+              onUnsettled={() => {
+                setUnconfirmedSince((since) => since ?? new Date().toISOString());
+                setMode('idle');
+              }}
               onCancel={() => setMode('idle')}
             />
           ) : (
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap gap-2">
-                <Pill
-                  variant="outline"
-                  size="sm"
-                  disabled={!windowOpen}
-                  aria-describedby={windowOpen ? undefined : reasonId}
-                  onClick={() => {
-                    setError(null);
-                    setMode('confirm-card');
-                  }}
-                >
-                  {words.refundToCard}
-                </Pill>
-                <Pill
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setError(null);
-                    setMode('bank');
-                  }}
-                >
-                  {words.recordBankTransfer}
-                </Pill>
+                {/*
+                  Past the provider's window the card refund is not drawn at all: a control that
+                  cannot succeed is not offered, and the sentence below says why. While a card
+                  refund is unconfirmed it is the only way out, because it asks the provider first.
+                */}
+                {windowOpen && (
+                  <Pill
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setError(null);
+                      setMode('confirm-card');
+                    }}
+                  >
+                    {words.refundToCard}
+                  </Pill>
+                )}
+                {!unconfirmed && (
+                  <Pill
+                    variant="ghost"
+                    size="sm"
+                    aria-describedby={windowOpen ? undefined : reasonId}
+                    onClick={() => {
+                      setError(null);
+                      setMode('bank');
+                    }}
+                  >
+                    {words.recordBankTransfer}
+                  </Pill>
+                )}
               </div>
               {!windowOpen && (
                 <p id={reasonId} className="max-w-[62ch] text-xs text-white/64">
@@ -392,11 +418,11 @@ function CardWindow({
   } else if (!closedByRefusal && cardWindowOpen(payment)) {
     const days = Math.floor((new Date(until).getTime() - Date.now()) / DAY_MS);
     text = fillPlaceholders(words.cardOpenUntil, {
-      date: formatDate(until, locale),
+      date: bakuDate(until, locale),
       left: days < 1 ? words.lastDay : fillPlaceholders(words.daysLeft, { count: String(days) }),
     });
   } else {
-    text = fillPlaceholders(words.cardClosed, { date: formatDate(until, locale) });
+    text = fillPlaceholders(words.cardClosed, { date: bakuDate(until, locale) });
   }
 
   return <p className="text-xs text-white/64">{text}</p>;
@@ -408,12 +434,14 @@ function RecordReturn({
   copy,
   onReturned,
   onAlreadyReturned,
+  onUnsettled,
   onCancel,
 }: {
   readonly payment: UnappliedPlanPayment;
   readonly copy: RefundConsoleCopy;
   readonly onReturned: (notice: Notice) => void;
   readonly onAlreadyReturned: (message: string) => void;
+  readonly onUnsettled: () => void;
   readonly onCancel: () => void;
 }) {
   const words = copy.planPayments;
@@ -447,6 +475,11 @@ function RecordReturn({
       const message = planRefusalMessage(cause, copy);
       if (codeOf(cause) === 'PLAN_REFUND_NOT_UNAPPLIED') {
         onAlreadyReturned(message);
+        return;
+      }
+      if (codeOf(cause) === 'PLAN_REFUND_CARD_REFUND_UNSETTLED') {
+        // A card refund may already have returned this money; the row stops offering the transfer.
+        onUnsettled();
         return;
       }
       setError(message);
