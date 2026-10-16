@@ -16,7 +16,8 @@ import { figuresMoved, payoutRefusalFor } from '../../lib/admin/payout-refusals'
 import { bakuDate, calendarDate } from '../../lib/admin/console-dates';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { wasAborted } from '../../lib/admin/refusals';
-import { formatMoney } from '../../lib/money';
+// The printing half only: the money module's root brings decimal.js, which nothing here needs.
+import { formatMoney } from '@ideanest/money/format';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { PayoutQueueCopy } from '../../lib/i18n/admin/money-copy';
 import { EntityName } from './ConsoleIdentity';

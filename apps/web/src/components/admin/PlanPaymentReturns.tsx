@@ -15,7 +15,8 @@ import { shortId } from '../../lib/admin/refusals';
 import { codedRefusalFor, refusalCode } from '../../lib/admin/coded-refusal';
 import { bakuDate } from '../../lib/admin/console-dates';
 import type { DirectoryNames } from '../../lib/admin/directory';
-import { formatMoney } from '../../lib/money';
+// The printing half only: the money module's root brings decimal.js, which nothing here needs.
+import { formatMoney } from '@ideanest/money/format';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';

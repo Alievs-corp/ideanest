@@ -36,13 +36,15 @@ import { calculateRefusalFor, figuresMoved, payoutRefusalFor } from '../../lib/a
 import { isIdentifier } from '../../lib/admin/coded-refusal';
 import { bakuDate, bakuDateTime, calendarDate } from '../../lib/admin/console-dates';
 import { shortId } from '../../lib/admin/refusals';
-import { formatMoney, type Money } from '../../lib/money';
+import { formatMoney } from '@ideanest/money/format';
+import type { Money } from '../../lib/money';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { Locale } from '../../lib/i18n/locale';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import type { PayoutQueueCopy } from '../../lib/i18n/admin/money-copy';
 import { ConsoleRefusal } from './ConsoleRefusal';
+import { Confirm } from './ConsoleConfirm';
 import { EntityName } from './ConsoleIdentity';
 import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
@@ -573,45 +575,6 @@ function Line({ label, value }: { readonly label: string; readonly value: string
       <dt className="text-white/48">{label}</dt>
       <dd className="text-right font-mono tabular-nums text-white/64">{value}</dd>
     </>
-  );
-}
-
-/* -------------------------------------------------------------------------
- * Asking first
- * ---------------------------------------------------------------------- */
-
-/** The second step of a control that moves money or cannot be undone: what is about to happen, then do it. */
-function Confirm({
-  label,
-  text,
-  action,
-  working,
-  back,
-  busy,
-  onConfirm,
-  onBack,
-}: {
-  readonly label: string;
-  readonly text: string;
-  readonly action: string;
-  readonly working: string;
-  readonly back: string;
-  readonly busy: boolean;
-  readonly onConfirm: () => void;
-  readonly onBack: () => void;
-}) {
-  return (
-    <div role="group" aria-label={label} className="flex w-full flex-col gap-2 rounded-lg border border-white/16 p-3">
-      <p className="max-w-[62ch] text-sm text-white">{text}</p>
-      <div className="flex flex-wrap gap-2">
-        <Pill size="sm" autoFocus aria-disabled={busy} onClick={() => (busy ? undefined : onConfirm())}>
-          {busy ? working : action}
-        </Pill>
-        <Pill variant="ghost" size="sm" aria-disabled={busy} onClick={() => (busy ? undefined : onBack())}>
-          {back}
-        </Pill>
-      </div>
-    </div>
   );
 }
 

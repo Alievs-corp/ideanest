@@ -174,7 +174,7 @@ describe('the plan manager', () => {
     render(<PlanManager copy={COPY} />);
     await screen.findAllByText(/Starter/);
 
-    await userEvent.type(screen.getByLabelText(COPY.referenceLabel), 'transfer 44');
+    await userEvent.type(await screen.findByLabelText(COPY.referenceLabel), 'transfer 44');
     await userEvent.click(screen.getByRole('button', { name: COPY.recordPayment }));
     expect(activateMock).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: COPY.confirmRecordAction }));
@@ -189,7 +189,7 @@ describe('the plan manager', () => {
     ready([STARTER], [{ ...WAITING, state: 'ACTIVE', entitled: true, currentPeriodEnd: '2026-09-20T09:00:00Z' }]);
 
     render(<PlanManager copy={COPY} />);
-    await screen.findAllByText(/Starter/);
+    await screen.findByText(COPY.state.ACTIVE);
 
     expect(screen.queryByRole('button', { name: COPY.recordPayment })).not.toBeInTheDocument();
   });
@@ -294,7 +294,7 @@ describe('the money pages audit on the plan manager', () => {
     render(<PlanManager copy={COPY} />);
     await screen.findAllByText(/Starter/);
 
-    const day = screen.getByLabelText(new RegExp(`^${COPY.receivedLabel}`));
+    const day = await screen.findByLabelText(new RegExp(`^${COPY.receivedLabel}`));
     await userEvent.clear(day);
     await userEvent.type(day, '2999-01-01');
     expect(screen.getByText(COPY.receivedInvalid)).toBeInTheDocument();
@@ -323,7 +323,7 @@ describe('the money pages audit on the plan manager', () => {
     render(<PlanManager copy={COPY} />);
     await screen.findAllByText(/Starter/);
 
-    expect(screen.getByLabelText(new RegExp(`^${COPY.receivedLabel}`))).toHaveValue(bankDay());
+    expect(await screen.findByLabelText(new RegExp(`^${COPY.receivedLabel}`))).toHaveValue(bankDay());
     await userEvent.click(screen.getByRole('button', { name: COPY.recordPayment }));
     await userEvent.click(screen.getByRole('button', { name: COPY.confirmRecordAction }));
 
@@ -333,7 +333,7 @@ describe('the money pages audit on the plan manager', () => {
   it('offers no ending on a subscription that has expired', async () => {
     ready([STARTER], [{ ...WAITING, state: 'EXPIRED', currentPeriodEnd: '2026-08-01T09:00:00Z' }]);
     render(<PlanManager copy={COPY} />);
-    await screen.findAllByText(/Starter/);
+    await screen.findByText(COPY.state.EXPIRED);
 
     expect(screen.queryByRole('button', { name: COPY.endSubscription })).not.toBeInTheDocument();
   });
@@ -345,7 +345,7 @@ describe('the money pages audit on the plan manager', () => {
     render(<PlanManager copy={COPY} />);
     await screen.findAllByText(/Starter/);
 
-    await userEvent.type(screen.getByLabelText(new RegExp(`^${COPY.endReasonLabel}`)), 'Payment reversed');
+    await userEvent.type(await screen.findByLabelText(new RegExp(`^${COPY.endReasonLabel}`)), 'Payment reversed');
     await userEvent.click(screen.getByRole('button', { name: COPY.endSubscription }));
     expect(endMock).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: COPY.confirmEndAction }));
@@ -360,7 +360,7 @@ describe('the money pages audit on the plan manager', () => {
     render(<PlanManager copy={COPY} />);
     await screen.findAllByText(/Starter/);
 
-    await userEvent.type(screen.getByLabelText(new RegExp(`^${COPY.endReasonLabel}`)), 'Tidy');
+    await userEvent.type(await screen.findByLabelText(new RegExp(`^${COPY.endReasonLabel}`)), 'Tidy');
     await userEvent.click(screen.getByRole('button', { name: COPY.endSubscription }));
     await userEvent.click(screen.getByRole('button', { name: COPY.confirmEndAction }));
 
