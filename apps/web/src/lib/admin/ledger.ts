@@ -118,6 +118,11 @@ export const LEDGER_PAGE_SIZE = 20;
  *
  * <p>Unlike the payment log's two filters, these combine: `ledger_entries` has an index that
  * leads on `(account, project_id)`, so escrow-on-one-campaign is one index read.
+ *
+ * <p>Both are applied in SQL. Until the service had a query for the pair it paged by account
+ * and dropped other campaigns' postings afterwards, so a page could come back short, or empty
+ * with a `nextCursor`; a reader of this contract should still treat a page as "possibly short"
+ * and only an absent cursor as the end.
  */
 export interface LedgerRequest {
   account?: string | null;
