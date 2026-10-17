@@ -120,6 +120,30 @@ class AdminUserApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("the next page continues the list rather than repeating the first")
+    void theCursorContinuesTheList() {
+        String marker = "Pager" + SEQUENCE.incrementAndGet();
+        Account oldest = account("admin-page", marker);
+        Account middle = account("admin-page", marker);
+        Account newest = account("admin-page", marker);
+        String term = "query=" + marker.toLowerCase();
+
+        Map<String, Object> first = search(term + "&limit=2").getBody();
+        assertThat(idsOf(first)).containsExactly(newest.id().toString(), middle.id().toString());
+        assertThat(first.get("nextCursor")).as("a full page may have more behind it").isNotNull();
+
+        Map<String, Object> second = search(term + "&limit=2&after=" + first.get("nextCursor")).getBody();
+        assertThat(idsOf(second)).containsExactly(oldest.id().toString());
+        assertThat(second.get("nextCursor")).as("a short page is the end").isNull();
+
+        // The unfiltered list pages through its own query, and repeated its first page on
+        // the console's "load more" when the cursor was not applied.
+        Map<String, Object> top = search("limit=1").getBody();
+        Map<String, Object> next = search("limit=1&after=" + top.get("nextCursor")).getBody();
+        assertThat(idsOf(next)).doesNotContainAnyElementsOf(idsOf(top));
+    }
+
+    @Test
     @DisplayName("the suspended filter answers only the accounts that were stopped")
     void theSuspendedFilterIsTheStoppedList() {
         Account quiet = account("admin-quiet");

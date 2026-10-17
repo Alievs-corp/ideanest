@@ -1679,6 +1679,7 @@
         "filteredBody": "Arama bir adresle, görünen adla ya da profil kısa adıyla eşleşir ve bunların içinde herhangi bir yerde eşleşir.",
         "emptyTitle": "Gösterilecek hesap yok",
         "emptyBody": "İnsanlar kaydoldukça hesaplar burada görünür.",
+        "noMore": "Başka hesap yok. Hepsi gösteriliyor.",
         "joined": "{date} tarihinde katıldı",
         "unknownDate": "bilinmeyen bir tarihte",
         "emailVerified": "E-posta doğrulandı",

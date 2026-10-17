@@ -193,6 +193,46 @@ describe('UserDirectory', () => {
     });
   });
 
+  describe('loading more', () => {
+    it('offers no "load more" when the first page is the whole list', async () => {
+      render(<UserDirectory copy={COPY} />);
+      await screen.findByText('ayan@example.com');
+
+      expect(screen.queryByRole('button', { name: COPY.loadMore })).toBeNull();
+    });
+
+    it('appends the next page, asks with the cursor, and says when there is nothing further', async () => {
+      const user = userEvent.setup();
+      listUsersMock.mockResolvedValueOnce(page([AYAN], AYAN.id));
+      listUsersMock.mockResolvedValueOnce(page([STOPPED]));
+      render(<UserDirectory copy={COPY} />);
+      await screen.findByText('ayan@example.com');
+
+      await user.click(screen.getByRole('button', { name: COPY.loadMore }));
+
+      expect(await screen.findByText('rasim@example.com')).toBeInTheDocument();
+      expect(listUsersMock).toHaveBeenLastCalledWith(expect.objectContaining({ after: AYAN.id }));
+      expect(screen.getAllByText('ayan@example.com')).toHaveLength(1);
+      expect(screen.getByText(COPY.noMore)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: COPY.loadMore })).toBeNull();
+    });
+
+    it('never draws an account twice, and says so when the next page held nothing new', async () => {
+      const user = userEvent.setup();
+      // A full page offers a cursor whether or not anything is behind it.
+      listUsersMock.mockResolvedValueOnce(page([AYAN, STOPPED], STOPPED.id));
+      listUsersMock.mockResolvedValueOnce(page([AYAN, STOPPED]));
+      render(<UserDirectory copy={COPY} />);
+      await screen.findByText('ayan@example.com');
+
+      await user.click(screen.getByRole('button', { name: COPY.loadMore }));
+
+      expect(await screen.findByText(COPY.noMore)).toBeInTheDocument();
+      expect(screen.getAllByText('ayan@example.com')).toHaveLength(1);
+      expect(screen.getAllByText('rasim@example.com')).toHaveLength(1);
+    });
+  });
+
   describe('suspending an account', () => {
     it("offers no suspension on the reader's own row, and says it is theirs", async () => {
       const membership = {

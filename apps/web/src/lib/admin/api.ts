@@ -73,6 +73,18 @@ export interface DirectoryRequest {
   readonly signal?: AbortSignal;
 }
 
+/**
+ * A page as it actually arrives.
+ *
+ * <p>The service runs with `default-property-inclusion: non_null`, so the last page carries
+ * no `nextCursor` at all rather than `null`. Read as the typed page, that `undefined` passed
+ * every `cursor !== null` check: the directory offered "load more" on its only page, asked
+ * again without a cursor, and appended the first page to itself.
+ */
+type WirePage<T, K extends string> = { readonly [key in K]?: T[] | null } & {
+  readonly nextCursor?: string | null;
+};
+
 /** The service's own default; sent explicitly so the cursor and the page agree. */
 export const DIRECTORY_PAGE_SIZE = 25;
 
@@ -95,7 +107,8 @@ export async function listUsers(request: DirectoryRequest = {}): Promise<AdminUs
   });
   if (!response.ok) throw await errorFrom(response);
 
-  return (await response.json()) as AdminUserPage;
+  const body = (await response.json()) as WirePage<AdminUser, 'users'>;
+  return { users: body.users ?? [], nextCursor: body.nextCursor ?? null };
 }
 
 /**
@@ -182,7 +195,8 @@ export async function readUserPledges(
   );
   if (!response.ok) throw await errorFrom(response);
 
-  return (await response.json()) as AdminUserPledgePage;
+  const body = (await response.json()) as WirePage<AdminUserPledge, 'pledges'>;
+  return { pledges: body.pledges ?? [], nextCursor: body.nextCursor ?? null };
 }
 
 /**

@@ -62,6 +62,8 @@ export interface UserDirectoryCopy extends SuspensionCopy {
   readonly filteredBody: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
+  /** Under the list once "load more" has reached its end. */
+  readonly noMore: string;
   /** Carries `{date}`. */
   readonly joined: string;
   readonly unknownDate: string;
@@ -154,6 +156,7 @@ export function userDirectoryCopyFrom(
     filteredBody: t('screens.users.filteredBody'),
     emptyTitle: t('screens.users.emptyTitle'),
     emptyBody: t('screens.users.emptyBody'),
+    noMore: t('screens.users.noMore'),
     joined: String(t.raw('screens.users.joined')),
     unknownDate: t('screens.users.unknownDate'),
     emailVerified: t('screens.users.emailVerified'),

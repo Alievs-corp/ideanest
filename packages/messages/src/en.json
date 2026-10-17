@@ -1679,6 +1679,7 @@
         "filteredBody": "Search matches an address, a display name or a profile slug, and it matches anywhere inside them.",
         "emptyTitle": "No accounts to show",
         "emptyBody": "Accounts appear here as people register.",
+        "noMore": "There are no more accounts. Every one is shown.",
         "joined": "joined {date}",
         "unknownDate": "at an unknown date",
         "emailVerified": "Email verified",
