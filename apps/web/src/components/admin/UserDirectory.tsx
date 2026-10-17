@@ -96,6 +96,10 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
   const [loaded, setLoaded] = useState<readonly AdminUser[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Set when "load more" is what reached the end, so the reader who asked is told there was
+  // nothing further rather than watching the button vanish. A list that fits on its first
+  // page never offered the button and needs no sentence.
+  const [reachedEnd, setReachedEnd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -120,6 +124,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
 
         setLoaded(page.users);
         setCursor(page.nextCursor);
+        setReachedEnd(false);
         setError(null);
         setStatus('ready');
       } catch (cause) {
@@ -152,8 +157,14 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
     setError(null);
     try {
       const page = await listUsers({ query: submitted, suspendedOnly, after: cursor });
-      setLoaded((previous) => [...previous, ...page.users]);
+      // Keyed by identifier, so a row the reader already has is never drawn twice — not even
+      // if an account suspended or reinstated meanwhile moves across the page boundary.
+      setLoaded((previous) => {
+        const shown = new Set(previous.map((user) => user.id));
+        return [...previous, ...page.users.filter((user) => !shown.has(user.id))];
+      });
       setCursor(page.nextCursor);
+      setReachedEnd(page.nextCursor === null);
     } catch (cause) {
       setError(messageFor(cause, copy));
     } finally {
@@ -437,6 +448,12 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
           {loadingMore ? copy.loading : copy.loadMore}
         </Pill>
       )}
+
+      <div role="status" aria-live="polite" className="empty:hidden">
+        {status === 'ready' && reachedEnd && cursor === null && loaded.length > 0 && (
+          <p className="mt-3 text-sm text-white/64">{copy.noMore}</p>
+        )}
+      </div>
 
       {status === 'failed' && (
         <Pill variant="ghost" size="sm" className="mt-4" onClick={() => setAttempt((n) => n + 1)}>

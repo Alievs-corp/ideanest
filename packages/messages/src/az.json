@@ -1679,6 +1679,7 @@
         "filteredBody": "Axtarış ünvana, göstərilən ada və ya profil qısa adına uyğun gəlir və onların içində istənilən yerdə uyğunlaşır.",
         "emptyTitle": "Göstəriləcək hesab yoxdur",
         "emptyBody": "İnsanlar qeydiyyatdan keçdikcə hesablar burada görünür.",
+        "noMore": "Başqa hesab yoxdur. Siyahıda hamısı göstərilir.",
         "joined": "{date} qoşulub",
         "unknownDate": "naməlum tarixdə",
         "emailVerified": "E-poçt təsdiqlənib",
