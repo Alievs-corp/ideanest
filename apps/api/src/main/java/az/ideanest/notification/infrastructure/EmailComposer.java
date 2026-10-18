@@ -2,12 +2,14 @@ package az.ideanest.notification.infrastructure;
 
 import az.ideanest.notification.NotificationProperties;
 import az.ideanest.notification.application.NotificationDigest;
+import az.ideanest.notification.application.EditedCopy;
 import az.ideanest.notification.application.NotificationMessage;
 import az.ideanest.notification.application.TemplateOverrides;
 import az.ideanest.notification.domain.NotificationType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -100,11 +102,33 @@ public class EmailComposer {
     }
 
     /**
-     * The content of the email for one notification.
+     * The content of the email for one notification, with whatever override is live for the
+     * recipient's language.
      *
      * @param recipientName the name on the recipient's account, for the greeting
      */
     public EmailContent compose(NotificationMessage message, String recipientName, Locale locale) {
+        return compose(
+                message,
+                recipientName,
+                locale,
+                overrides.editedFor(message.type().name(), TemplateOverrides.localeOf(locale)));
+    }
+
+    /**
+     * The same, with a given edit in place of the live one — the template editor's preview of
+     * text nobody has saved yet, and its test send.
+     *
+     * <p><strong>An edit that names the campaign is not used for a message that has no
+     * campaign name.</strong> {@code ShippedCopy} makes an override keep {@code {1}} whenever
+     * the shipped copy names the campaign, and the rows written before #249 — or whose campaign
+     * was deleted before the send — have nothing to put there. The shipped copy has a sentence
+     * written for exactly that case, so it is sent instead of the edit with a hole in it.
+     *
+     * @param edited the subject and first paragraph to send instead of the catalogue's
+     */
+    public EmailContent compose(
+            NotificationMessage message, String recipientName, Locale locale, Optional<EditedCopy> edited) {
         JsonNode params = this.facts.paramsOf(message.params());
         EmailFacts facts = this.facts.factsFor(message.type(), params, recipientName);
         String action = actionUrl(message.type(), params, message.subjectType(), message.subjectId());
@@ -113,16 +137,14 @@ public class EmailComposer {
         // The subject and the first paragraph are the two an administrator may rewrite
         // (#315); the headline and the button label stay in the catalogue, because a
         // button with no label is a broken email rather than a badly worded one.
-        String type = message.type().name();
+        Optional<EditedCopy> applied =
+                edited.filter(copy -> !copy.namesCampaign() || !facts.projectTitle().isEmpty());
 
         return EmailContent.of(
-                overridden(
-                        overrides.subjectFor(type, TemplateOverrides.RENDER_LOCALE),
-                        base + "subject",
-                        facts,
-                        locale),
+                applied.map(copy -> EditedCopy.format(copy.subject(), facts.arguments(), locale))
+                        .orElseGet(() -> copy(base + "subject", facts, locale)),
                 copy(base + "headline", facts, locale),
-                overriddenParagraphs(type, base, facts, locale),
+                overriddenParagraphs(applied, base, facts, locale),
                 copy(base + "action", facts, locale),
                 action);
     }
@@ -226,14 +248,6 @@ public class EmailComposer {
         return List.copyOf(paragraphs);
     }
 
-    /** An edited string when there is one, and the catalogue's otherwise. */
-    private String overridden(
-            java.util.Optional<String> override, String key, EmailFacts facts, Locale locale) {
-        return override
-                .map(text -> java.text.MessageFormat.format(text, facts.arguments()))
-                .orElseGet(() -> copy(key, facts, locale));
-    }
-
     /**
      * The paragraphs, with the first one overridable.
      *
@@ -243,17 +257,16 @@ public class EmailComposer {
      * some recipients and not others, with nothing on the screen to say which.
      */
     private List<String> overriddenParagraphs(
-            String type, String base, EmailFacts facts, Locale locale) {
-        java.util.Optional<String> body = overrides.bodyFor(type, TemplateOverrides.RENDER_LOCALE);
-        if (body.isEmpty()) {
-            return paragraphs(base, facts, locale);
+            Optional<EditedCopy> edited, String base, EmailFacts facts, Locale locale) {
+        List<String> shipped = paragraphs(base, facts, locale);
+        if (edited.isEmpty()) {
+            return shipped;
         }
 
-        List<String> shipped = paragraphs(base, facts, locale);
-        List<String> edited = new ArrayList<>(shipped.size());
-        edited.add(java.text.MessageFormat.format(body.get(), facts.arguments()));
-        edited.addAll(shipped.subList(1, shipped.size()));
-        return edited;
+        List<String> paragraphs = new ArrayList<>(shipped.size());
+        paragraphs.add(EditedCopy.format(edited.get().body(), facts.arguments(), locale));
+        paragraphs.addAll(shipped.subList(1, shipped.size()));
+        return paragraphs;
     }
 
     /**

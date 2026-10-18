@@ -92,4 +92,55 @@ public interface LegalDocumentRepository extends JpaRepository<LegalDocument, UU
             """)
     Optional<LegalDocument> published(
             @Param("kind") DocumentKind kind, @Param("locale") String locale, @Param("version") int version);
+
+    /**
+     * Serialises every write to one kind until the transaction ends.
+     *
+     * <p>Drafting, publishing and choosing a version all read the kind's rows and then write on
+     * the strength of what they read. Two of them at once used to meet V65's trigger or its
+     * one-draft index as a 500: two publications both found the same drafts and the second
+     * tried to publish rows the first already had, and a draft saved during a publication
+     * rewrote a row that had just become immutable. With this taken first, the second waits,
+     * then reads what the first committed — no drafts left, so {@code NOTHING_TO_PUBLISH}; a
+     * published row, so a fresh draft of the next version.
+     */
+    @Query(
+            value = "SELECT 1 FROM (SELECT pg_advisory_xact_lock(hashtext(:key))) AS locked",
+            nativeQuery = true)
+    Integer lockForWriting(@Param("key") String key);
+
+    /** Whether a published version of this kind took effect in {@code (after, upTo]}. */
+    @Query(
+            """
+            SELECT COUNT(d) > 0 FROM LegalDocument d
+             WHERE d.kind = :kind
+               AND d.publishedAt IS NOT NULL
+               AND d.effectiveFrom > :after
+               AND d.effectiveFrom <= :upTo
+            """)
+    boolean tookEffectBetween(
+            @Param("kind") DocumentKind kind, @Param("after") Instant after, @Param("upTo") Instant upTo);
+
+    /**
+     * The governing rows of every version that took effect in {@code (after, upTo]}.
+     *
+     * <p>What the {@code legal-taking-effect} pass announces. Served by
+     * {@code legal_documents_in_force}'s leading columns only loosely, which is acceptable for a
+     * table of eight documents changing a few times a year.
+     */
+    @Query(
+            """
+            SELECT d FROM LegalDocument d
+             WHERE d.locale = :locale
+               AND d.publishedAt IS NOT NULL
+               AND d.effectiveFrom > :after
+               AND d.effectiveFrom <= :upTo
+             ORDER BY d.effectiveFrom ASC
+            """)
+    List<LegalDocument> tookEffectBetween(
+            @Param("locale") String locale, @Param("after") Instant after, @Param("upTo") Instant upTo);
+
+    /** The soonest date any published version is still waiting for, or null when none is. */
+    @Query("SELECT MIN(d.effectiveFrom) FROM LegalDocument d WHERE d.publishedAt IS NOT NULL AND d.effectiveFrom > :now")
+    Instant nextTakingEffect(@Param("now") Instant now);
 }

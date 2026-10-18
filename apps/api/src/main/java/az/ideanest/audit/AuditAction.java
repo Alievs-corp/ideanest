@@ -465,6 +465,17 @@ public enum AuditAction {
      */
     EMAIL_TEMPLATE_EDITED("email.template_edited", "email_template"),
 
+    /**
+     * AD-15 (#315): an edited email was withdrawn, so the shipped copy is sent again in that
+     * language.
+     *
+     * <p>Its own action rather than an edit with "withdrawn" in the detail: the trail is
+     * filtered by action, and a reader asking "when did this notice go back to the shipped
+     * text" should not have to read every edit's detail to find out. The entity is the version
+     * that stopped being live.
+     */
+    EMAIL_TEMPLATE_WITHDRAWN("email.template_withdrawn", "email_template"),
+
     /** AD-10 (#310): staff answered, assigned or closed a support ticket. */
     SUPPORT_TICKET_HANDLED("support.ticket_handled", "support_ticket"),
 
@@ -697,6 +708,17 @@ public enum AuditAction {
      * <p>The entity is the governing row of the chosen version, as for a publication.
      */
     LEGAL_DOCUMENT_ACTIVATED("legal.document_activated", "legal_document"),
+
+    /**
+     * An administrator wrote or rewrote the draft of a legal document's next version in one
+     * language.
+     *
+     * <p>Recorded although nothing governs yet, because a draft is the text a publication will
+     * make binding with one more click, and "who wrote this paragraph of the creator agreement"
+     * is asked about the draft, not about the click. The entity is the draft row; the detail
+     * carries the kind, the language, the version and the hash of the text as saved.
+     */
+    LEGAL_DOCUMENT_DRAFTED("legal.document_drafted", "legal_document"),
 
     /**
      * A member of staff read what an account has agreed to, and when.

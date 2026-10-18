@@ -1,13 +1,21 @@
 package az.ideanest.notification.api;
 
+import az.ideanest.notification.application.EditedCopy;
 import az.ideanest.notification.application.EmailTemplates;
+import az.ideanest.notification.application.TemplateOverrides;
 import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.notification.infrastructure.RenderedEmail;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.mail.MessagingException;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.UUID;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +24,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -33,23 +42,30 @@ import org.springframework.web.bind.annotation.RestController;
  * role model until epic #100 — so every method here refuses one layer in, through
  * {@code EmailTemplates} and {@code PlatformStaff}, exactly as the moderation queue does.
  *
- * <p>Editing a template is the third of AD-15 and is not here. {@code EmailTemplates}
- * says why.
+ * <p>Editing a template is the third of AD-15 and lives in
+ * {@code EmailTemplateEditorController}. What is here since then is the editor's preview and
+ * test send of text nobody has saved yet, which are the same two verbs over a different
+ * source of copy.
  */
 @RestController
 @RequestMapping("/v1/admin/email-templates")
 public class EmailTemplateController {
 
     private final EmailTemplates templates;
+    private final TemplateOverrides overrides;
 
-    public EmailTemplateController(EmailTemplates templates) {
+    public EmailTemplateController(EmailTemplates templates, TemplateOverrides overrides) {
         this.templates = templates;
+        this.overrides = overrides;
     }
 
-    /** Every template there is: the types §4.10 gives an email column. */
+    /**
+     * Every template there is: the types §4.10 gives an email column, each with the languages
+     * somebody has rewritten it in.
+     */
     @GetMapping
     public EmailTemplateListResponse templates(@AuthenticationPrincipal Jwt accessToken) {
-        return EmailTemplateListResponse.of(templates.previewable(callerOf(accessToken)));
+        return EmailTemplateListResponse.of(templates.previewable(callerOf(accessToken)), overrides.liveByTemplate());
     }
 
     /**
@@ -125,6 +141,25 @@ public class EmailTemplateController {
     }
 
     /**
+     * Text somebody has typed in the editor and not saved, rendered as the email it would be.
+     *
+     * <p>{@code POST} because the text travels in the body, and JSON because the editor shows
+     * the HTML in a sandboxed frame beside the subject and needs both in one answer. Nothing is
+     * stored. Refused with {@code TEMPLATE_COPY_MALFORMED} only when the text would not render.
+     */
+    @PostMapping("/{type}/preview")
+    public ResponseEntity<EmailTemplateEditorResponses.Preview> previewDraft(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable NotificationType type,
+            @Valid @RequestBody DraftCopy draft) {
+
+        RenderedEmail email = templates.previewDraft(callerOf(accessToken), type, draft.locale(), draft.edited());
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(new EmailTemplateEditorResponses.Preview(email.subject(), email.html(), email.text()));
+    }
+
+    /**
      * Sends this template to the calling staff member's own address.
      *
      * <p><strong>There is no recipient parameter, and that is the design.</strong>
@@ -137,12 +172,39 @@ public class EmailTemplateController {
      * afterwards is between the relay and the mailbox, and this endpoint cannot see it —
      * for the same reason {@code email_deliveries} has no {@code delivered_at}.
      */
+    /*
+     * The body is optional. Without one this sends what the platform sends today, in the
+     * caller's language; with one it sends the editor's unsaved text in that text's language,
+     * which is the "send it to me before I save it" the editor offers.
+     */
     @PostMapping("/{type}/test-send")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void testSend(@AuthenticationPrincipal Jwt accessToken, @PathVariable NotificationType type)
+    public void testSend(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable NotificationType type,
+            @Valid @RequestBody(required = false) DraftCopy draft)
             throws MessagingException {
 
-        templates.testSend(callerOf(accessToken), type);
+        if (draft == null) {
+            templates.testSend(callerOf(accessToken), type);
+        } else {
+            templates.testSendDraft(callerOf(accessToken), type, draft.locale(), draft.edited());
+        }
+    }
+
+    /**
+     * Copy the editor holds and has not saved.
+     *
+     * @param locale which language's copy it is — one of §21.1's four
+     */
+    public record DraftCopy(
+            @NotNull @Pattern(regexp = EmailTemplateEditorController.LOCALES) String locale,
+            @NotBlank @Size(max = 300) String subject,
+            @NotBlank @Size(max = 50000) String body) {
+
+        EditedCopy edited() {
+            return new EditedCopy(subject, body);
+        }
     }
 
     /** The authenticated caller, from the token's subject and never from the request. */

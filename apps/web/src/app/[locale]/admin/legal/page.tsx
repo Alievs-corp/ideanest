@@ -9,9 +9,10 @@ import { privatePageMetadata } from '../../../../lib/seo/metadata';
  *
  * <p>Filed under §4.11's AD-11, which is the module about what the platform charges and
  * what it obliges: a fee, a plan and the creator agreement are three subjects of one
- * authority, and all three need `CONFIGURE_PLATFORM`. `lib/admin/navigation.ts` carries the
- * argument for why that is truthful rather than a seventeenth module, and why the rail
- * nevertheless files this under Platform.
+ * authority. Publishing a legal document needs its own capability, `PUBLISH_LEGAL_DOCUMENT`,
+ * narrower than the `CONFIGURE_PLATFORM` a fee or a plan needs, because a published version
+ * cannot be undone. `lib/admin/navigation.ts` carries the argument for why this is truthful
+ * rather than a seventeenth module, and why the rail nevertheless files this under Platform.
  *
  * <p><strong>There is no edit and no delete.</strong> A published version is immutable —
  * V65 puts a trigger on the table — because an acceptance names a version, and an
