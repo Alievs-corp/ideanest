@@ -87,18 +87,3 @@ export async function readPlatformAnalytics(
 
   return (await response.json()) as PlatformAnalytics;
 }
-
-/**
- * The tallest daily volume in a window, for scaling a chart.
- *
- * Returns zero for an empty window rather than negative infinity, so a caller dividing by it
- * gets a flat chart instead of a page of `NaN`.
- */
-export function peakVolume(analytics: PlatformAnalytics): number {
-  let peak = 0;
-  for (const point of analytics.daily) {
-    const value = Number(point.volume.amount);
-    if (Number.isFinite(value) && value > peak) peak = value;
-  }
-  return peak;
-}

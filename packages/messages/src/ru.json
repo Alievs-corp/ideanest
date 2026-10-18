@@ -871,6 +871,23 @@
         "copy": "Скопировать идентификатор",
         "copyLabel": "Скопировать полный идентификатор, начинающийся на {id}",
         "copied": "Скопировано"
+      },
+      "chart": {
+        "summary": "Собрано с {from} по {to}: всего {total}; больше всего — {period}, {amount}.",
+        "granularity": {
+          "day": "Каждый столбец — день",
+          "week": "Каждый столбец — неделя",
+          "month": "Каждый столбец — месяц"
+        },
+        "highest": "Максимум: {period} — {amount}",
+        "total": "Всего: {amount}",
+        "count": "Поддержек: {count}",
+        "range": "{from} – {to}",
+        "keyboardHint": "Переходите между столбцами клавишами со стрелками влево и вправо.",
+        "tableToggle": "Показать цифры таблицей",
+        "periodColumn": "Период",
+        "countColumn": "Поддержек",
+        "amountColumn": "Собрано"
       }
     },
     "pages": {
@@ -1335,8 +1352,7 @@
         "notBuilt": {
           "COHORTS": "Для когорт нужна агрегация по первой поддержке бэкера, которой не существует (#313).",
           "FUNNELS": "Для воронок нужен путь от визита к поддержке; referral_touches фиксирует приход, а не то, что было дальше (#313)."
-        },
-        "busiestDay": "Самый активный день {day}, {amount}"
+        }
       },
       "emailTemplates": {
         "subject": "шаблоны писем",
@@ -3450,11 +3466,6 @@
       "hours": "{amount} ч",
       "minutes": "{amount} мин",
       "trendHeading": "Собрано по дням",
-      "trendSummary": "Собрано по дням с {from} по {to}; лучший день — {highest}.",
-      "trendTableToggle": "Показать таблицей",
-      "dateColumn": "Дата",
-      "pledgedColumn": "Собрано",
-      "pledgesColumn": "Взносы",
       "byStateHeading": "Кампании по состояниям",
       "state": {
         "DRAFT": "Черновик",

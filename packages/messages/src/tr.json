@@ -871,6 +871,23 @@
         "copy": "Tanımlayıcıyı kopyala",
         "copyLabel": "{id} ile başlayan tam tanımlayıcıyı kopyala",
         "copied": "Kopyalandı"
+      },
+      "chart": {
+        "summary": "{from} – {to} arası toplanan: toplam {total}; en yüksek {period}, {amount}.",
+        "granularity": {
+          "day": "Her sütun bir gün",
+          "week": "Her sütun bir hafta",
+          "month": "Her sütun bir ay"
+        },
+        "highest": "En yüksek: {period} — {amount}",
+        "total": "Toplam: {amount}",
+        "count": "Destek sayısı: {count}",
+        "range": "{from} – {to}",
+        "keyboardHint": "Sütunlar arasında sol ve sağ ok tuşlarıyla geçin.",
+        "tableToggle": "Rakamları tablo olarak göster",
+        "periodColumn": "Dönem",
+        "countColumn": "Destek sayısı",
+        "amountColumn": "Toplanan"
       }
     },
     "pages": {
@@ -1335,8 +1352,7 @@
         "notBuilt": {
           "COHORTS": "Kohortlar için destekçinin ilk desteğine göre bir toplama gerekir; böylesi yok (#313).",
           "FUNNELS": "Huniler için ziyaretten desteğe giden yol gerekir; referral_touches varışı kaydeder, sonrasını değil (#313)."
-        },
-        "busiestDay": "En yoğun gün {day}, {amount}"
+        }
       },
       "emailTemplates": {
         "subject": "e-posta şablonlarını",
@@ -3450,11 +3466,6 @@
       "hours": "{amount} sa",
       "minutes": "{amount} dk",
       "trendHeading": "Günlere göre toplanan",
-      "trendSummary": "{from} – {to} arası günlere göre toplanan; en yüksek gün {highest}.",
-      "trendTableToggle": "Tablo olarak göster",
-      "dateColumn": "Tarih",
-      "pledgedColumn": "Toplanan",
-      "pledgesColumn": "Destekler",
       "byStateHeading": "Duruma göre kampanyalar",
       "state": {
         "DRAFT": "Taslak",

@@ -210,6 +210,48 @@ export function consoleChromeCopyFrom(t: AdminTranslator, common: AdminTranslato
   };
 }
 
+/**
+ * The words of `ConsoleColumnChart`, shared by the front page and the platform figures so the
+ * two charts say the same thing the same way.
+ */
+export interface ConsoleChartCopy {
+  /** The plot's accessible name and the table's caption. Carries `{from}`, `{to}`, `{total}`, `{period}`, `{amount}`. */
+  readonly summary: string;
+  /** What one column is: "Each column is a day". */
+  readonly granularity: Readonly<Record<'day' | 'week' | 'month', string>>;
+  /** Carries `{period}`, `{amount}`. */
+  readonly highest: string;
+  /** Carries `{amount}`. */
+  readonly total: string;
+  /** A pledge count in the tooltip. Carries `{count}`, written so one form fits every number. */
+  readonly count: string;
+  /** Two days as a period. Carries `{from}`, `{to}`. */
+  readonly range: string;
+  readonly keyboardHint: string;
+  readonly tableToggle: string;
+  readonly periodColumn: string;
+  readonly countColumn: string;
+  readonly amountColumn: string;
+}
+
+export function consoleChartCopyFrom(t: AdminTranslator): ConsoleChartCopy {
+  return {
+    /* `raw` for the templates, because next-intl renders a template's own key when it is read
+       with `t()` and has no value for the argument. */
+    summary: String(t.raw('common.chart.summary')),
+    granularity: t.raw('common.chart.granularity') as ConsoleChartCopy['granularity'],
+    highest: String(t.raw('common.chart.highest')),
+    total: String(t.raw('common.chart.total')),
+    count: String(t.raw('common.chart.count')),
+    range: String(t.raw('common.chart.range')),
+    keyboardHint: t('common.chart.keyboardHint'),
+    tableToggle: t('common.chart.tableToggle'),
+    periodColumn: t('common.chart.periodColumn'),
+    countColumn: t('common.chart.countColumn'),
+    amountColumn: t('common.chart.amountColumn'),
+  };
+}
+
 export function consoleCountCopyFrom(t: AdminTranslator): ConsoleCountCopy {
   return {
     /* `raw` on all four, because next-intl renders a template's own key when it is read with

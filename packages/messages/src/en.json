@@ -871,6 +871,23 @@
         "copy": "Copy identifier",
         "copyLabel": "Copy the full identifier beginning {id}",
         "copied": "Copied"
+      },
+      "chart": {
+        "summary": "Pledged from {from} to {to}: {total} in total; the highest is {period}, {amount}.",
+        "granularity": {
+          "day": "Each column is a day",
+          "week": "Each column is a week",
+          "month": "Each column is a month"
+        },
+        "highest": "Highest: {period} — {amount}",
+        "total": "Total: {amount}",
+        "count": "Pledges: {count}",
+        "range": "{from} – {to}",
+        "keyboardHint": "Use the left and right arrow keys to move between columns.",
+        "tableToggle": "Show the figures as a table",
+        "periodColumn": "Period",
+        "countColumn": "Pledges",
+        "amountColumn": "Pledged"
       }
     },
     "pages": {
@@ -1335,8 +1352,7 @@
         "notBuilt": {
           "COHORTS": "Cohorts need a rollup keyed on a backer's first pledge, which does not exist (#313).",
           "FUNNELS": "Funnels need the visit-to-pledge path; referral_touches records arrival, not what happened next (#313)."
-        },
-        "busiestDay": "Busiest day {day}, {amount}"
+        }
       },
       "emailTemplates": {
         "subject": "the email templates",
@@ -3450,11 +3466,6 @@
       "hours": "{amount} h",
       "minutes": "{amount} min",
       "trendHeading": "Pledged per day",
-      "trendSummary": "Pledged per day from {from} to {to}; the highest day is {highest}.",
-      "trendTableToggle": "Show as a table",
-      "dateColumn": "Date",
-      "pledgedColumn": "Pledged",
-      "pledgesColumn": "Pledges",
       "byStateHeading": "Campaigns by state",
       "state": {
         "DRAFT": "Draft",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useRouter } from '../../i18n/navigation';
 import {
   PERIOD_PRESETS,
@@ -18,6 +18,8 @@ import type { StaffCapability } from '../../lib/admin/staff';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { CAMPAIGN_STATES, type ConsoleDashboardCopy } from '../../lib/i18n/admin/dashboard-copy';
 import { formatMoney } from '@ideanest/money/format';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { ConsoleColumnChart } from './ConsoleColumnChart';
 import { useConsoleMembership } from './ConsoleMembership';
 import { useConsoleResource } from './useConsoleResource';
 
@@ -54,8 +56,8 @@ import { useConsoleResource } from './useConsoleResource';
  * <h2>Figures are read, not computed</h2>
  *
  * <p>Every value is a decimal string from the service. Money goes through `formatMoney`, counts
- * are grouped for reading, and the only arithmetic is the bar heights of the trend, which are
- * geometry and are never printed.
+ * are grouped for reading. The trend's total is added in whole qəpik by `chart-series.ts`, never
+ * in floating point; the column heights are geometry and are never printed.
  *
  * MOTION: none, like every console screen. `docs/motion-system.md` §5.
  */
@@ -298,12 +300,10 @@ function display(figure: DashboardFigure): string {
 }
 
 /**
- * The daily trend, as bars with the table as its alternative.
+ * The daily trend: the shared console chart, under its heading.
  *
- * <p>The bars are drawn from the amounts as geometry only and carry their meaning in an
- * `aria-label` that says the period and the highest day, so a reader who cannot see them loses
- * nothing; the full figures are one disclosure away as a real table. The height of a bar is never
- * printed, so nothing here is arithmetic on money that somebody could read as a figure.
+ * <p>The amounts are in the currency of the pledged total, which is the one the service sums the
+ * series in; the chart prints them, the table behind it carries every figure as text.
  */
 function Trend({
   series,
@@ -314,69 +314,26 @@ function Trend({
   readonly series: readonly DashboardPoint[];
   readonly page: Dashboard;
   readonly copy: ConsoleDashboardCopy;
-  /** The currency of the pledged total, which is the one the daily amounts are in. */
   readonly currency: string;
 }) {
-  const heights = series.map((point) => Number(point.amount));
-  const peak = Math.max(...heights, 0);
-  const highest = series.reduce((best, point) => (Number(point.amount) > Number(best.amount) ? point : best), series[0] as DashboardPoint);
-  const slot = 100 / series.length;
+  const locale = useRouteLocale();
+  const points = useMemo(
+    () => series.map((point) => ({ day: point.date, amount: point.amount, count: point.count })),
+    [series],
+  );
 
   return (
-    <div className="mt-5">
+    <div className="mt-6">
       <h3 className="text-sm font-medium text-white">{copy.trendHeading}</h3>
-      <svg
-        role="img"
-        aria-label={fillPlaceholders(copy.trendSummary, {
-          from: page.from,
-          to: page.to,
-          highest: `${highest.date} ${formatMoney({ amount: highest.amount, currency })}`,
-        })}
-        viewBox="0 0 100 32"
-        preserveAspectRatio="none"
-        className="mt-2 h-24 w-full text-white/40"
-      >
-        {series.map((point, index) => {
-          const height = peak === 0 ? 0.5 : Math.max(0.5, (Number(point.amount) / peak) * 30);
-          return (
-            <rect
-              key={point.date}
-              x={index * slot + slot * 0.15}
-              y={32 - height}
-              width={slot * 0.7}
-              height={height}
-              fill="currentColor"
-            />
-          );
-        })}
-      </svg>
-
-      <details className="mt-3">
-        <summary className="cursor-pointer text-sm text-white/64 hover:text-white">{copy.trendTableToggle}</summary>
-        <div className="mt-2 max-h-72 overflow-auto" role="region" aria-label={copy.trendHeading} tabIndex={0}>
-          <table className="w-full text-left text-sm">
-            <caption className="sr-only">{copy.trendHeading}</caption>
-            <thead>
-              <tr className="text-xs text-white/48">
-                <th scope="col" className="py-2 pr-4 font-normal">{copy.dateColumn}</th>
-                <th scope="col" className="py-2 pr-4 text-right font-normal">{copy.pledgedColumn}</th>
-                <th scope="col" className="py-2 text-right font-normal">{copy.pledgesColumn}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {series.map((point) => (
-                <tr key={point.date} className="border-t border-white/6">
-                  <td className="py-2 pr-4 text-white">{point.date}</td>
-                  <td className="py-2 pr-4 text-right tabular-nums text-white">
-                    {formatMoney({ amount: point.amount, currency })}
-                  </td>
-                  <td className="py-2 text-right tabular-nums text-white">{point.count}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
+      <ConsoleColumnChart
+        points={points}
+        from={page.from}
+        to={page.to}
+        currency={currency}
+        locale={locale}
+        copy={copy.chart}
+        height={160}
+      />
     </div>
   );
 }

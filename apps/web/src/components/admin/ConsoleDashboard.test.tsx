@@ -215,17 +215,26 @@ describe('the console front page', () => {
     expect(screen.getByText('12,500.50 AZN')).toBeInTheDocument();
   });
 
-  it('gives the trend a text alternative and a table', async () => {
+  it('draws the whole window on a scale, reads a column from the keyboard and keeps a table', async () => {
     readMock.mockResolvedValue(page([MONEY]));
 
-    renderFor(['VIEW_FINANCE']);
+    const { container } = renderFor(['VIEW_FINANCE']);
     await screen.findByRole('heading', { name: COPY.section.figures });
 
-    const chart = screen.getByRole('img');
-    expect(chart).toHaveAccessibleName(/2050-05-17 to 2050-06-15.*2050-06-15 250\.00 AZN/);
-    await userEvent.click(screen.getByText(COPY.trendTableToggle));
-    const table = screen.getByRole('table', { name: COPY.trendHeading });
-    expect(within(table).getByText('2050-06-14')).toBeInTheDocument();
+    // Named by its range, total and highest day, so the plot means something without sight.
+    const chart = screen.getByRole('group', { name: /350\.00 AZN.*250\.00 AZN/ });
+    // Thirty columns for thirty days: the twenty-eight with nothing pledged are drawn, not dropped.
+    expect(container.querySelectorAll('[data-chart-column]')).toHaveLength(30);
+
+    chart.focus();
+    await userEvent.keyboard('{End}');
+    expect(screen.getByText(/: 250\.00 AZN, Pledges: 7$/)).toBeInTheDocument();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(screen.getByText(/: 100\.00 AZN, Pledges: 3$/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText(COPY.chart.tableToggle));
+    const table = screen.getByRole('table');
+    expect(within(table).getAllByRole('row')).toHaveLength(31);
     expect(within(table).getByText('250.00 AZN')).toBeInTheDocument();
   });
 

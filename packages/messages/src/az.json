@@ -871,6 +871,23 @@
         "copy": "İdentifikatoru kopyala",
         "copyLabel": "{id} ilə başlayan tam identifikatoru kopyala",
         "copied": "Kopyalandı"
+      },
+      "chart": {
+        "summary": "{from} – {to} arasında toplanan vəsait: cəmi {total}; ən yüksək {period}, {amount}.",
+        "granularity": {
+          "day": "Hər sütun bir gündür",
+          "week": "Hər sütun bir həftədir",
+          "month": "Hər sütun bir aydır"
+        },
+        "highest": "Ən yüksək: {period} — {amount}",
+        "total": "Cəmi: {amount}",
+        "count": "Dəstək sayı: {count}",
+        "range": "{from} – {to}",
+        "keyboardHint": "Sütunlar arasında sağ və sol ox düymələri ilə keçin.",
+        "tableToggle": "Rəqəmləri cədvəl kimi göstər",
+        "periodColumn": "Dövr",
+        "countColumn": "Dəstək sayı",
+        "amountColumn": "Toplanan"
       }
     },
     "pages": {
@@ -1335,8 +1352,7 @@
         "notBuilt": {
           "COHORTS": "Kohortlar üçün dəstəkçinin ilk dəstəyinə görə qurulmuş yığım lazımdır; belə bir şey yoxdur (#313).",
           "FUNNELS": "Huniler üçün ziyarətdən dəstəyə gedən yol lazımdır; referral_touches gəlişi qeyd edir, sonra nə olduğunu yox (#313)."
-        },
-        "busiestDay": "Ən yüksək gün {day}, {amount}"
+        }
       },
       "emailTemplates": {
         "subject": "e-poçt şablonlarını",
@@ -3450,11 +3466,6 @@
       "hours": "{amount} saat",
       "minutes": "{amount} dəq",
       "trendHeading": "Günlər üzrə toplanan",
-      "trendSummary": "{from} – {to} günlər üzrə toplanan; ən yüksək gün {highest}.",
-      "trendTableToggle": "Cədvəl kimi göstər",
-      "dateColumn": "Tarix",
-      "pledgedColumn": "Toplanıb",
-      "pledgesColumn": "Dəstəklər",
       "byStateHeading": "Vəziyyət üzrə kampaniyalar",
       "state": {
         "DRAFT": "Qaralama",

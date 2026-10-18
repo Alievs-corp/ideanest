@@ -1,6 +1,6 @@
 import type { AuditActionLabels } from '../../admin/audit';
 import type { AdminTranslator } from '../admin-copy';
-import type { ConsoleChromeCopy } from './common-copy';
+import { consoleChartCopyFrom, type ConsoleChartCopy, type ConsoleChromeCopy } from './common-copy';
 import { accountPickerCopyFrom, type AccountPickerCopy } from './people-copy';
 
 /**
@@ -286,14 +286,7 @@ export interface PlatformAnalyticsCopy extends ConsoleChromeCopy {
   readonly successRate: string;
   readonly dailyHeading: string;
   readonly nothingPledged: string;
-  /**
-   * The chart's one stated figure, under the series — issue #405.
-   *
-   * <p>Carries `{day}` and `{amount}`. A column chart shows shape and not magnitude, so the
-   * peak is named: without it, thirty bars scaled to their own maximum look identical
-   * whether the busiest day took two hundred manat or two hundred thousand.
-   */
-  readonly busiestDay: string;
+  readonly chart: ConsoleChartCopy;
   readonly notBuiltHeading: string;
   /** Keyed by the code the service sends. Unknown codes fall through to themselves. */
   readonly notBuilt: Readonly<Record<string, string>>;
@@ -325,9 +318,7 @@ export function platformAnalyticsCopyFrom(
     successRate: t('screens.analytics.successRate'),
     dailyHeading: t('screens.analytics.dailyHeading'),
     nothingPledged: t('screens.analytics.nothingPledged'),
-    /* `raw`, because next-intl renders a template's own key when it is read with `t()` and
-       has no value for the argument. */
-    busiestDay: String(t.raw('screens.analytics.busiestDay')),
+    chart: consoleChartCopyFrom(t),
     notBuiltHeading: t('screens.analytics.notBuiltHeading'),
     notBuilt: t.raw('screens.analytics.notBuilt') as Readonly<Record<string, string>>,
   };
