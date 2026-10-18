@@ -960,7 +960,7 @@
       "emailTemplatesType": {
         "metaTitle": "E-poçt mətni",
         "metaDescription": "Hazır mətn, hər dil üçün yenidən yazılmış mətn və hər versiyanı kimin yazdığı.",
-        "intro": "Mövzunu və birinci abzası hər dil üçün ayrıca yenidən yaza bilərsiniz. Başlıq, düymə və ikinci abzas hazır mətndə qalır — yazısız düymə pis yazılmış yox, sınmış e-poçtdur."
+        "intro": "Mövzunu və birinci abzası hər dil üçün ayrıca yenidən yaza bilərsiniz. Başlıq, düymə və ikinci abzas hazır mətndə qalır, ona görə e-poçtun quruluşu pozulmur."
       },
       "fees": {
         "metaTitle": "Komissiyalar",
@@ -1086,7 +1086,7 @@
         "metaTitle": "Hüquqi sənədlər",
         "metaDescription": "Platformanın səkkiz hüquqi sənədi, onların versiyaları və dərci.",
         "title": "Hüquqi sənədlər",
-        "intro": "Dərc edilmiş versiya dəyişdirilmir. Düzəliş yeni versiyadır, köhnəsi isə oxunaqlı qalır — çünki qəbul qeydi məhz versiyanı göstərir."
+        "intro": "Platformanın hüquqi sənədlərini hər dildə yazın, dərc edin və saytda hansı versiyanın göstərildiyini seçin."
       },
       "revenue": {
         "metaTitle": "Gəlir",
@@ -1466,12 +1466,12 @@
         "saveNew": "Yeni versiya kimi saxla",
         "confirmSaveLabel": "Saxlamağı təsdiqləyin",
         "confirmSave": "Versiya {version} dərhal canlı olacaq: bu andan {language} oxuyan alıcılar bu mətni alacaq.",
-        "confirmSaveAction": "Saxla və göndər",
+        "confirmSaveAction": "Saxla və canlı et",
         "back": "Geri qayıt",
         "withdraw": "Hazır mətnə qayıt",
         "confirmWithdrawLabel": "Hazır mətnə qayıtmağı təsdiqləyin",
         "confirmWithdraw": "Versiya {version} dayandırılacaq və {language} oxuyan alıcılar yenidən hazır mətni alacaq. Versiya tarixçədə qalır.",
-        "savedNew": "Versiya {version} saxlanıldı və artıq göndərilir.",
+        "savedNew": "Versiya {version} saxlanıldı və canlıdır: bundan sonrakı bildirişlər bu mətnlə gedir.",
         "savedWithdrawn": "Hazır mətn yenidən göndərilir.",
         "restore": "Bu versiyanı bərpa et",
         "confirmRestoreLabel": "Bərpanı təsdiqləyin",
@@ -3115,7 +3115,7 @@
         "nothingDraftedTitle": "Layihə yoxdur",
         "nothingDraftedBody": "Yuxarıda ən azı Azərbaycanca mətni yazıb saxlayın, sonra dərc edin.",
         "historyHeading": "Versiyalar",
-        "historyIntro": "Hər versiya oxunaqlı qalır: onu qəbul etmiş adam razılaşdığı mətni görməlidir.",
+        "historyIntro": "Ən yeni versiya yuxarıdadır. Hər birini saytda öz ünvanında oxumaq olar.",
         "noVersionsTitle": "Hələ heç nə dərc olunmayıb",
         "noVersionsBody": "Bu sənədin heç bir versiyası dərc olunmayıb, ona görə platformada heç kimdən onu qəbul etmək tələb olunmur.",
         "versionLabel": "Versiya {version}",
@@ -3154,7 +3154,7 @@
         "whenNow": "dərhal",
         "whenDate": "{date}, Bakı vaxtı ilə 00:00",
         "reaccept": {
-          "CREATOR_AGREEMENT": "Bu versiya qüvvədə olanda hər müəllif növbəti kampaniyasını göndərməzdən əvvəl onu qəbul etməlidir.",
+          "CREATOR_AGREEMENT": "Bu versiya qüvvədə olanda hər yaradıcı növbəti kampaniyasını göndərməzdən əvvəl onu qəbul etməlidir.",
           "BACKER_AGREEMENT": "Bu versiya qüvvədə olanda hər dəstəkçi növbəti dəstəyini təsdiqləməzdən əvvəl onu qəbul etməlidir."
         },
         "confirmActivateLabel": "Saytda göstərməyi təsdiqləyin",

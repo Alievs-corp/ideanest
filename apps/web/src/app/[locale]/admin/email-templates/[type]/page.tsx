@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { EmptyState } from '@ideanest/ui';
+import { EmptyState } from '@ideanest/ui/server';
 import { EmailTemplateEditor } from '../../../../../components/admin/EmailTemplateEditor';
 import { Link } from '../../../../../i18n/navigation';
 import { emailTemplateEditorCopy } from '../../../../../lib/i18n/admin/console.server';

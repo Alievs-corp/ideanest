@@ -960,7 +960,7 @@
       "emailTemplatesType": {
         "metaTitle": "E-posta metni",
         "metaDescription": "Hazır metin, her dil için yeniden yazılmış metin ve her sürümü kimin yazdığı.",
-        "intro": "Konuyu ve ilk paragrafı her dil için ayrı ayrı yeniden yazabilirsiniz. Başlık, düğme ve ikinci paragraf hazır metinde kalır — yazısız bir düğme kötü yazılmış değil, bozuk bir e-postadır."
+        "intro": "Konuyu ve ilk paragrafı her dil için ayrı ayrı yeniden yazabilirsiniz. Başlık, düğme ve ikinci paragraf hazır metinde kalır, böylece e-postanın yapısı bozulmaz."
       },
       "fees": {
         "metaTitle": "Ücretler",
@@ -1086,7 +1086,7 @@
         "metaTitle": "Hukuki belgeler",
         "metaDescription": "Platformun sekiz hukuki belgesi, sürümleri ve yayımlanmaları.",
         "title": "Hukuki belgeler",
-        "intro": "Yayımlanmış bir sürüm düzenlenmez. Düzeltme yeni bir sürümdür ve eskisi okunabilir kalır, çünkü bir kabul kaydı sürümü adlandırır."
+        "intro": "Platformun hukuki belgelerini her dilde yazın, yayımlayın ve sitenin hangi sürümü gösterdiğini seçin."
       },
       "revenue": {
         "metaTitle": "Gelir",
@@ -1466,12 +1466,12 @@
         "saveNew": "Yeni sürüm olarak kaydet",
         "confirmSaveLabel": "Kaydetmeyi onaylayın",
         "confirmSave": "Sürüm {version} hemen yayına girer: bundan sonra dili {language} olan alıcılar bu metni alır.",
-        "confirmSaveAction": "Kaydet ve gönder",
+        "confirmSaveAction": "Kaydet ve yayına al",
         "back": "Geri dön",
         "withdraw": "Hazır metne dön",
         "confirmWithdrawLabel": "Hazır metne dönmeyi onaylayın",
         "confirmWithdraw": "Sürüm {version} durdurulur ve dili {language} olan alıcılar yeniden hazır metni alır. Sürüm geçmişte kalır.",
-        "savedNew": "Sürüm {version} kaydedildi ve artık gönderiliyor.",
+        "savedNew": "Sürüm {version} kaydedildi ve yayında: bundan sonraki bildirimler bu metinle gider.",
         "savedWithdrawn": "Hazır metin yeniden gönderiliyor.",
         "restore": "Bu sürümü geri yükle",
         "confirmRestoreLabel": "Geri yüklemeyi onaylayın",
@@ -3115,7 +3115,7 @@
         "nothingDraftedTitle": "Taslak yok",
         "nothingDraftedBody": "Yukarıda en az Azerice metni yazıp kaydedin, sonra yayımlayın.",
         "historyHeading": "Sürümler",
-        "historyIntro": "Her sürüm okunabilir kalır: birini kabul eden kişi neyi kabul ettiğini okuyabilmelidir.",
+        "historyIntro": "En yeni sürüm en üstte. Her biri sitede kendi adresinde okunabilir.",
         "noVersionsTitle": "Henüz bir şey yayımlanmadı",
         "noVersionsBody": "Bu belgenin hiçbir sürümü yayımlanmadı, bu yüzden platformda kimseden onu kabul etmesi istenmiyor.",
         "versionLabel": "Sürüm {version}",

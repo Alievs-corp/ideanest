@@ -960,7 +960,7 @@
       "emailTemplatesType": {
         "metaTitle": "Email copy",
         "metaDescription": "The shipped copy, the rewritten copy in each language, and who wrote every version.",
-        "intro": "You can rewrite the subject and the first paragraph, separately in each language. The headline, the button and the second paragraph stay as shipped — a button with no label is a broken email rather than a badly worded one."
+        "intro": "You can rewrite the subject and the first paragraph for each language separately. The heading, the button and the second paragraph stay as shipped, so the email keeps its structure."
       },
       "fees": {
         "metaTitle": "Fees",
@@ -1086,7 +1086,7 @@
         "metaTitle": "Legal documents",
         "metaDescription": "The platform's eight legal documents, their versions and publishing them.",
         "title": "Legal documents",
-        "intro": "A published version is never edited. A correction is a new version and the old one stays readable, because an acceptance names a version."
+        "intro": "Write the platform's legal documents in each language, publish them, and choose which version the site shows."
       },
       "revenue": {
         "metaTitle": "Revenue",
@@ -1466,12 +1466,12 @@
         "saveNew": "Save as a new version",
         "confirmSaveLabel": "Confirm saving",
         "confirmSave": "Version {version} goes live at once: from now on, recipients who read {language} get this copy.",
-        "confirmSaveAction": "Save and send",
+        "confirmSaveAction": "Save and make live",
         "back": "Go back",
         "withdraw": "Go back to the shipped copy",
         "confirmWithdrawLabel": "Confirm going back to the shipped copy",
         "confirmWithdraw": "Version {version} stops, and recipients who read {language} get the shipped copy again. The version stays in the history.",
-        "savedNew": "Saved version {version}; it is being sent from now.",
+        "savedNew": "Version {version} is saved and live: notices from now on use this text.",
         "savedWithdrawn": "The shipped copy is being sent again.",
         "restore": "Restore this version",
         "confirmRestoreLabel": "Confirm restoring",
@@ -3115,7 +3115,7 @@
         "nothingDraftedTitle": "Nothing is drafted",
         "nothingDraftedBody": "Write and save at least the Azerbaijani text above, then publish it.",
         "historyHeading": "Versions",
-        "historyIntro": "Every version stays readable: somebody who accepted one is entitled to read what they accepted.",
+        "historyIntro": "The newest version is at the top. Each one can be read on the site at its own address.",
         "noVersionsTitle": "Nothing published yet",
         "noVersionsBody": "No version of this document is published, so nobody on the platform is asked to accept it.",
         "versionLabel": "Version {version}",
