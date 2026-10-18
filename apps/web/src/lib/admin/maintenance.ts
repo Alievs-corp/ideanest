@@ -80,6 +80,12 @@ export function overviewFrom(wire: WireOverview): MaintenanceOverview {
 
 const BASE = '/v1/admin/maintenance';
 
+/**
+ * The attribute that marks the console shell's "maintenance is on" strip, so the maintenance
+ * console can tell whether the layout drew it — see `MaintenanceStrip`.
+ */
+export const MAINTENANCE_STRIP = 'data-maintenance-strip';
+
 export async function readMaintenance(signal?: AbortSignal): Promise<MaintenanceOverview> {
   const response = await authorizedFetch(BASE, { signal });
   if (!response.ok) throw await errorFrom(response);

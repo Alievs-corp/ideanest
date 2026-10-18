@@ -13,7 +13,6 @@ import {
   type MaintenanceWindow,
 } from '../../lib/admin/maintenance';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
-import { forgetReportedMaintenance, reportedMaintenance } from '../../lib/admin/maintenance-strip';
 import { maintenanceConsoleCopyFrom } from '../../lib/i18n/admin/platform-copy';
 import { expectNoViolations } from '../../test-axe';
 import { translatorFor } from '../../test-copy';
@@ -85,7 +84,6 @@ function ready(overview: Partial<MaintenanceOverview> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  forgetReportedMaintenance();
 });
 
 afterEach(cleanup);
@@ -256,13 +254,32 @@ describe('the maintenance console', () => {
     expect(screen.getByText(COPY.endInvalid)).toBeInTheDocument();
   });
 
-  it('tells the console shell whether a window is in force', async () => {
+  it('redraws the console shell when its strip disagrees with what was read', async () => {
+    // A window in force, and no strip: the layout was drawn before the window started.
     ready({ current: ACTIVE });
-
     render(<MaintenanceConsole copy={COPY} />);
     await screen.findByRole('heading', { name: COPY.currentHeading });
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    cleanup();
+    refresh.mockClear();
 
-    expect(reportedMaintenance()).toBe(true);
+    // The strip drawn, and nothing in force any more.
+    const strip = document.createElement('p');
+    strip.setAttribute('data-maintenance-strip', '');
+    document.body.append(strip);
+    ready();
+    render(<MaintenanceConsole copy={COPY} />);
+    await screen.findByText(COPY.currentEmpty);
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    cleanup();
+    refresh.mockClear();
+
+    // The two agree: nothing to redraw.
+    ready({ current: ACTIVE });
+    render(<MaintenanceConsole copy={COPY} />);
+    await screen.findByRole('heading', { name: COPY.currentHeading });
+    expect(refresh).not.toHaveBeenCalled();
+    strip.remove();
   });
 
   it('has no accessibility violations', async () => {

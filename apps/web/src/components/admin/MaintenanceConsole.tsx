@@ -20,6 +20,7 @@ import {
   endWindowNow,
   instantFromLocal,
   localFromInstant,
+  MAINTENANCE_STRIP,
   readMaintenance,
   scheduleWindow,
   startWindowNow,
@@ -27,7 +28,6 @@ import {
 } from '../../lib/admin/maintenance';
 import { ApiError } from '../../lib/api/problem';
 import { codedRefusalFor } from '../../lib/admin/coded-refusal';
-import { reportMaintenanceInForce } from '../../lib/admin/maintenance-strip';
 import { actionMessageFor } from '../../lib/admin/refusals';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
@@ -98,10 +98,18 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
   }, []);
 
   const inForce = overview.status === 'ready' && overview.data !== null ? overview.data.current !== null : null;
-  // The console shell's strip is drawn by the layout, which a client navigation does not redraw.
+  /*
+   * The console shell's "maintenance is on" strip is drawn by the layout, which a client
+   * navigation does not redraw: a window that started on its own schedule, or that somebody else
+   * started, stayed out of the strip on the very screen that showed it in force. When what this
+   * read and what the strip says disagree, the route is redrawn — no script in the layout, so no
+   * console route pays for it.
+   */
   useEffect(() => {
-    if (inForce !== null) reportMaintenanceInForce(inForce);
-  }, [inForce]);
+    if (inForce === null) return;
+    const drawn = document.querySelector(`[${MAINTENANCE_STRIP}]`) !== null;
+    if (drawn !== inForce) router.refresh();
+  }, [inForce, router]);
 
   if (overview.status === 'signed-out' || overview.status === 'forbidden') {
     return (
