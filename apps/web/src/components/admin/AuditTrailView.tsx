@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Chip,
   ChipRow,
@@ -10,6 +10,7 @@ import {
   Pill,
   Skeleton,
   SkeletonGroup,
+  Switch,
   Tag,
   TextInput,
 } from '@ideanest/ui';
@@ -18,6 +19,7 @@ import {
   TRAIL_PAGE_SIZE,
   actionLabel,
   dayBounds,
+  isAboutItsActor,
   readTrail,
   type AuditEntry,
 } from '../../lib/admin/audit';
@@ -30,6 +32,7 @@ import {
   wasAborted,
   type ConsoleStatus,
 } from '../../lib/admin/refusals';
+import { holds } from '../../lib/admin/staff';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { AuditTrailCopy } from '../../lib/i18n/admin/platform-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
@@ -38,6 +41,7 @@ import type { Locale } from '../../lib/i18n/locale';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { AccountPicker } from './AccountPicker';
 import { ConsoleCount } from './ConsoleCount';
+import { useConsoleMembership } from './ConsoleMembership';
 import { ConsoleRefusal } from './ConsoleRefusal';
 import { EntityName } from './ConsoleIdentity';
 import { useDirectoryNames } from './useDirectoryNames';
@@ -71,8 +75,20 @@ import { useDirectoryNames } from './useDirectoryNames';
  * That issue is also why the actor filter has a control at all. The service had accepted
  * `actorId` since #314 and the screen offered no way to set one, so "what did this person do"
  * — the question an audit log exists to answer — was reachable only by editing the URL.
- * `AccountPicker` is the control, for the reason it was built: an identifier a moderator has
- * to already hold is not a filter they can use.
+ *
+ * <p>There are two controls for it now. Every row's actor has "this person's actions", which
+ * any reader of the trail may press. `AccountPicker` searches the account directory, which is
+ * `ADMINISTER_ACCOUNTS`'s, so it is drawn only for a reader who holds that: a curator or finance
+ * was handed a search box that could only ever answer with a refusal. The actor combines with
+ * the kind chips on the service — it used to be dropped whenever a kind was set.
+ *
+ * <h2>Reads are hidden by default</h2>
+ *
+ * <p>Every page, chip and date of this screen writes an `audit.trail_read`, and every visit to
+ * the front page a `dashboard.read`. Unfiltered, the trail opened on the reader's own reads. The
+ * switch asks the service to leave out the routine screen reads and is on when the screen opens;
+ * opening one person's private record — an identity document, a signed agreement, a bank
+ * account — is never hidden, because that is the read an investigation is looking for.
  *
  * There is still no filter on the action and no search over the free text, and this screen
  * does not offer either client-side — a chip that filtered the twenty-five loaded rows in the
@@ -110,44 +126,73 @@ export interface AuditTrailViewProps {
   readonly copy: AuditTrailCopy;
 }
 
+/**
+ * Whose actions the trail is narrowed to.
+ *
+ * <p>The account record when the person was found with `AccountPicker`, which needs it to draw who
+ * is chosen; only the identifier when the filter came from a row's "this person's actions", which
+ * any reader of the trail may use — the directory names them on the applied-filter line.
+ */
+interface ActorFilter {
+  readonly id: string;
+  readonly account: AdminUser | null;
+}
+
+/** How long the date fields wait after the last change before the trail is read again. */
+const DATE_DEBOUNCE_MS = 400;
+
 export function AuditTrailView({ copy }: AuditTrailViewProps) {
   const locale = useRouteLocale();
+  const { membership } = useConsoleMembership();
+  // The picker searches `/v1/admin/users`, which is ADMINISTER_ACCOUNTS'. A curator or finance
+  // reader of the trail was handed a search box that could only ever answer with a refusal; they
+  // narrow to a person from that person's row instead.
+  const mayPick = holds(membership, 'ADMINISTER_ACCOUNTS');
+
   const [status, setStatus] = useState<ConsoleStatus>('loading');
   // #400: which of the two 403s this is. Only read while `status` is `forbidden`.
   const [capability, setCapability] = useState<string | null>(null);
   const [entityType, setEntityType] = useState<string | null>(null);
+  const [actor, setActor] = useState<ActorFilter | null>(null);
   /*
-   * #404: who, and when. Both reach the service.
-   *
-   * `actor` holds the whole account rather than its identifier, because that is what
-   * `AccountPicker` hands back and what lets the applied filter be rendered as a person
-   * instead of thirty-six characters — on the one screen whose purpose is that somebody who
-   * was not there can read what happened.
-   *
-   * The two dates are the reader's own days, `YYYY-MM-DD` as an `<input type="date">`
-   * produces them. `dayBounds` turns each into the instant the service wants, in the
-   * browser's timezone, which is the only definition of "last Tuesday" a moderator would
-   * recognise.
+   * The two dates as the fields hold them, and as the trail was last read with. A date field
+   * changes on every keystroke of a typed year — 2, 20, 202, 2026 — and each of those was a read
+   * of the trail and a row written to it. The read waits until the field has been still.
    */
-  const [actor, setActor] = useState<AdminUser | null>(null);
   const [fromDay, setFromDay] = useState('');
   const [toDay, setToDay] = useState('');
+  const [days, setDays] = useState<{ readonly from: string; readonly to: string }>({ from: '', to: '' });
+  // On by default: the trail is read for what was done, and without this its first page is the
+  // reader's own reads of it. The switch is one press away, and a look at somebody's private
+  // record is never hidden either way.
+  const [hideReads, setHideReads] = useState(true);
   const [entries, setEntries] = useState<readonly AuditEntry[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  // The "load more" in flight. A new question aborts it, so a page of the old one cannot be
+  // appended to the new one's rows.
+  const more = useRef<AbortController | null>(null);
 
-  /* The effect depends on who, not on the object holding them: `AccountPicker` hands back a
-     fresh record each time it searches, and depending on the object would re-read the trail
-     when somebody picked the same person twice. */
   const actorId = actor?.id ?? null;
 
+  useEffect(() => {
+    if (fromDay === days.from && toDay === days.to) return;
+    const timer = setTimeout(() => setDays({ from: fromDay, to: toDay }), DATE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [fromDay, toDay, days]);
+
   /** Whether the reader has narrowed the trail at all, which decides what an empty page says. */
-  const narrowed = entityType !== null || actorId !== null || fromDay !== '' || toDay !== '';
+  const narrowed = entityType !== null || actorId !== null || days.from !== '' || days.to !== '' || hideReads;
 
   useEffect(() => {
     const controller = new AbortController();
+
+    // A new question: whatever the previous one was still loading is not part of it.
+    more.current?.abort();
+    more.current = null;
+    setLoadingMore(false);
 
     async function load(): Promise<void> {
       setStatus('loading');
@@ -155,8 +200,9 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
         const page = await readTrail({
           entityType,
           actorId,
-          from: dayBounds(fromDay, 'from'),
-          to: dayBounds(toDay, 'to'),
+          from: dayBounds(days.from, 'from'),
+          to: dayBounds(days.to, 'to'),
+          hideReads,
           limit: TRAIL_PAGE_SIZE,
           signal: controller.signal,
         });
@@ -181,30 +227,42 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
     // `copy` is not a dependency: it is one object per server render, so it changes only when
     // the language does, and the language is a path segment that remounts this tree.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entityType, actorId, fromDay, toDay, attempt]);
+  }, [entityType, actorId, days, hideReads, attempt]);
+
+  useEffect(() => () => more.current?.abort(), []);
 
   const loadMore = useCallback(async (): Promise<void> => {
-    if (cursor === null || loadingMore) return;
+    if (cursor === null || more.current !== null) return;
 
+    const controller = new AbortController();
+    more.current = controller;
     setLoadingMore(true);
     setError(null);
     try {
       const page = await readTrail({
         entityType,
         actorId,
-        from: dayBounds(fromDay, 'from'),
-        to: dayBounds(toDay, 'to'),
+        from: dayBounds(days.from, 'from'),
+        to: dayBounds(days.to, 'to'),
+        hideReads,
         after: cursor,
         limit: TRAIL_PAGE_SIZE,
+        signal: controller.signal,
       });
+      // The question changed while this page was on its way: it is not a page of this list.
+      if (controller.signal.aborted) return;
       setEntries((previous) => [...previous, ...page.entries]);
       setCursor(page.nextCursor ?? null);
     } catch (cause) {
+      if (controller.signal.aborted || wasAborted(cause)) return;
       setError(consoleMessageFor(cause, copy.subject, copy.refusals));
     } finally {
-      setLoadingMore(false);
+      if (more.current === controller) {
+        more.current = null;
+        setLoadingMore(false);
+      }
     }
-  }, [cursor, entityType, actorId, fromDay, toDay, loadingMore, copy]);
+  }, [cursor, entityType, actorId, days, hideReads, copy]);
 
   /*
    * Who did it and, where the platform can say, what it was done to — #402. An audit trail
@@ -212,16 +270,21 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
    * suspended account c8edac99" is a sentence that cannot be read at all.
    */
   const names = useDirectoryNames(
-    entries.flatMap((entry) => [
-      entry.actorId ?? null,
-      entry.entityType === 'account' ? entry.entityId : null,
-    ]).filter((id): id is string => id != null),
+    [
+      ...(actorId === null ? [] : [actorId]),
+      ...entries.flatMap((entry) => [
+        entry.actorId ?? null,
+        entry.entityType === 'account' ? entry.entityId : null,
+      ]),
+    ].filter((id): id is string => id != null),
     entries.filter((entry) => entry.entityType === 'project').map((entry) => entry.entityId),
   );
 
   if (status === 'signed-out' || status === 'forbidden') {
     return <ConsoleRefusal status={status} capability={capability} subject={copy.subject} copy={copy.refusals} />;
   }
+
+  const chooseActor = (id: string) => setActor({ id, account: null });
 
   return (
     <section aria-labelledby="audit-trail-heading">
@@ -252,66 +315,98 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
       </ChipRow>
 
       {/*
-        #404: who, and when.
+        #404: who, and when. Each control produces one read when it changes — the dates once the
+        field has been still for a moment.
 
-        Not a form with a submit button, unlike the account directory's search. Nothing here
-        is typed — a day comes from a date picker and an actor from `AccountPicker`, which has
-        its own search and its own submit — so there is nothing to hold back until an
-        intention is complete. Each control produces one read when it changes.
+        `fieldset` rather than loose fields, so that a screen reader announces the group before
+        its parts: "when" is what the two dates mean together.
 
-        `fieldset` rather than three loose fields, so that a screen reader announces the group
-        before its parts: "when" is what the two dates mean together, and either alone is an
-        open-ended range rather than half a filter.
+        The hint sits under the whole row rather than inside each field, as on the payment log
+        (#504): inside, it made the fields taller than the control beside them and the row lined
+        "clear dates" up with the hint instead of with the boxes.
       */}
       <fieldset className="mt-4">
         <legend className="text-sm text-white/64">{copy.narrowLabel}</legend>
 
-        <div className="mt-2 flex flex-wrap items-end gap-3">
-          <AccountPicker
-            chosen={actor}
-            onChoose={setActor}
-            copy={copy.actorPicker}
-            className="min-w-[280px] flex-1"
-          />
+        <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-3">
+          {mayPick && (
+            <AccountPicker
+              chosen={actor?.account ?? null}
+              onChoose={(account) => setActor(account === null ? null : { id: account.id, account })}
+              copy={copy.actorPicker}
+              className="min-w-[min(100%,280px)] flex-1"
+            />
+          )}
 
           {/*
             `type="date"` rather than a text field. The format a person types differs by
             language — §21.1 puts the console in four — and the browser's own control renders
             the reader's format over a value that is always `YYYY-MM-DD`.
           */}
-          <Field label={copy.fromLabel} hint={copy.fromHint} className="min-w-[160px]">
+          <Field label={copy.fromLabel} className="min-w-[160px]">
             <TextInput
               type="date"
               value={fromDay}
               max={toDay === '' ? undefined : toDay}
+              aria-describedby={datesHintId}
               onChange={(event) => setFromDay(event.target.value)}
             />
           </Field>
 
-          <Field label={copy.toLabel} hint={copy.toHint} className="min-w-[160px]">
+          <Field label={copy.toLabel} className="min-w-[160px]">
             <TextInput
               type="date"
               value={toDay}
               min={fromDay === '' ? undefined : fromDay}
+              aria-describedby={datesHintId}
               onChange={(event) => setToDay(event.target.value)}
             />
           </Field>
 
           {(fromDay !== '' || toDay !== '') && (
-            <Pill
-              variant="ghost"
-              size="sm"
-              className="mb-1"
-              onClick={() => {
-                setFromDay('');
-                setToDay('');
-              }}
-            >
-              {copy.clearDates}
-            </Pill>
+            // As tall as the inputs, so the control is centred on the boxes.
+            <div className="flex min-h-11 items-center">
+              <Pill
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFromDay('');
+                  setToDay('');
+                }}
+              >
+                {copy.clearDates}
+              </Pill>
+            </div>
           )}
         </div>
+        <p id={datesHintId} className="mt-1.5 text-[13px] text-white/64">
+          {copy.datesHint}
+        </p>
+
+        <div className="mt-3 flex flex-col gap-1">
+          <Switch
+            checked={hideReads}
+            onCheckedChange={setHideReads}
+            label={copy.hideReads}
+            aria-describedby={hideReadsHintId}
+            className="self-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          />
+          <p id={hideReadsHintId} className="text-[13px] text-white/64">
+            {copy.hideReadsHint}
+          </p>
+        </div>
       </fieldset>
+
+      {/* The person the trail is narrowed to, when the picker is not the thing saying so. */}
+      {actor !== null && actor.account === null && (
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-white/16 px-3 py-2 text-sm text-white/80">
+          <span>{copy.actorApplied}</span>
+          <EntityName id={actor.id} names={names} kind="account" copy={copy.identity} />
+          <Pill variant="ghost" size="sm" onClick={() => setActor(null)}>
+            {copy.everyone}
+          </Pill>
+        </div>
+      )}
 
       {error && (
         <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
@@ -335,7 +430,7 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
       {status === 'ready' && entries.length === 0 && (
         <EmptyState
           className="mt-4"
-          /* Any of the four narrows the trail, so an empty page under one of them is
+          /* Any of the filters narrows the trail, so an empty page under one of them is
              "nothing matched" rather than "nothing has ever happened" — #404. */
           variant={narrowed ? 'filtered' : 'empty'}
           title={narrowed ? copy.filteredTitle : copy.emptyTitle}
@@ -346,7 +441,15 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
       {status === 'ready' && entries.length > 0 && (
         <ul className="mt-4 flex list-none flex-col gap-2">
           {entries.map((entry) => (
-            <AuditRow key={entry.id} entry={entry} locale={locale} names={names} copy={copy} />
+            <AuditRow
+              key={entry.id}
+              entry={entry}
+              locale={locale}
+              names={names}
+              copy={copy}
+              narrowedTo={actorId}
+              onNarrowTo={chooseActor}
+            />
           ))}
         </ul>
       )}
@@ -369,10 +472,13 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
         </Pill>
       )}
 
-      <p className="mt-8 max-w-[68ch] text-sm text-white/40">{copy.footnote}</p>
+      <p className="mt-8 max-w-[68ch] text-sm text-white/48">{copy.footnote}</p>
     </section>
   );
 }
+
+const datesHintId = 'audit-dates-hint';
+const hideReadsHintId = 'audit-hide-reads-hint';
 
 /**
  * One recorded action.
@@ -383,67 +489,76 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
  * also the single most interesting row on this screen. Red would say the system broke; the
  * word says what actually happened, and docs/ui-kit.md §9.2 requires the word either way.
  *
- * <p>The identifiers are shortened and the full value is on the element's `title`, because a
- * list of forty rows each carrying three UUIDs is a list nobody can scan — and the full value
- * is what somebody copies into the next query.
+ * <p><strong>What it was done to, then who did it, each said once.</strong> The thing is named
+ * with its kind in the singular — "Campaign Foo", not the chip's "Campaigns Foo" — and a row about
+ * the account that wrote it (a read, a search, one's own settings) names that person once, as the
+ * actor.
+ *
+ * <p><strong>The detail is a technical note, and is drawn as one.</strong> It is what the action
+ * recorded about itself in the service's own `key=value` vocabulary, which is evidence rather
+ * than prose: folded under its own summary, in a monospaced face, so the row reads as a sentence
+ * and the note is there for whoever needs it.
  */
 function AuditRow({
   entry,
   locale,
   names,
   copy,
+  narrowedTo,
+  onNarrowTo,
 }: {
   readonly entry: AuditEntry;
   readonly locale: Locale;
   readonly names: DirectoryNames;
   readonly copy: AuditTrailCopy;
+  readonly narrowedTo: string | null;
+  readonly onNarrowTo: (actorId: string) => void;
 }) {
+  const aboutItsActor = isAboutItsActor(entry);
+  const actorName =
+    entry.actorId == null ? null : (names.accounts.get(entry.actorId)?.name ?? shortId(entry.actorId));
+
   return (
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <p className="text-[15px] font-medium text-white">{actionLabel(entry.action, copy.action)}</p>
-          <p className="mt-1 text-sm text-white/64">
-            {copy.entity[entry.entityType] ?? entry.entityType}{' '}
-            {/*
-              #402: an audit row's whole purpose is accountability, and "who" and "what"
-              were both eight hexadecimal characters. Two of the six entity kinds are things
-              the directory can name — a campaign and an account — and the rest keep the
-              fragment, because a session or a collection is not a thing with a name.
-            */}
-            {entry.entityType === 'project' || entry.entityType === 'account' ? (
-              <EntityName
-                id={entry.entityId}
-                names={names}
-                kind={entry.entityType === 'project' ? 'project' : 'account'}
-                copy={copy.identity}
-              />
-            ) : (
-              <span className="font-mono" title={entry.entityId}>
-                {shortId(entry.entityId)}
-              </span>
-            )}
-            {' · '}
-            {entry.actorType.toLowerCase()}
-            {entry.actorId != null && (
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm text-white/64">
+            {!aboutItsActor && (
               <>
-                {' '}
-                <EntityName
-                  id={entry.actorId}
-                  names={names}
-                  kind="account"
-                  copy={copy.identity}
-                />
+                <span>{copy.entityOne[entry.entityType] ?? entry.entityType}</span>
+                {/*
+                  #402: an audit row's whole purpose is accountability. A campaign and an account
+                  are things the directory can name; the rest keep the fragment, because a
+                  session or a payout is not a thing with a name.
+                */}
+                {entry.entityType === 'project' || entry.entityType === 'account' ? (
+                  <EntityName
+                    id={entry.entityId}
+                    names={names}
+                    kind={entry.entityType === 'project' ? 'project' : 'account'}
+                    copy={copy.identity}
+                  />
+                ) : (
+                  <span className="font-mono" title={entry.entityId}>
+                    {shortId(entry.entityId)}
+                  </span>
+                )}
+                <span aria-hidden="true">·</span>
               </>
+            )}
+            <span>{copy.actorType[entry.actorType] ?? entry.actorType}</span>
+            {entry.actorId != null && (
+              <EntityName id={entry.actorId} names={names} kind="account" copy={copy.identity} />
             )}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           {entry.outcome === 'REFUSED' && <Tag variant="warning">{copy.refused}</Tag>}
           <time
             dateTime={entry.occurredAt}
-            className="text-xs text-white/40"
+            className="text-xs text-white/48"
             title={entry.occurredAt}
           >
             {formatExactTime(entry.occurredAt, locale)}
@@ -451,8 +566,25 @@ function AuditRow({
         </div>
       </div>
 
+      {entry.actorId != null && entry.actorId !== narrowedTo && actorName !== null && (
+        <Pill
+          variant="ghost"
+          size="sm"
+          className="mt-2"
+          aria-label={fillPlaceholders(copy.byThisPersonLabel, { name: actorName })}
+          onClick={() => onNarrowTo(entry.actorId as string)}
+        >
+          {copy.byThisPerson}
+        </Pill>
+      )}
+
       {entry.detail != null && entry.detail !== '' && (
-        <p className="mt-2 text-sm text-white/48">{entry.detail}</p>
+        <details className="mt-2 text-sm">
+          <summary className="cursor-pointer rounded text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]">
+            {copy.technicalNote}
+          </summary>
+          <p className="mt-1 whitespace-pre-wrap break-words font-mono text-xs text-white/64">{entry.detail}</p>
+        </details>
       )}
 
       {/*
@@ -461,7 +593,7 @@ function AuditRow({
         what turns "the ban was recorded" into "here is everything that happened while it was".
       */}
       {entry.requestId != null && entry.requestId !== '' && (
-        <p className="mt-2 font-mono text-xs text-white/32">
+        <p className="mt-2 break-all font-mono text-xs text-white/48">
           {fillPlaceholders(copy.requestId, { id: entry.requestId })}
         </p>
       )}

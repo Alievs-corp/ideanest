@@ -898,7 +898,7 @@
         "metaTitle": "Audit jurnalı",
         "metaDescription": "Platformanın qeyd etdiyi hər imtiyazlı əməliyyat, ən yenisi əvvəldə.",
         "title": "Audit jurnalı",
-        "intro": "Kim nə etdi, nəyə etdi və nəticəsi necə oldu. Cədvəl konvensiya ilə deyil, PostgreSQL-in özündə yalnız əlavəyə açıqdır, ona görə bu səhifədəki — və xidmətdəki — heç nə artıq burada olan sətri dəyişə bilməz."
+        "intro": "Kim nə etdi, nəyə etdi və nəticəsi necə oldu. Qeydlər dəyişdirilə və silinə bilməz."
       },
       "health": {
         "metaTitle": "Sistemin vəziyyəti",
@@ -1123,9 +1123,7 @@
         "filterLabel": "Əməliyyat nə haqqında idi",
         "everything": "Hamısı",
         "clearDates": "Tarixləri təmizlə",
-        "toHint": "Bu günün sonuna qədər.",
         "toLabel": "Son",
-        "fromHint": "Bu günün əvvəlindən.",
         "fromLabel": "Başlanğıc",
         "actorHint": "Kimin əməliyyatları göstərilsin. Kimisə axtarmaq özü də qeydə alınan oxumadır.",
         "actorLabel": "İcraçı",
@@ -1137,7 +1135,7 @@
         "filteredBody": "Bu filtrlərə uyğun imtiyazlı əməliyyat yoxdur. Qalanını görmək üçün onları genişləndirin.",
         "refused": "Rədd edildi",
         "requestId": "sorğu {id}",
-        "footnote": "Bu səhifəni oxumaq ona bir sətir yazır. Heç kimin yoxlamadığı audit səthi araşdırmanın şübhə ilə başladığı səthdir, ona görə oxumaq da yazmaq kimi qeyd olunur — filtr və sətirlərin sayı ilə, heç vaxt sətirlərin özü ilə deyil.",
+        "footnote": "Bu səhifəni açmaq və filtrləmək də jurnala yazılır.",
         "entity": {
           "account": "Hesablar",
           "collaborator": "Əməkdaşlar",
@@ -1147,7 +1145,7 @@
           "feature_flag": "Funksiya bayraqları",
           "fee_schedule": "Komissiya cədvəlləri",
           "maintenance_window": "Texniki xidmət pəncərələri",
-          "payout": "Ödənişlər",
+          "payout": "Müəllif köçürmələri",
           "project": "Kampaniyalar",
           "refund": "Geri qaytarmalar",
           "report": "Şikayətlər",
@@ -1155,7 +1153,10 @@
           "subscription": "Abunəliklər",
           "subscription_plan": "Abunəlik planları",
           "support_ticket": "Dəstək müraciətləri",
-          "taxonomy": "Taksonomiya"
+          "taxonomy": "Taksonomiya",
+          "legal_document": "Hüquqi sənədlər",
+          "subscription_charge": "Plan ödənişləri",
+          "user": "İstifadəçi hesabları"
         },
         "action": {
           "account": {
@@ -1169,7 +1170,9 @@
             "password_reset": "Parol sıfırlandı",
             "reinstated": "Hesab bərpa edildi",
             "searched": "Hesablar axtarıldı",
-            "suspended": "Hesab dayandırıldı"
+            "suspended": "Hesab dayandırıldı",
+            "blocked": "İstifadəçi bloklandı",
+            "unblocked": "İstifadəçinin bloku götürüldü"
           },
           "audit": {
             "trail_read": "Audit izi oxundu"
@@ -1183,7 +1186,8 @@
             "handled": "Geri tələb qərara bağlandı"
           },
           "email": {
-            "template_edited": "E-poçt şablonu dəyişdirildi"
+            "template_edited": "E-poçt şablonu dəyişdirildi",
+            "template_withdrawn": "E-poçt şablonu geri çəkildi"
           },
           "feature": {
             "flag_changed": "Funksiya bayrağı dəyişdirildi"
@@ -1212,9 +1216,13 @@
             "log_read": "Ödəniş jurnalı oxundu"
           },
           "payout": {
-            "approved": "Ödəniş təsdiqləndi",
-            "calculated": "Ödəniş hesablandı",
-            "sent": "Ödəniş göndərildi"
+            "approved": "Müəllif köçürməsi təsdiqləndi",
+            "calculated": "Müəllif köçürməsi hesablandı",
+            "sent": "Müəllif köçürməsi göndərildi",
+            "approval_withdrawn": "Müəllif köçürməsindən imza geri götürüldü",
+            "cancelled": "Müəllif köçürməsi ləğv edildi",
+            "bank_transfer_started": "Müəllif köçürməsi üçün bank köçürməsi başladıldı",
+            "bank_transfer_abandoned": "Müəllif köçürməsinin bank köçürməsi dayandırıldı"
           },
           "project": {
             "addresses_locked": "Ünvanlar bağlandı",
@@ -1230,7 +1238,7 @@
             "update_published": "Yenilik dərc edildi"
           },
           "refund": {
-            "issued": "Geri qaytarma edildi",
+            "issued": "Pul geri qaytarıldı",
             "routed_to_bank_transfer": "Geri ödəniş bank köçürməsinə yönəldildi",
             "bank_details_recorded": "Geri ödənişin bank rekvizitləri qeyd edildi",
             "bank_details_revealed": "Geri ödənişin bank rekvizitləri açıldı",
@@ -1255,7 +1263,10 @@
             "activated": "Abunəlik başladı",
             "canceled": "Abunəlik dayandırıldı",
             "plan_changed": "Abunəlik planı dəyişdirildi",
-            "plan_created": "Abunəlik planı yaradıldı"
+            "plan_created": "Abunəlik planı yaradıldı",
+            "payment_refunded": "Plan ödənişi geri qaytarıldı",
+            "renewed": "Abunəlik yeniləndi",
+            "revenue_exported": "Plan gəliri ixrac edildi"
           },
           "support": {
             "ticket_handled": "Dəstək müraciəti cavablandırıldı"
@@ -1266,7 +1277,74 @@
           "two_factor": {
             "disabled": "İki mərhələli giriş söndürüldü",
             "enabled": "İki mərhələli giriş qoşuldu"
+          },
+          "partner": {
+            "profile_saved": "Partnyor profili saxlanıldı",
+            "profile_removed": "Partnyor profili silindi",
+            "statistics_read": "Partnyor statistikası açıldı"
+          },
+          "dashboard": {
+            "read": "İcmal açıldı"
+          },
+          "analytics": {
+            "read": "Platforma analitikası açıldı"
+          },
+          "legal": {
+            "document_published": "Hüquqi sənəd dərc edildi",
+            "document_activated": "Hüquqi sənədin versiyası qüvvəyə mindi",
+            "document_drafted": "Hüquqi sənədin qaralaması saxlanıldı",
+            "acceptance_record_read": "Razılıq qeydləri açıldı",
+            "agreement_signed": "Müqavilə imzalandı",
+            "signed_agreement_read": "İmzalanmış müqavilə açıldı"
+          },
+          "compliance": {
+            "override_granted": "Uyğunluq tələbindən istisna verildi",
+            "override_revoked": "Uyğunluq istisnası geri alındı",
+            "legal_subject_recorded": "Hüquqi subyekt məlumatları qeyd edildi",
+            "legal_subject_read": "Hüquqi subyekt məlumatları açıldı",
+            "payout_destination_recorded": "Köçürmə hesabı qeyd edildi",
+            "payout_destination_verified": "Köçürmə hesabı yoxlanıldı",
+            "payout_destination_read": "Köçürmə hesabı açıldı",
+            "payout_destination_account_revealed": "Köçürmə hesabının nömrəsi göstərildi"
+          },
+          "obligation": {
+            "update_resolved": "Yenilik öhdəliyi həll edildi"
           }
+        },
+        "datesHint": "Başlanğıc günü əvvəlindən, son günü sonuna qədər daxildir.",
+        "hideReads": "Ekran oxumalarını gizlət",
+        "hideReadsHint": "Jurnalın, icmalın, analitikanın, ödəniş jurnalının, baş kitabın və risk növbəsinin açılması, hesab axtarışları gizlənir. Kiminsə şəxsi sənədini və ya bank hesabını açmaq həmişə görünür.",
+        "actorApplied": "Yalnız bu şəxsin əməliyyatları:",
+        "everyone": "Hamını göstər",
+        "byThisPerson": "Bu şəxsin əməliyyatları",
+        "byThisPersonLabel": "Yalnız {name} adlı şəxsin əməliyyatlarını göstər",
+        "technicalNote": "Texniki qeyd",
+        "actorType": {
+          "USER": "İstifadəçi",
+          "MODERATOR": "Platforma əməkdaşı",
+          "SYSTEM": "Sistem"
+        },
+        "entityOne": {
+          "project": "Kampaniya",
+          "account": "Hesab",
+          "report": "Şikayət",
+          "payout": "Müəllif köçürməsi",
+          "refund": "Geri qaytarma",
+          "dispute": "Geri tələb",
+          "subscription": "Abunəlik",
+          "subscription_charge": "Plan ödənişi",
+          "subscription_plan": "Abunəlik planı",
+          "fee_schedule": "Komissiya cədvəli",
+          "legal_document": "Hüquqi sənəd",
+          "support_ticket": "Dəstək müraciəti",
+          "collaborator": "Əməkdaş",
+          "session": "Sessiya",
+          "email_template": "E-poçt şablonu",
+          "feature_flag": "Funksiya bayrağı",
+          "taxonomy": "Taksonomiya",
+          "maintenance_window": "Texniki xidmət pəncərəsi",
+          "user": "İstifadəçi hesabı",
+          "collection": "Kolleksiya"
         }
       },
       "health": {

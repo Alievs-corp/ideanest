@@ -41,10 +41,23 @@ export interface AuditTrailCopy extends ConsoleChromeCopy {
   /** The group holding the actor and the two dates — issue #404. */
   readonly narrowLabel: string;
   readonly fromLabel: string;
-  readonly fromHint: string;
   readonly toLabel: string;
-  readonly toHint: string;
+  /** Under the two dates: both days are whole, the first from its start and the last to its end. */
+  readonly datesHint: string;
   readonly clearDates: string;
+  /** The switch that leaves out the routine screen reads, and what it does and does not hide. */
+  readonly hideReads: string;
+  readonly hideReadsHint: string;
+  /** Before the person the trail is narrowed to, when a row's control narrowed it. */
+  readonly actorApplied: string;
+  /** Takes that narrowing off. */
+  readonly everyone: string;
+  /** The control on each row that narrows the trail to its actor. */
+  readonly byThisPerson: string;
+  /** Its accessible name. Carries `{name}`. */
+  readonly byThisPersonLabel: string;
+  /** The summary over a row's technical detail. */
+  readonly technicalNote: string;
   /**
    * The actor control's words.
    *
@@ -64,8 +77,12 @@ export interface AuditTrailCopy extends ConsoleChromeCopy {
   /** Carries `{id}`. */
   readonly requestId: string;
   readonly footnote: string;
-  /** Keyed by the entity kind the service writes. Falls back to the wire spelling. */
+  /** Keyed by the entity kind the service writes, as the chips name them (plural). Falls back to the wire spelling. */
   readonly entity: Readonly<Record<string, string>>;
+  /** The same kinds in the singular, for a row naming one thing: "Campaign", not "Campaigns". */
+  readonly entityOne: Readonly<Record<string, string>>;
+  /** What the actor was acting as — `USER`, `MODERATOR`, `SYSTEM` — in words. */
+  readonly actorType: Readonly<Record<string, string>>;
   /** Keyed by the action the service writes, split at its `.`. Falls back to the wire spelling. */
   readonly action: AuditActionLabels;
 }
@@ -79,10 +96,16 @@ export function auditTrailCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy
     everything: t('screens.audit.everything'),
     narrowLabel: t('screens.audit.narrowLabel'),
     fromLabel: t('screens.audit.fromLabel'),
-    fromHint: t('screens.audit.fromHint'),
     toLabel: t('screens.audit.toLabel'),
-    toHint: t('screens.audit.toHint'),
+    datesHint: t('screens.audit.datesHint'),
     clearDates: t('screens.audit.clearDates'),
+    hideReads: t('screens.audit.hideReads'),
+    hideReadsHint: t('screens.audit.hideReadsHint'),
+    actorApplied: t('screens.audit.actorApplied'),
+    everyone: t('screens.audit.everyone'),
+    byThisPerson: t('screens.audit.byThisPerson'),
+    byThisPersonLabel: String(t.raw('screens.audit.byThisPersonLabel')),
+    technicalNote: t('screens.audit.technicalNote'),
     actorPicker: {
       ...accountPickerCopyFrom(t, chrome.refusals),
       label: t('screens.audit.actorLabel'),
@@ -97,6 +120,8 @@ export function auditTrailCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy
     requestId: String(t.raw('screens.audit.requestId')),
     footnote: t('screens.audit.footnote'),
     entity: t.raw('screens.audit.entity') as Readonly<Record<string, string>>,
+    entityOne: t.raw('screens.audit.entityOne') as Readonly<Record<string, string>>,
+    actorType: t.raw('screens.audit.actorType') as Readonly<Record<string, string>>,
     action: t.raw('screens.audit.action') as AuditActionLabels,
   };
 }
