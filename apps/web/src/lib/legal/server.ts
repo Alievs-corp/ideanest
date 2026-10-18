@@ -37,7 +37,8 @@ import {
  *
  * The {@link LEGAL} tag is what makes the window survivable in the direction that matters: a
  * version published this morning is what somebody accepting this afternoon is shown, because
- * publishing invalidates the tag rather than waiting out the hour.
+ * publishing invalidates the tag rather than waiting out the hour — and so does the minute a version
+ * published for a later date takes effect, which the service's `legal-taking-effect` job announces.
  *
  * <h2>A 404 is "not published", and the page renders that rather than failing</h2>
  *
