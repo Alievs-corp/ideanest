@@ -30,6 +30,10 @@ import java.util.UUID;
  * and said nothing about {@code entries}. Harmless while both were merely wrong; adding a
  * field to one of them makes the other wrong in a new way, which is how a contract nobody
  * can trust gets built one honest change at a time. Nothing consumed the generated alias.
+ *
+ * <p><strong>{@code TrailEntry} rather than {@code Entry}, for the same reason.</strong> A survey
+ * response also had a nested {@code Entry}, and {@code TrailPage.entries} was published pointing
+ * at the survey's shape.
  */
 final class AuditTrailResponses {
 
@@ -43,12 +47,13 @@ final class AuditTrailResponses {
                 page.filter().actorId(),
                 page.filter().from(),
                 page.filter().to(),
+                page.filter().hideReads(),
                 page.entries().stream().map(AuditTrailResponses::entry).toList(),
                 page.nextCursor() == null ? null : page.nextCursor().encode());
     }
 
-    private static Entry entry(AuditEntry row) {
-        return new Entry(
+    private static TrailEntry entry(AuditEntry row) {
+        return new TrailEntry(
                 row.getId(),
                 row.getOccurredAt(),
                 row.getActorType().name(),
@@ -79,6 +84,7 @@ final class AuditTrailResponses {
      *     three above, and here it is doing slightly different work: the range survives every
      *     branch of the normalisation, so seeing it come back unchanged beside an entity
      *     filter that was narrowed is how a client learns the two are independent
+     * @param hideReads whether the routine screen reads were left out, echoed
      * @param entries the matching rows, newest first
      * @param nextCursor what to send as {@code after} for the next page, or absent when
      *     this was the last one. An opaque string since #404 rather than an identifier: the
@@ -87,7 +93,9 @@ final class AuditTrailResponses {
      *     published as two fields so that no client comes to depend on which columns the
      *     ordering uses — {@code AuditCursor} makes the argument. There is no total either:
      *     counting a table nothing is ever deleted from is a scan for a number that is
-     *     stale before it renders
+     *     stale before it renders. Present only when another row exists: the service reads one
+     *     row past the page to know, so a full last page no longer sends the reader to a request
+     *     that comes back empty
      */
     record TrailPage(
             String entityType,
@@ -95,7 +103,8 @@ final class AuditTrailResponses {
             UUID actorId,
             Instant from,
             Instant to,
-            List<Entry> entries,
+            boolean hideReads,
+            List<TrailEntry> entries,
             String nextCursor) {
     }
 
@@ -125,7 +134,7 @@ final class AuditTrailResponses {
      * @param detail what the action recorded about itself, in the vocabulary of whatever
      *     wrote it. Prose, and only ever rendered as text
      */
-    record Entry(
+    record TrailEntry(
             UUID id,
             Instant occurredAt,
             String actorType,

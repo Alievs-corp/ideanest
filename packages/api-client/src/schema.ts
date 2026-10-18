@@ -7517,15 +7517,37 @@ export interface components {
             pledgeCount?: number;
             volume?: components["schemas"]["Money"];
         };
+        TrailEntry: {
+            action?: string;
+            /** Format: uuid */
+            actorId?: string;
+            actorType?: string;
+            detail?: string;
+            /** Format: uuid */
+            entityId?: string;
+            entityType?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: uuid */
+            onBehalfOfId?: string;
+            outcome?: string;
+            requestId?: string;
+            sourceAddress?: string;
+            traceId?: string;
+            userAgent?: string;
+        };
         TrailPage: {
             /** Format: uuid */
             actorId?: string;
             /** Format: uuid */
             entityId?: string;
             entityType?: string;
-            entries?: components["schemas"]["Entry"][];
+            entries?: components["schemas"]["TrailEntry"][];
             /** Format: date-time */
             from?: string;
+            hideReads?: boolean;
             nextCursor?: string;
             /** Format: date-time */
             to?: string;
@@ -8066,6 +8088,7 @@ export type SchemaTicketFile = components['schemas']['TicketFile'];
 export type SchemaTicketPage = components['schemas']['TicketPage'];
 export type SchemaTokenResponse = components['schemas']['TokenResponse'];
 export type SchemaTotals = components['schemas']['Totals'];
+export type SchemaTrailEntry = components['schemas']['TrailEntry'];
 export type SchemaTrailPage = components['schemas']['TrailPage'];
 export type SchemaTransaction = components['schemas']['Transaction'];
 export type SchemaTransferRequest = components['schemas']['TransferRequest'];
@@ -8360,6 +8383,7 @@ export interface operations {
                 to?: string;
                 after?: string;
                 limit?: number;
+                hideReads?: boolean;
             };
             header?: never;
             path?: never;

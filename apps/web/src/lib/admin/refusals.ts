@@ -156,6 +156,19 @@ export function consoleMessageFor(
     if (code === 'CURATION_REJECTED') {
       return cause.problem?.detail ?? copy.curationRejected;
     }
+    // The figure screens' and the trail's own 400s. The service's detail names the limit in
+    // English; the catalogue's sentence says the same thing in the reader's language.
+    if (code === 'INVALID_ANALYTICS_RANGE' || code === 'INVALID_DASHBOARD_RANGE') {
+      return copy.invalidRange ?? copy.refused;
+    }
+    if (code === 'INVALID_CURSOR') {
+      return copy.invalidCursor ?? copy.refused;
+    }
+    // A failure on the service's side carries no code and Spring's English title ("Internal
+    // Server Error"). It is never the reader's to fix, and the sentence says so in their language.
+    if (cause.status >= 500) {
+      return copy.serviceFailed ?? copy.refused;
+    }
 
     return cause.problem?.detail ?? cause.problem?.title ?? copy.refused;
   }

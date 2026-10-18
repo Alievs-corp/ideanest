@@ -255,27 +255,33 @@ describe('names on a console screen', () => {
     expect(screen.getByRole('link', { name: 'Günel Rzayeva' })).toHaveAttribute('href', '/en/gunel-rzayeva');
   });
 
+  const CAMPAIGN_NAMES = {
+    accounts: new Map(),
+    projects: new Map([
+      [
+        'a1b2c3d4-0000-4000-8000-000000000001',
+        {
+          id: 'a1b2c3d4-0000-4000-8000-000000000001',
+          title: 'Xari Bulbul Ceramics',
+          slug: 'xari-bulbul-ceramics',
+          creatorSlug: 'aysel-studio',
+        },
+      ],
+    ]),
+  };
+
+  function readerHolding(capabilities: readonly StaffCapability[]) {
+    return {
+      status: 'ready' as const,
+      membership: { accountId: ME, staff: true, bootstrapped: false, roles: ['MODERATOR' as const], capabilities: [...capabilities] },
+    };
+  }
+
   it('links a campaign to the staff preview, which renders it in any state', () => {
     render(
-      <EntityName
-        id="a1b2c3d4-0000-4000-8000-000000000001"
-        names={{
-          accounts: new Map(),
-          projects: new Map([
-            [
-              'a1b2c3d4-0000-4000-8000-000000000001',
-              {
-                id: 'a1b2c3d4-0000-4000-8000-000000000001',
-                title: 'Xari Bulbul Ceramics',
-                slug: 'xari-bulbul-ceramics',
-                creatorSlug: 'aysel-studio',
-              },
-            ],
-          ]),
-        }}
-        kind="project"
-        copy={CHROME.identity}
-      />,
+      <ConsoleMembershipProvider given={readerHolding(['MODERATE_CONTENT'])}>
+        <EntityName id="a1b2c3d4-0000-4000-8000-000000000001" names={CAMPAIGN_NAMES} kind="project" copy={CHROME.identity} />
+      </ConsoleMembershipProvider>,
     );
 
     /*
@@ -289,6 +295,19 @@ describe('names on a console screen', () => {
       'href',
       '/en/admin/campaigns/a1b2c3d4-0000-4000-8000-000000000001',
     );
+  });
+
+  it('names a campaign without a link for a reader the preview would refuse', () => {
+    render(
+      <ConsoleMembershipProvider given={readerHolding(['VIEW_FINANCE', 'VIEW_AUDIT'])}>
+        <EntityName id="a1b2c3d4-0000-4000-8000-000000000001" names={CAMPAIGN_NAMES} kind="project" copy={CHROME.identity} />
+      </ConsoleMembershipProvider>,
+    );
+
+    // The preview is MODERATE_CONTENT's. Finance reading the trail was offered a link that
+    // answered with a refusal.
+    expect(screen.getByText('Xari Bulbul Ceramics')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Xari Bulbul Ceramics' })).toBeNull();
   });
 
   it('leaves the screen working when the lookup fails', async () => {

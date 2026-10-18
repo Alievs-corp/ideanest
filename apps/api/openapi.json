@@ -422,6 +422,14 @@
             "type" : "integer",
             "format" : "int32"
           }
+        }, {
+          "in" : "query",
+          "name" : "hideReads",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
+          }
         } ],
         "responses" : {
           "200" : {
@@ -19297,6 +19305,58 @@
           }
         }
       },
+      "TrailEntry" : {
+        "type" : "object",
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "actorId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "actorType" : {
+            "type" : "string"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "entityId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "entityType" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "onBehalfOfId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "outcome" : {
+            "type" : "string"
+          },
+          "requestId" : {
+            "type" : "string"
+          },
+          "sourceAddress" : {
+            "type" : "string"
+          },
+          "traceId" : {
+            "type" : "string"
+          },
+          "userAgent" : {
+            "type" : "string"
+          }
+        }
+      },
       "TrailPage" : {
         "type" : "object",
         "properties" : {
@@ -19314,12 +19374,15 @@
           "entries" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Entry"
+              "$ref" : "#/components/schemas/TrailEntry"
             }
           },
           "from" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "hideReads" : {
+            "type" : "boolean"
           },
           "nextCursor" : {
             "type" : "string"

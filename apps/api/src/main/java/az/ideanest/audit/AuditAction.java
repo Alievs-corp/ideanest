@@ -438,6 +438,16 @@ public enum AuditAction {
     DASHBOARD_READ("dashboard.read", "account"),
 
     /**
+     * A member of staff opened {@code /admin/analytics}, the platform's pledge and plan figures.
+     *
+     * <p>Recorded with the window that was read, for {@link #DASHBOARD_READ}'s reason: "who has
+     * been looking at the platform's figures" is answerable only if every screen that shows them
+     * says so. Written by the analytics endpoint alone; the front page's figures card reads the
+     * same service and is already covered by {@link #DASHBOARD_READ}, so one look is one row.
+     */
+    ANALYTICS_READ("analytics.read", "account"),
+
+    /**
      * AD-11 (#311): the platform changed what it charges.
      *
      * <p>The entity is the schedule that was opened rather than the one that was closed:
@@ -931,5 +941,43 @@ public enum AuditAction {
     /** What goes in {@code audit_logs.entity_type}. */
     public String entityType() {
         return entityType;
+    }
+
+    /**
+     * Whether this records somebody <em>looking at a console screen</em> rather than changing
+     * anything or opening one person's private record.
+     *
+     * <p>The trail can hide these on request, and {@code /admin/audit} does by default. Every page,
+     * chip and date the trail itself is read through writes an {@link #AUDIT_TRAIL_READ}, and every
+     * visit to the front page a {@link #DASHBOARD_READ}, so an unfiltered trail opened on the
+     * reader's own reads and the morning's approvals were three pages down.
+     *
+     * <p><strong>Not every read is routine, and the line is drawn on purpose.</strong> Opening a
+     * person's identity document, their signed agreement, their legal subject or their payout
+     * destination — and revealing a bank account — is access to one individual's private data, the
+     * very thing an investigator goes to the trail to find. Those stay visible whichever way the
+     * switch is set. What is hidden is a screen of lists or sums: the trail, the payment log, the
+     * ledger, the risk queue, the account search, and the three figure screens.
+     */
+    public boolean isRoutineRead() {
+        return switch (this) {
+            case AUDIT_TRAIL_READ,
+                    PAYMENT_LOG_READ,
+                    LEDGER_READ,
+                    RISK_QUEUE_READ,
+                    ACCOUNTS_SEARCHED,
+                    PARTNER_STATISTICS_READ,
+                    DASHBOARD_READ,
+                    ANALYTICS_READ -> true;
+            default -> false;
+        };
+    }
+
+    /** The wire spellings of every {@linkplain #isRoutineRead routine read}, for a query that leaves them out. */
+    public static java.util.List<String> routineReads() {
+        return java.util.Arrays.stream(values())
+                .filter(AuditAction::isRoutineRead)
+                .map(AuditAction::action)
+                .toList();
     }
 }

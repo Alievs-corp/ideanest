@@ -847,7 +847,10 @@
       "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
       "needsCapabilityToAct": "Bu işlem için {capability} yetkisi gerekir, rolleriniz ise bunu içermiyor. Bunu bir yönetici verebilir.",
       "capabilityNamed": "«{name}» ({capability})",
-      "invalidRequest": "Hizmet isteği okuyamadı. Alanları kontrol edip yeniden deneyin."
+      "invalidRequest": "Hizmet isteği okuyamadı. Alanları kontrol edip yeniden deneyin.",
+      "invalidRange": "Bu dönem okunamaz: bitişinden sonra başlayamaz ve bir yıldan uzun olamaz.",
+      "invalidCursor": "Liste değişti ve sonraki sayfa bulunamadı. Listeyi yeniden yükleyin.",
+      "serviceFailed": "Serviste bir hata oluştu. Biraz sonra yeniden deneyin."
     },
     "note": {
       "why": "Gerekçe",
@@ -895,7 +898,7 @@
         "metaTitle": "Denetim günlüğü",
         "metaDescription": "Platformun kaydettiği her ayrıcalıklı işlem, en yenisi başta.",
         "title": "Denetim günlüğü",
-        "intro": "Kim ne yaptı, neye yaptı ve sonucu ne oldu. Tablo bir gelenek olarak değil, PostgreSQL veritabanının kendisinde yalnızca eklemeye açıktır, bu yüzden bu sayfadaki — ve servisteki — hiçbir şey burada zaten bulunan bir satırı değiştiremez."
+        "intro": "Kim ne yaptı, neye yaptı ve sonucu ne oldu. Kayıtlar değiştirilemez ve silinemez."
       },
       "health": {
         "metaTitle": "Sistem sağlığı",
@@ -913,7 +916,7 @@
         "metaTitle": "Platform analitiği",
         "metaDescription": "Tüm platform genelinde hacim, başarı oranı ve ortalama destek.",
         "title": "Platform analitiği",
-        "intro": "AD-13'ün beşinden üçü. Kohortlar ve huniler burada değil; ekran, onlara benzeyecek iki sayıyı tahmin etmek yerine her birinin neyi beklediğini söylüyor."
+        "intro": "Seçilen dönem için destek hacmi, destekçiler, ortalama destek ve kampanya sonuçları."
       },
       "curation": {
         "metaTitle": "Koleksiyonlar",
@@ -1124,9 +1127,7 @@
         "filterLabel": "İşlem neyle ilgiliydi",
         "everything": "Hepsi",
         "clearDates": "Tarihleri temizle",
-        "toHint": "Bu günün sonuna kadar.",
         "toLabel": "Bitiş",
-        "fromHint": "Bu günün başından.",
         "fromLabel": "Başlangıç",
         "actorHint": "Kimin işlemleri gösterilsin. Birini aramak da kaydedilen bir okumadır.",
         "actorLabel": "İşlemi yapan",
@@ -1138,7 +1139,7 @@
         "filteredBody": "Bu filtrelere uyan hiçbir ayrıcalıklı işlem yok. Geri kalanı görmek için filtreleri genişletin.",
         "refused": "Reddedildi",
         "requestId": "istek {id}",
-        "footnote": "Bu sayfayı okumak ona bir satır yazar. Kimsenin denetlemediği bir denetim yüzeyi, bir soruşturmanın güvenmemekle başladığı yüzeydir, bu yüzden okuma da yazma gibi kaydedilir — filtre ve satır sayısıyla, asla satırların kendisiyle değil.",
+        "footnote": "Bu sayfayı açmak ve filtrelemek de günlüğe yazılır.",
         "entity": {
           "account": "Hesaplar",
           "collaborator": "Ortak çalışanlar",
@@ -1148,7 +1149,7 @@
           "feature_flag": "Özellik bayrakları",
           "fee_schedule": "Ücret çizelgeleri",
           "maintenance_window": "Bakım pencereleri",
-          "payout": "Ödemeler",
+          "payout": "Yaratıcı ödemeleri",
           "project": "Kampanyalar",
           "refund": "İadeler",
           "report": "Şikayetler",
@@ -1156,7 +1157,10 @@
           "subscription": "Abonelikler",
           "subscription_plan": "Abonelik planları",
           "support_ticket": "Destek talepleri",
-          "taxonomy": "Taksonomi"
+          "taxonomy": "Taksonomi",
+          "legal_document": "Hukuki belgeler",
+          "subscription_charge": "Plan ödemeleri",
+          "user": "Kullanıcı hesapları"
         },
         "action": {
           "account": {
@@ -1170,7 +1174,9 @@
             "password_reset": "Parola sıfırlandı",
             "reinstated": "Hesap yeniden açıldı",
             "searched": "Hesaplar arandı",
-            "suspended": "Hesap askıya alındı"
+            "suspended": "Hesap askıya alındı",
+            "blocked": "Kullanıcı engellendi",
+            "unblocked": "Kullanıcının engeli kaldırıldı"
           },
           "audit": {
             "trail_read": "Denetim izi okundu"
@@ -1184,7 +1190,8 @@
             "handled": "Ters ibraz sonuçlandırıldı"
           },
           "email": {
-            "template_edited": "E-posta şablonu düzenlendi"
+            "template_edited": "E-posta şablonu düzenlendi",
+            "template_withdrawn": "E-posta şablonu geri çekildi"
           },
           "feature": {
             "flag_changed": "Özellik bayrağı değiştirildi"
@@ -1213,9 +1220,13 @@
             "log_read": "Ödeme günlüğü okundu"
           },
           "payout": {
-            "approved": "Ödeme onaylandı",
-            "calculated": "Ödeme hesaplandı",
-            "sent": "Ödeme gönderildi"
+            "approved": "Yaratıcı ödemesi onaylandı",
+            "calculated": "Yaratıcı ödemesi hesaplandı",
+            "sent": "Yaratıcı ödemesi gönderildi",
+            "approval_withdrawn": "Yaratıcı ödemesinden imza geri çekildi",
+            "cancelled": "Yaratıcı ödemesi iptal edildi",
+            "bank_transfer_started": "Yaratıcı ödemesi için banka havalesi başlatıldı",
+            "bank_transfer_abandoned": "Yaratıcı ödemesinin banka havalesinden vazgeçildi"
           },
           "project": {
             "addresses_locked": "Adresler kilitlendi",
@@ -1256,7 +1267,10 @@
             "activated": "Abonelik başlatıldı",
             "canceled": "Abonelik iptal edildi",
             "plan_changed": "Abonelik planı değiştirildi",
-            "plan_created": "Abonelik planı oluşturuldu"
+            "plan_created": "Abonelik planı oluşturuldu",
+            "payment_refunded": "Plan ödemesi iade edildi",
+            "renewed": "Abonelik yenilendi",
+            "revenue_exported": "Plan geliri dışa aktarıldı"
           },
           "support": {
             "ticket_handled": "Destek talebi yanıtlandı"
@@ -1267,7 +1281,74 @@
           "two_factor": {
             "disabled": "İki adımlı giriş kapatıldı",
             "enabled": "İki adımlı giriş açıldı"
+          },
+          "partner": {
+            "profile_saved": "Ortak profili kaydedildi",
+            "profile_removed": "Ortak profili kaldırıldı",
+            "statistics_read": "Ortak istatistikleri açıldı"
+          },
+          "dashboard": {
+            "read": "Özet açıldı"
+          },
+          "analytics": {
+            "read": "Platform analitiği açıldı"
+          },
+          "legal": {
+            "document_published": "Hukuki belge yayımlandı",
+            "document_activated": "Hukuki belge sürümü yürürlüğe kondu",
+            "document_drafted": "Hukuki belge taslağı kaydedildi",
+            "acceptance_record_read": "Onay kayıtları açıldı",
+            "agreement_signed": "Sözleşme imzalandı",
+            "signed_agreement_read": "İmzalı sözleşme açıldı"
+          },
+          "compliance": {
+            "override_granted": "Uyum gerekliliğinden istisna tanındı",
+            "override_revoked": "Uyum istisnası geri alındı",
+            "legal_subject_recorded": "Hukuki kimlik bilgileri kaydedildi",
+            "legal_subject_read": "Hukuki kimlik bilgileri açıldı",
+            "payout_destination_recorded": "Ödeme hesabı kaydedildi",
+            "payout_destination_verified": "Ödeme hesabı doğrulandı",
+            "payout_destination_read": "Ödeme hesabı açıldı",
+            "payout_destination_account_revealed": "Ödeme hesabı numarası gösterildi"
+          },
+          "obligation": {
+            "update_resolved": "Güncelleme yükümlülüğü çözüldü"
           }
+        },
+        "datesHint": "İlk gün başından, son gün sonuna kadar dahildir.",
+        "hideReads": "Ekran okumalarını gizle",
+        "hideReadsHint": "Günlüğün, özetin, analitiğin, ödeme günlüğünün, defterin ve risk kuyruğunun açılmasını, hesap aramalarını gizler. Birinin kişisel belgesini veya banka hesabını açmak her zaman gösterilir.",
+        "actorApplied": "Yalnızca şu kişinin işlemleri:",
+        "everyone": "Herkesi göster",
+        "byThisPerson": "Bu kişinin işlemleri",
+        "byThisPersonLabel": "Yalnızca {name} adlı kişinin işlemlerini göster",
+        "technicalNote": "Teknik not",
+        "actorType": {
+          "USER": "Kullanıcı",
+          "MODERATOR": "Personel",
+          "SYSTEM": "Sistem"
+        },
+        "entityOne": {
+          "project": "Kampanya",
+          "account": "Hesap",
+          "report": "Şikayet",
+          "payout": "Yaratıcı ödemesi",
+          "refund": "İade",
+          "dispute": "Ters ibraz",
+          "subscription": "Abonelik",
+          "subscription_charge": "Plan ödemesi",
+          "subscription_plan": "Abonelik planı",
+          "fee_schedule": "Ücret çizelgesi",
+          "legal_document": "Hukuki belge",
+          "support_ticket": "Destek talebi",
+          "collaborator": "Ortak çalışan",
+          "session": "Oturum",
+          "email_template": "E-posta şablonu",
+          "feature_flag": "Özellik bayrağı",
+          "taxonomy": "Taksonomi",
+          "maintenance_window": "Bakım penceresi",
+          "user": "Kullanıcı hesabı",
+          "collection": "Koleksiyon"
         }
       },
       "health": {
@@ -1438,27 +1519,31 @@
           "365": "365 gün"
         },
         "range": "{from} ile {to} arası",
-        "volume": "Hacim",
+        "volume": "Net hacim",
         "pledges": "Destekler",
         "backers": "Destekçiler",
         "averagePledge": "Ortalama destek",
-        "liveProjects": "Yayındaki kampanyalar",
+        "liveProjects": "Şu an yürüyen kampanyalar",
         "planRevenue": "Plan geliri",
         "planPayments": "Plan ödemeleri",
         "otherCurrencyTitle": "Bazı destekler bu toplamlarda yok",
-        "otherCurrencyBody": "Bu dönemdeki {count} destek başka bir para birimindeydi. §21.2 onları çevirecek bir şey vermiyor, bu yüzden burada sayılıyor ve kimsenin mutabık kılamayacağı bir rakama eklenmek yerine hacmin dışında bırakılıyorlar.",
-        "outcomesHeading": "Kapanan kampanyalar",
-        "noneClosed": "Bu dönemde hiçbir kampanya kapanmadı. Bu, sıfır başarı oranı değil — oranın hiç olmamasıdır, bu yüzden burada bir şey gösterilmiyor.",
+        "otherCurrencyBody": "Bu dönemde {count} destek başka bir para biriminde yapıldı; çevrilmeden ayrıca sayılıyor ve hacme dahil değil.",
+        "outcomesHeading": "Bu dönemde sonuçlanan kampanyalar",
+        "noneClosed": "Bu dönemde sonuçlanan kampanya yok.",
         "succeeded": "Başarılı",
         "didNot": "Başarısız",
         "successRate": "Başarı oranı",
         "dailyHeading": "Günlük hacim",
         "nothingPledged": "Bu dönemde hiçbir destek verilmedi.",
-        "notBuiltHeading": "Bu ekranın yanıtlamadıkları",
+        "notBuiltHeading": "Henüz hazır olmayanlar",
         "notBuilt": {
-          "COHORTS": "Kohortlar için destekçinin ilk desteğine göre bir toplama gerekir; böylesi yok (#313).",
-          "FUNNELS": "Huniler için ziyaretten desteğe giden yol gerekir; referral_touches varışı kaydeder, sonrasını değil (#313)."
-        }
+          "COHORTS": "Kohort analizi henüz hazır değil.",
+          "FUNNELS": "Ziyaretten desteğe huni henüz hazır değil."
+        },
+        "windowLegend": "Dönem",
+        "populationNote": "Yalnızca bu dönemde tahsil edilen ve iade ya da ters ibraz edilmeyen destekler sayılır; kısmi iadeler düşülmüştür.",
+        "nowHeading": "Şu an",
+        "computedAt": "Rakamlar {time} itibarıyla okundu (Bakü saati)."
       },
       "emailTemplates": {
         "subject": "e-posta şablonlarını",
@@ -3668,7 +3753,7 @@
       "metaTitle": "Genel bakış",
       "metaDescription": "Platformun bir dönem için temel göstergeleri.",
       "subject": "genel bakış",
-      "standfirst": "Seçtiğiniz dönem için platformun temel göstergeleri. Rollerinizin açtığı bölümleri görürsünüz.",
+      "standfirst": "Para, yeni kampanyalar ve yeni hesaplar seçtiğiniz döneme göredir; «Şu an» altındaki kuyruklar ve kampanya durumları bu anı gösterir. Rollerinizin açtığı bölümleri görürsünüz.",
       "modulesLink": "Tüm modüller ve her birinin neyi beklediği",
       "periodLegend": "Dönem",
       "period": {
@@ -3677,7 +3762,7 @@
         "month30": "30 gün",
         "thisMonth": "Bu ay"
       },
-      "windowNote": "{from} – {to}, {zone} saatine göre.",
+      "windowNote": "{from} – {to}, Bakü saatiyle.",
       "loading": "Genel bakış yükleniyor",
       "emptyTitle": "Rolleriniz için bu sayfada bir şey yok",
       "emptyBody": "Genel bakış rollerinizin açtığı bölümleri gösterir ve bunların hiçbiri sizin değil. Açabileceğiniz ekranlar menüde.",
@@ -3691,14 +3776,14 @@
         "accounts": "Hesaplar"
       },
       "figure": {
-        "pledgeVolume": "Toplanan",
+        "pledgeVolume": "Net toplanan",
         "pledgeCount": "Destekler",
         "backerCount": "Destekçiler",
         "averagePledge": "Ortalama destek",
         "successRate": "Başarı oranı",
         "otherCurrencyPledges": "Başka para biriminde destekler",
-        "campaignsSucceeded": "Hedefe ulaşan kampanyalar",
-        "campaignsFailed": "Hedefe ulaşmayan kampanyalar",
+        "campaignsSucceeded": "Başarıyla biten kampanyalar",
+        "campaignsFailed": "Başarısız biten kampanyalar",
         "running": "Şu an sürenler",
         "awaitingModeration": "Moderasyon bekleyenler",
         "awaitingLaunch": "Onaylandı, başlatılmadı",
@@ -3725,7 +3810,7 @@
         "APPROVED": "Onaylandı",
         "SCHEDULED": "Zamanlandı",
         "LIVE": "Yayında",
-        "CLOSING_WINDOW": "Kapanış penceresi",
+        "CLOSING_WINDOW": "Yakında kapanıyor",
         "EXTENDED": "Uzatıldı",
         "SUSPENDED": "Askıya alındı",
         "CANCELED": "İptal edildi",
@@ -3742,7 +3827,8 @@
         "support": "Desteği aç",
         "accounts": "Hesapları aç",
         "analytics": "Ayrıntılı analitik"
-      }
+      },
+      "nowHeading": "Şu an"
     }
   },
   "settings": {

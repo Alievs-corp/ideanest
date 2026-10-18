@@ -9,6 +9,7 @@ import { readPaymentLog } from '../../lib/admin/payments';
 import type { AdminCollection } from '../../lib/admin/curation';
 import type { LedgerView } from '../../lib/admin/ledger';
 import { AuditTrailView } from './AuditTrailView';
+import { ConsoleMembershipProvider } from './ConsoleMembership';
 import { BadgeManager } from './BadgeManager';
 import { LedgerExplorer } from './LedgerExplorer';
 import { PaymentLogView } from './PaymentLogView';
@@ -224,7 +225,13 @@ describe('the audit trail', () => {
   });
 
   it('says an empty trail is empty rather than broken', async () => {
+    const user = userEvent.setup();
     render(<AuditTrailView copy={AUDIT} />);
+    await screen.findByRole('button', { name: 'Everything' });
+
+    // Reads are hidden when the screen opens, and an empty page under that is "nothing
+    // matches"; with everything shown it is a statement about the platform.
+    await user.click(screen.getByRole('switch', { name: AUDIT.hideReads }));
 
     expect(await screen.findByText('Nothing has been recorded yet')).toBeInTheDocument();
   });
@@ -270,7 +277,22 @@ describe('the audit trail', () => {
   });
 
   it('offers the range and the actor as controls, which it never did before #404', async () => {
-    render(<AuditTrailView copy={AUDIT} />);
+    render(
+      <ConsoleMembershipProvider
+        given={{
+          status: 'ready',
+          membership: {
+            accountId: '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0',
+            staff: true,
+            bootstrapped: false,
+            roles: [],
+            capabilities: ['VIEW_AUDIT', 'ADMINISTER_ACCOUNTS'],
+          },
+        }}
+      >
+        <AuditTrailView copy={AUDIT} />
+      </ConsoleMembershipProvider>,
+    );
     await screen.findByRole('button', { name: 'Everything' });
 
     /*

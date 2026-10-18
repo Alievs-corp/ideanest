@@ -4,10 +4,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Which of the four questions the trail is being asked, and over which stretch of time —
- * AD-14, #314 and #404.
+ * Which question the trail is being asked, over which stretch of time, and whether the routine
+ * screen reads are left out — AD-14, #314 and #404.
  *
- * <p><strong>Four shapes rather than a bag of optional predicates, because the table has
+ * <p><strong>A few shapes rather than a bag of optional predicates, because the table has
  * four indexes and no others.</strong> V21 gives {@code audit_logs} an index on
  * {@code (occurred_at DESC)}, one on {@code (actor_id, occurred_at DESC)}, one on
  * {@code (entity_type, entity_id, occurred_at DESC)} and a partial one on
@@ -54,20 +54,27 @@ import java.util.UUID;
  * @param entityId one thing, and only meaningful with {@link #entityType()}: identifiers do
  *     not collide across kinds, but the index leads on the type and an entity id alone would
  *     not use it. {@link #normalised()} drops it rather than pretending
- * @param actorId one account, which answers "what did this member of staff do". Not combined
- *     with the entity filter, because no index serves both and choosing one silently would
- *     be answering a different question from the one asked
+ * @param actorId one account, which answers "what did this member of staff do". Combines with
+ *     a kind or an entity: the actor index finds that person's rows and the kind is filtered
+ *     among them, which for any one person is a short list. It used to be dropped whenever a
+ *     kind was set, so "what did this person do to campaigns" answered "what has anybody done
+ *     to campaigns" under a chip that still showed the person's name
  * @param from the earliest instant to include, or null for the beginning of the table.
  *     Inclusive, because a reader who asks for Tuesday means from midnight
  * @param to the first instant to exclude, or null for the end. <strong>Exclusive</strong>,
  *     so that "Tuesday" is {@code [Tuesday 00:00, Wednesday 00:00)} and two adjacent days
  *     partition the rows between them instead of both claiming midnight. A caller that
  *     computes the second bound from a chosen day never has to think about a boundary row
+ * @param hideReads leave out the {@linkplain AuditAction#isRoutineRead routine screen reads}.
+ *     Off unless asked for, so a caller that predates it reads what it always read; the
+ *     console's trail asks for it by default, because otherwise its first page is the reader's
+ *     own reads of the trail
  */
-public record AuditTrailFilter(String entityType, UUID entityId, UUID actorId, Instant from, Instant to) {
+public record AuditTrailFilter(
+        String entityType, UUID entityId, UUID actorId, Instant from, Instant to, boolean hideReads) {
 
     /** The whole table, newest first. */
-    public static final AuditTrailFilter EVERYTHING = new AuditTrailFilter(null, null, null, null, null);
+    public static final AuditTrailFilter EVERYTHING = new AuditTrailFilter(null, null, null, null, null, false);
 
     /**
      * The lower end of the column's useful range, for a read with no {@link #from()}.
@@ -103,26 +110,23 @@ public record AuditTrailFilter(String entityType, UUID entityId, UUID actorId, I
     }
 
     /**
-     * The filter this actually is, with the combinations no index serves resolved.
+     * The filter this actually is: a blank kind is no kind, and an entity id without a kind is
+     * dropped, because the entity index leads on the kind and an id alone would not use it.
+     * The echoed filter says so.
      *
-     * <p>Resolved here rather than refused with a 400. A client that sends both an actor and
-     * an entity has asked a question this release cannot answer efficiently; answering the
-     * narrower half of it — the entity — and saying so in the echoed filter is more useful
-     * than a refusal, and it is visible, which a silent drop would not be.
-     *
-     * <p><strong>The range survives every branch</strong>, because it composes with all four
-     * shapes rather than competing with them: it is the trailing column of each of the four
-     * indexes. An inverted range — {@code to} at or before {@code from} — is left exactly as
+     * <p><strong>The actor, the range and {@link #hideReads} survive every branch.</strong> The
+     * range is the trailing column of each of the four indexes; the actor is the leading column
+     * of one of them, and a kind is a filter among that actor's rows. An inverted range — {@code to} at or before {@code from} — is left exactly as
      * it was sent and matches nothing, which is the honest answer to a question that asks
      * for the rows between Friday and Tuesday.
      */
     public AuditTrailFilter normalised() {
         String type = blankToNull(entityType);
         if (type != null) {
-            return new AuditTrailFilter(type, entityId, null, from, to);
+            return new AuditTrailFilter(type, entityId, actorId, from, to, hideReads);
         }
         // An entity id with no kind cannot use the index it belongs to; see the record's note.
-        return new AuditTrailFilter(null, null, actorId, from, to);
+        return new AuditTrailFilter(null, null, actorId, from, to, hideReads);
     }
 
     /** Whether this filter narrows to one thing rather than to a kind of thing. */

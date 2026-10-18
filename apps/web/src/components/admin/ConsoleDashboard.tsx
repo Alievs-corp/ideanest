@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useRouter } from '../../i18n/navigation';
 import {
   PERIOD_PRESETS,
+  isNowFigure,
   readDashboard,
   waitedFor,
   windowFor,
@@ -13,13 +14,18 @@ import {
   type DashboardSectionData,
   type PeriodPreset,
 } from '../../lib/admin/dashboard';
+import { calendarDate } from '../../lib/admin/console-dates';
+import { formatCount, formatPercent } from '../../lib/admin/console-numbers';
 import { mayOpenConsoleLink } from '../../lib/admin/navigation';
+import { refusalWords } from '../../lib/admin/refusal-words';
 import type { StaffCapability } from '../../lib/admin/staff';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import type { Locale } from '../../lib/i18n/locale';
 import { CAMPAIGN_STATES, type ConsoleDashboardCopy } from '../../lib/i18n/admin/dashboard-copy';
 import { formatMoney } from '@ideanest/money/format';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { ConsoleColumnChart } from './ConsoleColumnChart';
+import { FigureGrid, FigureTile, NoFigure } from './ConsoleFigures';
 import { useConsoleMembership } from './ConsoleMembership';
 import { useConsoleResource } from './useConsoleResource';
 
@@ -40,6 +46,13 @@ import { useConsoleResource } from './useConsoleResource';
  * an empty page, and this one sends them on to their own statistics screen, where the figures are
  * scaled to their share and say so. The real platform figures never reach them through this page.
  *
+ * <h2>The period, and now</h2>
+ *
+ * <p>The period buttons move the money, the campaigns created and the accounts opened. They do not
+ * move how many campaigns are running or how many reports are open: those are counts of this
+ * moment. Each card draws its period figures first and its present-moment figures under "Now", and
+ * the standfirst says which is which — it used to claim every figure followed the period.
+ *
  * <h2>One card failing is one card</h2>
  *
  * <p>A section the service could not read arrives as `UNAVAILABLE` and says so in place; the rest
@@ -55,8 +68,8 @@ import { useConsoleResource } from './useConsoleResource';
  *
  * <h2>Figures are read, not computed</h2>
  *
- * <p>Every value is a decimal string from the service. Money goes through `formatMoney`, counts
- * are grouped for reading. The trend's total is added in whole qəpik by `chart-series.ts`, never
+ * <p>Every value is a decimal string from the service. Money goes through `formatMoney`, counts and
+ * the rate through `console-numbers.ts`, in the reader's language. The trend's total is added in whole qəpik by `chart-series.ts`, never
  * in floating point; the column heights are geometry and are never printed.
  *
  * MOTION: none, like every console screen. `docs/motion-system.md` §5.
@@ -77,10 +90,14 @@ const SECTION_LINKS: Readonly<Record<string, readonly { readonly href: string; r
   accounts: [{ href: '/admin/users', label: 'accounts' }],
 };
 
+const LINK_CLASS =
+  'rounded-lg text-sm text-white/64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+
 export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
   const [preset, setPreset] = useState<PeriodPreset>('month30');
   const { membership } = useConsoleMembership();
   const capabilities = membership?.capabilities ?? null;
+  const locale = useRouteLocale();
 
   const resource = useConsoleResource(
     (signal) => readDashboard(windowFor(preset), signal),
@@ -89,16 +106,24 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
     [preset],
   );
 
-  const page = resource.data;
+  // Only while the read is current. `useConsoleResource` keeps the last answer across a reload, so
+  // a period that is still loading — or failed — would otherwise draw the previous period's
+  // figures under the new period's button, with nothing on the page to say they are stale.
+  const page = resource.status === 'ready' ? resource.data : null;
   const router = useRouter();
-  const sendToStatistics =
-    page !== null && page.sections.length === 0 && (capabilities?.includes('VIEW_PARTNER_STATISTICS') ?? false);
+  const isPartner = capabilities?.includes('VIEW_PARTNER_STATISTICS') ?? false;
+  const sendToStatistics = page !== null && page.sections.length === 0 && isPartner;
 
   // A partner's landing is their own statistics page: the service gave them nothing here, and this
   // is where the figures they are entitled to are kept.
   useEffect(() => {
     if (sendToStatistics) router.replace('/admin/partner-statistics');
   }, [sendToStatistics, router]);
+
+  const refusal =
+    resource.status === 'forbidden' || resource.status === 'signed-out'
+      ? refusalWords(resource.status, resource.capability, copy.subject, copy.refusals)
+      : null;
 
   return (
     <div>
@@ -123,17 +148,17 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
             </button>
           ))}
         </div>
-        <Link
-          href="/admin/modules"
-          className="rounded-lg text-sm text-white/64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
-        >
+        <Link href="/admin/modules" className={LINK_CLASS}>
           {copy.modulesLink}
         </Link>
       </div>
 
       {page !== null && (
         <p className="mt-3 text-xs text-white/48">
-          {fillPlaceholders(copy.windowNote, { from: page.from, to: page.to, zone: page.timeZone })}
+          {fillPlaceholders(copy.windowNote, {
+            from: calendarDate(page.from, locale),
+            to: calendarDate(page.to, locale),
+          })}
         </p>
       )}
 
@@ -145,7 +170,17 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
         </div>
       )}
 
-      {(resource.status === 'failed' || resource.status === 'forbidden' || resource.status === 'signed-out') && (
+      {/* The two refusals in the console's own words: which capability the page wanted, or that the
+          session ended. This was the failure alert with the service's sentence in it, which for
+          these two is empty. No retry: trying again changes neither. */}
+      {refusal !== null && (
+        <div role="alert" className="mt-8 rounded-lg border border-white/16 bg-surface-2 p-4">
+          <p className="text-sm font-medium text-white">{refusal.title}</p>
+          <p className="mt-1 max-w-[68ch] text-sm text-white/64">{refusal.body}</p>
+        </div>
+      )}
+
+      {resource.status === 'failed' && (
         <div role="alert" className="mt-8 rounded-lg border border-white/16 bg-surface-2 p-4">
           <p className="text-sm font-medium text-white">{copy.errorTitle}</p>
           <p className="mt-1 text-sm text-white/64">{resource.error}</p>
@@ -159,7 +194,9 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
         </div>
       )}
 
-      {page !== null && page.sections.length === 0 && !sendToStatistics && (
+      {/* Only once the membership is known: before it is, a partner — who is about to be sent to
+          their statistics — would see "nothing here for your roles" for a moment first. */}
+      {page !== null && page.sections.length === 0 && capabilities !== null && !isPartner && (
         <div className="mt-8 rounded-lg border border-white/8 bg-surface-1 p-5">
           <p className="text-sm font-medium text-white">{copy.emptyTitle}</p>
           <p className="mt-1 max-w-[62ch] text-sm text-white/64">{copy.emptyBody}</p>
@@ -175,6 +212,7 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
               page={page}
               copy={copy}
               capabilities={capabilities}
+              locale={locale}
             />
           ))}
         </div>
@@ -188,17 +226,22 @@ function SectionCard({
   page,
   copy,
   capabilities,
+  locale,
 }: {
   readonly section: DashboardSectionData;
   readonly page: Dashboard;
   readonly copy: ConsoleDashboardCopy;
   readonly capabilities: readonly StaffCapability[] | null;
+  readonly locale: Locale;
 }) {
   const headingId = `dash-${section.key}`;
   const links = (SECTION_LINKS[section.key] ?? []).filter((link) => mayOpenConsoleLink(link.href, capabilities));
   const byKey = new Map(section.figures.map((figure) => [figure.key, figure]));
 
-  const plain = section.figures.filter((figure) => !figure.key.startsWith('state.'));
+  // The period's figures, then this moment's. The period buttons move the first group and not the
+  // second, and the page says which is which rather than claiming every figure follows the period.
+  const inPeriod = section.figures.filter((figure) => !isNowFigure(figure.key));
+  const now = section.figures.filter((figure) => isNowFigure(figure.key) && !figure.key.startsWith('state.'));
   const states = section.figures.filter((figure) => figure.key.startsWith('state.'));
 
   return (
@@ -219,14 +262,12 @@ function SectionCard({
         </div>
       ) : (
         <>
-          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3">
-            {plain.map((figure) => (
-              <FigureTile key={figure.key} figure={figure} copy={copy} />
-            ))}
-          </dl>
-
-          {section.key === 'figures' && byKey.has('otherCurrencyPledges') && Number(byKey.get('otherCurrencyPledges')?.value ?? 0) > 0 && (
-            <p className="mt-3 text-xs text-white/48">{copy.otherCurrencyNote}</p>
+          {inPeriod.length > 0 && (
+            <FigureGrid className="mt-3">
+              {inPeriod.map((figure) => (
+                <Figure key={figure.key} figure={figure} copy={copy} locale={locale} />
+              ))}
+            </FigureGrid>
           )}
 
           {section.series.length > 0 && (
@@ -238,7 +279,19 @@ function SectionCard({
             />
           )}
 
-          {states.length > 0 && <ByState states={states} copy={copy} />}
+          {(now.length > 0 || hasAnyState(states)) && (
+            <div className={inPeriod.length > 0 ? 'mt-6' : 'mt-3'}>
+              <h3 className="text-sm font-medium text-white">{copy.nowHeading}</h3>
+              {now.length > 0 && (
+                <FigureGrid className="mt-2">
+                  {now.map((figure) => (
+                    <Figure key={figure.key} figure={figure} copy={copy} locale={locale} />
+                  ))}
+                </FigureGrid>
+              )}
+              <ByState states={states} copy={copy} locale={locale} />
+            </div>
+          )}
         </>
       )}
 
@@ -246,10 +299,7 @@ function SectionCard({
         <ul className="mt-4 flex list-none flex-wrap gap-x-4 gap-y-2">
           {links.map((link) => (
             <li key={link.href}>
-              <Link
-                href={link.href}
-                className="rounded-lg text-sm text-white/64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
-              >
+              <Link href={link.href} className={LINK_CLASS}>
                 {copy.link[link.label] ?? link.label}
               </Link>
             </li>
@@ -260,26 +310,31 @@ function SectionCard({
   );
 }
 
-/** One figure as a term and what it is, with how long the longest wait is for a queue. */
-function FigureTile({ figure, copy }: { readonly figure: DashboardFigure; readonly copy: ConsoleDashboardCopy }) {
+/**
+ * One figure as a term and what it is — with how long the longest wait is for a queue, and, for
+ * the pledges in another currency, that they are not in the total beside them.
+ */
+function Figure({
+  figure,
+  copy,
+  locale,
+}: {
+  readonly figure: DashboardFigure;
+  readonly copy: ConsoleDashboardCopy;
+  readonly locale: Locale;
+}) {
   const waited = figure.since ? waitedFor(figure.since) : null;
   const duration = waited === null ? null : fillPlaceholders(copy[waited.unit], { amount: String(waited.amount) });
+  const present = hasValue(figure);
+
+  let note: string | null = null;
+  if (duration !== null && present && Number(figure.value) > 0) note = fillPlaceholders(copy.oldest, { duration });
+  if (figure.key === 'otherCurrencyPledges' && present && Number(figure.value) > 0) note = copy.otherCurrencyNote;
 
   return (
-    <div>
-      <dt className="text-xs text-white/48">{copy.figure[figure.key] ?? figure.key}</dt>
-      {/* The wait sits inside the description, not beside it: a description list's groups may hold
-          only terms and descriptions, and a paragraph between them fails the rule and confuses a
-          screen reader about which term the age belongs to. */}
-      <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">
-        {hasValue(figure) ? display(figure) : <span className="text-base font-normal text-white/48">{copy.noSuccessRate}</span>}
-        {duration !== null && hasValue(figure) && Number(figure.value) > 0 && (
-          <span className="mt-1 block text-xs font-normal text-white/48">
-            {fillPlaceholders(copy.oldest, { duration })}
-          </span>
-        )}
-      </dd>
-    </div>
+    <FigureTile term={copy.figure[figure.key] ?? figure.key} note={note}>
+      {present ? display(figure, locale) : <NoFigure>{copy.noSuccessRate}</NoFigure>}
+    </FigureTile>
   );
 }
 
@@ -291,12 +346,12 @@ function hasValue(figure: DashboardFigure): boolean {
   return figure.value !== null && figure.value !== undefined && figure.value !== '';
 }
 
-/** A figure's value for reading: money formatted, a ratio with its sign, a count grouped. */
-function display(figure: DashboardFigure): string {
+/** A figure's value for reading, in the reader's language: money formatted, a rate, a count grouped. */
+function display(figure: DashboardFigure, locale: Locale): string {
   const value = figure.value ?? '';
   if (figure.kind === 'MONEY') return formatMoney({ amount: value, currency: figure.currency ?? '' });
-  if (figure.kind === 'RATIO') return `${value}%`;
-  return value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (figure.kind === 'RATIO') return formatPercent(value, locale);
+  return formatCount(value, locale);
 }
 
 /**
@@ -338,25 +393,35 @@ function Trend({
   );
 }
 
-/** Every state that has something in it, in the order a campaign moves through them. */
+function hasAnyState(states: readonly DashboardFigure[]): boolean {
+  return states.some((figure) => Number(figure.value ?? 0) > 0);
+}
+
+/**
+ * Every state that has something in it, in the order a campaign moves through them. Nothing at all
+ * when none has, rather than a heading over an empty list.
+ */
 function ByState({
   states,
   copy,
+  locale,
 }: {
   readonly states: readonly DashboardFigure[];
   readonly copy: ConsoleDashboardCopy;
+  readonly locale: Locale;
 }) {
   const counts = new Map(states.map((figure) => [figure.key.slice('state.'.length), figure.value ?? '0']));
   const present = CAMPAIGN_STATES.filter((state) => Number(counts.get(state) ?? 0) > 0);
+  if (present.length === 0) return null;
 
   return (
     <div className="mt-5">
-      <h3 className="text-sm font-medium text-white">{copy.byStateHeading}</h3>
-      <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+      <h4 className="text-sm text-white/64">{copy.byStateHeading}</h4>
+      <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 min-[420px]:grid-cols-2 sm:grid-cols-3">
         {present.map((state) => (
           <div key={state} className="flex items-baseline justify-between gap-2 border-b border-white/6 pb-1">
             <dt className="text-sm text-white/64">{copy.state[state]}</dt>
-            <dd className="text-sm tabular-nums text-white">{counts.get(state)}</dd>
+            <dd className="text-sm tabular-nums text-white">{formatCount(counts.get(state) ?? '0', locale)}</dd>
           </div>
         ))}
       </dl>

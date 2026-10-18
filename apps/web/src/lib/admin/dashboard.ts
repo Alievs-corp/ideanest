@@ -1,5 +1,8 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
+import { addDays, BAKU_ZONE, bakuToday } from './baku-calendar';
+
+export { bakuToday } from './baku-calendar';
 
 /**
  * The console's front page — #222.
@@ -84,29 +87,29 @@ export type PeriodPreset = 'today' | 'week' | 'month30' | 'thisMonth';
 export const PERIOD_PRESETS: readonly PeriodPreset[] = ['today', 'week', 'month30', 'thisMonth'];
 
 /** The calendar the platform's days are in. The service's own, and the one a bank statement is dated in. */
-export const DASHBOARD_ZONE = 'Asia/Baku';
+export const DASHBOARD_ZONE = BAKU_ZONE;
 
 /**
- * Today's date in Baku as `YYYY-MM-DD`, from the browser's clock.
+ * The figures that describe <strong>now</strong> rather than the chosen period.
  *
- * <p>`Intl` with an explicit zone rather than `new Date().toISOString()`, which is UTC: for four
- * hours a night Baku is already on the next day, and a "today" that read the wrong one would ask
- * for yesterday's window.
+ * <p>The page's period buttons change the money, the campaigns created and the accounts opened.
+ * They do not change how many campaigns are running or how many reports are open — those are
+ * counts of this moment — and a page that drew both under one sentence saying every figure
+ * followed the period told the reader something false about half of them. The page groups these
+ * under their own heading. A `state.` figure is always one of them.
  */
-export function bakuToday(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: DASHBOARD_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
-}
+export const NOW_FIGURES: ReadonlySet<string> = new Set([
+  'running',
+  'awaitingModeration',
+  'awaitingLaunch',
+  'changesRequested',
+  'openReports',
+  'openTickets',
+]);
 
-/** Adds whole days to a `YYYY-MM-DD` date, in calendar days and not in milliseconds of a zone. */
-function addDays(date: string, days: number): string {
-  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
-  const moved = new Date(Date.UTC(year, month - 1, day + days));
-  return moved.toISOString().slice(0, 10);
+/** Whether a figure counts this moment rather than the chosen period. */
+export function isNowFigure(key: string): boolean {
+  return NOW_FIGURES.has(key) || key.startsWith('state.');
 }
 
 /**

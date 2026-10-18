@@ -86,9 +86,9 @@ public record PlatformAnalyticsResponse(
     }
 
     /**
-     * How campaigns that closed in the window ended.
+     * How campaigns decided in the window ended.
      *
-     * @param successRate null when nothing closed. Null rather than zero, because "no
+     * @param successRate null when nothing was decided. Null rather than zero, because "no
      *     campaigns closed" and "none of them succeeded" are different facts and a zero on
      *     a dashboard reads as the second
      */

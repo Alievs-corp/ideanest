@@ -23,7 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
  * nouns. Two routes because they are two different authorities over two different figures —
  * a creator may see their own volume and may not see everybody's.
  *
- * <p>Needs {@code VIEW_ANALYTICS}, checked in the service.
+ * <p>Needs {@code VIEW_FINANCE}, checked in the service, and every read is recorded as
+ * {@code analytics.read}.
  *
  * <p><strong>{@code no-store}</strong>: these are the platform's revenue figures.
  */
@@ -52,6 +53,6 @@ public class PlatformAnalyticsController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(PlatformAnalyticsResponse.of(
-                        analytics.dashboard(UUID.fromString(accessToken.getSubject()), from, to)));
+                        analytics.read(UUID.fromString(accessToken.getSubject()), from, to)));
     }
 }

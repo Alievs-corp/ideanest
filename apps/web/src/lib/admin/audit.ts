@@ -71,6 +71,8 @@ export interface AuditTrailPage {
   from?: string | null;
   /** The first instant excluded, echoed, absent when unbounded. */
   to?: string | null;
+  /** Whether the routine screen reads were left out, echoed. */
+  hideReads?: boolean;
   entries: AuditEntry[];
   /**
    * Absent on the last page. Opaque, and hand it back as `after` unchanged.
@@ -112,6 +114,10 @@ export const TRAIL_PAGE_SIZE = 25;
  * <p>An entity identifier without a kind is <strong>dropped by the service</strong> rather
  * than applied — the index leads on the kind — and the response says so by echoing an empty
  * filter. This client sends what it is given and reads back what was used.
+ *
+ * <p>An actor <strong>combines</strong> with a kind (and with one entity): "what did this person
+ * do to campaigns". It used to be dropped whenever a kind was set, under a filter that still
+ * named the person.
  */
 export interface TrailRequest {
   entityType?: string | null;
@@ -128,6 +134,12 @@ export interface TrailRequest {
   /** The previous page's `nextCursor`. */
   after?: string | null;
   limit?: number;
+  /**
+   * Leave out the routine screen reads — the trail's own reads, the front page, the figure
+   * screens, the payment log, the ledger, the risk queue, an account search. Opening one person's
+   * private record (an identity document, a signed agreement, a bank account) is never hidden.
+   */
+  hideReads?: boolean;
   signal?: AbortSignal;
 }
 
@@ -171,6 +183,7 @@ export function trailQuery(request: TrailRequest): string {
   if (request.from != null && request.from !== '') params.set('from', request.from);
   if (request.to != null && request.to !== '') params.set('to', request.to);
   if (request.after != null && request.after !== '') params.set('after', request.after);
+  if (request.hideReads === true) params.set('hideReads', 'true');
   return params.toString();
 }
 
@@ -194,18 +207,47 @@ export async function readTrail(request: TrailRequest = {}): Promise<AuditTrailP
  *
  * <p><strong>Values only since #324.</strong> This used to be a list of pairs carrying the
  * English word for each kind, which put a translatable sentence in a module a server renders
- * and a client imports. The words are `admin.screens.audit.entity` now, keyed by these same
- * values, and this array stays the one place that says which kinds exist.
+ * and a client imports. The words are `admin.screens.audit.entity` now (the chip's plural) and
+ * `entityOne` (the row's singular), keyed by these same values, and this array stays the one
+ * place that says which kinds exist.
+ *
+ * <p>Every kind `AuditAction.java` writes, in the order a reader looks for them. It held seven,
+ * one of which (`collection`) nothing writes, and left out the money: payouts, refunds,
+ * chargebacks and plan payments could not be narrowed to at all. `audit-catalogue.test.ts` reads
+ * the enum and fails when a kind it writes is missing here or from the catalogue.
  */
 export const AUDIT_ENTITY_TYPES: readonly string[] = Object.freeze([
   'project',
   'account',
   'report',
+  'payout',
+  'refund',
+  'dispute',
+  'subscription',
+  'subscription_charge',
+  'subscription_plan',
+  'fee_schedule',
+  'legal_document',
+  'support_ticket',
   'collaborator',
   'session',
-  'collection',
+  'email_template',
+  'feature_flag',
+  'taxonomy',
   'maintenance_window',
+  'user',
 ]);
+
+/** What an actor was acting as, for the labels. */
+export const AUDIT_ACTOR_TYPES: readonly AuditActorType[] = Object.freeze(['USER', 'MODERATOR', 'SYSTEM']);
+
+/**
+ * Whether a row is about the account that wrote it — a read, a search, a change to one's own
+ * settings. The row names the person once rather than twice.
+ */
+export function isAboutItsActor(entry: AuditEntry): boolean {
+  return entry.entityType === 'account' && entry.actorId != null && entry.actorId === entry.entityId;
+}
 
 /**
  * The action table, in the shape the catalogue has to hold it: the group, then the rest.
