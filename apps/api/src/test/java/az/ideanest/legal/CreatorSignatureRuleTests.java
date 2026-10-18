@@ -36,7 +36,7 @@ class CreatorSignatureRuleTests {
     @Test
     @DisplayName("a whole LegalProperties with nothing configured is the same, so a missing block is not a demand")
     void missingConfigurationIsNotADemand() {
-        assertThat(new LegalProperties(null).signature().isRequiredFor(LARGE, true)).isFalse();
+        assertThat(new LegalProperties(null, null).signature().isRequiredFor(LARGE, true)).isFalse();
     }
 
     @Test

@@ -710,6 +710,17 @@ public enum AuditAction {
     LEGAL_DOCUMENT_ACTIVATED("legal.document_activated", "legal_document"),
 
     /**
+     * An administrator wrote or rewrote the draft of a legal document's next version in one
+     * language.
+     *
+     * <p>Recorded although nothing governs yet, because a draft is the text a publication will
+     * make binding with one more click, and "who wrote this paragraph of the creator agreement"
+     * is asked about the draft, not about the click. The entity is the draft row; the detail
+     * carries the kind, the language, the version and the hash of the text as saved.
+     */
+    LEGAL_DOCUMENT_DRAFTED("legal.document_drafted", "legal_document"),
+
+    /**
      * A member of staff read what an account has agreed to, and when.
      *
      * <p>Audited because it is a read of somebody's own record rather than of the

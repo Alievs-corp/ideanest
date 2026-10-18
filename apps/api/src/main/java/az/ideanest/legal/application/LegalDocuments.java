@@ -13,10 +13,13 @@ import az.ideanest.shared.ReaderLocale;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -81,6 +84,21 @@ import org.springframework.transaction.annotation.Transactional;
  * place the rule is stated, which is the absence of an entry point. A correction is
  * {@link #draft} followed by {@link #publish}, and the previous version stays readable
  * because somebody who accepted it is entitled to read what they accepted.
+ *
+ * <h2>A future date is a date the platform keeps</h2>
+ *
+ * <p>A version published for next month governs from next month, and three things follow
+ * from it here: the version an administrator chose to show stays shown until the new one
+ * takes effect, rather than being dropped the moment the future version is published; a
+ * version cannot be chosen before its date; and {@link #announceTakingEffect} — run every
+ * minute by {@code LegalTakingEffectJob} — announces the version on its date, so the web's
+ * cached pages change then rather than up to an hour later.
+ *
+ * <h2>One writer per document at a time</h2>
+ *
+ * <p>Every write takes {@code LegalDocumentRepository.lockForWriting} on its kind first, so
+ * two administrators publishing at once get one publication and one
+ * {@code NOTHING_TO_PUBLISH}, rather than one publication and a 500 from V65's trigger.
  */
 @Service
 public class LegalDocuments {
@@ -120,9 +138,12 @@ public class LegalDocuments {
     @Transactional(readOnly = true)
     public List<LegalDocument> inForce(DocumentKind kind) {
         Instant now = clock.instant();
-        Optional<Integer> selected = selections.selectedVersion(kind);
-        if (selected.isPresent()) {
-            List<LegalDocument> chosen = documents.publishedVersion(kind, selected.get()).stream()
+        Optional<LegalDocumentSelections.Selection> selected = selections.selection(kind);
+        // A choice holds until a version takes effect after it was made. Publishing for a
+        // future date leaves the choice in place, so this is where it stops applying on that
+        // date — read-side, so it is right even on a minute the job has not run yet.
+        if (selected.isPresent() && !documents.tookEffectBetween(kind, selected.get().selectedAt(), now)) {
+            List<LegalDocument> chosen = documents.publishedVersion(kind, selected.get().version()).stream()
                     .filter(document -> !document.getEffectiveFrom().isAfter(now))
                     .toList();
             if (!chosen.isEmpty()) {
@@ -188,20 +209,26 @@ public class LegalDocuments {
      * Shows readers an already published version of a document instead of the latest one.
      *
      * <p>Nothing is copied or edited: the chosen version's rows stay exactly as published,
-     * and the selection only decides which of them {@link #inForce} answers with. Publishing
-     * a new version clears it, so a publication always takes over.
+     * and the selection only decides which of them {@link #inForce} answers with. A version
+     * that takes effect after the choice takes over from it, so a publication always does —
+     * on its date, not before.
      *
      * @throws DocumentNotPublishedException when no such version was published
+     * @throws VersionNotYetEffectiveException when the version's date has not arrived
      */
     @Transactional
     public List<LegalDocument> activate(UUID staffId, DocumentKind kind, int version) {
         staff.requireCapability(staffId, StaffCapability.PUBLISH_LEGAL_DOCUMENT);
+        documents.lockForWriting(lockKey(kind));
 
         List<LegalDocument> rows = documents.publishedVersion(kind, version);
         LegalDocument governing = rows.stream()
                 .filter(document -> document.getLocale().equals(ReaderLocale.PRIMARY))
                 .findFirst()
                 .orElseThrow(() -> new DocumentNotPublishedException(kind));
+        if (governing.getEffectiveFrom().isAfter(clock.instant())) {
+            throw new VersionNotYetEffectiveException(kind, version, governing.getEffectiveFrom());
+        }
 
         selections.select(kind, governing.getId(), staffId, clock.instant().truncatedTo(ChronoUnit.MICROS));
 
@@ -251,13 +278,14 @@ public class LegalDocuments {
     @Transactional
     public LegalDocument draft(UUID staffId, DocumentKind kind, String locale, String title, String body) {
         staff.requireCapability(staffId, StaffCapability.PUBLISH_LEGAL_DOCUMENT);
+        documents.lockForWriting(lockKey(kind));
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Optional<LegalDocument> open = documents.draftOf(kind, locale);
         if (open.isPresent()) {
             LegalDocument existing = open.get();
             existing.rewrite(title, body, now);
-            return documents.save(existing);
+            return drafted(staffId, documents.save(existing));
         }
 
         // A translation started after the Azerbaijani draft joins that draft's version
@@ -276,7 +304,25 @@ public class LegalDocuments {
 
         LegalDocument drafted =
                 LegalDocument.draft(Identifiers.newIdentifier(), kind, locale, version, title, body, staffId, now);
-        return documents.save(drafted);
+        return drafted(staffId, documents.save(drafted));
+    }
+
+    /**
+     * Records a saved draft.
+     *
+     * <p>A draft governs nobody, and it is still recorded: it is the text the next click makes
+     * binding, and "who wrote this paragraph" is a question about the draft. The hash pins which
+     * text this entry is about, since the row itself is rewritten by the next save.
+     */
+    private LegalDocument drafted(UUID staffId, LegalDocument saved) {
+        audit.record(
+                AuditAction.LEGAL_DOCUMENT_DRAFTED,
+                saved.getId(),
+                AuditActor.user(staffId),
+                AuditOutcome.SUCCEEDED,
+                "%s version %d in %s drafted, hash %s"
+                        .formatted(saved.getKind(), saved.getVersion(), saved.getLocale(), saved.getContentHash()));
+        return saved;
     }
 
     /**
@@ -299,6 +345,7 @@ public class LegalDocuments {
     @Transactional
     public List<LegalDocument> publish(UUID staffId, DocumentKind kind, Instant effectiveFrom) {
         staff.requireCapability(staffId, StaffCapability.PUBLISH_LEGAL_DOCUMENT);
+        documents.lockForWriting(lockKey(kind));
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Instant effective = effectiveFrom == null ? now : effectiveFrom.truncatedTo(ChronoUnit.MICROS);
@@ -320,7 +367,12 @@ public class LegalDocuments {
             draft.publish(staffId, effective, now);
         }
         List<LegalDocument> saved = documents.saveAll(drafts);
-        selections.clear(kind);
+        // Only when it governs from now. A version dated for next month leaves the version an
+        // administrator chose on the site until then; inForce stops honouring the choice on
+        // the date, and announceTakingEffect clears it.
+        if (!effective.isAfter(now)) {
+            selections.clear(kind);
+        }
 
         // The governing row is the entity, because that is the text that governs and the row
         // an acceptance names. The hash is in the detail so that "is the document in the
@@ -348,5 +400,60 @@ public class LegalDocuments {
         events.publishEvent(new LegalDocumentInForceChanged(kind, governing.getVersion()));
 
         return saved;
+    }
+
+    /**
+     * Announces every version whose effective date passed in the last {@code lookback}.
+     *
+     * <p>The other half of publishing for a future date. Publishing drops the web's cached
+     * legal pages at the moment of publication, when the new version does not govern yet; on
+     * the day it starts to, nothing else would, and the site would keep the previous text for up
+     * to the web's hour. So {@code LegalTakingEffectJob} calls this every minute, and an
+     * administrator's earlier choice of version is cleared here too, now that a later version
+     * has taken over from it.
+     *
+     * <p>Stateless on purpose: the window is longer than the interval between passes, so a
+     * pass that ran on another replica or was missed to a restart is covered by the next one.
+     * The cost is announcing one change a few times, which drops a cache that is already fresh.
+     *
+     * @return how many versions were announced
+     */
+    @Transactional
+    public int announceTakingEffect(Instant now, Duration lookback) {
+        List<LegalDocument> arrived = documents.tookEffectBetween(ReaderLocale.PRIMARY, now.minus(lookback), now);
+
+        Map<DocumentKind, LegalDocument> latest = new LinkedHashMap<>();
+        for (LegalDocument governing : arrived) {
+            latest.merge(governing.getKind(), governing, (left, right) ->
+                    right.getVersion() > left.getVersion() ? right : left);
+        }
+
+        for (LegalDocument governing : latest.values()) {
+            DocumentKind kind = governing.getKind();
+            selections.selection(kind)
+                    .filter(selected -> selected.selectedAt().isBefore(governing.getEffectiveFrom()))
+                    .ifPresent(selected -> selections.clear(kind));
+            events.publishEvent(new LegalDocumentInForceChanged(kind, governing.getVersion()));
+        }
+
+        if (!latest.isEmpty()) {
+            log.info("Announced {} legal version(s) whose effective date arrived", latest.size());
+        }
+        return latest.size();
+    }
+
+    /**
+     * The soonest moment a published version starts to govern, if one is waiting.
+     *
+     * <p>{@code LegalDocumentController} shortens its cache directive to it, so no cache
+     * between the service and a reader holds the previous version past that moment.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Instant> nextTakingEffect() {
+        return Optional.ofNullable(documents.nextTakingEffect(clock.instant()));
+    }
+
+    private static String lockKey(DocumentKind kind) {
+        return "legal_documents:" + kind.name();
     }
 }

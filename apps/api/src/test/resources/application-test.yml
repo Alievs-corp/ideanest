@@ -122,6 +122,10 @@ ideanest:
       # a line so that both sides are tested.
       goal-ceiling: 5000.00
       required-for-legal-entity: true
+    in-force:
+      # Disabled like every schedule here. LegalTakingEffectTests drives the pass
+      # directly with the instant to judge against.
+      schedule: "-"
 
   staff:
     # One address, so the fail-closed default is exercised by every other

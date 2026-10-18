@@ -4,7 +4,9 @@ import az.ideanest.legal.application.DocumentNotPublishedException;
 import az.ideanest.legal.application.LegalDocuments;
 import az.ideanest.legal.domain.DocumentKind;
 import az.ideanest.shared.ReaderLocale;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +36,11 @@ import org.springframework.web.bind.annotation.RestController;
  * this morning should be what somebody accepting this afternoon is shown — and an hour bounds
  * that without making the pages dynamic. The gates check the database on every submission and
  * every confirmation, so a stale page can never produce a stale acceptance.
+ *
+ * <p><strong>Never past a version's effective date.</strong> When a published version is waiting
+ * for its date, the directive is shortened to end at that moment, so a cache between the service
+ * and a reader cannot keep serving the previous text after the new one starts to govern. The web's
+ * own cache is dropped on the date by {@code LegalTakingEffectJob}.
  */
 @RestController
 public class LegalDocumentController {
@@ -45,9 +52,30 @@ public class LegalDocumentController {
     private static final Duration ARCHIVE_CACHE_FOR = Duration.ofDays(30);
 
     private final LegalDocuments documents;
+    private final Clock clock;
 
-    public LegalDocumentController(LegalDocuments documents) {
+    public LegalDocumentController(LegalDocuments documents, Clock clock) {
         this.documents = documents;
+        this.clock = clock;
+    }
+
+    /**
+     * The hour, or less when a version takes effect sooner.
+     *
+     * <p>Rounded up to the next second and never below one, so a date a few milliseconds away
+     * is not a directive of zero that tells a cache to keep nothing at all.
+     */
+    private CacheControl inForceCaching() {
+        Duration window = CACHE_FOR;
+        java.util.Optional<Instant> next = documents.nextTakingEffect();
+        if (next.isPresent()) {
+            Duration until = Duration.between(clock.instant(), next.get());
+            long seconds = Math.max(1, (until.toMillis() + 999) / 1000);
+            if (seconds < window.toSeconds()) {
+                window = Duration.ofSeconds(seconds);
+            }
+        }
+        return CacheControl.maxAge(window).cachePublic();
     }
 
     /**
@@ -63,7 +91,7 @@ public class LegalDocumentController {
             @RequestParam(name = "locale", required = false) String locale) {
 
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(CACHE_FOR).cachePublic())
+                .cacheControl(inForceCaching())
                 .body(LegalResponses.Catalogue.of(documents.inForce(readerLocale(locale))));
     }
 
@@ -82,7 +110,7 @@ public class LegalDocumentController {
         return documents
                 .inForce(kind, readerLocale(locale))
                 .map(document -> ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(CACHE_FOR).cachePublic())
+                        .cacheControl(inForceCaching())
                         .body(LegalResponses.Document.of(document)))
                 .orElseThrow(() -> new DocumentNotPublishedException(kind));
     }
