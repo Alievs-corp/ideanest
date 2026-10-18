@@ -191,30 +191,63 @@ export function healthDashboardCopyFrom(
   };
 }
 
-/** AD-12, the feature flags. */
+/**
+ * AD-12, the feature flags.
+ *
+ * <p>`reach` is keyed by `FlagReach` from `lib/admin/flags.ts`: one sentence for each of the
+ * five things a flag can reach, so the screen never prints "On" beside a flag that reaches
+ * nobody. `picker` is the account directory's own picker, labelled for this screen.
+ */
 export interface FlagConsoleCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly heading: string;
   readonly loadingList: string;
+  readonly notReadTitle: string;
+  readonly notReadBody: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
   readonly on: string;
   readonly off: string;
   readonly rollout: string;
-  /** Carries `{count}`. */
-  readonly alwaysIn: string;
-  /** Carries `{date}`. */
+  /** Carries `{flag}`. The rollout buttons' group name. */
+  readonly rolloutGroup: string;
+  /** Carries `{percent}`. */
+  readonly rolloutNow: string;
+  /** Keyed by `FlagReach`. `some` carries `{percent}`. */
+  readonly reach: Readonly<Record<string, string>>;
+  readonly accountsHeading: string;
+  readonly accountsNone: string;
+  readonly accountsReadOnly: string;
+  readonly accountsFull: string;
+  readonly removeAccount: string;
+  /** Carries `{name}`, `{flag}`. */
+  readonly removeAccountLabel: string;
+  readonly editDescription: string;
+  readonly saveDescription: string;
+  /** Carries `{date}`, `{name}`. */
   readonly lastChanged: string;
-  readonly offForEverybody: string;
+  /** Carries `{flag}`. */
+  readonly confirmLabel: string;
+  /** Carries `{flag}`, `{reach}`. */
+  readonly confirmWiden: string;
+  readonly confirmYes: string;
+  readonly keep: string;
   readonly addHeading: string;
   readonly addIntro: string;
   readonly nameLabel: string;
   readonly nameHint: string;
   readonly nameError: string;
   readonly switchesLabel: string;
+  readonly descriptionRequired: string;
+  /** Carries `{flag}`. */
+  readonly created: string;
+  readonly doneTitle: string;
   readonly working: string;
   readonly add: string;
   readonly failedTitle: string;
+  /** Keyed by the service's refusal code. */
+  readonly errors: Readonly<Record<string, string>>;
+  readonly picker: AccountPickerCopy;
 }
 
 export function flagConsoleCopyFrom(
@@ -226,23 +259,43 @@ export function flagConsoleCopyFrom(
     subject: t('screens.flags.subject'),
     heading: t('screens.flags.heading'),
     loadingList: t('screens.flags.loadingList'),
+    notReadTitle: t('screens.flags.notReadTitle'),
+    notReadBody: t('screens.flags.notReadBody'),
     emptyTitle: t('screens.flags.emptyTitle'),
     emptyBody: t('screens.flags.emptyBody'),
     on: t('screens.flags.on'),
     off: t('screens.flags.off'),
     rollout: t('screens.flags.rollout'),
-    alwaysIn: String(t.raw('screens.flags.alwaysIn')),
+    rolloutGroup: String(t.raw('screens.flags.rolloutGroup')),
+    rolloutNow: String(t.raw('screens.flags.rolloutNow')),
+    reach: t.raw('screens.flags.reach') as Readonly<Record<string, string>>,
+    accountsHeading: t('screens.flags.accountsHeading'),
+    accountsNone: t('screens.flags.accountsNone'),
+    accountsReadOnly: t('screens.flags.accountsReadOnly'),
+    accountsFull: t('screens.flags.accountsFull'),
+    removeAccount: t('screens.flags.removeAccount'),
+    removeAccountLabel: String(t.raw('screens.flags.removeAccountLabel')),
+    editDescription: t('screens.flags.editDescription'),
+    saveDescription: t('screens.flags.saveDescription'),
     lastChanged: String(t.raw('screens.flags.lastChanged')),
-    offForEverybody: t('screens.flags.offForEverybody'),
+    confirmLabel: String(t.raw('screens.flags.confirmLabel')),
+    confirmWiden: String(t.raw('screens.flags.confirmWiden')),
+    confirmYes: t('screens.flags.confirmYes'),
+    keep: t('screens.flags.keep'),
     addHeading: t('screens.flags.addHeading'),
     addIntro: t('screens.flags.addIntro'),
     nameLabel: t('screens.flags.nameLabel'),
     nameHint: t('screens.flags.nameHint'),
     nameError: t('screens.flags.nameError'),
     switchesLabel: t('screens.flags.switchesLabel'),
+    descriptionRequired: t('screens.flags.descriptionRequired'),
+    created: String(t.raw('screens.flags.created')),
+    doneTitle: t('screens.flags.doneTitle'),
     working: t('screens.flags.working'),
     add: t('screens.flags.add'),
     failedTitle: t('screens.flags.failedTitle'),
+    errors: t.raw('screens.flags.errors') as Readonly<Record<string, string>>,
+    picker: { ...accountPickerCopyFrom(t, chrome.refusals), label: t('screens.flags.addAccount') },
   };
 }
 
