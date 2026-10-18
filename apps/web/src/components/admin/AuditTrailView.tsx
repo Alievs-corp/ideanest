@@ -328,15 +328,19 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
       <fieldset className="mt-4">
         <legend className="text-sm text-white/64">{copy.narrowLabel}</legend>
 
-        <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-3">
-          {mayPick && (
-            <AccountPicker
-              chosen={actor?.account ?? null}
-              onChoose={(account) => setActor(account === null ? null : { id: account.id, account })}
-              copy={copy.actorPicker}
-              className="min-w-[min(100%,280px)] flex-1"
-            />
-          )}
+        {/* The person and the days are two rows, each with its own hint directly under it: side
+            by side, the picker's hint pushed the date boxes down and the dates' hint landed
+            under the person. */}
+        {mayPick && (
+          <AccountPicker
+            chosen={actor?.account ?? null}
+            onChoose={(account) => setActor(account === null ? null : { id: account.id, account })}
+            copy={copy.actorPicker}
+            className="mt-2 max-w-[560px]"
+          />
+        )}
+
+        <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-3">
 
           {/*
             `type="date"` rather than a text field. The format a person types differs by
@@ -551,6 +555,18 @@ function AuditRow({
             {entry.actorId != null && (
               <EntityName id={entry.actorId} names={names} kind="account" copy={copy.identity} />
             )}
+            {/* Beside the name it narrows to, and as quiet as a link: on a page of twenty-five
+                rows a button on each was the loudest thing on the screen. */}
+            {entry.actorId != null && entry.actorId !== narrowedTo && actorName !== null && (
+              <button
+                type="button"
+                className="rounded text-xs text-white/64 underline decoration-white/24 underline-offset-2 hover:text-white hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                aria-label={fillPlaceholders(copy.byThisPersonLabel, { name: actorName })}
+                onClick={() => onNarrowTo(entry.actorId as string)}
+              >
+                {copy.byThisPerson}
+              </button>
+            )}
           </p>
         </div>
 
@@ -566,37 +582,31 @@ function AuditRow({
         </div>
       </div>
 
-      {entry.actorId != null && entry.actorId !== narrowedTo && actorName !== null && (
-        <Pill
-          variant="ghost"
-          size="sm"
-          className="mt-2"
-          aria-label={fillPlaceholders(copy.byThisPersonLabel, { name: actorName })}
-          onClick={() => onNarrowTo(entry.actorId as string)}
-        >
-          {copy.byThisPerson}
-        </Pill>
-      )}
-
-      {entry.detail != null && entry.detail !== '' && (
+      {/*
+        The service's own note and the correlation identifier, folded together: both are for
+        whoever goes from this row to the logs, and neither is something a reader scans for. The
+        request id is the one thing here that reaches outside the database — the same value is on
+        the request's log lines.
+      */}
+      {(hasText(entry.detail) || hasText(entry.requestId)) && (
         <details className="mt-2 text-sm">
           <summary className="cursor-pointer rounded text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]">
             {copy.technicalNote}
           </summary>
-          <p className="mt-1 whitespace-pre-wrap break-words font-mono text-xs text-white/64">{entry.detail}</p>
+          {hasText(entry.detail) && (
+            <p className="mt-1 whitespace-pre-wrap break-words font-mono text-xs text-white/64">{entry.detail}</p>
+          )}
+          {hasText(entry.requestId) && (
+            <p className="mt-1 break-all font-mono text-xs text-white/48">
+              {fillPlaceholders(copy.requestId, { id: entry.requestId })}
+            </p>
+          )}
         </details>
-      )}
-
-      {/*
-        The correlation identifier, which is the only thing on this row that reaches outside
-        the database: §18.1 stamps the same value on the log lines for the request, so this is
-        what turns "the ban was recorded" into "here is everything that happened while it was".
-      */}
-      {entry.requestId != null && entry.requestId !== '' && (
-        <p className="mt-2 break-all font-mono text-xs text-white/48">
-          {fillPlaceholders(copy.requestId, { id: entry.requestId })}
-        </p>
       )}
     </li>
   );
+}
+
+function hasText(value: string | null | undefined): value is string {
+  return value != null && value !== '';
 }
