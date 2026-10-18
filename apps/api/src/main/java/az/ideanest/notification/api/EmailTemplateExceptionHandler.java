@@ -1,11 +1,15 @@
 package az.ideanest.notification.api;
 
+import az.ideanest.notification.application.MissingTemplatePlaceholderException;
+import az.ideanest.notification.application.TemplateCopyMalformedException;
 import az.ideanest.notification.application.TemplateNotEmailedException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import jakarta.mail.MessagingException;
 import java.net.URI;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -14,15 +18,21 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * What AD-15's two endpoints refuse, as RFC 9457 problem details (§10.4).
+ * What AD-15's endpoints refuse, as RFC 9457 problem details (§10.4).
  *
- * <p>Scoped to {@link EmailTemplateController} rather than added to
+ * <p>Scoped to the two template controllers rather than added to
  * {@code NotificationExceptionHandler}, for that class's own reason: an advice covering
  * refusals only some of its controllers can raise is one that has to be read to rule out.
- * These three are the template endpoints' alone — the inbox cannot fail to reach a relay,
- * and nothing else in this module is staff-only.
+ * These are the template endpoints' alone — the inbox cannot fail to reach a relay, and
+ * nothing else in this module is staff-only.
+ *
+ * <p><strong>One advice for both since the editor learned to preview.</strong> The editor's
+ * preview and test send of unsaved text live on {@code EmailTemplateController} and can be
+ * refused as malformed copy, and the editor's own routes can now be refused for a type with
+ * no email column — so each controller raises the other's refusals, and two advices would be
+ * two copies of each.
  */
-@RestControllerAdvice(assignableTypes = EmailTemplateController.class)
+@RestControllerAdvice(assignableTypes = {EmailTemplateController.class, EmailTemplateEditorController.class})
 public class EmailTemplateExceptionHandler {
 
     /**
@@ -92,6 +102,50 @@ public class EmailTemplateExceptionHandler {
         problem.setTitle("The message could not be sent");
         problem.setDetail("The mail relay did not accept the message.");
         problem.setProperty("code", "MAIL_RELAY_UNAVAILABLE");
+        return problem;
+    }
+
+    /**
+     * 422 when the edited copy drops something the shipped copy carries.
+     *
+     * <p>422 rather than 400: the request is well formed and the body is a perfectly good
+     * sentence. It is refused for what it leaves out, which is a rule about content rather than
+     * shape. The missing indices travel in {@code meta}, in numeric order, so the screen can
+     * point at them.
+     */
+    @ExceptionHandler(MissingTemplatePlaceholderException.class)
+    public ProblemDetail handleMissingPlaceholder(MissingTemplatePlaceholderException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        problem.setType(URI.create("https://ideanest.az/problems/missing-template-placeholder"));
+        problem.setTitle("The copy drops something it has to keep");
+        problem.setDetail("This message carries facts the recipient needs. Keep every placeholder the "
+                + "shipped copy uses.");
+        problem.setProperty("code", "MISSING_TEMPLATE_PLACEHOLDER");
+        problem.setProperty("meta", Map.of("missing", List.copyOf(exception.missing())));
+        return problem;
+    }
+
+    /**
+     * 422 when the edited copy would not render.
+     *
+     * <p>{@code meta.field} says which of the two texts, {@code meta.reason} is
+     * {@code SYNTAX} or {@code UNKNOWN_PLACEHOLDER}, and {@code meta.placeholder} names the
+     * index for the second.
+     */
+    @ExceptionHandler(TemplateCopyMalformedException.class)
+    public ProblemDetail handleMalformed(TemplateCopyMalformedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        problem.setType(URI.create("https://ideanest.az/problems/template-copy-malformed"));
+        problem.setTitle("The copy would not render");
+        problem.setDetail("Braces are only for placeholders such as {2}, and only for facts this message carries.");
+        problem.setProperty("code", "TEMPLATE_COPY_MALFORMED");
+        Map<String, Object> meta = new LinkedHashMap<>();
+        meta.put("field", exception.field());
+        meta.put("reason", exception.reason().name());
+        if (exception.placeholder() != null) {
+            meta.put("placeholder", exception.placeholder());
+        }
+        problem.setProperty("meta", meta);
         return problem;
     }
 }

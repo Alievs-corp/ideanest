@@ -5,22 +5,18 @@ import az.ideanest.audit.AuditActor;
 import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
 import az.ideanest.notification.domain.EmailTemplateVersion;
+import az.ideanest.notification.domain.NotificationChannel;
 import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.notification.infrastructure.EmailTemplateVersionRepository;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
-import java.util.LinkedHashSet;
+import java.time.Clock;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.context.NoSuchMessageException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,54 +44,52 @@ import org.springframework.transaction.annotation.Transactional;
  *       copy's placeholders are extracted and the override must keep every one of them.
  * </ul>
  *
- * <p>That is a narrow answer to a narrow question. It does not settle the larger one —
- * whether a transactional notice should be editable at all — and #315's follow-up can
- * argue that now there is a screen to argue about.
+ * <p>An edit is also refused when it would not render — {@link TemplateCopyMalformedException}
+ * — because the place that discovered an unbalanced brace used to be the sender, on a
+ * background thread, with real mail.
  *
  * <h2>Every edit is a new version</h2>
  *
  * <p>Nothing is updated in place. "What did the notice say in March" is asked when somebody
  * claims they were never told their card had failed, and {@code email_deliveries} records
  * what was sent while this records what it was sent from.
+ *
+ * <h2>Per language</h2>
+ *
+ * <p>Every method takes one of §21.1's four locales and works on that language's override
+ * only. A recipient gets the live override for their language when there is one and the
+ * shipped copy of their language otherwise — {@code TemplateOverrides.localeOf} is the one
+ * rule for which language that is.
  */
 @Service
 public class EmailTemplateEditor {
 
     private static final Logger log = LoggerFactory.getLogger(EmailTemplateEditor.class);
 
-    /** Where {@code messages.properties} keeps this module's copy. Mirrors {@code EmailComposer}. */
-    private static final String PREFIX = "email.";
-
-    /**
-     * A {@code MessageFormat} argument index.
-     *
-     * <p>{@code {0}} and {@code {1,number}} alike — the index is what has to survive an
-     * edit, and the format is what the editor is allowed to change. Anchored on the digits
-     * so that a body writing {@code {0,number,#.##}} still counts as carrying {@code 0}.
-     */
-    private static final Pattern PLACEHOLDER = Pattern.compile("\\{(\\d+)");
-
     private final EmailTemplateVersionRepository versions;
     private final TemplateOverrides overrides;
-    private final MessageSource messages;
+    private final ShippedCopy shipped;
     private final PlatformStaff staff;
     private final AuditLog audit;
+    private final Clock clock;
 
     public EmailTemplateEditor(
             EmailTemplateVersionRepository versions,
             TemplateOverrides overrides,
-            MessageSource messages,
+            ShippedCopy shipped,
             PlatformStaff staff,
-            AuditLog audit) {
+            AuditLog audit,
+            Clock clock) {
         this.versions = versions;
         this.overrides = overrides;
-        this.messages = messages;
+        this.shipped = shipped;
         this.staff = staff;
         this.audit = audit;
+        this.clock = clock;
     }
 
     /**
-     * The shipped copy and the override, side by side.
+     * The shipped copy and the override, side by side, in one language.
      *
      * <p>Both, because an editor that showed only the current text would give somebody no
      * way to see what they had changed it from — and the shipped copy is what an override
@@ -104,16 +98,12 @@ public class EmailTemplateEditor {
     @Transactional(readOnly = true)
     public TemplateDraft read(UUID staffId, NotificationType type, String locale) {
         staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
-
-        String shippedSubject = shipped(type, "subject");
-        String shippedBody = shipped(type, "body");
+        requireEmail(type);
 
         return new TemplateDraft(
                 type,
                 locale,
-                shippedSubject,
-                shippedBody,
-                placeholdersOf(shippedSubject, shippedBody),
+                shipped.of(type, locale),
                 overrides.liveFor(type.name(), locale).orElse(null));
     }
 
@@ -121,6 +111,7 @@ public class EmailTemplateEditor {
     @Transactional(readOnly = true)
     public List<EmailTemplateVersion> history(UUID staffId, NotificationType type, String locale) {
         staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
+        requireEmail(type);
         return versions.historyOf(type.name(), locale);
     }
 
@@ -132,6 +123,7 @@ public class EmailTemplateEditor {
      * without the withdrawal would violate the index, and a withdrawal that committed
      * without the write would silently revert the platform to the shipped copy.
      *
+     * @throws TemplateCopyMalformedException when the text would not render
      * @throws MissingTemplatePlaceholderException when the override drops a placeholder the
      *     shipped copy carries. The rule the class comment argues for
      */
@@ -140,21 +132,31 @@ public class EmailTemplateEditor {
             UUID staffId, NotificationType type, String locale, String subject, String body, String note) {
 
         staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
+        requireEmail(type);
 
-        Set<String> required = placeholdersOf(shipped(type, "subject"), shipped(type, "body"));
-        Set<String> present = placeholdersOf(subject, body);
+        ShippedCopy.Copy original = shipped.of(type, locale);
+        EditedCopy edited = new EditedCopy(subject, body);
+        original.check(edited);
 
-        Set<String> missing = new LinkedHashSet<>(required);
-        missing.removeAll(present);
+        List<String> missing = original.missingFrom(edited);
         if (!missing.isEmpty()) {
             throw new MissingTemplatePlaceholderException(type, locale, missing);
         }
 
+        versions.lockForWriting(lockKey(type, locale));
         versions.liveFor(type.name(), locale).ifPresent(EmailTemplateVersion::withdraw);
 
         int version = versions.highestVersionOf(type.name(), locale) + 1;
         EmailTemplateVersion written = versions.saveAndFlush(new EmailTemplateVersion(
-                type.name(), locale, version, subject, body, List.copyOf(required), note, staffId));
+                type.name(),
+                locale,
+                version,
+                subject,
+                body,
+                List.copyOf(original.required()),
+                note,
+                staffId,
+                clock.instant().truncatedTo(ChronoUnit.MICROS)));
 
         overrides.reload();
 
@@ -170,7 +172,8 @@ public class EmailTemplateEditor {
     }
 
     /**
-     * Takes the override out of service, so the shipped copy renders again.
+     * Takes the override in one language out of service, so that language's shipped copy
+     * renders again.
      *
      * <p>The versions stay. Withdrawing is not deleting — the history is what answers "what
      * did the notice say in March", and an override that was live for a month and then
@@ -181,66 +184,44 @@ public class EmailTemplateEditor {
     @Transactional
     public Optional<EmailTemplateVersion> withdraw(UUID staffId, NotificationType type, String locale) {
         staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
+        requireEmail(type);
 
+        versions.lockForWriting(lockKey(type, locale));
         Optional<EmailTemplateVersion> live = versions.liveFor(type.name(), locale);
         live.ifPresent(version -> {
             version.withdraw();
             audit.record(
-                    AuditAction.EMAIL_TEMPLATE_EDITED,
+                    AuditAction.EMAIL_TEMPLATE_WITHDRAWN,
                     version.id(),
                     AuditActor.moderator(staffId),
                     AuditOutcome.SUCCEEDED,
-                    "withdrawn; template=%s; locale=%s".formatted(type, locale));
+                    "template=%s; locale=%s; version=%d".formatted(type, locale, version.version()));
         });
 
         overrides.reload();
         return live;
     }
 
-    /**
-     * The copy as it is shipped, for one key of one type.
-     *
-     * <p>{@link Locale#ROOT}, matching {@code EmailComposer}: the catalogue has one
-     * language today and #123 is what gives it more. When it does, the shipped copy an
-     * editor is shown will be the one in the locale they are editing, and this method takes
-     * a locale — the argument is already threaded through every caller for that reason.
-     */
-    private String shipped(NotificationType type, String suffix) {
-        try {
-            return messages.getMessage(PREFIX + type.name() + "." + suffix, null, Locale.ROOT);
-        } catch (NoSuchMessageException e) {
-            // A type whose copy is missing is a build failure caught by EmailCopyTests, not
-            // something a screen should crash on — so the editor shows an empty shipped
-            // version and the override becomes the whole of it.
-            return "";
+    /** Refuses a type the platform never emails — {@link TemplateNotEmailedException}. */
+    static void requireEmail(NotificationType type) {
+        if (!type.channels().contains(NotificationChannel.EMAIL)) {
+            throw new TemplateNotEmailedException(type);
         }
     }
 
-    /** Every {@code MessageFormat} argument index used across the two strings. */
-    private static Set<String> placeholdersOf(String subject, String body) {
-        Set<String> found = new LinkedHashSet<>();
-        for (String text : List.of(subject, body)) {
-            Matcher matcher = PLACEHOLDER.matcher(text);
-            while (matcher.find()) {
-                found.add(matcher.group(1));
-            }
-        }
-        return found;
+    private static String lockKey(NotificationType type, String locale) {
+        return "email_template_versions:" + type.name() + ":" + locale;
     }
 
     /**
      * What an editor is shown.
      *
+     * @param shipped the shipped copy in this language, with the placeholders an override must
+     *     keep and may use. Sent to the screen so it can say which are missing before the
+     *     service refuses
      * @param override the live version, or null when the shipped copy is what is being sent
-     * @param requiredPlaceholders the argument indices an override must keep. Sent to the
-     *     screen so it can say which are missing before the service refuses
      */
     public record TemplateDraft(
-            NotificationType type,
-            String locale,
-            String shippedSubject,
-            String shippedBody,
-            Set<String> requiredPlaceholders,
-            EmailTemplateVersion override) {
+            NotificationType type, String locale, ShippedCopy.Copy shipped, EmailTemplateVersion override) {
     }
 }

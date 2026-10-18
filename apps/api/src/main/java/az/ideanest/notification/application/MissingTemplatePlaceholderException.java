@@ -1,7 +1,7 @@
 package az.ideanest.notification.application;
 
 import az.ideanest.notification.domain.NotificationType;
-import java.util.Set;
+import java.util.List;
 
 /**
  * The edited copy drops something the shipped copy carries — issue #315.
@@ -20,15 +20,15 @@ import java.util.Set;
  */
 public class MissingTemplatePlaceholderException extends RuntimeException {
 
-    private final transient Set<String> missing;
+    private final transient List<String> missing;
 
-    public MissingTemplatePlaceholderException(NotificationType type, String locale, Set<String> missing) {
+    public MissingTemplatePlaceholderException(NotificationType type, String locale, List<String> missing) {
         super("The " + locale + " copy for " + type + " must keep " + missing);
-        this.missing = Set.copyOf(missing);
+        this.missing = List.copyOf(missing);
     }
 
-    /** The {@code MessageFormat} argument indices the override left out. */
-    public Set<String> missing() {
+    /** The argument indices the override left out, in numeric order. */
+    public List<String> missing() {
         return missing;
     }
 }
