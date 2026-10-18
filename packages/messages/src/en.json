@@ -901,7 +901,7 @@
         "metaTitle": "System health",
         "metaDescription": "Queue depth, failed jobs and provider status, measured when you open the page.",
         "title": "System health",
-        "intro": "Measured when you open it. Nothing on this page wakes anybody, and nothing watches it while you are not looking — read it when you suspect something rather than relying on it to tell you."
+        "intro": "Queues, scheduled jobs and payment providers at a glance."
       },
       "flags": {
         "metaTitle": "Feature flags",
@@ -1271,34 +1271,103 @@
         "loadingList": "Loading the health dashboard",
         "readFailed": "The dashboard could not be read.",
         "notMonitoredTitle": "This page does not alert anybody",
-        "notMonitoredBody": "Everything here is measured when you open it. Nothing on this screen wakes anybody, and nothing watches it while you are not looking — §18's observability work (#138) is what will. Read it when you suspect something; do not rely on it to tell you.",
+        "notMonitoredBody": "Everything here is measured when you open the page. This screen tells nobody anything, and nothing watches it while you are not looking. Read it when you suspect something; do not rely on it to tell you.",
         "overall": "Overall",
-        "measuredSeconds": "Measured {count} seconds ago.",
-        "measuredMinutes": "Measured {count} minutes ago.",
+        "measuredAt": "Measured at {time}.",
         "measureAgain": "Measure again",
         "queues": "Queues",
         "waiting": "{count} waiting",
-        "givenUp": "{count} given up",
+        "givenUp": "{count} could not be sent (out of attempts)",
+        "givenUpHint": "These will not be sent again by themselves. Tell the engineering team, who can fix the cause and send them again.",
         "jobs": "Scheduled jobs",
-        "overdue": "overdue by {count} minutes",
+        "jobsAttention": "Jobs needing attention: {count}",
+        "jobsAllWell": "Every job is fine.",
+        "overdue": {
+          "minutes": {
+            "one": "{count} minute late",
+            "few": "{count} minutes late",
+            "many": "{count} minutes late",
+            "other": "{count} minutes late"
+          },
+          "hours": {
+            "one": "{count} hour late",
+            "few": "{count} hours late",
+            "many": "{count} hours late",
+            "other": "{count} hours late"
+          },
+          "days": {
+            "one": "{count} day late",
+            "few": "{count} days late",
+            "many": "{count} days late",
+            "other": "{count} days late"
+          }
+        },
         "onTime": "on time",
-        "attempts": "{count} attempts",
+        "lastRun": "Last ran {time}",
+        "neverRun": "Has never run",
+        "lastErrorLabel": "Technical text of the last error",
         "providers": "Providers",
         "notConfigured": "Not configured",
+        "attempts": {
+          "one": "{count} attempt",
+          "few": "{count} attempts",
+          "many": "{count} attempts",
+          "other": "{count} attempts"
+        },
         "status": {
           "HEALTHY": "Healthy",
           "DEGRADED": "Worth a look",
-          "CRITICAL": "Stopped"
+          "CRITICAL": "Needs attention now"
         },
         "jobState": {
           "READY": "Ready for its next run",
-          "RUNNING": "Running",
-          "FAILED": "Failed on its last run",
-          "DISABLED": "Switched off"
+          "DEAD": "Out of attempts; it will not restart by itself"
+        },
+        "hold": {
+          "MAINTENANCE": "Paused until the maintenance window ends",
+          "UNSCHEDULED": "Not scheduled on this deployment; it does not run by itself"
         },
         "queue": {
-          "outbox": "Outbox",
-          "scheduled-jobs": "Scheduled jobs"
+          "outbox": "Outbox"
+        },
+        "kind": {
+          "payments": "Payments"
+        },
+        "providerName": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Sandbox"
+        },
+        "reason": {
+          "NOT_CONFIGURED": "No credentials on this deployment. Switched off, not failing.",
+          "CIRCUIT_OPEN": "Taken out of service after repeated failures. The platform will try it again shortly."
+        },
+        "jobName": {
+          "account-anonymiser": "Account anonymisation",
+          "analytics-aggregator": "Daily analytics roll-up",
+          "automatic-withdrawal": "Automatic withdrawal of funds",
+          "campaign-finalizer": "Closing campaigns at their deadline",
+          "campaign-launcher": "Opening scheduled campaigns",
+          "campaign-refunds": "Refunds for unsuccessful campaigns",
+          "deadline-reminder": "Deadline reminders",
+          "exchange-rate-refresh": "Exchange rate refresh",
+          "hosted-charge-sweep": "Checking payment pages with no callback",
+          "idempotency-key-cleaner": "Removing expired retry keys",
+          "identity-document-retention": "Identity document retention",
+          "ledger-reconciliation": "Ledger reconciliation",
+          "media-processing": "Processing uploaded media",
+          "media-video-processing": "Video processing",
+          "notification-digest": "Notification digests",
+          "notification-sender": "Sending notifications",
+          "outbox-relay": "Outbox relay",
+          "payout-destination-reminders": "Payout destination reminders",
+          "push-device-retention": "Removing stale push registrations",
+          "reminder-sender": "Launch reminders",
+          "reservation-cleaner": "Releasing unfinished checkout holds",
+          "subscription-renewal-reminders": "Subscription renewal reminders",
+          "survey-nudge": "Survey reminders",
+          "update-obligation-sweep": "Monthly update obligation check"
         }
       },
       "flags": {

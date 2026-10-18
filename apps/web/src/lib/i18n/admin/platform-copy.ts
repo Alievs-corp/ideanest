@@ -1,5 +1,6 @@
 import type { AuditActionLabels } from '../../admin/audit';
 import type { AdminTranslator } from '../admin-copy';
+import type { PluralForms } from '../plurals';
 import { consoleChartCopyFrom, type ConsoleChartCopy, type ConsoleChromeCopy } from './common-copy';
 import { accountPickerCopyFrom, type AccountPickerCopy } from './people-copy';
 
@@ -104,14 +105,19 @@ export function auditTrailCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy
 /**
  * AD-16, the health dashboard.
  *
- * <h2>Two sentences for one measurement, and not a unit bolted onto a number</h2>
+ * <h2>Every machine value has a table, and falls back to itself</h2>
  *
- * `measuredSeconds` and `measuredMinutes` are separate messages rather than one sentence with
- * a unit interpolated into it. The unit is a word that inflects: Russian says "секунд" beside
- * one number and "секунды" beside another, and Azerbaijani puts the whole phrase in a
- * different place than English does. A sentence assembled from a number, a space and a noun
- * can express none of that, and the version of it that existed here before #324 was a template
- * literal in JSX.
+ * The service sends identifiers — a job's name, its state, why it is held, a provider, its kind,
+ * why it is down — and this screen words each of them from the catalogue. The service used to
+ * send some of them as English sentences, which the screen printed under Azerbaijani headings.
+ * A value a table has not been taught renders as itself rather than as nothing.
+ *
+ * <h2>Counts that inflect are plural forms</h2>
+ *
+ * "1 minutes late" is what a sentence with a number interpolated into it says in English, and
+ * Russian needs three forms. Lateness and attempts are therefore `PluralForms`; the counts that
+ * stand alone in a sentence — waiting, given up, needing attention — read correctly with any
+ * number in all four languages.
  */
 export interface HealthDashboardCopy extends ConsoleChromeCopy {
   readonly subject: string;
@@ -120,45 +126,46 @@ export interface HealthDashboardCopy extends ConsoleChromeCopy {
   readonly notMonitoredTitle: string;
   readonly notMonitoredBody: string;
   readonly overall: string;
-  /** Carries `{count}`. */
-  readonly measuredSeconds: string;
-  /** Carries `{count}`. */
-  readonly measuredMinutes: string;
+  /** Carries `{time}`. */
+  readonly measuredAt: string;
   readonly measureAgain: string;
   readonly queues: string;
   /** Carries `{count}`. */
   readonly waiting: string;
   /** Carries `{count}`. Never added into {@link waiting} — see `lib/admin/health.ts`. */
   readonly givenUp: string;
+  readonly givenUpHint: string;
   readonly jobs: string;
   /** Carries `{count}`. */
-  readonly overdue: string;
+  readonly jobsAttention: string;
+  readonly jobsAllWell: string;
+  /** Each carries `{count}`. */
+  readonly overdue: Readonly<Record<'minutes' | 'hours' | 'days', PluralForms>>;
   readonly onTime: string;
   /** Carries `{count}`. */
-  readonly attempts: string;
+  readonly attempts: PluralForms;
+  /** Carries `{time}`. */
+  readonly lastRun: string;
+  readonly neverRun: string;
+  readonly lastErrorLabel: string;
   readonly providers: string;
   readonly notConfigured: string;
   /** Keyed by `HealthStatus`. The word, never only the colour — CLAUDE.md §2. */
   readonly status: Readonly<Record<string, string>>;
-  /**
-   * The scheduler's own states, worded — issue #403.
-   *
-   * <p>`READY` was drawn raw on all nineteen rows, which is not information in any
-   * language. The wire word moved to the row's `title`, so it is still one hover from
-   * whoever is about to grep for it, and a state with no sentence is drawn as itself.
-   */
+  /** Keyed by the scheduler's state: `READY`, `DEAD`. */
   readonly jobState: Readonly<Record<string, string>>;
-  /**
-   * A queue's name in the reader's language, keyed by the identifier the service sends —
-   * issue #405.
-   *
-   * <p>The service used to answer "Outbox" and "Scheduled jobs", which this screen rendered
-   * verbatim under an Azerbaijani heading and above a section headed with the Azerbaijani
-   * for the second of them. `QueueDepthSource.queueName()` answers an identifier now, and a
-   * queue this table has not been taught about renders as that identifier rather than as
-   * nothing — the same rule the job states one field up follow.
-   */
+  /** Keyed by a job's hold: `MAINTENANCE`, `UNSCHEDULED`. */
+  readonly hold: Readonly<Record<string, string>>;
+  /** Keyed by the queue's identifier. */
   readonly queue: Readonly<Record<string, string>>;
+  /** Keyed by the provider's kind. */
+  readonly kind: Readonly<Record<string, string>>;
+  /** Keyed by the provider as the platform names it. */
+  readonly providerName: Readonly<Record<string, string>>;
+  /** Keyed by why a provider is not available. */
+  readonly reason: Readonly<Record<string, string>>;
+  /** Keyed by the job's identifier, which stays on the row's `title`. */
+  readonly jobName: Readonly<Record<string, string>>;
 }
 
 export function healthDashboardCopyFrom(
@@ -173,21 +180,31 @@ export function healthDashboardCopyFrom(
     notMonitoredTitle: t('screens.health.notMonitoredTitle'),
     notMonitoredBody: t('screens.health.notMonitoredBody'),
     overall: t('screens.health.overall'),
-    measuredSeconds: String(t.raw('screens.health.measuredSeconds')),
-    measuredMinutes: String(t.raw('screens.health.measuredMinutes')),
+    measuredAt: String(t.raw('screens.health.measuredAt')),
     measureAgain: t('screens.health.measureAgain'),
     queues: t('screens.health.queues'),
     waiting: String(t.raw('screens.health.waiting')),
     givenUp: String(t.raw('screens.health.givenUp')),
+    givenUpHint: t('screens.health.givenUpHint'),
     jobs: t('screens.health.jobs'),
-    overdue: String(t.raw('screens.health.overdue')),
+    jobsAttention: String(t.raw('screens.health.jobsAttention')),
+    jobsAllWell: t('screens.health.jobsAllWell'),
+    overdue: t.raw('screens.health.overdue') as Readonly<Record<'minutes' | 'hours' | 'days', PluralForms>>,
     onTime: t('screens.health.onTime'),
-    attempts: String(t.raw('screens.health.attempts')),
+    attempts: t.raw('screens.health.attempts') as PluralForms,
+    lastRun: String(t.raw('screens.health.lastRun')),
+    neverRun: t('screens.health.neverRun'),
+    lastErrorLabel: t('screens.health.lastErrorLabel'),
     providers: t('screens.health.providers'),
     notConfigured: t('screens.health.notConfigured'),
     status: t.raw('screens.health.status') as Readonly<Record<string, string>>,
     jobState: t.raw('screens.health.jobState') as Readonly<Record<string, string>>,
+    hold: t.raw('screens.health.hold') as Readonly<Record<string, string>>,
     queue: t.raw('screens.health.queue') as Readonly<Record<string, string>>,
+    kind: t.raw('screens.health.kind') as Readonly<Record<string, string>>,
+    providerName: t.raw('screens.health.providerName') as Readonly<Record<string, string>>,
+    reason: t.raw('screens.health.reason') as Readonly<Record<string, string>>,
+    jobName: t.raw('screens.health.jobName') as Readonly<Record<string, string>>,
   };
 }
 

@@ -901,7 +901,7 @@
         "metaTitle": "Sistem sağlığı",
         "metaDescription": "Kuyruk derinliği, başarısız işler ve sağlayıcı durumu, sayfayı açtığınızda ölçülür.",
         "title": "Sistem sağlığı",
-        "intro": "Sayfayı açtığınızda ölçülür. Bu sayfadaki hiçbir şey kimseyi uyandırmaz ve siz bakmıyorken hiçbir şey onu izlemez — bir şeyden şüphelendiğinizde okuyun, size haber vermesine güvenmeyin."
+        "intro": "Kuyruklar, zamanlanmış işler ve ödeme sağlayıcıları tek bakışta."
       },
       "flags": {
         "metaTitle": "Özellik bayrakları",
@@ -1271,34 +1271,103 @@
         "loadingList": "Sağlık panosu yükleniyor",
         "readFailed": "Pano okunamadı.",
         "notMonitoredTitle": "Bu sayfa kimseyi uyarmaz",
-        "notMonitoredBody": "Buradaki her şey siz açtığınızda ölçülür. Bu ekrandaki hiçbir şey kimseyi uyandırmaz ve siz bakmıyorken hiçbir şey onu izlemez — §18'in gözlemlenebilirlik işi (#138) bunu yapacak. Bir şeyden şüphelendiğinizde okuyun; size haber vermesine güvenmeyin.",
+        "notMonitoredBody": "Buradaki her şey sayfayı açtığınız anda ölçülür. Bu ekran kimseye bir şey bildirmez ve siz bakmıyorken hiçbir şey onu izlemez. Bir şeyden şüphelendiğinizde okuyun; size haber vermesine güvenmeyin.",
         "overall": "Genel",
-        "measuredSeconds": "{count} saniye önce ölçüldü.",
-        "measuredMinutes": "{count} dakika önce ölçüldü.",
+        "measuredAt": "Ölçüm zamanı: {time}.",
         "measureAgain": "Yeniden ölç",
         "queues": "Kuyruklar",
         "waiting": "{count} bekliyor",
-        "givenUp": "{count} vazgeçildi",
+        "givenUp": "{count} gönderilemedi (denemeler tükendi)",
+        "givenUpHint": "Bunlar kendiliğinden yeniden gönderilmez. Nedeni giderip yeniden göndermesi için teknik ekibe bildirin.",
         "jobs": "Zamanlanmış işler",
-        "overdue": "{count} dakika gecikti",
+        "jobsAttention": "İlgilenilmesi gereken işler: {count}",
+        "jobsAllWell": "Tüm işler yolunda.",
+        "overdue": {
+          "minutes": {
+            "one": "{count} dakika gecikmiş",
+            "few": "{count} dakika gecikmiş",
+            "many": "{count} dakika gecikmiş",
+            "other": "{count} dakika gecikmiş"
+          },
+          "hours": {
+            "one": "{count} saat gecikmiş",
+            "few": "{count} saat gecikmiş",
+            "many": "{count} saat gecikmiş",
+            "other": "{count} saat gecikmiş"
+          },
+          "days": {
+            "one": "{count} gün gecikmiş",
+            "few": "{count} gün gecikmiş",
+            "many": "{count} gün gecikmiş",
+            "other": "{count} gün gecikmiş"
+          }
+        },
         "onTime": "zamanında",
-        "attempts": "{count} deneme",
+        "lastRun": "Son çalışma: {time}",
+        "neverRun": "Hiç çalışmadı",
+        "lastErrorLabel": "Son hatanın teknik metni",
         "providers": "Sağlayıcılar",
         "notConfigured": "Yapılandırılmadı",
+        "attempts": {
+          "one": "{count} deneme",
+          "few": "{count} deneme",
+          "many": "{count} deneme",
+          "other": "{count} deneme"
+        },
         "status": {
           "HEALTHY": "Sağlıklı",
           "DEGRADED": "Bakmaya değer",
-          "CRITICAL": "Durdu"
+          "CRITICAL": "Hemen ilgilenilmeli"
         },
         "jobState": {
           "READY": "Sonraki çalışması için hazır",
-          "RUNNING": "Çalışıyor",
-          "FAILED": "Son çalışmasında başarısız oldu",
-          "DISABLED": "Kapatılmış"
+          "DEAD": "Denemeler tükendi, kendiliğinden yeniden başlamaz"
+        },
+        "hold": {
+          "MAINTENANCE": "Bakım bitene kadar duraklatıldı",
+          "UNSCHEDULED": "Bu kurulumda zamanlanmamış; kendiliğinden çalışmaz"
         },
         "queue": {
-          "outbox": "Giden kuyruğu",
-          "scheduled-jobs": "Planlanmış işler"
+          "outbox": "Giden kuyruğu"
+        },
+        "kind": {
+          "payments": "Ödemeler"
+        },
+        "providerName": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Test sağlayıcısı"
+        },
+        "reason": {
+          "NOT_CONFIGURED": "Bu kurulumda kimlik bilgileri yok. Kapalı, arızalı değil.",
+          "CIRCUIT_OPEN": "Art arda hatalardan sonra geçici olarak devre dışı bırakıldı. Platform kısa süre içinde yeniden deneyecek."
+        },
+        "jobName": {
+          "account-anonymiser": "Hesap anonimleştirme",
+          "analytics-aggregator": "Günlük analitik özeti",
+          "automatic-withdrawal": "Fonların otomatik çekilmesi",
+          "campaign-finalizer": "Kampanyaların süresinde kapatılması",
+          "campaign-launcher": "Planlanmış kampanyaların açılması",
+          "campaign-refunds": "Başarısız kampanyaların iadeleri",
+          "deadline-reminder": "Bitiş tarihi hatırlatmaları",
+          "exchange-rate-refresh": "Döviz kuru güncellemesi",
+          "hosted-charge-sweep": "Yanıtsız ödeme sayfalarının kontrolü",
+          "idempotency-key-cleaner": "Süresi dolmuş tekrar anahtarlarının silinmesi",
+          "identity-document-retention": "Kimlik belgesi saklama süresi",
+          "ledger-reconciliation": "Defter mutabakatı",
+          "media-processing": "Yüklenen medyanın işlenmesi",
+          "media-video-processing": "Video işleme",
+          "notification-digest": "Bildirim özetleri",
+          "notification-sender": "Bildirim gönderimi",
+          "outbox-relay": "Giden kuyruğu aktarımı",
+          "payout-destination-reminders": "Ödeme hesabı hatırlatmaları",
+          "push-device-retention": "Eski anlık bildirim kayıtlarının silinmesi",
+          "reminder-sender": "Açılış hatırlatmaları",
+          "reservation-cleaner": "Tamamlanmamış ödeme rezervlerinin bırakılması",
+          "subscription-renewal-reminders": "Abonelik yenileme hatırlatmaları",
+          "survey-nudge": "Anket hatırlatmaları",
+          "update-obligation-sweep": "Aylık güncelleme yükümlülüğü kontrolü"
         }
       },
       "flags": {

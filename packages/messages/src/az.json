@@ -901,7 +901,7 @@
         "metaTitle": "Sistemin vəziyyəti",
         "metaDescription": "Növbə dərinliyi, uğursuz işlər və provayder vəziyyəti, səhifəni açdığınız anda ölçülür.",
         "title": "Sistemin vəziyyəti",
-        "intro": "Səhifəni açdığınız anda ölçülür. Bu səhifədəki heç nə kimisə oyatmır və siz baxmayanda heç nə onu izləmir — nəyisə şübhələndiyiniz zaman oxuyun, ondan sizə xəbər verməsini gözləməyin."
+        "intro": "Növbələr, planlaşdırılmış işlər və ödəniş provayderləri bir baxışda."
       },
       "flags": {
         "metaTitle": "Funksiya bayraqları",
@@ -1271,34 +1271,103 @@
         "loadingList": "Vəziyyət lövhəsi yüklənir",
         "readFailed": "Lövhəni oxumaq mümkün olmadı.",
         "notMonitoredTitle": "Bu səhifə heç kimə xəbərdarlıq göndərmir",
-        "notMonitoredBody": "Buradakı hər şey siz açanda ölçülür. Bu ekrandakı heç nə kimisə oyatmır və siz baxmayanda heç nə onu izləmir — §18-in müşahidə işi (#138) bunu edəcək. Nəyisə şübhələndiyiniz zaman oxuyun; sizə xəbər verməsinə güvənməyin.",
+        "notMonitoredBody": "Buradakı hər şey səhifəni açdığınız anda ölçülür. Bu ekran heç kimə xəbər vermir və siz baxmayanda heç nə onu izləmir. Nəyisə şübhələndiyiniz zaman oxuyun, sizə xəbər verəcəyini gözləməyin.",
         "overall": "Ümumi",
-        "measuredSeconds": "{count} saniyə əvvəl ölçülüb.",
-        "measuredMinutes": "{count} dəqiqə əvvəl ölçülüb.",
+        "measuredAt": "Ölçülmə vaxtı: {time}.",
         "measureAgain": "Yenidən ölç",
         "queues": "Növbələr",
         "waiting": "{count} gözləyir",
-        "givenUp": "{count} imtina edilib",
+        "givenUp": "{count} göndərilə bilmədi (cəhdlər tükənib)",
+        "givenUpHint": "Bunlar özü yenidən göndərilməyəcək. Səbəbi aradan qaldırıb yenidən göndərmək üçün texniki komandaya bildirin.",
         "jobs": "Planlaşdırılmış işlər",
-        "overdue": "{count} dəqiqə gecikib",
+        "jobsAttention": "Diqqət tələb edən işlər: {count}",
+        "jobsAllWell": "Bütün işlər qaydasındadır.",
+        "overdue": {
+          "minutes": {
+            "one": "{count} dəqiqə gecikir",
+            "few": "{count} dəqiqə gecikir",
+            "many": "{count} dəqiqə gecikir",
+            "other": "{count} dəqiqə gecikir"
+          },
+          "hours": {
+            "one": "{count} saat gecikir",
+            "few": "{count} saat gecikir",
+            "many": "{count} saat gecikir",
+            "other": "{count} saat gecikir"
+          },
+          "days": {
+            "one": "{count} gün gecikir",
+            "few": "{count} gün gecikir",
+            "many": "{count} gün gecikir",
+            "other": "{count} gün gecikir"
+          }
+        },
         "onTime": "vaxtında",
-        "attempts": "{count} cəhd",
+        "lastRun": "Son işləmə: {time}",
+        "neverRun": "Hələ heç işləməyib",
+        "lastErrorLabel": "Son xətanın texniki mətni",
         "providers": "Provayderlər",
         "notConfigured": "Konfiqurasiya edilməyib",
+        "attempts": {
+          "one": "{count} cəhd",
+          "few": "{count} cəhd",
+          "many": "{count} cəhd",
+          "other": "{count} cəhd"
+        },
         "status": {
           "HEALTHY": "Sağlam",
           "DEGRADED": "Baxmağa dəyər",
-          "CRITICAL": "Dayanıb"
+          "CRITICAL": "Təcili baxın"
         },
         "jobState": {
           "READY": "Növbəti işə hazır",
-          "RUNNING": "İşləyir",
-          "FAILED": "Sonuncu dəfə uğursuz olub",
-          "DISABLED": "Söndürülüb"
+          "DEAD": "Cəhdlər tükənib, özü yenidən başlamayacaq"
+        },
+        "hold": {
+          "MAINTENANCE": "Texniki xidmət bitənə qədər dayandırılıb",
+          "UNSCHEDULED": "Bu quraşdırmada cədvəli yoxdur, öz-özünə işə düşmür"
         },
         "queue": {
-          "outbox": "Göndərilənlər növbəsi",
-          "scheduled-jobs": "Planlaşdırılmış işlər"
+          "outbox": "Göndərilənlər növbəsi"
+        },
+        "kind": {
+          "payments": "Ödənişlər"
+        },
+        "providerName": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Sınaq provayderi"
+        },
+        "reason": {
+          "NOT_CONFIGURED": "Bu quraşdırmada açarları yoxdur. Söndürülüb, xəta deyil.",
+          "CIRCUIT_OPEN": "Ardıcıl uğursuz cavablardan sonra müvəqqəti xidmətdən çıxarılıb. Platforma bir azdan yenidən yoxlayacaq."
+        },
+        "jobName": {
+          "account-anonymiser": "Hesabların anonimləşdirilməsi",
+          "analytics-aggregator": "Analitikanın gündəlik yığımı",
+          "automatic-withdrawal": "Vəsaitin avtomatik çıxarılması",
+          "campaign-finalizer": "Kampaniyaların son tarixdə bağlanması",
+          "campaign-launcher": "Planlaşdırılmış kampaniyaların açılması",
+          "campaign-refunds": "Uğursuz kampaniyalar üzrə geri ödəmələr",
+          "deadline-reminder": "Son tarix xatırlatmaları",
+          "exchange-rate-refresh": "Valyuta məzənnələrinin yenilənməsi",
+          "hosted-charge-sweep": "Cavabsız ödəniş səhifələrinin yoxlanması",
+          "idempotency-key-cleaner": "Köhnə təkrar sorğu açarlarının silinməsi",
+          "identity-document-retention": "Şəxsiyyət sənədlərinin saxlanma müddəti",
+          "ledger-reconciliation": "Mühasibat kitabının tutuşdurulması",
+          "media-processing": "Yüklənmiş mediaların emalı",
+          "media-video-processing": "Videoların emalı",
+          "notification-digest": "Bildiriş icmalları",
+          "notification-sender": "Bildirişlərin göndərilməsi",
+          "outbox-relay": "Göndərilənlər növbəsinin ötürülməsi",
+          "payout-destination-reminders": "Ödəniş hesabı xatırlatmaları",
+          "push-device-retention": "Köhnə push qeydiyyatlarının silinməsi",
+          "reminder-sender": "Açılış xatırlatmaları",
+          "reservation-cleaner": "Bitməmiş sifarişlərin yerlərinin qaytarılması",
+          "subscription-renewal-reminders": "Abunə yenilənməsi xatırlatmaları",
+          "survey-nudge": "Sorğu xatırlatmaları",
+          "update-obligation-sweep": "Aylıq yeniləmə öhdəliyinin yoxlanması"
         }
       },
       "flags": {
