@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { Suspense, lazy, useId, useState } from 'react';
 import {
   EmptyState,
   Field,
@@ -36,7 +36,6 @@ import type { Locale } from '../../lib/i18n/locale';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { FlagConsoleCopy } from '../../lib/i18n/admin/platform-copy';
-import { AccountPicker } from './AccountPicker';
 import { Confirm } from './ConsoleConfirm';
 import { useConsoleMembership } from './ConsoleMembership';
 import { ConsoleRefusal } from './ConsoleRefusal';
@@ -69,6 +68,13 @@ import { useDirectoryNames } from './useDirectoryNames';
  * deleted row and a row that never existed are indistinguishable from the application&apos;s
  * side. A flag is switched off instead, which leaves the row saying who switched it off.
  */
+/**
+ * The directory picker, fetched when a row draws it. `React.lazy`, as `PayoutQueue` does: the rows
+ * render only in the browser, after the list is read, and only for a reader who may search the
+ * directory — so the picker and the directory client are not part of the route's first load.
+ */
+const AccountPicker = lazy(() => import('./AccountPicker').then((module) => ({ default: module.AccountPicker })));
+
 export interface FlagConsoleProps {
   readonly copy: FlagConsoleCopy;
 }
@@ -402,13 +408,15 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
           full ? (
             <p className="mt-2 text-xs text-white/48">{copy.accountsFull}</p>
           ) : (
-            <AccountPicker
-              className="mt-3 max-w-[480px]"
-              chosen={picked}
-              onChoose={pick}
-              copy={copy.picker}
-              disabled={busy || (pending !== null && picked === null)}
-            />
+            <Suspense fallback={null}>
+              <AccountPicker
+                className="mt-3 max-w-[480px]"
+                chosen={picked}
+                onChoose={pick}
+                copy={copy.picker}
+                disabled={busy || (pending !== null && picked === null)}
+              />
+            </Suspense>
           )
         ) : (
           <p className="mt-2 text-xs text-white/48">{copy.accountsReadOnly}</p>
