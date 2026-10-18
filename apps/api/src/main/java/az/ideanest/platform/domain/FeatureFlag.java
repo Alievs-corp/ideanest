@@ -80,7 +80,7 @@ public class FeatureFlag {
     private UUID updatedBy;
 
     /**
-     * V111's version, which a save has to name — see {@code FeatureFlags.save}.
+     * V110's version, which a save has to name — see {@code FeatureFlags.save}.
      *
      * <p>A wrapper rather than a primitive so that a flag nobody has saved yet is new to
      * Spring Data: with a primitive it would be merged, which reads before it writes and
@@ -267,7 +267,7 @@ public class FeatureFlag {
         return updatedBy;
     }
 
-    /** The version this row was read at. Zero for a row saved before V111. */
+    /** The version this row was read at. Zero for a row saved before V110. */
     public long version() {
         return version == null ? 0L : version;
     }

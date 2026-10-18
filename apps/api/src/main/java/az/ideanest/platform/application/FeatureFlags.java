@@ -139,7 +139,7 @@ public class FeatureFlags {
      * <p>A version is an edit of that version. An edit made from a list somebody else has
      * since saved over is refused with {@code FEATURE_FLAG_CHANGED}, checked twice: once
      * against the row as read, which is the ordinary case of a stale screen, and once by
-     * V111's column when the row is written, which catches two saves in the same instant.
+     * V110's column when the row is written, which catches two saves in the same instant.
      *
      * <p>The cache is cleared inside the transaction rather than after it commits, which
      * is technically early — a rollback would leave this instance re-reading a table that

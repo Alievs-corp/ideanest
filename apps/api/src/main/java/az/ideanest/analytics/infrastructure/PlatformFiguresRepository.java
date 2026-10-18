@@ -62,7 +62,7 @@ import org.springframework.stereotype.Repository;
  *
  * <h2>The scan</h2>
  *
- * <p>V110 gives this set a partial index on {@code collected_at}, so a window is a range scan
+ * <p>V109 gives this set a partial index on {@code collected_at}, so a window is a range scan
  * over collected pledges rather than a pass over every checkout ever started.
  */
 @Repository
