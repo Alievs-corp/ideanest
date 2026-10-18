@@ -117,7 +117,8 @@ describe('one document at a time', () => {
     historyMock.mockRejectedValue(new ApiError(500, { detail: 'Internal Server Error' }));
     render(<LegalDocumentEditor copy={COPY} />);
 
-    expect(await screen.findByText(COPY.readFailed)).toBeInTheDocument();
+    // A failure on the service's side is worded as one, in the reader's language.
+    expect(await screen.findByText(COPY.refusals.serviceFailed ?? '')).toBeInTheDocument();
     expect(screen.queryByText(COPY.draftHeading)).not.toBeInTheDocument();
     expect(screen.queryByText('Internal Server Error')).not.toBeInTheDocument();
   });

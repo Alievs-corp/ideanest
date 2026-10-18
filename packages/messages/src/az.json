@@ -3345,7 +3345,7 @@
         "whenNow": "dərhal",
         "whenDate": "{date}, Bakı vaxtı ilə 00:00",
         "reaccept": {
-          "CREATOR_AGREEMENT": "Bu versiya qüvvədə olanda hər yaradıcı növbəti kampaniyasını göndərməzdən əvvəl onu qəbul etməlidir.",
+          "CREATOR_AGREEMENT": "Bu versiya qüvvədə olanda hər müəllif növbəti kampaniyasını göndərməzdən əvvəl onu qəbul etməlidir.",
           "BACKER_AGREEMENT": "Bu versiya qüvvədə olanda hər dəstəkçi növbəti dəstəyini təsdiqləməzdən əvvəl onu qəbul etməlidir."
         },
         "confirmActivateLabel": "Saytda göstərməyi təsdiqləyin",
