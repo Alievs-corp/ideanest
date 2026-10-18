@@ -247,6 +247,86 @@ class AuditTrailFilterApiTests extends AbstractIntegrationTest {
         assertThat(found).doesNotContain(anotherDay.toString());
     }
 
+    @Test
+    @DisplayName("an actor and a kind combine: what this person did to this kind of thing")
+    void anActorAndAKindCombine() {
+        UUID actor = UUID.randomUUID();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+        UUID theirsOfTheKind = writeRow(UUID.randomUUID(), actor, "probe.kind", PROBE, now.minus(1, ChronoUnit.MINUTES));
+        UUID theirsOfAnother = writeRow(UUID.randomUUID(), actor, "probe.kind", PROBE + "-other", now.minus(2, ChronoUnit.MINUTES));
+        UUID somebodyElses = writeRow(UUID.randomUUID(), UUID.randomUUID(), "probe.kind", PROBE, now.minus(3, ChronoUnit.MINUTES));
+
+        Map<String, Object> body = trail("?entityType=" + PROBE + "&actorId=" + actor);
+
+        // The actor used to be dropped whenever a kind was set, and the page answered "what has
+        // anybody done to this kind" under a filter that still named the person.
+        assertThat(idsIn(body)).containsExactly(theirsOfTheKind.toString());
+        assertThat(idsIn(body)).doesNotContain(theirsOfAnother.toString(), somebodyElses.toString());
+        assertThat(body).containsEntry("actorId", actor.toString());
+        assertThat(body).containsEntry("entityType", PROBE);
+    }
+
+    @Test
+    @DisplayName("an actor and one entity combine too, and page together")
+    void anActorAndAnEntityCombineAndPage() {
+        UUID subject = UUID.randomUUID();
+        UUID actor = UUID.randomUUID();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+        UUID newer = writeBy(subject, actor, "probe.newer", now.minus(1, ChronoUnit.MINUTES));
+        writeBy(subject, UUID.randomUUID(), "probe.other", now.minus(2, ChronoUnit.MINUTES));
+        UUID older = writeBy(subject, actor, "probe.older", now.minus(3, ChronoUnit.MINUTES));
+
+        Map<String, Object> first = trail(probe(subject) + "&actorId=" + actor + "&limit=1");
+        assertThat(idsIn(first)).containsExactly(newer.toString());
+
+        Map<String, Object> second = trail(probe(subject) + "&actorId=" + actor + "&limit=1&after=" + first.get("nextCursor"));
+        assertThat(idsIn(second)).containsExactly(older.toString());
+        assertThat(second).doesNotContainKey("nextCursor");
+    }
+
+    @Test
+    @DisplayName("hiding reads leaves out the routine screen reads and keeps everything else, including a look at somebody's record")
+    void hidingReadsKeepsWritesAndPrivateLooks() {
+        UUID actor = UUID.randomUUID();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+        UUID trailRead = writeBy(UUID.randomUUID(), actor, "audit.trail_read", now.minus(1, ChronoUnit.MINUTES));
+        UUID dashboardRead = writeBy(UUID.randomUUID(), actor, "dashboard.read", now.minus(2, ChronoUnit.MINUTES));
+        UUID analyticsRead = writeBy(UUID.randomUUID(), actor, "analytics.read", now.minus(3, ChronoUnit.MINUTES));
+        UUID documentRead = writeBy(UUID.randomUUID(), actor, "identity.document_read", now.minus(4, ChronoUnit.MINUTES));
+        UUID approval = writeBy(UUID.randomUUID(), actor, "project.approved", now.minus(5, ChronoUnit.MINUTES));
+
+        Map<String, Object> hidden = trail("?actorId=" + actor + "&hideReads=true");
+        assertThat(idsIn(hidden)).containsExactly(documentRead.toString(), approval.toString());
+        assertThat(hidden).containsEntry("hideReads", true);
+
+        Map<String, Object> everything = trail("?actorId=" + actor);
+        assertThat(idsIn(everything))
+                .containsExactly(
+                        trailRead.toString(),
+                        dashboardRead.toString(),
+                        analyticsRead.toString(),
+                        documentRead.toString(),
+                        approval.toString());
+        assertThat(everything).containsEntry("hideReads", false);
+    }
+
+    @Test
+    @DisplayName("a last page that is exactly full says it is the last, rather than sending the reader to an empty one")
+    void anExactlyFullLastPageHasNoCursor() {
+        UUID subject = UUID.randomUUID();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        write(subject, "probe.one", now.minus(2, ChronoUnit.MINUTES));
+        write(subject, "probe.two", now.minus(1, ChronoUnit.MINUTES));
+
+        Map<String, Object> page = trail(probe(subject) + "&limit=2");
+
+        assertThat(idsIn(page)).hasSize(2);
+        assertThat(page).doesNotContainKey("nextCursor");
+    }
+
     // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
@@ -272,6 +352,10 @@ class AuditTrailFilterApiTests extends AbstractIntegrationTest {
      * column trustworthy and also the reason this suite cannot go through it.
      */
     private UUID writeRow(UUID entityId, UUID actorId, String action, Instant occurredAt) {
+        return writeRow(entityId, actorId, action, PROBE, occurredAt);
+    }
+
+    private UUID writeRow(UUID entityId, UUID actorId, String action, String entityType, Instant occurredAt) {
         UUID id = UuidCreator.getTimeOrderedEpoch();
         new JdbcTemplate(dataSource)
                 .update(
@@ -285,7 +369,7 @@ class AuditTrailFilterApiTests extends AbstractIntegrationTest {
                         actorId == null ? "SYSTEM" : "MODERATOR",
                         actorId,
                         action,
-                        PROBE,
+                        entityType,
                         entityId);
         return id;
     }

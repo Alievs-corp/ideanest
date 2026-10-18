@@ -59,10 +59,9 @@ public class AuditTrailController {
      * @param entityId narrows to one thing, and only together with {@code entityType}: V21's
      *     index leads on the kind, and an identifier alone would not use it. Sent alone it
      *     is dropped, and the response says so rather than pretending it was applied
-     * @param actorId narrows to one account's actions. Not combined with the entity filter —
-     *     no index serves both, and choosing one silently would be answering a different
-     *     question from the one asked. {@code AuditTrailFilter} has the whole argument,
-     *     including what is deliberately not filterable and why
+     * @param actorId narrows to one account's actions, and combines with {@code entityType}
+     *     (and {@code entityId}): "what did this person do to campaigns". {@code AuditTrailFilter}
+     *     has the whole argument, including what is deliberately not filterable and why
      * @param from the earliest instant to include, inclusive, or absent for the beginning of
      *     the table — #404. An ISO-8601 instant ({@code 2026-09-02T00:00:00Z}), so the bound
      *     is unambiguous about the timezone it is in; the column is UTC and a date with no
@@ -84,6 +83,10 @@ public class AuditTrailController {
      * @param limit clamped to {@code ideanest.admin.audit.max-page-size} rather than
      *     refused, following the report queue: a client asking for a thousand is asking for
      *     as much as it can have, and a 400 there only teaches it to ask for the maximum
+     * @param hideReads leave out the routine screen reads — opening the trail, the payment log,
+     *     the ledger, the risk queue, the figure screens, an account search
+     *     ({@code AuditAction.isRoutineRead}). Absent means false, so every caller that predates
+     *     it reads what it always did; opening one person's private record is never hidden
      */
     @GetMapping
     public ResponseEntity<AuditTrailResponses.TrailPage> trail(
@@ -94,9 +97,10 @@ public class AuditTrailController {
             @RequestParam(required = false) Instant from,
             @RequestParam(required = false) Instant to,
             @RequestParam(required = false) String after,
-            @RequestParam(required = false) Integer limit) {
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(defaultValue = "false") boolean hideReads) {
 
-        AuditTrailFilter filter = new AuditTrailFilter(entityType, entityId, actorId, from, to);
+        AuditTrailFilter filter = new AuditTrailFilter(entityType, entityId, actorId, from, to, hideReads);
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
