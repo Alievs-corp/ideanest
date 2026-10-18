@@ -178,6 +178,12 @@ public interface SubscriptionRevenueRepository extends Repository<SubscriptionPa
      * but the identifier. That is the correct answer rather than a gap; the alternative
      * is a report that quietly under-reports revenue by the accounts that have since left.
      * §17.4's anonymiser blanks the address in place, which this follows for free.
+     *
+     * <p><strong>The address is cast to {@code text}.</strong> {@code users.email} is
+     * {@code citext}, which the driver hands back as a {@code PGobject} rather than a
+     * {@code String}, and a projection has no converter between the two: every page that
+     * held a payment from an existing account failed with a 500. A payment from a closed
+     * account joins nothing and comes back null, which is all the tests had ever asked for.
      */
     @Query(
             nativeQuery = true,
@@ -186,7 +192,7 @@ public interface SubscriptionRevenueRepository extends Repository<SubscriptionPa
                     SELECT p.id                 AS "id",
                            p.subscription_id    AS "subscriptionId",
                            p.account_id         AS "accountId",
-                           u.email              AS "accountEmail",
+                           CAST(u.email AS text) AS "accountEmail",
                            u.name               AS "accountName",
                            p.plan_id            AS "planId",
                            p.plan_code          AS "planCode",

@@ -217,6 +217,33 @@ class SubscriptionRevenueApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("a payment from an open account names the payer, in the list and in the export")
+    void aPaymentFromAnOpenAccountNamesThePayer() {
+        String plan = planCode();
+        Window window = quietWindow();
+        // An account that still exists, so the join finds a row. `users.email` is citext,
+        // and before the query cast it this exact page was a 500 — the test above, whose
+        // payer is gone, was the only shape any test had asked for.
+        String token = admin();
+        insert(plan, "Pro", "149.00", window.at(1), null, adminId, "CARD", null);
+
+        ResponseEntity<Map<String, Object>> page =
+                get(window.query("/v1/admin/subscription/payments") + "&planCode=" + plan);
+        assertThat(page.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> payment = only(page.getBody().get("payments"));
+        assertThat(payment.get("accountId")).isEqualTo(adminId.toString());
+        assertThat(payment.get("accountEmail")).isEqualTo(ADMIN_EMAIL);
+
+        ResponseEntity<byte[]> export = rest.exchange(
+                window.query("/v1/admin/subscription/payments/export") + "&planCode=" + plan,
+                HttpMethod.GET,
+                new HttpEntity<>(authorised(token)),
+                byte[].class);
+        assertThat(export.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(new String(export.getBody(), StandardCharsets.UTF_8)).contains(ADMIN_EMAIL);
+    }
+
+    @Test
     @DisplayName("filters combine: one account, one method")
     void filtersCombine() {
         String plan = planCode();
