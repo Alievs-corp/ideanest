@@ -22,7 +22,7 @@
     "/[locale]/admin/curation/placements": 586,
     "/[locale]/admin/disputes": 631,
     "/[locale]/admin/email-templates": 582,
-    "/[locale]/admin/email-templates/[type]": 586,
+    "/[locale]/admin/email-templates/[type]": 593,
     "/[locale]/admin/fees": 621,
     "/[locale]/admin/flags": 587,
     "/[locale]/admin/health": 584,
