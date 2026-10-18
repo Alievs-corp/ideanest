@@ -907,7 +907,7 @@
         "metaTitle": "Feature flags",
         "metaDescription": "Gradual rollout and experiments: who sees what, and how widely.",
         "title": "Feature flags",
-        "intro": "A rollout percentage is decided by a stable hash, so widening one only ever adds people — nobody loses a feature because the number went up. A flag that is off reaches nobody, the named accounts included."
+        "intro": "Turn a feature on for everybody, for a share of signed-in readers, or for chosen accounts. Raising the share keeps everyone who already sees it and only adds people."
       },
       "analytics": {
         "metaTitle": "Platform analytics",
@@ -1110,7 +1110,11 @@
         "metaTitle": "Maintenance windows",
         "metaDescription": "Schedule, start and end planned maintenance, with notice for readers.",
         "title": "Maintenance",
-        "intro": "While a window is in force every reader gets the maintenance page, and the service refuses everything except staff, sign-in, payment providers' notifications and the return from bank verification. Readers are warned from the announcement time, a day ahead by default. Six background jobs pause: refunds, checks on unanswered payment pages, ledger reconciliation, sending notifications and their digests, and launch reminders. Everything else keeps running, including campaigns opening and closing at their deadline, automatic withdrawals and the outbox."
+        "intro": "While a window is in force readers get the maintenance page and staff keep working in the console. Readers are warned from the announcement time, a day ahead by default.",
+        "detailsSummary": "What stops and what keeps running during a window",
+        "detailsPasses": "Let through: staff, sign-in, payment providers' notifications and the return from bank verification. Every other request is refused.",
+        "detailsPaused": "The six background jobs that pause: refunds, checks on unanswered payment pages, ledger reconciliation, sending notifications and their digests, and launch reminders.",
+        "detailsRunning": "Keeps running: campaigns opening and closing at their deadline, automatic withdrawals and the outbox."
       }
     },
     "screens": {
@@ -1405,7 +1409,7 @@
         "confirmYes": "Yes, save it",
         "keep": "Not now",
         "addHeading": "Add a flag",
-        "addIntro": "A new flag starts off, at nought percent and with no accounts named. Widening a rollout only ever adds people: who is inside is decided by a stable hash, not a sample.",
+        "addIntro": "A new flag starts off, at zero percent and with no accounts. You can then switch it on and widen it from its card.",
         "nameLabel": "Name",
         "nameHint": "Lower case letters, digits and hyphens, at least three characters: checkout-v2.",
         "nameError": "Lower case letters, digits and hyphens. It starts with a letter and ends with a letter or digit.",
@@ -1421,7 +1425,9 @@
           "FEATURE_FLAG_CHANGED": "Somebody else changed this flag after you read it. The list has been read again: look at your change once more.",
           "FEATURE_FLAG_NOT_FOUND": "That flag no longer exists. The list has been read again.",
           "FEATURE_FLAG_KEY_INVALID": "That name will not do: lower case letters, digits and hyphens only."
-        }
+        },
+        "addAccountLabel": "Add an account to {flag}",
+        "addAccountClose": "Close"
       },
       "analytics": {
         "subject": "the platform figures",
@@ -3472,11 +3478,11 @@
           "ENDED": "Ended",
           "CANCELLED": "Cancelled"
         },
-        "startsLabel": "Starts",
-        "endsLabel": "Ends",
+        "startsLabel": "Start",
+        "endsLabel": "Planned end",
         "announceLabel": "Readers warned from",
-        "endedLabel": "Ended",
-        "cancelledLabel": "Cancelled",
+        "endedLabel": "Actual end",
+        "cancelledLabel": "Cancelled at",
         "noteLabel": "Note",
         "untilFurtherNotice": "Until further notice",
         "startNow": "Start now",
@@ -3492,7 +3498,7 @@
         "saveEnd": "Save the end",
         "cancelWindow": "Cancel the window",
         "scheduleHeading": "Schedule a window",
-        "scheduleIntro": "Times are in your time zone, {zone}. Readers see them in theirs.",
+        "scheduleIntro": "Readers see the times in their own time zone.",
         "startsAtLabel": "Starts",
         "endsAtLabel": "Ends",
         "endsAtHint": "Leave empty for until further notice. Readers are shown the end you set.",

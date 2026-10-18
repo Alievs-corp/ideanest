@@ -907,7 +907,7 @@
         "metaTitle": "Özellik bayrakları",
         "metaDescription": "Kademeli yayılım ve deneyler: kim neyi görüyor ve ne kadar geniş.",
         "title": "Özellik bayrakları",
-        "intro": "Yayılım yüzdesi kararlı bir özet değerle belirlenir, bu yüzden onu genişletmek yalnızca insan ekler — sayı arttığı için kimse bir özelliği kaybetmez. Kapalı bir bayrak kimseye ulaşmaz, adı geçen hesaplar dahil."
+        "intro": "Bir özelliği herkes için, giriş yapmış okuyucuların bir kısmı için ya da seçilen hesaplar için açın. Oranı artırdığınızda zaten görenler görmeye devam eder, yalnızca yeni kişiler eklenir."
       },
       "analytics": {
         "metaTitle": "Platform analitiği",
@@ -1110,7 +1110,11 @@
         "metaTitle": "Bakım pencereleri",
         "metaDescription": "Planlı bakımı planlayın, başlatın ve bitirin; okurlar önceden uyarılır.",
         "title": "Bakım",
-        "intro": "Bir pencere yürürlükteyken her okur bakım sayfasını görür; servis ekip üyeleri, giriş, ödeme sağlayıcılarının bildirimleri ve banka doğrulamasından sonra siteye dönüş dışında her şeyi reddeder. Okurlar duyuru zamanından itibaren, varsayılan olarak bir gün önceden uyarılır. Altı arka plan işi durur: iadeler, yanıtsız ödeme sayfalarının kontrolü, defter mutabakatı, bildirim gönderimi ve özetleri, açılış hatırlatmaları. Diğer her şey, kampanyaların açılması ve süresinde kapanması, otomatik para çekme ve giden kuyruğu dahil, çalışmaya devam eder."
+        "intro": "Bir pencere yürürlükteyken okurlar bakım sayfasını görür, ekip ise konsolda çalışmaya devam eder. Okurlar duyuru zamanından itibaren, varsayılan olarak bir gün önceden uyarılır.",
+        "detailsSummary": "Pencere sırasında ne durur, ne çalışmaya devam eder",
+        "detailsPasses": "Geçenler: ekip üyeleri, giriş, ödeme sağlayıcılarının bildirimleri ve banka doğrulamasından sonra siteye dönüş. Diğer her istek reddedilir.",
+        "detailsPaused": "Duran altı arka plan işi: iadeler, yanıtsız ödeme sayfalarının kontrolü, defter mutabakatı, bildirim gönderimi ve özetleri, açılış hatırlatmaları.",
+        "detailsRunning": "Çalışmaya devam edenler: kampanyaların açılması ve süresinde kapanması, otomatik para çekme ve giden kuyruğu."
       }
     },
     "screens": {
@@ -1405,7 +1409,7 @@
         "confirmYes": "Evet, kaydet",
         "keep": "Şimdi değil",
         "addHeading": "Bayrak ekle",
-        "addIntro": "Yeni bir bayrak kapalı, sıfır yayılımla ve hiçbir hesap olmadan başlar. Yayılımı genişletmek yalnızca insan ekler: içeride kimin olduğunu örneklem değil kararlı bir özet değer belirler.",
+        "addIntro": "Yeni bayrak kapalı, sıfır oranla ve hesapsız oluşturulur. Ardından kartından açıp genişletebilirsiniz.",
         "nameLabel": "Ad",
         "nameHint": "Küçük harfler, rakamlar ve tire, en az üç karakter: checkout-v2.",
         "nameError": "Küçük harfler, rakamlar ve tire. Harfle başlar, harf ya da rakamla biter.",
@@ -1421,7 +1425,9 @@
           "FEATURE_FLAG_CHANGED": "Siz okuduktan sonra bu bayrağı başka biri değiştirdi. Liste yeniden okundu: değişikliğinize bir kez daha bakın.",
           "FEATURE_FLAG_NOT_FOUND": "Bu bayrak artık yok. Liste yeniden okundu.",
           "FEATURE_FLAG_KEY_INVALID": "Bu ad olmaz: yalnızca küçük harfler, rakamlar ve tire."
-        }
+        },
+        "addAccountLabel": "{flag} bayrağına hesap ekle",
+        "addAccountClose": "Kapat"
       },
       "analytics": {
         "subject": "platform rakamlarını",
@@ -3473,10 +3479,10 @@
           "CANCELLED": "İptal edildi"
         },
         "startsLabel": "Başlangıç",
-        "endsLabel": "Bitiş",
-        "announceLabel": "Okurlar şu tarihten itibaren uyarılır",
-        "endedLabel": "Bitti",
-        "cancelledLabel": "İptal edildi",
+        "endsLabel": "Planlanan bitiş",
+        "announceLabel": "Uyarı başlangıcı",
+        "endedLabel": "Gerçek bitiş",
+        "cancelledLabel": "İptal zamanı",
         "noteLabel": "Not",
         "untilFurtherNotice": "Yeni bir duyuruya kadar",
         "startNow": "Şimdi başlat",
@@ -3492,7 +3498,7 @@
         "saveEnd": "Bitişi kaydet",
         "cancelWindow": "Pencereyi iptal et",
         "scheduleHeading": "Pencere planla",
-        "scheduleIntro": "Saatler sizin saat diliminizde: {zone}. Okurlar kendi saat dilimlerinde görür.",
+        "scheduleIntro": "Okurlar saatleri kendi saat dilimlerinde görür.",
         "startsAtLabel": "Başlangıç",
         "endsAtLabel": "Bitiş",
         "endsAtHint": "Bitiş belli değilse boş bırakın. Okurlara belirlediğiniz bitiş gösterilir.",

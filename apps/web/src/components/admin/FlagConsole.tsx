@@ -219,6 +219,9 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(flag.description);
   const [draftError, setDraftError] = useState(false);
+  // The directory search is opened on request: three open search boxes on a page of three flags
+  // read as three forms to fill in, and each search is itself an audited read.
+  const [adding, setAdding] = useState(false);
 
   const accountName = (id: string) => names.accounts.get(id)?.name ?? shortId(id);
 
@@ -240,6 +243,7 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
       setPending(null);
       setPicked(null);
       setEditing(false);
+      setAdding(false);
     } catch (cause) {
       setError(refusalFor(cause, copy));
       setPending(null);
@@ -407,16 +411,34 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
         {canPickAccounts ? (
           full ? (
             <p className="mt-2 text-xs text-white/48">{copy.accountsFull}</p>
+          ) : adding ? (
+            <>
+              <Suspense fallback={null}>
+                <AccountPicker
+                  className="mt-3 max-w-[480px]"
+                  chosen={picked}
+                  onChoose={pick}
+                  copy={copy.picker}
+                  disabled={busy || (pending !== null && picked === null)}
+                />
+              </Suspense>
+              {picked === null && (
+                <Pill variant="ghost" size="sm" className="mt-2" onClick={() => setAdding(false)}>
+                  {copy.addAccountClose}
+                </Pill>
+              )}
+            </>
           ) : (
-            <Suspense fallback={null}>
-              <AccountPicker
-                className="mt-3 max-w-[480px]"
-                chosen={picked}
-                onChoose={pick}
-                copy={copy.picker}
-                disabled={busy || (pending !== null && picked === null)}
-              />
-            </Suspense>
+            <Pill
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              disabled={busy || pending !== null}
+              aria-label={fillPlaceholders(copy.addAccountLabel, { flag: flag.key })}
+              onClick={() => setAdding(true)}
+            >
+              {copy.addAccount}
+            </Pill>
           )
         ) : (
           <p className="mt-2 text-xs text-white/48">{copy.accountsReadOnly}</p>

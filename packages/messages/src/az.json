@@ -907,7 +907,7 @@
         "metaTitle": "Funksiya bayraqları",
         "metaDescription": "Tədricən yayım və eksperimentlər: kim nəyi görür və nə qədər geniş.",
         "title": "Funksiya bayraqları",
-        "intro": "Yayım faizi sabit heşlə müəyyən olunur, ona görə onu genişlətmək yalnız adam əlavə edir — rəqəm artdığı üçün heç kim funksiyanı itirmir. Bağlı bayraq heç kimə çatmır, adı çəkilən hesablara da."
+        "intro": "Funksiyanı hamı üçün, daxil olmuş oxucuların bir hissəsi üçün və ya seçilmiş hesablar üçün açın. Faizi artıranda artıq görənlər görməyə davam edir, yalnız yeni adamlar əlavə olunur."
       },
       "analytics": {
         "metaTitle": "Platforma analitikası",
@@ -1110,7 +1110,11 @@
         "metaTitle": "Texniki xidmət pəncərələri",
         "metaDescription": "Planlı texniki xidməti planlaşdırın, başladın və bitirin — oxucular əvvəlcədən xəbərdar edilir.",
         "title": "Texniki xidmət",
-        "intro": "Pəncərə qüvvədə olanda hər oxucu texniki xidmət səhifəsini görür. Xidmət əməkdaşlardan, girişdən, ödəniş provayderlərinin bildirişlərindən və bank yoxlamasından sonra sayta qayıdışdan başqa hər şeyi rədd edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir. Altı fon işi dayanır: geri ödəmələr, cavabsız ödəniş səhifələrinin yoxlanması, mühasibat tutuşdurması, bildirişlərin göndərilməsi və icmalları, açılış xatırlatmaları. Qalan işlər, o cümlədən kampaniyaların açılması və son tarixdə bağlanması, vəsaitin avtomatik çıxarılması və göndərilənlər növbəsi işləməyə davam edir."
+        "intro": "Pəncərə qüvvədə olanda oxucular texniki xidmət səhifəsini görür, əməkdaşlar isə konsolda işləməyə davam edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir.",
+        "detailsSummary": "Pəncərə vaxtı nə dayanır, nə işləyir",
+        "detailsPasses": "Keçənlər: əməkdaşlar, giriş, ödəniş provayderlərinin bildirişləri və bank yoxlamasından sonra sayta qayıdış. Qalan hər sorğu rədd edilir.",
+        "detailsPaused": "Dayanan altı fon işi: geri ödəmələr, cavabsız ödəniş səhifələrinin yoxlanması, mühasibat tutuşdurması, bildirişlərin göndərilməsi və icmalları, açılış xatırlatmaları.",
+        "detailsRunning": "İşləməyə davam edənlər: kampaniyaların açılması və son tarixdə bağlanması, vəsaitin avtomatik çıxarılması və göndərilənlər növbəsi."
       }
     },
     "screens": {
@@ -1405,7 +1409,7 @@
         "confirmYes": "Bəli, saxla",
         "keep": "Hələ yox",
         "addHeading": "Bayraq əlavə et",
-        "addIntro": "Yeni bayraq bağlı, sıfır yayımla və heç bir hesab olmadan yaranır. Yayımı genişlətmək yalnız adam əlavə edir: içəridəki hesablar seçmə ilə yox, sabit heşlə müəyyən olunur.",
+        "addIntro": "Yeni bayraq bağlı, sıfır faizlə və hesabsız yaranır. Sonra onu kartında açıb genişlədə bilərsiniz.",
         "nameLabel": "Ad",
         "nameHint": "Kiçik hərflər, rəqəmlər və defis, ən azı üç simvol: checkout-v2.",
         "nameError": "Kiçik hərflər, rəqəmlər və defis. Hərflə başlayıb hərf və ya rəqəmlə bitməlidir.",
@@ -1421,7 +1425,9 @@
           "FEATURE_FLAG_CHANGED": "Siz oxuyandan sonra bu bayrağı başqası dəyişib. Siyahı yenidən oxundu: dəyişikliyə yenidən baxın.",
           "FEATURE_FLAG_NOT_FOUND": "Bu bayraq artıq yoxdur. Siyahı yenidən oxundu.",
           "FEATURE_FLAG_KEY_INVALID": "Bu ad uyğun deyil: kiçik hərflər, rəqəmlər və defis olmalıdır."
-        }
+        },
+        "addAccountLabel": "{flag} bayrağına hesab əlavə et",
+        "addAccountClose": "Bağla"
       },
       "analytics": {
         "subject": "platforma rəqəmlərini",
@@ -3472,11 +3478,11 @@
           "ENDED": "Bitib",
           "CANCELLED": "Ləğv olunub"
         },
-        "startsLabel": "Başlayır",
-        "endsLabel": "Bitir",
-        "announceLabel": "Oxucular bu vaxtdan xəbərdar edilir",
-        "endedLabel": "Bitdi",
-        "cancelledLabel": "Ləğv olundu",
+        "startsLabel": "Başlanğıc",
+        "endsLabel": "Planlanan son",
+        "announceLabel": "Xəbərdarlıq başlanğıcı",
+        "endedLabel": "Faktiki son",
+        "cancelledLabel": "Ləğv vaxtı",
         "noteLabel": "Qeyd",
         "untilFurtherNotice": "Növbəti xəbərə qədər",
         "startNow": "İndi başlat",
@@ -3492,7 +3498,7 @@
         "saveEnd": "Bitmə vaxtını saxla",
         "cancelWindow": "Pəncərəni ləğv et",
         "scheduleHeading": "Pəncərə planlaşdır",
-        "scheduleIntro": "Vaxtlar sizin saat qurşağınızdadır: {zone}. Oxucular onları öz saat qurşaqlarında görür.",
+        "scheduleIntro": "Oxucular vaxtları öz saat qurşaqlarında görür.",
         "startsAtLabel": "Başlama vaxtı",
         "endsAtLabel": "Bitmə vaxtı",
         "endsAtHint": "Növbəti xəbərə qədər üçün boş saxlayın. Oxuculara təyin etdiyiniz bitmə vaxtı göstərilir.",

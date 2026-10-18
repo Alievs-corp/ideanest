@@ -236,6 +236,10 @@ export interface FlagConsoleCopy extends ConsoleChromeCopy {
   readonly accountsNone: string;
   readonly accountsReadOnly: string;
   readonly accountsFull: string;
+  readonly addAccount: string;
+  /** Carries `{flag}`. */
+  readonly addAccountLabel: string;
+  readonly addAccountClose: string;
   readonly removeAccount: string;
   /** Carries `{name}`, `{flag}`. */
   readonly removeAccountLabel: string;
@@ -290,6 +294,9 @@ export function flagConsoleCopyFrom(
     accountsNone: t('screens.flags.accountsNone'),
     accountsReadOnly: t('screens.flags.accountsReadOnly'),
     accountsFull: t('screens.flags.accountsFull'),
+    addAccount: t('screens.flags.addAccount'),
+    addAccountLabel: String(t.raw('screens.flags.addAccountLabel')),
+    addAccountClose: t('screens.flags.addAccountClose'),
     removeAccount: t('screens.flags.removeAccount'),
     removeAccountLabel: String(t.raw('screens.flags.removeAccountLabel')),
     editDescription: t('screens.flags.editDescription'),

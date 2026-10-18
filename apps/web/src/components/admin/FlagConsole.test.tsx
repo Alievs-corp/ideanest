@@ -222,7 +222,12 @@ describe('the flags screen', () => {
 
     const flag = await screen.findByText('checkout-v2', { selector: 'p' });
     const item = flag.closest('li') as HTMLElement;
-    await userEvent.type(within(item).getByRole('textbox', { name: COPY.picker.label }), 'Rashad');
+    // The search is opened on request rather than drawn open on every row.
+    expect(within(item).queryByRole('textbox', { name: COPY.picker.label })).not.toBeInTheDocument();
+    await userEvent.click(
+      within(item).getByRole('button', { name: fillPlaceholders(COPY.addAccountLabel, { flag: 'checkout-v2' }) }),
+    );
+    await userEvent.type(await within(item).findByRole('textbox', { name: COPY.picker.label }), 'Rashad');
     await userEvent.click(within(item).getByRole('button', { name: COPY.picker.search }));
     await userEvent.click(await within(item).findByRole('button', { name: /Rashad Aliyev/ }));
 

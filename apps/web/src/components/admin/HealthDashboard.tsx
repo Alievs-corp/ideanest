@@ -1,5 +1,6 @@
 'use client';
 
+import { CircleAlert, CircleCheck, TriangleAlert } from 'lucide-react';
 import { InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
 import { bakuDateTime } from '../../lib/admin/console-dates';
 import {
@@ -282,5 +283,28 @@ function StatusTag({
   readonly status: HealthStatus;
   readonly copy: HealthDashboardCopy;
 }) {
-  return <Tag>{copy.status[status] ?? status}</Tag>;
+  const Icon = STATUS_ICON[status] ?? CircleAlert;
+  return (
+    <Tag variant={STATUS_VARIANT[status] ?? 'default'}>
+      <Icon aria-hidden="true" className="size-3.5" strokeWidth={2.25} />
+      {copy.status[status] ?? status}
+    </Tag>
+  );
 }
+
+/**
+ * Each state wears its own status colour and shape, with the word beside it, so the one row that
+ * needs somebody stands out of a list of twenty healthy ones without being read line by line.
+ * The colours are the kit's status tokens, which are reserved for exactly this.
+ */
+const STATUS_VARIANT: Readonly<Record<string, 'success' | 'warning' | 'danger'>> = {
+  HEALTHY: 'success',
+  DEGRADED: 'warning',
+  CRITICAL: 'danger',
+};
+
+const STATUS_ICON: Readonly<Record<string, typeof CircleAlert>> = {
+  HEALTHY: CircleCheck,
+  DEGRADED: TriangleAlert,
+  CRITICAL: CircleAlert,
+};

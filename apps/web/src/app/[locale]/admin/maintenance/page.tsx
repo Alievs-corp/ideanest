@@ -26,6 +26,18 @@ export default async function MaintenancePage() {
     <div className="max-w-[880px]">
       <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">{t('title')}</h1>
       <p className="mt-2 max-w-[62ch] text-sm text-white/64">{t('intro')}</p>
+      {/* The exact list is a reference, not a preamble: folded, so the screen's controls are
+          what a reader meets first. A native disclosure, so it costs the route no script. */}
+      <details className="mt-3 max-w-[62ch] text-sm">
+        <summary className="cursor-pointer rounded text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]">
+          {t('detailsSummary')}
+        </summary>
+        <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5 text-white/64">
+          <li>{t('detailsPasses')}</li>
+          <li>{t('detailsPaused')}</li>
+          <li>{t('detailsRunning')}</li>
+        </ul>
+      </details>
 
       <div className="mt-8">
         <MaintenanceConsole copy={await maintenanceConsoleCopy()} />
