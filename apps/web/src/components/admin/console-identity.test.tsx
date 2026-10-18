@@ -160,7 +160,7 @@ function health(overdueBySeconds: number): PlatformHealth {
     at: new Date().toISOString(),
     status: 'HEALTHY',
     monitored: false,
-    queues: [{ name: 'scheduled-jobs', waiting: 0, dead: 0, status: 'HEALTHY' }],
+    queues: [{ name: 'outbox', waiting: 0, dead: 0, status: 'HEALTHY' }],
     jobs: [
       {
         name: 'outbox-relay',
@@ -479,17 +479,13 @@ describe('the health dashboard', () => {
     render(<HealthDashboard copy={HEALTH} />);
 
     /*
-     * The service answers an identifier now. It used to answer "Scheduled jobs", which this
-     * screen rendered verbatim under an Azerbaijani heading and above a section headed with
-     * the Azerbaijani for the same three words.
-     *
-     * Found by the wire value on the row's `title` rather than by its text: the label is
-     * deliberately the same words as the section heading below it, which is the point — one
-     * concept, one language.
+     * The service answers an identifier now. It used to answer "Outbox" and "Scheduled jobs",
+     * which this screen rendered verbatim under an Azerbaijani heading. Found by the wire
+     * value on the row's `title`, which is where the identifier stays.
      */
-    const row = await screen.findByTitle('scheduled-jobs');
-    expect(row).toHaveTextContent(HEALTH.queue['scheduled-jobs']!);
-    expect(row).not.toHaveTextContent('scheduled-jobs');
+    const row = await screen.findByTitle('outbox');
+    expect(row).toHaveTextContent(HEALTH.queue['outbox']!);
+    expect(row).not.toHaveTextContent('outbox');
   });
 });
 

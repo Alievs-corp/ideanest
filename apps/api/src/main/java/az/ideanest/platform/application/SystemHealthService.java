@@ -11,6 +11,7 @@ import az.ideanest.shared.jobs.JobRecord;
 import az.ideanest.shared.jobs.JobRecordRepository;
 import az.ideanest.shared.jobs.JobState;
 import az.ideanest.shared.jobs.ScheduledJob;
+import az.ideanest.shared.maintenance.MaintenanceGate;
 import az.ideanest.shared.observability.ProviderStatusSource;
 import az.ideanest.shared.observability.QueueDepthSource;
 import java.time.Duration;
@@ -21,7 +22,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
@@ -60,6 +63,9 @@ public class SystemHealthService {
     private final PlatformProperties properties;
     private final java.time.Clock clock;
     private final Map<String, CronExpression> schedules;
+    private final Set<String> unscheduled;
+    private final Set<String> pausing;
+    private final MaintenanceGate maintenance;
 
     public SystemHealthService(
             List<QueueDepthSource> queues,
@@ -68,16 +74,26 @@ public class SystemHealthService {
             List<ProviderStatusSource> providers,
             PlatformStaff staff,
             PlatformProperties properties,
+            MaintenanceGate maintenance,
             java.time.Clock clock) {
         this.queues = queues;
         this.jobs = jobs;
         this.schedules = scheduled.stream()
                 .filter(job -> !Scheduled.CRON_DISABLED.equals(job.schedule()))
-                .collect(java.util.stream.Collectors.toUnmodifiableMap(
+                .collect(Collectors.toUnmodifiableMap(
                         ScheduledJob::name, job -> CronExpression.parse(job.schedule()), (a, b) -> a));
+        this.unscheduled = scheduled.stream()
+                .filter(job -> Scheduled.CRON_DISABLED.equals(job.schedule()))
+                .map(ScheduledJob::name)
+                .collect(Collectors.toUnmodifiableSet());
+        this.pausing = scheduled.stream()
+                .filter(ScheduledJob::pausesDuringMaintenance)
+                .map(ScheduledJob::name)
+                .collect(Collectors.toUnmodifiableSet());
         this.providers = providers;
         this.staff = staff;
         this.properties = properties;
+        this.maintenance = maintenance;
         this.clock = clock;
     }
 
@@ -99,13 +115,21 @@ public class SystemHealthService {
         Instant now = clock.instant();
         PlatformProperties.Health thresholds = properties.health();
 
+        // The scheduler is graded job by job below rather than listed as a queue —
+        // QueueDepthSource.listedAsQueue has why.
         List<QueueDepth> depths = queues.stream()
+                .filter(QueueDepthSource::listedAsQueue)
                 .map(source -> QueueDepth.of(source.queueName(), source.waiting(), source.dead(), thresholds))
                 .sorted(Comparator.comparing(QueueDepth::name))
                 .toList();
 
+        boolean paused = maintenance.active().isPresent();
+        // Worst first, so the row that needs somebody is at the top of the list rather than
+        // wherever its name falls in the alphabet; by name within a grade.
         List<JobHealth> jobHealth = jobs.allJobs().stream()
-                .map(job -> gradeJob(job, now, thresholds))
+                .map(job -> gradeJob(job, now, thresholds, paused))
+                .sorted(Comparator.comparing(JobHealth::status, Comparator.reverseOrder())
+                        .thenComparing(JobHealth::name))
                 .toList();
 
         List<ProviderHealth> providerHealth = gradeProviders();
@@ -148,18 +172,39 @@ public class SystemHealthService {
      * it a job is on time, which is what the screen already said in words while the tag
      * beside it said otherwise. The default is the minute the screen renders in, so the
      * two can no longer disagree.
+     *
+     * <h2>A job that is held is not late</h2>
+     *
+     * <p>Two kinds of job stand still on purpose, and both used to be graded critical: the
+     * six that send money or messages out are not claimed while a maintenance window is in
+     * force, so every window turned them red a quarter of an hour in; and a job registered
+     * with the schedule {@code -} never runs on a timer, so it was red for ever. Each is
+     * healthy now, and {@code hold} says which in words — the screen's job is to show what
+     * has stopped by accident.
+     *
+     * <p>A dead job and a held one report no lateness: neither is waiting for a run that is
+     * coming, and a figure that grew by a minute every minute said nothing the state did not.
      */
-    private JobHealth gradeJob(JobRecord job, Instant now, PlatformProperties.Health thresholds) {
-        Instant nextAttemptAt = job.getState() == JobState.DEAD
+    private JobHealth gradeJob(JobRecord job, Instant now, PlatformProperties.Health thresholds, boolean paused) {
+        boolean dead = job.getState() == JobState.DEAD;
+        String hold = dead
+                ? null
+                : paused && pausing.contains(job.getName())
+                        ? JobHealth.MAINTENANCE
+                        : unscheduled.contains(job.getName()) ? JobHealth.UNSCHEDULED : null;
+
+        Instant nextAttemptAt = dead
                 ? job.getNextAttemptAt()
                 : dueAt(job.getNextAttemptAt(), Optional.ofNullable(schedules.get(job.getName())));
-        long overdueBy = nextAttemptAt == null || nextAttemptAt.isAfter(now)
+        long overdueBy = dead || hold != null || nextAttemptAt == null || nextAttemptAt.isAfter(now)
                 ? 0L
                 : Duration.between(nextAttemptAt, now).toSeconds();
 
         HealthStatus status;
-        if (job.getState() == JobState.DEAD) {
+        if (dead) {
             status = HealthStatus.CRITICAL;
+        } else if (hold != null) {
+            status = HealthStatus.HEALTHY;
         } else if (overdueBy > thresholds.staleJobAfter().toSeconds()) {
             status = HealthStatus.CRITICAL;
         } else if (overdueBy >= thresholds.lateJobAfter().toSeconds()) {
@@ -176,6 +221,7 @@ public class SystemHealthService {
                 overdueBy,
                 job.getAttempts(),
                 job.getLastError(),
+                hold,
                 status);
     }
 
@@ -221,7 +267,7 @@ public class SystemHealthService {
                         status.name(),
                         status.configured(),
                         status.available(),
-                        status.detail(),
+                        status.reason(),
                         !status.configured() || status.available()
                                 ? HealthStatus.HEALTHY
                                 : HealthStatus.CRITICAL));

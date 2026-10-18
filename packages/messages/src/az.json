@@ -901,13 +901,13 @@
         "metaTitle": "Sistemin vəziyyəti",
         "metaDescription": "Növbə dərinliyi, uğursuz işlər və provayder vəziyyəti, səhifəni açdığınız anda ölçülür.",
         "title": "Sistemin vəziyyəti",
-        "intro": "Səhifəni açdığınız anda ölçülür. Bu səhifədəki heç nə kimisə oyatmır və siz baxmayanda heç nə onu izləmir — nəyisə şübhələndiyiniz zaman oxuyun, ondan sizə xəbər verməsini gözləməyin."
+        "intro": "Növbələr, planlaşdırılmış işlər və ödəniş provayderləri bir baxışda."
       },
       "flags": {
         "metaTitle": "Funksiya bayraqları",
-        "metaDescription": "Tədricən yayım və eksperimentlər, dediyini edən dayandırma açarı ilə.",
+        "metaDescription": "Tədricən yayım və eksperimentlər: kim nəyi görür və nə qədər geniş.",
         "title": "Funksiya bayraqları",
-        "intro": "Yayım faizi sabit heş ilə müəyyən olunur, ona görə onu genişlətmək yalnız adam əlavə edir — rəqəm artdığı üçün heç kim funksiyanı itirmir. Bayrağı söndürmək onun haqqında qalan hər şeyi ləğv edir."
+        "intro": "Yayım faizi sabit heşlə müəyyən olunur, ona görə onu genişlətmək yalnız adam əlavə edir — rəqəm artdığı üçün heç kim funksiyanı itirmir. Bağlı bayraq heç kimə çatmır, adı çəkilən hesablara da."
       },
       "analytics": {
         "metaTitle": "Platforma analitikası",
@@ -1110,7 +1110,7 @@
         "metaTitle": "Texniki xidmət pəncərələri",
         "metaDescription": "Planlı texniki xidməti planlaşdırın, başladın və bitirin — oxucular əvvəlcədən xəbərdar edilir.",
         "title": "Texniki xidmət",
-        "intro": "Pəncərə qüvvədə olanda hər oxucu texniki xidmət səhifəsini görür, xidmət isə girişdən, ödəniş provayderlərinin webhook-larından və əməkdaşlardan başqa hər şeyi rədd edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir. Pul və ya mesaj göndərən fon işləri dayanır və pəncərə bitəndə davam edir."
+        "intro": "Pəncərə qüvvədə olanda hər oxucu texniki xidmət səhifəsini görür. Xidmət əməkdaşlardan, girişdən, ödəniş provayderlərinin bildirişlərindən və bank yoxlamasından sonra sayta qayıdışdan başqa hər şeyi rədd edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir. Altı fon işi dayanır: geri ödəmələr, cavabsız ödəniş səhifələrinin yoxlanması, mühasibat tutuşdurması, bildirişlərin göndərilməsi və icmalları, açılış xatırlatmaları. Qalan işlər, o cümlədən kampaniyaların açılması və son tarixdə bağlanması, vəsaitin avtomatik çıxarılması və göndərilənlər növbəsi işləməyə davam edir."
       }
     },
     "screens": {
@@ -1271,57 +1271,157 @@
         "loadingList": "Vəziyyət lövhəsi yüklənir",
         "readFailed": "Lövhəni oxumaq mümkün olmadı.",
         "notMonitoredTitle": "Bu səhifə heç kimə xəbərdarlıq göndərmir",
-        "notMonitoredBody": "Buradakı hər şey siz açanda ölçülür. Bu ekrandakı heç nə kimisə oyatmır və siz baxmayanda heç nə onu izləmir — §18-in müşahidə işi (#138) bunu edəcək. Nəyisə şübhələndiyiniz zaman oxuyun; sizə xəbər verməsinə güvənməyin.",
+        "notMonitoredBody": "Buradakı hər şey səhifəni açdığınız anda ölçülür. Bu ekran heç kimə xəbər vermir və siz baxmayanda heç nə onu izləmir. Nəyisə şübhələndiyiniz zaman oxuyun, sizə xəbər verəcəyini gözləməyin.",
         "overall": "Ümumi",
-        "measuredSeconds": "{count} saniyə əvvəl ölçülüb.",
-        "measuredMinutes": "{count} dəqiqə əvvəl ölçülüb.",
+        "measuredAt": "Ölçülmə vaxtı: {time}.",
         "measureAgain": "Yenidən ölç",
         "queues": "Növbələr",
         "waiting": "{count} gözləyir",
-        "givenUp": "{count} imtina edilib",
+        "givenUp": "{count} göndərilə bilmədi (cəhdlər tükənib)",
+        "givenUpHint": "Bunlar özü yenidən göndərilməyəcək. Səbəbi aradan qaldırıb yenidən göndərmək üçün texniki komandaya bildirin.",
         "jobs": "Planlaşdırılmış işlər",
-        "overdue": "{count} dəqiqə gecikib",
+        "jobsAttention": "Diqqət tələb edən işlər: {count}",
+        "jobsAllWell": "Bütün işlər qaydasındadır.",
+        "overdue": {
+          "minutes": {
+            "one": "{count} dəqiqə gecikir",
+            "few": "{count} dəqiqə gecikir",
+            "many": "{count} dəqiqə gecikir",
+            "other": "{count} dəqiqə gecikir"
+          },
+          "hours": {
+            "one": "{count} saat gecikir",
+            "few": "{count} saat gecikir",
+            "many": "{count} saat gecikir",
+            "other": "{count} saat gecikir"
+          },
+          "days": {
+            "one": "{count} gün gecikir",
+            "few": "{count} gün gecikir",
+            "many": "{count} gün gecikir",
+            "other": "{count} gün gecikir"
+          }
+        },
         "onTime": "vaxtında",
-        "attempts": "{count} cəhd",
+        "lastRun": "Son işləmə: {time}",
+        "neverRun": "Hələ heç işləməyib",
+        "lastErrorLabel": "Son xətanın texniki mətni",
         "providers": "Provayderlər",
         "notConfigured": "Konfiqurasiya edilməyib",
+        "attempts": {
+          "one": "{count} cəhd",
+          "few": "{count} cəhd",
+          "many": "{count} cəhd",
+          "other": "{count} cəhd"
+        },
         "status": {
           "HEALTHY": "Sağlam",
           "DEGRADED": "Baxmağa dəyər",
-          "CRITICAL": "Dayanıb"
+          "CRITICAL": "Təcili baxın"
         },
         "jobState": {
           "READY": "Növbəti işə hazır",
-          "RUNNING": "İşləyir",
-          "FAILED": "Sonuncu dəfə uğursuz olub",
-          "DISABLED": "Söndürülüb"
+          "DEAD": "Cəhdlər tükənib, özü yenidən başlamayacaq"
+        },
+        "hold": {
+          "MAINTENANCE": "Texniki xidmət bitənə qədər dayandırılıb",
+          "UNSCHEDULED": "Bu quraşdırmada cədvəli yoxdur, öz-özünə işə düşmür"
         },
         "queue": {
-          "outbox": "Göndərilənlər növbəsi",
-          "scheduled-jobs": "Planlaşdırılmış işlər"
+          "outbox": "Göndərilənlər növbəsi"
+        },
+        "kind": {
+          "payments": "Ödənişlər"
+        },
+        "providerName": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Sınaq provayderi"
+        },
+        "reason": {
+          "NOT_CONFIGURED": "Bu quraşdırmada açarları yoxdur. Söndürülüb, xəta deyil.",
+          "CIRCUIT_OPEN": "Ardıcıl uğursuz cavablardan sonra müvəqqəti xidmətdən çıxarılıb. Platforma bir azdan yenidən yoxlayacaq."
+        },
+        "jobName": {
+          "account-anonymiser": "Hesabların anonimləşdirilməsi",
+          "analytics-aggregator": "Analitikanın gündəlik yığımı",
+          "automatic-withdrawal": "Vəsaitin avtomatik çıxarılması",
+          "campaign-finalizer": "Kampaniyaların son tarixdə bağlanması",
+          "campaign-launcher": "Planlaşdırılmış kampaniyaların açılması",
+          "campaign-refunds": "Uğursuz kampaniyalar üzrə geri ödəmələr",
+          "deadline-reminder": "Son tarix xatırlatmaları",
+          "exchange-rate-refresh": "Valyuta məzənnələrinin yenilənməsi",
+          "hosted-charge-sweep": "Cavabsız ödəniş səhifələrinin yoxlanması",
+          "idempotency-key-cleaner": "Köhnə təkrar sorğu açarlarının silinməsi",
+          "identity-document-retention": "Şəxsiyyət sənədlərinin saxlanma müddəti",
+          "ledger-reconciliation": "Mühasibat kitabının tutuşdurulması",
+          "media-processing": "Yüklənmiş mediaların emalı",
+          "media-video-processing": "Videoların emalı",
+          "notification-digest": "Bildiriş icmalları",
+          "notification-sender": "Bildirişlərin göndərilməsi",
+          "outbox-relay": "Göndərilənlər növbəsinin ötürülməsi",
+          "payout-destination-reminders": "Ödəniş hesabı xatırlatmaları",
+          "push-device-retention": "Köhnə push qeydiyyatlarının silinməsi",
+          "reminder-sender": "Açılış xatırlatmaları",
+          "reservation-cleaner": "Bitməmiş sifarişlərin yerlərinin qaytarılması",
+          "subscription-renewal-reminders": "Abunə yenilənməsi xatırlatmaları",
+          "survey-nudge": "Sorğu xatırlatmaları",
+          "update-obligation-sweep": "Aylıq yeniləmə öhdəliyinin yoxlanması"
         }
       },
       "flags": {
         "subject": "funksiya bayraqlarını",
         "heading": "Bayraqlar",
         "loadingList": "Funksiya bayraqları yüklənir",
+        "notReadTitle": "Hələ heç bir ekran bu bayraqları oxumur",
+        "notReadBody": "Açarı dəyişmək platformanın verdiyi cavabı dəyişir. Hansısa funksiya bayrağı oxumağa başlayana qədər heç nə buna reaksiya vermir.",
         "emptyTitle": "Bayraq yoxdur",
-        "emptyBody": "Bu quraşdırmada heç nə açarın arxasında deyil. Mövcud olmayan bayrağı soruşan kod false alır, ona görə platforma qurulmamış hər funksiyanı sönmüş kimi qəbul edir — bu da təhlükəsiz istiqamətdir.",
+        "emptyBody": "Hələ heç bir bayraq yaradılmayıb. Mövcud olmayan bayraq hamı üçün bağlı sayılır.",
         "on": "Açıq",
         "off": "Bağlı",
         "rollout": "Yayım",
-        "alwaysIn": "{count} həmişə daxil",
-        "lastChanged": "Son dəyişiklik {date}",
-        "offForEverybody": "hamı üçün bağlıdır, üzərində adı çəkilən hesablar da daxil olmaqla",
+        "rolloutGroup": "{flag} bayrağının yayımı",
+        "rolloutNow": "Yayım: {percent}",
+        "reach": {
+          "off": "Hamı üçün bağlıdır, adı çəkilən hesablar da daxil olmaqla.",
+          "nobody": "Açıqdır, amma heç kimə çatmır: yayım sıfırdır və heç bir hesab əlavə edilməyib.",
+          "named": "Yalnız adı çəkilən hesablar görür.",
+          "some": "Daxil olmuş oxucuların bir hissəsi ({percent}) və adı çəkilən hesablar görür. Daxil olmamış ziyarətçilər görmür.",
+          "everybody": "Hamı görür, daxil olmamış ziyarətçilər də."
+        },
+        "accountsHeading": "Həmişə daxil olan hesablar",
+        "accountsNone": "Heç bir hesab əlavə edilməyib.",
+        "accountsReadOnly": "Hesab əlavə etmək və çıxarmaq üçün hesabları idarə etmək icazəsi lazımdır.",
+        "accountsFull": "Bir bayrağa ən çox 200 hesab əlavə etmək olar.",
+        "addAccount": "Hesab əlavə et",
+        "removeAccount": "Çıxar",
+        "removeAccountLabel": "{name} hesabını {flag} bayrağından çıxar",
+        "editDescription": "Təsviri dəyiş",
+        "saveDescription": "Təsviri saxla",
+        "lastChanged": "Son dəyişiklik: {date}, {name}",
+        "confirmLabel": "{flag} bayrağının dəyişikliyini təsdiqləyin",
+        "confirmWiden": "{flag} bayrağı daha çox adama çatacaq. Saxladıqdan sonra: {reach}",
+        "confirmYes": "Bəli, saxla",
+        "keep": "Hələ yox",
         "addHeading": "Bayraq əlavə et",
-        "addIntro": "Yeni bayraqlar bağlı və sıfır faizlə gəlir. Yayımı genişlətmək yalnız adam əlavə edir — içindəki hesablar seçmə ilə deyil, sabit heş ilə müəyyən olunur, ona görə faiz artdığı üçün heç kim funksiyanı itirmir.",
+        "addIntro": "Yeni bayraq bağlı, sıfır yayımla və heç bir hesab olmadan yaranır. Yayımı genişlətmək yalnız adam əlavə edir: içəridəki hesablar seçmə ilə yox, sabit heşlə müəyyən olunur.",
         "nameLabel": "Ad",
-        "nameHint": "Kiçik hərflərlə və defislə, kodun istədiyi kimi.",
-        "nameError": "Kiçik hərflər, rəqəmlər və defis.",
+        "nameHint": "Kiçik hərflər, rəqəmlər və defis, ən azı üç simvol: checkout-v2.",
+        "nameError": "Kiçik hərflər, rəqəmlər və defis. Hərflə başlayıb hərf və ya rəqəmlə bitməlidir.",
         "switchesLabel": "Nəyi açıb-bağlayır",
+        "descriptionRequired": "Bayrağın nəyi açıb-bağladığını yazın.",
+        "created": "{flag} bağlı vəziyyətdə yaradıldı.",
+        "doneTitle": "Hazırdır",
         "working": "İşlənir",
         "add": "Əlavə et",
-        "failedTitle": "Bu alınmadı"
+        "failedTitle": "Bu alınmadı",
+        "errors": {
+          "FEATURE_FLAG_EXISTS": "Bu adda bayraq artıq var. Onu yuxarıdakı siyahıda dəyişin.",
+          "FEATURE_FLAG_CHANGED": "Siz oxuyandan sonra bu bayrağı başqası dəyişib. Siyahı yenidən oxundu: dəyişikliyə yenidən baxın.",
+          "FEATURE_FLAG_NOT_FOUND": "Bu bayraq artıq yoxdur. Siyahı yenidən oxundu.",
+          "FEATURE_FLAG_KEY_INVALID": "Bu ad uyğun deyil: kiçik hərflər, rəqəmlər və defis olmalıdır."
+        }
       },
       "analytics": {
         "subject": "platforma rəqəmlərini",
@@ -2069,7 +2169,7 @@
           "MANAGE_DISPUTES": "Geri tələblərə cavab vermək",
           "APPROVE_PAYOUT": "Ödənişi təsdiqləyib göndərmək",
           "HANDLE_SUPPORT": "Dəstək müraciətlərinə cavab vermək",
-          "CONFIGURE_PLATFORM": "Komissiyaları, funksiya bayraqlarını və e-poçt mətnlərini dəyişmək",
+          "CONFIGURE_PLATFORM": "Komissiyaları, planları, funksiya bayraqlarını, e-poçt mətnlərini və texniki xidmət pəncərələrini idarə etmək",
           "VIEW_AUDIT": "Audit izini oxumaq",
           "VIEW_HEALTH": "Növbə dərinliyini və provayder vəziyyətini oxumaq",
           "PUBLISH_LEGAL_DOCUMENT": "Hüquqi sənədin bir versiyasını dərc etmək",
@@ -3380,10 +3480,10 @@
         "noteLabel": "Qeyd",
         "untilFurtherNotice": "Növbəti xəbərə qədər",
         "startNow": "İndi başlat",
-        "startNowConfirm": "Bu pəncərə indi başladılsın? On saniyə ərzində hər oxucu texniki xidmət səhifəsini görəcək, çıxan ödənişlər və mesajlar dayanacaq.",
+        "startNowConfirm": "Bu pəncərə indi başladılsın? Təxminən yarım dəqiqə ərzində hər oxucu texniki xidmət səhifəsini görəcək, geri ödəmələr və mesajlar dayanacaq.",
         "startNowYes": "Bəli, indi başlat",
         "endNow": "İndi bitir",
-        "endNowConfirm": "Bu pəncərə indi bitirilsin? On saniyə ərzində oxucular platformaya qayıdacaq, dayandırılmış işlər davam edəcək.",
+        "endNowConfirm": "Bu pəncərə indi bitirilsin? Təxminən yarım dəqiqə ərzində oxucular platformaya qayıdacaq, dayandırılmış işlər davam edəcək.",
         "endNowYes": "Bəli, indi bitir",
         "keep": "Hələ yox",
         "changeEnd": "Bitmə vaxtını dəyiş",
@@ -3409,8 +3509,16 @@
           "MAINTENANCE_WINDOW_ALREADY_STARTED": "Bu pəncərə artıq başlayıb, onu yalnız bitirmək olar.",
           "MAINTENANCE_WINDOW_NOT_ACTIVE": "Bu pəncərə qüvvədə deyil, bitiriləcək bir şey yoxdur.",
           "MAINTENANCE_WINDOW_OVER": "Bu pəncərə artıq bitib.",
-          "MAINTENANCE_WINDOW_INVALID": "Bu vaxtlardan pəncərə alınmır: başlama keçmişdə ola bilməz, bitmə başlamadan sonra, xəbərdarlıq isə ondan əvvəl gəlməlidir."
-        }
+          "MAINTENANCE_WINDOW_INVALID": "Bu vaxtlardan pəncərə alınmır: başlama keçmişdə ola bilməz, bitmə başlamadan sonra, xəbərdarlıq isə ondan əvvəl gəlməlidir.",
+          "MAINTENANCE_WINDOW_END_INVALID": "Bitmə vaxtı başlamadan sonra və gələcəkdə olmalıdır. Pəncərəni indi bitirmək üçün «İndi bitir»dən istifadə edin."
+        },
+        "scheduleNowConfirm": "Bu başlama vaxtı artıq çatıb, ona görə pəncərə dərhal qüvvəyə minəcək: təxminən yarım dəqiqə ərzində hər oxucu texniki xidmət səhifəsini görəcək. Yenə də planlaşdırılsın?",
+        "scheduleNowYes": "Bəli, indi başlat",
+        "confirmLabel": "Təsdiqləyin",
+        "cancelConfirm": "Bu pəncərə ləğv edilsin? Oxuculara göstərilən xəbərdarlıq götürüləcək və onu geri qaytarmaq olmayacaq.",
+        "cancelYes": "Bəli, ləğv et",
+        "endInvalid": "Bitmə vaxtı başlamadan sonra və gələcəkdə olmalıdır. Pəncərəni indi bitirmək üçün «İndi bitir»dən istifadə edin.",
+        "zoneNote": "Bu səhifədəki vaxtlar sizin saat qurşağınızdadır: {zone}."
       }
     },
     "moderation": {

@@ -2548,6 +2548,22 @@ export interface paths {
         patch: operations["projectFaqEdit"];
         trace?: never;
     };
+    "/v1/feature-flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["featureFlagEvaluationEvaluate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/fees/disclosure": {
         parameters: {
             query?: never;
@@ -5504,6 +5520,25 @@ export interface components {
             answer?: string;
             question?: string;
         };
+        FeatureFlag: {
+            description?: string;
+            enabled?: boolean;
+            enabledAccounts?: string[];
+            key?: string;
+            /** Format: int32 */
+            rolloutPercentage?: number;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            updatedBy?: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        FeatureFlagAnswers: {
+            flags?: {
+                [key: string]: boolean;
+            };
+        };
         Feed: {
             items?: components["schemas"]["Card"][];
             nextCursor?: string;
@@ -5525,20 +5560,8 @@ export interface components {
             kind?: "UNBALANCED" | "IMPOSSIBLE_SIGN" | "DISAGREES_WITH_PAYMENTS";
             otherAmount?: string;
         };
-        Flag: {
-            description?: string;
-            enabled?: boolean;
-            enabledAccounts?: string[];
-            key?: string;
-            /** Format: int32 */
-            rolloutPercentage?: number;
-            /** Format: date-time */
-            updatedAt?: string;
-            /** Format: uuid */
-            updatedBy?: string;
-        };
         FlagList: {
-            flags?: components["schemas"]["Flag"][];
+            flags?: components["schemas"]["FeatureFlag"][];
         };
         FollowStateResponse: {
             following?: boolean;
@@ -5634,14 +5657,42 @@ export interface components {
         GrantRequest: {
             note?: string;
         };
-        Health: {
+        HealthJob: {
+            /** Format: int32 */
+            attempts?: number;
+            /** @enum {string} */
+            hold?: "MAINTENANCE" | "UNSCHEDULED";
+            lastError?: string;
             /** Format: date-time */
-            at?: string;
-            jobs?: components["schemas"]["Job"][];
-            monitored?: boolean;
-            providers?: components["schemas"]["Provider"][];
-            queues?: components["schemas"]["Queue"][];
-            status?: string;
+            lastRunAt?: string;
+            name?: string;
+            /** Format: date-time */
+            nextAttemptAt?: string;
+            /** Format: int64 */
+            overdueBySeconds?: number;
+            /** @enum {string} */
+            state?: "READY" | "DEAD";
+            /** @enum {string} */
+            status?: "HEALTHY" | "DEGRADED" | "CRITICAL";
+        };
+        HealthProvider: {
+            available?: boolean;
+            configured?: boolean;
+            kind?: string;
+            provider?: string;
+            /** @enum {string} */
+            reason?: "NOT_CONFIGURED" | "CIRCUIT_OPEN";
+            /** @enum {string} */
+            status?: "HEALTHY" | "DEGRADED" | "CRITICAL";
+        };
+        HealthQueue: {
+            /** Format: int64 */
+            dead?: number;
+            name?: string;
+            /** @enum {string} */
+            status?: "HEALTHY" | "DEGRADED" | "CRITICAL";
+            /** Format: int64 */
+            waiting?: number;
         };
         History: {
             drafts?: components["schemas"]["Document"][];
@@ -5710,20 +5761,6 @@ export interface components {
             updatedAt?: string;
             /** Format: int32 */
             weightGrams?: number;
-        };
-        Job: {
-            /** Format: int32 */
-            attempts?: number;
-            lastError?: string;
-            /** Format: date-time */
-            lastRunAt?: string;
-            name?: string;
-            /** Format: date-time */
-            nextAttemptAt?: string;
-            /** Format: int64 */
-            overdueBySeconds?: number;
-            state?: string;
-            status?: string;
         };
         JsonNode: {
             array?: boolean;
@@ -6220,6 +6257,16 @@ export interface components {
             to?: string;
             totals?: components["schemas"]["Totals"];
         };
+        PlatformHealth: {
+            /** Format: date-time */
+            at?: string;
+            jobs?: components["schemas"]["HealthJob"][];
+            monitored?: boolean;
+            providers?: components["schemas"]["HealthProvider"][];
+            queues?: components["schemas"]["HealthQueue"][];
+            /** @enum {string} */
+            status?: "HEALTHY" | "DEGRADED" | "CRITICAL";
+        };
         PlatformStatus: {
             /** @description The window in force, or null. */
             maintenance?: components["schemas"]["StatusWindow"];
@@ -6505,14 +6552,6 @@ export interface components {
             publishedAt?: string;
             title?: string;
             visibility?: string;
-        };
-        Provider: {
-            available?: boolean;
-            configured?: boolean;
-            detail?: string;
-            kind?: string;
-            provider?: string;
-            status?: string;
         };
         PublicBackerListResponse: {
             /** Format: int64 */
@@ -6950,6 +6989,8 @@ export interface components {
             enabledAccounts?: string[];
             /** Format: int32 */
             rolloutPercentage?: number;
+            /** Format: int64 */
+            version?: number;
         };
         SaveRequest: {
             percentage: string;
@@ -7808,10 +7849,11 @@ export type SchemaExportBackersRequest = components['schemas']['ExportBackersReq
 export type SchemaExtendCampaignRequest = components['schemas']['ExtendCampaignRequest'];
 export type SchemaFacets = components['schemas']['Facets'];
 export type SchemaFaqPatchRequest = components['schemas']['FaqPatchRequest'];
+export type SchemaFeatureFlag = components['schemas']['FeatureFlag'];
+export type SchemaFeatureFlagAnswers = components['schemas']['FeatureFlagAnswers'];
 export type SchemaFeed = components['schemas']['Feed'];
 export type SchemaFigures = components['schemas']['Figures'];
 export type SchemaFinding = components['schemas']['Finding'];
-export type SchemaFlag = components['schemas']['Flag'];
 export type SchemaFlagList = components['schemas']['FlagList'];
 export type SchemaFollowStateResponse = components['schemas']['FollowStateResponse'];
 export type SchemaFollowingListResponse = components['schemas']['FollowingListResponse'];
@@ -7823,7 +7865,9 @@ export type SchemaFulfilmentProgressResponse = components['schemas']['Fulfilment
 export type SchemaFulfilmentResponse = components['schemas']['FulfilmentResponse'];
 export type SchemaGrant = components['schemas']['Grant'];
 export type SchemaGrantRequest = components['schemas']['GrantRequest'];
-export type SchemaHealth = components['schemas']['Health'];
+export type SchemaHealthJob = components['schemas']['HealthJob'];
+export type SchemaHealthProvider = components['schemas']['HealthProvider'];
+export type SchemaHealthQueue = components['schemas']['HealthQueue'];
 export type SchemaHistory = components['schemas']['History'];
 export type SchemaImage = components['schemas']['Image'];
 export type SchemaInviteCollaboratorRequest = components['schemas']['InviteCollaboratorRequest'];
@@ -7832,7 +7876,6 @@ export type SchemaItem = components['schemas']['Item'];
 export type SchemaItemBody = components['schemas']['ItemBody'];
 export type SchemaItemPatchRequest = components['schemas']['ItemPatchRequest'];
 export type SchemaItemResponse = components['schemas']['ItemResponse'];
-export type SchemaJob = components['schemas']['Job'];
 export type SchemaJsonNode = components['schemas']['JsonNode'];
 export type SchemaLanguageOverride = components['schemas']['LanguageOverride'];
 export type SchemaLedgerBalanceRecord = components['schemas']['LedgerBalanceRecord'];
@@ -7881,6 +7924,7 @@ export type SchemaPayoutSummary = components['schemas']['PayoutSummary'];
 export type SchemaPlan = components['schemas']['Plan'];
 export type SchemaPlanPaymentBankTransferRequest = components['schemas']['PlanPaymentBankTransferRequest'];
 export type SchemaPlatformAnalyticsResponse = components['schemas']['PlatformAnalyticsResponse'];
+export type SchemaPlatformHealth = components['schemas']['PlatformHealth'];
 export type SchemaPlatformStatus = components['schemas']['PlatformStatus'];
 export type SchemaPledgeAddonBody = components['schemas']['PledgeAddonBody'];
 export type SchemaPledgeRaiseBody = components['schemas']['PledgeRaiseBody'];
@@ -7906,7 +7950,6 @@ export type SchemaProjectPageResponse = components['schemas']['ProjectPageRespon
 export type SchemaProjectPatchRequest = components['schemas']['ProjectPatchRequest'];
 export type SchemaProjectUpdateListResponse = components['schemas']['ProjectUpdateListResponse'];
 export type SchemaProjectUpdateResponse = components['schemas']['ProjectUpdateResponse'];
-export type SchemaProvider = components['schemas']['Provider'];
 export type SchemaPublicBackerListResponse = components['schemas']['PublicBackerListResponse'];
 export type SchemaPublicProfileResponse = components['schemas']['PublicProfileResponse'];
 export type SchemaPublicRewardListResponse = components['schemas']['PublicRewardListResponse'];
@@ -9027,7 +9070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Flag"];
+                    "application/json": components["schemas"]["FeatureFlag"];
                 };
             };
         };
@@ -9091,7 +9134,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Health"];
+                    "application/json": components["schemas"]["PlatformHealth"];
                 };
             };
         };
@@ -12322,6 +12365,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectFaqResponse"];
+                };
+            };
+        };
+    };
+    featureFlagEvaluationEvaluate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagAnswers"];
                 };
             };
         };

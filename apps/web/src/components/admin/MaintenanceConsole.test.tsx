@@ -14,6 +14,7 @@ import {
 } from '../../lib/admin/maintenance';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
 import { maintenanceConsoleCopyFrom } from '../../lib/i18n/admin/platform-copy';
+import { expectNoViolations } from '../../test-axe';
 import { translatorFor } from '../../test-copy';
 import { MaintenanceConsole } from './MaintenanceConsole';
 
@@ -182,14 +183,112 @@ describe('the maintenance console', () => {
     expect(changeWindowEnd).toHaveBeenCalledWith(ANNOUNCED.id, null);
   });
 
-  it('cancels a window that has not started', async () => {
+  it('asks before cancelling a window that has not started', async () => {
     ready({ upcoming: [ANNOUNCED] });
     vi.mocked(cancelWindow).mockResolvedValue();
 
     render(<MaintenanceConsole copy={COPY} />);
     await userEvent.click(await screen.findByRole('button', { name: COPY.cancelWindow }));
 
+    expect(cancelWindow).not.toHaveBeenCalled();
+    expect(screen.getByText(COPY.cancelConfirm)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: COPY.cancelYes }));
+
     expect(cancelWindow).toHaveBeenCalledWith(ANNOUNCED.id);
+  });
+
+  it('never lists a window in force or to come under recent, even if it is sent there', async () => {
+    ready({ current: ACTIVE, upcoming: [ANNOUNCED], recent: [ACTIVE, ANNOUNCED, ENDED] });
+
+    render(<MaintenanceConsole copy={COPY} />);
+    await screen.findByRole('heading', { name: COPY.recentHeading });
+
+    expect(screen.getAllByRole('button', { name: COPY.endNow })).toHaveLength(1);
+    expect(within(section(COPY.recentHeading)).getAllByRole('listitem')).toHaveLength(1);
+  });
+
+  it('asks before scheduling a window whose start has already come', async () => {
+    ready();
+    vi.mocked(scheduleWindow).mockResolvedValue({ ...ANNOUNCED, state: 'ACTIVE' });
+
+    const { container } = render(<MaintenanceConsole copy={COPY} />);
+    await screen.findByText(COPY.currentEmpty);
+    const starts = container.querySelector('input[type="datetime-local"]') as HTMLInputElement;
+    await userEvent.type(starts, '2026-01-01T00:00');
+    await userEvent.click(screen.getByRole('button', { name: COPY.schedule }));
+
+    expect(scheduleWindow).not.toHaveBeenCalled();
+    expect(screen.getByText(COPY.scheduleNowConfirm)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: COPY.scheduleNowYes }));
+
+    expect(scheduleWindow).toHaveBeenCalledTimes(1);
+  });
+
+  it('says a refused verb in its own row and a refused schedule under the form', async () => {
+    ready({ current: ACTIVE, upcoming: [ANNOUNCED] });
+    vi.mocked(startWindowNow).mockRejectedValue(
+      new ApiError(409, { status: 409, code: 'MAINTENANCE_WINDOW_OVERLAPS', detail: 'English detail' }),
+    );
+
+    render(<MaintenanceConsole copy={COPY} />);
+    await userEvent.click(await screen.findByRole('button', { name: COPY.startNow }));
+    await userEvent.click(screen.getByRole('button', { name: COPY.startNowYes }));
+
+    const upcoming = section(COPY.upcomingHeading);
+    expect(await within(upcoming).findByText(COPY.refusal['MAINTENANCE_WINDOW_OVERLAPS']!)).toBeInTheDocument();
+    expect(within(section(COPY.scheduleHeading)).queryByText(COPY.refusal['MAINTENANCE_WINDOW_OVERLAPS']!)).not.toBeInTheDocument();
+    expect(screen.queryByText('English detail')).not.toBeInTheDocument();
+  });
+
+  it('refuses an end that is not in the future in words, before asking the service', async () => {
+    ready({ current: ACTIVE });
+
+    const { container } = render(<MaintenanceConsole copy={COPY} />);
+    await userEvent.click(await screen.findByRole('button', { name: COPY.changeEnd }));
+    await userEvent.click(screen.getByRole('checkbox', { name: COPY.openEndLabel }));
+    const end = container.querySelector('form input[type="datetime-local"]') as HTMLInputElement;
+    await userEvent.type(end, '2026-01-01T00:00');
+    await userEvent.click(screen.getByRole('button', { name: COPY.saveEnd }));
+
+    expect(changeWindowEnd).not.toHaveBeenCalled();
+    expect(screen.getByText(COPY.endInvalid)).toBeInTheDocument();
+  });
+
+  it('redraws the console shell when its strip disagrees with what was read', async () => {
+    // A window in force, and no strip: the layout was drawn before the window started.
+    ready({ current: ACTIVE });
+    render(<MaintenanceConsole copy={COPY} />);
+    await screen.findByRole('heading', { name: COPY.currentHeading });
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    cleanup();
+    refresh.mockClear();
+
+    // The strip drawn, and nothing in force any more.
+    const strip = document.createElement('p');
+    strip.setAttribute('data-maintenance-strip', '');
+    document.body.append(strip);
+    ready();
+    render(<MaintenanceConsole copy={COPY} />);
+    await screen.findByText(COPY.currentEmpty);
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    cleanup();
+    refresh.mockClear();
+
+    // The two agree: nothing to redraw.
+    ready({ current: ACTIVE });
+    render(<MaintenanceConsole copy={COPY} />);
+    await screen.findByRole('heading', { name: COPY.currentHeading });
+    expect(refresh).not.toHaveBeenCalled();
+    strip.remove();
+  });
+
+  it('has no accessibility violations', async () => {
+    ready({ current: ACTIVE, upcoming: [ANNOUNCED], recent: [ENDED] });
+    const { container } = render(<MaintenanceConsole copy={COPY} />);
+    await screen.findByRole('heading', { name: COPY.currentHeading });
+    await userEvent.click(screen.getByRole('button', { name: COPY.endNow }));
+
+    await expectNoViolations(container);
   });
 
   it('schedules a window from the times typed, in the typist’s own zone', async () => {
@@ -200,14 +299,14 @@ describe('the maintenance console', () => {
     await screen.findByText(COPY.currentEmpty);
 
     const [starts, ends] = [...container.querySelectorAll('input[type="datetime-local"]')] as HTMLInputElement[];
-    await userEvent.type(starts!, '2026-10-05T02:00');
-    await userEvent.type(ends!, '2026-10-05T02:30');
+    await userEvent.type(starts!, '2027-10-05T02:00');
+    await userEvent.type(ends!, '2027-10-05T02:30');
     await userEvent.type(screen.getByRole('textbox', { name: new RegExp(COPY.noteFieldLabel) }), 'Upgrade');
     await userEvent.click(screen.getByRole('button', { name: COPY.schedule }));
 
     expect(scheduleWindow).toHaveBeenCalledWith({
-      startsAt: new Date('2026-10-05T02:00').toISOString(),
-      endsAt: new Date('2026-10-05T02:30').toISOString(),
+      startsAt: new Date('2027-10-05T02:00').toISOString(),
+      endsAt: new Date('2027-10-05T02:30').toISOString(),
       announceFrom: null,
       note: 'Upgrade',
     });
@@ -222,12 +321,12 @@ describe('the maintenance console', () => {
     const { container } = render(<MaintenanceConsole copy={COPY} />);
     await screen.findByText(COPY.currentEmpty);
     const starts = container.querySelector('input[type="datetime-local"]') as HTMLInputElement;
-    await userEvent.type(starts, '2026-10-05T02:00');
+    await userEvent.type(starts, '2027-10-05T02:00');
     await userEvent.click(screen.getByRole('button', { name: COPY.schedule }));
 
     expect(await screen.findByText(COPY.refusal['MAINTENANCE_WINDOW_OVERLAPS']!)).toBeInTheDocument();
     // Kept, so an overlap is fixed by moving one field rather than typing four again.
-    expect(starts.value).toBe('2026-10-05T02:00');
+    expect(starts.value).toBe('2027-10-05T02:00');
   });
 
   it('refuses a reader without CONFIGURE_PLATFORM with the console’s own refusal', async () => {

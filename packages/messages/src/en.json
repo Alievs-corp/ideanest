@@ -901,13 +901,13 @@
         "metaTitle": "System health",
         "metaDescription": "Queue depth, failed jobs and provider status, measured when you open the page.",
         "title": "System health",
-        "intro": "Measured when you open it. Nothing on this page wakes anybody, and nothing watches it while you are not looking — read it when you suspect something rather than relying on it to tell you."
+        "intro": "Queues, scheduled jobs and payment providers at a glance."
       },
       "flags": {
         "metaTitle": "Feature flags",
-        "metaDescription": "Gradual rollout and experiments, with a kill switch that means what it says.",
+        "metaDescription": "Gradual rollout and experiments: who sees what, and how widely.",
         "title": "Feature flags",
-        "intro": "A rollout percentage is decided by a stable hash, so widening one only ever adds people — nobody loses a feature because the number went up. Switching a flag off overrides everything else about it."
+        "intro": "A rollout percentage is decided by a stable hash, so widening one only ever adds people — nobody loses a feature because the number went up. A flag that is off reaches nobody, the named accounts included."
       },
       "analytics": {
         "metaTitle": "Platform analytics",
@@ -1110,7 +1110,7 @@
         "metaTitle": "Maintenance windows",
         "metaDescription": "Schedule, start and end planned maintenance, with notice for readers.",
         "title": "Maintenance",
-        "intro": "While a window is in force every reader gets the maintenance page, and the service refuses everything except sign-in, payment provider webhooks and staff. Readers are warned from the announcement time, a day ahead by default. Background jobs that send money or messages pause and resume when the window ends."
+        "intro": "While a window is in force every reader gets the maintenance page, and the service refuses everything except staff, sign-in, payment providers' notifications and the return from bank verification. Readers are warned from the announcement time, a day ahead by default. Six background jobs pause: refunds, checks on unanswered payment pages, ledger reconciliation, sending notifications and their digests, and launch reminders. Everything else keeps running, including campaigns opening and closing at their deadline, automatic withdrawals and the outbox."
       }
     },
     "screens": {
@@ -1271,57 +1271,157 @@
         "loadingList": "Loading the health dashboard",
         "readFailed": "The dashboard could not be read.",
         "notMonitoredTitle": "This page does not alert anybody",
-        "notMonitoredBody": "Everything here is measured when you open it. Nothing on this screen wakes anybody, and nothing watches it while you are not looking — §18's observability work (#138) is what will. Read it when you suspect something; do not rely on it to tell you.",
+        "notMonitoredBody": "Everything here is measured when you open the page. This screen tells nobody anything, and nothing watches it while you are not looking. Read it when you suspect something; do not rely on it to tell you.",
         "overall": "Overall",
-        "measuredSeconds": "Measured {count} seconds ago.",
-        "measuredMinutes": "Measured {count} minutes ago.",
+        "measuredAt": "Measured at {time}.",
         "measureAgain": "Measure again",
         "queues": "Queues",
         "waiting": "{count} waiting",
-        "givenUp": "{count} given up",
+        "givenUp": "{count} could not be sent (out of attempts)",
+        "givenUpHint": "These will not be sent again by themselves. Tell the engineering team, who can fix the cause and send them again.",
         "jobs": "Scheduled jobs",
-        "overdue": "overdue by {count} minutes",
+        "jobsAttention": "Jobs needing attention: {count}",
+        "jobsAllWell": "Every job is fine.",
+        "overdue": {
+          "minutes": {
+            "one": "{count} minute late",
+            "few": "{count} minutes late",
+            "many": "{count} minutes late",
+            "other": "{count} minutes late"
+          },
+          "hours": {
+            "one": "{count} hour late",
+            "few": "{count} hours late",
+            "many": "{count} hours late",
+            "other": "{count} hours late"
+          },
+          "days": {
+            "one": "{count} day late",
+            "few": "{count} days late",
+            "many": "{count} days late",
+            "other": "{count} days late"
+          }
+        },
         "onTime": "on time",
-        "attempts": "{count} attempts",
+        "lastRun": "Last ran {time}",
+        "neverRun": "Has never run",
+        "lastErrorLabel": "Technical text of the last error",
         "providers": "Providers",
         "notConfigured": "Not configured",
+        "attempts": {
+          "one": "{count} attempt",
+          "few": "{count} attempts",
+          "many": "{count} attempts",
+          "other": "{count} attempts"
+        },
         "status": {
           "HEALTHY": "Healthy",
           "DEGRADED": "Worth a look",
-          "CRITICAL": "Stopped"
+          "CRITICAL": "Needs attention now"
         },
         "jobState": {
           "READY": "Ready for its next run",
-          "RUNNING": "Running",
-          "FAILED": "Failed on its last run",
-          "DISABLED": "Switched off"
+          "DEAD": "Out of attempts; it will not restart by itself"
+        },
+        "hold": {
+          "MAINTENANCE": "Paused until the maintenance window ends",
+          "UNSCHEDULED": "Not scheduled on this deployment; it does not run by itself"
         },
         "queue": {
-          "outbox": "Outbox",
-          "scheduled-jobs": "Scheduled jobs"
+          "outbox": "Outbox"
+        },
+        "kind": {
+          "payments": "Payments"
+        },
+        "providerName": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Sandbox"
+        },
+        "reason": {
+          "NOT_CONFIGURED": "No credentials on this deployment. Switched off, not failing.",
+          "CIRCUIT_OPEN": "Taken out of service after repeated failures. The platform will try it again shortly."
+        },
+        "jobName": {
+          "account-anonymiser": "Account anonymisation",
+          "analytics-aggregator": "Daily analytics roll-up",
+          "automatic-withdrawal": "Automatic withdrawal of funds",
+          "campaign-finalizer": "Closing campaigns at their deadline",
+          "campaign-launcher": "Opening scheduled campaigns",
+          "campaign-refunds": "Refunds for unsuccessful campaigns",
+          "deadline-reminder": "Deadline reminders",
+          "exchange-rate-refresh": "Exchange rate refresh",
+          "hosted-charge-sweep": "Checking payment pages with no callback",
+          "idempotency-key-cleaner": "Removing expired retry keys",
+          "identity-document-retention": "Identity document retention",
+          "ledger-reconciliation": "Ledger reconciliation",
+          "media-processing": "Processing uploaded media",
+          "media-video-processing": "Video processing",
+          "notification-digest": "Notification digests",
+          "notification-sender": "Sending notifications",
+          "outbox-relay": "Outbox relay",
+          "payout-destination-reminders": "Payout destination reminders",
+          "push-device-retention": "Removing stale push registrations",
+          "reminder-sender": "Launch reminders",
+          "reservation-cleaner": "Releasing unfinished checkout holds",
+          "subscription-renewal-reminders": "Subscription renewal reminders",
+          "survey-nudge": "Survey reminders",
+          "update-obligation-sweep": "Monthly update obligation check"
         }
       },
       "flags": {
         "subject": "the feature flags",
         "heading": "Flags",
         "loadingList": "Loading feature flags",
+        "notReadTitle": "No screen reads these flags yet",
+        "notReadBody": "Switching one changes the answer the platform gives. Nothing reacts to it until a feature reads the flag.",
         "emptyTitle": "No flags",
-        "emptyBody": "Nothing on this deployment is behind a switch. Code asking for a flag that does not exist gets false, so the platform behaves as though every unbuilt feature is off — which is the safe direction.",
+        "emptyBody": "No flag has been created yet. A flag that does not exist counts as off for everybody.",
         "on": "On",
         "off": "Off",
         "rollout": "Rollout",
-        "alwaysIn": "{count} always in",
-        "lastChanged": "Last changed {date}",
-        "offForEverybody": "off for everybody, including the accounts named on it",
+        "rolloutGroup": "Rollout of {flag}",
+        "rolloutNow": "Rollout: {percent}",
+        "reach": {
+          "off": "Off for everybody, including the accounts named on it.",
+          "nobody": "On, but it reaches nobody: the rollout is nought and no account is named.",
+          "named": "Only the named accounts see it.",
+          "some": "Some signed-in readers ({percent}) and the named accounts see it. Signed-out visitors do not.",
+          "everybody": "Everybody sees it, signed-out visitors included."
+        },
+        "accountsHeading": "Always included",
+        "accountsNone": "No account is named.",
+        "accountsReadOnly": "Adding and removing accounts needs the permission to administer accounts.",
+        "accountsFull": "A flag can name at most 200 accounts.",
+        "addAccount": "Add an account",
+        "removeAccount": "Remove",
+        "removeAccountLabel": "Remove {name} from {flag}",
+        "editDescription": "Change the description",
+        "saveDescription": "Save the description",
+        "lastChanged": "Last changed {date} by {name}",
+        "confirmLabel": "Confirm the change to {flag}",
+        "confirmWiden": "{flag} will reach more people. Once saved: {reach}",
+        "confirmYes": "Yes, save it",
+        "keep": "Not now",
         "addHeading": "Add a flag",
-        "addIntro": "New flags arrive off and at nought percent. Widening a rollout only ever adds people — the accounts inside it are decided by a stable hash rather than a sample, so nobody loses a feature because the percentage went up.",
+        "addIntro": "A new flag starts off, at nought percent and with no accounts named. Widening a rollout only ever adds people: who is inside is decided by a stable hash, not a sample.",
         "nameLabel": "Name",
-        "nameHint": "Lower case and hyphenated, as the code asks for it.",
-        "nameError": "Lower case letters, digits and hyphens.",
+        "nameHint": "Lower case letters, digits and hyphens, at least three characters: checkout-v2.",
+        "nameError": "Lower case letters, digits and hyphens. It starts with a letter and ends with a letter or digit.",
         "switchesLabel": "What it switches",
+        "descriptionRequired": "Say what the flag switches.",
+        "created": "{flag} was created, switched off.",
+        "doneTitle": "Done",
         "working": "Working",
         "add": "Add",
-        "failedTitle": "That did not work"
+        "failedTitle": "That did not work",
+        "errors": {
+          "FEATURE_FLAG_EXISTS": "A flag with that name already exists. Change it in the list above.",
+          "FEATURE_FLAG_CHANGED": "Somebody else changed this flag after you read it. The list has been read again: look at your change once more.",
+          "FEATURE_FLAG_NOT_FOUND": "That flag no longer exists. The list has been read again.",
+          "FEATURE_FLAG_KEY_INVALID": "That name will not do: lower case letters, digits and hyphens only."
+        }
       },
       "analytics": {
         "subject": "the platform figures",
@@ -2069,7 +2169,7 @@
           "MANAGE_DISPUTES": "Answer chargebacks",
           "APPROVE_PAYOUT": "Sign off and send a payout",
           "HANDLE_SUPPORT": "Answer support tickets",
-          "CONFIGURE_PLATFORM": "Change fees, feature flags and email copy",
+          "CONFIGURE_PLATFORM": "Manage fees, plans, feature flags, email copy and maintenance windows",
           "VIEW_AUDIT": "Read the audit trail",
           "VIEW_HEALTH": "Read queue depth and provider status",
           "PUBLISH_LEGAL_DOCUMENT": "Publish a version of a legal document",
@@ -3380,10 +3480,10 @@
         "noteLabel": "Note",
         "untilFurtherNotice": "Until further notice",
         "startNow": "Start now",
-        "startNowConfirm": "Start this window now? Within ten seconds every reader gets the maintenance page, and outgoing payments and messages pause.",
+        "startNowConfirm": "Start this window now? Within about half a minute every reader gets the maintenance page, and refunds and messages pause.",
         "startNowYes": "Yes, start it now",
         "endNow": "End now",
-        "endNowConfirm": "End this window now? Within ten seconds readers get the platform back, and paused jobs resume.",
+        "endNowConfirm": "End this window now? Within about half a minute readers get the platform back, and paused jobs resume.",
         "endNowYes": "Yes, end it now",
         "keep": "Not now",
         "changeEnd": "Change the end",
@@ -3409,8 +3509,16 @@
           "MAINTENANCE_WINDOW_ALREADY_STARTED": "That window has already started, so it can only be ended.",
           "MAINTENANCE_WINDOW_NOT_ACTIVE": "That window is not in force, so there is nothing to end.",
           "MAINTENANCE_WINDOW_OVER": "That window is already over.",
-          "MAINTENANCE_WINDOW_INVALID": "Those times do not make a window: the start cannot be in the past, the end has to come after the start, and the warning before it."
-        }
+          "MAINTENANCE_WINDOW_INVALID": "Those times do not make a window: the start cannot be in the past, the end has to come after the start, and the warning before it.",
+          "MAINTENANCE_WINDOW_END_INVALID": "The end has to be after the start and in the future. To end the window now, use End now."
+        },
+        "scheduleNowConfirm": "That start time has already come, so the window takes effect at once: within about half a minute every reader gets the maintenance page. Schedule it anyway?",
+        "scheduleNowYes": "Yes, start it now",
+        "confirmLabel": "Confirm",
+        "cancelConfirm": "Cancel this window? The notice readers are shown is withdrawn, and the window cannot be brought back.",
+        "cancelYes": "Yes, cancel it",
+        "endInvalid": "The end has to be after the start and in the future. To end the window now, use End now.",
+        "zoneNote": "Times on this page are in your time zone, {zone}."
       }
     },
     "moderation": {

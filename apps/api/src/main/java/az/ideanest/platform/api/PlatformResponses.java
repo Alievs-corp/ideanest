@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -19,7 +20,19 @@ public final class PlatformResponses {
     private PlatformResponses() {
     }
 
-    /** One switch. */
+    /**
+     * One switch.
+     *
+     * <p>Named in the published contract, as the health records below are: springdoc names a
+     * schema after its class, and several modules have a record called {@code Flag},
+     * {@code Queue} or {@code Job}. Two schemas with one name collapse into whichever was
+     * read last, and the generated client then describes this endpoint with another
+     * module's shape.
+     *
+     * @param version what an edit sends back, so that one made from a stale list is refused
+     *     rather than applied over somebody else's
+     */
+    @Schema(name = "FeatureFlag")
     public record Flag(
             String key,
             String description,
@@ -27,7 +40,8 @@ public final class PlatformResponses {
             short rolloutPercentage,
             List<UUID> enabledAccounts,
             Instant updatedAt,
-            UUID updatedBy) {
+            UUID updatedBy,
+            long version) {
 
         public static Flag of(FeatureFlag flag) {
             return new Flag(
@@ -37,8 +51,19 @@ public final class PlatformResponses {
                     flag.rolloutPercentage(),
                     flag.enabledAccounts(),
                     flag.updatedAt(),
-                    flag.updatedBy());
+                    flag.updatedBy(),
+                    flag.version());
         }
+    }
+
+    /**
+     * What is switched on for the caller: every flag's name, and whether they see it.
+     *
+     * <p>A flag missing from the map is off, which is what a client must assume — the same
+     * fail-closed default {@code FeatureFlags.isOn} gives a name with no row.
+     */
+    @Schema(name = "FeatureFlagAnswers")
+    public record FlagAnswers(Map<String, Boolean> flags) {
     }
 
     /** Every flag. Unpaged — there are tens of rows and the screen is a list. */
@@ -59,9 +84,10 @@ public final class PlatformResponses {
      * argument. When #138 lands, this field becomes true and the disclaimer disappears
      * without a change to the console.
      */
+    @Schema(name = "PlatformHealth")
     public record Health(
             Instant at,
-            String status,
+            @Schema(allowableValues = {"HEALTHY", "DEGRADED", "CRITICAL"}) String status,
             boolean monitored,
             List<Queue> queues,
             List<Job> jobs,
@@ -79,23 +105,38 @@ public final class PlatformResponses {
     }
 
     /** One queue. See {@code QueueDepthSource} on why waiting and dead are never summed. */
-    public record Queue(String name, long waiting, long dead, String status) {
+    @Schema(name = "HealthQueue")
+    public record Queue(
+            String name,
+            long waiting,
+            long dead,
+            @Schema(allowableValues = {"HEALTHY", "DEGRADED", "CRITICAL"}) String status) {
 
         public static Queue of(SystemHealth.QueueDepth depth) {
             return new Queue(depth.name(), depth.waiting(), depth.dead(), depth.status().name());
         }
     }
 
-    /** One scheduled job. */
+    /**
+     * One scheduled job.
+     *
+     * @param state the scheduler's own: {@code READY}, or {@code DEAD} once it has run out
+     *     of attempts and will not restart itself
+     * @param hold why a job that is not dead is deliberately not running, or absent:
+     *     {@code MAINTENANCE} while a window holds the jobs that send money or messages out,
+     *     {@code UNSCHEDULED} for one with no trigger on this deployment
+     */
+    @Schema(name = "HealthJob")
     public record Job(
             String name,
-            String state,
+            @Schema(allowableValues = {"READY", "DEAD"}) String state,
             Instant lastRunAt,
             Instant nextAttemptAt,
             long overdueBySeconds,
             int attempts,
             String lastError,
-            String status) {
+            @Schema(allowableValues = {"MAINTENANCE", "UNSCHEDULED"}) String hold,
+            @Schema(allowableValues = {"HEALTHY", "DEGRADED", "CRITICAL"}) String status) {
 
         public static Job of(SystemHealth.JobHealth job) {
             return new Job(
@@ -106,6 +147,7 @@ public final class PlatformResponses {
                     job.overdueBySeconds(),
                     job.attempts(),
                     job.lastError(),
+                    job.hold(),
                     job.status().name());
         }
     }
@@ -113,16 +155,20 @@ public final class PlatformResponses {
     /**
      * One third party the platform calls. Not configured is not the same as not working.
      *
-     * @param kind what the screen groups by — "Payments". A mail relay would arrive under
-     *     its own heading with no change here
+     * @param kind what the screen groups by and words — {@code payments}. A mail relay would
+     *     arrive under its own heading with no change here
+     * @param provider the provider as the platform names it — {@code PAYRIFF}; the screen
+     *     gives it its proper name
+     * @param reason why it is not available, or absent while it is
      */
+    @Schema(name = "HealthProvider")
     public record Provider(
             String kind,
             String provider,
             boolean configured,
             boolean available,
-            String detail,
-            String status) {
+            @Schema(allowableValues = {"NOT_CONFIGURED", "CIRCUIT_OPEN"}) String reason,
+            @Schema(allowableValues = {"HEALTHY", "DEGRADED", "CRITICAL"}) String status) {
 
         public static Provider of(SystemHealth.ProviderHealth provider) {
             return new Provider(
@@ -130,7 +176,7 @@ public final class PlatformResponses {
                     provider.provider(),
                     provider.configured(),
                     provider.available(),
-                    provider.detail(),
+                    provider.reason(),
                     provider.status().name());
         }
     }
@@ -179,7 +225,7 @@ public final class PlatformResponses {
      *
      * @param current the window in force, or null
      * @param upcoming every window still to come, announced or not, soonest first
-     * @param recent the last twenty by start, in any state, newest first
+     * @param recent the last twenty that are over, the most recently finished first
      */
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public record MaintenanceOverview(

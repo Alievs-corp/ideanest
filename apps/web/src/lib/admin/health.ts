@@ -35,24 +35,36 @@ export interface QueueHealth {
 
 export interface JobHealth {
   name: string;
+  /** `READY`, or `DEAD` once it has run out of attempts and will not restart itself. */
   state: string;
   lastRunAt?: string | null;
   nextAttemptAt?: string | null;
-  /** Zero when it is not due yet. Seconds, so the column sorts as a number. */
+  /**
+   * Zero when it is not due yet, and zero for a job that is not expected to run — dead, or
+   * held. Seconds, so the column sorts as a number.
+   */
   overdueBySeconds: number;
   attempts: number;
   lastError?: string | null;
+  /**
+   * Why a job that is not dead is deliberately not running: `MAINTENANCE` while a window holds
+   * the jobs that send money or messages out, `UNSCHEDULED` for one with no trigger on this
+   * deployment. Absent while it runs on its schedule. Either is healthy.
+   */
+  hold?: string | null;
   status: HealthStatus;
 }
 
 export interface ProviderHealth {
-  /** What the screen groups by — "Payments". A mail relay would arrive under its own heading. */
+  /** What the screen groups by, as an identifier it words — `payments`. */
   kind: string;
+  /** As the platform names it — `PAYRIFF`. The screen gives it its proper name. */
   provider: string;
   /** Not configured is not unhealthy. It is switched off, which is a different column. */
   configured: boolean;
   available: boolean;
-  detail?: string | null;
+  /** Why it is not available — `NOT_CONFIGURED`, `CIRCUIT_OPEN` — or absent while it is. */
+  reason?: string | null;
   status: HealthStatus;
 }
 
@@ -75,7 +87,31 @@ export async function readHealth(signal?: AbortSignal): Promise<PlatformHealth> 
   return (await response.json()) as PlatformHealth;
 }
 
-/** How long ago the snapshot was taken, in seconds. */
-export function ageInSeconds(health: PlatformHealth, now: Date = new Date()): number {
-  return Math.max(0, Math.round((now.getTime() - new Date(health.at).getTime()) / 1000));
+/** Worst first, then by name: the row that needs somebody is at the top. */
+const SEVERITY: Readonly<Record<HealthStatus, number>> = { CRITICAL: 0, DEGRADED: 1, HEALTHY: 2 };
+
+export function worstFirst<T extends { status: HealthStatus; name: string }>(rows: readonly T[]): T[] {
+  return [...rows].sort((a, b) => (SEVERITY[a.status] ?? 3) - (SEVERITY[b.status] ?? 3) || a.name.localeCompare(b.name));
+}
+
+/** How late a job is, in the largest unit that keeps the number readable. */
+export type Lateness = { readonly unit: 'minutes' | 'hours' | 'days'; readonly count: number };
+
+export function latenessOf(seconds: number): Lateness {
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return { unit: 'minutes', count: minutes };
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return { unit: 'hours', count: hours };
+  return { unit: 'days', count: Math.floor(hours / 24) };
+}
+
+/** Providers under their kind, in the order the service sent them. */
+export function byKind(providers: readonly ProviderHealth[]): [string, ProviderHealth[]][] {
+  const groups = new Map<string, ProviderHealth[]>();
+  for (const provider of providers) {
+    const group = groups.get(provider.kind) ?? [];
+    group.push(provider);
+    groups.set(provider.kind, group);
+  }
+  return [...groups.entries()];
 }

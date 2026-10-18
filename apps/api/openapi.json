@@ -1375,7 +1375,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Flag"
+                  "$ref" : "#/components/schemas/FeatureFlag"
                 }
               }
             },
@@ -1437,7 +1437,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Health"
+                  "$ref" : "#/components/schemas/PlatformHealth"
                 }
               }
             },
@@ -6065,6 +6065,24 @@
           }
         },
         "tags" : [ "project-faq-controller" ]
+      }
+    },
+    "/v1/feature-flags" : {
+      "get" : {
+        "operationId" : "featureFlagEvaluationEvaluate",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeatureFlagAnswers"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "feature-flag-evaluation-controller" ]
       }
     },
     "/v1/fees/disclosure" : {
@@ -14005,6 +14023,54 @@
           }
         }
       },
+      "FeatureFlag" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "enabledAccounts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            }
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "rolloutPercentage" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "FeatureFlagAnswers" : {
+        "type" : "object",
+        "properties" : {
+          "flags" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "boolean"
+            }
+          }
+        }
+      },
       "Feed" : {
         "type" : "object",
         "properties" : {
@@ -14064,46 +14130,13 @@
           }
         }
       },
-      "Flag" : {
-        "type" : "object",
-        "properties" : {
-          "description" : {
-            "type" : "string"
-          },
-          "enabled" : {
-            "type" : "boolean"
-          },
-          "enabledAccounts" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "format" : "uuid"
-            }
-          },
-          "key" : {
-            "type" : "string"
-          },
-          "rolloutPercentage" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "updatedAt" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        }
-      },
       "FlagList" : {
         "type" : "object",
         "properties" : {
           "flags" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Flag"
+              "$ref" : "#/components/schemas/FeatureFlag"
             }
           }
         }
@@ -14336,36 +14369,87 @@
           }
         }
       },
-      "Health" : {
+      "HealthJob" : {
         "type" : "object",
         "properties" : {
-          "at" : {
+          "attempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "hold" : {
+            "type" : "string",
+            "enum" : [ "MAINTENANCE", "UNSCHEDULED" ]
+          },
+          "lastError" : {
+            "type" : "string"
+          },
+          "lastRunAt" : {
             "type" : "string",
             "format" : "date-time"
           },
-          "jobs" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/Job"
-            }
+          "name" : {
+            "type" : "string"
           },
-          "monitored" : {
-            "type" : "boolean"
+          "nextAttemptAt" : {
+            "type" : "string",
+            "format" : "date-time"
           },
-          "providers" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/Provider"
-            }
+          "overdueBySeconds" : {
+            "type" : "integer",
+            "format" : "int64"
           },
-          "queues" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/Queue"
-            }
+          "state" : {
+            "type" : "string",
+            "enum" : [ "READY", "DEAD" ]
           },
           "status" : {
+            "type" : "string",
+            "enum" : [ "HEALTHY", "DEGRADED", "CRITICAL" ]
+          }
+        }
+      },
+      "HealthProvider" : {
+        "type" : "object",
+        "properties" : {
+          "available" : {
+            "type" : "boolean"
+          },
+          "configured" : {
+            "type" : "boolean"
+          },
+          "kind" : {
             "type" : "string"
+          },
+          "provider" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string",
+            "enum" : [ "NOT_CONFIGURED", "CIRCUIT_OPEN" ]
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "HEALTHY", "DEGRADED", "CRITICAL" ]
+          }
+        }
+      },
+      "HealthQueue" : {
+        "type" : "object",
+        "properties" : {
+          "dead" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "HEALTHY", "DEGRADED", "CRITICAL" ]
+          },
+          "waiting" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -14550,39 +14634,6 @@
           "weightGrams" : {
             "type" : "integer",
             "format" : "int32"
-          }
-        }
-      },
-      "Job" : {
-        "type" : "object",
-        "properties" : {
-          "attempts" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "lastError" : {
-            "type" : "string"
-          },
-          "lastRunAt" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "nextAttemptAt" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
-          "overdueBySeconds" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "state" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
           }
         }
       },
@@ -15851,6 +15902,40 @@
           }
         }
       },
+      "PlatformHealth" : {
+        "type" : "object",
+        "properties" : {
+          "at" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "jobs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/HealthJob"
+            }
+          },
+          "monitored" : {
+            "type" : "boolean"
+          },
+          "providers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/HealthProvider"
+            }
+          },
+          "queues" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/HealthQueue"
+            }
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "HEALTHY", "DEGRADED", "CRITICAL" ]
+          }
+        }
+      },
       "PlatformStatus" : {
         "type" : "object",
         "properties" : {
@@ -16590,29 +16675,6 @@
             "type" : "string"
           },
           "visibility" : {
-            "type" : "string"
-          }
-        }
-      },
-      "Provider" : {
-        "type" : "object",
-        "properties" : {
-          "available" : {
-            "type" : "boolean"
-          },
-          "configured" : {
-            "type" : "boolean"
-          },
-          "detail" : {
-            "type" : "string"
-          },
-          "kind" : {
-            "type" : "string"
-          },
-          "provider" : {
-            "type" : "string"
-          },
-          "status" : {
             "type" : "string"
           }
         }
@@ -17839,6 +17901,10 @@
             "format" : "int32",
             "maximum" : 100,
             "minimum" : 0
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         },
         "required" : [ "description" ]

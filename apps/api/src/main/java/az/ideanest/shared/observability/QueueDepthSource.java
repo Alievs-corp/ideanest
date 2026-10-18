@@ -41,6 +41,19 @@ public interface QueueDepthSource {
     long waiting();
 
     /**
+     * Whether the health screen lists this as a queue.
+     *
+     * <p>True for every queue there is. False only for the scheduler, which publishes its
+     * dead count here so that {@code QueueDeadLetters} pages somebody about a job that has
+     * given up, and has nothing to say as a queue: it holds one row per job, not a backlog,
+     * and the screen grades each of those rows itself. Listing it as well put the same
+     * jobs on the screen twice, once under a count that meant nothing.
+     */
+    default boolean listedAsQueue() {
+        return true;
+    }
+
+    /**
      * Rows that ran out of attempts and will not be retried.
      *
      * <p>Zero for a queue that has no dead state, which is an honest answer rather than a
