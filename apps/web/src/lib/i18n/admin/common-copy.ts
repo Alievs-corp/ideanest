@@ -158,6 +158,12 @@ export interface ConsoleRefusalsCopy {
   readonly capabilityNames?: Readonly<Record<string, string>>;
   /** A 400 with no code — Spring's "Failed to read request" — in the reader's language. */
   readonly invalidRequest?: string;
+  /** `INVALID_ANALYTICS_RANGE` and `INVALID_DASHBOARD_RANGE`: a window that runs backwards or past a year. */
+  readonly invalidRange?: string;
+  /** `INVALID_CURSOR`: a list's "load more" position the service no longer accepts. */
+  readonly invalidCursor?: string;
+  /** A 5xx: the service failed, and nothing the reader sent was wrong. */
+  readonly serviceFailed?: string;
 }
 
 /**
@@ -297,6 +303,9 @@ export function consoleRefusalsCopyFrom(t: AdminTranslator): ConsoleRefusalsCopy
     capabilityNamed: String(t.raw('refusals.capabilityNamed')),
     capabilityNames: t.raw('screens.staff.capability') as Readonly<Record<string, string>>,
     invalidRequest: t('refusals.invalidRequest'),
+    invalidRange: t('refusals.invalidRange'),
+    invalidCursor: t('refusals.invalidCursor'),
+    serviceFailed: t('refusals.serviceFailed'),
   };
 }
 

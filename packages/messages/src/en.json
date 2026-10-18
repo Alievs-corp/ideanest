@@ -847,7 +847,10 @@
       "unreachable": "The service could not be reached. Check your connection and try again.",
       "needsCapabilityToAct": "This action needs {capability}, which your roles do not include. An administrator can grant it.",
       "capabilityNamed": "“{name}” ({capability})",
-      "invalidRequest": "The service could not read the request. Check the fields and try again."
+      "invalidRequest": "The service could not read the request. Check the fields and try again.",
+      "invalidRange": "That period cannot be read: it cannot start after it ends or cover more than a year.",
+      "invalidCursor": "The list has changed and the next page could not be found. Reload the list.",
+      "serviceFailed": "Something went wrong on the service. Try again in a moment."
     },
     "note": {
       "why": "Why",
@@ -913,7 +916,7 @@
         "metaTitle": "Platform analytics",
         "metaDescription": "Volume, success rate and average pledge across the whole platform.",
         "title": "Platform analytics",
-        "intro": "Three of AD-13's five. Cohorts and funnels are not here, and the screen says what each is waiting on rather than approximating two numbers that would look like them."
+        "intro": "Pledge volume, backers, the average pledge and campaign outcomes for the period you choose."
       },
       "curation": {
         "metaTitle": "Collections",
@@ -1332,27 +1335,31 @@
           "365": "365 days"
         },
         "range": "Over {from} to {to}",
-        "volume": "Volume",
+        "volume": "Net volume",
         "pledges": "Pledges",
         "backers": "Backers",
         "averagePledge": "Average pledge",
-        "liveProjects": "Live campaigns",
+        "liveProjects": "Campaigns running now",
         "planRevenue": "Plan revenue",
         "planPayments": "Plan payments",
         "otherCurrencyTitle": "Some pledges are not in these totals",
-        "otherCurrencyBody": "{count} pledges in the window were in another currency. §21.2 gives nothing to convert them with, so they are counted here and left out of the volume rather than added to a figure nobody could reconcile.",
-        "outcomesHeading": "Campaigns that closed",
-        "noneClosed": "No campaign closed in this window. That is not a success rate of nought — it is the absence of one, which is why nothing is shown here.",
+        "otherCurrencyBody": "{count} pledges in this period were in another currency; they are counted separately, not converted, and are not in the volume.",
+        "outcomesHeading": "Campaigns decided in this period",
+        "noneClosed": "No campaign was decided in this period.",
         "succeeded": "Succeeded",
         "didNot": "Did not",
         "successRate": "Success rate",
         "dailyHeading": "Daily volume",
         "nothingPledged": "Nothing was pledged in this window.",
-        "notBuiltHeading": "What this screen does not answer",
+        "notBuiltHeading": "Not ready yet",
         "notBuilt": {
-          "COHORTS": "Cohorts need a rollup keyed on a backer's first pledge, which does not exist (#313).",
-          "FUNNELS": "Funnels need the visit-to-pledge path; referral_touches records arrival, not what happened next (#313)."
-        }
+          "COHORTS": "Cohort analysis is not ready yet.",
+          "FUNNELS": "The visit-to-pledge funnel is not ready yet."
+        },
+        "windowLegend": "Window",
+        "populationNote": "Only pledges collected in this period and not refunded or charged back are counted; partial refunds are deducted.",
+        "nowHeading": "Now",
+        "computedAt": "Figures as read at {time}, Baku time."
       },
       "emailTemplates": {
         "subject": "the email templates",
@@ -3419,7 +3426,7 @@
       "metaTitle": "Overview",
       "metaDescription": "The platform’s key figures for a period.",
       "subject": "the overview",
-      "standfirst": "The platform’s key figures for the period you choose. You see the sections your roles open.",
+      "standfirst": "Money, new campaigns and new accounts follow the period you choose; the queues and campaign states under “Now” show this moment. You see the sections your roles open.",
       "modulesLink": "All modules and what each is waiting on",
       "periodLegend": "Period",
       "period": {
@@ -3428,7 +3435,7 @@
         "month30": "30 days",
         "thisMonth": "This month"
       },
-      "windowNote": "{from} to {to}, {zone} time.",
+      "windowNote": "{from} – {to}, Baku time.",
       "loading": "Loading the overview",
       "emptyTitle": "Nothing on this page for your roles",
       "emptyBody": "The overview shows the sections your roles open, and none of them is one of yours. The screens you can open are in the menu.",
@@ -3442,14 +3449,14 @@
         "accounts": "Accounts"
       },
       "figure": {
-        "pledgeVolume": "Pledged",
+        "pledgeVolume": "Net pledged",
         "pledgeCount": "Pledges",
         "backerCount": "Backers",
         "averagePledge": "Average pledge",
         "successRate": "Success rate",
         "otherCurrencyPledges": "Pledges in another currency",
-        "campaignsSucceeded": "Campaigns funded",
-        "campaignsFailed": "Campaigns not funded",
+        "campaignsSucceeded": "Campaigns that ended funded",
+        "campaignsFailed": "Campaigns that ended unfunded",
         "running": "Running now",
         "awaitingModeration": "Waiting for moderation",
         "awaitingLaunch": "Approved, not launched",
@@ -3476,7 +3483,7 @@
         "APPROVED": "Approved",
         "SCHEDULED": "Scheduled",
         "LIVE": "Live",
-        "CLOSING_WINDOW": "Closing window",
+        "CLOSING_WINDOW": "Closing soon",
         "EXTENDED": "Extended",
         "SUSPENDED": "Suspended",
         "CANCELED": "Canceled",
@@ -3493,7 +3500,8 @@
         "support": "Open support",
         "accounts": "Open the accounts",
         "analytics": "Detailed analytics"
-      }
+      },
+      "nowHeading": "Now"
     }
   },
   "settings": {

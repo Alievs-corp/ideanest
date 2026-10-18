@@ -267,8 +267,16 @@ export interface PlatformAnalyticsCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly loadingList: string;
   readonly windows: Readonly<Record<string, string>>;
-  /** Carries `{from}`, `{to}`. */
+  /** The accessible name of the group of window buttons. */
+  readonly windowLegend: string;
+  /** Carries `{from}`, `{to}`, each already a date in the reader's language. */
   readonly range: string;
+  /** Which pledges the figures count: collected, and not refunded or charged back. */
+  readonly populationNote: string;
+  /** The heading over the figures that describe this moment rather than the window. */
+  readonly nowHeading: string;
+  /** Carries `{time}`: when the figures were read, in Baku. */
+  readonly computedAt: string;
   readonly volume: string;
   readonly pledges: string;
   readonly backers: string;
@@ -301,7 +309,11 @@ export function platformAnalyticsCopyFrom(
     subject: t('screens.analytics.subject'),
     loadingList: t('screens.analytics.loadingList'),
     windows: t.raw('screens.analytics.windows') as Readonly<Record<string, string>>,
+    windowLegend: t('screens.analytics.windowLegend'),
     range: String(t.raw('screens.analytics.range')),
+    populationNote: t('screens.analytics.populationNote'),
+    nowHeading: t('screens.analytics.nowHeading'),
+    computedAt: String(t.raw('screens.analytics.computedAt')),
     volume: t('screens.analytics.volume'),
     pledges: t('screens.analytics.pledges'),
     backers: t('screens.analytics.backers'),

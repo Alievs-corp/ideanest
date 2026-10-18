@@ -847,7 +847,10 @@
       "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
       "needsCapabilityToAct": "Bu işlem için {capability} yetkisi gerekir, rolleriniz ise bunu içermiyor. Bunu bir yönetici verebilir.",
       "capabilityNamed": "«{name}» ({capability})",
-      "invalidRequest": "Hizmet isteği okuyamadı. Alanları kontrol edip yeniden deneyin."
+      "invalidRequest": "Hizmet isteği okuyamadı. Alanları kontrol edip yeniden deneyin.",
+      "invalidRange": "Bu dönem okunamaz: bitişinden sonra başlayamaz ve bir yıldan uzun olamaz.",
+      "invalidCursor": "Liste değişti ve sonraki sayfa bulunamadı. Listeyi yeniden yükleyin.",
+      "serviceFailed": "Serviste bir hata oluştu. Biraz sonra yeniden deneyin."
     },
     "note": {
       "why": "Gerekçe",
@@ -913,7 +916,7 @@
         "metaTitle": "Platform analitiği",
         "metaDescription": "Tüm platform genelinde hacim, başarı oranı ve ortalama destek.",
         "title": "Platform analitiği",
-        "intro": "AD-13'ün beşinden üçü. Kohortlar ve huniler burada değil; ekran, onlara benzeyecek iki sayıyı tahmin etmek yerine her birinin neyi beklediğini söylüyor."
+        "intro": "Seçilen dönem için destek hacmi, destekçiler, ortalama destek ve kampanya sonuçları."
       },
       "curation": {
         "metaTitle": "Koleksiyonlar",
@@ -1332,27 +1335,31 @@
           "365": "365 gün"
         },
         "range": "{from} ile {to} arası",
-        "volume": "Hacim",
+        "volume": "Net hacim",
         "pledges": "Destekler",
         "backers": "Destekçiler",
         "averagePledge": "Ortalama destek",
-        "liveProjects": "Yayındaki kampanyalar",
+        "liveProjects": "Şu an yürüyen kampanyalar",
         "planRevenue": "Plan geliri",
         "planPayments": "Plan ödemeleri",
         "otherCurrencyTitle": "Bazı destekler bu toplamlarda yok",
-        "otherCurrencyBody": "Bu dönemdeki {count} destek başka bir para birimindeydi. §21.2 onları çevirecek bir şey vermiyor, bu yüzden burada sayılıyor ve kimsenin mutabık kılamayacağı bir rakama eklenmek yerine hacmin dışında bırakılıyorlar.",
-        "outcomesHeading": "Kapanan kampanyalar",
-        "noneClosed": "Bu dönemde hiçbir kampanya kapanmadı. Bu, sıfır başarı oranı değil — oranın hiç olmamasıdır, bu yüzden burada bir şey gösterilmiyor.",
+        "otherCurrencyBody": "Bu dönemde {count} destek başka bir para biriminde yapıldı; çevrilmeden ayrıca sayılıyor ve hacme dahil değil.",
+        "outcomesHeading": "Bu dönemde sonuçlanan kampanyalar",
+        "noneClosed": "Bu dönemde sonuçlanan kampanya yok.",
         "succeeded": "Başarılı",
         "didNot": "Başarısız",
         "successRate": "Başarı oranı",
         "dailyHeading": "Günlük hacim",
         "nothingPledged": "Bu dönemde hiçbir destek verilmedi.",
-        "notBuiltHeading": "Bu ekranın yanıtlamadıkları",
+        "notBuiltHeading": "Henüz hazır olmayanlar",
         "notBuilt": {
-          "COHORTS": "Kohortlar için destekçinin ilk desteğine göre bir toplama gerekir; böylesi yok (#313).",
-          "FUNNELS": "Huniler için ziyaretten desteğe giden yol gerekir; referral_touches varışı kaydeder, sonrasını değil (#313)."
-        }
+          "COHORTS": "Kohort analizi henüz hazır değil.",
+          "FUNNELS": "Ziyaretten desteğe huni henüz hazır değil."
+        },
+        "windowLegend": "Dönem",
+        "populationNote": "Yalnızca bu dönemde tahsil edilen ve iade ya da ters ibraz edilmeyen destekler sayılır; kısmi iadeler düşülmüştür.",
+        "nowHeading": "Şu an",
+        "computedAt": "Rakamlar {time} itibarıyla okundu (Bakü saati)."
       },
       "emailTemplates": {
         "subject": "e-posta şablonlarını",
@@ -3419,7 +3426,7 @@
       "metaTitle": "Genel bakış",
       "metaDescription": "Platformun bir dönem için temel göstergeleri.",
       "subject": "genel bakış",
-      "standfirst": "Seçtiğiniz dönem için platformun temel göstergeleri. Rollerinizin açtığı bölümleri görürsünüz.",
+      "standfirst": "Para, yeni kampanyalar ve yeni hesaplar seçtiğiniz döneme göredir; «Şu an» altındaki kuyruklar ve kampanya durumları bu anı gösterir. Rollerinizin açtığı bölümleri görürsünüz.",
       "modulesLink": "Tüm modüller ve her birinin neyi beklediği",
       "periodLegend": "Dönem",
       "period": {
@@ -3428,7 +3435,7 @@
         "month30": "30 gün",
         "thisMonth": "Bu ay"
       },
-      "windowNote": "{from} – {to}, {zone} saatine göre.",
+      "windowNote": "{from} – {to}, Bakü saatiyle.",
       "loading": "Genel bakış yükleniyor",
       "emptyTitle": "Rolleriniz için bu sayfada bir şey yok",
       "emptyBody": "Genel bakış rollerinizin açtığı bölümleri gösterir ve bunların hiçbiri sizin değil. Açabileceğiniz ekranlar menüde.",
@@ -3442,14 +3449,14 @@
         "accounts": "Hesaplar"
       },
       "figure": {
-        "pledgeVolume": "Toplanan",
+        "pledgeVolume": "Net toplanan",
         "pledgeCount": "Destekler",
         "backerCount": "Destekçiler",
         "averagePledge": "Ortalama destek",
         "successRate": "Başarı oranı",
         "otherCurrencyPledges": "Başka para biriminde destekler",
-        "campaignsSucceeded": "Hedefe ulaşan kampanyalar",
-        "campaignsFailed": "Hedefe ulaşmayan kampanyalar",
+        "campaignsSucceeded": "Başarıyla biten kampanyalar",
+        "campaignsFailed": "Başarısız biten kampanyalar",
         "running": "Şu an sürenler",
         "awaitingModeration": "Moderasyon bekleyenler",
         "awaitingLaunch": "Onaylandı, başlatılmadı",
@@ -3476,7 +3483,7 @@
         "APPROVED": "Onaylandı",
         "SCHEDULED": "Zamanlandı",
         "LIVE": "Yayında",
-        "CLOSING_WINDOW": "Kapanış penceresi",
+        "CLOSING_WINDOW": "Yakında kapanıyor",
         "EXTENDED": "Uzatıldı",
         "SUSPENDED": "Askıya alındı",
         "CANCELED": "İptal edildi",
@@ -3493,7 +3500,8 @@
         "support": "Desteği aç",
         "accounts": "Hesapları aç",
         "analytics": "Ayrıntılı analitik"
-      }
+      },
+      "nowHeading": "Şu an"
     }
   },
   "settings": {

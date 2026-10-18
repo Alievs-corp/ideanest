@@ -39,8 +39,10 @@ export interface ConsoleDashboardCopy extends ConsoleChromeCopy {
   readonly modulesLink: string;
   readonly periodLegend: string;
   readonly period: Readonly<Record<'today' | 'week' | 'month30' | 'thisMonth', string>>;
-  /** Carries `{from}`, `{to}`, `{zone}`. */
+  /** Carries `{from}` and `{to}`, each already a date in the reader's language. Names Baku's time itself. */
   readonly windowNote: string;
+  /** The heading over a card's figures that count this moment rather than the period. */
+  readonly nowHeading: string;
   readonly loading: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
@@ -77,6 +79,7 @@ export function consoleDashboardCopyFrom(t: AdminTranslator, chrome: ConsoleChro
     periodLegend: word('periodLegend'),
     period: record('period') as ConsoleDashboardCopy['period'],
     windowNote: template('windowNote'),
+    nowHeading: word('nowHeading'),
     loading: word('loading'),
     emptyTitle: word('emptyTitle'),
     emptyBody: word('emptyBody'),
