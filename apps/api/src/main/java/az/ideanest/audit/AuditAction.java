@@ -438,6 +438,16 @@ public enum AuditAction {
     DASHBOARD_READ("dashboard.read", "account"),
 
     /**
+     * A member of staff opened {@code /admin/analytics}, the platform's pledge and plan figures.
+     *
+     * <p>Recorded with the window that was read, for {@link #DASHBOARD_READ}'s reason: "who has
+     * been looking at the platform's figures" is answerable only if every screen that shows them
+     * says so. Written by the analytics endpoint alone; the front page's figures card reads the
+     * same service and is already covered by {@link #DASHBOARD_READ}, so one look is one row.
+     */
+    ANALYTICS_READ("analytics.read", "account"),
+
+    /**
      * AD-11 (#311): the platform changed what it charges.
      *
      * <p>The entity is the schedule that was opened rather than the one that was closed:
