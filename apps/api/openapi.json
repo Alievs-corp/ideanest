@@ -1095,6 +1095,15 @@
             "type" : "string",
             "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
+        }, {
+          "in" : "query",
+          "name" : "locale",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "az",
+            "pattern" : "^(az|en|ru|tr)$"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -1112,6 +1121,15 @@
           "schema" : {
             "type" : "string",
             "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "locale",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "az",
+            "pattern" : "^(az|en|ru|tr)$"
           }
         } ],
         "responses" : {
@@ -1137,6 +1155,15 @@
           "schema" : {
             "type" : "string",
             "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "locale",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "az",
+            "pattern" : "^(az|en|ru|tr)$"
           }
         } ],
         "requestBody" : {
@@ -1202,6 +1229,41 @@
           }
         },
         "tags" : [ "email-template-controller" ]
+      },
+      "post" : {
+        "operationId" : "emailTemplatePreviewDraft",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DraftCopy"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Preview"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "email-template-controller" ]
       }
     },
     "/v1/admin/email-templates/{type}/test-send" : {
@@ -1216,6 +1278,15 @@
             "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DraftCopy"
+              }
+            }
+          }
+        },
         "responses" : {
           "204" : {
             "description" : "No Content"
@@ -1234,6 +1305,15 @@
           "schema" : {
             "type" : "string",
             "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "locale",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "az",
+            "pattern" : "^(az|en|ru|tr)$"
           }
         } ],
         "responses" : {
@@ -13563,6 +13643,12 @@
       "Draft" : {
         "type" : "object",
         "properties" : {
+          "availablePlaceholders" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "locale" : {
             "type" : "string"
           },
@@ -13573,13 +13659,18 @@
             "type" : "array",
             "items" : {
               "type" : "string"
-            },
-            "uniqueItems" : true
+            }
           },
           "shippedBody" : {
             "type" : "string"
           },
+          "shippedBodyNamed" : {
+            "type" : "string"
+          },
           "shippedSubject" : {
+            "type" : "string"
+          },
+          "shippedSubjectNamed" : {
             "type" : "string"
           },
           "type" : {
@@ -13587,6 +13678,26 @@
             "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }
+      },
+      "DraftCopy" : {
+        "type" : "object",
+        "properties" : {
+          "body" : {
+            "type" : "string",
+            "maxLength" : 50000,
+            "minLength" : 0
+          },
+          "locale" : {
+            "type" : "string",
+            "pattern" : "^(az|en|ru|tr)$"
+          },
+          "subject" : {
+            "type" : "string",
+            "maxLength" : 300,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "body", "locale", "subject" ]
       },
       "DraftPledgeRequest" : {
         "type" : "object",
@@ -14551,6 +14662,18 @@
           },
           "valueNode" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "LanguageOverride" : {
+        "type" : "object",
+        "properties" : {
+          "liveVersion" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "locale" : {
+            "type" : "string"
           }
         }
       },
@@ -16022,6 +16145,20 @@
             "type" : "string"
           },
           "title" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Preview" : {
+        "type" : "object",
+        "properties" : {
+          "html" : {
+            "type" : "string"
+          },
+          "subject" : {
+            "type" : "string"
+          },
+          "text" : {
             "type" : "string"
           }
         }
@@ -18895,6 +19032,12 @@
           },
           "mandatory" : {
             "type" : "boolean"
+          },
+          "overrides" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LanguageOverride"
+            }
           },
           "type" : {
             "type" : "string"

@@ -493,7 +493,7 @@ export interface paths {
         };
         get: operations["emailTemplatePreview"];
         put?: never;
-        post?: never;
+        post: operations["emailTemplatePreviewDraft"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5390,13 +5390,21 @@ export interface components {
             version?: number;
         };
         Draft: {
+            availablePlaceholders?: string[];
             locale?: string;
             override?: components["schemas"]["Version"];
             requiredPlaceholders?: string[];
             shippedBody?: string;
+            shippedBodyNamed?: string;
             shippedSubject?: string;
+            shippedSubjectNamed?: string;
             /** @enum {string} */
             type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+        };
+        DraftCopy: {
+            body: string;
+            locale: string;
+            subject: string;
         };
         DraftPledgeRequest: {
             addons?: components["schemas"]["PledgeAddonBody"][];
@@ -5744,6 +5752,11 @@ export interface components {
             /** @deprecated */
             textual?: boolean;
             valueNode?: boolean;
+        };
+        LanguageOverride: {
+            /** Format: int32 */
+            liveVersion?: number;
+            locale?: string;
         };
         LedgerBalanceRecord: {
             account?: string;
@@ -6323,6 +6336,11 @@ export interface components {
             slug?: string;
             state?: string;
             title?: string;
+        };
+        Preview: {
+            html?: string;
+            subject?: string;
+            text?: string;
         };
         ProfilePatchRequest: {
             avatarUrl?: string;
@@ -7382,6 +7400,7 @@ export interface components {
         Template: {
             category?: string;
             mandatory?: boolean;
+            overrides?: components["schemas"]["LanguageOverride"][];
             type?: string;
         };
         TermResponse: {
@@ -7775,6 +7794,7 @@ export type SchemaDisputePage = components['schemas']['DisputePage'];
 export type SchemaDisputeWindowBody = components['schemas']['DisputeWindowBody'];
 export type SchemaDocument = components['schemas']['Document'];
 export type SchemaDraft = components['schemas']['Draft'];
+export type SchemaDraftCopy = components['schemas']['DraftCopy'];
 export type SchemaDraftPledgeRequest = components['schemas']['DraftPledgeRequest'];
 export type SchemaDraftRequest = components['schemas']['DraftRequest'];
 export type SchemaEditRequest = components['schemas']['EditRequest'];
@@ -7814,6 +7834,7 @@ export type SchemaItemPatchRequest = components['schemas']['ItemPatchRequest'];
 export type SchemaItemResponse = components['schemas']['ItemResponse'];
 export type SchemaJob = components['schemas']['Job'];
 export type SchemaJsonNode = components['schemas']['JsonNode'];
+export type SchemaLanguageOverride = components['schemas']['LanguageOverride'];
 export type SchemaLedgerBalanceRecord = components['schemas']['LedgerBalanceRecord'];
 export type SchemaLegalSubjectRequest = components['schemas']['LegalSubjectRequest'];
 export type SchemaLine = components['schemas']['Line'];
@@ -7870,6 +7891,7 @@ export type SchemaPostalAddressBody = components['schemas']['PostalAddressBody']
 export type SchemaPosting = components['schemas']['Posting'];
 export type SchemaPreference = components['schemas']['Preference'];
 export type SchemaPrelaunchPageResponse = components['schemas']['PrelaunchPageResponse'];
+export type SchemaPreview = components['schemas']['Preview'];
 export type SchemaProfilePatchRequest = components['schemas']['ProfilePatchRequest'];
 export type SchemaProfileProjectCard = components['schemas']['ProfileProjectCard'];
 export type SchemaProfileProjectListResponse = components['schemas']['ProfileProjectListResponse'];
@@ -8793,7 +8815,9 @@ export interface operations {
     };
     emailTemplateEditorRead: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
@@ -8815,7 +8839,9 @@ export interface operations {
     };
     emailTemplateEditorEdit: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
@@ -8841,7 +8867,9 @@ export interface operations {
     };
     emailTemplateEditorWithdraw: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
@@ -8884,6 +8912,32 @@ export interface operations {
             };
         };
     };
+    emailTemplatePreviewDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftCopy"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preview"];
+                };
+            };
+        };
+    };
     emailTemplateTestSend: {
         parameters: {
             query?: never;
@@ -8893,7 +8947,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DraftCopy"];
+            };
+        };
         responses: {
             /** @description No Content */
             204: {
@@ -8906,7 +8964,9 @@ export interface operations {
     };
     emailTemplateEditorHistory: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
