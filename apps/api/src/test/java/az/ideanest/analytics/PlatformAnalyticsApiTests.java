@@ -184,14 +184,14 @@ class PlatformAnalyticsApiTests extends AbstractIntegrationTest {
         LocalDate first = LocalDate.of(2012, 1, 1);
         long before = number(totals(read(first, first)), "liveProjects");
 
-        Campaigns.seed(dataSource, creator(), "running-closing").state("CLOSING_WINDOW").insert();
-        Campaigns.seed(dataSource, creator(), "running-extended").state("EXTENDED")
+        made.add(Campaigns.seed(dataSource, creator(), "running-closing").state("CLOSING_WINDOW").insert());
+        made.add(Campaigns.seed(dataSource, creator(), "running-extended").state("EXTENDED")
                 .launchedAt(Instant.now().minusSeconds(30 * 86_400))
                 .deadline(Instant.now().minusSeconds(86_400))
                 .extendedUntil(Instant.now().plusSeconds(7 * 86_400))
-                .insert();
-        Campaigns.seed(dataSource, creator(), "running-live").state("LIVE").insert();
-        Campaigns.seed(dataSource, creator(), "running-not").state("UNSUCCESSFUL").insert();
+                .insert());
+        made.add(Campaigns.seed(dataSource, creator(), "running-live").state("LIVE").insert());
+        made.add(Campaigns.seed(dataSource, creator(), "running-not").state("UNSUCCESSFUL").insert());
 
         assertThat(number(totals(read(first, first)), "liveProjects") - before).isEqualTo(3);
     }
@@ -226,12 +226,21 @@ class PlatformAnalyticsApiTests extends AbstractIntegrationTest {
     }
 
     /**
-     * The refund fixtures write `transactions`, which V41 makes append-only and which refer to the
-     * campaign, so a suite that later clears `projects` would be refused. Taken out again here.
+     * Everything this suite made, taken out again: suites after it clear `projects` and `users`
+     * wholesale, and a campaign left behind — or a refund's `transactions` row, which V41 makes
+     * append-only and which refers to the campaign — would have that refused.
      */
     @AfterEach
-    void removeMoneyRows() {
+    void removeWhatWasMade() {
+        if (made.isEmpty()) {
+            return;
+        }
         PaymentRows.clearProjects(dataSource, made);
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        for (UUID project : made) {
+            jdbc.update("DELETE FROM pledges WHERE project_id = ?", project);
+            jdbc.update("DELETE FROM projects WHERE id = ?", project);
+        }
         made.clear();
     }
 
