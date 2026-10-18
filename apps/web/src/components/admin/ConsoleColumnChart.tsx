@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { formatMoney } from '@ideanest/money/format';
 import {
   axisLabelIndices,
@@ -73,8 +73,14 @@ export interface ConsoleColumnChartProps {
   readonly height?: number;
 }
 
-/** Labels under the axis. Six fit "14 okt" comfortably in the narrowest plot this is drawn in. */
-const AXIS_LABELS = 6;
+/**
+ * Horizontal room one date under the axis needs: "14 okt" or "Oct 2026" with clear space either
+ * side. The plot is measured, so a phone gets three or four labels and a desktop six or seven.
+ */
+const AXIS_LABEL_ROOM = 56;
+/** Before the plot has been measured, and in tests, which have no layout. */
+const DEFAULT_AXIS_LABELS = 6;
+const MAX_AXIS_LABELS = 7;
 
 export function ConsoleColumnChart({
   points,
@@ -93,10 +99,28 @@ export function ConsoleColumnChart({
     [highest],
   );
   const [active, setActive] = useState<number | null>(null);
+  const [axisLabels, setAxisLabels] = useState(DEFAULT_AXIS_LABELS);
+  const plot = useRef<HTMLDivElement>(null);
   const hintId = useId();
+
+  const empty = buckets.length === 0;
+
+  useEffect(() => {
+    const element = plot.current;
+    if (element === null || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const width = element.getBoundingClientRect().width;
+      if (width > 0) setAxisLabels(Math.max(2, Math.min(MAX_AXIS_LABELS, Math.floor(width / AXIS_LABEL_ROOM))));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+    // Re-attached when the plot first appears: it is not drawn for an empty range.
+  }, [empty]);
   const tableId = useId();
 
-  if (buckets.length === 0) return null;
+  if (empty) return null;
 
   const money = (amount: string) => formatMoney({ amount, currency });
   const period = (bucket: ChartBucket) => periodLabel(bucket, granularity, locale, copy);
@@ -197,6 +221,7 @@ export function ConsoleColumnChart({
 
         <div className="min-w-0 flex-1">
           <div
+            ref={plot}
             role="group"
             aria-label={summary}
             aria-describedby={hintId}
@@ -279,7 +304,7 @@ export function ConsoleColumnChart({
 
           {/* Dates under the axis, by sight; the group's label already names the range. */}
           <div aria-hidden="true" className="relative mt-2 h-4">
-            {axisLabelIndices(buckets.length, granularity === 'month' ? AXIS_LABELS + 1 : AXIS_LABELS).map((index) => {
+            {axisLabelIndices(buckets.length, axisLabels).map((index) => {
               const bucket = buckets[index];
               if (bucket === undefined) return null;
               return (
