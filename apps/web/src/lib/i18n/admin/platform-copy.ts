@@ -328,10 +328,14 @@ export function platformAnalyticsCopyFrom(
  * AD-15's list.
  *
  * <p>`category` is the console's own table rather than `account.notifications.category`, which
- * is written for the person receiving the notice â€” "Your pledges", "Campaigns you back". A
+ * is written for the person receiving the notice — "Your pledges", "Campaigns you back". A
  * member of staff reading a list of templates is not the recipient, and second-person copy on
  * an administrative list reads as though the console belonged to somebody else. Unknown
  * categories fall back to the wire value.
+ *
+ * <p>`type` names every notification in words, because the list used to title each row with its
+ * enum constant. A type the catalogue does not know falls back to the constant, which is
+ * readable and is the honest failure.
  */
 export interface EmailTemplateIndexCopy extends ConsoleChromeCopy {
   readonly subject: string;
@@ -339,23 +343,35 @@ export interface EmailTemplateIndexCopy extends ConsoleChromeCopy {
   readonly readFailed: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
-  readonly transactional: string;
+  /** The tag on the one template a recipient cannot switch off. */
+  readonly mandatory: string;
+  readonly shippedOnly: string;
+  /** Carries `{language}`, `{version}`. */
+  readonly rewritten: string;
   readonly category: Readonly<Record<string, string>>;
+  readonly type: Readonly<Record<string, string>>;
+  /** The four languages, by code. */
+  readonly language: Readonly<Record<string, string>>;
 }
 
 export function emailTemplateIndexCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
 ): EmailTemplateIndexCopy {
+  const raw = (key: string) => String(t.raw(`screens.emailTemplates.${key}`));
   return {
     ...chrome,
-    subject: t('screens.emailTemplates.subject'),
-    loadingList: t('screens.emailTemplates.loadingList'),
-    readFailed: t('screens.emailTemplates.readFailed'),
-    emptyTitle: t('screens.emailTemplates.emptyTitle'),
-    emptyBody: t('screens.emailTemplates.emptyBody'),
-    transactional: t('screens.emailTemplates.transactional'),
+    subject: raw('subject'),
+    loadingList: raw('loadingList'),
+    readFailed: raw('readFailed'),
+    emptyTitle: raw('emptyTitle'),
+    emptyBody: raw('emptyBody'),
+    mandatory: raw('mandatory'),
+    shippedOnly: raw('shippedOnly'),
+    rewritten: raw('rewritten'),
     category: t.raw('screens.emailTemplates.category') as Readonly<Record<string, string>>,
+    type: t.raw('screens.emailTemplates.type') as Readonly<Record<string, string>>,
+    language: t.raw('screens.emailTemplates.language') as Readonly<Record<string, string>>,
   };
 }
 
@@ -366,25 +382,35 @@ export function emailTemplateIndexCopyFrom(
  * refusal about the version history that said "the email copy" would send somebody looking at
  * the wrong endpoint.
  *
- * <p>`mustKeep` and `mustKeepWhy` bracket a list of `{n}` placeholders the component renders as
- * `<code>` elements. Two keys rather than one because the middle is markup, and the alternative
- * â€” a single sentence with the codes interpolated as text â€” would lose the styling that tells
- * an editor these are literals rather than words.
+ * <p>Every string is read with `t.raw`: most carry placeholders the component fills, and several
+ * name a placeholder such as `{2}` literally, which the component supplies rather than the
+ * catalogue — an ICU message cannot hold a bare `{2}`.
  */
 export interface EmailTemplateEditorCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly historySubject: string;
   readonly loadingList: string;
   readonly readFailed: string;
+  readonly languageLabel: string;
+  /** Carries `{language}`. */
+  readonly reach: string;
+  readonly reachPrimary: string;
   readonly overriddenTitle: string;
-  /** Carries `{version}`. */
+  /** Carries `{version}`, `{language}`. */
   readonly overriddenBody: string;
   readonly shippedTitle: string;
   readonly shippedBody: string;
   readonly shippedHeading: string;
+  readonly shippedNamedLabel: string;
+  readonly shippedPlainLabel: string;
   readonly yourHeading: string;
+  readonly placeholdersHeading: string;
+  readonly placeholdersIntro: string;
   readonly mustKeep: string;
-  readonly mustKeepWhy: string;
+  /** What each of the six facts is, by its index. */
+  readonly placeholder: Readonly<Record<string, string>>;
+  /** Carries `{placeholder}`. */
+  readonly campaignFallback: string;
   readonly subjectLabel: string;
   readonly bodyLabel: string;
   readonly whyLabel: string;
@@ -392,53 +418,139 @@ export interface EmailTemplateEditorCopy extends ConsoleChromeCopy {
   readonly missingTitle: string;
   /** Carries `{placeholders}`. */
   readonly missingBody: string;
+  readonly unknownTitle: string;
+  /** Carries `{placeholders}`. */
+  readonly unknownBody: string;
+  /** Carries `{field}`, `{example}`. */
+  readonly malformedBody: string;
+  /** The two editable fields, as `malformedBody` names them. */
+  readonly field: { readonly subject: string; readonly body: string };
+  readonly preview: string;
+  readonly previewing: string;
+  readonly previewHeading: string;
+  readonly previewIntro: string;
+  /** Carries `{subject}`. */
+  readonly previewSubject: string;
+  readonly previewFrameTitle: string;
+  readonly previewStale: string;
+  readonly testSend: string;
+  readonly testSending: string;
+  readonly testSent: string;
   readonly saving: string;
   readonly saveNew: string;
+  readonly confirmSaveLabel: string;
+  /** Carries `{version}`, `{language}`. */
+  readonly confirmSave: string;
+  readonly confirmSaveAction: string;
+  readonly back: string;
   readonly withdraw: string;
+  readonly confirmWithdrawLabel: string;
+  /** Carries `{version}`, `{language}`. */
+  readonly confirmWithdraw: string;
+  /** Carries `{version}`. */
   readonly savedNew: string;
   readonly savedWithdrawn: string;
+  readonly restore: string;
+  readonly confirmRestoreLabel: string;
+  /** Carries `{from}`, `{version}`. */
+  readonly confirmRestore: string;
+  /** Carries `{version}`. The note a restored version is saved with. */
+  readonly restoredNote: string;
+  readonly showText: string;
+  readonly switchLabel: string;
+  readonly switchConfirm: string;
+  readonly switchAction: string;
   readonly doneTitle: string;
   readonly failedTitle: string;
   readonly versionsHeading: string;
+  readonly versionsEmpty: string;
   /** Carries `{date}`, `{version}`. */
   readonly versionLine: string;
+  readonly writtenBy: string;
   readonly live: string;
+  readonly tryAgain: string;
+  /** The refusals the editor words itself, by the service's code. */
+  readonly errors: Readonly<Record<string, string>>;
+  /** The four languages, by code — the list's table, so both screens name them alike. */
+  readonly language: Readonly<Record<string, string>>;
 }
 
 export function emailTemplateEditorCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
 ): EmailTemplateEditorCopy {
+  const raw = (key: string) => String(t.raw(`screens.emailTemplateEditor.${key}`));
   return {
     ...chrome,
-    subject: t('screens.emailTemplateEditor.subject'),
-    historySubject: t('screens.emailTemplateEditor.historySubject'),
-    loadingList: t('screens.emailTemplateEditor.loadingList'),
-    readFailed: t('screens.emailTemplateEditor.readFailed'),
-    overriddenTitle: t('screens.emailTemplateEditor.overriddenTitle'),
-    overriddenBody: String(t.raw('screens.emailTemplateEditor.overriddenBody')),
-    shippedTitle: t('screens.emailTemplateEditor.shippedTitle'),
-    shippedBody: t('screens.emailTemplateEditor.shippedBody'),
-    shippedHeading: t('screens.emailTemplateEditor.shippedHeading'),
-    yourHeading: t('screens.emailTemplateEditor.yourHeading'),
-    mustKeep: t('screens.emailTemplateEditor.mustKeep'),
-    mustKeepWhy: t('screens.emailTemplateEditor.mustKeepWhy'),
-    subjectLabel: t('screens.emailTemplateEditor.subjectLabel'),
-    bodyLabel: t('screens.emailTemplateEditor.bodyLabel'),
-    whyLabel: t('screens.emailTemplateEditor.whyLabel'),
-    whyHint: t('screens.emailTemplateEditor.whyHint'),
-    missingTitle: t('screens.emailTemplateEditor.missingTitle'),
-    missingBody: String(t.raw('screens.emailTemplateEditor.missingBody')),
-    saving: t('screens.emailTemplateEditor.saving'),
-    saveNew: t('screens.emailTemplateEditor.saveNew'),
-    withdraw: t('screens.emailTemplateEditor.withdraw'),
-    savedNew: t('screens.emailTemplateEditor.savedNew'),
-    savedWithdrawn: t('screens.emailTemplateEditor.savedWithdrawn'),
-    doneTitle: t('screens.emailTemplateEditor.doneTitle'),
-    failedTitle: t('screens.emailTemplateEditor.failedTitle'),
-    versionsHeading: t('screens.emailTemplateEditor.versionsHeading'),
-    versionLine: String(t.raw('screens.emailTemplateEditor.versionLine')),
-    live: t('screens.emailTemplateEditor.live'),
+    subject: raw('subject'),
+    historySubject: raw('historySubject'),
+    loadingList: raw('loadingList'),
+    readFailed: raw('readFailed'),
+    languageLabel: raw('languageLabel'),
+    reach: raw('reach'),
+    reachPrimary: raw('reachPrimary'),
+    overriddenTitle: raw('overriddenTitle'),
+    overriddenBody: raw('overriddenBody'),
+    shippedTitle: raw('shippedTitle'),
+    shippedBody: raw('shippedBody'),
+    shippedHeading: raw('shippedHeading'),
+    shippedNamedLabel: raw('shippedNamedLabel'),
+    shippedPlainLabel: raw('shippedPlainLabel'),
+    yourHeading: raw('yourHeading'),
+    placeholdersHeading: raw('placeholdersHeading'),
+    placeholdersIntro: raw('placeholdersIntro'),
+    mustKeep: raw('mustKeep'),
+    placeholder: t.raw('screens.emailTemplateEditor.placeholder') as Readonly<Record<string, string>>,
+    campaignFallback: raw('campaignFallback'),
+    subjectLabel: raw('subjectLabel'),
+    bodyLabel: raw('bodyLabel'),
+    whyLabel: raw('whyLabel'),
+    whyHint: raw('whyHint'),
+    missingTitle: raw('missingTitle'),
+    missingBody: raw('missingBody'),
+    unknownTitle: raw('unknownTitle'),
+    unknownBody: raw('unknownBody'),
+    malformedBody: raw('malformedBody'),
+    field: t.raw('screens.emailTemplateEditor.field') as { readonly subject: string; readonly body: string },
+    preview: raw('preview'),
+    previewing: raw('previewing'),
+    previewHeading: raw('previewHeading'),
+    previewIntro: raw('previewIntro'),
+    previewSubject: raw('previewSubject'),
+    previewFrameTitle: raw('previewFrameTitle'),
+    previewStale: raw('previewStale'),
+    testSend: raw('testSend'),
+    testSending: raw('testSending'),
+    testSent: raw('testSent'),
+    saving: raw('saving'),
+    saveNew: raw('saveNew'),
+    confirmSaveLabel: raw('confirmSaveLabel'),
+    confirmSave: raw('confirmSave'),
+    confirmSaveAction: raw('confirmSaveAction'),
+    back: raw('back'),
+    withdraw: raw('withdraw'),
+    confirmWithdrawLabel: raw('confirmWithdrawLabel'),
+    confirmWithdraw: raw('confirmWithdraw'),
+    savedNew: raw('savedNew'),
+    savedWithdrawn: raw('savedWithdrawn'),
+    restore: raw('restore'),
+    confirmRestoreLabel: raw('confirmRestoreLabel'),
+    confirmRestore: raw('confirmRestore'),
+    restoredNote: raw('restoredNote'),
+    showText: raw('showText'),
+    switchLabel: raw('switchLabel'),
+    switchConfirm: raw('switchConfirm'),
+    switchAction: raw('switchAction'),
+    doneTitle: raw('doneTitle'),
+    failedTitle: raw('failedTitle'),
+    versionsHeading: raw('versionsHeading'),
+    versionsEmpty: raw('versionsEmpty'),
+    versionLine: raw('versionLine'),
+    writtenBy: raw('writtenBy'),
+    live: raw('live'),
+    tryAgain: raw('tryAgain'),
+    errors: t.raw('screens.emailTemplateEditor.errors') as Readonly<Record<string, string>>,
+    language: t.raw('screens.emailTemplates.language') as Readonly<Record<string, string>>,
   };
 }
 
