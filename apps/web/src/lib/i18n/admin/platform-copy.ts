@@ -561,6 +561,8 @@ export function emailTemplateEditorCopyFrom(
  * shapes give and one of its own: the screen's whole job is to make an irreversible action
  * legible, and a missing string here would be a blank where the sentence explaining that a
  * published version cannot be edited should be.
+ *
+ * <p>Read with `t.raw` throughout, because most of these carry placeholders the screen fills.
  */
 export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly subject: string;
@@ -576,7 +578,7 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly bodyHint: string;
   readonly save: string;
   readonly working: string;
-  /** Carries `{locale}`, `{version}`. */
+  /** Carries `{language}`, `{version}`. */
   readonly savedNotice: string;
   readonly publishHeading: string;
   readonly publishIntro: string;
@@ -589,6 +591,8 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly publish: string;
   /** Carries `{languages}`, `{version}`. */
   readonly publishedNotice: string;
+  /** Carries `{languages}`, `{version}`, `{date}`. */
+  readonly publishedFuture: string;
   readonly nothingDraftedTitle: string;
   readonly nothingDraftedBody: string;
   readonly historyHeading: string;
@@ -599,6 +603,9 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly versionLabel: string;
   /** Carries `{from}`, `{hash}`. */
   readonly versionMeta: string;
+  /** Carries `{date}`. */
+  readonly takesEffect: string;
+  readonly openOnSite: string;
   readonly showOnSite: string;
   readonly shownOnSite: string;
   /** Carries `{version}`. */
@@ -606,60 +613,109 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly doneTitle: string;
   readonly failedTitle: string;
   readonly loadingList: string;
+  readonly readFailed: string;
   readonly tryAgain: string;
+  readonly back: string;
+  readonly confirmPublishLabel: string;
+  /** Carries `{document}`, `{version}`, `{languages}`, `{when}`. */
+  readonly confirmPublish: string;
+  readonly confirmPublishAction: string;
+  readonly whenNow: string;
+  /** Carries `{date}`. */
+  readonly whenDate: string;
+  /** Who must accept a new version again, by document. Only the two agreements have an entry. */
+  readonly reaccept: Readonly<Record<string, string>>;
+  readonly confirmActivateLabel: string;
+  /** Carries `{document}`, `{version}`. */
+  readonly confirmActivate: string;
+  readonly unsavedTitle: string;
+  /** Carries `{languages}`. */
+  readonly unsavedBody: string;
+  /** Carries `{language}`. */
+  readonly unsavedOption: string;
+  readonly switchDocumentLabel: string;
+  /** Carries `{languages}`. */
+  readonly switchDocument: string;
+  readonly switchDocumentAction: string;
+  /** The refusals the screen words itself, by the service's code. */
+  readonly errors: Readonly<Record<string, string>>;
   /** §22.2's eight, named in the reader's language rather than by their code. */
   readonly kind: Readonly<Record<string, string>>;
-  /** §21.1's four, likewise. The Azerbaijani entry says that it is the governing text. */
+  /** §21.1's four, for the selector. The Azerbaijani entry says that it is the governing text. */
   readonly locale: Readonly<Record<string, string>>;
+  /** The same four as plain names, for sentences. */
+  readonly languageName: Readonly<Record<string, string>>;
 }
 
 export function legalDocumentEditorCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
 ): LegalDocumentEditorCopy {
+  const raw = (key: string) => String(t.raw(`screens.legal.${key}`));
+  const table = (key: string) => t.raw(`screens.legal.${key}`) as Readonly<Record<string, string>>;
   return {
     ...chrome,
-    subject: t('screens.legal.subject'),
-    noticeTitle: t('screens.legal.noticeTitle'),
-    noticeBody: t('screens.legal.noticeBody'),
-    documentLabel: t('screens.legal.documentLabel'),
-    languageLabel: t('screens.legal.languageLabel'),
-    languageHint: t('screens.legal.languageHint'),
-    draftHeading: t('screens.legal.draftHeading'),
-    draftIntro: t('screens.legal.draftIntro'),
-    titleLabel: t('screens.legal.titleLabel'),
-    bodyLabel: t('screens.legal.bodyLabel'),
-    bodyHint: t('screens.legal.bodyHint'),
-    save: t('screens.legal.save'),
-    working: t('screens.legal.working'),
-    /* `t.raw`, because it carries placeholders — `test-copy.ts` refuses `t()` on one. */
-    savedNotice: String(t.raw('screens.legal.savedNotice')),
-    publishHeading: t('screens.legal.publishHeading'),
-    publishIntro: t('screens.legal.publishIntro'),
-    willPublish: String(t.raw('screens.legal.willPublish')),
-    governingMissingTitle: t('screens.legal.governingMissingTitle'),
-    governingMissingBody: t('screens.legal.governingMissingBody'),
-    effectiveFromLabel: t('screens.legal.effectiveFromLabel'),
-    effectiveFromHint: t('screens.legal.effectiveFromHint'),
-    publish: t('screens.legal.publish'),
-    publishedNotice: String(t.raw('screens.legal.publishedNotice')),
-    nothingDraftedTitle: t('screens.legal.nothingDraftedTitle'),
-    nothingDraftedBody: t('screens.legal.nothingDraftedBody'),
-    historyHeading: t('screens.legal.historyHeading'),
-    historyIntro: t('screens.legal.historyIntro'),
-    noVersionsTitle: t('screens.legal.noVersionsTitle'),
-    noVersionsBody: t('screens.legal.noVersionsBody'),
-    versionLabel: String(t.raw('screens.legal.versionLabel')),
-    versionMeta: String(t.raw('screens.legal.versionMeta')),
-    showOnSite: t('screens.legal.showOnSite'),
-    shownOnSite: t('screens.legal.shownOnSite'),
-    activatedNotice: String(t.raw('screens.legal.activatedNotice')),
-    doneTitle: t('screens.legal.doneTitle'),
-    failedTitle: t('screens.legal.failedTitle'),
-    loadingList: t('screens.legal.loadingList'),
-    tryAgain: t('screens.legal.tryAgain'),
-    kind: t.raw('screens.legal.kind') as Readonly<Record<string, string>>,
-    locale: t.raw('screens.legal.locale') as Readonly<Record<string, string>>,
+    subject: raw('subject'),
+    noticeTitle: raw('noticeTitle'),
+    noticeBody: raw('noticeBody'),
+    documentLabel: raw('documentLabel'),
+    languageLabel: raw('languageLabel'),
+    languageHint: raw('languageHint'),
+    draftHeading: raw('draftHeading'),
+    draftIntro: raw('draftIntro'),
+    titleLabel: raw('titleLabel'),
+    bodyLabel: raw('bodyLabel'),
+    bodyHint: raw('bodyHint'),
+    save: raw('save'),
+    working: raw('working'),
+    savedNotice: raw('savedNotice'),
+    publishHeading: raw('publishHeading'),
+    publishIntro: raw('publishIntro'),
+    willPublish: raw('willPublish'),
+    governingMissingTitle: raw('governingMissingTitle'),
+    governingMissingBody: raw('governingMissingBody'),
+    effectiveFromLabel: raw('effectiveFromLabel'),
+    effectiveFromHint: raw('effectiveFromHint'),
+    publish: raw('publish'),
+    publishedNotice: raw('publishedNotice'),
+    publishedFuture: raw('publishedFuture'),
+    nothingDraftedTitle: raw('nothingDraftedTitle'),
+    nothingDraftedBody: raw('nothingDraftedBody'),
+    historyHeading: raw('historyHeading'),
+    historyIntro: raw('historyIntro'),
+    noVersionsTitle: raw('noVersionsTitle'),
+    noVersionsBody: raw('noVersionsBody'),
+    versionLabel: raw('versionLabel'),
+    versionMeta: raw('versionMeta'),
+    takesEffect: raw('takesEffect'),
+    openOnSite: raw('openOnSite'),
+    showOnSite: raw('showOnSite'),
+    shownOnSite: raw('shownOnSite'),
+    activatedNotice: raw('activatedNotice'),
+    doneTitle: raw('doneTitle'),
+    failedTitle: raw('failedTitle'),
+    loadingList: raw('loadingList'),
+    readFailed: raw('readFailed'),
+    tryAgain: raw('tryAgain'),
+    back: raw('back'),
+    confirmPublishLabel: raw('confirmPublishLabel'),
+    confirmPublish: raw('confirmPublish'),
+    confirmPublishAction: raw('confirmPublishAction'),
+    whenNow: raw('whenNow'),
+    whenDate: raw('whenDate'),
+    reaccept: table('reaccept'),
+    confirmActivateLabel: raw('confirmActivateLabel'),
+    confirmActivate: raw('confirmActivate'),
+    unsavedTitle: raw('unsavedTitle'),
+    unsavedBody: raw('unsavedBody'),
+    unsavedOption: raw('unsavedOption'),
+    switchDocumentLabel: raw('switchDocumentLabel'),
+    switchDocument: raw('switchDocument'),
+    switchDocumentAction: raw('switchDocumentAction'),
+    errors: table('errors'),
+    kind: table('kind'),
+    locale: table('locale'),
+    languageName: table('languageName'),
   };
 }
 
