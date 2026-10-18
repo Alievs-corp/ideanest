@@ -20,18 +20,24 @@ public class LegalDocumentSelections {
         this.jdbc = new NamedParameterJdbcTemplate(dataSource);
     }
 
-    /** The chosen version of this kind, or empty when the latest effective one governs. */
-    public Optional<Integer> selectedVersion(DocumentKind kind) {
+    /**
+     * The chosen version of this kind, or empty when the latest effective one governs.
+     *
+     * <p>With the moment it was chosen, because a version that takes effect after that moment
+     * takes over from the choice — see {@code LegalDocuments.inForce}.
+     */
+    public Optional<Selection> selection(DocumentKind kind) {
         return jdbc
                 .query(
                         """
-                        SELECT d.version
+                        SELECT d.version, s.selected_at
                           FROM legal_document_selections s
                           JOIN legal_documents d ON d.id = s.document_id
                          WHERE s.kind = :kind
                         """,
                         Map.of("kind", kind.name()),
-                        (row, index) -> row.getInt("version"))
+                        (row, index) -> new Selection(
+                                row.getInt("version"), row.getTimestamp("selected_at").toInstant()))
                 .stream()
                 .findFirst();
     }
@@ -55,5 +61,14 @@ public class LegalDocumentSelections {
 
     public void clear(DocumentKind kind) {
         jdbc.update("DELETE FROM legal_document_selections WHERE kind = :kind", Map.of("kind", kind.name()));
+    }
+
+    /**
+     * One administrator's choice.
+     *
+     * @param version the version readers are shown
+     * @param selectedAt when it was chosen
+     */
+    public record Selection(int version, Instant selectedAt) {
     }
 }

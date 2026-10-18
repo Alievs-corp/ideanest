@@ -60,7 +60,11 @@ public class EmailTemplateVersion {
     @Column(name = "note", updatable = false)
     private String note;
 
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
+    /**
+     * Set by the writer rather than by the column default, so that the response to the write
+     * carries it — a default the database fills is not on the entity Hibernate hands back.
+     */
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @Column(name = "created_by", nullable = false, updatable = false)
@@ -78,7 +82,8 @@ public class EmailTemplateVersion {
             String body,
             List<String> requiredPlaceholders,
             String note,
-            UUID createdBy) {
+            UUID createdBy,
+            Instant createdAt) {
 
         this.id = Identifiers.newIdentifier();
         this.templateKey = Objects.requireNonNull(templateKey, "templateKey");
@@ -90,6 +95,7 @@ public class EmailTemplateVersion {
         this.live = true;
         this.note = note;
         this.createdBy = Objects.requireNonNull(createdBy, "createdBy");
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
     }
 
     /**

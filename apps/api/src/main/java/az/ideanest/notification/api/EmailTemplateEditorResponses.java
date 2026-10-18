@@ -5,7 +5,6 @@ import az.ideanest.notification.domain.EmailTemplateVersion;
 import az.ideanest.notification.domain.NotificationType;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -47,43 +46,64 @@ public final class EmailTemplateEditorResponses {
     }
 
     /**
-     * What the editor opens with.
+     * What the editor opens with, in one language.
      *
      * <p><strong>Both the shipped copy and the override travel.</strong> An editor showing
      * only the current text gives nobody a way to see what they changed it from — and the
      * shipped copy is what withdrawing an override returns to, so it is also the preview of
      * the undo.
      *
-     * @param requiredPlaceholders the {@code MessageFormat} argument indices an override
-     *     must keep. Sent so the screen can say which are missing before the service
-     *     refuses — {@code MissingTemplatePlaceholderException} is the rule and this is how
-     *     somebody avoids meeting it
-     * @param override null when the platform is sending the shipped copy
+     * @param shippedSubject the subject a message with no campaign name gets
+     * @param shippedSubjectNamed the subject that names the campaign, which is what nearly every
+     *     recipient gets. Absent when the type has no such variant
+     * @param shippedBodyNamed the same, for the first paragraph
+     * @param requiredPlaceholders the argument indices an override must keep — across both
+     *     variants, so an override cannot drop the campaign name. Sent so the screen can say
+     *     which are missing before the service refuses
+     * @param availablePlaceholders the indices an override may use: the facts this message
+     *     carries. Anything else is refused as {@code TEMPLATE_COPY_MALFORMED}
+     * @param override null when the platform is sending the shipped copy in this language
      */
     public record Draft(
             NotificationType type,
             String locale,
             String shippedSubject,
             String shippedBody,
-            Set<String> requiredPlaceholders,
+            String shippedSubjectNamed,
+            String shippedBodyNamed,
+            List<String> requiredPlaceholders,
+            List<String> availablePlaceholders,
             Version override) {
 
         public static Draft of(EmailTemplateEditor.TemplateDraft draft) {
             return new Draft(
                     draft.type(),
                     draft.locale(),
-                    draft.shippedSubject(),
-                    draft.shippedBody(),
-                    draft.requiredPlaceholders(),
+                    draft.shipped().subject(),
+                    draft.shipped().body(),
+                    draft.shipped().subjectNamed(),
+                    draft.shipped().bodyNamed(),
+                    List.copyOf(draft.shipped().required()),
+                    List.copyOf(draft.shipped().available()),
                     draft.override() == null ? null : Version.of(draft.override()));
         }
     }
 
-    /** Every version of one template, newest first. */
+    /** Every version of one template in one language, newest first. */
     public record History(List<Version> versions) {
 
         public static History of(List<EmailTemplateVersion> versions) {
             return new History(versions.stream().map(Version::of).toList());
         }
+    }
+
+    /**
+     * Unsaved text rendered as the email it would be — the editor's preview.
+     *
+     * <p>JSON here where {@code GET .../preview} answers with the bare body, because this one is
+     * read by a screen that shows the HTML in a sandboxed frame beside the subject, and needs
+     * both parts in one answer.
+     */
+    public record Preview(String subject, String html, String text) {
     }
 }

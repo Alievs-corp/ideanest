@@ -1,6 +1,7 @@
 package az.ideanest.legal;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -38,12 +39,39 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * amount.
  *
  * @param signature the creator-agreement signature rule
+ * @param inForce when a version dated for the future is noticed taking effect
  */
 @ConfigurationProperties(prefix = "ideanest.legal")
-public record LegalProperties(Signature signature) {
+public record LegalProperties(Signature signature, InForce inForce) {
 
     public LegalProperties {
         signature = signature == null ? Signature.defaults() : signature;
+        inForce = inForce == null ? InForce.defaults() : inForce;
+    }
+
+    /**
+     * The {@code legal-taking-effect} job — a version published for a future date reaching
+     * the website on that date rather than whenever the web's cache next expired.
+     *
+     * @param schedule a UTC cron, or {@code -} to register the job without scheduling it
+     * @param lookback how far behind a pass looks for a date that passed. Longer than the
+     *     interval between passes, so a pass missed to a restart or a lease held elsewhere is
+     *     covered by the next one; the cost of the overlap is announcing the same change more
+     *     than once, which drops a cache that is already fresh
+     */
+    public record InForce(String schedule, Duration lookback) {
+
+        public static InForce defaults() {
+            return new InForce(null, null);
+        }
+
+        public InForce {
+            schedule = schedule == null || schedule.isBlank() ? "0 * * * * *" : schedule;
+            lookback = lookback == null ? Duration.ofMinutes(10) : lookback;
+            if (lookback.isNegative() || lookback.isZero()) {
+                throw new IllegalArgumentException("A lookback is a positive duration");
+            }
+        }
     }
 
     /**

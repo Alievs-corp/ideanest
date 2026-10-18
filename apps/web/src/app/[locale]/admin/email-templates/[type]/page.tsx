@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { EmptyState } from '@ideanest/ui/server';
 import { EmailTemplateEditor } from '../../../../../components/admin/EmailTemplateEditor';
+import { Link } from '../../../../../i18n/navigation';
 import { emailTemplateEditorCopy } from '../../../../../lib/i18n/admin/console.server';
 import { privatePageMetadata } from '../../../../../lib/seo/metadata';
 
@@ -11,17 +13,26 @@ import { privatePageMetadata } from '../../../../../lib/seo/metadata';
  * about: an administrator sends somebody a link to the notice they are arguing over, and a
  * query parameter would be a link to the list with a filter applied.
  *
- * <p><strong>The title does not name the template.</strong> `generateMetadata` could read the
- * type from the params and put it in the tab, and it is deliberately not done: the value is a
- * `NotificationType`, so the title would be `PLEDGE_CONFIRMED` — a constant from the codebase
- * rendered as a page title. The heading below carries it, where it reads as what it is.
+ * <p><strong>The heading names the template in words</strong>, from the catalogue the list uses,
+ * rather than printing the `NotificationType` constant. A path the catalogue has no name for is
+ * not a template — `/admin/email-templates/FOO` — and the page says so instead of mounting an
+ * editor whose first read would be refused in the service's English.
  *
  * <p>`privatePageMetadata` for the reason every console route gives.
  */
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('admin.pages.emailTemplatesType');
+export async function generateMetadata({
+  params,
+}: {
+  readonly params: Promise<{ readonly type: string }>;
+}): Promise<Metadata> {
+  const { type } = await params;
+  const t = await getTranslations('admin');
+  const names = t.raw('screens.emailTemplates.type') as Readonly<Record<string, string>>;
 
-  return privatePageMetadata({ title: t('metaTitle'), description: t('metaDescription') });
+  return privatePageMetadata({
+    title: Object.hasOwn(names, type) ? (names[type] ?? t('pages.emailTemplatesType.metaTitle')) : t('pages.emailTemplatesType.metaTitle'),
+    description: t('pages.emailTemplatesType.metaDescription'),
+  });
 }
 
 export default async function EmailTemplatePage({
@@ -31,14 +42,32 @@ export default async function EmailTemplatePage({
 }) {
   const { type } = await params;
 
-  const t = await getTranslations('admin.pages.emailTemplatesType');
+  const t = await getTranslations('admin');
+  const names = t.raw('screens.emailTemplates.type') as Readonly<Record<string, string>>;
+  const name = Object.hasOwn(names, type) ? names[type] : undefined;
+
+  if (name === undefined) {
+    return (
+      <div className="max-w-[880px]">
+        <EmptyState
+          variant="empty"
+          title={t('screens.emailTemplates.notFoundTitle')}
+          description={t('screens.emailTemplates.notFoundBody')}
+        />
+        <Link
+          href="/admin/email-templates"
+          className="mt-4 inline-block rounded text-sm text-white underline decoration-white/24 underline-offset-2 hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        >
+          {t('screens.emailTemplates.backToList')}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[880px]">
-      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
-        {type}
-      </h1>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{t('intro')}</p>
+      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">{name}</h1>
+      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{t('pages.emailTemplatesType.intro')}</p>
 
       <div className="mt-8">
         <EmailTemplateEditor type={type} copy={await emailTemplateEditorCopy()} />

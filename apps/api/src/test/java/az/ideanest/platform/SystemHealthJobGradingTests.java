@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.platform.application.MaintenanceWindows;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.user.infrastructure.UserRepository;
@@ -47,6 +48,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * is to write it, and driving a real job would make a test about a threshold depend on how
  * long the job takes.
  */
+@SuppressWarnings("unchecked")
 class SystemHealthJobGradingTests extends AbstractIntegrationTest {
 
     private static final String PASSWORD = "a-long-enough-password";
@@ -68,9 +70,15 @@ class SystemHealthJobGradingTests extends AbstractIntegrationTest {
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private MaintenanceWindows windows;
+
     @AfterEach
     void removeTestJobs() {
-        new JdbcTemplate(dataSource).update("DELETE FROM scheduled_jobs WHERE name LIKE 'health-grading-%'");
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        jdbc.update("DELETE FROM scheduled_jobs WHERE name LIKE 'health-grading-%'");
+        jdbc.update("DELETE FROM maintenance_windows");
+        windows.invalidate();
     }
 
     @Test
@@ -106,6 +114,88 @@ class SystemHealthJobGradingTests extends AbstractIntegrationTest {
         String name = job("stale", Instant.now().minus(Duration.ofHours(4)));
 
         assertThat(jobNamed(name)).containsEntry("status", "CRITICAL");
+    }
+
+    @Test
+    @DisplayName("a dead job is critical and reports no lateness")
+    void deadJobsAreNotLate() {
+        String name = job("dead", Instant.now().minus(Duration.ofDays(2)));
+        new JdbcTemplate(dataSource).update("UPDATE scheduled_jobs SET state = 'DEAD', attempts = 5, last_error = 'connection refused' WHERE name = ?", name);
+
+        Map<String, Object> graded = jobNamed(name);
+
+        // Measured from a run that is never coming, the figure grew by a minute every minute.
+        assertThat(graded).containsEntry("status", "CRITICAL").containsEntry("state", "DEAD");
+        assertThat(((Number) graded.get("overdueBySeconds")).longValue()).isZero();
+        assertThat(graded).containsEntry("attempts", 5).doesNotContainKey("hold");
+    }
+
+    @Test
+    @DisplayName("a job registered with no schedule is healthy and says why it does not run")
+    void unscheduledJobsAreHeld() {
+        // The test profile registers every real job with the schedule "-".
+        String name = "campaign-launcher";
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        jdbc.update(
+                "INSERT INTO scheduled_jobs (name, state, next_attempt_at) VALUES (?, 'READY', now()) ON CONFLICT DO NOTHING",
+                name);
+        jdbc.update(
+                "UPDATE scheduled_jobs SET next_attempt_at = now() - interval '3 hours' WHERE name = ? AND state = 'READY'",
+                name);
+
+        Map<String, Object> graded = jobNamed(name);
+
+        assertThat(graded).containsEntry("status", "HEALTHY").containsEntry("hold", "UNSCHEDULED");
+        assertThat(((Number) graded.get("overdueBySeconds")).longValue()).isZero();
+    }
+
+    @Test
+    @DisplayName("during a window the jobs that pause are healthy and say they are paused")
+    void pausedJobsAreHeldForMaintenance() {
+        String name = "notification-sender";
+        new JdbcTemplate(dataSource).update(
+                "INSERT INTO scheduled_jobs (name, state, next_attempt_at) VALUES (?, 'READY', now()) ON CONFLICT DO NOTHING",
+                name);
+        UUID staff = moderatorId();
+        UUID window = windows.schedule(staff, Instant.now().plus(Duration.ofMinutes(5)), null, null, null).id();
+        windows.startNow(staff, window);
+
+        Map<String, Object> snapshot = snapshot();
+
+        assertThat(jobIn(snapshot, name)).containsEntry("status", "HEALTHY").containsEntry("hold", "MAINTENANCE");
+        // A window used to turn the board red a quarter of an hour in.
+        assertThat(jobsIn(snapshot).stream()
+                        .filter(job -> "MAINTENANCE".equals(job.get("hold")))
+                        .map(job -> job.get("status")))
+                .containsOnly("HEALTHY");
+    }
+
+    @Test
+    @DisplayName("the scheduler is not listed as a queue, and the worst job comes first")
+    void theSchedulerIsGradedByRowNotAsAQueue() {
+        job("stale-first", Instant.now().minus(Duration.ofHours(4)));
+
+        Map<String, Object> snapshot = snapshot();
+
+        // It counted every job that had finished a run as "waiting": about two dozen on a
+        // platform where nothing was behind.
+        assertThat(((List<Map<String, Object>>) snapshot.get("queues")).stream().map(queue -> queue.get("name")))
+                .doesNotContain("scheduled-jobs")
+                .contains("outbox");
+        assertThat(jobsIn(snapshot).getFirst()).containsEntry("status", "CRITICAL");
+    }
+
+    @Test
+    @DisplayName("providers are grouped by an identifier and say why they are down with a code")
+    void providersAreCodedNotWorded() {
+        List<Map<String, Object>> providers = (List<Map<String, Object>>) snapshot().get("providers");
+
+        assertThat(providers).isNotEmpty().allSatisfy(provider -> {
+            assertThat(provider).containsEntry("kind", "payments").doesNotContainKey("detail");
+            if (Boolean.FALSE.equals(provider.get("configured"))) {
+                assertThat(provider).containsEntry("reason", "NOT_CONFIGURED");
+            }
+        });
     }
 
     @Test
@@ -151,8 +241,11 @@ class SystemHealthJobGradingTests extends AbstractIntegrationTest {
         return name;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> jobNamed(String name) {
+        return jobIn(snapshot(), name);
+    }
+
+    private Map<String, Object> snapshot() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(staffToken());
@@ -162,12 +255,23 @@ class SystemHealthJobGradingTests extends AbstractIntegrationTest {
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 new ParameterizedTypeReference<Map<String, Object>>() {});
+        return snapshot.getBody();
+    }
 
-        return ((List<Map<String, Object>>) snapshot.getBody().get("jobs"))
-                .stream()
-                        .filter(job -> name.equals(job.get("name")))
-                        .findFirst()
-                        .orElseThrow(() -> new AssertionError("The health snapshot did not mention " + name));
+    private static List<Map<String, Object>> jobsIn(Map<String, Object> snapshot) {
+        return (List<Map<String, Object>>) snapshot.get("jobs");
+    }
+
+    private static Map<String, Object> jobIn(Map<String, Object> snapshot, String name) {
+        return jobsIn(snapshot).stream()
+                .filter(job -> name.equals(job.get("name")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("The health snapshot did not mention " + name));
+    }
+
+    private UUID moderatorId() {
+        staffToken();
+        return users.findByEmailAndDeletedAtIsNull(EmailAddress.of(MODERATOR_EMAIL)).orElseThrow().getId();
     }
 
     /**

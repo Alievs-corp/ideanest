@@ -1,6 +1,7 @@
 package az.ideanest.audit;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -22,9 +23,9 @@ import org.springframework.data.repository.query.Param;
  *
  * <p>The two unpaged finders are the two questions §7.2 says this table exists to
  * answer. The paged ones below them are the same questions asked by AD-14's viewer
- * (#314), which cannot read an unbounded list into a browser; every one of the four
+ * (#314), which cannot read an unbounded list into a browser; every one of the six
  * shapes is index-backed by V21, and {@link az.ideanest.audit.AuditTrailFilter} explains
- * why there are four and not an arbitrary combination.
+ * why there are these and not an arbitrary combination.
  *
  * <h2>Ordered by {@code occurred_at}, and it used to be by the identifier</h2>
  *
@@ -86,6 +87,19 @@ public interface AuditEntryRepository extends JpaRepository<AuditEntry, UUID> {
      * them for a null. The predicate is then a plain comparison against a typed path, the
      * planner sees an ordinary range scan over an index that is already ordered by this
      * column, and there is no untyped parameter anywhere in the file.
+     *
+     * `hidden` follows the same rule. It is the actions a reader asked to leave out — the
+     * routine screen reads (`AuditAction.isRoutineRead`) — or, when they asked for nothing to
+     * be left out, `AuditTrail.NOTHING_HIDDEN`, a one-element list no action is ever spelled
+     * as. `NOT IN` an empty list is not valid SQL and an optional list is an untyped
+     * parameter, so the list is never empty and never absent, and the clause is one more
+     * filter on rows the index has already found rather than a different plan.
+     *
+     * The actor-and-kind pair (and the actor on one entity) arrived when the screen started
+     * sending both: the filter used to drop the actor whenever a kind was set, so "what did
+     * this person do to campaigns" quietly answered "what has anybody done to campaigns".
+     * They read the actor index, which is the narrower of the two for any one person, and
+     * filter the kind in the rows it returns.
      */
 
     /** The newest rows in the table. AD-14's default view: what has just happened. */
@@ -93,16 +107,22 @@ public interface AuditEntryRepository extends JpaRepository<AuditEntry, UUID> {
             """
             SELECT e FROM AuditEntry e
             WHERE e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
             ORDER BY e.occurredAt DESC, e.id DESC
             """)
-    List<AuditEntry> newest(@Param("from") Instant from, @Param("to") Instant to, Pageable limit);
+    List<AuditEntry> newest(
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
+            Pageable limit);
 
-    /** The page after the row at {@code (before, beforeId)}. Keyset: a row written mid-read shifts nothing. */
+    /** The page after the row at {@code (before, beforeId)}, for {@link #newest}. Keyset: a row written mid-read shifts nothing. */
     @Query(
             """
             SELECT e FROM AuditEntry e
             WHERE (e.occurredAt < :before OR (e.occurredAt = :before AND e.id < :beforeId))
               AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
             ORDER BY e.occurredAt DESC, e.id DESC
             """)
     List<AuditEntry> newestBefore(
@@ -110,29 +130,33 @@ public interface AuditEntryRepository extends JpaRepository<AuditEntry, UUID> {
             @Param("beforeId") UUID beforeId,
             @Param("from") Instant from,
             @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
             Pageable limit);
 
-    /** Everything that has happened to one kind of thing. */
+    /** The newest rows about one kind of entity. */
     @Query(
             """
             SELECT e FROM AuditEntry e
             WHERE e.entityType = :entityType
               AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
             ORDER BY e.occurredAt DESC, e.id DESC
             """)
     List<AuditEntry> newestOfType(
             @Param("entityType") String entityType,
             @Param("from") Instant from,
             @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
             Pageable limit);
 
-    /** The page after that row, within one kind of thing. */
+    /** The page after the row at {@code (before, beforeId)}, for {@link #newestOfType}. Keyset: a row written mid-read shifts nothing. */
     @Query(
             """
             SELECT e FROM AuditEntry e
             WHERE e.entityType = :entityType
               AND (e.occurredAt < :before OR (e.occurredAt = :before AND e.id < :beforeId))
               AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
             ORDER BY e.occurredAt DESC, e.id DESC
             """)
     List<AuditEntry> newestOfTypeBefore(
@@ -141,14 +165,16 @@ public interface AuditEntryRepository extends JpaRepository<AuditEntry, UUID> {
             @Param("beforeId") UUID beforeId,
             @Param("from") Instant from,
             @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
             Pageable limit);
 
-    /** Everything that has happened to one thing. */
+    /** The newest rows about one entity. */
     @Query(
             """
             SELECT e FROM AuditEntry e
             WHERE e.entityType = :entityType AND e.entityId = :entityId
               AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
             ORDER BY e.occurredAt DESC, e.id DESC
             """)
     List<AuditEntry> newestOfEntity(
@@ -156,15 +182,17 @@ public interface AuditEntryRepository extends JpaRepository<AuditEntry, UUID> {
             @Param("entityId") UUID entityId,
             @Param("from") Instant from,
             @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
             Pageable limit);
 
-    /** The page after that row, within one thing. */
+    /** The page after the row at {@code (before, beforeId)}, for {@link #newestOfEntity}. Keyset: a row written mid-read shifts nothing. */
     @Query(
             """
             SELECT e FROM AuditEntry e
             WHERE e.entityType = :entityType AND e.entityId = :entityId
               AND (e.occurredAt < :before OR (e.occurredAt = :before AND e.id < :beforeId))
               AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
             ORDER BY e.occurredAt DESC, e.id DESC
             """)
     List<AuditEntry> newestOfEntityBefore(
@@ -174,29 +202,33 @@ public interface AuditEntryRepository extends JpaRepository<AuditEntry, UUID> {
             @Param("beforeId") UUID beforeId,
             @Param("from") Instant from,
             @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
             Pageable limit);
 
-    /** Everything one account has done. */
+    /** The newest rows written by one actor. */
     @Query(
             """
             SELECT e FROM AuditEntry e
             WHERE e.actorId = :actorId
               AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
             ORDER BY e.occurredAt DESC, e.id DESC
             """)
     List<AuditEntry> newestByActor(
             @Param("actorId") UUID actorId,
             @Param("from") Instant from,
             @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
             Pageable limit);
 
-    /** The page after that row, within one account's actions. */
+    /** The page after the row at {@code (before, beforeId)}, for {@link #newestByActor}. Keyset: a row written mid-read shifts nothing. */
     @Query(
             """
             SELECT e FROM AuditEntry e
             WHERE e.actorId = :actorId
               AND (e.occurredAt < :before OR (e.occurredAt = :before AND e.id < :beforeId))
               AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
             ORDER BY e.occurredAt DESC, e.id DESC
             """)
     List<AuditEntry> newestByActorBefore(
@@ -205,5 +237,86 @@ public interface AuditEntryRepository extends JpaRepository<AuditEntry, UUID> {
             @Param("beforeId") UUID beforeId,
             @Param("from") Instant from,
             @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
+            Pageable limit);
+
+    /** What one actor did to one kind of entity: "what did this person do to campaigns". */
+    @Query(
+            """
+            SELECT e FROM AuditEntry e
+            WHERE e.actorId = :actorId
+              AND e.entityType = :entityType
+              AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
+            ORDER BY e.occurredAt DESC, e.id DESC
+            """)
+    List<AuditEntry> newestOfTypeByActor(
+            @Param("actorId") UUID actorId,
+            @Param("entityType") String entityType,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
+            Pageable limit);
+
+    /** The page after the row at {@code (before, beforeId)}, for {@link #newestOfTypeByActor}. Keyset: a row written mid-read shifts nothing. */
+    @Query(
+            """
+            SELECT e FROM AuditEntry e
+            WHERE e.actorId = :actorId
+              AND e.entityType = :entityType
+              AND (e.occurredAt < :before OR (e.occurredAt = :before AND e.id < :beforeId))
+              AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
+            ORDER BY e.occurredAt DESC, e.id DESC
+            """)
+    List<AuditEntry> newestOfTypeByActorBefore(
+            @Param("actorId") UUID actorId,
+            @Param("entityType") String entityType,
+            @Param("before") Instant before,
+            @Param("beforeId") UUID beforeId,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
+            Pageable limit);
+
+    /** What one actor did to one entity. */
+    @Query(
+            """
+            SELECT e FROM AuditEntry e
+            WHERE e.actorId = :actorId
+              AND e.entityType = :entityType AND e.entityId = :entityId
+              AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
+            ORDER BY e.occurredAt DESC, e.id DESC
+            """)
+    List<AuditEntry> newestOfEntityByActor(
+            @Param("actorId") UUID actorId,
+            @Param("entityType") String entityType,
+            @Param("entityId") UUID entityId,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
+            Pageable limit);
+
+    /** The page after the row at {@code (before, beforeId)}, for {@link #newestOfEntityByActor}. Keyset: a row written mid-read shifts nothing. */
+    @Query(
+            """
+            SELECT e FROM AuditEntry e
+            WHERE e.actorId = :actorId
+              AND e.entityType = :entityType AND e.entityId = :entityId
+              AND (e.occurredAt < :before OR (e.occurredAt = :before AND e.id < :beforeId))
+              AND e.occurredAt >= :from AND e.occurredAt < :to
+              AND e.action NOT IN :hidden
+            ORDER BY e.occurredAt DESC, e.id DESC
+            """)
+    List<AuditEntry> newestOfEntityByActorBefore(
+            @Param("actorId") UUID actorId,
+            @Param("entityType") String entityType,
+            @Param("entityId") UUID entityId,
+            @Param("before") Instant before,
+            @Param("beforeId") UUID beforeId,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            @Param("hidden") Collection<String> hidden,
             Pageable limit);
 }

@@ -8,8 +8,13 @@ import type { Money } from '../money';
  * <h2>Not the campaign dashboard</h2>
  *
  * `/v1/projects/{id}/analytics` is #95's and answers a creator asking about their own
- * campaign. This answers the platform's question with the same nouns, over the same daily
- * rollups summed the other way — which is what made #313 unblockable without a new table.
+ * campaign. This answers the platform's question with the same nouns.
+ *
+ * <h2>One population</h2>
+ *
+ * Volume, count, average, backers and the daily series all count the same pledges: collected in
+ * the window and still collected — a refunded or charged-back pledge is in none of them, and a
+ * settled partial refund comes off its pledge.
  *
  * <h2>What it does not answer, and says so</h2>
  *
@@ -20,12 +25,17 @@ import type { Money } from '../money';
  */
 
 export interface PlatformTotals {
+  /** Pledges collected in the window that still stand. */
   pledgeCount: number;
   volume: Money;
   /** Divided by the service, on BigDecimal — dividing money in a browser is how a total drifts. */
   averagePledge: Money;
   /** Distinct accounts. Not the same as `pledgeCount`, and conflating them overstates reach. */
   backerCount: number;
+  /**
+   * Campaigns running at the moment of reading — live, in their closing window, or extended. A
+   * count of now, not of the window: the front page's "running".
+   */
   liveProjects: number;
   /**
    * Pledges left out of `volume` because they were in another currency.
@@ -39,6 +49,7 @@ export interface PlatformTotals {
   planPayments: number;
 }
 
+/** One day of the window. The service sends every day, with zeros where nothing was collected. */
 export interface PlatformDailyPoint {
   day: string;
   pledgeCount: number;
@@ -49,7 +60,8 @@ export interface PlatformOutcomes {
   succeeded: number;
   failed: number;
   /**
-   * The fraction, or null when nothing closed in the window.
+   * The fraction, or absent when no campaign was decided in the window. Decided means the
+   * transition to successful or unsuccessful, which comes a closing window after the deadline.
    *
    * Null rather than zero: "no campaigns closed" and "none of them succeeded" are different
    * facts, and a zero on a dashboard reads as the second.
@@ -86,19 +98,4 @@ export async function readPlatformAnalytics(
   if (!response.ok) throw await errorFrom(response);
 
   return (await response.json()) as PlatformAnalytics;
-}
-
-/**
- * The tallest daily volume in a window, for scaling a chart.
- *
- * Returns zero for an empty window rather than negative infinity, so a caller dividing by it
- * gets a flat chart instead of a page of `NaN`.
- */
-export function peakVolume(analytics: PlatformAnalytics): number {
-  let peak = 0;
-  for (const point of analytics.daily) {
-    const value = Number(point.volume.amount);
-    if (Number.isFinite(value) && value > peak) peak = value;
-  }
-  return peak;
 }

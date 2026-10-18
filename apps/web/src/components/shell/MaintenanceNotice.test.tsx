@@ -192,6 +192,8 @@ describe('the console’s maintenance strip', () => {
     await show(MaintenanceStrip({ label: en.admin.maintenanceOn }));
 
     expect(screen.getByRole('status')).toHaveTextContent('Maintenance is on — readers see the maintenance page.');
+    // What the maintenance console looks for to tell whether the layout drew it.
+    expect(screen.getByRole('status')).toHaveAttribute('data-maintenance-strip');
   });
 
   it('is nothing otherwise, including when the status cannot be read', async () => {

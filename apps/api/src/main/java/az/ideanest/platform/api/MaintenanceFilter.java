@@ -58,6 +58,10 @@ import tools.jackson.databind.ObjectMapper;
  *       {@code MaintenanceGate.admitSession}: no session and no refresh token is issued;
  *   <li>{@code POST /v1/webhooks/psp/{provider}} — payment provider webhooks, because a
  *       provider may stop retrying and the ledger must not miss a settlement;
+ *   <li>{@code GET /v1/webhooks/psp/{provider}} — the 3-D Secure return, which only sends
+ *       the backer's browser back to the site. A backer whose bank verification finished
+ *       as a window started was otherwise left on a page of raw JSON from the API, rather
+ *       than taken to the site, which shows the maintenance page in words;
  *   <li>any request carrying a staff access token, of any role — so staff can look at the
  *       platform while it is closed to everybody else.
  * </ul>
@@ -125,7 +129,8 @@ public class MaintenanceFilter extends OncePerRequestFilter {
         if (AUTH_PATHS.contains(path)) {
             return true;
         }
-        return HttpMethod.POST.matches(method) && PAYMENT_WEBHOOK.matches(PathContainer.parsePath(path));
+        return (HttpMethod.POST.matches(method) || HttpMethod.GET.matches(method))
+                && PAYMENT_WEBHOOK.matches(PathContainer.parsePath(path));
     }
 
     /**

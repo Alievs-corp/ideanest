@@ -121,8 +121,10 @@ describe('the console front page', () => {
     // Formatted, never recomputed: what arrived as a decimal string is what is shown.
     expect(within(money).getByText('12,500.50 AZN')).toBeInTheDocument();
     expect(within(money).getByText('1,234')).toBeInTheDocument();
-    expect(within(money).getByText('80.00%')).toBeInTheDocument();
-    expect(within(money).getByText(COPY.otherCurrencyNote)).toBeInTheDocument();
+    expect(within(money).getByText('80%')).toBeInTheDocument();
+    // Beside the figure it qualifies, inside its tile, rather than under the whole grid.
+    const other = within(money).getByText(COPY.figure.otherCurrencyPledges as string).parentElement as HTMLElement;
+    expect(within(other).getByText(COPY.otherCurrencyNote)).toBeInTheDocument();
   });
 
   it('says nothing has been decided yet when the success rate has no value, however the service says so', async () => {
@@ -215,17 +217,26 @@ describe('the console front page', () => {
     expect(screen.getByText('12,500.50 AZN')).toBeInTheDocument();
   });
 
-  it('gives the trend a text alternative and a table', async () => {
+  it('draws the whole window on a scale, reads a column from the keyboard and keeps a table', async () => {
     readMock.mockResolvedValue(page([MONEY]));
 
-    renderFor(['VIEW_FINANCE']);
+    const { container } = renderFor(['VIEW_FINANCE']);
     await screen.findByRole('heading', { name: COPY.section.figures });
 
-    const chart = screen.getByRole('img');
-    expect(chart).toHaveAccessibleName(/2050-05-17 to 2050-06-15.*2050-06-15 250\.00 AZN/);
-    await userEvent.click(screen.getByText(COPY.trendTableToggle));
-    const table = screen.getByRole('table', { name: COPY.trendHeading });
-    expect(within(table).getByText('2050-06-14')).toBeInTheDocument();
+    // Named by its range, total and highest day, so the plot means something without sight.
+    const chart = screen.getByRole('group', { name: /350\.00 AZN.*250\.00 AZN/ });
+    // Thirty columns for thirty days: the twenty-eight with nothing pledged are drawn, not dropped.
+    expect(container.querySelectorAll('[data-chart-column]')).toHaveLength(30);
+
+    chart.focus();
+    await userEvent.keyboard('{End}');
+    expect(screen.getByText(/: 250\.00 AZN, Pledges: 7$/)).toBeInTheDocument();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(screen.getByText(/: 100\.00 AZN, Pledges: 3$/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText(COPY.chart.tableToggle));
+    const table = screen.getByRole('table');
+    expect(within(table).getAllByRole('row')).toHaveLength(31);
     expect(within(table).getByText('250.00 AZN')).toBeInTheDocument();
   });
 
@@ -275,13 +286,106 @@ describe('the console front page', () => {
     expect(screen.getByRole('link', { name: COPY.link.campaigns })).toBeInTheDocument();
   });
 
-  it('shows an alert with a retry when the whole request fails', async () => {
+  it('shows an alert with a retry when the whole request fails, in the reader’s words', async () => {
     readMock.mockRejectedValue(new ApiError(500, { title: 'Broken' }));
 
     renderFor(['VIEW_FINANCE']);
 
-    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText(COPY.refusals.serviceFailed as string)).toBeInTheDocument();
+    // The service's English title never reaches the page.
+    expect(screen.queryByText('Broken')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: COPY.tryAgain })).toBeInTheDocument();
+  });
+
+  it('says which capability the page wanted when the service refuses, with no retry that cannot help', async () => {
+    readMock.mockRejectedValue(
+      new ApiError(403, { code: 'INSUFFICIENT_STAFF_CAPABILITY', meta: { capability: 'VIEW_FINANCE' } } as never),
+    );
+
+    renderFor(['VIEW_FINANCE']);
+
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText(COPY.refusals.capabilityTitle)).toBeInTheDocument();
+    expect(within(alert).getByText(/VIEW_FINANCE/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
+  });
+
+  it('says the session ended rather than drawing an empty alert', async () => {
+    readMock.mockRejectedValue(new ApiError(401, { code: 'UNAUTHENTICATED' } as never));
+
+    renderFor(['VIEW_FINANCE']);
+
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText(COPY.refusals.signedOutTitle)).toBeInTheDocument();
+  });
+
+  it('does not draw the last period’s figures while the next one loads or after it fails', async () => {
+    readMock.mockResolvedValueOnce(page([MONEY]));
+    renderFor(['VIEW_FINANCE']);
+    expect(await screen.findByText('12,500.50 AZN')).toBeInTheDocument();
+
+    let fail: (reason: unknown) => void = () => {};
+    readMock.mockReturnValueOnce(new Promise((_, reject) => (fail = reject)));
+    await userEvent.click(screen.getByRole('button', { name: COPY.period.today }));
+
+    // Pending: the thirty days' money is not drawn under the "today" button.
+    expect(screen.queryByText('12,500.50 AZN')).not.toBeInTheDocument();
+    expect(screen.queryByText(/2050/)).not.toBeInTheDocument();
+
+    fail(new ApiError(500, { title: 'Broken' }));
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.queryByText('12,500.50 AZN')).not.toBeInTheDocument();
+  });
+
+  it('states the window in the reader’s dates and names Baku’s time in words', async () => {
+    readMock.mockResolvedValue(page([MONEY]));
+
+    renderFor(['VIEW_FINANCE']);
+    await screen.findByRole('heading', { name: COPY.section.figures });
+
+    expect(screen.getByText('17 May 2050 – 15 Jun 2050, Baku time.')).toBeInTheDocument();
+    expect(screen.queryByText(/Asia\/Baku/)).not.toBeInTheDocument();
+  });
+
+  it('puts the counts of this moment under “Now”, apart from the period’s', async () => {
+    readMock.mockResolvedValue(page([CAMPAIGNS]));
+
+    renderFor(['MODERATE_CONTENT']);
+    const campaigns = (await screen.findByRole('heading', { name: COPY.section.campaigns })).closest('section') as HTMLElement;
+
+    const now = within(campaigns).getByRole('heading', { name: COPY.nowHeading }).parentElement as HTMLElement;
+    expect(within(now).getByText(COPY.figure.running as string)).toBeInTheDocument();
+    expect(within(now).getByText(COPY.figure.awaitingModeration as string)).toBeInTheDocument();
+    expect(within(now).getByText(COPY.byStateHeading)).toBeInTheDocument();
+    // Created in the period is the period's, so it is not among them.
+    expect(within(now).queryByText(COPY.figure.createdInPeriod as string)).not.toBeInTheDocument();
+    expect(within(campaigns).getByText(COPY.figure.createdInPeriod as string)).toBeInTheDocument();
+  });
+
+  it('draws no "by state" heading when no state has anything in it', async () => {
+    readMock.mockResolvedValue(
+      page([
+        {
+          ...CAMPAIGNS,
+          figures: CAMPAIGNS.figures.map((figure) => (figure.key.startsWith('state.') ? { ...figure, value: '0' } : figure)),
+        },
+      ]),
+    );
+
+    renderFor(['MODERATE_CONTENT']);
+    await screen.findByRole('heading', { name: COPY.section.campaigns });
+
+    expect(screen.queryByText(COPY.byStateHeading)).not.toBeInTheDocument();
+  });
+
+  it('does not show a partner the "nothing here" note before sending them on', async () => {
+    readMock.mockResolvedValue(page([]));
+
+    renderFor(['VIEW_PARTNER_STATISTICS']);
+
+    await waitFor(() => expect(replace).toHaveBeenCalled());
+    expect(screen.queryByText(COPY.emptyTitle)).not.toBeInTheDocument();
   });
 
   it('has no accessibility violations with money, queues and a trend on the page', async () => {

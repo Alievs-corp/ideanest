@@ -124,15 +124,4 @@ public interface JobRecordRepository extends JpaRepository<JobRecord, String> {
     /** How many jobs are in one state. {@code DEAD} is the number worth looking at. */
     @Query("SELECT COUNT(j) FROM JobRecord j WHERE j.state = :state")
     long countByState(@Param("state") JobState state);
-
-    /**
-     * How many jobs are due and have not run.
-     *
-     * <p>The queue depth for the scheduler, in the sense {@link
-     * az.ideanest.shared.observability.QueueDepthSource} means: work that is waiting. A
-     * job whose next attempt is in the future is not waiting, it is scheduled.
-     */
-    @Query("SELECT COUNT(j) FROM JobRecord j WHERE j.state = az.ideanest.shared.jobs.JobState.READY"
-            + " AND j.nextAttemptAt <= :now")
-    long countDue(@Param("now") Instant now);
 }

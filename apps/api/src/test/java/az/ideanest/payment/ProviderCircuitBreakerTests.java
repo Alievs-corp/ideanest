@@ -120,7 +120,7 @@ class ProviderCircuitBreakerTests {
         ProviderStatus reported = payriff(status);
         assertThat(reported.configured()).isTrue();
         assertThat(reported.available()).isFalse();
-        assertThat(reported.detail()).contains("circuit breaker");
+        assertThat(reported.reason()).isEqualTo(ProviderStatus.CIRCUIT_OPEN);
     }
 
     // ------------------------------------------------------------------

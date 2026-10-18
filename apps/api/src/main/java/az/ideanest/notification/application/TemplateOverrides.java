@@ -2,9 +2,15 @@ package az.ideanest.notification.application;
 
 import az.ideanest.notification.domain.EmailTemplateVersion;
 import az.ideanest.notification.infrastructure.EmailTemplateVersionRepository;
+import az.ideanest.shared.ReaderLocale;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,30 +56,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class TemplateOverrides {
 
     /**
-     * The locale an override is stored and looked up under — #315.
+     * The language an override for a recipient reading in {@code locale} is stored under.
      *
-     * <p>{@code "und"}, ISO 639-2 for an undetermined language. It was chosen to match the
-     * {@link java.util.Locale#ROOT} {@code EmailComposer} rendered with, on the reasoning that
-     * an override keyed to a language nobody was rendering in would be an override that never
-     * applied — and that storing them under a guessed {@code "en"} would make every one of them
-     * stop applying on the release that gave the sender a real locale.
+     * <p>One of §21.1's four. An override is per language, because that is what a translation
+     * is: editing the Azerbaijani does not rewrite what an English reader receives, and a
+     * language with no override sends its own shipped copy. Anything the platform does not
+     * translate into reads the primary language, exactly as {@code ReaderLocale} resolves it for
+     * the shipped copy, so the two can never disagree about which text a recipient gets.
      *
-     * <p><strong>#324 was that release, and this key was right to be what it is.</strong> The
-     * sender now takes the recipient's language off their account and the bundles carry all four
-     * of §21.1's, so the shipped copy is translated. The overrides are not: one written here
-     * applies to every recipient whatever they read, because {@code und} matches all of them.
-     *
-     * <p>That is a gap and it is deliberate rather than overlooked. An administrator who
-     * rewrites a subject line today is rewriting it for everybody, which is what they could
-     * already do and what the console's one text box means. Making an override per-language is
-     * a screen with a language switcher on it, a migration that decides what the existing rows
-     * mean, and a rule for what a recipient gets when their language has no override — three
-     * product decisions, and #315's to take.
-     *
-     * <p>It lives here rather than on {@code EmailComposer} because the API layer needs it
-     * too, and {@code ModuleBoundaryTests} keeps the api package out of infrastructure.
+     * <p>This replaced a single {@code "und"} key that applied one override to every language.
+     * V52's CHECK only admits a two-letter code, so no {@code und} row ever existed — every
+     * write under it failed — and nothing had to be migrated.
      */
-    public static final String RENDER_LOCALE = "und";
+    public static String localeOf(Locale locale) {
+        String language = locale == null ? null : locale.getLanguage();
+        return ReaderLocale.supported(language) ? language : ReaderLocale.PRIMARY;
+    }
 
     private final EmailTemplateVersionRepository versions;
 
@@ -92,23 +90,31 @@ public class TemplateOverrides {
     }
 
     /**
-     * The edited subject for this template, if there is one.
+     * The live version of this template in this language, if somebody has edited it.
      *
-     * @param locale §21.1's code. An override is per language, because that is what a
-     *     translation is — editing the English does not silently blank the Azerbaijani
+     * @param locale §21.1's code — see {@link #localeOf}
      */
-    public Optional<String> subjectFor(String templateKey, String locale) {
-        return liveFor(templateKey, locale).map(EmailTemplateVersion::subject);
-    }
-
-    /** The edited body paragraph, if there is one. */
-    public Optional<String> bodyFor(String templateKey, String locale) {
-        return liveFor(templateKey, locale).map(EmailTemplateVersion::body);
-    }
-
-    /** The whole live version, for the preview that shows what will actually be sent. */
     public Optional<EmailTemplateVersion> liveFor(String templateKey, String locale) {
         return Optional.ofNullable(current().get(key(templateKey, locale)));
+    }
+
+    /** What renders in place of the shipped subject and first paragraph, if anything. */
+    public Optional<EditedCopy> editedFor(String templateKey, String locale) {
+        return liveFor(templateKey, locale).map(version -> new EditedCopy(version.subject(), version.body()));
+    }
+
+    /**
+     * Every live override, grouped by template, for the list that says which are rewritten.
+     *
+     * <p>From the cache rather than the table, so the list and the sender cannot disagree.
+     */
+    public Map<String, List<EmailTemplateVersion>> liveByTemplate() {
+        Map<String, List<EmailTemplateVersion>> grouped = new TreeMap<>();
+        for (EmailTemplateVersion version : current().values()) {
+            grouped.computeIfAbsent(version.templateKey(), key -> new ArrayList<>()).add(version);
+        }
+        grouped.values().forEach(list -> list.sort(Comparator.comparing(EmailTemplateVersion::locale)));
+        return grouped;
     }
 
     /** Drops the cache. Called by the editor after every write. */

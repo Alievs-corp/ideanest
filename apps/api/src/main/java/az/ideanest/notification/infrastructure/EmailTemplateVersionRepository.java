@@ -43,12 +43,27 @@ public interface EmailTemplateVersionRepository extends JpaRepository<EmailTempl
             @Param("templateKey") String templateKey, @Param("locale") String locale);
 
     /**
+     * Serialises the writes to one template in one language until the transaction ends.
+     *
+     * <p>Two administrators saving at once used to race between reading the live version and
+     * writing the next: both withdrew version two, both wrote version three, and the second
+     * met V52's unique constraint as a 500. A transaction-scoped advisory lock on the pair
+     * makes the second wait for the first and then build on it, so both saves land as
+     * consecutive versions and the history shows each. Keyed by text hash, as
+     * {@code PartnerProfileRepository} does; a collision between two pairs only makes two
+     * unrelated saves wait for each other.
+     */
+    @Query(
+            value = "SELECT 1 FROM (SELECT pg_advisory_xact_lock(hashtext(:key))) AS locked",
+            nativeQuery = true)
+    Integer lockForWriting(@Param("key") String key);
+
+    /**
      * The highest version written for this template and locale.
      *
-     * <p>Read inside the transaction that writes the next one. V52's unique constraint on
-     * {@code (template_key, locale, version)} is what makes two concurrent edits produce a
-     * refusal rather than two rows claiming to be version three — this read is the fast
-     * path and the constraint is the guarantee.
+     * <p>Read inside the transaction that writes the next one, after {@link #lockForWriting}.
+     * V52's unique constraint on {@code (template_key, locale, version)} stays the guarantee
+     * underneath.
      */
     @Query(
             """

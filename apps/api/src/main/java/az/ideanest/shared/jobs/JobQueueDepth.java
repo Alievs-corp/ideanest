@@ -1,27 +1,30 @@
 package az.ideanest.shared.jobs;
 
 import az.ideanest.shared.observability.QueueDepthSource;
-import java.time.Clock;
 import org.springframework.stereotype.Component;
 
 /**
- * The scheduler's contribution to AD-16's screen — #316.
+ * The scheduler's dead jobs, as a gauge — #316.
  *
- * <p><strong>"Waiting" is jobs that are due and have not run</strong>, not every
- * registered job. A job whose next attempt is tomorrow is scheduled rather than queued,
- * and counting it would make the screen show a permanent backlog equal to the number of
- * jobs in the codebase — a number that never goes down, which is how a dashboard teaches
- * people to ignore it.
+ * <p><strong>Its dead count is what this is for.</strong> {@code PlatformMetrics} publishes
+ * it as {@code ideanest_queue_dead{queue="scheduled-jobs"}}, and {@code QueueDeadLetters}
+ * pages somebody when a job has run out of attempts.
+ *
+ * <p><strong>It waits for nothing, and says so.</strong> This used to count every
+ * {@code READY} job whose {@code next_attempt_at} had passed. A run that succeeds writes
+ * the instant it finished there, and the cron decides when the job next runs, so nearly
+ * every healthy job was counted: the health screen showed about two dozen "waiting" on a
+ * platform where nothing was behind. A scheduler is one row per job, not a backlog, and
+ * whether a job is late depends on its own trigger — which {@code SystemHealthService}
+ * grades row by row. So the screen does not list this as a queue at all.
  */
 @Component
 public class JobQueueDepth implements QueueDepthSource {
 
     private final JobRecordRepository jobs;
-    private final Clock clock;
 
-    public JobQueueDepth(JobRecordRepository jobs, Clock clock) {
+    public JobQueueDepth(JobRecordRepository jobs) {
         this.jobs = jobs;
-        this.clock = clock;
     }
 
     /**
@@ -42,9 +45,15 @@ public class JobQueueDepth implements QueueDepthSource {
         return "scheduled-jobs";
     }
 
+    /** Nothing: see the class comment. Lateness is per job, graded on the health screen. */
     @Override
     public long waiting() {
-        return jobs.countDue(clock.instant());
+        return 0;
+    }
+
+    @Override
+    public boolean listedAsQueue() {
+        return false;
     }
 
     @Override

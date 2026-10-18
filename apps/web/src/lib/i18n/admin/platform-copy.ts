@@ -1,6 +1,7 @@
 import type { AuditActionLabels } from '../../admin/audit';
 import type { AdminTranslator } from '../admin-copy';
-import type { ConsoleChromeCopy } from './common-copy';
+import type { PluralForms } from '../plurals';
+import { consoleChartCopyFrom, type ConsoleChartCopy, type ConsoleChromeCopy } from './common-copy';
 import { accountPickerCopyFrom, type AccountPickerCopy } from './people-copy';
 
 /**
@@ -41,10 +42,23 @@ export interface AuditTrailCopy extends ConsoleChromeCopy {
   /** The group holding the actor and the two dates — issue #404. */
   readonly narrowLabel: string;
   readonly fromLabel: string;
-  readonly fromHint: string;
   readonly toLabel: string;
-  readonly toHint: string;
+  /** Under the two dates: both days are whole, the first from its start and the last to its end. */
+  readonly datesHint: string;
   readonly clearDates: string;
+  /** The switch that leaves out the routine screen reads, and what it does and does not hide. */
+  readonly hideReads: string;
+  readonly hideReadsHint: string;
+  /** Before the person the trail is narrowed to, when a row's control narrowed it. */
+  readonly actorApplied: string;
+  /** Takes that narrowing off. */
+  readonly everyone: string;
+  /** The control on each row that narrows the trail to its actor. */
+  readonly byThisPerson: string;
+  /** Its accessible name. Carries `{name}`. */
+  readonly byThisPersonLabel: string;
+  /** The summary over a row's technical detail. */
+  readonly technicalNote: string;
   /**
    * The actor control's words.
    *
@@ -64,8 +78,12 @@ export interface AuditTrailCopy extends ConsoleChromeCopy {
   /** Carries `{id}`. */
   readonly requestId: string;
   readonly footnote: string;
-  /** Keyed by the entity kind the service writes. Falls back to the wire spelling. */
+  /** Keyed by the entity kind the service writes, as the chips name them (plural). Falls back to the wire spelling. */
   readonly entity: Readonly<Record<string, string>>;
+  /** The same kinds in the singular, for a row naming one thing: "Campaign", not "Campaigns". */
+  readonly entityOne: Readonly<Record<string, string>>;
+  /** What the actor was acting as — `USER`, `MODERATOR`, `SYSTEM` — in words. */
+  readonly actorType: Readonly<Record<string, string>>;
   /** Keyed by the action the service writes, split at its `.`. Falls back to the wire spelling. */
   readonly action: AuditActionLabels;
 }
@@ -79,10 +97,16 @@ export function auditTrailCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy
     everything: t('screens.audit.everything'),
     narrowLabel: t('screens.audit.narrowLabel'),
     fromLabel: t('screens.audit.fromLabel'),
-    fromHint: t('screens.audit.fromHint'),
     toLabel: t('screens.audit.toLabel'),
-    toHint: t('screens.audit.toHint'),
+    datesHint: t('screens.audit.datesHint'),
     clearDates: t('screens.audit.clearDates'),
+    hideReads: t('screens.audit.hideReads'),
+    hideReadsHint: t('screens.audit.hideReadsHint'),
+    actorApplied: t('screens.audit.actorApplied'),
+    everyone: t('screens.audit.everyone'),
+    byThisPerson: t('screens.audit.byThisPerson'),
+    byThisPersonLabel: String(t.raw('screens.audit.byThisPersonLabel')),
+    technicalNote: t('screens.audit.technicalNote'),
     actorPicker: {
       ...accountPickerCopyFrom(t, chrome.refusals),
       label: t('screens.audit.actorLabel'),
@@ -97,6 +121,8 @@ export function auditTrailCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy
     requestId: String(t.raw('screens.audit.requestId')),
     footnote: t('screens.audit.footnote'),
     entity: t.raw('screens.audit.entity') as Readonly<Record<string, string>>,
+    entityOne: t.raw('screens.audit.entityOne') as Readonly<Record<string, string>>,
+    actorType: t.raw('screens.audit.actorType') as Readonly<Record<string, string>>,
     action: t.raw('screens.audit.action') as AuditActionLabels,
   };
 }
@@ -104,14 +130,19 @@ export function auditTrailCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy
 /**
  * AD-16, the health dashboard.
  *
- * <h2>Two sentences for one measurement, and not a unit bolted onto a number</h2>
+ * <h2>Every machine value has a table, and falls back to itself</h2>
  *
- * `measuredSeconds` and `measuredMinutes` are separate messages rather than one sentence with
- * a unit interpolated into it. The unit is a word that inflects: Russian says "секунд" beside
- * one number and "секунды" beside another, and Azerbaijani puts the whole phrase in a
- * different place than English does. A sentence assembled from a number, a space and a noun
- * can express none of that, and the version of it that existed here before #324 was a template
- * literal in JSX.
+ * The service sends identifiers — a job's name, its state, why it is held, a provider, its kind,
+ * why it is down — and this screen words each of them from the catalogue. The service used to
+ * send some of them as English sentences, which the screen printed under Azerbaijani headings.
+ * A value a table has not been taught renders as itself rather than as nothing.
+ *
+ * <h2>Counts that inflect are plural forms</h2>
+ *
+ * "1 minutes late" is what a sentence with a number interpolated into it says in English, and
+ * Russian needs three forms. Lateness and attempts are therefore `PluralForms`; the counts that
+ * stand alone in a sentence — waiting, given up, needing attention — read correctly with any
+ * number in all four languages.
  */
 export interface HealthDashboardCopy extends ConsoleChromeCopy {
   readonly subject: string;
@@ -120,45 +151,46 @@ export interface HealthDashboardCopy extends ConsoleChromeCopy {
   readonly notMonitoredTitle: string;
   readonly notMonitoredBody: string;
   readonly overall: string;
-  /** Carries `{count}`. */
-  readonly measuredSeconds: string;
-  /** Carries `{count}`. */
-  readonly measuredMinutes: string;
+  /** Carries `{time}`. */
+  readonly measuredAt: string;
   readonly measureAgain: string;
   readonly queues: string;
   /** Carries `{count}`. */
   readonly waiting: string;
   /** Carries `{count}`. Never added into {@link waiting} — see `lib/admin/health.ts`. */
   readonly givenUp: string;
+  readonly givenUpHint: string;
   readonly jobs: string;
   /** Carries `{count}`. */
-  readonly overdue: string;
+  readonly jobsAttention: string;
+  readonly jobsAllWell: string;
+  /** Each carries `{count}`. */
+  readonly overdue: Readonly<Record<'minutes' | 'hours' | 'days', PluralForms>>;
   readonly onTime: string;
   /** Carries `{count}`. */
-  readonly attempts: string;
+  readonly attempts: PluralForms;
+  /** Carries `{time}`. */
+  readonly lastRun: string;
+  readonly neverRun: string;
+  readonly lastErrorLabel: string;
   readonly providers: string;
   readonly notConfigured: string;
   /** Keyed by `HealthStatus`. The word, never only the colour — CLAUDE.md §2. */
   readonly status: Readonly<Record<string, string>>;
-  /**
-   * The scheduler's own states, worded — issue #403.
-   *
-   * <p>`READY` was drawn raw on all nineteen rows, which is not information in any
-   * language. The wire word moved to the row's `title`, so it is still one hover from
-   * whoever is about to grep for it, and a state with no sentence is drawn as itself.
-   */
+  /** Keyed by the scheduler's state: `READY`, `DEAD`. */
   readonly jobState: Readonly<Record<string, string>>;
-  /**
-   * A queue's name in the reader's language, keyed by the identifier the service sends —
-   * issue #405.
-   *
-   * <p>The service used to answer "Outbox" and "Scheduled jobs", which this screen rendered
-   * verbatim under an Azerbaijani heading and above a section headed with the Azerbaijani
-   * for the second of them. `QueueDepthSource.queueName()` answers an identifier now, and a
-   * queue this table has not been taught about renders as that identifier rather than as
-   * nothing — the same rule the job states one field up follow.
-   */
+  /** Keyed by a job's hold: `MAINTENANCE`, `UNSCHEDULED`. */
+  readonly hold: Readonly<Record<string, string>>;
+  /** Keyed by the queue's identifier. */
   readonly queue: Readonly<Record<string, string>>;
+  /** Keyed by the provider's kind. */
+  readonly kind: Readonly<Record<string, string>>;
+  /** Keyed by the provider as the platform names it. */
+  readonly providerName: Readonly<Record<string, string>>;
+  /** Keyed by why a provider is not available. */
+  readonly reason: Readonly<Record<string, string>>;
+  /** Keyed by the job's identifier, which stays on the row's `title`. */
+  readonly jobName: Readonly<Record<string, string>>;
 }
 
 export function healthDashboardCopyFrom(
@@ -173,48 +205,95 @@ export function healthDashboardCopyFrom(
     notMonitoredTitle: t('screens.health.notMonitoredTitle'),
     notMonitoredBody: t('screens.health.notMonitoredBody'),
     overall: t('screens.health.overall'),
-    measuredSeconds: String(t.raw('screens.health.measuredSeconds')),
-    measuredMinutes: String(t.raw('screens.health.measuredMinutes')),
+    measuredAt: String(t.raw('screens.health.measuredAt')),
     measureAgain: t('screens.health.measureAgain'),
     queues: t('screens.health.queues'),
     waiting: String(t.raw('screens.health.waiting')),
     givenUp: String(t.raw('screens.health.givenUp')),
+    givenUpHint: t('screens.health.givenUpHint'),
     jobs: t('screens.health.jobs'),
-    overdue: String(t.raw('screens.health.overdue')),
+    jobsAttention: String(t.raw('screens.health.jobsAttention')),
+    jobsAllWell: t('screens.health.jobsAllWell'),
+    overdue: t.raw('screens.health.overdue') as Readonly<Record<'minutes' | 'hours' | 'days', PluralForms>>,
     onTime: t('screens.health.onTime'),
-    attempts: String(t.raw('screens.health.attempts')),
+    attempts: t.raw('screens.health.attempts') as PluralForms,
+    lastRun: String(t.raw('screens.health.lastRun')),
+    neverRun: t('screens.health.neverRun'),
+    lastErrorLabel: t('screens.health.lastErrorLabel'),
     providers: t('screens.health.providers'),
     notConfigured: t('screens.health.notConfigured'),
     status: t.raw('screens.health.status') as Readonly<Record<string, string>>,
     jobState: t.raw('screens.health.jobState') as Readonly<Record<string, string>>,
+    hold: t.raw('screens.health.hold') as Readonly<Record<string, string>>,
     queue: t.raw('screens.health.queue') as Readonly<Record<string, string>>,
+    kind: t.raw('screens.health.kind') as Readonly<Record<string, string>>,
+    providerName: t.raw('screens.health.providerName') as Readonly<Record<string, string>>,
+    reason: t.raw('screens.health.reason') as Readonly<Record<string, string>>,
+    jobName: t.raw('screens.health.jobName') as Readonly<Record<string, string>>,
   };
 }
 
-/** AD-12, the feature flags. */
+/**
+ * AD-12, the feature flags.
+ *
+ * <p>`reach` is keyed by `FlagReach` from `lib/admin/flags.ts`: one sentence for each of the
+ * five things a flag can reach, so the screen never prints "On" beside a flag that reaches
+ * nobody. `picker` is the account directory's own picker, labelled for this screen.
+ */
 export interface FlagConsoleCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly heading: string;
   readonly loadingList: string;
+  readonly notReadTitle: string;
+  readonly notReadBody: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
   readonly on: string;
   readonly off: string;
   readonly rollout: string;
-  /** Carries `{count}`. */
-  readonly alwaysIn: string;
-  /** Carries `{date}`. */
+  /** Carries `{flag}`. The rollout buttons' group name. */
+  readonly rolloutGroup: string;
+  /** Carries `{percent}`. */
+  readonly rolloutNow: string;
+  /** Keyed by `FlagReach`. `some` carries `{percent}`. */
+  readonly reach: Readonly<Record<string, string>>;
+  readonly accountsHeading: string;
+  readonly accountsNone: string;
+  readonly accountsReadOnly: string;
+  readonly accountsFull: string;
+  readonly addAccount: string;
+  /** Carries `{flag}`. */
+  readonly addAccountLabel: string;
+  readonly addAccountClose: string;
+  readonly removeAccount: string;
+  /** Carries `{name}`, `{flag}`. */
+  readonly removeAccountLabel: string;
+  readonly editDescription: string;
+  readonly saveDescription: string;
+  /** Carries `{date}`, `{name}`. */
   readonly lastChanged: string;
-  readonly offForEverybody: string;
+  /** Carries `{flag}`. */
+  readonly confirmLabel: string;
+  /** Carries `{flag}`, `{reach}`. */
+  readonly confirmWiden: string;
+  readonly confirmYes: string;
+  readonly keep: string;
   readonly addHeading: string;
   readonly addIntro: string;
   readonly nameLabel: string;
   readonly nameHint: string;
   readonly nameError: string;
   readonly switchesLabel: string;
+  readonly descriptionRequired: string;
+  /** Carries `{flag}`. */
+  readonly created: string;
+  readonly doneTitle: string;
   readonly working: string;
   readonly add: string;
   readonly failedTitle: string;
+  /** Keyed by the service's refusal code. */
+  readonly errors: Readonly<Record<string, string>>;
+  readonly picker: AccountPickerCopy;
 }
 
 export function flagConsoleCopyFrom(
@@ -226,23 +305,46 @@ export function flagConsoleCopyFrom(
     subject: t('screens.flags.subject'),
     heading: t('screens.flags.heading'),
     loadingList: t('screens.flags.loadingList'),
+    notReadTitle: t('screens.flags.notReadTitle'),
+    notReadBody: t('screens.flags.notReadBody'),
     emptyTitle: t('screens.flags.emptyTitle'),
     emptyBody: t('screens.flags.emptyBody'),
     on: t('screens.flags.on'),
     off: t('screens.flags.off'),
     rollout: t('screens.flags.rollout'),
-    alwaysIn: String(t.raw('screens.flags.alwaysIn')),
+    rolloutGroup: String(t.raw('screens.flags.rolloutGroup')),
+    rolloutNow: String(t.raw('screens.flags.rolloutNow')),
+    reach: t.raw('screens.flags.reach') as Readonly<Record<string, string>>,
+    accountsHeading: t('screens.flags.accountsHeading'),
+    accountsNone: t('screens.flags.accountsNone'),
+    accountsReadOnly: t('screens.flags.accountsReadOnly'),
+    accountsFull: t('screens.flags.accountsFull'),
+    addAccount: t('screens.flags.addAccount'),
+    addAccountLabel: String(t.raw('screens.flags.addAccountLabel')),
+    addAccountClose: t('screens.flags.addAccountClose'),
+    removeAccount: t('screens.flags.removeAccount'),
+    removeAccountLabel: String(t.raw('screens.flags.removeAccountLabel')),
+    editDescription: t('screens.flags.editDescription'),
+    saveDescription: t('screens.flags.saveDescription'),
     lastChanged: String(t.raw('screens.flags.lastChanged')),
-    offForEverybody: t('screens.flags.offForEverybody'),
+    confirmLabel: String(t.raw('screens.flags.confirmLabel')),
+    confirmWiden: String(t.raw('screens.flags.confirmWiden')),
+    confirmYes: t('screens.flags.confirmYes'),
+    keep: t('screens.flags.keep'),
     addHeading: t('screens.flags.addHeading'),
     addIntro: t('screens.flags.addIntro'),
     nameLabel: t('screens.flags.nameLabel'),
     nameHint: t('screens.flags.nameHint'),
     nameError: t('screens.flags.nameError'),
     switchesLabel: t('screens.flags.switchesLabel'),
+    descriptionRequired: t('screens.flags.descriptionRequired'),
+    created: String(t.raw('screens.flags.created')),
+    doneTitle: t('screens.flags.doneTitle'),
     working: t('screens.flags.working'),
     add: t('screens.flags.add'),
     failedTitle: t('screens.flags.failedTitle'),
+    errors: t.raw('screens.flags.errors') as Readonly<Record<string, string>>,
+    picker: { ...accountPickerCopyFrom(t, chrome.refusals), label: t('screens.flags.addAccount') },
   };
 }
 
@@ -267,8 +369,16 @@ export interface PlatformAnalyticsCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly loadingList: string;
   readonly windows: Readonly<Record<string, string>>;
-  /** Carries `{from}`, `{to}`. */
+  /** The accessible name of the group of window buttons. */
+  readonly windowLegend: string;
+  /** Carries `{from}`, `{to}`, each already a date in the reader's language. */
   readonly range: string;
+  /** Which pledges the figures count: collected, and not refunded or charged back. */
+  readonly populationNote: string;
+  /** The heading over the figures that describe this moment rather than the window. */
+  readonly nowHeading: string;
+  /** Carries `{time}`: when the figures were read, in Baku. */
+  readonly computedAt: string;
   readonly volume: string;
   readonly pledges: string;
   readonly backers: string;
@@ -286,14 +396,7 @@ export interface PlatformAnalyticsCopy extends ConsoleChromeCopy {
   readonly successRate: string;
   readonly dailyHeading: string;
   readonly nothingPledged: string;
-  /**
-   * The chart's one stated figure, under the series — issue #405.
-   *
-   * <p>Carries `{day}` and `{amount}`. A column chart shows shape and not magnitude, so the
-   * peak is named: without it, thirty bars scaled to their own maximum look identical
-   * whether the busiest day took two hundred manat or two hundred thousand.
-   */
-  readonly busiestDay: string;
+  readonly chart: ConsoleChartCopy;
   readonly notBuiltHeading: string;
   /** Keyed by the code the service sends. Unknown codes fall through to themselves. */
   readonly notBuilt: Readonly<Record<string, string>>;
@@ -308,7 +411,11 @@ export function platformAnalyticsCopyFrom(
     subject: t('screens.analytics.subject'),
     loadingList: t('screens.analytics.loadingList'),
     windows: t.raw('screens.analytics.windows') as Readonly<Record<string, string>>,
+    windowLegend: t('screens.analytics.windowLegend'),
     range: String(t.raw('screens.analytics.range')),
+    populationNote: t('screens.analytics.populationNote'),
+    nowHeading: t('screens.analytics.nowHeading'),
+    computedAt: String(t.raw('screens.analytics.computedAt')),
     volume: t('screens.analytics.volume'),
     pledges: t('screens.analytics.pledges'),
     backers: t('screens.analytics.backers'),
@@ -325,9 +432,7 @@ export function platformAnalyticsCopyFrom(
     successRate: t('screens.analytics.successRate'),
     dailyHeading: t('screens.analytics.dailyHeading'),
     nothingPledged: t('screens.analytics.nothingPledged'),
-    /* `raw`, because next-intl renders a template's own key when it is read with `t()` and
-       has no value for the argument. */
-    busiestDay: String(t.raw('screens.analytics.busiestDay')),
+    chart: consoleChartCopyFrom(t),
     notBuiltHeading: t('screens.analytics.notBuiltHeading'),
     notBuilt: t.raw('screens.analytics.notBuilt') as Readonly<Record<string, string>>,
   };
@@ -337,10 +442,14 @@ export function platformAnalyticsCopyFrom(
  * AD-15's list.
  *
  * <p>`category` is the console's own table rather than `account.notifications.category`, which
- * is written for the person receiving the notice â€” "Your pledges", "Campaigns you back". A
+ * is written for the person receiving the notice — "Your pledges", "Campaigns you back". A
  * member of staff reading a list of templates is not the recipient, and second-person copy on
  * an administrative list reads as though the console belonged to somebody else. Unknown
  * categories fall back to the wire value.
+ *
+ * <p>`type` names every notification in words, because the list used to title each row with its
+ * enum constant. A type the catalogue does not know falls back to the constant, which is
+ * readable and is the honest failure.
  */
 export interface EmailTemplateIndexCopy extends ConsoleChromeCopy {
   readonly subject: string;
@@ -348,23 +457,35 @@ export interface EmailTemplateIndexCopy extends ConsoleChromeCopy {
   readonly readFailed: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
-  readonly transactional: string;
+  /** The tag on the one template a recipient cannot switch off. */
+  readonly mandatory: string;
+  readonly shippedOnly: string;
+  /** Carries `{language}`, `{version}`. */
+  readonly rewritten: string;
   readonly category: Readonly<Record<string, string>>;
+  readonly type: Readonly<Record<string, string>>;
+  /** The four languages, by code. */
+  readonly language: Readonly<Record<string, string>>;
 }
 
 export function emailTemplateIndexCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
 ): EmailTemplateIndexCopy {
+  const raw = (key: string) => String(t.raw(`screens.emailTemplates.${key}`));
   return {
     ...chrome,
-    subject: t('screens.emailTemplates.subject'),
-    loadingList: t('screens.emailTemplates.loadingList'),
-    readFailed: t('screens.emailTemplates.readFailed'),
-    emptyTitle: t('screens.emailTemplates.emptyTitle'),
-    emptyBody: t('screens.emailTemplates.emptyBody'),
-    transactional: t('screens.emailTemplates.transactional'),
+    subject: raw('subject'),
+    loadingList: raw('loadingList'),
+    readFailed: raw('readFailed'),
+    emptyTitle: raw('emptyTitle'),
+    emptyBody: raw('emptyBody'),
+    mandatory: raw('mandatory'),
+    shippedOnly: raw('shippedOnly'),
+    rewritten: raw('rewritten'),
     category: t.raw('screens.emailTemplates.category') as Readonly<Record<string, string>>,
+    type: t.raw('screens.emailTemplates.type') as Readonly<Record<string, string>>,
+    language: t.raw('screens.emailTemplates.language') as Readonly<Record<string, string>>,
   };
 }
 
@@ -375,25 +496,35 @@ export function emailTemplateIndexCopyFrom(
  * refusal about the version history that said "the email copy" would send somebody looking at
  * the wrong endpoint.
  *
- * <p>`mustKeep` and `mustKeepWhy` bracket a list of `{n}` placeholders the component renders as
- * `<code>` elements. Two keys rather than one because the middle is markup, and the alternative
- * â€” a single sentence with the codes interpolated as text â€” would lose the styling that tells
- * an editor these are literals rather than words.
+ * <p>Every string is read with `t.raw`: most carry placeholders the component fills, and several
+ * name a placeholder such as `{2}` literally, which the component supplies rather than the
+ * catalogue — an ICU message cannot hold a bare `{2}`.
  */
 export interface EmailTemplateEditorCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly historySubject: string;
   readonly loadingList: string;
   readonly readFailed: string;
+  readonly languageLabel: string;
+  /** Carries `{language}`. */
+  readonly reach: string;
+  readonly reachPrimary: string;
   readonly overriddenTitle: string;
-  /** Carries `{version}`. */
+  /** Carries `{version}`, `{language}`. */
   readonly overriddenBody: string;
   readonly shippedTitle: string;
   readonly shippedBody: string;
   readonly shippedHeading: string;
+  readonly shippedNamedLabel: string;
+  readonly shippedPlainLabel: string;
   readonly yourHeading: string;
+  readonly placeholdersHeading: string;
+  readonly placeholdersIntro: string;
   readonly mustKeep: string;
-  readonly mustKeepWhy: string;
+  /** What each of the six facts is, by its index. */
+  readonly placeholder: Readonly<Record<string, string>>;
+  /** Carries `{placeholder}`. */
+  readonly campaignFallback: string;
   readonly subjectLabel: string;
   readonly bodyLabel: string;
   readonly whyLabel: string;
@@ -401,53 +532,139 @@ export interface EmailTemplateEditorCopy extends ConsoleChromeCopy {
   readonly missingTitle: string;
   /** Carries `{placeholders}`. */
   readonly missingBody: string;
+  readonly unknownTitle: string;
+  /** Carries `{placeholders}`. */
+  readonly unknownBody: string;
+  /** Carries `{field}`, `{example}`. */
+  readonly malformedBody: string;
+  /** The two editable fields, as `malformedBody` names them. */
+  readonly field: { readonly subject: string; readonly body: string };
+  readonly preview: string;
+  readonly previewing: string;
+  readonly previewHeading: string;
+  readonly previewIntro: string;
+  /** Carries `{subject}`. */
+  readonly previewSubject: string;
+  readonly previewFrameTitle: string;
+  readonly previewStale: string;
+  readonly testSend: string;
+  readonly testSending: string;
+  readonly testSent: string;
   readonly saving: string;
   readonly saveNew: string;
+  readonly confirmSaveLabel: string;
+  /** Carries `{version}`, `{language}`. */
+  readonly confirmSave: string;
+  readonly confirmSaveAction: string;
+  readonly back: string;
   readonly withdraw: string;
+  readonly confirmWithdrawLabel: string;
+  /** Carries `{version}`, `{language}`. */
+  readonly confirmWithdraw: string;
+  /** Carries `{version}`. */
   readonly savedNew: string;
   readonly savedWithdrawn: string;
+  readonly restore: string;
+  readonly confirmRestoreLabel: string;
+  /** Carries `{from}`, `{version}`. */
+  readonly confirmRestore: string;
+  /** Carries `{version}`. The note a restored version is saved with. */
+  readonly restoredNote: string;
+  readonly showText: string;
+  readonly switchLabel: string;
+  readonly switchConfirm: string;
+  readonly switchAction: string;
   readonly doneTitle: string;
   readonly failedTitle: string;
   readonly versionsHeading: string;
+  readonly versionsEmpty: string;
   /** Carries `{date}`, `{version}`. */
   readonly versionLine: string;
+  readonly writtenBy: string;
   readonly live: string;
+  readonly tryAgain: string;
+  /** The refusals the editor words itself, by the service's code. */
+  readonly errors: Readonly<Record<string, string>>;
+  /** The four languages, by code — the list's table, so both screens name them alike. */
+  readonly language: Readonly<Record<string, string>>;
 }
 
 export function emailTemplateEditorCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
 ): EmailTemplateEditorCopy {
+  const raw = (key: string) => String(t.raw(`screens.emailTemplateEditor.${key}`));
   return {
     ...chrome,
-    subject: t('screens.emailTemplateEditor.subject'),
-    historySubject: t('screens.emailTemplateEditor.historySubject'),
-    loadingList: t('screens.emailTemplateEditor.loadingList'),
-    readFailed: t('screens.emailTemplateEditor.readFailed'),
-    overriddenTitle: t('screens.emailTemplateEditor.overriddenTitle'),
-    overriddenBody: String(t.raw('screens.emailTemplateEditor.overriddenBody')),
-    shippedTitle: t('screens.emailTemplateEditor.shippedTitle'),
-    shippedBody: t('screens.emailTemplateEditor.shippedBody'),
-    shippedHeading: t('screens.emailTemplateEditor.shippedHeading'),
-    yourHeading: t('screens.emailTemplateEditor.yourHeading'),
-    mustKeep: t('screens.emailTemplateEditor.mustKeep'),
-    mustKeepWhy: t('screens.emailTemplateEditor.mustKeepWhy'),
-    subjectLabel: t('screens.emailTemplateEditor.subjectLabel'),
-    bodyLabel: t('screens.emailTemplateEditor.bodyLabel'),
-    whyLabel: t('screens.emailTemplateEditor.whyLabel'),
-    whyHint: t('screens.emailTemplateEditor.whyHint'),
-    missingTitle: t('screens.emailTemplateEditor.missingTitle'),
-    missingBody: String(t.raw('screens.emailTemplateEditor.missingBody')),
-    saving: t('screens.emailTemplateEditor.saving'),
-    saveNew: t('screens.emailTemplateEditor.saveNew'),
-    withdraw: t('screens.emailTemplateEditor.withdraw'),
-    savedNew: t('screens.emailTemplateEditor.savedNew'),
-    savedWithdrawn: t('screens.emailTemplateEditor.savedWithdrawn'),
-    doneTitle: t('screens.emailTemplateEditor.doneTitle'),
-    failedTitle: t('screens.emailTemplateEditor.failedTitle'),
-    versionsHeading: t('screens.emailTemplateEditor.versionsHeading'),
-    versionLine: String(t.raw('screens.emailTemplateEditor.versionLine')),
-    live: t('screens.emailTemplateEditor.live'),
+    subject: raw('subject'),
+    historySubject: raw('historySubject'),
+    loadingList: raw('loadingList'),
+    readFailed: raw('readFailed'),
+    languageLabel: raw('languageLabel'),
+    reach: raw('reach'),
+    reachPrimary: raw('reachPrimary'),
+    overriddenTitle: raw('overriddenTitle'),
+    overriddenBody: raw('overriddenBody'),
+    shippedTitle: raw('shippedTitle'),
+    shippedBody: raw('shippedBody'),
+    shippedHeading: raw('shippedHeading'),
+    shippedNamedLabel: raw('shippedNamedLabel'),
+    shippedPlainLabel: raw('shippedPlainLabel'),
+    yourHeading: raw('yourHeading'),
+    placeholdersHeading: raw('placeholdersHeading'),
+    placeholdersIntro: raw('placeholdersIntro'),
+    mustKeep: raw('mustKeep'),
+    placeholder: t.raw('screens.emailTemplateEditor.placeholder') as Readonly<Record<string, string>>,
+    campaignFallback: raw('campaignFallback'),
+    subjectLabel: raw('subjectLabel'),
+    bodyLabel: raw('bodyLabel'),
+    whyLabel: raw('whyLabel'),
+    whyHint: raw('whyHint'),
+    missingTitle: raw('missingTitle'),
+    missingBody: raw('missingBody'),
+    unknownTitle: raw('unknownTitle'),
+    unknownBody: raw('unknownBody'),
+    malformedBody: raw('malformedBody'),
+    field: t.raw('screens.emailTemplateEditor.field') as { readonly subject: string; readonly body: string },
+    preview: raw('preview'),
+    previewing: raw('previewing'),
+    previewHeading: raw('previewHeading'),
+    previewIntro: raw('previewIntro'),
+    previewSubject: raw('previewSubject'),
+    previewFrameTitle: raw('previewFrameTitle'),
+    previewStale: raw('previewStale'),
+    testSend: raw('testSend'),
+    testSending: raw('testSending'),
+    testSent: raw('testSent'),
+    saving: raw('saving'),
+    saveNew: raw('saveNew'),
+    confirmSaveLabel: raw('confirmSaveLabel'),
+    confirmSave: raw('confirmSave'),
+    confirmSaveAction: raw('confirmSaveAction'),
+    back: raw('back'),
+    withdraw: raw('withdraw'),
+    confirmWithdrawLabel: raw('confirmWithdrawLabel'),
+    confirmWithdraw: raw('confirmWithdraw'),
+    savedNew: raw('savedNew'),
+    savedWithdrawn: raw('savedWithdrawn'),
+    restore: raw('restore'),
+    confirmRestoreLabel: raw('confirmRestoreLabel'),
+    confirmRestore: raw('confirmRestore'),
+    restoredNote: raw('restoredNote'),
+    showText: raw('showText'),
+    switchLabel: raw('switchLabel'),
+    switchConfirm: raw('switchConfirm'),
+    switchAction: raw('switchAction'),
+    doneTitle: raw('doneTitle'),
+    failedTitle: raw('failedTitle'),
+    versionsHeading: raw('versionsHeading'),
+    versionsEmpty: raw('versionsEmpty'),
+    versionLine: raw('versionLine'),
+    writtenBy: raw('writtenBy'),
+    live: raw('live'),
+    tryAgain: raw('tryAgain'),
+    errors: t.raw('screens.emailTemplateEditor.errors') as Readonly<Record<string, string>>,
+    language: t.raw('screens.emailTemplates.language') as Readonly<Record<string, string>>,
   };
 }
 
@@ -458,6 +675,8 @@ export function emailTemplateEditorCopyFrom(
  * shapes give and one of its own: the screen's whole job is to make an irreversible action
  * legible, and a missing string here would be a blank where the sentence explaining that a
  * published version cannot be edited should be.
+ *
+ * <p>Read with `t.raw` throughout, because most of these carry placeholders the screen fills.
  */
 export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly subject: string;
@@ -473,7 +692,7 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly bodyHint: string;
   readonly save: string;
   readonly working: string;
-  /** Carries `{locale}`, `{version}`. */
+  /** Carries `{language}`, `{version}`. */
   readonly savedNotice: string;
   readonly publishHeading: string;
   readonly publishIntro: string;
@@ -486,6 +705,8 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly publish: string;
   /** Carries `{languages}`, `{version}`. */
   readonly publishedNotice: string;
+  /** Carries `{languages}`, `{version}`, `{date}`. */
+  readonly publishedFuture: string;
   readonly nothingDraftedTitle: string;
   readonly nothingDraftedBody: string;
   readonly historyHeading: string;
@@ -496,6 +717,9 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly versionLabel: string;
   /** Carries `{from}`, `{hash}`. */
   readonly versionMeta: string;
+  /** Carries `{date}`. */
+  readonly takesEffect: string;
+  readonly openOnSite: string;
   readonly showOnSite: string;
   readonly shownOnSite: string;
   /** Carries `{version}`. */
@@ -503,60 +727,109 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly doneTitle: string;
   readonly failedTitle: string;
   readonly loadingList: string;
+  readonly readFailed: string;
   readonly tryAgain: string;
+  readonly back: string;
+  readonly confirmPublishLabel: string;
+  /** Carries `{document}`, `{version}`, `{languages}`, `{when}`. */
+  readonly confirmPublish: string;
+  readonly confirmPublishAction: string;
+  readonly whenNow: string;
+  /** Carries `{date}`. */
+  readonly whenDate: string;
+  /** Who must accept a new version again, by document. Only the two agreements have an entry. */
+  readonly reaccept: Readonly<Record<string, string>>;
+  readonly confirmActivateLabel: string;
+  /** Carries `{document}`, `{version}`. */
+  readonly confirmActivate: string;
+  readonly unsavedTitle: string;
+  /** Carries `{languages}`. */
+  readonly unsavedBody: string;
+  /** Carries `{language}`. */
+  readonly unsavedOption: string;
+  readonly switchDocumentLabel: string;
+  /** Carries `{languages}`. */
+  readonly switchDocument: string;
+  readonly switchDocumentAction: string;
+  /** The refusals the screen words itself, by the service's code. */
+  readonly errors: Readonly<Record<string, string>>;
   /** §22.2's eight, named in the reader's language rather than by their code. */
   readonly kind: Readonly<Record<string, string>>;
-  /** §21.1's four, likewise. The Azerbaijani entry says that it is the governing text. */
+  /** §21.1's four, for the selector. The Azerbaijani entry says that it is the governing text. */
   readonly locale: Readonly<Record<string, string>>;
+  /** The same four as plain names, for sentences. */
+  readonly languageName: Readonly<Record<string, string>>;
 }
 
 export function legalDocumentEditorCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
 ): LegalDocumentEditorCopy {
+  const raw = (key: string) => String(t.raw(`screens.legal.${key}`));
+  const table = (key: string) => t.raw(`screens.legal.${key}`) as Readonly<Record<string, string>>;
   return {
     ...chrome,
-    subject: t('screens.legal.subject'),
-    noticeTitle: t('screens.legal.noticeTitle'),
-    noticeBody: t('screens.legal.noticeBody'),
-    documentLabel: t('screens.legal.documentLabel'),
-    languageLabel: t('screens.legal.languageLabel'),
-    languageHint: t('screens.legal.languageHint'),
-    draftHeading: t('screens.legal.draftHeading'),
-    draftIntro: t('screens.legal.draftIntro'),
-    titleLabel: t('screens.legal.titleLabel'),
-    bodyLabel: t('screens.legal.bodyLabel'),
-    bodyHint: t('screens.legal.bodyHint'),
-    save: t('screens.legal.save'),
-    working: t('screens.legal.working'),
-    /* `t.raw`, because it carries placeholders — `test-copy.ts` refuses `t()` on one. */
-    savedNotice: String(t.raw('screens.legal.savedNotice')),
-    publishHeading: t('screens.legal.publishHeading'),
-    publishIntro: t('screens.legal.publishIntro'),
-    willPublish: String(t.raw('screens.legal.willPublish')),
-    governingMissingTitle: t('screens.legal.governingMissingTitle'),
-    governingMissingBody: t('screens.legal.governingMissingBody'),
-    effectiveFromLabel: t('screens.legal.effectiveFromLabel'),
-    effectiveFromHint: t('screens.legal.effectiveFromHint'),
-    publish: t('screens.legal.publish'),
-    publishedNotice: String(t.raw('screens.legal.publishedNotice')),
-    nothingDraftedTitle: t('screens.legal.nothingDraftedTitle'),
-    nothingDraftedBody: t('screens.legal.nothingDraftedBody'),
-    historyHeading: t('screens.legal.historyHeading'),
-    historyIntro: t('screens.legal.historyIntro'),
-    noVersionsTitle: t('screens.legal.noVersionsTitle'),
-    noVersionsBody: t('screens.legal.noVersionsBody'),
-    versionLabel: String(t.raw('screens.legal.versionLabel')),
-    versionMeta: String(t.raw('screens.legal.versionMeta')),
-    showOnSite: t('screens.legal.showOnSite'),
-    shownOnSite: t('screens.legal.shownOnSite'),
-    activatedNotice: String(t.raw('screens.legal.activatedNotice')),
-    doneTitle: t('screens.legal.doneTitle'),
-    failedTitle: t('screens.legal.failedTitle'),
-    loadingList: t('screens.legal.loadingList'),
-    tryAgain: t('screens.legal.tryAgain'),
-    kind: t.raw('screens.legal.kind') as Readonly<Record<string, string>>,
-    locale: t.raw('screens.legal.locale') as Readonly<Record<string, string>>,
+    subject: raw('subject'),
+    noticeTitle: raw('noticeTitle'),
+    noticeBody: raw('noticeBody'),
+    documentLabel: raw('documentLabel'),
+    languageLabel: raw('languageLabel'),
+    languageHint: raw('languageHint'),
+    draftHeading: raw('draftHeading'),
+    draftIntro: raw('draftIntro'),
+    titleLabel: raw('titleLabel'),
+    bodyLabel: raw('bodyLabel'),
+    bodyHint: raw('bodyHint'),
+    save: raw('save'),
+    working: raw('working'),
+    savedNotice: raw('savedNotice'),
+    publishHeading: raw('publishHeading'),
+    publishIntro: raw('publishIntro'),
+    willPublish: raw('willPublish'),
+    governingMissingTitle: raw('governingMissingTitle'),
+    governingMissingBody: raw('governingMissingBody'),
+    effectiveFromLabel: raw('effectiveFromLabel'),
+    effectiveFromHint: raw('effectiveFromHint'),
+    publish: raw('publish'),
+    publishedNotice: raw('publishedNotice'),
+    publishedFuture: raw('publishedFuture'),
+    nothingDraftedTitle: raw('nothingDraftedTitle'),
+    nothingDraftedBody: raw('nothingDraftedBody'),
+    historyHeading: raw('historyHeading'),
+    historyIntro: raw('historyIntro'),
+    noVersionsTitle: raw('noVersionsTitle'),
+    noVersionsBody: raw('noVersionsBody'),
+    versionLabel: raw('versionLabel'),
+    versionMeta: raw('versionMeta'),
+    takesEffect: raw('takesEffect'),
+    openOnSite: raw('openOnSite'),
+    showOnSite: raw('showOnSite'),
+    shownOnSite: raw('shownOnSite'),
+    activatedNotice: raw('activatedNotice'),
+    doneTitle: raw('doneTitle'),
+    failedTitle: raw('failedTitle'),
+    loadingList: raw('loadingList'),
+    readFailed: raw('readFailed'),
+    tryAgain: raw('tryAgain'),
+    back: raw('back'),
+    confirmPublishLabel: raw('confirmPublishLabel'),
+    confirmPublish: raw('confirmPublish'),
+    confirmPublishAction: raw('confirmPublishAction'),
+    whenNow: raw('whenNow'),
+    whenDate: raw('whenDate'),
+    reaccept: table('reaccept'),
+    confirmActivateLabel: raw('confirmActivateLabel'),
+    confirmActivate: raw('confirmActivate'),
+    unsavedTitle: raw('unsavedTitle'),
+    unsavedBody: raw('unsavedBody'),
+    unsavedOption: raw('unsavedOption'),
+    switchDocumentLabel: raw('switchDocumentLabel'),
+    switchDocument: raw('switchDocument'),
+    switchDocumentAction: raw('switchDocumentAction'),
+    errors: table('errors'),
+    kind: table('kind'),
+    locale: table('locale'),
+    languageName: table('languageName'),
   };
 }
 
@@ -598,6 +871,14 @@ export interface MaintenanceConsoleCopy extends ConsoleChromeCopy {
   readonly openEndLabel: string;
   readonly saveEnd: string;
   readonly cancelWindow: string;
+  readonly cancelConfirm: string;
+  readonly cancelYes: string;
+  /** The inline confirmation's group name. */
+  readonly confirmLabel: string;
+  /** Under the end editor, when the end is not after both the start and now. */
+  readonly endInvalid: string;
+  /** Carries `{zone}`. Above the lists, so every time on the screen is read in one zone. */
+  readonly zoneNote: string;
   readonly scheduleHeading: string;
   /** Carries `{zone}`. */
   readonly scheduleIntro: string;
@@ -609,6 +890,9 @@ export interface MaintenanceConsoleCopy extends ConsoleChromeCopy {
   readonly noteFieldLabel: string;
   readonly noteHint: string;
   readonly schedule: string;
+  /** Asked before scheduling a window whose start has already come. */
+  readonly scheduleNowConfirm: string;
+  readonly scheduleNowYes: string;
   readonly working: string;
   readonly failedTitle: string;
   /** Keyed by the service's refusal code. */
@@ -649,6 +933,11 @@ export function maintenanceConsoleCopyFrom(
     openEndLabel: t('screens.maintenance.openEndLabel'),
     saveEnd: t('screens.maintenance.saveEnd'),
     cancelWindow: t('screens.maintenance.cancelWindow'),
+    cancelConfirm: t('screens.maintenance.cancelConfirm'),
+    cancelYes: t('screens.maintenance.cancelYes'),
+    confirmLabel: t('screens.maintenance.confirmLabel'),
+    endInvalid: t('screens.maintenance.endInvalid'),
+    zoneNote: String(t.raw('screens.maintenance.zoneNote')),
     scheduleHeading: t('screens.maintenance.scheduleHeading'),
     scheduleIntro: String(t.raw('screens.maintenance.scheduleIntro')),
     startsAtLabel: t('screens.maintenance.startsAtLabel'),
@@ -659,6 +948,8 @@ export function maintenanceConsoleCopyFrom(
     noteFieldLabel: t('screens.maintenance.noteFieldLabel'),
     noteHint: t('screens.maintenance.noteHint'),
     schedule: t('screens.maintenance.schedule'),
+    scheduleNowConfirm: t('screens.maintenance.scheduleNowConfirm'),
+    scheduleNowYes: t('screens.maintenance.scheduleNowYes'),
     working: t('screens.maintenance.working'),
     failedTitle: t('screens.maintenance.failedTitle'),
     refusal: t.raw('screens.maintenance.refusal') as Readonly<Record<string, string>>,

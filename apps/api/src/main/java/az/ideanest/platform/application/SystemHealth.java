@@ -32,7 +32,7 @@ public record SystemHealth(
     /**
      * One queue and how much is in it.
      *
-     * @param name the queue, as an identifier — {@code outbox}, {@code scheduled-jobs}.
+     * @param name the queue, as an identifier — {@code outbox}.
      *     Not a sentence: see {@link az.ideanest.shared.observability.QueueDepthSource#queueName()}
      *     and issue #405
      * @param waiting rows not yet handled
@@ -63,12 +63,17 @@ public record SystemHealth(
      * One scheduled job.
      *
      * @param overdueBySeconds how far past its next attempt it is, or zero when it is not
-     *     due yet. Seconds rather than a duration because the screen renders it and a
-     *     client that had to parse ISO-8601 to sort a column is a client that will sort it
-     *     as text
+     *     due yet — and zero for a job that is not expected to run: one that has given up
+     *     ({@code DEAD}) and one that is {@code hold}. Lateness measured from a run that is
+     *     never coming grew by a minute every minute and said nothing the state did not.
+     *     Seconds rather than a duration because the screen renders it and a client that
+     *     had to parse ISO-8601 to sort a column is a client that will sort it as text
      * @param lastError the last failure's message, truncated by the query. Present even
      *     on a job that has since recovered — "it failed twice this morning and is fine
      *     now" is the sentence somebody is trying to reconstruct
+     * @param hold why a job that is not dead is deliberately not running, or null when it
+     *     runs on its schedule: {@link #MAINTENANCE} or {@link #UNSCHEDULED}. Either is
+     *     healthy, and the screen says which in words
      */
     public record JobHealth(
             String name,
@@ -78,27 +83,35 @@ public record SystemHealth(
             long overdueBySeconds,
             int attempts,
             String lastError,
+            String hold,
             HealthStatus status) {
+
+        /** One of the jobs that send money or messages out, standing still for a maintenance window. */
+        public static final String MAINTENANCE = "MAINTENANCE";
+
+        /** Registered with no trigger on this deployment — its schedule is {@code -}. */
+        public static final String UNSCHEDULED = "UNSCHEDULED";
     }
 
     /**
      * One third party the platform calls.
      *
-     * @param kind what sort of thing it is, in the words the screen groups by — "Payments".
-     *     Present so that a mail relay or a media provider can appear on the same screen
-     *     without the screen learning what either is
+     * @param kind what sort of thing it is, as the identifier the screen groups by and
+     *     words — {@code payments}. Present so that a mail relay or a media provider can
+     *     appear on the same screen without the screen learning what either is
      * @param configured whether the deployment has credentials for it at all. A provider
      *     that is not configured is not unhealthy — it is switched off, and a screen that
      *     painted it red would teach people that red is normal
      * @param available what the owning module's own circuit breaker currently answers
-     * @param detail why it is unavailable, when the answerer knows. Null otherwise
+     * @param reason why it is not available, as a code — {@code NOT_CONFIGURED} or
+     *     {@code CIRCUIT_OPEN}. Null while it is
      */
     public record ProviderHealth(
             String kind,
             String provider,
             boolean configured,
             boolean available,
-            String detail,
+            String reason,
             HealthStatus status) {
     }
 

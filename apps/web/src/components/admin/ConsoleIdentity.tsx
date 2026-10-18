@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from '../../i18n/navigation';
 import { shortId } from '../../lib/admin/refusals';
+import { mayOpenConsoleLink } from '../../lib/admin/navigation';
 import { holds } from '../../lib/admin/staff';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { DirectoryNames } from '../../lib/admin/directory';
@@ -96,6 +97,10 @@ export interface EntityNameProps {
  * so the link is now always a real one and the "no path, no link" case has stopped existing
  * for campaigns.
  *
+ * <p><strong>Only where the reader may open it.</strong> The preview is `MODERATE_CONTENT`'s, like
+ * the campaign directory it belongs to; finance reading the audit trail or the payout queue was
+ * offered a link that answered with a refusal. A reader without it sees the name, unlinked.
+ *
  * <p><strong>An account links to the console's own account screen when the reader may open
  * it.</strong> It linked to the public profile everywhere, so a support ticket's requester or a
  * staff grant's holder — names on screens whose whole subject is that person's account — took
@@ -121,7 +126,7 @@ export function EntityName({
       ? holds(membership, 'ADMINISTER_ACCOUNTS')
         ? `/admin/users/${encodeURIComponent(account.id)}`
         : `/${account.slug}`
-      : project !== undefined
+      : project !== undefined && mayOpenConsoleLink('/admin/campaigns', membership?.capabilities ?? null)
         ? `/admin/campaigns/${encodeURIComponent(project.id)}`
         : null;
 

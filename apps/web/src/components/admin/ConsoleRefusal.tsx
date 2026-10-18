@@ -1,9 +1,9 @@
 'use client';
 
 import { InlineAlert } from '@ideanest/ui';
-import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ConsoleRefusalsCopy } from '../../lib/i18n/admin/common-copy';
-import { capabilityLabel, type ConsoleStatus } from '../../lib/admin/refusals';
+import type { ConsoleStatus } from '../../lib/admin/refusals';
+import { refusalWords } from '../../lib/admin/refusal-words';
 
 export interface ConsoleRefusalProps {
   readonly status: ConsoleStatus;
@@ -55,31 +55,12 @@ export interface ConsoleRefusalProps {
  * its position, and the sentence is a template around it rather than a concatenation.
  */
 export function ConsoleRefusal({ status, subject, capability, copy }: ConsoleRefusalProps) {
-  if (status === 'signed-out') {
-    return (
-      <InlineAlert variant="info" title={copy.signedOutTitle}>
-        {fillPlaceholders(copy.signedOutBody, { subject })}
-      </InlineAlert>
-    );
-  }
+  const words = refusalWords(status, capability, subject, copy);
+  if (words === null) return null;
 
-  if (status === 'forbidden') {
-    // A colleague, on a screen that is not theirs. The service already worked out which of
-    // the two this is and said so in `meta.capability`; all this does is not throw it away.
-    if (capability != null && capability !== '') {
-      return (
-        <InlineAlert variant="info" title={copy.capabilityTitle}>
-          {`${fillPlaceholders(copy.needsCapability, { subject, capability: capabilityLabel(capability, copy) })} ${copy.capabilityAsk}`}
-        </InlineAlert>
-      );
-    }
-
-    return (
-      <InlineAlert variant="info" title={copy.forbiddenTitle}>
-        {copy.forbiddenBody}
-      </InlineAlert>
-    );
-  }
-
-  return null;
+  return (
+    <InlineAlert variant="info" title={words.title}>
+      {words.body}
+    </InlineAlert>
+  );
 }

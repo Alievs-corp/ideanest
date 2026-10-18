@@ -953,6 +953,14 @@ ideanest:
       # somebody who already has a stamp and a registration number. Inert while
       # `enabled` is false.
       required-for-legal-entity: true
+    in-force:
+      # legal-taking-effect, every minute. A version published for a future date has to
+      # appear on the website on that date: publishing drops the web's cached legal
+      # pages, but on the day the date arrives nothing else would, and the pages would
+      # keep the previous version for up to the web's hour. Each pass announces every
+      # version whose date passed within `lookback`, which drops the cache again.
+      schedule: "0 * * * * *"
+      lookback: PT10M
 
   # §5.5's post-campaign obligations, as a clock -- issue #437.
   #

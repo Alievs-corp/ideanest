@@ -1,5 +1,5 @@
 import type { AdminTranslator } from '../admin-copy';
-import type { ConsoleChromeCopy } from './common-copy';
+import { consoleChartCopyFrom, type ConsoleChartCopy, type ConsoleChromeCopy } from './common-copy';
 
 /**
  * The words on the console's front page — #222.
@@ -39,8 +39,10 @@ export interface ConsoleDashboardCopy extends ConsoleChromeCopy {
   readonly modulesLink: string;
   readonly periodLegend: string;
   readonly period: Readonly<Record<'today' | 'week' | 'month30' | 'thisMonth', string>>;
-  /** Carries `{from}`, `{to}`, `{zone}`. */
+  /** Carries `{from}` and `{to}`, each already a date in the reader's language. Names Baku's time itself. */
   readonly windowNote: string;
+  /** The heading over a card's figures that count this moment rather than the period. */
+  readonly nowHeading: string;
   readonly loading: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
@@ -57,12 +59,7 @@ export interface ConsoleDashboardCopy extends ConsoleChromeCopy {
   readonly hours: string;
   readonly minutes: string;
   readonly trendHeading: string;
-  /** Carries `{from}`, `{to}`, `{highest}`. */
-  readonly trendSummary: string;
-  readonly trendTableToggle: string;
-  readonly dateColumn: string;
-  readonly pledgedColumn: string;
-  readonly pledgesColumn: string;
+  readonly chart: ConsoleChartCopy;
   readonly byStateHeading: string;
   readonly state: Readonly<Record<CampaignState, string>>;
   readonly link: Readonly<Record<string, string>>;
@@ -82,6 +79,7 @@ export function consoleDashboardCopyFrom(t: AdminTranslator, chrome: ConsoleChro
     periodLegend: word('periodLegend'),
     period: record('period') as ConsoleDashboardCopy['period'],
     windowNote: template('windowNote'),
+    nowHeading: word('nowHeading'),
     loading: word('loading'),
     emptyTitle: word('emptyTitle'),
     emptyBody: word('emptyBody'),
@@ -96,11 +94,7 @@ export function consoleDashboardCopyFrom(t: AdminTranslator, chrome: ConsoleChro
     hours: template('hours'),
     minutes: template('minutes'),
     trendHeading: word('trendHeading'),
-    trendSummary: template('trendSummary'),
-    trendTableToggle: word('trendTableToggle'),
-    dateColumn: word('dateColumn'),
-    pledgedColumn: word('pledgedColumn'),
-    pledgesColumn: word('pledgesColumn'),
+    chart: consoleChartCopyFrom(t),
     byStateHeading: word('byStateHeading'),
     state: record('state') as ConsoleDashboardCopy['state'],
     link: record('link'),

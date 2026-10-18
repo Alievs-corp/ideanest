@@ -10,6 +10,7 @@ import az.ideanest.legal.application.NothingToPublishException;
 import az.ideanest.legal.application.SignatureOverAnotherVersionException;
 import az.ideanest.legal.application.SignerNameMismatchException;
 import az.ideanest.legal.application.SigningNotAvailableException;
+import az.ideanest.legal.application.VersionNotYetEffectiveException;
 import az.ideanest.signature.application.SigningUnavailableException;
 import az.ideanest.signature.application.UnknownSigningSessionException;
 import az.ideanest.legal.domain.PublishedDocumentIsImmutableException;
@@ -133,6 +134,28 @@ public class LegalExceptionHandler {
                         "kind", exception.kind().name(),
                         "locale", exception.locale(),
                         "version", exception.version()));
+        return problem;
+    }
+
+    /**
+     * <strong>409: that version does not govern yet.</strong>
+     *
+     * <p>It shows itself on {@code meta.effectiveFrom}; nothing has to be pressed. 409 rather
+     * than 400, because the request is right and the date is what refuses it.
+     */
+    @ExceptionHandler(VersionNotYetEffectiveException.class)
+    public ProblemDetail handleNotYetEffective(VersionNotYetEffectiveException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/version-not-yet-effective"));
+        problem.setTitle("That version does not govern yet");
+        problem.setDetail("It is shown on its effective date, without anything being pressed.");
+        problem.setProperty("code", "VERSION_NOT_YET_EFFECTIVE");
+        problem.setProperty(
+                "meta",
+                Map.of(
+                        "kind", exception.kind().name(),
+                        "version", exception.version(),
+                        "effectiveFrom", exception.effectiveFrom().toString()));
         return problem;
     }
 

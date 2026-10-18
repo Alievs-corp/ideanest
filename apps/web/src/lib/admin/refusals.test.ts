@@ -76,3 +76,22 @@ describe('a refused read, as every other screen calls it', () => {
     expect(actionMessageFor(new ApiError(400, { title: 'Bad Request' }), 's', older)).toBe(older.refused);
   });
 });
+
+describe('a refused read, by its code', () => {
+  it('says why a reporting window was refused in the reader’s language, not the service’s', () => {
+    for (const code of ['INVALID_ANALYTICS_RANGE', 'INVALID_DASHBOARD_RANGE']) {
+      const refused = new ApiError(400, { code, title: 'That reporting window cannot be read', detail: 'A reporting window covers at most 366 days' });
+      expect(consoleMessageFor(refused, 'the figures', AZ)).toBe(AZ.invalidRange);
+    }
+  });
+
+  it('asks for the list to be reloaded when a "load more" position is no longer accepted', () => {
+    const refused = new ApiError(400, { code: 'INVALID_CURSOR', detail: 'Send the nextCursor from the previous page, or nothing for the first.' });
+    expect(consoleMessageFor(refused, 'the audit trail', AZ)).toBe(AZ.invalidCursor);
+  });
+
+  it('never prints Spring’s English title for a failure on the service’s side', () => {
+    const failed = new ApiError(500, { title: 'Internal Server Error' });
+    expect(consoleMessageFor(failed, 'the audit trail', AZ)).toBe(AZ.serviceFailed);
+  });
+});

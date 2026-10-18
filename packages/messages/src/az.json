@@ -847,7 +847,10 @@
       "unreachable": "Xidmətə çatmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
       "needsCapabilityToAct": "Bu əməliyyat üçün {capability} səlahiyyəti lazımdır, rollarınız isə onu daxil etmir. Bunu administrator verə bilər.",
       "capabilityNamed": "«{name}» ({capability})",
-      "invalidRequest": "Xidmət sorğunu oxuya bilmədi. Sahələri yoxlayıb yenidən cəhd edin."
+      "invalidRequest": "Xidmət sorğunu oxuya bilmədi. Sahələri yoxlayıb yenidən cəhd edin.",
+      "invalidRange": "Bu dövr oxuna bilməz: başlanğıc sondan sonra ola bilməz və dövr bir ildən uzun ola bilməz.",
+      "invalidCursor": "Siyahı dəyişib və növbəti səhifə tapılmadı. Siyahını yenidən yükləyin.",
+      "serviceFailed": "Xidmətdə xəta baş verdi. Bir az sonra yenidən cəhd edin."
     },
     "note": {
       "why": "Səbəb",
@@ -871,6 +874,23 @@
         "copy": "İdentifikatoru kopyala",
         "copyLabel": "{id} ilə başlayan tam identifikatoru kopyala",
         "copied": "Kopyalandı"
+      },
+      "chart": {
+        "summary": "{from} – {to} arasında toplanan vəsait: cəmi {total}; ən yüksək {period}, {amount}.",
+        "granularity": {
+          "day": "Hər sütun bir gündür",
+          "week": "Hər sütun bir həftədir",
+          "month": "Hər sütun bir aydır"
+        },
+        "highest": "Ən yüksək: {period} — {amount}",
+        "total": "Cəmi: {amount}",
+        "count": "Dəstək sayı: {count}",
+        "range": "{from} – {to}",
+        "keyboardHint": "Sütunlar arasında sağ və sol ox düymələri ilə keçin.",
+        "tableToggle": "Rəqəmləri cədvəl kimi göstər",
+        "periodColumn": "Dövr",
+        "countColumn": "Dəstək sayı",
+        "amountColumn": "Toplanan"
       }
     },
     "pages": {
@@ -878,25 +898,25 @@
         "metaTitle": "Audit jurnalı",
         "metaDescription": "Platformanın qeyd etdiyi hər imtiyazlı əməliyyat, ən yenisi əvvəldə.",
         "title": "Audit jurnalı",
-        "intro": "Kim nə etdi, nəyə etdi və nəticəsi necə oldu. Cədvəl konvensiya ilə deyil, PostgreSQL-in özündə yalnız əlavəyə açıqdır, ona görə bu səhifədəki — və xidmətdəki — heç nə artıq burada olan sətri dəyişə bilməz."
+        "intro": "Kim nə etdi, nəyə etdi və nəticəsi necə oldu. Qeydlər dəyişdirilə və silinə bilməz."
       },
       "health": {
         "metaTitle": "Sistemin vəziyyəti",
         "metaDescription": "Növbə dərinliyi, uğursuz işlər və provayder vəziyyəti, səhifəni açdığınız anda ölçülür.",
         "title": "Sistemin vəziyyəti",
-        "intro": "Səhifəni açdığınız anda ölçülür. Bu səhifədəki heç nə kimisə oyatmır və siz baxmayanda heç nə onu izləmir — nəyisə şübhələndiyiniz zaman oxuyun, ondan sizə xəbər verməsini gözləməyin."
+        "intro": "Növbələr, planlaşdırılmış işlər və ödəniş provayderləri bir baxışda."
       },
       "flags": {
         "metaTitle": "Funksiya bayraqları",
-        "metaDescription": "Tədricən yayım və eksperimentlər, dediyini edən dayandırma açarı ilə.",
+        "metaDescription": "Tədricən yayım və eksperimentlər: kim nəyi görür və nə qədər geniş.",
         "title": "Funksiya bayraqları",
-        "intro": "Yayım faizi sabit heş ilə müəyyən olunur, ona görə onu genişlətmək yalnız adam əlavə edir — rəqəm artdığı üçün heç kim funksiyanı itirmir. Bayrağı söndürmək onun haqqında qalan hər şeyi ləğv edir."
+        "intro": "Funksiyanı hamı üçün, daxil olmuş oxucuların bir hissəsi üçün və ya seçilmiş hesablar üçün açın. Faizi artıranda artıq görənlər görməyə davam edir, yalnız yeni adamlar əlavə olunur."
       },
       "analytics": {
         "metaTitle": "Platforma analitikası",
         "metaDescription": "Bütün platforma üzrə həcm, uğur nisbəti və orta dəstək məbləği.",
         "title": "Platforma analitikası",
-        "intro": "AD-13-ün beşindən üçü. Kohortlar və huniler burada deyil və ekran onlara oxşayan iki rəqəmi təxmin etmək əvəzinə hər birinin nəyi gözlədiyini deyir."
+        "intro": "Seçilmiş dövr üzrə dəstək həcmi, dəstəkçilər, orta dəstək və kampaniyaların nəticəsi."
       },
       "curation": {
         "metaTitle": "Kolleksiyalar",
@@ -938,12 +958,12 @@
         "metaTitle": "E-poçt şablonları",
         "metaDescription": "Platformanın göndərdiyi hər mesajın mətni və ona edilən hər redaktə.",
         "title": "E-poçt şablonları",
-        "intro": "Kodla gələn mətn, kimsə onu yenidən yazmayıbsa, platformanın göndərdiyidir. Redaktə heç nəyi yerində dəyişmir, versiya əlavə edir, ona görə «bu bildiriş martda nə deyirdi» sualı cavablana bilən qalır."
+        "intro": "Kimsə yenidən yazmayıbsa, platforma hazır mətni göndərir. Hər dil ayrıca redaktə olunur və hər redaktə yeni versiyadır, ona görə «bu bildiriş martda nə deyirdi» sualı cavablana bilən qalır."
       },
       "emailTemplatesType": {
         "metaTitle": "E-poçt mətni",
-        "metaDescription": "Kodla gələn mətn, varsa əvəzləmə və kimin nə yazdığının hər versiyası.",
-        "intro": "Mövzu və birinci abzas administratorun yenidən yaza biləcəyi hissədir. Başlıq, düymə etiketi və növün şərtli ikinci abzası kodla gələn kataloqda qalır — etiketsiz düymə pis yazılmış deyil, sınmış e-poçtdur."
+        "metaDescription": "Hazır mətn, hər dil üçün yenidən yazılmış mətn və hər versiyanı kimin yazdığı.",
+        "intro": "Mövzunu və birinci abzası hər dil üçün ayrıca yenidən yaza bilərsiniz. Başlıq, düymə və ikinci abzas hazır mətndə qalır, ona görə e-poçtun quruluşu pozulmur."
       },
       "fees": {
         "metaTitle": "Komissiyalar",
@@ -1067,9 +1087,9 @@
       },
       "legal": {
         "metaTitle": "Hüquqi sənədlər",
-        "metaDescription": "§22.2-nin tələb etdiyi səkkiz sənəd, onların versiyaları və dərci.",
+        "metaDescription": "Platformanın səkkiz hüquqi sənədi, onların versiyaları və dərci.",
         "title": "Hüquqi sənədlər",
-        "intro": "Dərc edilmiş versiya dəyişdirilmir. Düzəliş yeni versiyadır, köhnəsi isə oxunaqlı qalır — çünki qəbul qeydi məhz versiyanı göstərir."
+        "intro": "Platformanın hüquqi sənədlərini hər dildə yazın, dərc edin və saytda hansı versiyanın göstərildiyini seçin."
       },
       "revenue": {
         "metaTitle": "Gəlir",
@@ -1093,7 +1113,11 @@
         "metaTitle": "Texniki xidmət pəncərələri",
         "metaDescription": "Planlı texniki xidməti planlaşdırın, başladın və bitirin — oxucular əvvəlcədən xəbərdar edilir.",
         "title": "Texniki xidmət",
-        "intro": "Pəncərə qüvvədə olanda hər oxucu texniki xidmət səhifəsini görür, xidmət isə girişdən, ödəniş provayderlərinin webhook-larından və əməkdaşlardan başqa hər şeyi rədd edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir. Pul və ya mesaj göndərən fon işləri dayanır və pəncərə bitəndə davam edir."
+        "intro": "Pəncərə qüvvədə olanda oxucular texniki xidmət səhifəsini görür, əməkdaşlar isə konsolda işləməyə davam edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir.",
+        "detailsSummary": "Pəncərə vaxtı nə dayanır, nə işləyir",
+        "detailsPasses": "Keçənlər: əməkdaşlar, giriş, ödəniş provayderlərinin bildirişləri və bank yoxlamasından sonra sayta qayıdış. Qalan hər sorğu rədd edilir.",
+        "detailsPaused": "Dayanan altı fon işi: geri ödəmələr, cavabsız ödəniş səhifələrinin yoxlanması, mühasibat tutuşdurması, bildirişlərin göndərilməsi və icmalları, açılış xatırlatmaları.",
+        "detailsRunning": "İşləməyə davam edənlər: kampaniyaların açılması və son tarixdə bağlanması, vəsaitin avtomatik çıxarılması və göndərilənlər növbəsi."
       }
     },
     "screens": {
@@ -1103,9 +1127,7 @@
         "filterLabel": "Əməliyyat nə haqqında idi",
         "everything": "Hamısı",
         "clearDates": "Tarixləri təmizlə",
-        "toHint": "Bu günün sonuna qədər.",
         "toLabel": "Son",
-        "fromHint": "Bu günün əvvəlindən.",
         "fromLabel": "Başlanğıc",
         "actorHint": "Kimin əməliyyatları göstərilsin. Kimisə axtarmaq özü də qeydə alınan oxumadır.",
         "actorLabel": "İcraçı",
@@ -1117,7 +1139,7 @@
         "filteredBody": "Bu filtrlərə uyğun imtiyazlı əməliyyat yoxdur. Qalanını görmək üçün onları genişləndirin.",
         "refused": "Rədd edildi",
         "requestId": "sorğu {id}",
-        "footnote": "Bu səhifəni oxumaq ona bir sətir yazır. Heç kimin yoxlamadığı audit səthi araşdırmanın şübhə ilə başladığı səthdir, ona görə oxumaq da yazmaq kimi qeyd olunur — filtr və sətirlərin sayı ilə, heç vaxt sətirlərin özü ilə deyil.",
+        "footnote": "Bu səhifəni açmaq və filtrləmək də jurnala yazılır.",
         "entity": {
           "account": "Hesablar",
           "collaborator": "Əməkdaşlar",
@@ -1127,7 +1149,7 @@
           "feature_flag": "Funksiya bayraqları",
           "fee_schedule": "Komissiya cədvəlləri",
           "maintenance_window": "Texniki xidmət pəncərələri",
-          "payout": "Ödənişlər",
+          "payout": "Müəllif köçürmələri",
           "project": "Kampaniyalar",
           "refund": "Geri qaytarmalar",
           "report": "Şikayətlər",
@@ -1135,7 +1157,10 @@
           "subscription": "Abunəliklər",
           "subscription_plan": "Abunəlik planları",
           "support_ticket": "Dəstək müraciətləri",
-          "taxonomy": "Taksonomiya"
+          "taxonomy": "Taksonomiya",
+          "legal_document": "Hüquqi sənədlər",
+          "subscription_charge": "Plan ödənişləri",
+          "user": "İstifadəçi hesabları"
         },
         "action": {
           "account": {
@@ -1149,7 +1174,9 @@
             "password_reset": "Parol sıfırlandı",
             "reinstated": "Hesab bərpa edildi",
             "searched": "Hesablar axtarıldı",
-            "suspended": "Hesab dayandırıldı"
+            "suspended": "Hesab dayandırıldı",
+            "blocked": "İstifadəçi bloklandı",
+            "unblocked": "İstifadəçinin bloku götürüldü"
           },
           "audit": {
             "trail_read": "Audit izi oxundu"
@@ -1163,7 +1190,8 @@
             "handled": "Geri tələb qərara bağlandı"
           },
           "email": {
-            "template_edited": "E-poçt şablonu dəyişdirildi"
+            "template_edited": "E-poçt şablonu dəyişdirildi",
+            "template_withdrawn": "E-poçt şablonu geri çəkildi"
           },
           "feature": {
             "flag_changed": "Funksiya bayrağı dəyişdirildi"
@@ -1192,9 +1220,13 @@
             "log_read": "Ödəniş jurnalı oxundu"
           },
           "payout": {
-            "approved": "Ödəniş təsdiqləndi",
-            "calculated": "Ödəniş hesablandı",
-            "sent": "Ödəniş göndərildi"
+            "approved": "Müəllif köçürməsi təsdiqləndi",
+            "calculated": "Müəllif köçürməsi hesablandı",
+            "sent": "Müəllif köçürməsi göndərildi",
+            "approval_withdrawn": "Müəllif köçürməsindən imza geri götürüldü",
+            "cancelled": "Müəllif köçürməsi ləğv edildi",
+            "bank_transfer_started": "Müəllif köçürməsi üçün bank köçürməsi başladıldı",
+            "bank_transfer_abandoned": "Müəllif köçürməsinin bank köçürməsi dayandırıldı"
           },
           "project": {
             "addresses_locked": "Ünvanlar bağlandı",
@@ -1210,7 +1242,7 @@
             "update_published": "Yenilik dərc edildi"
           },
           "refund": {
-            "issued": "Geri qaytarma edildi",
+            "issued": "Pul geri qaytarıldı",
             "routed_to_bank_transfer": "Geri ödəniş bank köçürməsinə yönəldildi",
             "bank_details_recorded": "Geri ödənişin bank rekvizitləri qeyd edildi",
             "bank_details_revealed": "Geri ödənişin bank rekvizitləri açıldı",
@@ -1235,7 +1267,10 @@
             "activated": "Abunəlik başladı",
             "canceled": "Abunəlik dayandırıldı",
             "plan_changed": "Abunəlik planı dəyişdirildi",
-            "plan_created": "Abunəlik planı yaradıldı"
+            "plan_created": "Abunəlik planı yaradıldı",
+            "payment_refunded": "Plan ödənişi geri qaytarıldı",
+            "renewed": "Abunəlik yeniləndi",
+            "revenue_exported": "Plan gəliri ixrac edildi"
           },
           "support": {
             "ticket_handled": "Dəstək müraciəti cavablandırıldı"
@@ -1246,7 +1281,74 @@
           "two_factor": {
             "disabled": "İki mərhələli giriş söndürüldü",
             "enabled": "İki mərhələli giriş qoşuldu"
+          },
+          "partner": {
+            "profile_saved": "Partnyor profili saxlanıldı",
+            "profile_removed": "Partnyor profili silindi",
+            "statistics_read": "Partnyor statistikası açıldı"
+          },
+          "dashboard": {
+            "read": "İcmal açıldı"
+          },
+          "analytics": {
+            "read": "Platforma analitikası açıldı"
+          },
+          "legal": {
+            "document_published": "Hüquqi sənəd dərc edildi",
+            "document_activated": "Hüquqi sənədin versiyası qüvvəyə mindi",
+            "document_drafted": "Hüquqi sənədin qaralaması saxlanıldı",
+            "acceptance_record_read": "Razılıq qeydləri açıldı",
+            "agreement_signed": "Müqavilə imzalandı",
+            "signed_agreement_read": "İmzalanmış müqavilə açıldı"
+          },
+          "compliance": {
+            "override_granted": "Uyğunluq tələbindən istisna verildi",
+            "override_revoked": "Uyğunluq istisnası geri alındı",
+            "legal_subject_recorded": "Hüquqi subyekt məlumatları qeyd edildi",
+            "legal_subject_read": "Hüquqi subyekt məlumatları açıldı",
+            "payout_destination_recorded": "Köçürmə hesabı qeyd edildi",
+            "payout_destination_verified": "Köçürmə hesabı yoxlanıldı",
+            "payout_destination_read": "Köçürmə hesabı açıldı",
+            "payout_destination_account_revealed": "Köçürmə hesabının nömrəsi göstərildi"
+          },
+          "obligation": {
+            "update_resolved": "Yenilik öhdəliyi həll edildi"
           }
+        },
+        "datesHint": "Başlanğıc günü əvvəlindən, son günü sonuna qədər daxildir.",
+        "hideReads": "Ekran oxumalarını gizlət",
+        "hideReadsHint": "Jurnalın, icmalın, analitikanın, ödəniş jurnalının, baş kitabın və risk növbəsinin açılması, hesab axtarışları gizlənir. Kiminsə şəxsi sənədini və ya bank hesabını açmaq həmişə görünür.",
+        "actorApplied": "Yalnız bu şəxsin əməliyyatları:",
+        "everyone": "Hamını göstər",
+        "byThisPerson": "Bu şəxsin əməliyyatları",
+        "byThisPersonLabel": "Yalnız {name} adlı şəxsin əməliyyatlarını göstər",
+        "technicalNote": "Texniki qeyd",
+        "actorType": {
+          "USER": "İstifadəçi",
+          "MODERATOR": "Platforma əməkdaşı",
+          "SYSTEM": "Sistem"
+        },
+        "entityOne": {
+          "project": "Kampaniya",
+          "account": "Hesab",
+          "report": "Şikayət",
+          "payout": "Müəllif köçürməsi",
+          "refund": "Geri qaytarma",
+          "dispute": "Geri tələb",
+          "subscription": "Abunəlik",
+          "subscription_charge": "Plan ödənişi",
+          "subscription_plan": "Abunəlik planı",
+          "fee_schedule": "Komissiya cədvəli",
+          "legal_document": "Hüquqi sənəd",
+          "support_ticket": "Dəstək müraciəti",
+          "collaborator": "Əməkdaş",
+          "session": "Sessiya",
+          "email_template": "E-poçt şablonu",
+          "feature_flag": "Funksiya bayrağı",
+          "taxonomy": "Taksonomiya",
+          "maintenance_window": "Texniki xidmət pəncərəsi",
+          "user": "İstifadəçi hesabı",
+          "collection": "Kolleksiya"
         }
       },
       "health": {
@@ -1254,57 +1356,159 @@
         "loadingList": "Vəziyyət lövhəsi yüklənir",
         "readFailed": "Lövhəni oxumaq mümkün olmadı.",
         "notMonitoredTitle": "Bu səhifə heç kimə xəbərdarlıq göndərmir",
-        "notMonitoredBody": "Buradakı hər şey siz açanda ölçülür. Bu ekrandakı heç nə kimisə oyatmır və siz baxmayanda heç nə onu izləmir — §18-in müşahidə işi (#138) bunu edəcək. Nəyisə şübhələndiyiniz zaman oxuyun; sizə xəbər verməsinə güvənməyin.",
+        "notMonitoredBody": "Buradakı hər şey səhifəni açdığınız anda ölçülür. Bu ekran heç kimə xəbər vermir və siz baxmayanda heç nə onu izləmir. Nəyisə şübhələndiyiniz zaman oxuyun, sizə xəbər verəcəyini gözləməyin.",
         "overall": "Ümumi",
-        "measuredSeconds": "{count} saniyə əvvəl ölçülüb.",
-        "measuredMinutes": "{count} dəqiqə əvvəl ölçülüb.",
+        "measuredAt": "Ölçülmə vaxtı: {time}.",
         "measureAgain": "Yenidən ölç",
         "queues": "Növbələr",
         "waiting": "{count} gözləyir",
-        "givenUp": "{count} imtina edilib",
+        "givenUp": "{count} göndərilə bilmədi (cəhdlər tükənib)",
+        "givenUpHint": "Bunlar özü yenidən göndərilməyəcək. Səbəbi aradan qaldırıb yenidən göndərmək üçün texniki komandaya bildirin.",
         "jobs": "Planlaşdırılmış işlər",
-        "overdue": "{count} dəqiqə gecikib",
+        "jobsAttention": "Diqqət tələb edən işlər: {count}",
+        "jobsAllWell": "Bütün işlər qaydasındadır.",
+        "overdue": {
+          "minutes": {
+            "one": "{count} dəqiqə gecikir",
+            "few": "{count} dəqiqə gecikir",
+            "many": "{count} dəqiqə gecikir",
+            "other": "{count} dəqiqə gecikir"
+          },
+          "hours": {
+            "one": "{count} saat gecikir",
+            "few": "{count} saat gecikir",
+            "many": "{count} saat gecikir",
+            "other": "{count} saat gecikir"
+          },
+          "days": {
+            "one": "{count} gün gecikir",
+            "few": "{count} gün gecikir",
+            "many": "{count} gün gecikir",
+            "other": "{count} gün gecikir"
+          }
+        },
         "onTime": "vaxtında",
-        "attempts": "{count} cəhd",
+        "lastRun": "Son işləmə: {time}",
+        "neverRun": "Hələ heç işləməyib",
+        "lastErrorLabel": "Son xətanın texniki mətni",
         "providers": "Provayderlər",
         "notConfigured": "Konfiqurasiya edilməyib",
+        "attempts": {
+          "one": "{count} cəhd",
+          "few": "{count} cəhd",
+          "many": "{count} cəhd",
+          "other": "{count} cəhd"
+        },
         "status": {
           "HEALTHY": "Sağlam",
           "DEGRADED": "Baxmağa dəyər",
-          "CRITICAL": "Dayanıb"
+          "CRITICAL": "Təcili baxın"
         },
         "jobState": {
           "READY": "Növbəti işə hazır",
-          "RUNNING": "İşləyir",
-          "FAILED": "Sonuncu dəfə uğursuz olub",
-          "DISABLED": "Söndürülüb"
+          "DEAD": "Cəhdlər tükənib, özü yenidən başlamayacaq"
+        },
+        "hold": {
+          "MAINTENANCE": "Texniki xidmət bitənə qədər dayandırılıb",
+          "UNSCHEDULED": "Bu quraşdırmada cədvəli yoxdur, öz-özünə işə düşmür"
         },
         "queue": {
-          "outbox": "Göndərilənlər növbəsi",
-          "scheduled-jobs": "Planlaşdırılmış işlər"
+          "outbox": "Göndərilənlər növbəsi"
+        },
+        "kind": {
+          "payments": "Ödənişlər"
+        },
+        "providerName": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Sınaq provayderi"
+        },
+        "reason": {
+          "NOT_CONFIGURED": "Bu quraşdırmada açarları yoxdur. Söndürülüb, xəta deyil.",
+          "CIRCUIT_OPEN": "Ardıcıl uğursuz cavablardan sonra müvəqqəti xidmətdən çıxarılıb. Platforma bir azdan yenidən yoxlayacaq."
+        },
+        "jobName": {
+          "account-anonymiser": "Hesabların anonimləşdirilməsi",
+          "analytics-aggregator": "Analitikanın gündəlik yığımı",
+          "automatic-withdrawal": "Vəsaitin avtomatik çıxarılması",
+          "campaign-finalizer": "Kampaniyaların son tarixdə bağlanması",
+          "campaign-launcher": "Planlaşdırılmış kampaniyaların açılması",
+          "campaign-refunds": "Uğursuz kampaniyalar üzrə geri ödəmələr",
+          "deadline-reminder": "Son tarix xatırlatmaları",
+          "exchange-rate-refresh": "Valyuta məzənnələrinin yenilənməsi",
+          "hosted-charge-sweep": "Cavabsız ödəniş səhifələrinin yoxlanması",
+          "idempotency-key-cleaner": "Köhnə təkrar sorğu açarlarının silinməsi",
+          "identity-document-retention": "Şəxsiyyət sənədlərinin saxlanma müddəti",
+          "ledger-reconciliation": "Mühasibat kitabının tutuşdurulması",
+          "media-processing": "Yüklənmiş mediaların emalı",
+          "media-video-processing": "Videoların emalı",
+          "notification-digest": "Bildiriş icmalları",
+          "notification-sender": "Bildirişlərin göndərilməsi",
+          "outbox-relay": "Göndərilənlər növbəsinin ötürülməsi",
+          "payout-destination-reminders": "Ödəniş hesabı xatırlatmaları",
+          "push-device-retention": "Köhnə push qeydiyyatlarının silinməsi",
+          "reminder-sender": "Açılış xatırlatmaları",
+          "reservation-cleaner": "Bitməmiş sifarişlərin yerlərinin qaytarılması",
+          "subscription-renewal-reminders": "Abunə yenilənməsi xatırlatmaları",
+          "survey-nudge": "Sorğu xatırlatmaları",
+          "update-obligation-sweep": "Aylıq yeniləmə öhdəliyinin yoxlanması"
         }
       },
       "flags": {
         "subject": "funksiya bayraqlarını",
         "heading": "Bayraqlar",
         "loadingList": "Funksiya bayraqları yüklənir",
+        "notReadTitle": "Hələ heç bir ekran bu bayraqları oxumur",
+        "notReadBody": "Açarı dəyişmək platformanın verdiyi cavabı dəyişir. Hansısa funksiya bayrağı oxumağa başlayana qədər heç nə buna reaksiya vermir.",
         "emptyTitle": "Bayraq yoxdur",
-        "emptyBody": "Bu quraşdırmada heç nə açarın arxasında deyil. Mövcud olmayan bayrağı soruşan kod false alır, ona görə platforma qurulmamış hər funksiyanı sönmüş kimi qəbul edir — bu da təhlükəsiz istiqamətdir.",
+        "emptyBody": "Hələ heç bir bayraq yaradılmayıb. Mövcud olmayan bayraq hamı üçün bağlı sayılır.",
         "on": "Açıq",
         "off": "Bağlı",
         "rollout": "Yayım",
-        "alwaysIn": "{count} həmişə daxil",
-        "lastChanged": "Son dəyişiklik {date}",
-        "offForEverybody": "hamı üçün bağlıdır, üzərində adı çəkilən hesablar da daxil olmaqla",
+        "rolloutGroup": "{flag} bayrağının yayımı",
+        "rolloutNow": "Yayım: {percent}",
+        "reach": {
+          "off": "Hamı üçün bağlıdır, adı çəkilən hesablar da daxil olmaqla.",
+          "nobody": "Açıqdır, amma heç kimə çatmır: yayım sıfırdır və heç bir hesab əlavə edilməyib.",
+          "named": "Yalnız adı çəkilən hesablar görür.",
+          "some": "Daxil olmuş oxucuların bir hissəsi ({percent}) və adı çəkilən hesablar görür. Daxil olmamış ziyarətçilər görmür.",
+          "everybody": "Hamı görür, daxil olmamış ziyarətçilər də."
+        },
+        "accountsHeading": "Həmişə daxil olan hesablar",
+        "accountsNone": "Heç bir hesab əlavə edilməyib.",
+        "accountsReadOnly": "Hesab əlavə etmək və çıxarmaq üçün hesabları idarə etmək icazəsi lazımdır.",
+        "accountsFull": "Bir bayrağa ən çox 200 hesab əlavə etmək olar.",
+        "addAccount": "Hesab əlavə et",
+        "removeAccount": "Çıxar",
+        "removeAccountLabel": "{name} hesabını {flag} bayrağından çıxar",
+        "editDescription": "Təsviri dəyiş",
+        "saveDescription": "Təsviri saxla",
+        "lastChanged": "Son dəyişiklik: {date}, {name}",
+        "confirmLabel": "{flag} bayrağının dəyişikliyini təsdiqləyin",
+        "confirmWiden": "{flag} bayrağı daha çox adama çatacaq. Saxladıqdan sonra: {reach}",
+        "confirmYes": "Bəli, saxla",
+        "keep": "Hələ yox",
         "addHeading": "Bayraq əlavə et",
-        "addIntro": "Yeni bayraqlar bağlı və sıfır faizlə gəlir. Yayımı genişlətmək yalnız adam əlavə edir — içindəki hesablar seçmə ilə deyil, sabit heş ilə müəyyən olunur, ona görə faiz artdığı üçün heç kim funksiyanı itirmir.",
+        "addIntro": "Yeni bayraq bağlı, sıfır faizlə və hesabsız yaranır. Sonra onu kartında açıb genişlədə bilərsiniz.",
         "nameLabel": "Ad",
-        "nameHint": "Kiçik hərflərlə və defislə, kodun istədiyi kimi.",
-        "nameError": "Kiçik hərflər, rəqəmlər və defis.",
+        "nameHint": "Kiçik hərflər, rəqəmlər və defis, ən azı üç simvol: checkout-v2.",
+        "nameError": "Kiçik hərflər, rəqəmlər və defis. Hərflə başlayıb hərf və ya rəqəmlə bitməlidir.",
         "switchesLabel": "Nəyi açıb-bağlayır",
+        "descriptionRequired": "Bayrağın nəyi açıb-bağladığını yazın.",
+        "created": "{flag} bağlı vəziyyətdə yaradıldı.",
+        "doneTitle": "Hazırdır",
         "working": "İşlənir",
         "add": "Əlavə et",
-        "failedTitle": "Bu alınmadı"
+        "failedTitle": "Bu alınmadı",
+        "errors": {
+          "FEATURE_FLAG_EXISTS": "Bu adda bayraq artıq var. Onu yuxarıdakı siyahıda dəyişin.",
+          "FEATURE_FLAG_CHANGED": "Siz oxuyandan sonra bu bayrağı başqası dəyişib. Siyahı yenidən oxundu: dəyişikliyə yenidən baxın.",
+          "FEATURE_FLAG_NOT_FOUND": "Bu bayraq artıq yoxdur. Siyahı yenidən oxundu.",
+          "FEATURE_FLAG_KEY_INVALID": "Bu ad uyğun deyil: kiçik hərflər, rəqəmlər və defis olmalıdır."
+        },
+        "addAccountLabel": "{flag} bayrağına hesab əlavə et",
+        "addAccountClose": "Bağla"
       },
       "analytics": {
         "subject": "platforma rəqəmlərini",
@@ -1315,36 +1519,50 @@
           "365": "365 gün"
         },
         "range": "{from} ilə {to} arasında",
-        "volume": "Həcm",
+        "volume": "Xalis həcm",
         "pledges": "Dəstəklər",
         "backers": "Dəstəkçilər",
         "averagePledge": "Orta dəstək",
-        "liveProjects": "Aktiv kampaniyalar",
+        "liveProjects": "İndi aktiv kampaniyalar",
         "planRevenue": "Plan gəliri",
         "planPayments": "Plan ödənişləri",
         "otherCurrencyTitle": "Bəzi dəstəklər bu cəmlərə daxil deyil",
-        "otherCurrencyBody": "Bu dövrdəki {count} dəstək başqa valyutada idi. §21.2 onları çevirmək üçün heç nə vermir, ona görə onlar burada sayılır və heç kimin uzlaşdıra bilməyəcəyi rəqəmə əlavə edilmək əvəzinə həcmdən kənarda saxlanılır.",
-        "outcomesHeading": "Bağlanan kampaniyalar",
-        "noneClosed": "Bu dövrdə heç bir kampaniya bağlanmayıb. Bu, sıfır uğur nisbəti deyil — ümumiyyətlə nisbətin olmamasıdır, ona görə burada heç nə göstərilmir.",
+        "otherCurrencyBody": "Bu dövrdə {count} dəstək başqa valyutada edilib; onlar çevrilmədən ayrıca sayılır və həcmə daxil deyil.",
+        "outcomesHeading": "Bu dövrdə qərara bağlanan kampaniyalar",
+        "noneClosed": "Bu dövrdə qərara bağlanan kampaniya yoxdur.",
         "succeeded": "Uğurlu",
         "didNot": "Uğursuz",
         "successRate": "Uğur nisbəti",
-        "dailyHeading": "Günlük həcm",
+        "dailyHeading": "Dövr üzrə həcm",
         "nothingPledged": "Bu dövrdə heç nə dəstəklənməyib.",
-        "notBuiltHeading": "Bu ekranın cavab vermədikləri",
+        "notBuiltHeading": "Hələ hazır olmayanlar",
         "notBuilt": {
-          "COHORTS": "Kohortlar üçün dəstəkçinin ilk dəstəyinə görə qurulmuş yığım lazımdır; belə bir şey yoxdur (#313).",
-          "FUNNELS": "Huniler üçün ziyarətdən dəstəyə gedən yol lazımdır; referral_touches gəlişi qeyd edir, sonra nə olduğunu yox (#313)."
+          "COHORTS": "Kohort təhlili hələ hazır deyil.",
+          "FUNNELS": "Ziyarətdən dəstəyə qədər huni hələ hazır deyil."
         },
-        "busiestDay": "Ən yüksək gün {day}, {amount}"
+        "windowLegend": "Dövr",
+        "populationNote": "Yalnız bu dövrdə toplanan və geri qaytarılmayan dəstəklər sayılır; qismən geri qaytarılan məbləğlər çıxılıb.",
+        "nowHeading": "İndi",
+        "computedAt": "Rəqəmlər {time} vaxtına oxunub (Bakı vaxtı)."
       },
       "emailTemplates": {
         "subject": "e-poçt şablonlarını",
         "loadingList": "E-poçt şablonları yüklənir",
         "readFailed": "Şablonları oxumaq mümkün olmadı.",
         "emptyTitle": "Şablon yoxdur",
-        "emptyBody": "Bu quraşdırmada platforma heç bir bildiriş göndərmir, bu da demək olar ki, mütləq mesaj kataloqunun yüklənmədiyini bildirir.",
-        "transactional": "Tranzaksiya",
+        "emptyBody": "Xidmət heç bir e-poçt şablonu qaytarmadı. Səhifəni yeniləyin; yenə boş qalarsa, texniki komandaya bildirin.",
+        "mandatory": "Söndürülə bilməz",
+        "shippedOnly": "Hazır mətn",
+        "rewritten": "{language} · versiya {version}",
+        "notFoundTitle": "Belə şablon yoxdur",
+        "notFoundBody": "Bu ünvanda e-poçt şablonu tapılmadı. Siyahıdan birini seçin.",
+        "backToList": "Bütün şablonlar",
+        "language": {
+          "az": "Azərbaycanca",
+          "en": "İngiliscə",
+          "ru": "Rusca",
+          "tr": "Türkcə"
+        },
         "category": {
           "PLEDGES": "Dəstəklər",
           "CAMPAIGN": "Kampaniyalar",
@@ -1353,6 +1571,39 @@
           "REWARDS": "Mükafatlar və sorğular",
           "DISCOVERY": "İzləmələr",
           "SECURITY": "Hesab təhlükəsizliyi"
+        },
+        "type": {
+          "PLEDGE_CONFIRMED": "Dəstək təsdiqləndi",
+          "PLEDGE_EDITED": "Dəstək dəyişdirildi",
+          "GOAL_REACHED": "Kampaniya hədəfə çatdı",
+          "DEADLINE_48H": "Son tarixə 48 saat qalıb",
+          "DEADLINE_24H": "Son tarixə 24 saat qalıb",
+          "CAMPAIGN_SUCCEEDED": "Kampaniya uğurla başa çatdı",
+          "CAMPAIGN_UNSUCCESSFUL": "Kampaniya hədəfə çatmadı",
+          "CAMPAIGN_EXTENDED": "Kampaniyanın müddəti uzadıldı",
+          "UPDATE_DUE_SOON": "Yenilənmə vaxtı yaxınlaşır",
+          "PROJECT_APPROVED": "Kampaniya təsdiqləndi",
+          "PAYMENT_COLLECTED": "Ödəniş alındı",
+          "PAYMENT_FAILED": "Ödəniş keçmədi",
+          "FINAL_PAYMENT_WARNING": "Son ödəniş xəbərdarlığı",
+          "PAYOUT_SENT": "Ödəniş müəllifə köçürüldü",
+          "WITHDRAWAL_REQUESTED": "Vəsaitin çıxarılması tələb edildi",
+          "PAYOUT_DETAILS_NEEDED": "Ödəniş üçün rekvizitlər lazımdır",
+          "REFUND_NEEDS_BANK_DETAILS": "Geri ödəniş üçün bank rekvizitləri lazımdır",
+          "REFUND_SENT_BY_BANK": "Geri ödəniş bank köçürməsi ilə göndərildi",
+          "SUBSCRIPTION_RENEWAL_DUE": "Abunəliyin yenilənməsi yaxınlaşır",
+          "SUBSCRIPTION_LAPSED": "Abunəlik bitdi",
+          "SUBSCRIPTION_RENEWED": "Abunəlik yeniləndi",
+          "NEW_UPDATE_PUBLISHED": "Yeni yenilənmə dərc olundu",
+          "COMMENT_REPLY": "Şərhə cavab",
+          "DIRECT_MESSAGE": "Şəxsi mesaj",
+          "SURVEY_AVAILABLE": "Sorğu açıldı",
+          "SURVEY_OVERDUE": "Sorğunun vaxtı keçib",
+          "REWARD_SHIPPED": "Mükafat göndərildi",
+          "FOLLOWED_CREATOR_LAUNCHED": "İzlənilən müəllif kampaniya açdı",
+          "LAUNCH_REMINDER": "Kampaniyanın açılış xatırlatması",
+          "SAVED_PROJECT_ENDING_SOON": "Saxlanmış kampaniya bitmək üzrədir",
+          "NEW_DEVICE_SIGN_IN": "Yeni cihazdan giriş"
         }
       },
       "emailTemplateEditor": {
@@ -1360,30 +1611,84 @@
         "historySubject": "versiya tarixçəsini",
         "loadingList": "Mətn yüklənir",
         "readFailed": "Mətni oxumaq mümkün olmadı.",
-        "overriddenTitle": "Bu mətn yenidən yazılıb",
-        "overriddenBody": "Versiya {version} canlıdır və platformanın göndərdiyi budur. Onu geri götürmək kodla gələn mətni yenidən göndərir — versiyalar hər halda saxlanılır, çünki «bu bildiriş martda nə deyirdi» sualını kimsə mütləq verir.",
-        "shippedTitle": "Bu, kodla gələn mətndir",
-        "shippedBody": "Heç nə redaktə olunmayıb, ona görə platforma kodla gələn mətni göndərir. Redaktə heç nəyi yerində dəyişmir, versiya əlavə edir.",
-        "shippedHeading": "Kodla gələn mətn",
+        "languageLabel": "Dil",
+        "reach": "Bu mətn {language} oxuyan alıcılara gedir. Başqa dillərin öz mətni var və dəyişmir.",
+        "reachPrimary": "Dil seçməyən və ya platformanın tərcümə etmədiyi dili seçən alıcılar da bu mətni alır.",
+        "overriddenTitle": "Bu dildə mətn yenidən yazılıb",
+        "overriddenBody": "Versiya {version} canlıdır: {language} oxuyanlara göndərilən budur. Hazır mətnə qayıtsanız, versiyalar tarixçədə qalır.",
+        "shippedTitle": "Hazır mətn göndərilir",
+        "shippedBody": "Bu dildə heç nə dəyişdirilməyib, ona görə platforma hazır mətni göndərir. Hər redaktə yeni versiya kimi saxlanılır, heç nə yerində dəyişmir.",
+        "shippedHeading": "Hazır mətn",
+        "shippedNamedLabel": "Kampaniyanın adı ilə — alıcıların demək olar hamısı bunu alır",
+        "shippedPlainLabel": "Kampaniyanın adı bilinməyəndə",
         "yourHeading": "Sizin mətniniz",
-        "mustKeep": "Saxlanmalıdır:",
-        "mustKeepWhy": "— bunlar mesajın daşıdığı faktlardır. Birini itirən ödəniş bildirişi adama nə baş verdiyini demir.",
+        "placeholdersHeading": "Yer tutucular",
+        "placeholdersIntro": "Fiqurlu mötərizədəki rəqəm göndəriləndə həqiqi faktla əvəz olunur. Fiqurlu mötərizəni yalnız bunlar üçün işlədin; apostrof olduğu kimi qalır.",
+        "mustKeep": "saxlanmalıdır",
+        "placeholder": {
+          "0": "alıcının adı",
+          "1": "kampaniyanın adı",
+          "2": "məbləğ",
+          "3": "əlavə fakt: cəhd nömrəsi, tarix və ya say",
+          "4": "hesabın gizlədilmiş nömrəsi",
+          "5": "planın adı"
+        },
+        "campaignFallback": "Kampaniyanın adı olmayan köhnə bildirişlərə hazır mətn gedir, ona görə {placeholder} heç vaxt boş qalmır.",
         "subjectLabel": "Mövzu",
         "bodyLabel": "Birinci abzas",
         "whyLabel": "Səbəb",
         "whyHint": "Tarixçəni bir ildən sonra oxuyacaq adam üçün.",
-        "missingTitle": "Bu, saxlanmalı olan bir şeyi itirir",
-        "missingBody": "{placeholders} çatışmır. Xidmət kodla gələn mətnin istifadə etdiyi yer tutucunu kənarda qoyan əvəzləməni rədd edir və düz edir: hansı kartın rədd edildiyini artıq deməyən bildirişi heç bir rol yoxlaması tuta bilməz.",
-        "saving": "Yadda saxlanılır",
+        "missingTitle": "Saxlanmalı olan fakt itib",
+        "missingBody": "{placeholders} çatışmır. Bu faktlar olmadan mesaj alıcıya nə baş verdiyini demir, ona görə belə mətn saxlanılmır.",
+        "unknownTitle": "Bu mesajda belə fakt yoxdur",
+        "unknownBody": "{placeholders} bu mesajda doldurulmur və göndəriləndə boş qalardı. Yuxarıdakı yer tutuculardan istifadə edin.",
+        "malformedBody": "{field} oxunmur: fiqurlu mötərizə bağlanmayıb və ya içində rəqəmdən başqa nə isə var. Yer tutucunu {example} kimi yazın.",
+        "preview": "Önizləmə",
+        "previewing": "Hazırlanır…",
+        "previewHeading": "Önizləmə",
+        "previewIntro": "Saxlanmamış mətniniz nümunə dəstək üzərində belə görünür.",
+        "previewSubject": "Mövzu: {subject}",
+        "previewFrameTitle": "E-poçtun önizləməsi",
+        "previewStale": "Mətn bu önizləmədən sonra dəyişib.",
+        "testSend": "Özümə göndər",
+        "testSending": "Göndərilir…",
+        "testSent": "Sınaq məktubu öz ünvanınıza göndərildi.",
+        "saving": "Yadda saxlanılır…",
         "saveNew": "Yeni versiya kimi saxla",
-        "withdraw": "Əvəzləməni geri götür",
-        "savedNew": "Yeni canlı versiya kimi saxlanıldı.",
-        "savedWithdrawn": "Geri götürüldü. Kodla gələn mətn yenidən göndərilir.",
+        "confirmSaveLabel": "Saxlamağı təsdiqləyin",
+        "confirmSave": "Versiya {version} dərhal canlı olacaq: bu andan {language} oxuyan alıcılar bu mətni alacaq.",
+        "confirmSaveAction": "Saxla və canlı et",
+        "back": "Geri qayıt",
+        "withdraw": "Hazır mətnə qayıt",
+        "confirmWithdrawLabel": "Hazır mətnə qayıtmağı təsdiqləyin",
+        "confirmWithdraw": "Versiya {version} dayandırılacaq və {language} oxuyan alıcılar yenidən hazır mətni alacaq. Versiya tarixçədə qalır.",
+        "savedNew": "Versiya {version} saxlanıldı və canlıdır: bundan sonrakı bildirişlər bu mətnlə gedir.",
+        "savedWithdrawn": "Hazır mətn yenidən göndərilir.",
+        "restore": "Bu versiyanı bərpa et",
+        "confirmRestoreLabel": "Bərpanı təsdiqləyin",
+        "confirmRestore": "Versiya {from} mətni yeni versiya {version} kimi dərhal canlı olacaq.",
+        "restoredNote": "Versiya {version} bərpa edildi",
+        "showText": "Mətni göstər",
+        "switchLabel": "Dili dəyişməyi təsdiqləyin",
+        "switchConfirm": "Saxlanmamış mətniniz itəcək.",
+        "switchAction": "Mətni at və keç",
         "doneTitle": "Hazırdır",
         "failedTitle": "Bu alınmadı",
         "versionsHeading": "Versiyalar",
+        "versionsEmpty": "Bu dildə hələ heç bir versiya yazılmayıb.",
         "versionLine": "Versiya {version} · {date}",
-        "live": "Canlı"
+        "writtenBy": "Yazan:",
+        "live": "Canlı",
+        "tryAgain": "Yenidən cəhd edin",
+        "errors": {
+          "TEMPLATE_NOT_EMAILED": "Bu bildiriş e-poçtla göndərilmir, ona görə onun e-poçt mətni yoxdur.",
+          "MAIL_RELAY_UNAVAILABLE": "Poçt serveri məktubu qəbul etmədi. Bir az sonra yenidən cəhd edin; təkrarlanarsa, poçt ayarlarını yoxlayın.",
+          "INVALID_REQUEST": "Sahələri yoxlayın: mövzu 300, abzas 50 000, səbəb 2 000 simvoldan uzun ola bilməz."
+        },
+        "field": {
+          "subject": "Mövzu",
+          "body": "Birinci abzas"
+        }
       },
       "moderationQueue": {
         "subject": "moderasiya növbəsini",
@@ -1955,7 +2260,7 @@
           "MANAGE_DISPUTES": "Geri tələblərə cavab vermək",
           "APPROVE_PAYOUT": "Ödənişi təsdiqləyib göndərmək",
           "HANDLE_SUPPORT": "Dəstək müraciətlərinə cavab vermək",
-          "CONFIGURE_PLATFORM": "Komissiyaları, funksiya bayraqlarını və e-poçt mətnlərini dəyişmək",
+          "CONFIGURE_PLATFORM": "Komissiyaları, planları, funksiya bayraqlarını, e-poçt mətnlərini və texniki xidmət pəncərələrini idarə etmək",
           "VIEW_AUDIT": "Audit izini oxumaq",
           "VIEW_HEALTH": "Növbə dərinliyini və provayder vəziyyətini oxumaq",
           "PUBLISH_LEGAL_DOCUMENT": "Hüquqi sənədin bir versiyasını dərc etmək",
@@ -2988,24 +3293,24 @@
         "bodyHint": "Saxlanılan mətnin özüdür — keçid deyil. Qəbul qeydi illər sonra bu mətni göstərə bilməlidir.",
         "save": "Layihəni saxla",
         "working": "Gözləyin…",
-        "savedNotice": "{locale} dilində {version} nömrəli versiyanın layihəsi saxlanıldı.",
+        "savedNotice": "{language} layihə saxlanıldı (versiya {version}).",
         "publishHeading": "Dərc et",
-        "publishIntro": "Bütün açıq layihələr bir versiya nömrəsi və bir qüvvəyəminmə tarixi ilə birlikdə dərc olunur.",
+        "publishIntro": "Bütün açıq layihələr bir versiya nömrəsi və bir qüvvəyəminmə tarixi ilə birlikdə dərc olunur. Tərcüməsi olmayan dildə oxuyanlar Azərbaycanca mətni görür.",
         "willPublish": "Dərc olunacaq dillər: {languages}.",
         "governingMissingTitle": "Azərbaycanca mətn yoxdur",
         "governingMissingBody": "Qüvvədə olan mətn Azərbaycan dilindəkidir, ona görə onsuz heç nə dərc olunmur.",
         "effectiveFromLabel": "Qüvvəyə minir",
-        "effectiveFromHint": "Boş buraxılsa — indi. Gələcək tarix mümkündür; keçmiş tarix rədd edilir.",
+        "effectiveFromHint": "Boş buraxsanız, dərhal qüvvəyə minir. Tarix seçsəniz, həmin gün Bakı vaxtı ilə 00:00-da qüvvəyə minir; ən tezi sabahdır.",
         "publish": "Bu versiyanı dərc et",
-        "publishedNotice": "{version} nömrəli versiya dərc olundu ({languages}).",
+        "publishedNotice": "Versiya {version} dərc olundu və qüvvədədir. Dillər: {languages}.",
         "nothingDraftedTitle": "Layihə yoxdur",
-        "nothingDraftedBody": "Əvvəlcə yuxarıda mətni yazın. İkinci dəfə dərc etmək heç nə etmir.",
+        "nothingDraftedBody": "Yuxarıda ən azı Azərbaycanca mətni yazıb saxlayın, sonra dərc edin.",
         "historyHeading": "Versiyalar",
-        "historyIntro": "Hər versiya oxunaqlı qalır: onu qəbul etmiş adam razılaşdığı mətni görməlidir.",
+        "historyIntro": "Ən yeni versiya yuxarıdadır. Hər birini saytda öz ünvanında oxumaq olar.",
         "noVersionsTitle": "Hələ heç nə dərc olunmayıb",
-        "noVersionsBody": "Bu sənədin mətni hələ yazılmayıb, ona görə heç bir yoxlama onu tələb etmir.",
+        "noVersionsBody": "Bu sənədin heç bir versiyası dərc olunmayıb, ona görə platformada heç kimdən onu qəbul etmək tələb olunmur.",
         "versionLabel": "Versiya {version}",
-        "versionMeta": "{from} tarixindən · hash {hash}",
+        "versionMeta": "{from} tarixindən · yoxlama kodu (SHA-256): {hash}",
         "showOnSite": "Saytda göstər",
         "shownOnSite": "Saytda göstərilir",
         "activatedNotice": "Versiya {version} indi saytda göstərilir.",
@@ -3028,6 +3333,43 @@
           "en": "İngiliscə",
           "ru": "Rusca",
           "tr": "Türkcə"
+        },
+        "publishedFuture": "Versiya {version} dərc olundu və {date} tarixində qüvvəyə minəcək. Dillər: {languages}.",
+        "takesEffect": "{date} tarixində qüvvəyə minəcək",
+        "openOnSite": "Saytda oxu",
+        "readFailed": "Sənədi oxumaq mümkün olmadı.",
+        "back": "Geri qayıt",
+        "confirmPublishLabel": "Dərci təsdiqləyin",
+        "confirmPublish": "«{document}» sənədinin {version} nömrəli versiyası dərc olunacaq. Dillər: {languages}. Qüvvəyə minir: {when}. Dərc geri qaytarılmır və dərc olunmuş mətn dəyişdirilə bilməz.",
+        "confirmPublishAction": "Dərc et",
+        "whenNow": "dərhal",
+        "whenDate": "{date}, Bakı vaxtı ilə 00:00",
+        "reaccept": {
+          "CREATOR_AGREEMENT": "Bu versiya qüvvədə olanda hər müəllif növbəti kampaniyasını göndərməzdən əvvəl onu qəbul etməlidir.",
+          "BACKER_AGREEMENT": "Bu versiya qüvvədə olanda hər dəstəkçi növbəti dəstəyini təsdiqləməzdən əvvəl onu qəbul etməlidir."
+        },
+        "confirmActivateLabel": "Saytda göstərməyi təsdiqləyin",
+        "confirmActivate": "Saytda «{document}» sənədinin {version} nömrəli versiyası bütün dillərdə göstəriləcək — sonrakı versiya qüvvəyə minənədək.",
+        "unsavedTitle": "Saxlanmamış dəyişikliklər var",
+        "unsavedBody": "Dərc yalnız saxlanmış layihələri əhatə edir. Əvvəlcə bu dilləri saxlayın: {languages}.",
+        "unsavedOption": "{language} — saxlanmayıb",
+        "switchDocumentLabel": "Sənədi dəyişməyi təsdiqləyin",
+        "switchDocument": "Saxlanmamış mətniniz itəcək. Dillər: {languages}.",
+        "switchDocumentAction": "Mətni at və keç",
+        "languageName": {
+          "az": "Azərbaycanca",
+          "en": "İngiliscə",
+          "ru": "Rusca",
+          "tr": "Türkcə"
+        },
+        "errors": {
+          "GOVERNING_TEXT_MISSING": "Azərbaycanca mətn saxlanmayıb. Qüvvədə olan mətn odur, ona görə onsuz heç nə dərc olunmur.",
+          "NOTHING_TO_PUBLISH": "Dərc ediləcək layihə yoxdur — bəlkə başqası artıq dərc edib. Siyahı yenilənib.",
+          "EFFECTIVE_DATE_IN_THE_PAST": "Bu tarix artıq keçib. Boş buraxın və ya sabahdan başlayan bir gün seçin.",
+          "DOCUMENT_NOT_PUBLISHED": "Bu versiya dərc olunmayıb.",
+          "VERSION_NOT_YET_EFFECTIVE": "Bu versiya hələ qüvvəyə minməyib; öz tarixində saytda özü görünəcək.",
+          "PUBLISHED_DOCUMENT_IS_IMMUTABLE": "Bu versiya artıq dərc olunub və dəyişdirilə bilməz. Yeni layihə yazın.",
+          "INVALID_REQUEST": "Sahələri yoxlayın: başlıq 200 simvoldan uzun ola bilməz, mətn boş ola bilməz."
         }
       },
       "revenue": {
@@ -3221,18 +3563,18 @@
           "ENDED": "Bitib",
           "CANCELLED": "Ləğv olunub"
         },
-        "startsLabel": "Başlayır",
-        "endsLabel": "Bitir",
-        "announceLabel": "Oxucular bu vaxtdan xəbərdar edilir",
-        "endedLabel": "Bitdi",
-        "cancelledLabel": "Ləğv olundu",
+        "startsLabel": "Başlanğıc",
+        "endsLabel": "Planlanan son",
+        "announceLabel": "Xəbərdarlıq başlanğıcı",
+        "endedLabel": "Faktiki son",
+        "cancelledLabel": "Ləğv vaxtı",
         "noteLabel": "Qeyd",
         "untilFurtherNotice": "Növbəti xəbərə qədər",
         "startNow": "İndi başlat",
-        "startNowConfirm": "Bu pəncərə indi başladılsın? On saniyə ərzində hər oxucu texniki xidmət səhifəsini görəcək, çıxan ödənişlər və mesajlar dayanacaq.",
+        "startNowConfirm": "Bu pəncərə indi başladılsın? Təxminən yarım dəqiqə ərzində hər oxucu texniki xidmət səhifəsini görəcək, geri ödəmələr və mesajlar dayanacaq.",
         "startNowYes": "Bəli, indi başlat",
         "endNow": "İndi bitir",
-        "endNowConfirm": "Bu pəncərə indi bitirilsin? On saniyə ərzində oxucular platformaya qayıdacaq, dayandırılmış işlər davam edəcək.",
+        "endNowConfirm": "Bu pəncərə indi bitirilsin? Təxminən yarım dəqiqə ərzində oxucular platformaya qayıdacaq, dayandırılmış işlər davam edəcək.",
         "endNowYes": "Bəli, indi bitir",
         "keep": "Hələ yox",
         "changeEnd": "Bitmə vaxtını dəyiş",
@@ -3241,7 +3583,7 @@
         "saveEnd": "Bitmə vaxtını saxla",
         "cancelWindow": "Pəncərəni ləğv et",
         "scheduleHeading": "Pəncərə planlaşdır",
-        "scheduleIntro": "Vaxtlar sizin saat qurşağınızdadır: {zone}. Oxucular onları öz saat qurşaqlarında görür.",
+        "scheduleIntro": "Oxucular vaxtları öz saat qurşaqlarında görür.",
         "startsAtLabel": "Başlama vaxtı",
         "endsAtLabel": "Bitmə vaxtı",
         "endsAtHint": "Növbəti xəbərə qədər üçün boş saxlayın. Oxuculara təyin etdiyiniz bitmə vaxtı göstərilir.",
@@ -3258,8 +3600,16 @@
           "MAINTENANCE_WINDOW_ALREADY_STARTED": "Bu pəncərə artıq başlayıb, onu yalnız bitirmək olar.",
           "MAINTENANCE_WINDOW_NOT_ACTIVE": "Bu pəncərə qüvvədə deyil, bitiriləcək bir şey yoxdur.",
           "MAINTENANCE_WINDOW_OVER": "Bu pəncərə artıq bitib.",
-          "MAINTENANCE_WINDOW_INVALID": "Bu vaxtlardan pəncərə alınmır: başlama keçmişdə ola bilməz, bitmə başlamadan sonra, xəbərdarlıq isə ondan əvvəl gəlməlidir."
-        }
+          "MAINTENANCE_WINDOW_INVALID": "Bu vaxtlardan pəncərə alınmır: başlama keçmişdə ola bilməz, bitmə başlamadan sonra, xəbərdarlıq isə ondan əvvəl gəlməlidir.",
+          "MAINTENANCE_WINDOW_END_INVALID": "Bitmə vaxtı başlamadan sonra və gələcəkdə olmalıdır. Pəncərəni indi bitirmək üçün «İndi bitir»dən istifadə edin."
+        },
+        "scheduleNowConfirm": "Bu başlama vaxtı artıq çatıb, ona görə pəncərə dərhal qüvvəyə minəcək: təxminən yarım dəqiqə ərzində hər oxucu texniki xidmət səhifəsini görəcək. Yenə də planlaşdırılsın?",
+        "scheduleNowYes": "Bəli, indi başlat",
+        "confirmLabel": "Təsdiqləyin",
+        "cancelConfirm": "Bu pəncərə ləğv edilsin? Oxuculara göstərilən xəbərdarlıq götürüləcək və onu geri qaytarmaq olmayacaq.",
+        "cancelYes": "Bəli, ləğv et",
+        "endInvalid": "Bitmə vaxtı başlamadan sonra və gələcəkdə olmalıdır. Pəncərəni indi bitirmək üçün «İndi bitir»dən istifadə edin.",
+        "zoneNote": "Bu səhifədəki vaxtlar sizin saat qurşağınızdadır: {zone}."
       }
     },
     "moderation": {
@@ -3403,7 +3753,7 @@
       "metaTitle": "İcmal",
       "metaDescription": "Platformanın dövr üzrə əsas göstəriciləri.",
       "subject": "icmal",
-      "standfirst": "Seçdiyiniz dövr üzrə platformanın əsas göstəriciləri. Rollarınızın açdığı bölmələri görürsünüz.",
+      "standfirst": "Pul, yeni kampaniyalar və yeni hesablar seçdiyiniz dövr üzrədir; «İndi» altındakı növbələr və kampaniyaların vəziyyəti bu anı göstərir. Rollarınızın açdığı bölmələri görürsünüz.",
       "modulesLink": "Bütün modullar və hər birinin nəyi gözlədiyi",
       "periodLegend": "Dövr",
       "period": {
@@ -3412,7 +3762,7 @@
         "month30": "30 gün",
         "thisMonth": "Bu ay"
       },
-      "windowNote": "{from} – {to}, {zone} vaxtı ilə.",
+      "windowNote": "{from} – {to}, Bakı vaxtı ilə.",
       "loading": "İcmal yüklənir",
       "emptyTitle": "Rollarınız üçün bu səhifədə heç nə yoxdur",
       "emptyBody": "İcmal rollarınızın açdığı bölmələri göstərir, onların heç biri sizə aid deyil. Aça biləcəyiniz ekranlar menyudadır.",
@@ -3426,14 +3776,14 @@
         "accounts": "Hesablar"
       },
       "figure": {
-        "pledgeVolume": "Toplanıb",
+        "pledgeVolume": "Xalis toplanan",
         "pledgeCount": "Dəstəklər",
         "backerCount": "Dəstəkçilər",
         "averagePledge": "Orta dəstək",
         "successRate": "Uğur nisbəti",
         "otherCurrencyPledges": "Başqa valyutada dəstəklər",
-        "campaignsSucceeded": "Hədəfə çatan kampaniyalar",
-        "campaignsFailed": "Hədəfə çatmayan kampaniyalar",
+        "campaignsSucceeded": "Uğurla bitən kampaniyalar",
+        "campaignsFailed": "Uğursuz bitən kampaniyalar",
         "running": "İndi gedir",
         "awaitingModeration": "Moderasiya gözləyir",
         "awaitingLaunch": "Təsdiqlənib, başladılmayıb",
@@ -3450,11 +3800,6 @@
       "hours": "{amount} saat",
       "minutes": "{amount} dəq",
       "trendHeading": "Günlər üzrə toplanan",
-      "trendSummary": "{from} – {to} günlər üzrə toplanan; ən yüksək gün {highest}.",
-      "trendTableToggle": "Cədvəl kimi göstər",
-      "dateColumn": "Tarix",
-      "pledgedColumn": "Toplanıb",
-      "pledgesColumn": "Dəstəklər",
       "byStateHeading": "Vəziyyət üzrə kampaniyalar",
       "state": {
         "DRAFT": "Qaralama",
@@ -3465,7 +3810,7 @@
         "APPROVED": "Təsdiqlənib",
         "SCHEDULED": "Planlaşdırılıb",
         "LIVE": "Aktiv",
-        "CLOSING_WINDOW": "Bitmə pəncərəsi",
+        "CLOSING_WINDOW": "Tezliklə bağlanır",
         "EXTENDED": "Uzadılıb",
         "SUSPENDED": "Dayandırılıb",
         "CANCELED": "Ləğv edilib",
@@ -3482,7 +3827,8 @@
         "support": "Dəstəyi aç",
         "accounts": "Hesabları aç",
         "analytics": "Ətraflı analitika"
-      }
+      },
+      "nowHeading": "İndi"
     }
   },
   "settings": {

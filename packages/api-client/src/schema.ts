@@ -493,7 +493,7 @@ export interface paths {
         };
         get: operations["emailTemplatePreview"];
         put?: never;
-        post?: never;
+        post: operations["emailTemplatePreviewDraft"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2546,6 +2546,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["projectFaqEdit"];
+        trace?: never;
+    };
+    "/v1/feature-flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["featureFlagEvaluationEvaluate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/fees/disclosure": {
@@ -5390,13 +5406,21 @@ export interface components {
             version?: number;
         };
         Draft: {
+            availablePlaceholders?: string[];
             locale?: string;
             override?: components["schemas"]["Version"];
             requiredPlaceholders?: string[];
             shippedBody?: string;
+            shippedBodyNamed?: string;
             shippedSubject?: string;
+            shippedSubjectNamed?: string;
             /** @enum {string} */
             type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+        };
+        DraftCopy: {
+            body: string;
+            locale: string;
+            subject: string;
         };
         DraftPledgeRequest: {
             addons?: components["schemas"]["PledgeAddonBody"][];
@@ -5496,6 +5520,25 @@ export interface components {
             answer?: string;
             question?: string;
         };
+        FeatureFlag: {
+            description?: string;
+            enabled?: boolean;
+            enabledAccounts?: string[];
+            key?: string;
+            /** Format: int32 */
+            rolloutPercentage?: number;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            updatedBy?: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        FeatureFlagAnswers: {
+            flags?: {
+                [key: string]: boolean;
+            };
+        };
         Feed: {
             items?: components["schemas"]["Card"][];
             nextCursor?: string;
@@ -5517,20 +5560,8 @@ export interface components {
             kind?: "UNBALANCED" | "IMPOSSIBLE_SIGN" | "DISAGREES_WITH_PAYMENTS";
             otherAmount?: string;
         };
-        Flag: {
-            description?: string;
-            enabled?: boolean;
-            enabledAccounts?: string[];
-            key?: string;
-            /** Format: int32 */
-            rolloutPercentage?: number;
-            /** Format: date-time */
-            updatedAt?: string;
-            /** Format: uuid */
-            updatedBy?: string;
-        };
         FlagList: {
-            flags?: components["schemas"]["Flag"][];
+            flags?: components["schemas"]["FeatureFlag"][];
         };
         FollowStateResponse: {
             following?: boolean;
@@ -5626,14 +5657,42 @@ export interface components {
         GrantRequest: {
             note?: string;
         };
-        Health: {
+        HealthJob: {
+            /** Format: int32 */
+            attempts?: number;
+            /** @enum {string} */
+            hold?: "MAINTENANCE" | "UNSCHEDULED";
+            lastError?: string;
             /** Format: date-time */
-            at?: string;
-            jobs?: components["schemas"]["Job"][];
-            monitored?: boolean;
-            providers?: components["schemas"]["Provider"][];
-            queues?: components["schemas"]["Queue"][];
-            status?: string;
+            lastRunAt?: string;
+            name?: string;
+            /** Format: date-time */
+            nextAttemptAt?: string;
+            /** Format: int64 */
+            overdueBySeconds?: number;
+            /** @enum {string} */
+            state?: "READY" | "DEAD";
+            /** @enum {string} */
+            status?: "HEALTHY" | "DEGRADED" | "CRITICAL";
+        };
+        HealthProvider: {
+            available?: boolean;
+            configured?: boolean;
+            kind?: string;
+            provider?: string;
+            /** @enum {string} */
+            reason?: "NOT_CONFIGURED" | "CIRCUIT_OPEN";
+            /** @enum {string} */
+            status?: "HEALTHY" | "DEGRADED" | "CRITICAL";
+        };
+        HealthQueue: {
+            /** Format: int64 */
+            dead?: number;
+            name?: string;
+            /** @enum {string} */
+            status?: "HEALTHY" | "DEGRADED" | "CRITICAL";
+            /** Format: int64 */
+            waiting?: number;
         };
         History: {
             drafts?: components["schemas"]["Document"][];
@@ -5703,20 +5762,6 @@ export interface components {
             /** Format: int32 */
             weightGrams?: number;
         };
-        Job: {
-            /** Format: int32 */
-            attempts?: number;
-            lastError?: string;
-            /** Format: date-time */
-            lastRunAt?: string;
-            name?: string;
-            /** Format: date-time */
-            nextAttemptAt?: string;
-            /** Format: int64 */
-            overdueBySeconds?: number;
-            state?: string;
-            status?: string;
-        };
         JsonNode: {
             array?: boolean;
             bigDecimal?: boolean;
@@ -5744,6 +5789,11 @@ export interface components {
             /** @deprecated */
             textual?: boolean;
             valueNode?: boolean;
+        };
+        LanguageOverride: {
+            /** Format: int32 */
+            liveVersion?: number;
+            locale?: string;
         };
         LedgerBalanceRecord: {
             account?: string;
@@ -6207,6 +6257,16 @@ export interface components {
             to?: string;
             totals?: components["schemas"]["Totals"];
         };
+        PlatformHealth: {
+            /** Format: date-time */
+            at?: string;
+            jobs?: components["schemas"]["HealthJob"][];
+            monitored?: boolean;
+            providers?: components["schemas"]["HealthProvider"][];
+            queues?: components["schemas"]["HealthQueue"][];
+            /** @enum {string} */
+            status?: "HEALTHY" | "DEGRADED" | "CRITICAL";
+        };
         PlatformStatus: {
             /** @description The window in force, or null. */
             maintenance?: components["schemas"]["StatusWindow"];
@@ -6323,6 +6383,11 @@ export interface components {
             slug?: string;
             state?: string;
             title?: string;
+        };
+        Preview: {
+            html?: string;
+            subject?: string;
+            text?: string;
         };
         ProfilePatchRequest: {
             avatarUrl?: string;
@@ -6487,14 +6552,6 @@ export interface components {
             publishedAt?: string;
             title?: string;
             visibility?: string;
-        };
-        Provider: {
-            available?: boolean;
-            configured?: boolean;
-            detail?: string;
-            kind?: string;
-            provider?: string;
-            status?: string;
         };
         PublicBackerListResponse: {
             /** Format: int64 */
@@ -6932,6 +6989,8 @@ export interface components {
             enabledAccounts?: string[];
             /** Format: int32 */
             rolloutPercentage?: number;
+            /** Format: int64 */
+            version?: number;
         };
         SaveRequest: {
             percentage: string;
@@ -7382,6 +7441,7 @@ export interface components {
         Template: {
             category?: string;
             mandatory?: boolean;
+            overrides?: components["schemas"]["LanguageOverride"][];
             type?: string;
         };
         TermResponse: {
@@ -7457,15 +7517,37 @@ export interface components {
             pledgeCount?: number;
             volume?: components["schemas"]["Money"];
         };
+        TrailEntry: {
+            action?: string;
+            /** Format: uuid */
+            actorId?: string;
+            actorType?: string;
+            detail?: string;
+            /** Format: uuid */
+            entityId?: string;
+            entityType?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: uuid */
+            onBehalfOfId?: string;
+            outcome?: string;
+            requestId?: string;
+            sourceAddress?: string;
+            traceId?: string;
+            userAgent?: string;
+        };
         TrailPage: {
             /** Format: uuid */
             actorId?: string;
             /** Format: uuid */
             entityId?: string;
             entityType?: string;
-            entries?: components["schemas"]["Entry"][];
+            entries?: components["schemas"]["TrailEntry"][];
             /** Format: date-time */
             from?: string;
+            hideReads?: boolean;
             nextCursor?: string;
             /** Format: date-time */
             to?: string;
@@ -7775,6 +7857,7 @@ export type SchemaDisputePage = components['schemas']['DisputePage'];
 export type SchemaDisputeWindowBody = components['schemas']['DisputeWindowBody'];
 export type SchemaDocument = components['schemas']['Document'];
 export type SchemaDraft = components['schemas']['Draft'];
+export type SchemaDraftCopy = components['schemas']['DraftCopy'];
 export type SchemaDraftPledgeRequest = components['schemas']['DraftPledgeRequest'];
 export type SchemaDraftRequest = components['schemas']['DraftRequest'];
 export type SchemaEditRequest = components['schemas']['EditRequest'];
@@ -7788,10 +7871,11 @@ export type SchemaExportBackersRequest = components['schemas']['ExportBackersReq
 export type SchemaExtendCampaignRequest = components['schemas']['ExtendCampaignRequest'];
 export type SchemaFacets = components['schemas']['Facets'];
 export type SchemaFaqPatchRequest = components['schemas']['FaqPatchRequest'];
+export type SchemaFeatureFlag = components['schemas']['FeatureFlag'];
+export type SchemaFeatureFlagAnswers = components['schemas']['FeatureFlagAnswers'];
 export type SchemaFeed = components['schemas']['Feed'];
 export type SchemaFigures = components['schemas']['Figures'];
 export type SchemaFinding = components['schemas']['Finding'];
-export type SchemaFlag = components['schemas']['Flag'];
 export type SchemaFlagList = components['schemas']['FlagList'];
 export type SchemaFollowStateResponse = components['schemas']['FollowStateResponse'];
 export type SchemaFollowingListResponse = components['schemas']['FollowingListResponse'];
@@ -7803,7 +7887,9 @@ export type SchemaFulfilmentProgressResponse = components['schemas']['Fulfilment
 export type SchemaFulfilmentResponse = components['schemas']['FulfilmentResponse'];
 export type SchemaGrant = components['schemas']['Grant'];
 export type SchemaGrantRequest = components['schemas']['GrantRequest'];
-export type SchemaHealth = components['schemas']['Health'];
+export type SchemaHealthJob = components['schemas']['HealthJob'];
+export type SchemaHealthProvider = components['schemas']['HealthProvider'];
+export type SchemaHealthQueue = components['schemas']['HealthQueue'];
 export type SchemaHistory = components['schemas']['History'];
 export type SchemaImage = components['schemas']['Image'];
 export type SchemaInviteCollaboratorRequest = components['schemas']['InviteCollaboratorRequest'];
@@ -7812,8 +7898,8 @@ export type SchemaItem = components['schemas']['Item'];
 export type SchemaItemBody = components['schemas']['ItemBody'];
 export type SchemaItemPatchRequest = components['schemas']['ItemPatchRequest'];
 export type SchemaItemResponse = components['schemas']['ItemResponse'];
-export type SchemaJob = components['schemas']['Job'];
 export type SchemaJsonNode = components['schemas']['JsonNode'];
+export type SchemaLanguageOverride = components['schemas']['LanguageOverride'];
 export type SchemaLedgerBalanceRecord = components['schemas']['LedgerBalanceRecord'];
 export type SchemaLegalSubjectRequest = components['schemas']['LegalSubjectRequest'];
 export type SchemaLine = components['schemas']['Line'];
@@ -7860,6 +7946,7 @@ export type SchemaPayoutSummary = components['schemas']['PayoutSummary'];
 export type SchemaPlan = components['schemas']['Plan'];
 export type SchemaPlanPaymentBankTransferRequest = components['schemas']['PlanPaymentBankTransferRequest'];
 export type SchemaPlatformAnalyticsResponse = components['schemas']['PlatformAnalyticsResponse'];
+export type SchemaPlatformHealth = components['schemas']['PlatformHealth'];
 export type SchemaPlatformStatus = components['schemas']['PlatformStatus'];
 export type SchemaPledgeAddonBody = components['schemas']['PledgeAddonBody'];
 export type SchemaPledgeRaiseBody = components['schemas']['PledgeRaiseBody'];
@@ -7870,6 +7957,7 @@ export type SchemaPostalAddressBody = components['schemas']['PostalAddressBody']
 export type SchemaPosting = components['schemas']['Posting'];
 export type SchemaPreference = components['schemas']['Preference'];
 export type SchemaPrelaunchPageResponse = components['schemas']['PrelaunchPageResponse'];
+export type SchemaPreview = components['schemas']['Preview'];
 export type SchemaProfilePatchRequest = components['schemas']['ProfilePatchRequest'];
 export type SchemaProfileProjectCard = components['schemas']['ProfileProjectCard'];
 export type SchemaProfileProjectListResponse = components['schemas']['ProfileProjectListResponse'];
@@ -7884,7 +7972,6 @@ export type SchemaProjectPageResponse = components['schemas']['ProjectPageRespon
 export type SchemaProjectPatchRequest = components['schemas']['ProjectPatchRequest'];
 export type SchemaProjectUpdateListResponse = components['schemas']['ProjectUpdateListResponse'];
 export type SchemaProjectUpdateResponse = components['schemas']['ProjectUpdateResponse'];
-export type SchemaProvider = components['schemas']['Provider'];
 export type SchemaPublicBackerListResponse = components['schemas']['PublicBackerListResponse'];
 export type SchemaPublicProfileResponse = components['schemas']['PublicProfileResponse'];
 export type SchemaPublicRewardListResponse = components['schemas']['PublicRewardListResponse'];
@@ -8001,6 +8088,7 @@ export type SchemaTicketFile = components['schemas']['TicketFile'];
 export type SchemaTicketPage = components['schemas']['TicketPage'];
 export type SchemaTokenResponse = components['schemas']['TokenResponse'];
 export type SchemaTotals = components['schemas']['Totals'];
+export type SchemaTrailEntry = components['schemas']['TrailEntry'];
 export type SchemaTrailPage = components['schemas']['TrailPage'];
 export type SchemaTransaction = components['schemas']['Transaction'];
 export type SchemaTransferRequest = components['schemas']['TransferRequest'];
@@ -8295,6 +8383,7 @@ export interface operations {
                 to?: string;
                 after?: string;
                 limit?: number;
+                hideReads?: boolean;
             };
             header?: never;
             path?: never;
@@ -8793,7 +8882,9 @@ export interface operations {
     };
     emailTemplateEditorRead: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
@@ -8815,7 +8906,9 @@ export interface operations {
     };
     emailTemplateEditorEdit: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
@@ -8841,7 +8934,9 @@ export interface operations {
     };
     emailTemplateEditorWithdraw: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
@@ -8884,6 +8979,32 @@ export interface operations {
             };
         };
     };
+    emailTemplatePreviewDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftCopy"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preview"];
+                };
+            };
+        };
+    };
     emailTemplateTestSend: {
         parameters: {
             query?: never;
@@ -8893,7 +9014,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DraftCopy"];
+            };
+        };
         responses: {
             /** @description No Content */
             204: {
@@ -8906,7 +9031,9 @@ export interface operations {
     };
     emailTemplateEditorHistory: {
         parameters: {
-            query?: never;
+            query?: {
+                locale?: string;
+            };
             header?: never;
             path: {
                 type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
@@ -8967,7 +9094,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Flag"];
+                    "application/json": components["schemas"]["FeatureFlag"];
                 };
             };
         };
@@ -9031,7 +9158,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Health"];
+                    "application/json": components["schemas"]["PlatformHealth"];
                 };
             };
         };
@@ -12262,6 +12389,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectFaqResponse"];
+                };
+            };
+        };
+    };
+    featureFlagEvaluationEvaluate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagAnswers"];
                 };
             };
         };

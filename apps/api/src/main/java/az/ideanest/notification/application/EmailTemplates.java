@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,6 +108,7 @@ public class EmailTemplates {
     private final EmailComposer composer;
     private final EmailRenderer renderer;
     private final MimeEmails mime;
+    private final ShippedCopy shipped;
     private final Clock clock;
 
     public EmailTemplates(
@@ -115,6 +117,7 @@ public class EmailTemplates {
             EmailComposer composer,
             EmailRenderer renderer,
             MimeEmails mime,
+            ShippedCopy shipped,
             Clock clock) {
 
         this.staff = staff;
@@ -122,6 +125,7 @@ public class EmailTemplates {
         this.composer = composer;
         this.renderer = renderer;
         this.mime = mime;
+        this.shipped = shipped;
         this.clock = clock;
     }
 
@@ -192,6 +196,57 @@ public class EmailTemplates {
         // wire. It is not an audit_logs entry -- §17.4's audit is for actions that change
         // something, and this changes nothing -- but it is a line somebody can find.
         log.info("Staff {} sent themselves a test of the {} email template", staffAccountId, type);
+    }
+
+    /**
+     * Text somebody has typed and not saved, rendered as the email it would be — #315.
+     *
+     * <p>The editor's preview. In the language being edited rather than the reader's own,
+     * because what is being checked is the override for that language. Refused only when the
+     * text would not render at all; a missing placeholder still previews, so the person can see
+     * what the message loses before the save refuses it.
+     *
+     * @param locale one of §21.1's four
+     * @throws TemplateCopyMalformedException when the text would not render
+     */
+    @Transactional(readOnly = true)
+    public RenderedEmail previewDraft(
+            UUID staffAccountId, NotificationType type, String locale, EditedCopy edited) {
+        staff.requireCapability(staffAccountId, StaffCapability.CONFIGURE_PLATFORM);
+        requireEmail(type);
+        shipped.of(type, locale).check(edited);
+
+        Locale language = ReaderLocale.of(locale);
+        return renderer.render(
+                composer.compose(sampleOf(type), SAMPLE_RECIPIENT, language, Optional.of(edited)), language);
+    }
+
+    /**
+     * The same, sent to the caller's own address — the editor's "send me this" before saving.
+     *
+     * <p>To the caller and only the caller, for {@link #testSend}'s reason.
+     */
+    public void testSendDraft(UUID staffAccountId, NotificationType type, String locale, EditedCopy edited)
+            throws MessagingException {
+        staff.requireCapability(staffAccountId, StaffCapability.CONFIGURE_PLATFORM);
+        requireEmail(type);
+        shipped.of(type, locale).check(edited);
+
+        UserAccount recipient = users.findById(staffAccountId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "A caller that passed the staff check has an account"));
+
+        Locale language = ReaderLocale.of(locale);
+        RenderedEmail email = renderer.render(
+                composer.compose(sampleOf(type), recipient.name(), language, Optional.of(edited)), language);
+        String messageId = mime.messageIdFor(Identifiers.newIdentifier());
+
+        mime.send(mime.build(recipient.email().value(), recipient.name(), email, messageId));
+        log.info(
+                "Staff {} sent themselves a test of unsaved {} copy for the {} email template",
+                staffAccountId,
+                locale,
+                type);
     }
 
     /** The notification a preview stands in for. */

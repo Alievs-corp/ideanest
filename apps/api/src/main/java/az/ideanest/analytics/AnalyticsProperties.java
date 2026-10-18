@@ -28,11 +28,11 @@ public record AnalyticsProperties(Referral referral, Reporting reporting) {
     /**
      * How §4.11's AD-13 states a platform-wide figure — issue #313.
      *
-     * @param timeZone the calendar a "day" belongs to. The same default as
-     *     {@code AnalyticsAggregationProperties.zone} and configured separately on purpose:
-     *     that one decides when the rollup job runs and this one decides how the numbers
-     *     are read back, and a deployment that moved its reporting calendar without moving
-     *     its aggregation schedule would want exactly that
+     * @param timeZone the calendar a "day" belongs to. Must name the same zone as
+     *     {@code AnalyticsAggregationProperties.zone} and the console front page's
+     *     {@code DashboardService.ZONE}: {@code PlatformAnalyticsService} refuses to start
+     *     otherwise, because two screens bucketing "the same" day differently would show two
+     *     totals for it with nothing on either to say why
      * @param currency what the totals are denominated in. §21.2 gives nothing to convert
      *     with, so pledges in anything else are counted and reported separately rather than
      *     folded in — {@code PlatformAnalyticsService} has the argument

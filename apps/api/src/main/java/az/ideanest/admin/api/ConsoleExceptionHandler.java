@@ -99,7 +99,7 @@ public class ConsoleExceptionHandler {
     /**
      * 400 for a payment outcome that is not one of the three — #404.
      *
-     * <p>The same distinction the ledger handler below draws, and it lands in the same place
+     * <p>The same distinction {@link LedgerExceptionHandler} draws, and it lands in the same place
      * for a sharper reason: {@code ?status=refunded} is the mistake somebody actually makes,
      * because a refund <em>is</em> a thing this table records — as a {@code type}, never as a
      * {@code status}. Dropping the filter would draw every successful charge on the platform
@@ -118,30 +118,6 @@ public class ConsoleExceptionHandler {
         problem.setDetail("Outcome is SUCCEEDED, FAILED or PENDING. Received: " + exception.asked());
         problem.setProperty("code", "UNKNOWN_TRANSACTION_OUTCOME");
         problem.setProperty("meta", Map.of("parameter", "status"));
-        return problem;
-    }
-
-    /**
-     * 400 for a ledger account that is not one of §7.2's six.
-     *
-     * <p>A refusal rather than an empty page, and the distinction is the whole reason this
-     * handler exists. {@code ?account=platform_fees} — the plural, which is the mistake
-     * somebody actually makes — would otherwise return a page of nothing, and a page of
-     * nothing on a ledger reads as "this account is empty" rather than "there is no such
-     * account". One of those is a fact about the platform's money.
-     *
-     * <p>The message is {@link az.ideanest.ledger.application.LedgerAccount}'s own, which names the value and points at the
-     * six. It quotes what the caller sent and nothing else, so there is nothing here for a
-     * support ticket to leak.
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ProblemDetail handleUnknownAccount(IllegalArgumentException exception) {
-        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
-        problem.setType(URI.create("https://ideanest.az/problems/unknown-ledger-account"));
-        problem.setTitle("No such ledger account");
-        problem.setDetail(exception.getMessage());
-        problem.setProperty("code", "UNKNOWN_LEDGER_ACCOUNT");
-        problem.setProperty("meta", Map.of("parameter", "account"));
         return problem;
     }
 }

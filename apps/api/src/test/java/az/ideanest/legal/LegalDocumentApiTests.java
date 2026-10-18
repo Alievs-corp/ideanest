@@ -5,17 +5,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.legal.application.LegalDocumentInForceChanged;
+import az.ideanest.legal.application.LegalDocuments;
+import az.ideanest.support.AdjustableClock;
 import az.ideanest.legal.domain.DocumentKind;
 import az.ideanest.legal.domain.LegalDocument;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.RecordingLegalChanges;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -70,8 +74,15 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
     @Autowired
     private RecordingLegalChanges legalChanges;
 
+    @Autowired
+    private AdjustableClock clock;
+
+    @Autowired
+    private LegalDocuments legalDocuments;
+
     @AfterEach
     void clear() {
+        clock.reset();
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         // Acceptances first: V65 restricts on the document, deliberately, so that a version
         // somebody accepted cannot be removed out from under the record.
@@ -394,6 +405,132 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
                 // The hash is what makes "is the document in the table the document that was
                 // published" answerable from the trail alone.
                 .contains(LegalDocument.hashOf("Auditlənən mətn."));
+    }
+
+    // ------------------------------------------------------------------
+    // A future date is a date the platform keeps
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a version published for later leaves the chosen version on the site until its date")
+    void aFuturePublicationKeepsTheChoiceUntilItsDate() {
+        clock.freeze();
+        draft("PRIVACY_POLICY", "az", "Məxfilik", "Birinci.");
+        publish("PRIVACY_POLICY", null);
+        draft("PRIVACY_POLICY", "az", "Məxfilik", "İkinci.");
+        publish("PRIVACY_POLICY", null);
+        assertThat(activate("PRIVACY_POLICY", 1, admin().accessToken()).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        Instant tomorrow = clock.instant().plus(Duration.ofDays(1));
+        draft("PRIVACY_POLICY", "az", "Məxfilik", "Üçüncü.");
+        publish("PRIVACY_POLICY", tomorrow);
+
+        assertThat(current("PRIVACY_POLICY", "az").get("body"))
+                .as("the chosen version, not the latest effective one and not the future one")
+                .isEqualTo("Birinci.");
+
+        clock.advance(Duration.ofDays(1).plusMinutes(1));
+        assertThat(current("PRIVACY_POLICY", "az").get("body"))
+                .as("on its date the new version takes over from the choice")
+                .isEqualTo("Üçüncü.");
+    }
+
+    @Test
+    @DisplayName("on the date a version takes effect it is announced, so the web's cached pages change then")
+    void aVersionIsAnnouncedOnItsDate() {
+        clock.freeze();
+        draft("COOKIE_POLICY", "az", "Kuki", "İndiki.");
+        publish("COOKIE_POLICY", null);
+        // Past the lookback, so the version that took effect at publication is not counted.
+        clock.advance(Duration.ofMinutes(20));
+        Instant later = clock.instant().plus(Duration.ofHours(6));
+        draft("COOKIE_POLICY", "az", "Kuki", "Sonrakı.");
+        publish("COOKIE_POLICY", later);
+        legalChanges.clear();
+
+        assertThat(legalDocuments.announceTakingEffect(clock.instant(), Duration.ofMinutes(10)))
+                .as("nothing has reached its date yet")
+                .isZero();
+
+        clock.advance(Duration.ofHours(6).plusSeconds(30));
+        assertThat(legalDocuments.announceTakingEffect(clock.instant(), Duration.ofMinutes(10))).isEqualTo(1);
+        assertThat(legalChanges.changes())
+                .containsExactly(new LegalDocumentInForceChanged(DocumentKind.COOKIE_POLICY, 2));
+    }
+
+    @Test
+    @DisplayName("while a version waits for its date, the public cache directive ends at that date")
+    void theCacheDirectiveEndsAtTheNextDate() {
+        clock.freeze();
+        draft("PLATFORM_RULES", "az", "Qaydalar", "İndiki.");
+        publish("PLATFORM_RULES", null);
+        draft("PLATFORM_RULES", "az", "Qaydalar", "Sonrakı.");
+        publish("PLATFORM_RULES", clock.instant().plus(Duration.ofMinutes(5)));
+
+        ResponseEntity<Map<String, Object>> read =
+                rest.exchange("/v1/legal/documents/PLATFORM_RULES", HttpMethod.GET, null, mapType());
+
+        assertThat(read.getHeaders().getCacheControl()).isEqualTo("max-age=300, public");
+    }
+
+    @Test
+    @DisplayName("a version cannot be shown on the site before its date")
+    void aFutureVersionCannotBeShown() {
+        draft("BACKER_AGREEMENT", "az", "Razılaşma", "İndiki.");
+        publish("BACKER_AGREEMENT", null);
+        Instant later = Instant.now().plus(Duration.ofDays(3));
+        draft("BACKER_AGREEMENT", "az", "Razılaşma", "Sonrakı.");
+        publish("BACKER_AGREEMENT", later);
+
+        ResponseEntity<Map<String, Object>> refused = activate("BACKER_AGREEMENT", 2, admin().accessToken());
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "VERSION_NOT_YET_EFFECTIVE");
+        assertThat(refused.getBody().get("meta")).asString().contains("version=2");
+    }
+
+    @Test
+    @DisplayName("saving a draft is recorded, naming the language, the version and the text's hash")
+    void draftingIsAudited() {
+        draft("CREATOR_AGREEMENT", "en", "Agreement", "Drafted text.");
+
+        String detail = new JdbcTemplate(dataSource)
+                .queryForObject(
+                        "SELECT detail FROM audit_logs WHERE action = 'legal.document_drafted'"
+                                + " ORDER BY occurred_at DESC LIMIT 1",
+                        String.class);
+
+        assertThat(detail)
+                .contains("CREATOR_AGREEMENT")
+                .contains("version 1 in en")
+                .contains(LegalDocument.hashOf("Drafted text."));
+    }
+
+    @Test
+    @DisplayName("two publications at once are one publication and one refusal, not a 500")
+    void concurrentPublicationsAreSerialised() {
+        draft("DELIVERY_AND_REFUND_POLICY", "az", "Çatdırılma", "Mətn.");
+        draft("DELIVERY_AND_REFUND_POLICY", "en", "Delivery", "Text.");
+
+        CompletableFuture<HttpStatus> first =
+                CompletableFuture.supplyAsync(() -> publishStatus("DELIVERY_AND_REFUND_POLICY"));
+        CompletableFuture<HttpStatus> second =
+                CompletableFuture.supplyAsync(() -> publishStatus("DELIVERY_AND_REFUND_POLICY"));
+
+        assertThat(List.of(first.join(), second.join()))
+                .containsExactlyInAnyOrder(HttpStatus.CREATED, HttpStatus.CONFLICT);
+    }
+
+    private HttpStatus publishStatus(String kind) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("effectiveFrom", null);
+        return HttpStatus.valueOf(rest.exchange(
+                        "/v1/admin/legal/documents/" + kind + "/publish",
+                        HttpMethod.POST,
+                        new HttpEntity<>(body, authorised(admin().accessToken())),
+                        mapType())
+                .getStatusCode()
+                .value());
     }
 
     /* ------------------------------------------------------------------

@@ -158,6 +158,12 @@ export interface ConsoleRefusalsCopy {
   readonly capabilityNames?: Readonly<Record<string, string>>;
   /** A 400 with no code — Spring's "Failed to read request" — in the reader's language. */
   readonly invalidRequest?: string;
+  /** `INVALID_ANALYTICS_RANGE` and `INVALID_DASHBOARD_RANGE`: a window that runs backwards or past a year. */
+  readonly invalidRange?: string;
+  /** `INVALID_CURSOR`: a list's "load more" position the service no longer accepts. */
+  readonly invalidCursor?: string;
+  /** A 5xx: the service failed, and nothing the reader sent was wrong. */
+  readonly serviceFailed?: string;
 }
 
 /**
@@ -210,6 +216,48 @@ export function consoleChromeCopyFrom(t: AdminTranslator, common: AdminTranslato
   };
 }
 
+/**
+ * The words of `ConsoleColumnChart`, shared by the front page and the platform figures so the
+ * two charts say the same thing the same way.
+ */
+export interface ConsoleChartCopy {
+  /** The plot's accessible name and the table's caption. Carries `{from}`, `{to}`, `{total}`, `{period}`, `{amount}`. */
+  readonly summary: string;
+  /** What one column is: "Each column is a day". */
+  readonly granularity: Readonly<Record<'day' | 'week' | 'month', string>>;
+  /** Carries `{period}`, `{amount}`. */
+  readonly highest: string;
+  /** Carries `{amount}`. */
+  readonly total: string;
+  /** A pledge count in the tooltip. Carries `{count}`, written so one form fits every number. */
+  readonly count: string;
+  /** Two days as a period. Carries `{from}`, `{to}`. */
+  readonly range: string;
+  readonly keyboardHint: string;
+  readonly tableToggle: string;
+  readonly periodColumn: string;
+  readonly countColumn: string;
+  readonly amountColumn: string;
+}
+
+export function consoleChartCopyFrom(t: AdminTranslator): ConsoleChartCopy {
+  return {
+    /* `raw` for the templates, because next-intl renders a template's own key when it is read
+       with `t()` and has no value for the argument. */
+    summary: String(t.raw('common.chart.summary')),
+    granularity: t.raw('common.chart.granularity') as ConsoleChartCopy['granularity'],
+    highest: String(t.raw('common.chart.highest')),
+    total: String(t.raw('common.chart.total')),
+    count: String(t.raw('common.chart.count')),
+    range: String(t.raw('common.chart.range')),
+    keyboardHint: t('common.chart.keyboardHint'),
+    tableToggle: t('common.chart.tableToggle'),
+    periodColumn: t('common.chart.periodColumn'),
+    countColumn: t('common.chart.countColumn'),
+    amountColumn: t('common.chart.amountColumn'),
+  };
+}
+
 export function consoleCountCopyFrom(t: AdminTranslator): ConsoleCountCopy {
   return {
     /* `raw` on all four, because next-intl renders a template's own key when it is read with
@@ -255,6 +303,9 @@ export function consoleRefusalsCopyFrom(t: AdminTranslator): ConsoleRefusalsCopy
     capabilityNamed: String(t.raw('refusals.capabilityNamed')),
     capabilityNames: t.raw('screens.staff.capability') as Readonly<Record<string, string>>,
     invalidRequest: t('refusals.invalidRequest'),
+    invalidRange: t('refusals.invalidRange'),
+    invalidCursor: t('refusals.invalidCursor'),
+    serviceFailed: t('refusals.serviceFailed'),
   };
 }
 

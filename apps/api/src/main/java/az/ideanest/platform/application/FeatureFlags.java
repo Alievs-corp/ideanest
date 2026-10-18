@@ -5,6 +5,7 @@ import az.ideanest.audit.AuditActor;
 import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
 import az.ideanest.platform.PlatformProperties;
+import az.ideanest.platform.application.FeatureFlagRefusedException.Reason;
 import az.ideanest.platform.domain.FeatureFlag;
 import az.ideanest.platform.infrastructure.FeatureFlagRepository;
 import az.ideanest.shared.access.PlatformStaff;
@@ -14,12 +15,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +47,14 @@ import org.springframework.transaction.annotation.Transactional;
  * only ever between one instance and another, and only for as long as the window — which
  * matters because the thing an operator reaches for during an incident is
  * {@code enabled = false}, and a switch that takes a minute is not a kill switch.
+ *
+ * <h2>Nothing reads a flag yet</h2>
+ *
+ * <p>{@link #isOn} and {@link #evaluateAll} are what a feature asks, and
+ * {@code GET /v1/feature-flags} is how a client asks the second one. No product feature is
+ * behind a flag today, so switching one changes the answer the platform gives and nothing
+ * else; the console says exactly that. The day a feature reads one, the switch is a kill
+ * switch for it within {@link PlatformProperties.Flags#cacheTtl()}.
  *
  * <h2>An unknown flag is off</h2>
  *
@@ -95,10 +107,16 @@ public class FeatureFlags {
         return flag != null && flag.isOnFor(accountId);
     }
 
-    /** Every flag and whether this account sees it, for a client that asks once per page. */
+    /**
+     * Every flag and whether this account sees it, for a client that asks once per page.
+     *
+     * <p>Sorted by name, so that two answers with the same content are the same bytes and
+     * a cached copy is recognisably the same one.
+     */
     public Map<String, Boolean> evaluateAll(UUID accountId) {
         return current().flags().values().stream()
-                .collect(Collectors.toMap(FeatureFlag::key, flag -> flag.isOnFor(accountId)));
+                .collect(Collectors.toMap(
+                        FeatureFlag::key, flag -> flag.isOnFor(accountId), (a, b) -> a, TreeMap::new));
     }
 
     /** AD-12's screen. */
@@ -109,18 +127,27 @@ public class FeatureFlags {
     }
 
     /**
-     * Creates a flag or replaces everything about an existing one.
+     * Creates a flag, or replaces everything about one, from the version the caller read.
      *
-     * <p><strong>One endpoint for both</strong>, because the key is the identity and a
-     * create-versus-update distinction would make the console guess which verb to send
-     * based on a list it may have loaded a minute ago. The audit detail says which
-     * happened.
+     * <p><strong>One endpoint for both, and the version says which.</strong> No version is a
+     * create, and a create of a name that exists is refused with {@code FEATURE_FLAG_EXISTS}
+     * rather than applied. The console's "add a flag" form used to send a disabled flag at
+     * nought percent for whatever name was typed, and this method used to apply it to an
+     * existing row — so typing a live flag's name into the form switched it off for
+     * everybody, with no question asked and nothing on the screen to say it had happened.
+     *
+     * <p>A version is an edit of that version. An edit made from a list somebody else has
+     * since saved over is refused with {@code FEATURE_FLAG_CHANGED}, checked twice: once
+     * against the row as read, which is the ordinary case of a stale screen, and once by
+     * V110's column when the row is written, which catches two saves in the same instant.
      *
      * <p>The cache is cleared inside the transaction rather than after it commits, which
      * is technically early — a rollback would leave this instance re-reading a table that
      * did not change, which costs one query. The alternative is an after-commit hook that
-     * can be skipped, and a kill switch that sometimes does not take effect is worse than
-     * one that sometimes clears its cache for nothing.
+     * can be skipped, and a switch that sometimes does not take effect is worse than one
+     * that sometimes clears its cache for nothing.
+     *
+     * @param version the version the caller read, or null to create the flag
      */
     @Transactional
     public FeatureFlag save(
@@ -129,22 +156,58 @@ public class FeatureFlags {
             String description,
             boolean enabled,
             short rolloutPercentage,
-            List<UUID> enabledAccounts) {
+            List<UUID> enabledAccounts,
+            Long version) {
 
         staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
 
-        Optional<FeatureFlag> existing = flags.findById(key);
-        FeatureFlag flag = existing
-                .map(found -> {
-                    found.update(description, enabled, rolloutPercentage, enabledAccounts, staffId);
-                    return found;
-                })
-                .orElseGet(() -> new FeatureFlag(
-                        key, description, enabled, rolloutPercentage, enabledAccounts, staffId));
+        if (key == null || !FeatureFlag.KEY_SHAPE.matcher(key).matches()) {
+            throw new FeatureFlagRefusedException(
+                    Reason.FEATURE_FLAG_KEY_INVALID, "A flag's name is lower case letters, digits and hyphens.");
+        }
+        Instant now = clock.instant();
+        String text = description.strip();
 
-        FeatureFlag saved = flags.save(flag);
+        Optional<FeatureFlag> existing = flags.findById(key);
+        FeatureFlag flag;
+        String before;
+        List<UUID> accountsBefore;
+        if (version == null) {
+            if (existing.isPresent()) {
+                throw new FeatureFlagRefusedException(Reason.FEATURE_FLAG_EXISTS, "A flag named " + key + " exists.");
+            }
+            flag = new FeatureFlag(key, text, enabled, rolloutPercentage, enabledAccounts, staffId, now);
+            before = "none";
+            accountsBefore = List.of();
+        } else {
+            flag = existing.orElseThrow(() -> new FeatureFlagRefusedException(
+                    Reason.FEATURE_FLAG_NOT_FOUND, "There is no flag named " + key + "."));
+            if (flag.version() != version) {
+                throw changed(key);
+            }
+            before = flag.describe();
+            accountsBefore = flag.enabledAccounts();
+            flag.update(text, enabled, rolloutPercentage, enabledAccounts, staffId, now);
+        }
+
+        FeatureFlag saved;
+        try {
+            // Flushed here rather than at commit, so that a collision is answered as one —
+            // a key violation or a stale version — instead of surfacing from the commit as
+            // a 500 after this method has returned.
+            saved = flags.saveAndFlush(flag);
+        } catch (OptimisticLockingFailureException concurrent) {
+            throw changed(key);
+        } catch (DataIntegrityViolationException duplicate) {
+            if (version == null) {
+                throw new FeatureFlagRefusedException(Reason.FEATURE_FLAG_EXISTS, "A flag named " + key + " exists.");
+            }
+            throw duplicate;
+        }
         snapshot.set(Snapshot.empty());
 
+        List<UUID> added = FeatureFlag.added(accountsBefore, saved.enabledAccounts());
+        List<UUID> removed = FeatureFlag.added(saved.enabledAccounts(), accountsBefore);
         audit.record(
                 AuditAction.FEATURE_FLAG_CHANGED,
                 // The entity is a UUID everywhere in audit_logs and a flag's identity is
@@ -154,11 +217,16 @@ public class FeatureFlags {
                 UUID.nameUUIDFromBytes(key.getBytes(java.nio.charset.StandardCharsets.UTF_8)),
                 AuditActor.moderator(staffId),
                 AuditOutcome.SUCCEEDED,
-                "key=%s; created=%s; enabled=%s; rollout=%d; explicit=%d"
-                        .formatted(key, existing.isEmpty(), enabled, rolloutPercentage, enabledAccounts.size()));
+                "key=%s; before: %s; after: %s; accounts added=%s; accounts removed=%s"
+                        .formatted(key, before, saved.describe(), added, removed));
 
         log.info("Feature flag {} set by {} (enabled={}, rollout={})", key, staffId, enabled, rolloutPercentage);
         return saved;
+    }
+
+    private static FeatureFlagRefusedException changed(String key) {
+        return new FeatureFlagRefusedException(
+                Reason.FEATURE_FLAG_CHANGED, "Flag " + key + " was changed by somebody else after it was read.");
     }
 
     private Snapshot current() {

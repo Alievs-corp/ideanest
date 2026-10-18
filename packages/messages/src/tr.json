@@ -847,7 +847,10 @@
       "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
       "needsCapabilityToAct": "Bu işlem için {capability} yetkisi gerekir, rolleriniz ise bunu içermiyor. Bunu bir yönetici verebilir.",
       "capabilityNamed": "«{name}» ({capability})",
-      "invalidRequest": "Hizmet isteği okuyamadı. Alanları kontrol edip yeniden deneyin."
+      "invalidRequest": "Hizmet isteği okuyamadı. Alanları kontrol edip yeniden deneyin.",
+      "invalidRange": "Bu dönem okunamaz: bitişinden sonra başlayamaz ve bir yıldan uzun olamaz.",
+      "invalidCursor": "Liste değişti ve sonraki sayfa bulunamadı. Listeyi yeniden yükleyin.",
+      "serviceFailed": "Serviste bir hata oluştu. Biraz sonra yeniden deneyin."
     },
     "note": {
       "why": "Gerekçe",
@@ -871,6 +874,23 @@
         "copy": "Tanımlayıcıyı kopyala",
         "copyLabel": "{id} ile başlayan tam tanımlayıcıyı kopyala",
         "copied": "Kopyalandı"
+      },
+      "chart": {
+        "summary": "{from} – {to} arası toplanan: toplam {total}; en yüksek {period}, {amount}.",
+        "granularity": {
+          "day": "Her sütun bir gün",
+          "week": "Her sütun bir hafta",
+          "month": "Her sütun bir ay"
+        },
+        "highest": "En yüksek: {period} — {amount}",
+        "total": "Toplam: {amount}",
+        "count": "Destek sayısı: {count}",
+        "range": "{from} – {to}",
+        "keyboardHint": "Sütunlar arasında sol ve sağ ok tuşlarıyla geçin.",
+        "tableToggle": "Rakamları tablo olarak göster",
+        "periodColumn": "Dönem",
+        "countColumn": "Destek sayısı",
+        "amountColumn": "Toplanan"
       }
     },
     "pages": {
@@ -878,25 +898,25 @@
         "metaTitle": "Denetim günlüğü",
         "metaDescription": "Platformun kaydettiği her ayrıcalıklı işlem, en yenisi başta.",
         "title": "Denetim günlüğü",
-        "intro": "Kim ne yaptı, neye yaptı ve sonucu ne oldu. Tablo bir gelenek olarak değil, PostgreSQL veritabanının kendisinde yalnızca eklemeye açıktır, bu yüzden bu sayfadaki — ve servisteki — hiçbir şey burada zaten bulunan bir satırı değiştiremez."
+        "intro": "Kim ne yaptı, neye yaptı ve sonucu ne oldu. Kayıtlar değiştirilemez ve silinemez."
       },
       "health": {
         "metaTitle": "Sistem sağlığı",
         "metaDescription": "Kuyruk derinliği, başarısız işler ve sağlayıcı durumu, sayfayı açtığınızda ölçülür.",
         "title": "Sistem sağlığı",
-        "intro": "Sayfayı açtığınızda ölçülür. Bu sayfadaki hiçbir şey kimseyi uyandırmaz ve siz bakmıyorken hiçbir şey onu izlemez — bir şeyden şüphelendiğinizde okuyun, size haber vermesine güvenmeyin."
+        "intro": "Kuyruklar, zamanlanmış işler ve ödeme sağlayıcıları tek bakışta."
       },
       "flags": {
         "metaTitle": "Özellik bayrakları",
-        "metaDescription": "Kademeli yayılım ve deneyler, dediğini yapan bir kapatma anahtarıyla.",
+        "metaDescription": "Kademeli yayılım ve deneyler: kim neyi görüyor ve ne kadar geniş.",
         "title": "Özellik bayrakları",
-        "intro": "Yayılım yüzdesi kararlı bir özet değerle belirlenir, bu yüzden onu genişletmek yalnızca insan ekler — sayı arttığı için kimse bir özelliği kaybetmez. Bir bayrağı kapatmak, onunla ilgili diğer her şeyi geçersiz kılar."
+        "intro": "Bir özelliği herkes için, giriş yapmış okuyucuların bir kısmı için ya da seçilen hesaplar için açın. Oranı artırdığınızda zaten görenler görmeye devam eder, yalnızca yeni kişiler eklenir."
       },
       "analytics": {
         "metaTitle": "Platform analitiği",
         "metaDescription": "Tüm platform genelinde hacim, başarı oranı ve ortalama destek.",
         "title": "Platform analitiği",
-        "intro": "AD-13'ün beşinden üçü. Kohortlar ve huniler burada değil; ekran, onlara benzeyecek iki sayıyı tahmin etmek yerine her birinin neyi beklediğini söylüyor."
+        "intro": "Seçilen dönem için destek hacmi, destekçiler, ortalama destek ve kampanya sonuçları."
       },
       "curation": {
         "metaTitle": "Koleksiyonlar",
@@ -938,12 +958,12 @@
         "metaTitle": "E-posta şablonları",
         "metaDescription": "Platformun gönderdiği her mesajın metni ve ona yapılmış her düzenleme.",
         "title": "E-posta şablonları",
-        "intro": "Kodla gelen metin, biri onu yeniden yazmadıysa platformun gönderdiği metindir. Bir düzenleme yerinde bir şey değiştirmez, bir sürüm ekler, böylece «bu bildirim martta ne diyordu» sorusu yanıtlanabilir kalır."
+        "intro": "Kimse yeniden yazmadıysa platform hazır metni gönderir. Her dil ayrı düzenlenir ve her düzenleme yeni bir sürümdür; böylece «bu bildirim martta ne diyordu» sorusu yanıtlanabilir kalır."
       },
       "emailTemplatesType": {
         "metaTitle": "E-posta metni",
-        "metaDescription": "Kodla gelen metin, varsa geçersiz kılma ve kimin ne yazdığına dair her sürüm.",
-        "intro": "Konu ve ilk paragraf, bir yöneticinin yeniden yazabileceği kısımdır. Başlık, düğme etiketi ve bir türün koşullu ikinci paragrafı kodla gelen katalogda kalır — etiketi olmayan bir düğme, kötü yazılmış değil bozuk bir e-postadır."
+        "metaDescription": "Hazır metin, her dil için yeniden yazılmış metin ve her sürümü kimin yazdığı.",
+        "intro": "Konuyu ve ilk paragrafı her dil için ayrı ayrı yeniden yazabilirsiniz. Başlık, düğme ve ikinci paragraf hazır metinde kalır, böylece e-postanın yapısı bozulmaz."
       },
       "fees": {
         "metaTitle": "Ücretler",
@@ -1067,9 +1087,9 @@
       },
       "legal": {
         "metaTitle": "Hukuki belgeler",
-        "metaDescription": "§22.2 gerektirdiği sekiz belge, sürümleri ve yayımlanmaları.",
+        "metaDescription": "Platformun sekiz hukuki belgesi, sürümleri ve yayımlanmaları.",
         "title": "Hukuki belgeler",
-        "intro": "Yayımlanmış bir sürüm düzenlenmez. Düzeltme yeni bir sürümdür ve eskisi okunabilir kalır, çünkü bir kabul kaydı sürümü adlandırır."
+        "intro": "Platformun hukuki belgelerini her dilde yazın, yayımlayın ve sitenin hangi sürümü gösterdiğini seçin."
       },
       "revenue": {
         "metaTitle": "Gelir",
@@ -1093,7 +1113,11 @@
         "metaTitle": "Bakım pencereleri",
         "metaDescription": "Planlı bakımı planlayın, başlatın ve bitirin; okurlar önceden uyarılır.",
         "title": "Bakım",
-        "intro": "Bir pencere yürürlükteyken her okur bakım sayfasını görür ve servis; giriş, ödeme sağlayıcılarının webhook istekleri ve ekip üyeleri dışında her şeyi reddeder. Okurlar duyuru zamanından itibaren, varsayılan olarak bir gün önceden uyarılır. Para veya mesaj gönderen arka plan işleri durur ve pencere bitince devam eder."
+        "intro": "Bir pencere yürürlükteyken okurlar bakım sayfasını görür, ekip ise konsolda çalışmaya devam eder. Okurlar duyuru zamanından itibaren, varsayılan olarak bir gün önceden uyarılır.",
+        "detailsSummary": "Pencere sırasında ne durur, ne çalışmaya devam eder",
+        "detailsPasses": "Geçenler: ekip üyeleri, giriş, ödeme sağlayıcılarının bildirimleri ve banka doğrulamasından sonra siteye dönüş. Diğer her istek reddedilir.",
+        "detailsPaused": "Duran altı arka plan işi: iadeler, yanıtsız ödeme sayfalarının kontrolü, defter mutabakatı, bildirim gönderimi ve özetleri, açılış hatırlatmaları.",
+        "detailsRunning": "Çalışmaya devam edenler: kampanyaların açılması ve süresinde kapanması, otomatik para çekme ve giden kuyruğu."
       }
     },
     "screens": {
@@ -1103,9 +1127,7 @@
         "filterLabel": "İşlem neyle ilgiliydi",
         "everything": "Hepsi",
         "clearDates": "Tarihleri temizle",
-        "toHint": "Bu günün sonuna kadar.",
         "toLabel": "Bitiş",
-        "fromHint": "Bu günün başından.",
         "fromLabel": "Başlangıç",
         "actorHint": "Kimin işlemleri gösterilsin. Birini aramak da kaydedilen bir okumadır.",
         "actorLabel": "İşlemi yapan",
@@ -1117,7 +1139,7 @@
         "filteredBody": "Bu filtrelere uyan hiçbir ayrıcalıklı işlem yok. Geri kalanı görmek için filtreleri genişletin.",
         "refused": "Reddedildi",
         "requestId": "istek {id}",
-        "footnote": "Bu sayfayı okumak ona bir satır yazar. Kimsenin denetlemediği bir denetim yüzeyi, bir soruşturmanın güvenmemekle başladığı yüzeydir, bu yüzden okuma da yazma gibi kaydedilir — filtre ve satır sayısıyla, asla satırların kendisiyle değil.",
+        "footnote": "Bu sayfayı açmak ve filtrelemek de günlüğe yazılır.",
         "entity": {
           "account": "Hesaplar",
           "collaborator": "Ortak çalışanlar",
@@ -1127,7 +1149,7 @@
           "feature_flag": "Özellik bayrakları",
           "fee_schedule": "Ücret çizelgeleri",
           "maintenance_window": "Bakım pencereleri",
-          "payout": "Ödemeler",
+          "payout": "Yaratıcı ödemeleri",
           "project": "Kampanyalar",
           "refund": "İadeler",
           "report": "Şikayetler",
@@ -1135,7 +1157,10 @@
           "subscription": "Abonelikler",
           "subscription_plan": "Abonelik planları",
           "support_ticket": "Destek talepleri",
-          "taxonomy": "Taksonomi"
+          "taxonomy": "Taksonomi",
+          "legal_document": "Hukuki belgeler",
+          "subscription_charge": "Plan ödemeleri",
+          "user": "Kullanıcı hesapları"
         },
         "action": {
           "account": {
@@ -1149,7 +1174,9 @@
             "password_reset": "Parola sıfırlandı",
             "reinstated": "Hesap yeniden açıldı",
             "searched": "Hesaplar arandı",
-            "suspended": "Hesap askıya alındı"
+            "suspended": "Hesap askıya alındı",
+            "blocked": "Kullanıcı engellendi",
+            "unblocked": "Kullanıcının engeli kaldırıldı"
           },
           "audit": {
             "trail_read": "Denetim izi okundu"
@@ -1163,7 +1190,8 @@
             "handled": "Ters ibraz sonuçlandırıldı"
           },
           "email": {
-            "template_edited": "E-posta şablonu düzenlendi"
+            "template_edited": "E-posta şablonu düzenlendi",
+            "template_withdrawn": "E-posta şablonu geri çekildi"
           },
           "feature": {
             "flag_changed": "Özellik bayrağı değiştirildi"
@@ -1192,9 +1220,13 @@
             "log_read": "Ödeme günlüğü okundu"
           },
           "payout": {
-            "approved": "Ödeme onaylandı",
-            "calculated": "Ödeme hesaplandı",
-            "sent": "Ödeme gönderildi"
+            "approved": "Yaratıcı ödemesi onaylandı",
+            "calculated": "Yaratıcı ödemesi hesaplandı",
+            "sent": "Yaratıcı ödemesi gönderildi",
+            "approval_withdrawn": "Yaratıcı ödemesinden imza geri çekildi",
+            "cancelled": "Yaratıcı ödemesi iptal edildi",
+            "bank_transfer_started": "Yaratıcı ödemesi için banka havalesi başlatıldı",
+            "bank_transfer_abandoned": "Yaratıcı ödemesinin banka havalesinden vazgeçildi"
           },
           "project": {
             "addresses_locked": "Adresler kilitlendi",
@@ -1235,7 +1267,10 @@
             "activated": "Abonelik başlatıldı",
             "canceled": "Abonelik iptal edildi",
             "plan_changed": "Abonelik planı değiştirildi",
-            "plan_created": "Abonelik planı oluşturuldu"
+            "plan_created": "Abonelik planı oluşturuldu",
+            "payment_refunded": "Plan ödemesi iade edildi",
+            "renewed": "Abonelik yenilendi",
+            "revenue_exported": "Plan geliri dışa aktarıldı"
           },
           "support": {
             "ticket_handled": "Destek talebi yanıtlandı"
@@ -1246,7 +1281,74 @@
           "two_factor": {
             "disabled": "İki adımlı giriş kapatıldı",
             "enabled": "İki adımlı giriş açıldı"
+          },
+          "partner": {
+            "profile_saved": "Ortak profili kaydedildi",
+            "profile_removed": "Ortak profili kaldırıldı",
+            "statistics_read": "Ortak istatistikleri açıldı"
+          },
+          "dashboard": {
+            "read": "Özet açıldı"
+          },
+          "analytics": {
+            "read": "Platform analitiği açıldı"
+          },
+          "legal": {
+            "document_published": "Hukuki belge yayımlandı",
+            "document_activated": "Hukuki belge sürümü yürürlüğe kondu",
+            "document_drafted": "Hukuki belge taslağı kaydedildi",
+            "acceptance_record_read": "Onay kayıtları açıldı",
+            "agreement_signed": "Sözleşme imzalandı",
+            "signed_agreement_read": "İmzalı sözleşme açıldı"
+          },
+          "compliance": {
+            "override_granted": "Uyum gerekliliğinden istisna tanındı",
+            "override_revoked": "Uyum istisnası geri alındı",
+            "legal_subject_recorded": "Hukuki kimlik bilgileri kaydedildi",
+            "legal_subject_read": "Hukuki kimlik bilgileri açıldı",
+            "payout_destination_recorded": "Ödeme hesabı kaydedildi",
+            "payout_destination_verified": "Ödeme hesabı doğrulandı",
+            "payout_destination_read": "Ödeme hesabı açıldı",
+            "payout_destination_account_revealed": "Ödeme hesabı numarası gösterildi"
+          },
+          "obligation": {
+            "update_resolved": "Güncelleme yükümlülüğü çözüldü"
           }
+        },
+        "datesHint": "İlk gün başından, son gün sonuna kadar dahildir.",
+        "hideReads": "Ekran okumalarını gizle",
+        "hideReadsHint": "Günlüğün, özetin, analitiğin, ödeme günlüğünün, defterin ve risk kuyruğunun açılmasını, hesap aramalarını gizler. Birinin kişisel belgesini veya banka hesabını açmak her zaman gösterilir.",
+        "actorApplied": "Yalnızca şu kişinin işlemleri:",
+        "everyone": "Herkesi göster",
+        "byThisPerson": "Bu kişinin işlemleri",
+        "byThisPersonLabel": "Yalnızca {name} adlı kişinin işlemlerini göster",
+        "technicalNote": "Teknik not",
+        "actorType": {
+          "USER": "Kullanıcı",
+          "MODERATOR": "Personel",
+          "SYSTEM": "Sistem"
+        },
+        "entityOne": {
+          "project": "Kampanya",
+          "account": "Hesap",
+          "report": "Şikayet",
+          "payout": "Yaratıcı ödemesi",
+          "refund": "İade",
+          "dispute": "Ters ibraz",
+          "subscription": "Abonelik",
+          "subscription_charge": "Plan ödemesi",
+          "subscription_plan": "Abonelik planı",
+          "fee_schedule": "Ücret çizelgesi",
+          "legal_document": "Hukuki belge",
+          "support_ticket": "Destek talebi",
+          "collaborator": "Ortak çalışan",
+          "session": "Oturum",
+          "email_template": "E-posta şablonu",
+          "feature_flag": "Özellik bayrağı",
+          "taxonomy": "Taksonomi",
+          "maintenance_window": "Bakım penceresi",
+          "user": "Kullanıcı hesabı",
+          "collection": "Koleksiyon"
         }
       },
       "health": {
@@ -1254,57 +1356,159 @@
         "loadingList": "Sağlık panosu yükleniyor",
         "readFailed": "Pano okunamadı.",
         "notMonitoredTitle": "Bu sayfa kimseyi uyarmaz",
-        "notMonitoredBody": "Buradaki her şey siz açtığınızda ölçülür. Bu ekrandaki hiçbir şey kimseyi uyandırmaz ve siz bakmıyorken hiçbir şey onu izlemez — §18'in gözlemlenebilirlik işi (#138) bunu yapacak. Bir şeyden şüphelendiğinizde okuyun; size haber vermesine güvenmeyin.",
+        "notMonitoredBody": "Buradaki her şey sayfayı açtığınız anda ölçülür. Bu ekran kimseye bir şey bildirmez ve siz bakmıyorken hiçbir şey onu izlemez. Bir şeyden şüphelendiğinizde okuyun; size haber vermesine güvenmeyin.",
         "overall": "Genel",
-        "measuredSeconds": "{count} saniye önce ölçüldü.",
-        "measuredMinutes": "{count} dakika önce ölçüldü.",
+        "measuredAt": "Ölçüm zamanı: {time}.",
         "measureAgain": "Yeniden ölç",
         "queues": "Kuyruklar",
         "waiting": "{count} bekliyor",
-        "givenUp": "{count} vazgeçildi",
+        "givenUp": "{count} gönderilemedi (denemeler tükendi)",
+        "givenUpHint": "Bunlar kendiliğinden yeniden gönderilmez. Nedeni giderip yeniden göndermesi için teknik ekibe bildirin.",
         "jobs": "Zamanlanmış işler",
-        "overdue": "{count} dakika gecikti",
+        "jobsAttention": "İlgilenilmesi gereken işler: {count}",
+        "jobsAllWell": "Tüm işler yolunda.",
+        "overdue": {
+          "minutes": {
+            "one": "{count} dakika gecikmiş",
+            "few": "{count} dakika gecikmiş",
+            "many": "{count} dakika gecikmiş",
+            "other": "{count} dakika gecikmiş"
+          },
+          "hours": {
+            "one": "{count} saat gecikmiş",
+            "few": "{count} saat gecikmiş",
+            "many": "{count} saat gecikmiş",
+            "other": "{count} saat gecikmiş"
+          },
+          "days": {
+            "one": "{count} gün gecikmiş",
+            "few": "{count} gün gecikmiş",
+            "many": "{count} gün gecikmiş",
+            "other": "{count} gün gecikmiş"
+          }
+        },
         "onTime": "zamanında",
-        "attempts": "{count} deneme",
+        "lastRun": "Son çalışma: {time}",
+        "neverRun": "Hiç çalışmadı",
+        "lastErrorLabel": "Son hatanın teknik metni",
         "providers": "Sağlayıcılar",
         "notConfigured": "Yapılandırılmadı",
+        "attempts": {
+          "one": "{count} deneme",
+          "few": "{count} deneme",
+          "many": "{count} deneme",
+          "other": "{count} deneme"
+        },
         "status": {
           "HEALTHY": "Sağlıklı",
           "DEGRADED": "Bakmaya değer",
-          "CRITICAL": "Durdu"
+          "CRITICAL": "Hemen ilgilenilmeli"
         },
         "jobState": {
           "READY": "Sonraki çalışması için hazır",
-          "RUNNING": "Çalışıyor",
-          "FAILED": "Son çalışmasında başarısız oldu",
-          "DISABLED": "Kapatılmış"
+          "DEAD": "Denemeler tükendi, kendiliğinden yeniden başlamaz"
+        },
+        "hold": {
+          "MAINTENANCE": "Bakım bitene kadar duraklatıldı",
+          "UNSCHEDULED": "Bu kurulumda zamanlanmamış; kendiliğinden çalışmaz"
         },
         "queue": {
-          "outbox": "Giden kuyruğu",
-          "scheduled-jobs": "Planlanmış işler"
+          "outbox": "Giden kuyruğu"
+        },
+        "kind": {
+          "payments": "Ödemeler"
+        },
+        "providerName": {
+          "PAYRIFF": "Payriff",
+          "EPOINT": "Epoint",
+          "AZERICARD": "AzeriCard",
+          "SANDBOX": "Test sağlayıcısı"
+        },
+        "reason": {
+          "NOT_CONFIGURED": "Bu kurulumda kimlik bilgileri yok. Kapalı, arızalı değil.",
+          "CIRCUIT_OPEN": "Art arda hatalardan sonra geçici olarak devre dışı bırakıldı. Platform kısa süre içinde yeniden deneyecek."
+        },
+        "jobName": {
+          "account-anonymiser": "Hesap anonimleştirme",
+          "analytics-aggregator": "Günlük analitik özeti",
+          "automatic-withdrawal": "Fonların otomatik çekilmesi",
+          "campaign-finalizer": "Kampanyaların süresinde kapatılması",
+          "campaign-launcher": "Planlanmış kampanyaların açılması",
+          "campaign-refunds": "Başarısız kampanyaların iadeleri",
+          "deadline-reminder": "Bitiş tarihi hatırlatmaları",
+          "exchange-rate-refresh": "Döviz kuru güncellemesi",
+          "hosted-charge-sweep": "Yanıtsız ödeme sayfalarının kontrolü",
+          "idempotency-key-cleaner": "Süresi dolmuş tekrar anahtarlarının silinmesi",
+          "identity-document-retention": "Kimlik belgesi saklama süresi",
+          "ledger-reconciliation": "Defter mutabakatı",
+          "media-processing": "Yüklenen medyanın işlenmesi",
+          "media-video-processing": "Video işleme",
+          "notification-digest": "Bildirim özetleri",
+          "notification-sender": "Bildirim gönderimi",
+          "outbox-relay": "Giden kuyruğu aktarımı",
+          "payout-destination-reminders": "Ödeme hesabı hatırlatmaları",
+          "push-device-retention": "Eski anlık bildirim kayıtlarının silinmesi",
+          "reminder-sender": "Açılış hatırlatmaları",
+          "reservation-cleaner": "Tamamlanmamış ödeme rezervlerinin bırakılması",
+          "subscription-renewal-reminders": "Abonelik yenileme hatırlatmaları",
+          "survey-nudge": "Anket hatırlatmaları",
+          "update-obligation-sweep": "Aylık güncelleme yükümlülüğü kontrolü"
         }
       },
       "flags": {
         "subject": "özellik bayraklarını",
         "heading": "Bayraklar",
         "loadingList": "Özellik bayrakları yükleniyor",
+        "notReadTitle": "Bu bayrakları henüz hiçbir ekran okumuyor",
+        "notReadBody": "Bir bayrağı değiştirmek platformun verdiği yanıtı değiştirir. Bir özellik bayrağı okumaya başlayana kadar hiçbir şey buna tepki vermez.",
         "emptyTitle": "Bayrak yok",
-        "emptyBody": "Bu kurulumda hiçbir şey bir anahtarın arkasında değil. Var olmayan bir bayrağı soran kod false alır, bu yüzden platform yapılmamış her özelliği kapalı sayar — ki bu güvenli yöndür.",
+        "emptyBody": "Henüz hiç bayrak oluşturulmadı. Var olmayan bir bayrak herkes için kapalı sayılır.",
         "on": "Açık",
         "off": "Kapalı",
         "rollout": "Yayılım",
-        "alwaysIn": "{count} her zaman dahil",
-        "lastChanged": "Son değişiklik {date}",
-        "offForEverybody": "üzerinde adı geçen hesaplar dahil herkes için kapalı",
+        "rolloutGroup": "{flag} bayrağının yayılımı",
+        "rolloutNow": "Yayılım: {percent}",
+        "reach": {
+          "off": "Adı geçen hesaplar dahil herkes için kapalı.",
+          "nobody": "Açık, ama kimseye ulaşmıyor: yayılım sıfır ve hiçbir hesap eklenmemiş.",
+          "named": "Yalnızca adı geçen hesaplar görüyor.",
+          "some": "Giriş yapmış okurların bir kısmı ({percent}) ve adı geçen hesaplar görüyor. Giriş yapmamış ziyaretçiler görmüyor.",
+          "everybody": "Herkes görüyor, giriş yapmamış ziyaretçiler dahil."
+        },
+        "accountsHeading": "Her zaman dahil olanlar",
+        "accountsNone": "Hiçbir hesap eklenmemiş.",
+        "accountsReadOnly": "Hesap eklemek ve çıkarmak için hesapları yönetme izni gerekir.",
+        "accountsFull": "Bir bayrağa en fazla 200 hesap eklenebilir.",
+        "addAccount": "Hesap ekle",
+        "removeAccount": "Çıkar",
+        "removeAccountLabel": "{name} hesabını {flag} bayrağından çıkar",
+        "editDescription": "Açıklamayı değiştir",
+        "saveDescription": "Açıklamayı kaydet",
+        "lastChanged": "Son değişiklik: {date}, {name}",
+        "confirmLabel": "{flag} bayrağındaki değişikliği onaylayın",
+        "confirmWiden": "{flag} daha çok kişiye ulaşacak. Kaydedildikten sonra: {reach}",
+        "confirmYes": "Evet, kaydet",
+        "keep": "Şimdi değil",
         "addHeading": "Bayrak ekle",
-        "addIntro": "Yeni bayraklar kapalı ve sıfır yüzdeyle gelir. Bir yayılımı genişletmek yalnızca insan ekler — içindeki hesaplar örneklemle değil kararlı bir özet değerle belirlenir, bu yüzden yüzde arttığı için kimse bir özelliği kaybetmez.",
+        "addIntro": "Yeni bayrak kapalı, sıfır oranla ve hesapsız oluşturulur. Ardından kartından açıp genişletebilirsiniz.",
         "nameLabel": "Ad",
-        "nameHint": "Küçük harfle ve tireli, kodun istediği gibi.",
-        "nameError": "Küçük harfler, rakamlar ve tire.",
+        "nameHint": "Küçük harfler, rakamlar ve tire, en az üç karakter: checkout-v2.",
+        "nameError": "Küçük harfler, rakamlar ve tire. Harfle başlar, harf ya da rakamla biter.",
         "switchesLabel": "Neyi açıp kapatıyor",
+        "descriptionRequired": "Bayrağın neyi açıp kapattığını yazın.",
+        "created": "{flag} kapalı olarak oluşturuldu.",
+        "doneTitle": "Tamam",
         "working": "Çalışıyor",
         "add": "Ekle",
-        "failedTitle": "Bu işe yaramadı"
+        "failedTitle": "Bu işe yaramadı",
+        "errors": {
+          "FEATURE_FLAG_EXISTS": "Bu adda bir bayrak zaten var. Onu yukarıdaki listede değiştirin.",
+          "FEATURE_FLAG_CHANGED": "Siz okuduktan sonra bu bayrağı başka biri değiştirdi. Liste yeniden okundu: değişikliğinize bir kez daha bakın.",
+          "FEATURE_FLAG_NOT_FOUND": "Bu bayrak artık yok. Liste yeniden okundu.",
+          "FEATURE_FLAG_KEY_INVALID": "Bu ad olmaz: yalnızca küçük harfler, rakamlar ve tire."
+        },
+        "addAccountLabel": "{flag} bayrağına hesap ekle",
+        "addAccountClose": "Kapat"
       },
       "analytics": {
         "subject": "platform rakamlarını",
@@ -1315,36 +1519,50 @@
           "365": "365 gün"
         },
         "range": "{from} ile {to} arası",
-        "volume": "Hacim",
+        "volume": "Net hacim",
         "pledges": "Destekler",
         "backers": "Destekçiler",
         "averagePledge": "Ortalama destek",
-        "liveProjects": "Yayındaki kampanyalar",
+        "liveProjects": "Şu an yürüyen kampanyalar",
         "planRevenue": "Plan geliri",
         "planPayments": "Plan ödemeleri",
         "otherCurrencyTitle": "Bazı destekler bu toplamlarda yok",
-        "otherCurrencyBody": "Bu dönemdeki {count} destek başka bir para birimindeydi. §21.2 onları çevirecek bir şey vermiyor, bu yüzden burada sayılıyor ve kimsenin mutabık kılamayacağı bir rakama eklenmek yerine hacmin dışında bırakılıyorlar.",
-        "outcomesHeading": "Kapanan kampanyalar",
-        "noneClosed": "Bu dönemde hiçbir kampanya kapanmadı. Bu, sıfır başarı oranı değil — oranın hiç olmamasıdır, bu yüzden burada bir şey gösterilmiyor.",
+        "otherCurrencyBody": "Bu dönemde {count} destek başka bir para biriminde yapıldı; çevrilmeden ayrıca sayılıyor ve hacme dahil değil.",
+        "outcomesHeading": "Bu dönemde sonuçlanan kampanyalar",
+        "noneClosed": "Bu dönemde sonuçlanan kampanya yok.",
         "succeeded": "Başarılı",
         "didNot": "Başarısız",
         "successRate": "Başarı oranı",
-        "dailyHeading": "Günlük hacim",
+        "dailyHeading": "Dönem boyunca hacim",
         "nothingPledged": "Bu dönemde hiçbir destek verilmedi.",
-        "notBuiltHeading": "Bu ekranın yanıtlamadıkları",
+        "notBuiltHeading": "Henüz hazır olmayanlar",
         "notBuilt": {
-          "COHORTS": "Kohortlar için destekçinin ilk desteğine göre bir toplama gerekir; böylesi yok (#313).",
-          "FUNNELS": "Huniler için ziyaretten desteğe giden yol gerekir; referral_touches varışı kaydeder, sonrasını değil (#313)."
+          "COHORTS": "Kohort analizi henüz hazır değil.",
+          "FUNNELS": "Ziyaretten desteğe huni henüz hazır değil."
         },
-        "busiestDay": "En yoğun gün {day}, {amount}"
+        "windowLegend": "Dönem",
+        "populationNote": "Yalnızca bu dönemde tahsil edilen ve iade ya da ters ibraz edilmeyen destekler sayılır; kısmi iadeler düşülmüştür.",
+        "nowHeading": "Şu an",
+        "computedAt": "Rakamlar {time} itibarıyla okundu (Bakü saati)."
       },
       "emailTemplates": {
         "subject": "e-posta şablonlarını",
         "loadingList": "E-posta şablonları yükleniyor",
         "readFailed": "Şablonlar okunamadı.",
         "emptyTitle": "Şablon yok",
-        "emptyBody": "Bu kurulumda platform hiçbir bildirim göndermiyor, ki bu neredeyse kesinlikle mesaj kataloğunun yüklenemediği anlamına gelir.",
-        "transactional": "İşlemsel",
+        "emptyBody": "Hizmet hiçbir e-posta şablonu döndürmedi. Sayfayı yenileyin; yine boş kalırsa teknik ekibe bildirin.",
+        "mandatory": "Kapatılamaz",
+        "shippedOnly": "Hazır metin",
+        "rewritten": "{language} · sürüm {version}",
+        "notFoundTitle": "Böyle bir şablon yok",
+        "notFoundBody": "Bu adreste bir e-posta şablonu yok. Listeden birini seçin.",
+        "backToList": "Tüm şablonlar",
+        "language": {
+          "az": "Azerice",
+          "en": "İngilizce",
+          "ru": "Rusça",
+          "tr": "Türkçe"
+        },
         "category": {
           "PLEDGES": "Destekler",
           "CAMPAIGN": "Kampanyalar",
@@ -1353,6 +1571,39 @@
           "REWARDS": "Ödüller ve anketler",
           "DISCOVERY": "Takipler",
           "SECURITY": "Hesap güvenliği"
+        },
+        "type": {
+          "PLEDGE_CONFIRMED": "Destek onaylandı",
+          "PLEDGE_EDITED": "Destek değiştirildi",
+          "GOAL_REACHED": "Kampanya hedefine ulaştı",
+          "DEADLINE_48H": "Bitişe 48 saat kaldı",
+          "DEADLINE_24H": "Bitişe 24 saat kaldı",
+          "CAMPAIGN_SUCCEEDED": "Kampanya başarıyla tamamlandı",
+          "CAMPAIGN_UNSUCCESSFUL": "Kampanya hedefine ulaşamadı",
+          "CAMPAIGN_EXTENDED": "Kampanya süresi uzatıldı",
+          "UPDATE_DUE_SOON": "Güncelleme zamanı yaklaşıyor",
+          "PROJECT_APPROVED": "Kampanya onaylandı",
+          "PAYMENT_COLLECTED": "Ödeme alındı",
+          "PAYMENT_FAILED": "Ödeme gerçekleşmedi",
+          "FINAL_PAYMENT_WARNING": "Son ödeme uyarısı",
+          "PAYOUT_SENT": "Ödeme yaratıcıya aktarıldı",
+          "WITHDRAWAL_REQUESTED": "Para çekme talep edildi",
+          "PAYOUT_DETAILS_NEEDED": "Ödeme için hesap bilgileri gerekli",
+          "REFUND_NEEDS_BANK_DETAILS": "İade için banka bilgileri gerekli",
+          "REFUND_SENT_BY_BANK": "İade banka havalesiyle gönderildi",
+          "SUBSCRIPTION_RENEWAL_DUE": "Abonelik yenileme zamanı yaklaşıyor",
+          "SUBSCRIPTION_LAPSED": "Abonelik sona erdi",
+          "SUBSCRIPTION_RENEWED": "Abonelik yenilendi",
+          "NEW_UPDATE_PUBLISHED": "Yeni güncelleme yayımlandı",
+          "COMMENT_REPLY": "Yoruma yanıt",
+          "DIRECT_MESSAGE": "Özel mesaj",
+          "SURVEY_AVAILABLE": "Anket açıldı",
+          "SURVEY_OVERDUE": "Anketin süresi geçti",
+          "REWARD_SHIPPED": "Ödül gönderildi",
+          "FOLLOWED_CREATOR_LAUNCHED": "Takip edilen yaratıcı kampanya başlattı",
+          "LAUNCH_REMINDER": "Kampanya açılış hatırlatması",
+          "SAVED_PROJECT_ENDING_SOON": "Kaydedilen kampanya bitmek üzere",
+          "NEW_DEVICE_SIGN_IN": "Yeni cihazdan giriş"
         }
       },
       "emailTemplateEditor": {
@@ -1360,30 +1611,84 @@
         "historySubject": "sürüm geçmişini",
         "loadingList": "Metin yükleniyor",
         "readFailed": "Metin okunamadı.",
-        "overriddenTitle": "Bu metin yeniden yazıldı",
-        "overriddenBody": "Sürüm {version} yayında ve platformun gönderdiği bu. Onu geri çekmek kodla gelen metni yeniden gönderir — sürümler her durumda saklanır, çünkü «bu bildirim martta ne diyordu» sorusunu eninde sonunda biri sorar.",
-        "shippedTitle": "Bu, kodla gelen metin",
-        "shippedBody": "Hiçbir şey düzenlenmedi, bu yüzden platform kodla gelen metni gönderiyor. Düzenleme yerinde bir şey değiştirmez, bir sürüm ekler.",
-        "shippedHeading": "Kodla gelen metin",
+        "languageLabel": "Dil",
+        "reach": "Bu metin dili {language} olan alıcılara gider. Diğer dillerin kendi metni vardır ve değişmez.",
+        "reachPrimary": "Dil seçmeyen ya da platformun çevirmediği bir dili seçen alıcılar da bu metni alır.",
+        "overriddenTitle": "Bu dilde metin yeniden yazıldı",
+        "overriddenBody": "Sürüm {version} yayında: dili {language} olan alıcılara giden bu. Hazır metne dönerseniz sürümler geçmişte kalır.",
+        "shippedTitle": "Hazır metin gönderiliyor",
+        "shippedBody": "Bu dilde hiçbir şey değiştirilmedi, bu yüzden platform hazır metni gönderiyor. Her düzenleme yeni bir sürüm olarak saklanır; hiçbir şey yerinde değişmez.",
+        "shippedHeading": "Hazır metin",
+        "shippedNamedLabel": "Kampanya adıyla — alıcıların neredeyse tamamı bunu alır",
+        "shippedPlainLabel": "Kampanya adı bilinmediğinde",
         "yourHeading": "Sizin metniniz",
-        "mustKeep": "Korunmalı:",
-        "mustKeepWhy": "— bunlar mesajın taşıdığı bilgilerdir. Birini düşüren bir ödeme bildirimi kişiye ne olduğunu söylemeyi bırakır.",
+        "placeholdersHeading": "Yer tutucular",
+        "placeholdersIntro": "Süslü parantez içindeki sayı, gönderilirken gerçek bilgiyle değiştirilir. Süslü parantezi yalnızca bunlar için kullanın; kesme işareti olduğu gibi kalır.",
+        "mustKeep": "korunmalı",
+        "placeholder": {
+          "0": "alıcının adı",
+          "1": "kampanyanın adı",
+          "2": "tutar",
+          "3": "ek bilgi: deneme numarası, tarih ya da sayı",
+          "4": "hesabın gizlenmiş numarası",
+          "5": "planın adı"
+        },
+        "campaignFallback": "Kampanya adı taşımayan eski bildirimlere hazır metin gider, bu yüzden {placeholder} hiçbir zaman boş kalmaz.",
         "subjectLabel": "Konu",
         "bodyLabel": "İlk paragraf",
-        "whyLabel": "Gerekçe",
+        "whyLabel": "Neden",
         "whyHint": "Geçmişi bir yıl sonra okuyacak kişi için.",
-        "missingTitle": "Bu, korunması gereken bir şeyi düşürüyor",
-        "missingBody": "{placeholders} eksik. Servis, kodla gelen metnin kullandığı bir yer tutucuyu dışarıda bırakan bir geçersiz kılmayı reddeder ve haklıdır: hangi kartın reddedildiğini artık söylemeyen bir bildirimi hiçbir rol denetimi yakalayamaz.",
-        "saving": "Kaydediliyor",
+        "missingTitle": "Korunması gereken bir bilgi eksik",
+        "missingBody": "{placeholders} eksik. Bu bilgiler olmadan mesaj alıcıya ne olduğunu söylemez, bu yüzden böyle bir metin kaydedilmez.",
+        "unknownTitle": "Bu mesajda böyle bir bilgi yok",
+        "unknownBody": "{placeholders} bu mesajda doldurulmaz ve boş giderdi. Yukarıdaki yer tutucuları kullanın.",
+        "malformedBody": "{field} okunamıyor: bir süslü parantez kapanmamış ya da içinde sayıdan başka bir şey var. Yer tutucuyu {example} gibi yazın.",
+        "preview": "Önizleme",
+        "previewing": "Hazırlanıyor…",
+        "previewHeading": "Önizleme",
+        "previewIntro": "Kaydedilmemiş metniniz örnek bir destek üzerinde böyle görünür.",
+        "previewSubject": "Konu: {subject}",
+        "previewFrameTitle": "E-posta önizlemesi",
+        "previewStale": "Metin bu önizlemeden sonra değişti.",
+        "testSend": "Kendime gönder",
+        "testSending": "Gönderiliyor…",
+        "testSent": "Deneme e-postası kendi adresinize gönderildi.",
+        "saving": "Kaydediliyor…",
         "saveNew": "Yeni sürüm olarak kaydet",
-        "withdraw": "Geçersiz kılmayı geri çek",
-        "savedNew": "Yeni yayın sürümü olarak kaydedildi.",
-        "savedWithdrawn": "Geri çekildi. Kodla gelen metin yeniden gönderiliyor.",
+        "confirmSaveLabel": "Kaydetmeyi onaylayın",
+        "confirmSave": "Sürüm {version} hemen yayına girer: bundan sonra dili {language} olan alıcılar bu metni alır.",
+        "confirmSaveAction": "Kaydet ve yayına al",
+        "back": "Geri dön",
+        "withdraw": "Hazır metne dön",
+        "confirmWithdrawLabel": "Hazır metne dönmeyi onaylayın",
+        "confirmWithdraw": "Sürüm {version} durdurulur ve dili {language} olan alıcılar yeniden hazır metni alır. Sürüm geçmişte kalır.",
+        "savedNew": "Sürüm {version} kaydedildi ve yayında: bundan sonraki bildirimler bu metinle gider.",
+        "savedWithdrawn": "Hazır metin yeniden gönderiliyor.",
+        "restore": "Bu sürümü geri yükle",
+        "confirmRestoreLabel": "Geri yüklemeyi onaylayın",
+        "confirmRestore": "Sürüm {from} metni yeni sürüm {version} olarak hemen yayına girer.",
+        "restoredNote": "Sürüm {version} geri yüklendi",
+        "showText": "Metni göster",
+        "switchLabel": "Dil değişikliğini onaylayın",
+        "switchConfirm": "Kaydedilmemiş metniniz kaybolacak.",
+        "switchAction": "Metni bırak ve geç",
         "doneTitle": "Tamam",
-        "failedTitle": "Bu işe yaramadı",
+        "failedTitle": "Bu olmadı",
         "versionsHeading": "Sürümler",
+        "versionsEmpty": "Bu dilde henüz hiçbir sürüm yazılmadı.",
         "versionLine": "Sürüm {version} · {date}",
-        "live": "Yayında"
+        "writtenBy": "Yazan:",
+        "live": "Yayında",
+        "tryAgain": "Yeniden deneyin",
+        "errors": {
+          "TEMPLATE_NOT_EMAILED": "Bu bildirim e-postayla gönderilmez, bu yüzden e-posta metni yoktur.",
+          "MAIL_RELAY_UNAVAILABLE": "Posta sunucusu mesajı kabul etmedi. Biraz sonra yeniden deneyin; tekrarlanırsa posta ayarlarını kontrol edin.",
+          "INVALID_REQUEST": "Alanları kontrol edin: konu en fazla 300, paragraf 50.000, neden 2.000 karakter olabilir."
+        },
+        "field": {
+          "subject": "Konu",
+          "body": "İlk paragraf"
+        }
       },
       "moderationQueue": {
         "subject": "moderasyon kuyruğunu",
@@ -1955,7 +2260,7 @@
           "MANAGE_DISPUTES": "Ters ibrazları yanıtlamak",
           "APPROVE_PAYOUT": "Bir ödemeyi onaylayıp göndermek",
           "HANDLE_SUPPORT": "Destek taleplerini yanıtlamak",
-          "CONFIGURE_PLATFORM": "Ücretleri, özellik bayraklarını ve e-posta metnini değiştirmek",
+          "CONFIGURE_PLATFORM": "Ücretleri, planları, özellik bayraklarını, e-posta metinlerini ve bakım pencerelerini yönetmek",
           "VIEW_AUDIT": "Denetim izini okumak",
           "VIEW_HEALTH": "Kuyruk derinliğini ve sağlayıcı durumunu okumak",
           "PUBLISH_LEGAL_DOCUMENT": "Bir hukuki belgenin sürümünü yayımlamak",
@@ -2988,24 +3293,24 @@
         "bodyHint": "Bağlantı değil, metnin kendisi saklanır. Kabul kaydı bu metni yıllar sonra da gösterebilmelidir.",
         "save": "Taslağı kaydet",
         "working": "Çalışıyor…",
-        "savedNotice": "{locale} dilinde {version} numaralı sürümün taslağı kaydedildi.",
+        "savedNotice": "{language} taslak kaydedildi (sürüm {version}).",
         "publishHeading": "Yayımla",
-        "publishIntro": "Açık taslakların tümü tek bir sürüm numarası ve tek bir yürürlük tarihiyle birlikte yayımlanır.",
+        "publishIntro": "Açık taslakların tümü tek bir sürüm numarası ve tek bir yürürlük tarihiyle birlikte yayımlanır. Çevirisi olmayan bir dili okuyanlar Azerice metni görür.",
         "willPublish": "Yayımlanacak diller: {languages}.",
         "governingMissingTitle": "Azerice metin eksik",
         "governingMissingBody": "Geçerli olan Azerice sürümdür, bu yüzden onsuz hiçbir şey yayımlanmaz.",
         "effectiveFromLabel": "Yürürlüğe girer",
-        "effectiveFromHint": "Boş bırakılırsa şimdi. İleri bir tarih kabul edilir; geçmiş bir tarih reddedilir.",
+        "effectiveFromHint": "Boş bırakırsanız hemen yürürlüğe girer. Seçilen tarih o gün Bakü saatiyle 00:00'da yürürlüğe girer; en erkeni yarındır.",
         "publish": "Bu sürümü yayımla",
-        "publishedNotice": "{version} numaralı sürüm yayımlandı ({languages}).",
+        "publishedNotice": "Sürüm {version} yayımlandı ve yürürlükte. Diller: {languages}.",
         "nothingDraftedTitle": "Taslak yok",
-        "nothingDraftedBody": "Önce yukarıdaki metni yazın. İkinci kez yayımlamak bir şey yapmaz.",
+        "nothingDraftedBody": "Yukarıda en az Azerice metni yazıp kaydedin, sonra yayımlayın.",
         "historyHeading": "Sürümler",
-        "historyIntro": "Her sürüm okunabilir kalır: birini kabul eden kişi neyi kabul ettiğini okuyabilmelidir.",
+        "historyIntro": "En yeni sürüm en üstte. Her biri sitede kendi adresinde okunabilir.",
         "noVersionsTitle": "Henüz bir şey yayımlanmadı",
-        "noVersionsBody": "Bu belgenin henüz metni yok, bu yüzden platformda hiçbir şey onu gerektirmiyor.",
+        "noVersionsBody": "Bu belgenin hiçbir sürümü yayımlanmadı, bu yüzden platformda kimseden onu kabul etmesi istenmiyor.",
         "versionLabel": "Sürüm {version}",
-        "versionMeta": "{from} tarihinden · hash {hash}",
+        "versionMeta": "{from} tarihinden · doğrulama kodu (SHA-256): {hash}",
         "showOnSite": "Sitede göster",
         "shownOnSite": "Sitede gösteriliyor",
         "activatedNotice": "Sürüm {version} artık sitede gösteriliyor.",
@@ -3028,6 +3333,43 @@
           "en": "İngilizce",
           "ru": "Rusça",
           "tr": "Türkçe"
+        },
+        "publishedFuture": "Sürüm {version} yayımlandı ve {date} tarihinde yürürlüğe girecek. Diller: {languages}.",
+        "takesEffect": "{date} tarihinde yürürlüğe girecek",
+        "openOnSite": "Sitede oku",
+        "readFailed": "Belge okunamadı.",
+        "back": "Geri dön",
+        "confirmPublishLabel": "Yayımlamayı onaylayın",
+        "confirmPublish": "«{document}» belgesinin {version} numaralı sürümü yayımlanacak. Diller: {languages}. Yürürlük: {when}. Yayım geri alınamaz ve yayımlanan metin değiştirilemez.",
+        "confirmPublishAction": "Yayımla",
+        "whenNow": "hemen",
+        "whenDate": "{date}, Bakü saatiyle 00:00",
+        "reaccept": {
+          "CREATOR_AGREEMENT": "Bu sürüm yürürlükteyken her yaratıcı bir sonraki kampanyasını göndermeden önce onu kabul etmelidir.",
+          "BACKER_AGREEMENT": "Bu sürüm yürürlükteyken her destekçi bir sonraki desteğini onaylamadan önce onu kabul etmelidir."
+        },
+        "confirmActivateLabel": "Sitede göstermeyi onaylayın",
+        "confirmActivate": "Site, «{document}» belgesinin {version} numaralı sürümünü sonraki bir sürüm yürürlüğe girene kadar tüm dillerde gösterecek.",
+        "unsavedTitle": "Kaydedilmemiş değişiklikler var",
+        "unsavedBody": "Yayım yalnızca kaydedilmiş taslakları kapsar. Önce şu dilleri kaydedin: {languages}.",
+        "unsavedOption": "{language} — kaydedilmedi",
+        "switchDocumentLabel": "Belge değişikliğini onaylayın",
+        "switchDocument": "Kaydedilmemiş metniniz kaybolacak. Diller: {languages}.",
+        "switchDocumentAction": "Metni bırak ve geç",
+        "languageName": {
+          "az": "Azerice",
+          "en": "İngilizce",
+          "ru": "Rusça",
+          "tr": "Türkçe"
+        },
+        "errors": {
+          "GOVERNING_TEXT_MISSING": "Azerice metin kaydedilmedi. Geçerli olan metin odur, bu yüzden o olmadan hiçbir şey yayımlanmaz.",
+          "NOTHING_TO_PUBLISH": "Yayımlanacak taslak yok — belki başka biri zaten yayımladı. Liste yenilendi.",
+          "EFFECTIVE_DATE_IN_THE_PAST": "Bu tarih geçti. Boş bırakın ya da yarından itibaren bir gün seçin.",
+          "DOCUMENT_NOT_PUBLISHED": "Bu sürüm yayımlanmadı.",
+          "VERSION_NOT_YET_EFFECTIVE": "Bu sürüm henüz yürürlüğe girmedi; kendi tarihinde sitede kendiliğinden görünecek.",
+          "PUBLISHED_DOCUMENT_IS_IMMUTABLE": "Bu sürüm zaten yayımlandı ve değiştirilemez. Yeni bir taslak yazın.",
+          "INVALID_REQUEST": "Alanları kontrol edin: başlık en fazla 200 karakter olabilir ve metin boş olamaz."
         }
       },
       "revenue": {
@@ -3222,17 +3564,17 @@
           "CANCELLED": "İptal edildi"
         },
         "startsLabel": "Başlangıç",
-        "endsLabel": "Bitiş",
-        "announceLabel": "Okurlar şu tarihten itibaren uyarılır",
-        "endedLabel": "Bitti",
-        "cancelledLabel": "İptal edildi",
+        "endsLabel": "Planlanan bitiş",
+        "announceLabel": "Uyarı başlangıcı",
+        "endedLabel": "Gerçek bitiş",
+        "cancelledLabel": "İptal zamanı",
         "noteLabel": "Not",
         "untilFurtherNotice": "Yeni bir duyuruya kadar",
         "startNow": "Şimdi başlat",
-        "startNowConfirm": "Bu pencere şimdi başlatılsın mı? On saniye içinde her okur bakım sayfasını görecek, giden ödemeler ve mesajlar duracak.",
+        "startNowConfirm": "Bu pencere şimdi başlatılsın mı? Yaklaşık yarım dakika içinde her okur bakım sayfasını görecek, iadeler ve mesajlar duracak.",
         "startNowYes": "Evet, şimdi başlat",
         "endNow": "Şimdi bitir",
-        "endNowConfirm": "Bu pencere şimdi bitirilsin mi? On saniye içinde okurlar platforma geri döner ve duran işler devam eder.",
+        "endNowConfirm": "Bu pencere şimdi bitirilsin mi? Yaklaşık yarım dakika içinde okurlar platforma geri döner ve duran işler devam eder.",
         "endNowYes": "Evet, şimdi bitir",
         "keep": "Şimdi değil",
         "changeEnd": "Bitişi değiştir",
@@ -3241,7 +3583,7 @@
         "saveEnd": "Bitişi kaydet",
         "cancelWindow": "Pencereyi iptal et",
         "scheduleHeading": "Pencere planla",
-        "scheduleIntro": "Saatler sizin saat diliminizde: {zone}. Okurlar kendi saat dilimlerinde görür.",
+        "scheduleIntro": "Okurlar saatleri kendi saat dilimlerinde görür.",
         "startsAtLabel": "Başlangıç",
         "endsAtLabel": "Bitiş",
         "endsAtHint": "Bitiş belli değilse boş bırakın. Okurlara belirlediğiniz bitiş gösterilir.",
@@ -3258,8 +3600,16 @@
           "MAINTENANCE_WINDOW_ALREADY_STARTED": "Bu pencere zaten başladı, yalnızca bitirilebilir.",
           "MAINTENANCE_WINDOW_NOT_ACTIVE": "Bu pencere yürürlükte değil, bitirilecek bir şey yok.",
           "MAINTENANCE_WINDOW_OVER": "Bu pencere zaten sona erdi.",
-          "MAINTENANCE_WINDOW_INVALID": "Bu saatlerle bir pencere olmuyor: başlangıç geçmişte olamaz, bitiş başlangıçtan sonra, uyarı ise ondan önce gelmeli."
-        }
+          "MAINTENANCE_WINDOW_INVALID": "Bu saatlerle bir pencere olmuyor: başlangıç geçmişte olamaz, bitiş başlangıçtan sonra, uyarı ise ondan önce gelmeli.",
+          "MAINTENANCE_WINDOW_END_INVALID": "Bitiş başlangıçtan sonra ve gelecekte olmalı. Pencereyi şimdi bitirmek için «Şimdi bitir»i kullanın."
+        },
+        "scheduleNowConfirm": "Bu başlangıç zamanı zaten geldi, bu yüzden pencere hemen yürürlüğe girer: yaklaşık yarım dakika içinde her okur bakım sayfasını görür. Yine de planlansın mı?",
+        "scheduleNowYes": "Evet, şimdi başlat",
+        "confirmLabel": "Onaylayın",
+        "cancelConfirm": "Bu pencere iptal edilsin mi? Okurlara gösterilen uyarı kaldırılır ve pencere geri getirilemez.",
+        "cancelYes": "Evet, iptal et",
+        "endInvalid": "Bitiş başlangıçtan sonra ve gelecekte olmalı. Pencereyi şimdi bitirmek için «Şimdi bitir»i kullanın.",
+        "zoneNote": "Bu sayfadaki saatler sizin saat diliminizde: {zone}."
       }
     },
     "moderation": {
@@ -3403,7 +3753,7 @@
       "metaTitle": "Genel bakış",
       "metaDescription": "Platformun bir dönem için temel göstergeleri.",
       "subject": "genel bakış",
-      "standfirst": "Seçtiğiniz dönem için platformun temel göstergeleri. Rollerinizin açtığı bölümleri görürsünüz.",
+      "standfirst": "Para, yeni kampanyalar ve yeni hesaplar seçtiğiniz döneme göredir; «Şu an» altındaki kuyruklar ve kampanya durumları bu anı gösterir. Rollerinizin açtığı bölümleri görürsünüz.",
       "modulesLink": "Tüm modüller ve her birinin neyi beklediği",
       "periodLegend": "Dönem",
       "period": {
@@ -3412,7 +3762,7 @@
         "month30": "30 gün",
         "thisMonth": "Bu ay"
       },
-      "windowNote": "{from} – {to}, {zone} saatine göre.",
+      "windowNote": "{from} – {to}, Bakü saatiyle.",
       "loading": "Genel bakış yükleniyor",
       "emptyTitle": "Rolleriniz için bu sayfada bir şey yok",
       "emptyBody": "Genel bakış rollerinizin açtığı bölümleri gösterir ve bunların hiçbiri sizin değil. Açabileceğiniz ekranlar menüde.",
@@ -3426,14 +3776,14 @@
         "accounts": "Hesaplar"
       },
       "figure": {
-        "pledgeVolume": "Toplanan",
+        "pledgeVolume": "Net toplanan",
         "pledgeCount": "Destekler",
         "backerCount": "Destekçiler",
         "averagePledge": "Ortalama destek",
         "successRate": "Başarı oranı",
         "otherCurrencyPledges": "Başka para biriminde destekler",
-        "campaignsSucceeded": "Hedefe ulaşan kampanyalar",
-        "campaignsFailed": "Hedefe ulaşmayan kampanyalar",
+        "campaignsSucceeded": "Başarıyla biten kampanyalar",
+        "campaignsFailed": "Başarısız biten kampanyalar",
         "running": "Şu an sürenler",
         "awaitingModeration": "Moderasyon bekleyenler",
         "awaitingLaunch": "Onaylandı, başlatılmadı",
@@ -3450,11 +3800,6 @@
       "hours": "{amount} sa",
       "minutes": "{amount} dk",
       "trendHeading": "Günlere göre toplanan",
-      "trendSummary": "{from} – {to} arası günlere göre toplanan; en yüksek gün {highest}.",
-      "trendTableToggle": "Tablo olarak göster",
-      "dateColumn": "Tarih",
-      "pledgedColumn": "Toplanan",
-      "pledgesColumn": "Destekler",
       "byStateHeading": "Duruma göre kampanyalar",
       "state": {
         "DRAFT": "Taslak",
@@ -3465,7 +3810,7 @@
         "APPROVED": "Onaylandı",
         "SCHEDULED": "Zamanlandı",
         "LIVE": "Yayında",
-        "CLOSING_WINDOW": "Kapanış penceresi",
+        "CLOSING_WINDOW": "Yakında kapanıyor",
         "EXTENDED": "Uzatıldı",
         "SUSPENDED": "Askıya alındı",
         "CANCELED": "İptal edildi",
@@ -3482,7 +3827,8 @@
         "support": "Desteği aç",
         "accounts": "Hesapları aç",
         "analytics": "Ayrıntılı analitik"
-      }
+      },
+      "nowHeading": "Şu an"
     }
   },
   "settings": {

@@ -32,6 +32,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuditTrail {
 
+    /**
+     * What {@code NOT IN :hidden} is given when nothing is hidden: one spelling no action has.
+     *
+     * <p>An empty list would be {@code NOT IN ()}, which is not SQL. Actions are lower-case
+     * {@code entity.verb}, so a value with spaces and capitals cannot collide with one.
+     */
+    static final List<String> NOTHING_HIDDEN = List.of("NO ACTION IS SPELLED THIS WAY");
+
+    /** The routine screen reads, which {@link AuditTrailFilter#hideReads} leaves out. */
+    static final List<String> ROUTINE_READS = AuditAction.routineReads();
+
     private final AuditEntryRepository entries;
 
     public AuditTrail(AuditEntryRepository entries) {
@@ -41,7 +52,7 @@ public class AuditTrail {
     /**
      * One page of the trail, newest first.
      *
-     * @param filter one of the four shapes {@link AuditTrailFilter} allows. Normalised
+     * @param filter one of the shapes {@link AuditTrailFilter} allows. Normalised
      *     first, so the page and the echoed filter describe the same query
      * @param before the last row on the previous page, or null for the first page. A
      *     position rather than a row that has to exist: it names an instant and an
@@ -53,16 +64,14 @@ public class AuditTrail {
     @Transactional(readOnly = true)
     public AuditTrailPage page(AuditTrailFilter filter, AuditCursor before, int limit) {
         AuditTrailFilter asked = filter.normalised();
-        PageRequest page = PageRequest.ofSize(limit);
-        List<AuditEntry> rows = rowsFor(asked, before, page);
+        // One row more than the page, so "is there more" is a fact rather than a guess. A cursor
+        // on every full page sent the reader to a last request that came back empty - on the one
+        // screen where an empty page reads as "nothing else happened".
+        List<AuditEntry> fetched = rowsFor(asked, before, PageRequest.ofSize(limit + 1));
+        boolean more = fetched.size() > limit;
+        List<AuditEntry> rows = more ? fetched.subList(0, limit) : fetched;
 
-        /*
-         * A full page is the only honest signal that there may be more — the same rule
-         * the report queue follows. Reporting "no more" on a page that happened to fill
-         * exactly would hide the tail; reporting a cursor on a short page would cost the
-         * client one request to learn the same thing.
-         */
-        AuditCursor nextCursor = rows.size() < limit ? null : cursorTo(rows.get(rows.size() - 1));
+        AuditCursor nextCursor = more ? cursorTo(rows.get(rows.size() - 1)) : null;
         return new AuditTrailPage(asked, rows, nextCursor);
     }
 
@@ -90,9 +99,10 @@ public class AuditTrail {
     }
 
     /**
-     * The rows, from whichever of the eight queries this filter names.
+     * The rows, from whichever of the twelve queries this filter names.
      *
-     * <p>The date range is not a branch — it is two parameters every one of the eight takes.
+     * <p>The date range is not a branch — it is two parameters every one of them takes, and the
+     * hidden actions are a third ({@link #NOTHING_HIDDEN} when nothing is).
      * {@code occurred_at} is the trailing column of all four of V21's indexes, so a bound on
      * it narrows whichever scan the shape above already chose; {@code AuditEntryRepository}
      * carries the argument for why that makes it a parameter here and a separate query on the
@@ -104,25 +114,40 @@ public class AuditTrail {
         // cannot type. The filter still echoes the nulls, so the response says "unbounded".
         Instant from = filter.effectiveFrom();
         Instant to = filter.effectiveTo();
+        List<String> hidden = filter.hideReads() ? ROUTINE_READS : NOTHING_HIDDEN;
+        UUID actor = filter.actorId();
+        String type = filter.entityType();
 
         if (filter.isSingleEntity()) {
+            UUID entity = filter.entityId();
+            if (actor != null) {
+                return before == null
+                        ? entries.newestOfEntityByActor(actor, type, entity, from, to, hidden, page)
+                        : entries.newestOfEntityByActorBefore(
+                                actor, type, entity, before.at(), before.id(), from, to, hidden, page);
+            }
             return before == null
-                    ? entries.newestOfEntity(filter.entityType(), filter.entityId(), from, to, page)
-                    : entries.newestOfEntityBefore(
-                            filter.entityType(), filter.entityId(), before.at(), before.id(), from, to, page);
+                    ? entries.newestOfEntity(type, entity, from, to, hidden, page)
+                    : entries.newestOfEntityBefore(type, entity, before.at(), before.id(), from, to, hidden, page);
         }
-        if (filter.entityType() != null) {
+        if (type != null) {
+            if (actor != null) {
+                return before == null
+                        ? entries.newestOfTypeByActor(actor, type, from, to, hidden, page)
+                        : entries.newestOfTypeByActorBefore(
+                                actor, type, before.at(), before.id(), from, to, hidden, page);
+            }
             return before == null
-                    ? entries.newestOfType(filter.entityType(), from, to, page)
-                    : entries.newestOfTypeBefore(filter.entityType(), before.at(), before.id(), from, to, page);
+                    ? entries.newestOfType(type, from, to, hidden, page)
+                    : entries.newestOfTypeBefore(type, before.at(), before.id(), from, to, hidden, page);
         }
-        if (filter.actorId() != null) {
+        if (actor != null) {
             return before == null
-                    ? entries.newestByActor(filter.actorId(), from, to, page)
-                    : entries.newestByActorBefore(filter.actorId(), before.at(), before.id(), from, to, page);
+                    ? entries.newestByActor(actor, from, to, hidden, page)
+                    : entries.newestByActorBefore(actor, before.at(), before.id(), from, to, hidden, page);
         }
         return before == null
-                ? entries.newest(from, to, page)
-                : entries.newestBefore(before.at(), before.id(), from, to, page);
+                ? entries.newest(from, to, hidden, page)
+                : entries.newestBefore(before.at(), before.id(), from, to, hidden, page);
     }
 }

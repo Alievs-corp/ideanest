@@ -14,16 +14,16 @@ import java.util.List;
  * a different question with the same nouns — how the platform is doing — and the rows it
  * reads are the same daily rollups, summed the other way.
  *
- * <p><strong>Every figure here is derived from rollups that already exist.</strong> That is
- * what made this unblockable without new tables: V27 writes one row per campaign per day,
- * and "volume across the platform" is that table grouped by day instead of by campaign.
+ * <p><strong>Every pledge figure counts one population</strong>: pledges collected in the
+ * window that are still collected — refunded and charged-back pledges are excluded, and a
+ * settled partial refund comes off its pledge. {@code PlatformFiguresRepository} defines it.
  *
  * @param from the first day counted, inclusive
  * @param to the last, inclusive
  * @param computedAt when this was read, so a stale tab is not mistaken for a live figure
  * @param totals the headline numbers over the whole window
- * @param daily one point per day, for the chart
- * @param outcomes how campaigns that closed in the window ended — §4.11's "success rate"
+ * @param daily one point for every day of the window, zero where nothing was collected
+ * @param outcomes how campaigns decided in the window ended — §4.11's "success rate"
  */
 public record PlatformAnalytics(
         LocalDate from,
@@ -36,19 +36,21 @@ public record PlatformAnalytics(
     /**
      * The headline figures.
      *
-     * @param pledgeCount how many pledges were made in the window
-     * @param volume what they came to. §21.2 gives nothing to convert with, so this is
+     * @param pledgeCount how many pledges were collected in the window and still stand
+     * @param volume what they still hold, net of refunds. §21.2 gives nothing to convert with, so this is
      *     denominated in the platform currency and campaigns in another are counted in
      *     {@link #otherCurrencyPledges} rather than converted — a total that silently
      *     added two currencies would be a number nobody could reconcile
      * @param averagePledge {@code volume / pledgeCount}, or zero when nothing was pledged.
      *     Computed here rather than in the browser because dividing money is exactly what
      *     {@link Money} refuses to let callers do carelessly
-     * @param backerCount distinct accounts that pledged. Not the same as
+     * @param backerCount distinct accounts behind {@code pledgeCount}. Not the same as
      *     {@code pledgeCount}: a backer who pledges to three campaigns is three pledges and
      *     one person, and conflating them overstates reach by whatever the platform's
      *     repeat rate is
-     * @param liveProjects campaigns that were {@code LIVE} at the end of the window
+     * @param liveProjects campaigns running at the moment of reading — {@code LIVE},
+     *     {@code CLOSING_WINDOW} or {@code EXTENDED}, the front page's "running". A count of now,
+     *     not of the window
      * @param otherCurrencyPledges pledges excluded from {@link #volume} because they were
      *     in another currency. Reported rather than dropped: a figure with a silent
      *     exclusion is worse than one with a stated gap
@@ -79,16 +81,17 @@ public record PlatformAnalytics(
     }
 
     /**
-     * How campaigns that closed in the window ended.
+     * How campaigns decided in the window ended — the transitions to {@code SUCCESSFUL} and
+     * {@code UNSUCCESSFUL} made in it, not the deadlines that fell in it.
      *
      * <p>§4.11 asks for a "success rate", and this is the honest form of it: the two counts
      * and the campaigns still running, rather than one percentage. A single rate would have
      * to decide what to do with campaigns that are neither — and every choice it could make
      * is wrong in a month where a lot of campaigns launched.
      *
-     * @param succeeded reached the goal by the deadline
-     * @param failed did not
-     * @param successRate the fraction, or null when nothing closed in the window. Null
+     * @param succeeded declared successful in the window
+     * @param failed declared unsuccessful in the window
+     * @param successRate the fraction, or null when nothing was decided in the window. Null
      *     rather than zero, because "no campaigns closed" and "none of them succeeded" are
      *     different facts and a zero on a dashboard reads as the second
      */
