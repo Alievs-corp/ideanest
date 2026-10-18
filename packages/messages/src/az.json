@@ -1110,7 +1110,7 @@
         "metaTitle": "Texniki xidmət pəncərələri",
         "metaDescription": "Planlı texniki xidməti planlaşdırın, başladın və bitirin — oxucular əvvəlcədən xəbərdar edilir.",
         "title": "Texniki xidmət",
-        "intro": "Pəncərə qüvvədə olanda hər oxucu texniki xidmət səhifəsini görür, xidmət isə girişdən, ödəniş provayderlərinin webhook-larından və əməkdaşlardan başqa hər şeyi rədd edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir. Pul və ya mesaj göndərən fon işləri dayanır və pəncərə bitəndə davam edir."
+        "intro": "Pəncərə qüvvədə olanda hər oxucu texniki xidmət səhifəsini görür. Xidmət əməkdaşlardan, girişdən, ödəniş provayderlərinin bildirişlərindən və bank yoxlamasından sonra sayta qayıdışdan başqa hər şeyi rədd edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir. Altı fon işi dayanır: geri ödəmələr, cavabsız ödəniş səhifələrinin yoxlanması, mühasibat tutuşdurması, bildirişlərin göndərilməsi və icmalları, açılış xatırlatmaları. Qalan işlər, o cümlədən kampaniyaların açılması və son tarixdə bağlanması, vəsaitin avtomatik çıxarılması və göndərilənlər növbəsi işləməyə davam edir."
       }
     },
     "screens": {
@@ -2071,7 +2071,7 @@
           "MANAGE_DISPUTES": "Geri tələblərə cavab vermək",
           "APPROVE_PAYOUT": "Ödənişi təsdiqləyib göndərmək",
           "HANDLE_SUPPORT": "Dəstək müraciətlərinə cavab vermək",
-          "CONFIGURE_PLATFORM": "Komissiyaları, funksiya bayraqlarını və e-poçt mətnlərini dəyişmək",
+          "CONFIGURE_PLATFORM": "Komissiyaları, planları, funksiya bayraqlarını, e-poçt mətnlərini və texniki xidmət pəncərələrini idarə etmək",
           "VIEW_AUDIT": "Audit izini oxumaq",
           "VIEW_HEALTH": "Növbə dərinliyini və provayder vəziyyətini oxumaq",
           "PUBLISH_LEGAL_DOCUMENT": "Hüquqi sənədin bir versiyasını dərc etmək",
@@ -3345,10 +3345,10 @@
         "noteLabel": "Qeyd",
         "untilFurtherNotice": "Növbəti xəbərə qədər",
         "startNow": "İndi başlat",
-        "startNowConfirm": "Bu pəncərə indi başladılsın? On saniyə ərzində hər oxucu texniki xidmət səhifəsini görəcək, çıxan ödənişlər və mesajlar dayanacaq.",
+        "startNowConfirm": "Bu pəncərə indi başladılsın? Təxminən yarım dəqiqə ərzində hər oxucu texniki xidmət səhifəsini görəcək, geri ödəmələr və mesajlar dayanacaq.",
         "startNowYes": "Bəli, indi başlat",
         "endNow": "İndi bitir",
-        "endNowConfirm": "Bu pəncərə indi bitirilsin? On saniyə ərzində oxucular platformaya qayıdacaq, dayandırılmış işlər davam edəcək.",
+        "endNowConfirm": "Bu pəncərə indi bitirilsin? Təxminən yarım dəqiqə ərzində oxucular platformaya qayıdacaq, dayandırılmış işlər davam edəcək.",
         "endNowYes": "Bəli, indi bitir",
         "keep": "Hələ yox",
         "changeEnd": "Bitmə vaxtını dəyiş",
@@ -3374,8 +3374,16 @@
           "MAINTENANCE_WINDOW_ALREADY_STARTED": "Bu pəncərə artıq başlayıb, onu yalnız bitirmək olar.",
           "MAINTENANCE_WINDOW_NOT_ACTIVE": "Bu pəncərə qüvvədə deyil, bitiriləcək bir şey yoxdur.",
           "MAINTENANCE_WINDOW_OVER": "Bu pəncərə artıq bitib.",
-          "MAINTENANCE_WINDOW_INVALID": "Bu vaxtlardan pəncərə alınmır: başlama keçmişdə ola bilməz, bitmə başlamadan sonra, xəbərdarlıq isə ondan əvvəl gəlməlidir."
-        }
+          "MAINTENANCE_WINDOW_INVALID": "Bu vaxtlardan pəncərə alınmır: başlama keçmişdə ola bilməz, bitmə başlamadan sonra, xəbərdarlıq isə ondan əvvəl gəlməlidir.",
+          "MAINTENANCE_WINDOW_END_INVALID": "Bitmə vaxtı başlamadan sonra və gələcəkdə olmalıdır. Pəncərəni indi bitirmək üçün «İndi bitir»dən istifadə edin."
+        },
+        "scheduleNowConfirm": "Bu başlama vaxtı artıq çatıb, ona görə pəncərə dərhal qüvvəyə minəcək: təxminən yarım dəqiqə ərzində hər oxucu texniki xidmət səhifəsini görəcək. Yenə də planlaşdırılsın?",
+        "scheduleNowYes": "Bəli, indi başlat",
+        "confirmLabel": "Təsdiqləyin",
+        "cancelConfirm": "Bu pəncərə ləğv edilsin? Oxuculara göstərilən xəbərdarlıq götürüləcək və onu geri qaytarmaq olmayacaq.",
+        "cancelYes": "Bəli, ləğv et",
+        "endInvalid": "Bitmə vaxtı başlamadan sonra və gələcəkdə olmalıdır. Pəncərəni indi bitirmək üçün «İndi bitir»dən istifadə edin.",
+        "zoneNote": "Bu səhifədəki vaxtlar sizin saat qurşağınızdadır: {zone}."
       }
     },
     "moderation": {

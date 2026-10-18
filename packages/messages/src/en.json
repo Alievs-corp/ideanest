@@ -1110,7 +1110,7 @@
         "metaTitle": "Maintenance windows",
         "metaDescription": "Schedule, start and end planned maintenance, with notice for readers.",
         "title": "Maintenance",
-        "intro": "While a window is in force every reader gets the maintenance page, and the service refuses everything except sign-in, payment provider webhooks and staff. Readers are warned from the announcement time, a day ahead by default. Background jobs that send money or messages pause and resume when the window ends."
+        "intro": "While a window is in force every reader gets the maintenance page, and the service refuses everything except staff, sign-in, payment providers' notifications and the return from bank verification. Readers are warned from the announcement time, a day ahead by default. Six background jobs pause: refunds, checks on unanswered payment pages, ledger reconciliation, sending notifications and their digests, and launch reminders. Everything else keeps running, including campaigns opening and closing at their deadline, automatic withdrawals and the outbox."
       }
     },
     "screens": {
@@ -2071,7 +2071,7 @@
           "MANAGE_DISPUTES": "Answer chargebacks",
           "APPROVE_PAYOUT": "Sign off and send a payout",
           "HANDLE_SUPPORT": "Answer support tickets",
-          "CONFIGURE_PLATFORM": "Change fees, feature flags and email copy",
+          "CONFIGURE_PLATFORM": "Manage fees, plans, feature flags, email copy and maintenance windows",
           "VIEW_AUDIT": "Read the audit trail",
           "VIEW_HEALTH": "Read queue depth and provider status",
           "PUBLISH_LEGAL_DOCUMENT": "Publish a version of a legal document",
@@ -3345,10 +3345,10 @@
         "noteLabel": "Note",
         "untilFurtherNotice": "Until further notice",
         "startNow": "Start now",
-        "startNowConfirm": "Start this window now? Within ten seconds every reader gets the maintenance page, and outgoing payments and messages pause.",
+        "startNowConfirm": "Start this window now? Within about half a minute every reader gets the maintenance page, and refunds and messages pause.",
         "startNowYes": "Yes, start it now",
         "endNow": "End now",
-        "endNowConfirm": "End this window now? Within ten seconds readers get the platform back, and paused jobs resume.",
+        "endNowConfirm": "End this window now? Within about half a minute readers get the platform back, and paused jobs resume.",
         "endNowYes": "Yes, end it now",
         "keep": "Not now",
         "changeEnd": "Change the end",
@@ -3374,8 +3374,16 @@
           "MAINTENANCE_WINDOW_ALREADY_STARTED": "That window has already started, so it can only be ended.",
           "MAINTENANCE_WINDOW_NOT_ACTIVE": "That window is not in force, so there is nothing to end.",
           "MAINTENANCE_WINDOW_OVER": "That window is already over.",
-          "MAINTENANCE_WINDOW_INVALID": "Those times do not make a window: the start cannot be in the past, the end has to come after the start, and the warning before it."
-        }
+          "MAINTENANCE_WINDOW_INVALID": "Those times do not make a window: the start cannot be in the past, the end has to come after the start, and the warning before it.",
+          "MAINTENANCE_WINDOW_END_INVALID": "The end has to be after the start and in the future. To end the window now, use End now."
+        },
+        "scheduleNowConfirm": "That start time has already come, so the window takes effect at once: within about half a minute every reader gets the maintenance page. Schedule it anyway?",
+        "scheduleNowYes": "Yes, start it now",
+        "confirmLabel": "Confirm",
+        "cancelConfirm": "Cancel this window? The notice readers are shown is withdrawn, and the window cannot be brought back.",
+        "cancelYes": "Yes, cancel it",
+        "endInvalid": "The end has to be after the start and in the future. To end the window now, use End now.",
+        "zoneNote": "Times on this page are in your time zone, {zone}."
       }
     },
     "moderation": {

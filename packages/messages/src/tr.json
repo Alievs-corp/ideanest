@@ -1110,7 +1110,7 @@
         "metaTitle": "Bakım pencereleri",
         "metaDescription": "Planlı bakımı planlayın, başlatın ve bitirin; okurlar önceden uyarılır.",
         "title": "Bakım",
-        "intro": "Bir pencere yürürlükteyken her okur bakım sayfasını görür ve servis; giriş, ödeme sağlayıcılarının webhook istekleri ve ekip üyeleri dışında her şeyi reddeder. Okurlar duyuru zamanından itibaren, varsayılan olarak bir gün önceden uyarılır. Para veya mesaj gönderen arka plan işleri durur ve pencere bitince devam eder."
+        "intro": "Bir pencere yürürlükteyken her okur bakım sayfasını görür; servis ekip üyeleri, giriş, ödeme sağlayıcılarının bildirimleri ve banka doğrulamasından sonra siteye dönüş dışında her şeyi reddeder. Okurlar duyuru zamanından itibaren, varsayılan olarak bir gün önceden uyarılır. Altı arka plan işi durur: iadeler, yanıtsız ödeme sayfalarının kontrolü, defter mutabakatı, bildirim gönderimi ve özetleri, açılış hatırlatmaları. Diğer her şey, kampanyaların açılması ve süresinde kapanması, otomatik para çekme ve giden kuyruğu dahil, çalışmaya devam eder."
       }
     },
     "screens": {
@@ -2071,7 +2071,7 @@
           "MANAGE_DISPUTES": "Ters ibrazları yanıtlamak",
           "APPROVE_PAYOUT": "Bir ödemeyi onaylayıp göndermek",
           "HANDLE_SUPPORT": "Destek taleplerini yanıtlamak",
-          "CONFIGURE_PLATFORM": "Ücretleri, özellik bayraklarını ve e-posta metnini değiştirmek",
+          "CONFIGURE_PLATFORM": "Ücretleri, planları, özellik bayraklarını, e-posta metinlerini ve bakım pencerelerini yönetmek",
           "VIEW_AUDIT": "Denetim izini okumak",
           "VIEW_HEALTH": "Kuyruk derinliğini ve sağlayıcı durumunu okumak",
           "PUBLISH_LEGAL_DOCUMENT": "Bir hukuki belgenin sürümünü yayımlamak",
@@ -3345,10 +3345,10 @@
         "noteLabel": "Not",
         "untilFurtherNotice": "Yeni bir duyuruya kadar",
         "startNow": "Şimdi başlat",
-        "startNowConfirm": "Bu pencere şimdi başlatılsın mı? On saniye içinde her okur bakım sayfasını görecek, giden ödemeler ve mesajlar duracak.",
+        "startNowConfirm": "Bu pencere şimdi başlatılsın mı? Yaklaşık yarım dakika içinde her okur bakım sayfasını görecek, iadeler ve mesajlar duracak.",
         "startNowYes": "Evet, şimdi başlat",
         "endNow": "Şimdi bitir",
-        "endNowConfirm": "Bu pencere şimdi bitirilsin mi? On saniye içinde okurlar platforma geri döner ve duran işler devam eder.",
+        "endNowConfirm": "Bu pencere şimdi bitirilsin mi? Yaklaşık yarım dakika içinde okurlar platforma geri döner ve duran işler devam eder.",
         "endNowYes": "Evet, şimdi bitir",
         "keep": "Şimdi değil",
         "changeEnd": "Bitişi değiştir",
@@ -3374,8 +3374,16 @@
           "MAINTENANCE_WINDOW_ALREADY_STARTED": "Bu pencere zaten başladı, yalnızca bitirilebilir.",
           "MAINTENANCE_WINDOW_NOT_ACTIVE": "Bu pencere yürürlükte değil, bitirilecek bir şey yok.",
           "MAINTENANCE_WINDOW_OVER": "Bu pencere zaten sona erdi.",
-          "MAINTENANCE_WINDOW_INVALID": "Bu saatlerle bir pencere olmuyor: başlangıç geçmişte olamaz, bitiş başlangıçtan sonra, uyarı ise ondan önce gelmeli."
-        }
+          "MAINTENANCE_WINDOW_INVALID": "Bu saatlerle bir pencere olmuyor: başlangıç geçmişte olamaz, bitiş başlangıçtan sonra, uyarı ise ondan önce gelmeli.",
+          "MAINTENANCE_WINDOW_END_INVALID": "Bitiş başlangıçtan sonra ve gelecekte olmalı. Pencereyi şimdi bitirmek için «Şimdi bitir»i kullanın."
+        },
+        "scheduleNowConfirm": "Bu başlangıç zamanı zaten geldi, bu yüzden pencere hemen yürürlüğe girer: yaklaşık yarım dakika içinde her okur bakım sayfasını görür. Yine de planlansın mı?",
+        "scheduleNowYes": "Evet, şimdi başlat",
+        "confirmLabel": "Onaylayın",
+        "cancelConfirm": "Bu pencere iptal edilsin mi? Okurlara gösterilen uyarı kaldırılır ve pencere geri getirilemez.",
+        "cancelYes": "Evet, iptal et",
+        "endInvalid": "Bitiş başlangıçtan sonra ve gelecekte olmalı. Pencereyi şimdi bitirmek için «Şimdi bitir»i kullanın.",
+        "zoneNote": "Bu sayfadaki saatler sizin saat diliminizde: {zone}."
       }
     },
     "moderation": {

@@ -659,6 +659,14 @@ export interface MaintenanceConsoleCopy extends ConsoleChromeCopy {
   readonly openEndLabel: string;
   readonly saveEnd: string;
   readonly cancelWindow: string;
+  readonly cancelConfirm: string;
+  readonly cancelYes: string;
+  /** The inline confirmation's group name. */
+  readonly confirmLabel: string;
+  /** Under the end editor, when the end is not after both the start and now. */
+  readonly endInvalid: string;
+  /** Carries `{zone}`. Above the lists, so every time on the screen is read in one zone. */
+  readonly zoneNote: string;
   readonly scheduleHeading: string;
   /** Carries `{zone}`. */
   readonly scheduleIntro: string;
@@ -670,6 +678,9 @@ export interface MaintenanceConsoleCopy extends ConsoleChromeCopy {
   readonly noteFieldLabel: string;
   readonly noteHint: string;
   readonly schedule: string;
+  /** Asked before scheduling a window whose start has already come. */
+  readonly scheduleNowConfirm: string;
+  readonly scheduleNowYes: string;
   readonly working: string;
   readonly failedTitle: string;
   /** Keyed by the service's refusal code. */
@@ -710,6 +721,11 @@ export function maintenanceConsoleCopyFrom(
     openEndLabel: t('screens.maintenance.openEndLabel'),
     saveEnd: t('screens.maintenance.saveEnd'),
     cancelWindow: t('screens.maintenance.cancelWindow'),
+    cancelConfirm: t('screens.maintenance.cancelConfirm'),
+    cancelYes: t('screens.maintenance.cancelYes'),
+    confirmLabel: t('screens.maintenance.confirmLabel'),
+    endInvalid: t('screens.maintenance.endInvalid'),
+    zoneNote: String(t.raw('screens.maintenance.zoneNote')),
     scheduleHeading: t('screens.maintenance.scheduleHeading'),
     scheduleIntro: String(t.raw('screens.maintenance.scheduleIntro')),
     startsAtLabel: t('screens.maintenance.startsAtLabel'),
@@ -720,6 +736,8 @@ export function maintenanceConsoleCopyFrom(
     noteFieldLabel: t('screens.maintenance.noteFieldLabel'),
     noteHint: t('screens.maintenance.noteHint'),
     schedule: t('screens.maintenance.schedule'),
+    scheduleNowConfirm: t('screens.maintenance.scheduleNowConfirm'),
+    scheduleNowYes: t('screens.maintenance.scheduleNowYes'),
     working: t('screens.maintenance.working'),
     failedTitle: t('screens.maintenance.failedTitle'),
     refusal: t.raw('screens.maintenance.refusal') as Readonly<Record<string, string>>,

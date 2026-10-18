@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import az from '@ideanest/messages/az.json';
 import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
@@ -8,6 +8,7 @@ import { readStatusForRender } from '../../lib/maintenance/server';
 import type { PlatformStatus } from '../../lib/maintenance/status';
 import type { Locale } from '../../lib/i18n/locale';
 import { resolveServerTree } from '../../test-support/server-tree';
+import { forgetReportedMaintenance, reportMaintenanceInForce } from '../../lib/admin/maintenance-strip';
 import { MaintenanceStrip } from '../admin/MaintenanceStrip';
 import MaintenancePage from '../../app/[locale]/(site)/maintenance/page';
 import { MaintenanceNotice } from './MaintenanceNotice';
@@ -196,9 +197,25 @@ describe('the console’s maintenance strip', () => {
 
   it('is nothing otherwise, including when the status cannot be read', async () => {
     statusMock.mockResolvedValue(UPCOMING);
-    expect(await MaintenanceStrip({ label: 'x' })).toBeNull();
+    const upcoming = render(await MaintenanceStrip({ label: 'x' }));
+    expect(upcoming.container).toBeEmptyDOMElement();
+    upcoming.unmount();
 
     statusMock.mockResolvedValue(null);
-    expect(await MaintenanceStrip({ label: 'x' })).toBeNull();
+    const unreadable = render(await MaintenanceStrip({ label: 'x' }));
+    expect(unreadable.container).toBeEmptyDOMElement();
+  });
+
+  it('follows what the maintenance console last read, because the layout is not redrawn', async () => {
+    statusMock.mockResolvedValue(null);
+    render(await MaintenanceStrip({ label: 'Maintenance is on' }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+
+    act(() => reportMaintenanceInForce(true));
+    expect(screen.getByRole('status')).toHaveTextContent('Maintenance is on');
+
+    act(() => reportMaintenanceInForce(false));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    forgetReportedMaintenance();
   });
 });
