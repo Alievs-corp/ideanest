@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
@@ -25,9 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
  * <p><strong>{@code PUT} keyed on the flag's name, and there is no {@code POST}.</strong>
  * A flag's identity is what the code asks for — {@code flags.isOn("checkout-v2", id)} —
  * so the name is the address and creating one is putting to an address that has nothing
- * at it yet. A create-versus-update distinction would make the console choose a verb from
- * a list it may have loaded a minute ago, and choose wrong exactly when two people are
- * editing.
+ * at it yet. The body's {@code version} says which of the two is meant: none creates, and
+ * is refused for a name that exists; a version edits exactly that version, and is refused
+ * when somebody has saved over it since. {@code FeatureFlags.save} has why both refusals
+ * exist.
  *
  * <p><strong>There is no {@code DELETE}.</strong> Code asking for a flag that no longer
  * exists gets the fail-closed default silently, so "somebody deleted the row" and
@@ -69,7 +71,8 @@ public class FeatureFlagController {
                         request.description(),
                         request.enabled(),
                         request.rolloutPercentage(),
-                        request.enabledAccounts() == null ? List.of() : request.enabledAccounts())));
+                        request.enabledAccounts() == null ? List.of() : request.enabledAccounts(),
+                        request.version())));
     }
 
     /**
@@ -85,13 +88,17 @@ public class FeatureFlagController {
      * @param rolloutPercentage nought to a hundred. Which accounts fall inside it is
      *     decided by a stable hash, so widening a rollout only ever adds people
      * @param enabledAccounts always in, whatever the percentage says. Bounded by V50 at
-     *     two hundred, because this array is read on every evaluation
+     *     two hundred, because this array is read on every evaluation. A repeated account
+     *     is kept once
+     * @param version the version the edit was made from, as the list sent it. Absent to
+     *     create the flag
      */
     public record SaveFlagRequest(
             @NotBlank @Size(max = 2000) String description,
             boolean enabled,
             @Min(0) @Max(100) short rolloutPercentage,
-            @Size(max = 200) List<UUID> enabledAccounts) {
+            @Size(max = 200) List<@NotNull UUID> enabledAccounts,
+            Long version) {
     }
 
     private static UUID callerOf(Jwt accessToken) {

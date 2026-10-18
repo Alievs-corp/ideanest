@@ -26,7 +26,20 @@ public interface MaintenanceWindowRepository extends JpaRepository<MaintenanceWi
             """)
     List<MaintenanceWindow> live(@Param("now") Instant now);
 
-    /** The console's history, newest first. */
-    @Query("SELECT w FROM MaintenanceWindow w ORDER BY w.startsAt DESC, w.createdAt DESC")
-    List<MaintenanceWindow> recent(Pageable page);
+    /**
+     * The console's history: windows that are over, the most recently finished first.
+     *
+     * <p>Over means ended, cancelled, or past an announced end — the complement of
+     * {@link #live}. This used to be every window by start, so the one in force was listed
+     * twice on the console with its buttons twice, a confirmation opened in both rows at
+     * once, and a window scheduled for next month sat at the top of "Recent". Ordered by
+     * when each finished rather than when it began, because that is what "recent" means to
+     * somebody looking back at the last few.
+     */
+    @Query("""
+            SELECT w FROM MaintenanceWindow w
+            WHERE w.endedAt IS NOT NULL OR w.cancelledAt IS NOT NULL OR w.endsAt <= :now
+            ORDER BY COALESCE(w.cancelledAt, w.endedAt, w.endsAt) DESC, w.createdAt DESC
+            """)
+    List<MaintenanceWindow> recent(@Param("now") Instant now, Pageable page);
 }

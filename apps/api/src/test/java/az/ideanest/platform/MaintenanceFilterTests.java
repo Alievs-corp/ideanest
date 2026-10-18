@@ -95,7 +95,8 @@ class MaintenanceFilterTests {
                 Arguments.of(HttpMethod.GET, "/v3/api-docs"),
                 // Exempt paths only on their own method or shape.
                 Arguments.of(HttpMethod.POST, "/v1/status"),
-                Arguments.of(HttpMethod.GET, "/v1/webhooks/psp/payriff"),
+                Arguments.of(HttpMethod.PUT, "/v1/webhooks/psp/payriff"),
+                Arguments.of(HttpMethod.GET, "/v1/webhooks/psp"),
                 Arguments.of(HttpMethod.POST, "/v1/webhooks/psp"),
                 Arguments.of(HttpMethod.POST, "/v1/webhooks/psp/payriff/extra"),
                 Arguments.of(HttpMethod.GET, "/v1/status/extra"),
@@ -136,7 +137,9 @@ class MaintenanceFilterTests {
                 Arguments.of(HttpMethod.POST, "/v1/auth/2fa/verify"),
                 Arguments.of(HttpMethod.POST, "/v1/auth/logout"),
                 Arguments.of(HttpMethod.POST, "/v1/webhooks/psp/payriff"),
-                Arguments.of(HttpMethod.POST, "/v1/webhooks/psp/epoint"));
+                Arguments.of(HttpMethod.POST, "/v1/webhooks/psp/epoint"),
+                // The 3-D Secure return: a backer's browser on its way back to the site.
+                Arguments.of(HttpMethod.GET, "/v1/webhooks/psp/payriff"));
     }
 
     @ParameterizedTest(name = "{0} {1} passes")

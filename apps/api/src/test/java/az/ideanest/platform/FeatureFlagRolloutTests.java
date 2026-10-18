@@ -3,6 +3,7 @@ package az.ideanest.platform;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.platform.domain.FeatureFlag;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -24,8 +25,12 @@ import org.junit.jupiter.api.Test;
 class FeatureFlagRolloutTests {
 
     private static FeatureFlag flag(boolean enabled, int rollout, List<UUID> explicit) {
+        return flag("checkout-v2", enabled, rollout, explicit);
+    }
+
+    private static FeatureFlag flag(String key, boolean enabled, int rollout, List<UUID> explicit) {
         return new FeatureFlag(
-                "checkout-v2", "The rebuilt checkout", enabled, (short) rollout, explicit, UUID.randomUUID());
+                key, "The rebuilt checkout", enabled, (short) rollout, explicit, UUID.randomUUID(), Instant.now());
     }
 
     private static List<UUID> accounts(int count) {
@@ -120,6 +125,59 @@ class FeatureFlagRolloutTests {
         assertThat(flag(true, 50, List.of()).isOnFor(null)).isFalse();
         assertThat(flag(true, 99, List.of()).isOnFor(null)).isFalse();
         assertThat(flag(true, 100, List.of()).isOnFor(null)).isTrue();
+    }
+
+    @Test
+    @DisplayName("two flags' rollouts pick different people")
+    void rolloutsAreIndependentAcrossFlags() {
+        // The bucket used to be 31 * key.hashCode() + accountId.hashCode(): an account's place
+        // moved by the same constant for every flag, so the tenth inside one ten-percent
+        // rollout was very nearly the tenth inside every other. Independent flags overlap by
+        // about a tenth of a tenth.
+        List<UUID> population = accounts(5000);
+        FeatureFlag one = flag("checkout-v2", true, 10, List.of());
+        FeatureFlag other = flag("search-v3", true, 10, List.of());
+
+        List<UUID> inOne = population.stream().filter(one::isOnFor).toList();
+        long inBoth = inOne.stream().filter(other::isOnFor).count();
+
+        assertThat(inOne.size()).isBetween(400, 600);
+        assertThat(inBoth).isLessThan(inOne.size() / 4L);
+    }
+
+    @Test
+    @DisplayName("a bucket is a pure function of the flag and the account")
+    void theBucketIsPinned() {
+        // Pinned rather than merely compared with itself: a change to the function moves
+        // people in and out of every live rollout, and has to be a decision, not a refactor.
+        UUID account = UUID.fromString("00000000-0000-4000-8000-000000000001");
+        int bucket = FeatureFlag.bucket("checkout-v2", account);
+
+        assertThat(bucket).isBetween(0, 99);
+        assertThat(FeatureFlag.bucket("checkout-v2", account)).isEqualTo(bucket);
+        assertThat(FeatureFlag.bucket("checkout-v2", account)).isEqualTo(bucketOf("checkout-v2:" + account));
+    }
+
+    @Test
+    @DisplayName("an account named twice is kept once")
+    void namedAccountsAreDistinct() {
+        UUID insider = UUID.randomUUID();
+        FeatureFlag twice = flag(true, 0, List.of(insider, insider));
+
+        assertThat(twice.enabledAccounts()).containsExactly(insider);
+    }
+
+    /** SHA-256 of the text, first four bytes unsigned, modulo a hundred — written out again. */
+    private static int bucketOf(String text) {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            long first = ((digest[0] & 0xFFL) << 24) | ((digest[1] & 0xFFL) << 16) | ((digest[2] & 0xFFL) << 8)
+                    | (digest[3] & 0xFFL);
+            return (int) (first % 100);
+        } catch (java.security.NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
+        }
     }
 
     @Test

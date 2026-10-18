@@ -21,8 +21,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class PaymentProviderStatus implements ProviderStatusSource {
 
-    /** What the screen groups these under. Not the module name — see the interface. */
-    private static final String KIND = "Payments";
+    /** What the screen groups these under, as an identifier it words — see the interface. */
+    private static final String KIND = "payments";
 
     private final PaymentProviders providers;
     private final ProviderCircuitBreaker breaker;
@@ -55,9 +55,9 @@ public class PaymentProviderStatus implements ProviderStatusSource {
                     provider.name(),
                     configured,
                     available,
-                    configured || available
-                            ? (available ? null : "The circuit breaker has taken this provider out of service.")
-                            : "No credentials are configured for this provider on this deployment."));
+                    !configured
+                            ? ProviderStatus.NOT_CONFIGURED
+                            : available ? null : ProviderStatus.CIRCUIT_OPEN));
         }
 
         return statuses;

@@ -35,9 +35,10 @@ public interface ProviderStatusSource {
     /**
      * One provider.
      *
-     * @param kind what sort of thing it is, in the words the screen groups by — "Payments".
-     *     Not the module name: a reader of the health screen is not thinking about the
-     *     codebase
+     * @param kind what sort of thing it is, as an identifier the screen groups by and
+     *     words — {@code payments}. Not a sentence, for the reason
+     *     {@link QueueDepthSource#queueName()} gives: it is a metric tag and a catalogue key,
+     *     and a word sent from here could only ever be in one language
      * @param name the provider, as the platform names it
      * @param configured whether this deployment has credentials for it at all.
      *     <strong>An unconfigured provider is not unhealthy</strong> — §9.3 asks for at
@@ -46,8 +47,16 @@ public interface ProviderStatusSource {
      *     are not permanent
      * @param available what the caller's own circuit breaker currently answers. False on an
      *     unconfigured provider, which the screen reads together with {@code configured}
-     * @param detail why it is unavailable, when the answerer knows. Null otherwise
+     * @param reason why it is not available, as a code the screen words: {@link #NOT_CONFIGURED}
+     *     or {@link #CIRCUIT_OPEN}. Null while it is. It used to be an English sentence, which
+     *     the console printed verbatim under an Azerbaijani heading
      */
-    record ProviderStatus(String kind, String name, boolean configured, boolean available, String detail) {
+    record ProviderStatus(String kind, String name, boolean configured, boolean available, String reason) {
+
+        /** No credentials for it on this deployment. Switched off rather than failing. */
+        public static final String NOT_CONFIGURED = "NOT_CONFIGURED";
+
+        /** The caller's circuit breaker has taken it out of service after repeated failures. */
+        public static final String CIRCUIT_OPEN = "CIRCUIT_OPEN";
     }
 }

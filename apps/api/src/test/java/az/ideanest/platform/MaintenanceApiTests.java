@@ -403,7 +403,38 @@ class MaintenanceApiTests extends AbstractIntegrationTest {
         assertThat(((Map<?, ?>) overview.get("current")).get("id")).isEqualTo(current.toString());
         assertThat(field(overview.get("upcoming"), "id")).containsExactly(upcoming.toString());
         assertThat(field(overview.get("upcoming"), "state")).containsExactly("SCHEDULED");
-        assertThat(field(overview.get("recent"), "id")).contains(current.toString(), upcoming.toString());
+        // Recent is history: neither the window in force nor the one to come is in it. They
+        // used to be, so the one in force was drawn twice with its buttons twice.
+        assertThat(field(overview.get("recent"), "id")).doesNotContain(current.toString(), upcoming.toString());
+
+        endNow(current);
+        // Before the upcoming one, which has no end and so overlaps everything after it.
+        Instant tomorrow = seconds(Instant.now().plus(Duration.ofDays(1)));
+        UUID cancelled = schedule(tomorrow, tomorrow.plus(Duration.ofMinutes(30)), null);
+        exchange(HttpMethod.DELETE, "/v1/admin/maintenance/" + cancelled, moderator().accessToken(), null);
+
+        Map<String, Object> after =
+                exchange(HttpMethod.GET, "/v1/admin/maintenance", moderator().accessToken(), null).getBody();
+        assertThat(after.get("current")).isNull();
+        // The most recently finished first: the cancellation came after the end.
+        assertThat(field(after.get("recent"), "id")).containsExactly(cancelled.toString(), current.toString());
+        assertThat(field(after.get("recent"), "state")).containsExactly("CANCELLED", "ENDED");
+        assertThat(field(after.get("upcoming"), "id")).containsExactly(upcoming.toString());
+    }
+
+    @Test
+    @DisplayName("a changed end that is not in the future is refused with its own code")
+    void aChangedEndInThePastHasItsOwnCode() {
+        UUID window = schedule(seconds(Instant.now().plus(Duration.ofHours(2))), null, null);
+
+        ResponseEntity<Map<String, Object>> refused = exchange(
+                HttpMethod.PATCH,
+                "/v1/admin/maintenance/" + window,
+                moderator().accessToken(),
+                Map.of("endsAt", Instant.now().plus(Duration.ofHours(1)).toString()));
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(refused.getBody()).containsEntry("code", "MAINTENANCE_WINDOW_END_INVALID");
     }
 
     @Test

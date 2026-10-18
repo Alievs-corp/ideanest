@@ -78,6 +78,15 @@ public class SecurityConfiguration {
                         // anybody. GET only, for the categories rule's reason.
                         .requestMatchers(HttpMethod.GET, "/v1/status")
                         .permitAll()
+                        // ---- AD-12: what is switched on for the caller ----
+                        // Public because a visitor's page asks too, and gets
+                        // the answer that does not depend on who is asking. A
+                        // bearer token, when one is sent, is still read, and
+                        // makes the answer the reader's own. Nothing in it
+                        // belongs to anybody else: names and yes or no. GET
+                        // only, for the categories rule's reason.
+                        .requestMatchers(HttpMethod.GET, "/v1/feature-flags")
+                        .permitAll()
                         // The published contract (#136). Public because that is
                         // what "published" means: §10.1 makes OpenAPI the way a
                         // client is written against this service, and a document

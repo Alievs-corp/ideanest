@@ -167,7 +167,8 @@ public class MaintenanceWindows implements MaintenanceGate {
     /**
      * @param current in force now
      * @param upcoming every window still to come, announced or not, soonest first
-     * @param recent the last twenty by start, in any state
+     * @param recent the last twenty that are over — ended, cancelled or past their end —
+     *     the most recently finished first
      */
     public record Overview(
             Optional<MaintenanceWindow> current, List<MaintenanceWindow> upcoming, List<MaintenanceWindow> recent) {
@@ -186,7 +187,7 @@ public class MaintenanceWindows implements MaintenanceGate {
                         .filter(window -> window.stateAt(now) == State.SCHEDULED
                                 || window.stateAt(now) == State.ANNOUNCED)
                         .toList(),
-                windows.recent(PageRequest.ofSize(RECENT)));
+                windows.recent(now, PageRequest.ofSize(RECENT)));
     }
 
     /**
@@ -278,6 +279,7 @@ public class MaintenanceWindows implements MaintenanceGate {
                     // Past the start, and past now: an end moved into the past would end
                     // the window by accident. End now is the verb for that.
                     throw new InvalidMaintenanceWindowException(
+                            InvalidMaintenanceWindowException.END_INVALID,
                             "The end has to be after the start and in the future. Use end now to end it.");
                 }
                 window.changeEnd(end);
