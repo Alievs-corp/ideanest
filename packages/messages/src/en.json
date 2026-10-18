@@ -1533,7 +1533,7 @@
         "succeeded": "Succeeded",
         "didNot": "Did not",
         "successRate": "Success rate",
-        "dailyHeading": "Daily volume",
+        "dailyHeading": "Volume over the period",
         "nothingPledged": "Nothing was pledged in this window.",
         "notBuiltHeading": "Not ready yet",
         "notBuilt": {

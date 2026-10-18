@@ -363,7 +363,7 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
             return (
               <Pill
                 key={percentage}
-                variant={pressed ? 'outline' : 'ghost'}
+                variant={pressed ? 'primary' : 'outline'}
                 size="sm"
                 aria-pressed={pressed}
                 disabled={busy || pending !== null}

@@ -1533,7 +1533,7 @@
         "succeeded": "Başarılı",
         "didNot": "Başarısız",
         "successRate": "Başarı oranı",
-        "dailyHeading": "Günlük hacim",
+        "dailyHeading": "Dönem boyunca hacim",
         "nothingPledged": "Bu dönemde hiçbir destek verilmedi.",
         "notBuiltHeading": "Henüz hazır olmayanlar",
         "notBuilt": {

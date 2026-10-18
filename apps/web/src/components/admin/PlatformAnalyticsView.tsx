@@ -111,7 +111,7 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
         {WINDOWS.map((window) => (
           <Pill
             key={window}
-            variant={days === window ? 'outline' : 'ghost'}
+            variant={days === window ? 'primary' : 'outline'}
             size="sm"
             aria-pressed={days === window}
             onClick={() => setDays(window)}

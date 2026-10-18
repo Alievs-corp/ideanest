@@ -1533,7 +1533,7 @@
         "succeeded": "Успешно",
         "didNot": "Неуспешно",
         "successRate": "Доля успеха",
-        "dailyHeading": "Объём по дням",
+        "dailyHeading": "Объём за период",
         "nothingPledged": "В этом периоде взносов не было.",
         "notBuiltHeading": "Пока не готово",
         "notBuilt": {
