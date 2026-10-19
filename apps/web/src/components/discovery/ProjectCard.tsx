@@ -165,8 +165,8 @@ export interface ProjectCardProps {
    * campaign is half the column wide, and a cover sized for a quarter of it would be blurred.
    */
   sizes?: string;
-  /** From `lg`, the cover fills the card's spare height — the home page's popular cards. */
-  coverFills?: boolean;
+  /** Extra classes for the cover's frame — the home page sizes its covers per band. */
+  coverClassName?: string;
 }
 
 export function ProjectCard({
@@ -175,7 +175,7 @@ export function ProjectCard({
   copy,
   locale,
   sizes = CAMPAIGN_CARD_SIZES,
-  coverFills = false,
+  coverClassName,
 }: ProjectCardProps) {
   const completion = completionOf(card);
   /*
@@ -239,7 +239,7 @@ export function ProjectCard({
         ratio="16/9"
         narrowRatio="2/1"
         radius="lg"
-        {...(coverFills ? { className: 'lg:aspect-auto lg:min-h-65.5 lg:flex-[100_1_0%]' } : {})}
+        {...(coverClassName === undefined ? {} : { className: coverClassName })}
       >
         {card.image != null && (
           <Image

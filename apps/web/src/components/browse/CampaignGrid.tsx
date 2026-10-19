@@ -53,6 +53,8 @@ export interface CampaignGridProps {
   readonly itemClassName?: (card: ProjectCardData, index: number) => string | undefined;
   /** Addressed by the home page's rail arrows through `aria-controls`. */
   readonly id?: string;
+  /** Passed to every card's cover frame. */
+  readonly coverClassName?: string;
 }
 
 export function CampaignGrid({
@@ -64,6 +66,7 @@ export function CampaignGrid({
   layout = CAMPAIGN_GRID,
   itemClassName,
   id,
+  coverClassName,
 }: CampaignGridProps) {
   return (
     <ul id={id} aria-label={label} className={layout}>
@@ -74,6 +77,7 @@ export function CampaignGrid({
             priority={index < priorityCount}
             copy={cardCopy}
             locale={locale}
+            {...(coverClassName === undefined ? {} : { coverClassName })}
           />
         </li>
       ))}

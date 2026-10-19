@@ -276,7 +276,7 @@ export default async function HomePage() {
                       locale={locale}
                       sizes={FEATURED_CARD_SIZES}
                       priority={index === 0}
-                      coverFills
+                      coverClassName="lg:aspect-auto lg:min-h-65.5 lg:flex-[100_1_0%]"
                     />
                   </li>
                 ))}
@@ -301,6 +301,7 @@ export default async function HomePage() {
                 cardCopy={cardCopy}
                 locale={locale}
                 layout={HOME_SPLIT_GRID}
+                coverClassName="lg:aspect-[16/8.37]"
                 itemClassName={(card, index) =>
                   [splitIds.has(card.id) ? '' : 'lg:hidden', index === 0 ? '' : PHONE_FIRST_ONLY]
                     .filter(Boolean)
