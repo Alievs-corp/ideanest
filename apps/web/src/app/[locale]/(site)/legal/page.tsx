@@ -7,6 +7,9 @@ import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { LEGAL_DOCUMENTS, kindOf, legalPath } from '@ideanest/legal/documents';
 import { fetchLegalCatalogue } from '../../../../lib/legal/server';
 import { publicPageMetadata } from '../../../../lib/seo/metadata';
+import { StructuredData } from '../../../../components/seo/StructuredData';
+import { sitePageGraph } from '../../../../lib/seo/structured-data/graphs';
+import { graphContext } from '../../../../lib/i18n/shell-copy.server';
 
 /**
  * `/legal` — §22.2's eight, listed. Issue #439.
@@ -83,23 +86,26 @@ export default async function LegalIndexRoute({
   const inForce = new Map(catalogue.map((summary) => [summary.kind, summary]));
 
   return (
-    <StaticPage title={t('index.title')} summary={t('index.summary')}>
-      <p>{t('index.lead')}</p>
+    <>
+      <StructuredData nodes={sitePageGraph({ crumb: { name: t('index.metaTitle'), path: '/legal' }, ...(await graphContext()) })} />
+      <StaticPage title={t('index.title')} summary={t('index.summary')}>
+        <p>{t('index.lead')}</p>
 
-      <ul>
-        {LEGAL_DOCUMENTS.map((slug) => {
-          const published = inForce.has(kindOf(slug));
+        <ul>
+          {LEGAL_DOCUMENTS.map((slug) => {
+            const published = inForce.has(kindOf(slug));
 
-          return (
-            <li key={slug}>
-              <Link href={legalPath(slug)} className="text-white underline underline-offset-4">
-                {t(`documents.${slug}.title`)}
-              </Link>
-              {!published && <span className="text-white/64"> {t('index.notPublished')}</span>}
-            </li>
-          );
-        })}
-      </ul>
-    </StaticPage>
+            return (
+              <li key={slug}>
+                <Link href={legalPath(slug)} className="text-white underline underline-offset-4">
+                  {t(`documents.${slug}.title`)}
+                </Link>
+                {!published && <span className="text-white/64"> {t('index.notPublished')}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      </StaticPage>
+    </>
   );
 }

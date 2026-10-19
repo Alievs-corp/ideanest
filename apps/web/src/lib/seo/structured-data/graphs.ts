@@ -84,6 +84,33 @@ export function discoverPageGraph(input: {
 }
 
 /**
+ * A page that sits directly under the home page and describes the platform rather than a
+ * campaign — `/about`, `/how-it-works`, `/pricing`, `/support`, `/trust-safety`, `/legal`.
+ *
+ * `discoverPageGraph`'s shape with the page named by the caller: Home, then the page. That is
+ * the whole of what is true — these pages are reached from the header and the footer, which
+ * are one step from home, and none of them is *about* an organisation, a product or an
+ * article in the sense a richer type would claim. The identity nodes stay on `/`, for the
+ * reason `identity.ts` gives.
+ *
+ * The crumb's name is the page's own title from the catalogue, so the trail says in the
+ * page's language what the heading above it already says.
+ */
+export function sitePageGraph(input: {
+  readonly crumb: Crumb;
+  readonly locale: Locale;
+  readonly trailCopy: TrailCopy;
+  readonly env?: EnvSource;
+}): readonly JsonLdNode[] {
+  const breadcrumb = breadcrumbNode(
+    [homeCrumb(input.trailCopy), input.crumb],
+    input.locale,
+    input.env ?? process.env,
+  );
+  return breadcrumb === null ? [] : [breadcrumb];
+}
+
+/**
  * A category or subcategory landing page — §4.13 WS-05.
  *
  * A TRAIL AND NOTHING ELSE. There is no schema.org type that describes "a list of
