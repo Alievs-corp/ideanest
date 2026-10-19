@@ -18,9 +18,14 @@ import { BrandMark } from '../brand/BrandMark';
  *
  * §8.6: `--surface-1` with a `--divider` rule above it. A `--surface-2` footer reads as a
  * panel with content in it and pulls the eye down at the end of every page — and the footer
- * is a place to stop, not a destination. Headings are `--text-secondary`, links are
- * `--text-tertiary` and lift to white on hover, which is 4.9:1 at rest and is why they are
- * set at 16px or above (§9.1).
+ * is a place to stop, not a destination.
+ *
+ * HEADINGS `--text-primary` AND SEMIBOLD, LINKS `--text-secondary`. The links had to rise to
+ * `--text-secondary`, because `--text-tertiary` measures 3.8:1 and is not a body-text colour
+ * (§9.1) — and once they had, they were the same colour and weight as the headings above
+ * them, so a column read as five links rather than a title and four. The heading now takes
+ * the step up instead, which keeps hierarchy carried by colour, as the kit asks, without
+ * dropping the links below a readable contrast.
  *
  * <h2>The language is chosen here now, and the currency still is not</h2>
  *
@@ -102,7 +107,7 @@ export async function SiteFooter() {
           <nav aria-label={copy.label} className="grid grid-cols-2 gap-x-10 gap-y-10 sm:grid-cols-3">
             {copy.groups.map((group) => (
               <div key={group.heading}>
-                <h2 className="text-sm font-medium tracking-[-0.01em] text-white/64">
+                <h2 className="text-sm font-semibold tracking-[-0.01em] text-white">
                   {group.heading}
                 </h2>
                 <ul className="mt-4 flex list-none flex-col gap-3">

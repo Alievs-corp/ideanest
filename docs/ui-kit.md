@@ -1242,7 +1242,7 @@ stop, not a destination.
 | Nav pill, at rest | transparent, transparent border | `--text-primary` |
 | Nav pill, collapsed | `--white-surface`, `--radius-full`, `--border` | `--text-on-white` |
 | Header primary action | `--lime-500` | `--text-on-lime` |
-| Footer | `--surface-1` | `--text-tertiary`, headings `--text-secondary` |
+| Footer | `--surface-1` | links `--text-secondary`, headings `--text-primary` semibold |
 | Footer rule | `--divider` | — |
 
 **The skip link is not optional and it is part of this component.** It is the
