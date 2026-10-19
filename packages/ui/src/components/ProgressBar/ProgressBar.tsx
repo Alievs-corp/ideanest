@@ -6,7 +6,12 @@ import { cn } from '../../lib/cn';
  *
  * Colour logic (docs/ui-kit.md §8.1):
  *   below 100%  -> lime     (in progress)
- *   at/over     -> success + glow  (goal reached)
+ *   at/over     -> success         (goal reached)
+ *
+ * NO GLOW AT 100%. It used to add `0 0 12px var(--lime-glow)`, which put a lime halo on a
+ * success fill — lime says "act now", success says "done", and the halo said both at once.
+ * It was also drawn inside the track's `overflow-hidden`, so what survived was a faint tint
+ * at the ends rather than a glow. The colour change carries the meaning on its own.
  *
  * The bar fills to 100% and stops, but `value` may exceed it — an
  * overfunded campaign shows its real figure as text while the track stays full.
@@ -59,7 +64,7 @@ export function ProgressBar({
       <div
         className={cn(
           'h-full w-full rounded-full',
-          complete ? 'bg-success shadow-[0_0_12px_var(--lime-glow)]' : 'bg-lime-500',
+          complete ? 'bg-success' : 'bg-lime-500',
           animate && 'transition-transform duration-[800ms] ease-[var(--ease-standard)]',
         )}
         style={{ transform: `translateX(${clamped - 100}%)` }}

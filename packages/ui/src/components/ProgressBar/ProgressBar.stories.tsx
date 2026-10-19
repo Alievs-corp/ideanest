@@ -9,7 +9,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'At 100% the fill switches from **lime to success** and picks up a glow. Lime means "in progress"; success means "achieved".',
+          'At 100% the fill switches from **lime to success**, and nothing else changes: no glow, because a lime halo on a success fill would say both things at once. Lime means "in progress"; success means "achieved".',
       },
     },
   },

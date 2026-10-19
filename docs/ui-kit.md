@@ -638,9 +638,12 @@ not shout as loudly as a campaign about to close.
                   transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 .progress--complete .progress__fill {
   background: var(--success);
-  box-shadow: 0 0 12px var(--lime-glow);
 }
 ```
+
+No glow on a complete bar. A lime halo around a success fill mixes the two
+meanings §8.1 keeps apart, and the track's `overflow: hidden` clipped it to a
+tint anyway; the colour change says "goal reached" on its own.
 
 The track fills to 100% and stops, but the value may exceed it. An overfunded
 campaign shows its real figure as text while the track stays full.

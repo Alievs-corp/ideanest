@@ -545,7 +545,7 @@ Patterns the reference material had no need for:
 
 | Animation | Behaviour | Duration |
 |---|---|---|
-| **Progress bar fill** | Zero to actual percentage; changes colour and gains a glow past 100% | 800ms `ease-out` |
+| **Progress bar fill** | Zero to actual percentage; changes colour at 100% | 800ms `ease-out` |
 | **Live pledge counter** | Digit roll on a new pledge, with a brief lime flash | 400ms |
 | **Countdown** | **No animation.** The number simply changes | 0ms |
 | **Goal reached** | Confetti and a progress colour change, once | 1.5s |
