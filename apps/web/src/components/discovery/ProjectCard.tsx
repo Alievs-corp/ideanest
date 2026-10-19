@@ -169,6 +169,8 @@ export interface ProjectCardProps {
   coverClassName?: string;
   /** Cover height against the 16:9 / 2:1 crop; the owner asked for 7% taller everywhere but the popular band. */
   coverScale?: number;
+  /** Extra classes for the text below the cover — the home page trades its spacing for cover height. */
+  bodyClassName?: string;
 }
 
 const COVER_SCALE = 1.177;
@@ -188,6 +190,7 @@ export function ProjectCard({
   sizes = CAMPAIGN_CARD_SIZES,
   coverClassName,
   coverScale = COVER_SCALE,
+  bodyClassName,
 }: ProjectCardProps) {
   const completion = completionOf(card);
   /*
@@ -280,7 +283,9 @@ export function ProjectCard({
         From `lg` up the type climbs back a rung — title 18px, body 14px, meta and tags 12px —
         because on a laptop screen the smaller sizes read as too small at arm's length.
       */}
-      <div className="flex flex-1 flex-col gap-2.5 px-4 pt-3.5 pb-4 max-sm:gap-2 max-sm:pt-3">
+      <div
+        className={`flex flex-1 flex-col gap-2.5 px-4 pt-3.5 pb-4 max-sm:gap-2 max-sm:pt-3${bodyClassName === undefined ? '' : ` ${bodyClassName}`}`}
+      >
         <div className="flex flex-wrap items-center gap-1.5">
           {badge !== null && (
             <Tag variant="onAccent" className={CARD_TAG}>
