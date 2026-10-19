@@ -110,6 +110,37 @@ describe('the campaign preview', () => {
     expect(link).toHaveAttribute('href', '/en/projects/aysel-studio/xari-bulbul-ceramics');
   });
 
+  it('shows the video poster as the cover when the campaign has a video', async () => {
+    readPreviewMock.mockResolvedValue({
+      ...SUBMITTED,
+      coverImage: { url: 'https://cdn.test/cover.jpg', width: 1440, height: 810 },
+      video: {
+        url: 'https://cdn.test/clip.mp4',
+        posterUrl: 'https://cdn.test/clip-poster.jpg',
+        width: 1280,
+        height: 720,
+        durationMs: 30000,
+      },
+    });
+
+    render(<CampaignPreview projectId={PROJECT_ID} copy={COPY} />);
+
+    const cover = await screen.findByRole('img', { name: /Xari Bulbul Ceramics/ });
+    expect(cover).toHaveAttribute('src', 'https://cdn.test/clip-poster.jpg');
+  });
+
+  it('shows the uploaded cover when there is no video', async () => {
+    readPreviewMock.mockResolvedValue({
+      ...SUBMITTED,
+      coverImage: { url: 'https://cdn.test/cover.jpg', width: 1440, height: 810 },
+    });
+
+    render(<CampaignPreview projectId={PROJECT_ID} copy={COPY} />);
+
+    const cover = await screen.findByRole('img', { name: /Xari Bulbul Ceramics/ });
+    expect(cover).toHaveAttribute('src', 'https://cdn.test/cover.jpg');
+  });
+
   it('carries no decision controls, because they belong on the queue', async () => {
     render(<CampaignPreview projectId={PROJECT_ID} copy={COPY} />);
 
