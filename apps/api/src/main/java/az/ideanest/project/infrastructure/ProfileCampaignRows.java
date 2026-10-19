@@ -1,5 +1,6 @@
 package az.ideanest.project.infrastructure;
 
+import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.ProfileCampaign;
 import az.ideanest.project.application.ProfileCursor;
 import az.ideanest.shared.money.Money;
@@ -68,11 +69,17 @@ public class ProfileCampaignRows {
             p.goal_amount, p.pledged_amount, p.backers_count,
             p.launched_at, p.deadline, p.created_at,
             p.cover_image_url, p.cover_image_width, p.cover_image_height,
+            vm.storage_key AS video_storage_key, vm.poster_storage_key AS video_poster_storage_key,
+            vm.width AS video_width, vm.height AS video_height,
             u.slug AS creator_slug
             """;
 
+    /** The campaign video, when it is ready. Outer: most campaigns have none. */
+    private static final String VIDEO_JOIN = " LEFT JOIN media vm ON vm.id = p.video_media_id"
+            + " AND vm.status = 'READY' AND vm.kind = 'VIDEO'";
+
     private static final String CREATED_BY =
-            "SELECT " + COLUMNS + " FROM projects p JOIN users u ON u.id = p.creator_id"
+            "SELECT " + COLUMNS + " FROM projects p JOIN users u ON u.id = p.creator_id" + VIDEO_JOIN
                     + " WHERE p.creator_id = :creatorId AND u.deleted_at IS NULL AND p.state IN (:states)";
 
     /** Newest first, tie-broken on the identifier — the pair {@link ProfileCursor} names. */
@@ -84,18 +91,22 @@ public class ProfileCampaignRows {
             CREATED_BY + " AND (p.created_at, p.id) < (:cursorAt, :cursorId)" + NEWEST_FIRST;
 
     private static final String VISIBLE_BY_ID =
-            "SELECT " + COLUMNS + " FROM projects p JOIN users u ON u.id = p.creator_id"
+            "SELECT " + COLUMNS + " FROM projects p JOIN users u ON u.id = p.creator_id" + VIDEO_JOIN
                     + " WHERE p.id IN (:projectIds) AND u.deleted_at IS NULL AND p.state IN (:states)";
 
     private static final String ANY_BY_ID = "SELECT " + COLUMNS
-            + " FROM projects p LEFT JOIN users u ON u.id = p.creator_id WHERE p.id IN (:projectIds)";
+            + " FROM projects p LEFT JOIN users u ON u.id = p.creator_id" + VIDEO_JOIN
+            + " WHERE p.id IN (:projectIds)";
 
-    private static final RowMapper<ProfileCampaign> CARD = (row, index) -> card(row);
+    private final RowMapper<ProfileCampaign> cards = (row, index) -> card(row);
 
     private final NamedParameterJdbcTemplate jdbc;
 
-    public ProfileCampaignRows(NamedParameterJdbcTemplate jdbc) {
+    private final MediaLibrary media;
+
+    public ProfileCampaignRows(NamedParameterJdbcTemplate jdbc, MediaLibrary media) {
         this.jdbc = jdbc;
+        this.media = media;
     }
 
     /**
@@ -117,14 +128,14 @@ public class ProfileCampaignRows {
                 .addValue("limit", limit);
 
         if (after == null) {
-            return jdbc.query(FIRST_PAGE, parameters, CARD);
+            return jdbc.query(FIRST_PAGE, parameters, cards);
         }
         return jdbc.query(
                 AFTER_CURSOR,
                 parameters
                         .addValue("cursorAt", OffsetDateTime.ofInstant(after.at(), ZoneOffset.UTC))
                         .addValue("cursorId", after.id()),
-                CARD);
+                cards);
     }
 
     /**
@@ -151,7 +162,7 @@ public class ProfileCampaignRows {
                         // cannot make the answer carry it twice.
                         .addValue("projectIds", Set.copyOf(projectIds))
                         .addValue("states", states),
-                CARD);
+                cards);
     }
 
     /**
@@ -168,10 +179,10 @@ public class ProfileCampaignRows {
             return List.of();
         }
         return jdbc.query(
-                ANY_BY_ID, new MapSqlParameterSource("projectIds", Set.copyOf(projectIds)), CARD);
+                ANY_BY_ID, new MapSqlParameterSource("projectIds", Set.copyOf(projectIds)), cards);
     }
 
-    private static ProfileCampaign card(ResultSet row) throws SQLException {
+    private ProfileCampaign card(ResultSet row) throws SQLException {
         String currency = row.getString("currency");
 
         String coverUrl = row.getString("cover_image_url");
@@ -181,6 +192,16 @@ public class ProfileCampaignRows {
                 ? null
                 : new ProfileCampaign.Cover(
                         coverUrl, row.getInt("cover_image_width"), row.getInt("cover_image_height"));
+
+        String videoKey = row.getString("video_storage_key");
+        // A READY video holds its key, its poster and its extent: V61's and V94's constraints.
+        ProfileCampaign.Video video = videoKey == null
+                ? null
+                : new ProfileCampaign.Video(
+                        media.publicUrlOf(videoKey),
+                        media.publicUrlOf(row.getString("video_poster_storage_key")),
+                        row.getInt("video_width"),
+                        row.getInt("video_height"));
 
         return new ProfileCampaign(
                 row.getObject("id", UUID.class),
@@ -195,7 +216,8 @@ public class ProfileCampaignRows {
                 instantOf(row, "launched_at"),
                 instantOf(row, "deadline"),
                 instantOf(row, "created_at"),
-                cover);
+                cover,
+                video);
     }
 
     /**

@@ -105,6 +105,22 @@ public record PublicRewardListResponse(
                     // nullable later cannot silently share a tag with zero.
                     rate.additionalItemAmount() == null ? null : rate.additionalItemAmount().toPlainString());
         }
+        RewardImageBody image = reward.image();
+        append(
+                canonical,
+                image == null ? null : String.valueOf(image.mediaId()),
+                image == null ? null : image.url(),
+                image == null ? null : String.valueOf(image.width()),
+                image == null ? null : String.valueOf(image.height()));
+        RewardVideoBody video = reward.video();
+        append(
+                canonical,
+                video == null ? null : String.valueOf(video.mediaId()),
+                video == null ? null : video.url(),
+                video == null ? null : video.posterUrl(),
+                video == null ? null : String.valueOf(video.width()),
+                video == null ? null : String.valueOf(video.height()),
+                video == null ? null : String.valueOf(video.durationMs()));
     }
 
     private static void append(StringBuilder canonical, String... fields) {

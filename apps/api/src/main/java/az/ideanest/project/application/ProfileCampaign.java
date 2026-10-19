@@ -41,6 +41,8 @@ import java.util.UUID;
  *     slug alone addresses nothing. Null only when the creator row could not be joined,
  *     which {@link ProfileCampaigns#ofAnyState} explains and the two public reads exclude
  * @param cover null for a campaign with no cover image
+ * @param video the campaign's ready video, or null. A client shows its poster as the
+ *     card's cover and plays it on hover or a long press
  */
 public record ProfileCampaign(
         UUID id,
@@ -55,7 +57,8 @@ public record ProfileCampaign(
         Instant launchedAt,
         Instant deadline,
         Instant createdAt,
-        Cover cover) {
+        Cover cover,
+        Video video) {
 
     /**
      * Where the cover image is, and how large it was measured.
@@ -67,5 +70,9 @@ public record ProfileCampaign(
      * this module.
      */
     public record Cover(String url, int width, int height) {
+    }
+
+    /** The video's addresses and frame, as much as a card previews. */
+    public record Video(String url, String posterUrl, int width, int height) {
     }
 }

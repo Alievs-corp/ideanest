@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * What a client sends to add a reward tier to a campaign.
@@ -24,6 +25,9 @@ import java.util.List;
  *     reward is delivered has not promised to ship it
  * @param items the composition, which may be empty. A creator writes the tier and then
  *     builds the items in it
+ * @param imageMediaId a ready image upload of the caller's, or null
+ * @param videoMediaId a ready video upload of the caller's, at most five seconds long, or
+ *     null. A longer one is a {@code 422 REWARD_VIDEO_TOO_LONG}
  */
 public record CreateRewardRequest(
         @NotBlank(message = "A title is required") @Size(max = 80, message = "A title may not exceed 80 characters")
@@ -39,7 +43,9 @@ public record CreateRewardRequest(
         Boolean isAddon,
         Instant availableFrom,
         Instant availableUntil,
-        List<RewardItemBody> items) {
+        List<RewardItemBody> items,
+        UUID imageMediaId,
+        UUID videoMediaId) {
 
     public NewReward toDraft() {
         return new NewReward(
@@ -55,6 +61,8 @@ public record CreateRewardRequest(
                 Boolean.TRUE.equals(isAddon),
                 availableFrom,
                 availableUntil,
-                RewardItemBody.contentsOf(items));
+                RewardItemBody.contentsOf(items),
+                imageMediaId,
+                videoMediaId);
     }
 }

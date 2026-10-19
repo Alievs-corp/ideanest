@@ -12290,6 +12290,9 @@
           },
           "title" : {
             "type" : "string"
+          },
+          "video" : {
+            "$ref" : "#/components/schemas/CardVideo"
           }
         }
       },
@@ -12320,6 +12323,44 @@
           "redirectUrl" : {
             "type" : "string",
             "format" : "uri"
+          }
+        }
+      },
+      "CardVideo" : {
+        "type" : "object",
+        "properties" : {
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "posterUrl" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "CardVideoBody" : {
+        "type" : "object",
+        "properties" : {
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "posterUrl" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -13142,6 +13183,10 @@
             "type" : "string",
             "format" : "date"
           },
+          "imageMediaId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "isAddon" : {
             "type" : "boolean"
           },
@@ -13174,6 +13219,10 @@
             "type" : "string",
             "maxLength" : 80,
             "minLength" : 0
+          },
+          "videoMediaId" : {
+            "type" : "string",
+            "format" : "uuid"
           }
         },
         "required" : [ "price", "title" ]
@@ -16324,6 +16373,9 @@
           },
           "title" : {
             "type" : "string"
+          },
+          "video" : {
+            "$ref" : "#/components/schemas/CardVideoBody"
           }
         }
       },
@@ -16769,6 +16821,9 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "image" : {
+            "$ref" : "#/components/schemas/RewardImageBody"
+          },
           "isEarlyBird" : {
             "type" : "boolean"
           },
@@ -16803,6 +16858,9 @@
           },
           "title" : {
             "type" : "string"
+          },
+          "video" : {
+            "$ref" : "#/components/schemas/RewardVideoBody"
           }
         }
       },
@@ -17624,6 +17682,29 @@
           }
         }
       },
+      "RewardImageBody" : {
+        "type" : "object",
+        "properties" : {
+          "blurDataUrl" : {
+            "type" : "string"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mediaId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "RewardItemBody" : {
         "type" : "object",
         "properties" : {
@@ -17655,6 +17736,10 @@
             "type" : "string",
             "format" : "date"
           },
+          "imageMediaId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "isAddon" : {
             "type" : "boolean"
           },
@@ -17685,6 +17770,10 @@
           },
           "title" : {
             "type" : "string"
+          },
+          "videoMediaId" : {
+            "type" : "string",
+            "format" : "uuid"
           }
         }
       },
@@ -17717,6 +17806,9 @@
           "id" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "image" : {
+            "$ref" : "#/components/schemas/RewardImageBody"
           },
           "isAddon" : {
             "type" : "boolean"
@@ -17790,6 +17882,9 @@
           "version" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "video" : {
+            "$ref" : "#/components/schemas/RewardVideoBody"
           }
         }
       },
@@ -17825,6 +17920,36 @@
           "rewardTierId" : {
             "type" : "string",
             "format" : "uuid"
+          }
+        }
+      },
+      "RewardVideoBody" : {
+        "type" : "object",
+        "properties" : {
+          "blurDataUrl" : {
+            "type" : "string"
+          },
+          "durationMs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mediaId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "posterUrl" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },

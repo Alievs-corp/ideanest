@@ -89,6 +89,12 @@ final class PublicReads {
                 card.image() == null ? null : String.valueOf(card.image().height()));
         append(
                 canonical,
+                card.video() == null ? null : card.video().url(),
+                card.video() == null ? null : card.video().posterUrl(),
+                card.video() == null ? null : String.valueOf(card.video().width()),
+                card.video() == null ? null : String.valueOf(card.video().height()));
+        append(
+                canonical,
                 card.goal() == null ? null : card.goal().amount().toPlainString(),
                 card.goal() == null ? null : card.goal().currency(),
                 card.pledged().amount().toPlainString(),

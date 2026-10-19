@@ -5,6 +5,7 @@ import az.ideanest.shared.money.Money;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A reward tier as the creator first describes it.
@@ -20,6 +21,9 @@ import java.util.List;
  *     defaulting to shipping would ask a backer for an address nobody intended to use
  * @param items the composition. Empty is legal and common at this point: a creator
  *     writes the tier, then builds the items it contains
+ * @param imageMediaId a ready image upload of the caller's, or null
+ * @param videoMediaId a ready video upload of the caller's, short enough for a reward, or
+ *     null
  */
 public record NewReward(
         String title,
@@ -34,7 +38,9 @@ public record NewReward(
         boolean addon,
         Instant availableFrom,
         Instant availableUntil,
-        List<RewardContent> items) {
+        List<RewardContent> items,
+        UUID imageMediaId,
+        UUID videoMediaId) {
 
     public NewReward {
         items = items == null ? List.of() : List.copyOf(items);

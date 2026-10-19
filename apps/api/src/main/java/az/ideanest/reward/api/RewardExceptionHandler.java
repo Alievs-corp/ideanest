@@ -9,6 +9,7 @@ import az.ideanest.reward.application.RewardFieldRejectedException;
 import az.ideanest.reward.application.RewardHasBackersException;
 import az.ideanest.reward.application.RewardNotFoundException;
 import az.ideanest.reward.application.RewardOrderIncompleteException;
+import az.ideanest.reward.application.RewardVideoTooLongException;
 import az.ideanest.reward.application.TooManyRewardsException;
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -233,6 +234,28 @@ public class RewardExceptionHandler {
         problem.setDetail(exception.getMessage());
         problem.setProperty("code", "REWARD_FIELD_INVALID");
         problem.setProperty("meta", Map.of("field", exception.field()));
+        return problem;
+    }
+
+    /**
+     * 422 for a reward clip longer than the limit.
+     *
+     * <p>Both lengths are in {@code meta}, so the editor can say "6.2 seconds; at most 5"
+     * beside the video rather than only refusing it.
+     */
+    @ExceptionHandler(RewardVideoTooLongException.class)
+    public ProblemDetail handleVideoTooLong(RewardVideoTooLongException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        problem.setType(URI.create("https://ideanest.az/problems/reward-video-too-long"));
+        problem.setTitle("Reward video too long");
+        problem.setDetail(exception.getMessage());
+        problem.setProperty("code", "REWARD_VIDEO_TOO_LONG");
+
+        Map<String, Object> meta = new LinkedHashMap<>();
+        meta.put("field", "videoMediaId");
+        meta.put("durationMs", exception.durationMs());
+        meta.put("maxDurationMs", exception.maxDurationMs());
+        problem.setProperty("meta", meta);
         return problem;
     }
 

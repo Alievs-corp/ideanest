@@ -1,5 +1,6 @@
 package az.ideanest.reward.application;
 
+import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.EditLocks;
 import az.ideanest.reward.domain.RewardTier;
 import az.ideanest.reward.domain.RewardTierItem;
@@ -21,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -90,6 +92,7 @@ public class RewardService {
     private final ShippingZoneRepository shippingZones;
     private final ItemRepository items;
     private final RewardAccess access;
+    private final MediaLibrary media;
 
     public RewardService(
             RewardTierRepository rewards,
@@ -98,7 +101,8 @@ public class RewardService {
             ShippingZoneRuleRepository shippingZoneRules,
             ShippingZoneRepository shippingZones,
             ItemRepository items,
-            RewardAccess access) {
+            RewardAccess access,
+            MediaLibrary media) {
         this.rewards = rewards;
         this.compositions = compositions;
         this.shippingRules = shippingRules;
@@ -106,6 +110,7 @@ public class RewardService {
         this.shippingZones = shippingZones;
         this.items = items;
         this.access = access;
+        this.media = media;
     }
 
     /**
@@ -142,6 +147,8 @@ public class RewardService {
         if (draft.secret()) {
             tier.makeSecret();
         }
+        tier.setImageMediaId(claimImage(accountId, draft.imageMediaId()));
+        tier.setVideoMediaId(claimVideo(accountId, draft.videoMediaId()));
 
         requireConsistent(tier);
         RewardTier saved = rewards.save(tier);
@@ -187,6 +194,12 @@ public class RewardService {
                 tier.makePublic();
             }
         });
+        // Released only once the tier is known to be consistent: the reference check is a
+        // native query, which flushes the tier, and a flush before requireConsistent would
+        // turn a 400 into a constraint violation.
+        List<UUID> released = new ArrayList<>();
+        patch.imageMediaId().ifPresent(mediaId -> released.add(replaceImage(tier, accountId, mediaId)));
+        patch.videoMediaId().ifPresent(mediaId -> released.add(replaceVideo(tier, accountId, mediaId)));
 
         if (patch.changesAvailability()) {
             Instant from = patch.availableFrom().isPresent()
@@ -199,6 +212,7 @@ public class RewardService {
         }
 
         requireConsistent(tier);
+        released.forEach(mediaId -> release(tier, mediaId));
 
         if (patch.items().isPresent()) {
             List<RewardContent> contents =
@@ -222,6 +236,8 @@ public class RewardService {
         if (tier.hasBackers()) {
             throw new RewardHasBackersException(rewardId, tier.getClaimedQuantity());
         }
+        release(tier, tier.getImageMediaId());
+        release(tier, tier.getVideoMediaId());
         rewards.delete(tier);
     }
 
@@ -236,7 +252,8 @@ public class RewardService {
      * <p>What is not copied is what backers did. The claimed and reserved counts are
      * not insertable columns, so the copy takes the database's zeroes; that is
      * structural rather than a rule this method remembers to apply. See
-     * {@link RewardTier#duplicateAt(int)} for why a secret tier gets a new token.
+     * {@link RewardTier#duplicateAt(int)} for why a secret tier gets a new token, and
+     * why the copy starts without the original's image and video.
      */
     @Transactional
     public RewardDetail duplicate(UUID rewardId, UUID accountId) {
@@ -278,7 +295,7 @@ public class RewardService {
                 .toList();
         shippingZoneRules.saveAll(copiedZoneRules);
 
-        return new RewardDetail(copy, copiedContents, copiedRules, copiedZoneRules, authorised.locks());
+        return new RewardDetail(copy, copiedContents, copiedRules, copiedZoneRules, authorised.locks(), null, null);
     }
 
     /**
@@ -402,7 +419,9 @@ public class RewardService {
                 compositions.findByRewardTier(rewardId),
                 List.copyOf(result),
                 replaceZoneRates(tier, zoneRates),
-                authorised.locks());
+                authorised.locks(),
+                imageOf(tier),
+                videoOf(tier));
     }
 
     /**
@@ -475,6 +494,95 @@ public class RewardService {
     /** An omitted rate is free rather than unspecified. See {@code ShippingRate}. */
     private static BigDecimal orZero(BigDecimal amount) {
         return amount == null ? BigDecimal.ZERO : amount;
+    }
+
+    // ------------------------------------------------------------------
+    // Media
+    // ------------------------------------------------------------------
+
+    /**
+     * Attaches, replaces or removes the tier's picture.
+     *
+     * <p>The one it replaces is deleted once this edit commits, unless something else still
+     * shows it, as {@code ProjectEditingService} does for a campaign's video.
+     *
+     * @return the upload the tier no longer shows, for the caller to {@link #release}, or
+     *     null
+     */
+    private UUID replaceImage(RewardTier tier, UUID accountId, UUID mediaId) {
+        UUID previous = tier.getImageMediaId();
+        if (Objects.equals(previous, mediaId)) {
+            return null;
+        }
+        tier.setImageMediaId(claimImage(accountId, mediaId));
+        return previous;
+    }
+
+    /** {@link #replaceImage}, for the clip. */
+    private UUID replaceVideo(RewardTier tier, UUID accountId, UUID mediaId) {
+        UUID previous = tier.getVideoMediaId();
+        if (Objects.equals(previous, mediaId)) {
+            return null;
+        }
+        tier.setVideoMediaId(claimVideo(accountId, mediaId));
+        return previous;
+    }
+
+    /**
+     * The caller's own ready image, or a refusal naming the field — a campaign cover's rules.
+     *
+     * <p>The caller rather than the campaign's creator: an upload belongs to whoever made it,
+     * and a collaborator editing rewards attaches their own.
+     */
+    private UUID claimImage(UUID accountId, UUID mediaId) {
+        if (mediaId != null && !media.claimForOwner(accountId, Set.of(mediaId)).contains(mediaId)) {
+            throw new RewardFieldRejectedException(
+                    "imageMediaId", "That image is not available. It may still be processing.");
+        }
+        return mediaId;
+    }
+
+    /**
+     * The caller's own ready video, no longer than a reward's clip may be.
+     *
+     * <p>The length is checked here rather than by the transcoder, which accepts anything up
+     * to a campaign video's minute: one upload path serves both slots, and only the slot
+     * knows its limit. Measured by ffprobe, never reported by the client.
+     */
+    private UUID claimVideo(UUID accountId, UUID mediaId) {
+        if (mediaId == null) {
+            return null;
+        }
+        MediaLibrary.VideoView view = media.claimVideoForOwner(accountId, mediaId)
+                ? media.videoViewOf(mediaId).orElse(null)
+                : null;
+        if (view == null) {
+            throw new RewardFieldRejectedException(
+                    "videoMediaId", "That video is not available. It may still be processing.");
+        }
+        if (!media.fitsAReward(view)) {
+            throw new RewardVideoTooLongException(
+                    view.durationMs(), media.rewardVideoMaxDuration().toMillis());
+        }
+        return mediaId;
+    }
+
+    /**
+     * Deletes an upload this tier no longer shows, once the transaction commits, unless
+     * another tier or a campaign still does.
+     */
+    private void release(RewardTier tier, UUID mediaId) {
+        if (mediaId != null && !rewards.isMediaShownElsewhere(mediaId, tier.getId())) {
+            media.discardAfterCommit(mediaId);
+        }
+    }
+
+    private MediaLibrary.MediaView imageOf(RewardTier tier) {
+        return tier.getImageMediaId() == null ? null : media.viewOf(tier.getImageMediaId()).orElse(null);
+    }
+
+    private MediaLibrary.VideoView videoOf(RewardTier tier) {
+        return tier.getVideoMediaId() == null ? null : media.videoViewOf(tier.getVideoMediaId()).orElse(null);
     }
 
     // ------------------------------------------------------------------
@@ -553,11 +661,13 @@ public class RewardService {
                 compositions.findByRewardTier(tier.getId()),
                 shippingRules.findByRewardTier(tier.getId()),
                 shippingZoneRules.findByRewardTier(tier.getId()),
-                locks);
+                locks,
+                imageOf(tier),
+                videoOf(tier));
     }
 
     /**
-     * A whole reward list with its compositions and rates, in four queries.
+     * A whole reward list with its compositions, rates and media, in six queries.
      *
      * <p>Not one query per tier. A campaign with forty tiers is eighty extra round
      * trips on every load of the rewards tab, and an N+1 over a list this central is
@@ -575,6 +685,14 @@ public class RewardService {
                 .collect(Collectors.groupingBy(ShippingRule::getRewardTierId));
         Map<UUID, List<ShippingZoneRule>> zoneRules = shippingZoneRules.findByRewardTiers(ids).stream()
                 .collect(Collectors.groupingBy(ShippingZoneRule::getRewardTierId));
+        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(tiers.stream()
+                .map(RewardTier::getImageMediaId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
+        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(tiers.stream()
+                .map(RewardTier::getVideoMediaId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
 
         return tiers.stream()
                 .map(tier -> new RewardDetail(
@@ -582,7 +700,9 @@ public class RewardService {
                         contents.getOrDefault(tier.getId(), List.of()),
                         rules.getOrDefault(tier.getId(), List.of()),
                         zoneRules.getOrDefault(tier.getId(), List.of()),
-                        locks))
+                        locks,
+                        tier.getImageMediaId() == null ? null : images.get(tier.getImageMediaId()),
+                        tier.getVideoMediaId() == null ? null : videos.get(tier.getVideoMediaId())))
                 .toList();
     }
 

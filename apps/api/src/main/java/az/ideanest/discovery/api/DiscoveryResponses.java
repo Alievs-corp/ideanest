@@ -52,6 +52,9 @@ public final class DiscoveryResponses {
      * @param extended §4.3's "Extended": the campaign was extended and is still funding
      * @param categorySlug the campaign's category, absent when it has none. The clients colour
      *     and badge the card by it (#335)
+     * @param video the campaign's ready video, absent when it has none. When present a client
+     *     shows {@code video.posterUrl} as the cover and plays the clip on hover or a long
+     *     press; {@code image} stays the uploaded cover
      */
     public record Card(
             String id,
@@ -60,6 +63,7 @@ public final class DiscoveryResponses {
             String title,
             Creator creator,
             Image image,
+            CardVideo video,
             Money goal,
             Money pledged,
             String completionPercent,
@@ -78,6 +82,9 @@ public final class DiscoveryResponses {
     }
 
     public record Image(String url, int width, int height) {
+    }
+
+    public record CardVideo(String url, String posterUrl, int width, int height) {
     }
 
     /**
@@ -163,6 +170,13 @@ public final class DiscoveryResponses {
                                 card.coverImage().url(),
                                 card.coverImage().width(),
                                 card.coverImage().height()),
+                card.video() == null
+                        ? null
+                        : new CardVideo(
+                                card.video().url(),
+                                card.video().posterUrl(),
+                                card.video().width(),
+                                card.video().height()),
                 card.goal(),
                 card.pledged(),
                 card.completionPercent() == null ? null : card.completionPercent().toPlainString(),

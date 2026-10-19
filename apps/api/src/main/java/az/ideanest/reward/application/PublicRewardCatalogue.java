@@ -1,5 +1,6 @@
 package az.ideanest.reward.application;
 
+import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.PublicProjects;
 import az.ideanest.reward.domain.Item;
 import az.ideanest.reward.domain.RewardTier;
@@ -18,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -74,6 +76,7 @@ public class PublicRewardCatalogue {
     private final ShippingRuleRepository shippingRules;
     private final ItemRepository items;
     private final PublicProjects projects;
+    private final MediaLibrary media;
     private final Clock clock;
 
     public PublicRewardCatalogue(
@@ -82,6 +85,7 @@ public class PublicRewardCatalogue {
             ShippingRuleRepository shippingRules,
             ItemRepository items,
             PublicProjects projects,
+            MediaLibrary media,
             Clock clock) {
 
         this.rewards = rewards;
@@ -89,6 +93,7 @@ public class PublicRewardCatalogue {
         this.shippingRules = shippingRules;
         this.items = items;
         this.projects = projects;
+        this.media = media;
         this.clock = clock;
     }
 
@@ -205,7 +210,8 @@ public class PublicRewardCatalogue {
     }
 
     /**
-     * The tiers with their contents and their rates, in two further queries.
+     * The tiers with their contents, their rates and their media, in four further
+     * queries.
      *
      * <p>The items are read by campaign rather than by identifier, because a
      * campaign's item catalogue is tens of rows and the alternative is a second
@@ -224,12 +230,22 @@ public class PublicRewardCatalogue {
                 .collect(Collectors.groupingBy(ShippingRule::getRewardTierId));
         Map<UUID, Item> catalogue = items.findByProjectIdOrderByCreatedAtAsc(projectId).stream()
                 .collect(Collectors.toMap(Item::getId, Function.identity()));
+        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(tiers.stream()
+                .map(RewardTier::getImageMediaId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
+        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(tiers.stream()
+                .map(RewardTier::getVideoMediaId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
 
         return tiers.stream()
                 .map(tier -> new PublicReward(
                         tier,
                         publicContentsOf(catalogue, contents.getOrDefault(tier.getId(), List.of())),
-                        rates.getOrDefault(tier.getId(), List.of())))
+                        rates.getOrDefault(tier.getId(), List.of()),
+                        tier.getImageMediaId() == null ? null : images.get(tier.getImageMediaId()),
+                        tier.getVideoMediaId() == null ? null : videos.get(tier.getVideoMediaId())))
                 .toList();
     }
 
@@ -294,8 +310,15 @@ public class PublicRewardCatalogue {
      * @param shippingRates the rate table, which is what PL-05 needs: the destination
      *     drives the charge, and a client that cannot see the rates cannot show a
      *     total before checkout. Empty for a tier that is not shipped
+     * @param image the tier's picture, or null when it has none or it is not servable
+     * @param video the tier's clip, or null likewise
      */
-    public record PublicReward(RewardTier tier, List<PublicRewardItem> items, List<ShippingRule> shippingRates) {
+    public record PublicReward(
+            RewardTier tier,
+            List<PublicRewardItem> items,
+            List<ShippingRule> shippingRates,
+            MediaLibrary.MediaView image,
+            MediaLibrary.VideoView video) {
 
         public PublicReward {
             items = List.copyOf(items);
