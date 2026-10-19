@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DELIVERY_MONTH_OPTIONS, readRewardDetails } from './reward-details';
+import { DELIVERY_MONTH_OPTIONS, readRewardDetails, readRewardMedia } from './reward-details';
 
 /**
  * The reward card's details — #255. When it arrives, where it can be sent and from what, and
@@ -84,5 +84,36 @@ describe('the delivery month and the tags', () => {
       earlyBird: false,
       featured: false,
     });
+  });
+});
+
+describe('the card picture and clip', () => {
+  const image = { mediaId: 'm1', url: 'https://cdn.example/r.jpg', width: 1200, height: 900, blurDataUrl: 'data:image/png;base64,AA' };
+  const video = {
+    mediaId: 'm2',
+    url: 'https://cdn.example/r.mp4',
+    posterUrl: 'https://cdn.example/p.jpg',
+    width: 1280,
+    height: 720,
+    durationMs: 4800,
+  };
+
+  it('reads both', () => {
+    expect(readRewardMedia({ image, video })).toEqual({
+      image: { url: image.url, width: 1200, height: 900, blurDataUrl: image.blurDataUrl },
+      video: { url: video.url, posterUrl: video.posterUrl, width: 1280, height: 720, durationMs: 4800, blurDataUrl: null },
+    });
+  });
+
+  it('reads none for a tier without them, or one the service left out', () => {
+    expect(readRewardMedia({})).toEqual({ image: null, video: null });
+    expect(readRewardMedia({ image: null, video: null })).toEqual({ image: null, video: null });
+    expect(readRewardMedia(null)).toEqual({ image: null, video: null });
+  });
+
+  it('draws an incomplete one as none rather than as a box of no size', () => {
+    expect(readRewardMedia({ image: { ...image, width: 0 } }).image).toBeNull();
+    expect(readRewardMedia({ image: { ...image, url: 'javascript:alert(1)' } }).image).toBeNull();
+    expect(readRewardMedia({ video: { ...video, posterUrl: undefined } }).video).toBeNull();
   });
 });

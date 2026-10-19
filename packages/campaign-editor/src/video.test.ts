@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  REWARD_VIDEO_MAX_SECONDS,
   VIDEO_MAX_BYTES,
   formatVideoDuration,
+  rewardVideoPreflightRefusal,
   videoContentType,
   videoPreflightRefusal,
   videoSeconds,
@@ -36,6 +38,28 @@ describe('videoPreflightRefusal', () => {
 
   it('refuses an empty file rather than uploading nothing', () => {
     expect(videoPreflightRefusal({ byteSize: 0, durationMs: null })).toBe('EMPTY');
+  });
+});
+
+describe('rewardVideoPreflightRefusal', () => {
+  const ok = { byteSize: 2_000_000, durationMs: 4_000 };
+
+  it('is five seconds, with the same container rounding the campaign video gets', () => {
+    expect(REWARD_VIDEO_MAX_SECONDS).toBe(5);
+    expect(rewardVideoPreflightRefusal({ ...ok, durationMs: 5_000 })).toBeNull();
+    expect(rewardVideoPreflightRefusal({ ...ok, durationMs: 5_500 })).toBeNull();
+    expect(rewardVideoPreflightRefusal({ ...ok, durationMs: 5_501 })).toBe('TOO_LONG');
+  });
+
+  it('refuses a clip the campaign video would take', () => {
+    expect(videoPreflightRefusal({ ...ok, durationMs: 42_000 })).toBeNull();
+    expect(rewardVideoPreflightRefusal({ ...ok, durationMs: 42_000 })).toBe('TOO_LONG');
+  });
+
+  it('keeps the other refusals, and lets an unreadable length through', () => {
+    expect(rewardVideoPreflightRefusal({ byteSize: 0, durationMs: null })).toBe('EMPTY');
+    expect(rewardVideoPreflightRefusal({ ...ok, byteSize: VIDEO_MAX_BYTES + 1 })).toBe('TOO_LARGE');
+    expect(rewardVideoPreflightRefusal({ ...ok, durationMs: null })).toBeNull();
   });
 });
 

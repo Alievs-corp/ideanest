@@ -589,6 +589,33 @@ export interface RewardTierEditorCopy {
   readonly additionalRateTo: string;
   /** Carries `{name}`. */
   readonly removeNamed: string;
+  /** The tier's picture: its label, hint and drop zone. */
+  readonly image: string;
+  readonly imageHint: string;
+  readonly imagePrompt: string;
+  readonly imageDragPrompt: string;
+  readonly imageButtonLabel: string;
+  readonly imageDropHint: string;
+  readonly imageReplace: string;
+  readonly imageRemove: string;
+  /** Said once an upload is ready: the tier keeps it only when the drawer is saved. */
+  readonly imageUploaded: string;
+  /** The stages and refusals of an image upload, which are the cover's — #313. */
+  readonly upload: ImageUploadCopy;
+  /** The tier's clip, of at most `REWARD_VIDEO_MAX_SECONDS`. */
+  readonly video: RewardVideoCopy;
+}
+
+/**
+ * A reward tier's clip — the campaign video's words, with the sentences that are about the
+ * campaign or about a minute-long clip replaced.
+ *
+ * The same shape as {@link CampaignVideoCopy} so one field component can draw either. Every
+ * `{seconds}` here is the reward's five, filled where the template is read.
+ */
+export interface RewardVideoCopy extends CampaignVideoCopy {
+  /** The save refused with `REWARD_VIDEO_TOO_LONG` (`isRewardVideoTooLong`). Carries `{seconds}`. */
+  readonly refusedTooLong: string;
 }
 
 /** `RewardsPanel` — the tab itself. */
@@ -863,6 +890,17 @@ export function rewardsPanelCopyFrom(
       shippingRateTo: tpl('rewards.tier.shippingRateTo'),
       additionalRateTo: tpl('rewards.tier.additionalRateTo'),
       removeNamed: tpl('rewards.tier.removeNamed'),
+      image: at('tier.image'),
+      imageHint: at('tier.imageHint'),
+      imagePrompt: at('tier.imagePrompt'),
+      imageDragPrompt: at('tier.imageDragPrompt'),
+      imageButtonLabel: at('tier.imageButtonLabel'),
+      imageDropHint: at('tier.imageDropHint'),
+      imageReplace: at('tier.imageReplace'),
+      imageRemove: at('tier.imageRemove'),
+      imageUploaded: at('tier.imageUploaded'),
+      upload: imageUploadCopyFrom(t),
+      video: rewardVideoCopyFrom(t),
     },
   };
 }
@@ -1062,6 +1100,11 @@ export interface StoryVocabularyCopy {
     /** Carries `{provider}`, `{position}` and `{title}`. */
     readonly embed: string;
     readonly embedNoTitle: string;
+    /** Carries `{position}` and `{title}`. A section without a picture. */
+    readonly section: string;
+    /** Carries `{position}` and `{title}`. A section with one. */
+    readonly sectionWithImage: string;
+    readonly sectionEmpty: string;
     readonly numbered: string;
     readonly bulleted: string;
   };
@@ -1075,6 +1118,9 @@ export interface StoryVocabularyCopy {
     readonly imageNeedsAlt: string;
     readonly embedNeedsUrl: string;
     readonly embedNeedsTitle: string;
+    readonly sectionNeedsTitle: string;
+    /** Carries `{max}`, filled by `blockProblem`. */
+    readonly sectionTitleTooLong: string;
   };
   /** The language whose plural rule picks the list form. */
   readonly locale: Locale;
@@ -1202,6 +1248,33 @@ export interface StoryBlocksCopy {
   readonly removedAnnouncement: AppPluralForms;
   /** What each kind of block is, shown beside it in the add menu. */
   readonly hints: Readonly<Record<StoryBlockType, string>>;
+  /** A section block's own fields. Its title, text and alt inputs are named by `titleOf`, `textOf` and `descriptionOf`. */
+  readonly sectionBlock: StorySectionCopy;
+}
+
+/**
+ * A section block: a title, an optional picture and its text.
+ *
+ * The picture uploads through the image block's pipeline, so its stages and refusals are
+ * `StoryBlocksCopy.upload` and its drop zone is named by `imageUploadOf`.
+ */
+export interface StorySectionCopy {
+  readonly title: string;
+  readonly titlePlaceholder: string;
+  readonly image: string;
+  readonly imageHint: string;
+  readonly addImage: string;
+  readonly replaceImage: string;
+  readonly removeImage: string;
+  readonly imageAlt: string;
+  readonly text: string;
+  readonly textPlaceholder: string;
+  /** Carries `{name}`, the block's own description. */
+  readonly addImageTo: string;
+  /** Carries `{name}`. */
+  readonly replaceImageOf: string;
+  /** Carries `{name}`. */
+  readonly removeImageFrom: string;
 }
 
 /** The story tab. */
@@ -1348,6 +1421,7 @@ const STORY_BLOCK_TYPES = [
   'rule',
   'image',
   'embed',
+  'section',
 ] as const satisfies readonly StoryBlockType[];
 
 export function storyPanelCopyFrom(
@@ -1427,6 +1501,21 @@ export function storyPanelCopyFrom(
       movedAnnouncement: tpl('blocks.movedAnnouncement'),
       removedAnnouncement: t.raw('story.blocks.removedAnnouncement') as AppPluralForms,
       hints: record(STORY_BLOCK_TYPES, (kind) => at(`blocks.hints.${kind}`)),
+      sectionBlock: {
+        title: at('blocks.sectionBlock.title'),
+        titlePlaceholder: at('blocks.sectionBlock.titlePlaceholder'),
+        image: at('blocks.sectionBlock.image'),
+        imageHint: at('blocks.sectionBlock.imageHint'),
+        addImage: at('blocks.sectionBlock.addImage'),
+        replaceImage: at('blocks.sectionBlock.replaceImage'),
+        removeImage: at('blocks.sectionBlock.removeImage'),
+        imageAlt: at('blocks.sectionBlock.imageAlt'),
+        text: at('blocks.sectionBlock.text'),
+        textPlaceholder: at('blocks.sectionBlock.textPlaceholder'),
+        addImageTo: tpl('blocks.sectionBlock.addImageTo'),
+        replaceImageOf: tpl('blocks.sectionBlock.replaceImageOf'),
+        removeImageFrom: tpl('blocks.sectionBlock.removeImageFrom'),
+      },
     },
     history: {
       title: at('history.title'),
@@ -1482,6 +1571,9 @@ export function storyPanelCopyFrom(
         imageNoAlt: at('vocabulary.describe.imageNoAlt'),
         embed: tpl('vocabulary.describe.embed'),
         embedNoTitle: at('vocabulary.describe.embedNoTitle'),
+        section: tpl('vocabulary.describe.section'),
+        sectionWithImage: tpl('vocabulary.describe.sectionWithImage'),
+        sectionEmpty: at('vocabulary.describe.sectionEmpty'),
         numbered: at('vocabulary.describe.numbered'),
         bulleted: at('vocabulary.describe.bulleted'),
       },
@@ -1495,6 +1587,8 @@ export function storyPanelCopyFrom(
         imageNeedsAlt: at('vocabulary.problems.imageNeedsAlt'),
         embedNeedsUrl: at('vocabulary.problems.embedNeedsUrl'),
         embedNeedsTitle: at('vocabulary.problems.embedNeedsTitle'),
+        sectionNeedsTitle: at('vocabulary.problems.sectionNeedsTitle'),
+        sectionTitleTooLong: tpl('vocabulary.problems.sectionTitleTooLong'),
       },
       locale,
     },
@@ -2086,6 +2180,26 @@ export function campaignVideoCopyFrom(t: CampaignEditorTranslator): CampaignVide
     failures: record(VIDEO_FAILURE_CODES, (code) =>
       code === 'TOO_LONG' || code === 'TOO_LARGE' ? tpl(`failures.${code}`) : at(`failures.${code}`),
     ),
+  };
+}
+
+/** {@link RewardVideoCopy}: the campaign video's copy, overridden from `rewards.tier.video`. */
+export function rewardVideoCopyFrom(t: CampaignEditorTranslator): RewardVideoCopy {
+  const campaign = campaignVideoCopyFrom(t);
+  const at = (key: string) => t(`rewards.tier.video.${key}`);
+  const tpl = (key: string) => template(t, `rewards.tier.video.${key}`);
+
+  return {
+    ...campaign,
+    label: at('label'),
+    hint: tpl('hint'),
+    prompt: at('prompt'),
+    set: at('set'),
+    previewLabel: at('previewLabel'),
+    notAttached: at('notAttached'),
+    tooLong: tpl('tooLong'),
+    stage: { ...campaign.stage, processing: at('processing') },
+    refusedTooLong: tpl('refusedTooLong'),
   };
 }
 

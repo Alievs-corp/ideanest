@@ -5012,6 +5012,11 @@
         "pickup": "Elden teslim alınır, hiçbir şey gönderilmez",
         "shipsTo": "{count, plural, other {# ülkeye gönderilir}}",
         "shipsToFrom": "{count, plural, other {# ülkeye gönderilir, kargo en az {amount}}}"
+      },
+      "media": {
+        "play": "{title} ödülünün videosunu oynat",
+        "pause": "{title} ödülünün videosunu duraklat",
+        "imageAlt": "{title} ödülünün görseli"
       }
     },
     "media": {
@@ -5384,7 +5389,27 @@
         "notSavedDetail": "Yazdıklarınızdan hiçbiri kaybolmadı — metin aşağıdaki alanlarda duruyor.",
         "ratesNotSavedDetail": "Ödülle ilgili diğer her şey kaydedildi. Yalnızca ülkelere göre ücretler reddedildi; onları düzeltip yeniden kaydedin, geri kalanı ikinci kez gönderilmez.",
         "earlyBirdHint": "Tükenen daha iyi bir teklif. Ya bir kapanış tarihi ya da sınırlı kontenjan gerekir — ikisi de yoksa insanları boş yere acele ettiren etiketli sıradan bir ödüldür.",
-        "secretHint": "Herkese açık listede görünmez, özel bir jetonla ulaşılır. Yeniden herkese açık yapmak bu jetonu geçersiz kılar, gönderilmiş bağlantılar çalışmaz."
+        "secretHint": "Herkese açık listede görünmez, özel bir jetonla ulaşılır. Yeniden herkese açık yapmak bu jetonu geçersiz kılar, gönderilmiş bağlantılar çalışmaz.",
+        "image": "Görsel",
+        "imageHint": "İsteğe bağlı. Kampanya sayfasında ödül kartının üstünde gösterilir.",
+        "imagePrompt": "Bu ödülün görselini buraya bırakın",
+        "imageDragPrompt": "Bu görseli yüklemek için bırakın",
+        "imageButtonLabel": "Bir görsel seçin",
+        "imageDropHint": "En fazla 20 MB: JPEG, PNG, WebP, AVIF veya HEIC.",
+        "imageReplace": "Görseli değiştir",
+        "imageRemove": "Görseli kaldır",
+        "imageUploaded": "Görsel yüklendi. Saklamak için ödülü kaydedin.",
+        "video": {
+          "label": "Video",
+          "hint": "İsteğe bağlı. Ödül kartında sessiz oynayan, en fazla {seconds} saniyelik bir klip.",
+          "prompt": "Bu ödülün videosunu buraya bırakın",
+          "set": "Video hazır. Saklamak için ödülü kaydedin.",
+          "previewLabel": "Ödül videosunun önizlemesi",
+          "processing": "Video dönüştürülüyor…",
+          "notAttached": "Bu video ödüle eklenemedi. Yeniden yükleyin.",
+          "tooLong": "Bu videonun uzunluğu: {duration}. Ödül videosu en fazla {seconds} saniye olabilir — kısaltıp yeniden seçin.",
+          "refusedTooLong": "Ödül kaydedilmedi: videosu {seconds} saniyeden uzun. Daha kısa bir klip seçin."
+        }
       },
       "deleteItemNamed": "«{name}» silinsin mi?",
       "deleteRewardNamed": "«{title}» silinsin mi?",
@@ -5521,7 +5546,8 @@
           "quote": "Alıntı",
           "rule": "Ayırıcı",
           "image": "Görsel",
-          "embed": "Gömülü içerik"
+          "embed": "Gömülü içerik",
+          "section": "Bölüm"
         },
         "describe": {
           "position": "{total} bloktan {index}.",
@@ -5539,6 +5565,9 @@
           "imageNoAlt": "henüz açıklama yok",
           "embed": "{provider} gömülü içeriği {position}: {title}",
           "embedNoTitle": "henüz başlık yok",
+          "section": "Bölüm {position}: {title}",
+          "sectionWithImage": "Görselli bölüm {position}: {title}",
+          "sectionEmpty": "henüz başlık yok",
           "numbered": "Numaralı",
           "bulleted": "Madde işaretli"
         },
@@ -5551,7 +5580,9 @@
           "imageNotMeasured": "Bu görsel henüz ölçülmedi. Boyutunun kaydedilmesi için «Ölç ve ekle» düğmesini kullanın.",
           "imageNeedsAlt": "Açıklama zorunludur. Ekran okuyucu kullanan bir destekçi resim yerine onu alır.",
           "embedNeedsUrl": "Gömülü içeriğin adresi olmalı.",
-          "embedNeedsTitle": "Gömülü içeriğin başlığı olmalı. Ekran okuyucu «çerçeve» yerine onu seslendirir."
+          "embedNeedsTitle": "Gömülü içeriğin başlığı olmalı. Ekran okuyucu «çerçeve» yerine onu seslendirir.",
+          "sectionNeedsTitle": "Bir bölümün başlığı olmalı.",
+          "sectionTitleTooLong": "Bölüm başlığı en fazla {max} karakter olabilir. Gerisini bölümün metnine taşıyın."
         }
       },
       "panel": {
@@ -5629,7 +5660,8 @@
           "quote": "Öne çıkarılmış bir alıntı.",
           "image": "Yüklediğiniz ya da zaten yayımlanmış bir görsel.",
           "embed": "YouTube ya da Vimeo videosu.",
-          "rule": "Yatay bir ayırıcı."
+          "rule": "Yatay bir ayırıcı.",
+          "section": "Başlığı olan, isteğe bağlı görselli bir hikâye bölümü. Çapa menüsünde listelenir."
         },
         "empty": "Burada henüz bir şey yok. Bir paragrafla başlayın — kampanyaların çoğu ürünün ne olduğu ve kimin için olduğuyla açılır.",
         "embedHint": "Başlık, ekran okuyucunun «çerçeve» yerine okuduğu metindir. Yalnızca YouTube ve Vimeo videoları gömülebilir.",
@@ -5640,7 +5672,22 @@
         "imageDragPrompt": "Bu görseli yüklemek için bırakın",
         "imageButtonLabel": "Bir görsel seçin",
         "imageDropHint": "En fazla 20 MB: JPEG, PNG, WebP, AVIF veya HEIC. Boyutu ölçülür, böylece sayfa görsel yüklenmeden yerini ayırabilir.",
-        "imageUploadOf": "Yükleme: {name}"
+        "imageUploadOf": "Yükleme: {name}",
+        "sectionBlock": {
+          "title": "Bölüm başlığı",
+          "titlePlaceholder": "Atölyemiz",
+          "image": "Görsel",
+          "imageHint": "İsteğe bağlı. Başlığın altında, metinden önce gösterilir.",
+          "addImage": "Görsel ekle",
+          "replaceImage": "Görseli değiştir",
+          "removeImage": "Görseli kaldır",
+          "imageAlt": "Görsel açıklaması",
+          "text": "Metin",
+          "textPlaceholder": "Hikâyenin bu bölümü ne anlatıyor. Metni seçip «Kalın» ya da «İtalik» kullanın.",
+          "addImageTo": "Görsel ekle: {name}",
+          "replaceImageOf": "Görseli değiştir: {name}",
+          "removeImageFrom": "Görseli kaldır: {name}"
+        }
       },
       "history": {
         "title": "Önceki sürümler",
@@ -7210,6 +7257,10 @@
     },
     "blocking": {
       "offline": "Engellemek için bağlantı gerekir."
+    },
+    "preview": {
+      "cardHint": "Videoyu önizlemek için basılı tutun",
+      "rewardHint": "Videoyu oynatmak için basılı tutun"
     }
   },
   "blocking": {

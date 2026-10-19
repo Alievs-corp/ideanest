@@ -91,6 +91,31 @@ export interface EmbedBlock {
   title: string;
 }
 
+/** A section's picture: an image block without its `type`, under the same rules. */
+export interface SectionImage {
+  url: string;
+  width: number;
+  height: number;
+  /** Never empty, for the reason `ImageBlock.alt` gives. */
+  alt: string;
+}
+
+/**
+ * A titled part of the story: a title, an optional picture under it, and its text.
+ *
+ * Rendered as its own `<section>` with an `h2`, and listed in the anchor navigation like a
+ * level-2 heading. `id` is an anchor in the same namespace as the headings' — one set, unique
+ * across both, because both end up as the fragment of the same URL.
+ */
+export interface SectionBlock {
+  type: 'section';
+  id: string;
+  /** At most 200 code points, like a heading's text. */
+  title: string;
+  image: SectionImage | null;
+  spans: StorySpans;
+}
+
 export type StoryBlock =
   | HeadingBlock
   | ParagraphBlock
@@ -98,7 +123,8 @@ export type StoryBlock =
   | QuoteBlock
   | RuleBlock
   | ImageBlock
-  | EmbedBlock;
+  | EmbedBlock
+  | SectionBlock;
 
 export type StoryBlockType = StoryBlock['type'];
 
@@ -193,9 +219,57 @@ function readBlock(raw: unknown): StoryBlock | null {
       if (!isEmbedProvider(raw.provider)) return null;
       return { type: 'embed', provider: raw.provider, url: raw.url, title: raw.title };
     }
+    case 'section': {
+      if (typeof raw.id !== 'string' || typeof raw.title !== 'string') return null;
+      // An absent `image` reads as null: the service serialises `non_null`, so a null the
+      // editor sent may come back as a missing key, and both mean "no picture".
+      const image = raw.image == null ? null : readSectionImage(raw.image);
+      if (raw.image != null && image === null) return null;
+      const spans = readSpans(raw.spans);
+      if (spans === null) return null;
+      return { type: 'section', id: raw.id, title: raw.title, image, spans };
+    }
     default:
       return null;
   }
+}
+
+function readSectionImage(raw: unknown): SectionImage | null {
+  if (!isRecord(raw)) return null;
+  if (
+    typeof raw.url !== 'string' ||
+    typeof raw.alt !== 'string' ||
+    !Number.isInteger(raw.width) ||
+    !Number.isInteger(raw.height)
+  ) {
+    return null;
+  }
+  return { url: raw.url, width: raw.width as number, height: raw.height as number, alt: raw.alt };
+}
+
+/* -------------------------------------------------------------------------
+ * The anchor navigation
+ * ---------------------------------------------------------------------- */
+
+/** One entry of the story's anchor navigation (§4.6). */
+export interface StoryAnchor {
+  id: string;
+  text: string;
+  level: HeadingLevel;
+}
+
+/**
+ * The anchor navigation, in document order: every heading, and every section as a level-2
+ * entry. Here rather than in the editor so the campaign page lists exactly what the editor's
+ * anchor menu lists.
+ */
+export function storyAnchors(document: StoryDocument): readonly StoryAnchor[] {
+  const anchors: StoryAnchor[] = [];
+  for (const block of document.blocks) {
+    if (block.type === 'heading') anchors.push({ id: block.id, text: block.text, level: block.level });
+    else if (block.type === 'section') anchors.push({ id: block.id, text: block.title, level: 2 });
+  }
+  return anchors;
 }
 
 function readSpans(raw: unknown): StorySpans | null {
