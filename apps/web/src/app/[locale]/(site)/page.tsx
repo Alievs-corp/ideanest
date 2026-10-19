@@ -266,7 +266,7 @@ export default async function HomePage() {
               */}
               <ul
                 aria-label={t('featured.heading')}
-                className="grid list-none gap-4 sm:grid-cols-2 lg:auto-rows-fr lg:grid-cols-1"
+                className="grid list-none content-start gap-4 sm:grid-cols-2 lg:grid-cols-1"
               >
                 {featured.map((card, index) => (
                   <li key={card.id} className={index === 0 ? 'min-h-0' : `min-h-0 ${PHONE_FIRST_ONLY}`}>
@@ -276,7 +276,7 @@ export default async function HomePage() {
                       locale={locale}
                       sizes={FEATURED_CARD_SIZES}
                       priority={index === 0}
-                      coverClassName="lg:aspect-auto lg:min-h-65.5 lg:flex-[100_1_0%]"
+                      coverClassName="lg:aspect-auto lg:h-[341px]"
                       coverScale={1}
                     />
                   </li>
