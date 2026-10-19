@@ -1109,7 +1109,7 @@ the column, and a band may hold more than one part:
 
 | Band | Shape from `lg` |
 |---|---|
-| Popular right now + Ending soon | Two halves. Left: the two campaigns at the top of the `popularity` sort, one per row, each with a fixed 378px cover. Right: six ending-soon campaigns, two columns of three. The halves share their heading row through `subgrid`, so both grids start on one line |
+| Popular right now + Ending soon | Two halves. Left: the two campaigns at the top of the `popularity` sort, one per row, each cover filling its card so the column ends level with the grid beside it. Right: six ending-soon campaigns, two columns of three. The halves share their heading row through `subgrid`, so both grids start on one line |
 | Recently launched | One row that scrolls sideways under two arrows — three cards at `lg`, four at `xl`, the widths `CAMPAIGN_GRID` gives there |
 | For creators | Three pages side by side (how it works, pricing, trust and safety), each with a rule down its left edge; the title is the link, so there is no "learn more" button |
 | Browse by category | Unchanged |

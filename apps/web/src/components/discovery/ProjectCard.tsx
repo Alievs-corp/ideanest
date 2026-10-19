@@ -165,7 +165,7 @@ export interface ProjectCardProps {
    * campaign is half the column wide, and a cover sized for a quarter of it would be blurred.
    */
   sizes?: string;
-  /** From `lg`, a fixed 378px cover instead of the 16:9 crop — the home page's popular cards. */
+  /** From `lg`, the cover fills the card's spare height — the home page's popular cards. */
   coverFills?: boolean;
 }
 
@@ -239,7 +239,7 @@ export function ProjectCard({
         ratio="16/9"
         narrowRatio="2/1"
         radius="lg"
-        {...(coverFills ? { className: 'lg:aspect-auto lg:h-94.5' } : {})}
+        {...(coverFills ? { className: 'lg:aspect-auto lg:min-h-65.5 lg:flex-[100_1_0%]' } : {})}
       >
         {card.image != null && (
           <Image

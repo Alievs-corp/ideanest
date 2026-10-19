@@ -266,7 +266,7 @@ export default async function HomePage() {
               */}
               <ul
                 aria-label={t('featured.heading')}
-                className="grid list-none content-start gap-4 sm:grid-cols-2 lg:grid-cols-1"
+                className="grid list-none gap-4 sm:grid-cols-2 lg:auto-rows-fr lg:grid-cols-1"
               >
                 {featured.map((card, index) => (
                   <li key={card.id} className={index === 0 ? 'min-h-0' : `min-h-0 ${PHONE_FIRST_ONLY}`}>
