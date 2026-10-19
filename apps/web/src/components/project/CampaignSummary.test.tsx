@@ -118,6 +118,9 @@ const NO_DETAILS = {
   featured: false,
 } as const;
 
+/** A tier with neither a picture nor a clip. */
+const NO_MEDIA = { image: null, video: null } as const;
+
 const TIERS = [
   {
     id: 'tier-1',
@@ -126,6 +129,7 @@ const TIERS = [
     price: { amount: '45.00', currency: 'AZN' },
     remainingQuantity: 0,
     imageUrl: null,
+    media: NO_MEDIA,
     details: NO_DETAILS,
   },
   {
@@ -135,6 +139,7 @@ const TIERS = [
     price: { amount: '60.00', currency: 'AZN' },
     remainingQuantity: null,
     imageUrl: null,
+    media: NO_MEDIA,
     details: NO_DETAILS,
   },
 ] as const;
@@ -322,6 +327,7 @@ describe('the reward tiers', () => {
             price: { amount: '45.00', currency: 'AZN' },
             remainingQuantity: 0,
             imageUrl: null,
+            media: NO_MEDIA,
             details: NO_DETAILS,
           },
           {
@@ -331,6 +337,7 @@ describe('the reward tiers', () => {
             price: { amount: '60.00', currency: 'AZN' },
             remainingQuantity: null,
             imageUrl: null,
+            media: NO_MEDIA,
             details: NO_DETAILS,
           },
         ]}
@@ -526,6 +533,7 @@ describe('accessibility', () => {
               price: { amount: '45.00', currency: 'AZN' },
               remainingQuantity: 0,
               imageUrl: null,
+              media: NO_MEDIA,
               details: NO_DETAILS,
             },
             {
@@ -535,6 +543,7 @@ describe('accessibility', () => {
               price: { amount: '60.00', currency: 'AZN' },
               remainingQuantity: null,
               imageUrl: null,
+              media: NO_MEDIA,
               details: NO_DETAILS,
             },
           ]}

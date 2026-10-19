@@ -1,6 +1,10 @@
+import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
 import { CalendarClock, Truck } from 'lucide-react';
-import { Tag } from '@ideanest/ui/server';
+import { MediaFrame, Tag } from '@ideanest/ui/server';
+import { REWARD_MEDIA_SIZES } from '../../lib/images/sizes';
+import { canOptimise } from '../../lib/images/source';
+import { RewardVideoPreview } from './RewardVideoPreview';
 import type { RewardShipping } from '@ideanest/campaign/reward-details';
 import { formatMoney, type Money } from '../../lib/money';
 import type { CampaignRewardTier } from '../../lib/projects/publicPage';
@@ -55,6 +59,13 @@ import { getLocale, getTranslations } from 'next-intl/server';
  * checkout's two tags, early bird and featured, are on the card in the checkout's words.
  * `@ideanest/campaign/reward-details` reads all of it, the same way the app does. The items and
  * the add-ons stay in the checkout, which has the room for them; the card stays short.
+ *
+ * <h2>The picture and the clip</h2>
+ *
+ * A tier may carry a picture, a clip of up to five seconds, or both. The clip wins: its poster
+ * is drawn, and `RewardVideoPreview` (the only client code here) plays it over the poster on
+ * hover or focus, or on its own button. Either is in a 3:2 `MediaFrame` reserved before
+ * anything loads, so a list of tiers does not move as their pictures decode.
  *
  * <h2>Colour</h2>
  *
@@ -137,12 +148,43 @@ export async function CampaignRewards({
           const month =
             details.estimatedDelivery === null ? null : deliveryMonth(details.estimatedDelivery, locale);
           const shipping = shippingLine(details.shipping, tier.price);
+          const { image, video } = tier.media;
+          const still = video?.posterUrl ?? image?.url ?? null;
 
           return (
             <li
               key={tier.id}
               className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5"
             >
+              {still !== null && (
+                <MediaFrame
+                  ratio="3/2"
+                  radius="md"
+                  placeholder={(video ?? image)?.blurDataUrl ?? undefined}
+                  className="mb-2"
+                >
+                  <Image
+                    src={still}
+                    /*
+                     * A poster under a clip is the clip's, and its button names it; a picture on
+                     * its own says which tier it shows.
+                     */
+                    alt={video === null ? t('media.imageAlt', { title: tier.title }) : ''}
+                    fill
+                    sizes={REWARD_MEDIA_SIZES}
+                    // A host the optimiser will not fetch is served as it is, as the story does.
+                    unoptimized={!canOptimise(still)}
+                    className="object-cover"
+                  />
+                  {video !== null && (
+                    <RewardVideoPreview
+                      src={video.url}
+                      playName={t('media.play', { title: tier.title })}
+                      pauseName={t('media.pause', { title: tier.title })}
+                    />
+                  )}
+                </MediaFrame>
+              )}
               <p className="text-2xl font-semibold tracking-[-0.03em] text-white tabular-nums">
                 {formatMoney(tier.price)}
               </p>

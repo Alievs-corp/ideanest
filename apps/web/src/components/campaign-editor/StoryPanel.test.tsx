@@ -359,6 +359,58 @@ describe('StoryPanel', () => {
     expect(sent().some((patch) => JSON.stringify(patch).includes('cdn.example.test'))).toBe(false);
   });
 
+  it('adds a section: a title its anchor follows, an uploaded picture with a description, and text', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    uploadImageMock.mockImplementation(() => Promise.resolve(UPLOADED));
+    renderPanel();
+    await screen.findByRole('group', { name: /^Heading 1 of 2/ });
+
+    await user.click(screen.getByRole('button', { name: /Add section/ }));
+    await screen.findByRole('group', { name: /^Section 3 of 3/ });
+    await user.type(await screen.findByRole('textbox', { name: /Title of Section 3 of 3/ }), 'Our workshop');
+
+    chooseFileFor(/^Add an image to Section 3 of 3/);
+    expect(await screen.findByText('Added a 1440×1080 pixel image.')).toBeInTheDocument();
+    // Held until the picture is described, for the reason an image block is.
+    expect(screen.getByText(STORY_COPY.vocabulary.problems.imageNeedsAlt)).toBeInTheDocument();
+
+    await user.type(screen.getByRole('textbox', { name: /Description of Section 3 of 3/ }), 'The bench');
+    await user.type(screen.getByRole('textbox', { name: /Text of Section 3 of 3/ }), 'Where it is made.');
+    await settle(user);
+
+    expect(sent().at(-1)?.story?.blocks.at(-1)).toEqual({
+      type: 'section',
+      id: 'our-workshop',
+      title: 'Our workshop',
+      image: { url: UPLOADED.url, width: 1440, height: 1080, alt: 'The bench' },
+      spans: [{ text: 'Where it is made.', marks: [] }],
+    });
+
+    // Listed in the anchor menu like a heading, because the page lists it.
+    const anchors = screen.getByRole('region', { name: /Anchor menu/i });
+    expect(within(anchors).getByText('Our workshop')).toBeInTheDocument();
+    expect(within(anchors).getByText('#our-workshop')).toBeInTheDocument();
+
+    // The picture can be replaced and taken down, and the controls say which section's.
+    expect(screen.getByRole('group', { name: /^Replace the image of Section 3 of 3/ })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Remove the image from Section 3 of 3/ }));
+    await settle(user);
+    expect(sent().at(-1)?.story?.blocks.at(-1)).toMatchObject({ type: 'section', image: null });
+  });
+
+  it('gives a section an anchor no heading is using', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPanel();
+    await screen.findByRole('group', { name: /^Heading 1 of 2/ });
+
+    await user.click(screen.getByRole('button', { name: /Add section/ }));
+    await user.type(await screen.findByRole('textbox', { name: /Title of Section 3 of 3/ }), 'How it works');
+    await settle(user);
+
+    // The heading above already holds `how-it-works`; both are fragments of one URL.
+    expect(sent().at(-1)?.story?.blocks.at(-1)).toMatchObject({ type: 'section', id: 'how-it-works-2' });
+  });
+
   it('saves the risks section without refusing a half-written answer', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderPanel();

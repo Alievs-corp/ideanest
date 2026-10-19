@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { Suspense, lazy, useEffect, useId, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import {
   CharacterCount,
   Field,
+  FileDropZone,
   IconButton,
   InlineAlert,
+  Media,
   Pill,
   Select,
   Switch,
@@ -30,6 +32,7 @@ import {
   fieldErrorsFrom,
   isEmptyPatch,
   isRewardField,
+  isRewardVideoTooLong,
   isShippedScope,
   isShippingType,
   newRewardFrom,
@@ -43,6 +46,8 @@ import {
   type RewardLineDraft,
   type ShippingRateDraft,
 } from '@ideanest/campaign-editor/rewards';
+import { REWARD_VIDEO_MAX_SECONDS } from '@ideanest/campaign-editor/video';
+import { useImageUpload } from '../../lib/media/useImageUpload';
 import { EditorDrawer } from './EditorDrawer';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
 import { describeFailure } from './useAutosave';
@@ -87,13 +92,15 @@ import { describeFailure } from './useAutosave';
  * this says exactly that rather than reporting a failure that would leave the
  * creator retyping a tier that is already saved.
  *
- * <h3>WHAT IS DELIBERATELY NOT HERE</h3>
+ * <h3>A PICTURE AND A CLIP</h3>
  *
- * <strong>Images on a tier.</strong> §4.6 lists them. `reward_tiers` has no
- * image column and `RewardResponse` carries none, so there is nowhere to put
- * one; a tier's pictures are the pictures of the items it contains, which do
- * have an `imageUrl`. Inventing a column here would be a field that forgets
- * what it was told.
+ * A tier may carry one image and one clip of at most `REWARD_VIDEO_MAX_SECONDS`,
+ * both uploaded through the media pipeline the cover and the campaign video use.
+ * Each is sent by its `mediaId` when the drawer is saved, and only when it
+ * changed. Neither is locked after launch, unlike the price: a better picture
+ * changes nothing a backer has agreed to.
+ *
+ * <h3>WHAT IS DELIBERATELY NOT HERE</h3>
  *
  * <strong>A country picker.</strong> A destination is typed as its two-letter
  * code, which is what the service stores and re-checks. Nothing in the
@@ -106,6 +113,15 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
+
+/**
+ * The clip's field, fetched when the drawer first draws it rather than with the tab — the basics
+ * tab's reason (`BasicsPanel`): an upload with its own transfer, a duration reader and four
+ * stages of copy, below the fold of a drawer most visits never open.
+ */
+const CampaignVideoField = lazy(() =>
+  import('./CampaignVideoField').then((module) => ({ default: module.CampaignVideoField })),
+);
 
 export interface RewardTierEditorProps {
   /** This drawer's words. */
@@ -168,6 +184,16 @@ export function RewardTierEditor({
   const secretHintId = useId();
   const addonHintId = useId();
 
+  /* The picture's upload: the cover's pipeline, kept by `mediaId` (`lib/media/useImageUpload.ts`). */
+  const { stage: imageStage, upload: sendImage } = useImageUpload(copy.upload);
+  const [imageNote, setImageNote] = useState<{
+    tone: 'success' | 'danger';
+    title?: string;
+    text: string;
+  } | null>(null);
+  /** A clip being uploaded or converted, which Save waits for. */
+  const [videoBusy, setVideoBusy] = useState(false);
+
   useEffect(() => {
     if (!open) return;
     /*
@@ -181,6 +207,7 @@ export function RewardTierEditor({
     setFailure(null);
     setRatesUnsaved(false);
     setAttempted(false);
+    setImageNote(null);
     // `reward` and `currency` are read at the moment the drawer opens and are
     // deliberately not dependencies: re-running this while it is open is the
     // one thing that would destroy work.
@@ -314,6 +341,38 @@ export function RewardTierEditor({
     }
   }
 
+  async function uploadImage(file: File): Promise<void> {
+    setImageNote(null);
+    const result = await sendImage(file);
+    // Abandoned for a newer file, which is the one this field now reports on.
+    if (result === null) return;
+    if ('refusal' in result) {
+      setImageNote({ tone: 'danger', title: copy.upload.notUsedTitle, text: result.refusal });
+      return;
+    }
+    const { image } = result;
+    // Into the draft as it is NOW: a title typed while the file uploaded is kept.
+    setDraft((current) => ({
+      ...current,
+      image: {
+        mediaId: image.mediaId,
+        url: image.url,
+        width: image.width,
+        height: image.height,
+        blurDataUrl: image.blurDataUrl === '' ? null : image.blurDataUrl,
+      },
+    }));
+    setImageNote({ tone: 'success', text: copy.imageUploaded });
+  }
+
+  /*
+   * The service measuring the clip as too long is said on the clip's field, with the limit in
+   * the sentence, rather than in the server's own words.
+   */
+  const videoError = isRewardVideoTooLong(failure)
+    ? fillPlaceholders(copy.video.refusedTooLong, { seconds: String(REWARD_VIDEO_MAX_SECONDS) })
+    : visible.videoMediaId;
+
   const shipped = isShippedScope(draft.shippingType);
 
   return (
@@ -324,6 +383,8 @@ export function RewardTierEditor({
       title={target === null ? copy.addTitle : copy.editTitle}
       description={copy.description}
       saving={saving}
+      // Saving mid-upload would store the tier without the media being waited for.
+      waiting={imageStage !== null || videoBusy}
       onSave={() => void save()}
     >
       <div className="flex flex-col gap-6">
@@ -371,6 +432,85 @@ export function RewardTierEditor({
             onChange={(event) => setDraft({ ...draft, description: event.target.value })}
           />
         </Field>
+
+        <Field grouped label={copy.image} hint={copy.imageHint} error={visible.imageMediaId}>
+          <div className="flex flex-col gap-3">
+            {draft.image !== null && (
+              <div className="flex items-center gap-4">
+                {/*
+                  The campaign page's box for it, 3:2, so the creator sees the crop a backer
+                  will. Decorative here: the tier's title says what it is.
+                */}
+                <div className="w-32 shrink-0 overflow-hidden rounded-lg border border-white/8 bg-surface-3">
+                  <Media
+                    src={draft.image.url}
+                    ratio="3/2"
+                    decorative
+                    placeholder={draft.image.blurDataUrl ?? undefined}
+                  />
+                </div>
+                <Pill
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={imageStage !== null}
+                  onClick={() => {
+                    setImageNote(null);
+                    setDraft((current) => ({ ...current, image: null }));
+                  }}
+                >
+                  {copy.imageRemove}
+                </Pill>
+              </div>
+            )}
+
+            <FileDropZone
+              accept="image/*"
+              disabled={saving || imageStage !== null}
+              prompt={copy.imagePrompt}
+              dragPrompt={copy.imageDragPrompt}
+              buttonLabel={draft.image === null ? copy.imageButtonLabel : copy.imageReplace}
+              hint={copy.imageDropHint}
+              onFiles={(files) => {
+                const [first] = files;
+                if (first) void uploadImage(first);
+              }}
+            />
+
+            {/* Two regions, for the reason `CoverImageField` gives. */}
+            <div role="status" aria-live="polite" className="empty:hidden">
+              {imageStage !== null && (
+                <InlineAlert variant="info">{copy.upload.stage[imageStage]}</InlineAlert>
+              )}
+              {imageStage === null && imageNote !== null && imageNote.tone === 'success' && (
+                <InlineAlert variant="success">{imageNote.text}</InlineAlert>
+              )}
+            </div>
+            {imageNote !== null && imageNote.tone === 'danger' && (
+              <InlineAlert variant="danger" title={imageNote.title}>
+                {imageNote.text}
+              </InlineAlert>
+            )}
+          </div>
+        </Field>
+
+        <Suspense fallback={<div aria-hidden="true" className="h-[17.5rem]" />}>
+          <CampaignVideoField
+            copy={copy.video}
+            video={draft.video}
+            maxSeconds={REWARD_VIDEO_MAX_SECONDS}
+            disabled={saving}
+            error={videoError}
+            onAccept={(video) => {
+              // A new clip answers the refusal about the old one.
+              setFailure((current) => (isRewardVideoTooLong(current) ? null : current));
+              // Into the draft as it is then: a clip can take a minute to convert.
+              setDraft((current) => ({ ...current, video }));
+            }}
+            onRemove={() => setDraft((current) => ({ ...current, video: null }))}
+            onBusyChange={setVideoBusy}
+          />
+        </Suspense>
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Field

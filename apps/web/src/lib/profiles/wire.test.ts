@@ -132,6 +132,16 @@ describe('reading a page of campaign cards', () => {
     expect(page.items[0]?.coverImage).toBeNull();
   });
 
+  it('reads the campaign video, and none when any field a preview needs is missing', () => {
+    const video = { url: 'https://cdn.test/p1.mp4', posterUrl: 'https://cdn.test/p1-poster.jpg', width: 1280, height: 720 };
+
+    expect(readProjectCardPage({ projects: [{ ...card, video }] }).items[0]?.video).toEqual(video);
+    expect(readProjectCardPage({ projects: [card] }).items[0]?.video).toBeNull();
+    expect(
+      readProjectCardPage({ projects: [{ ...card, video: { ...video, posterUrl: undefined } }] }).items[0]?.video,
+    ).toBeNull();
+  });
+
   it('answers an empty page for a body that is not one', () => {
     expect(readProjectCardPage('nope').items).toEqual([]);
     expect(readProjectCardPage('nope').nextCursor).toBeNull();

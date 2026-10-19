@@ -413,6 +413,11 @@ function blockText(block: StoryDocument['blocks'][number]): string {
       return block.alt;
     case 'embed':
       return block.title;
+    case 'section': {
+      // Its title, then its text, as the page reads it; the picture is its description's.
+      const text = spansToText(block.spans);
+      return text === '' ? block.title : `${block.title} — ${text}`;
+    }
   }
 }
 

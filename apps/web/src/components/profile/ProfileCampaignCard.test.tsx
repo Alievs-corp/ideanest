@@ -123,3 +123,28 @@ describe('a campaign on the backed list', () => {
     expect(screen.getByText('214 backers')).toBeInTheDocument();
   });
 });
+
+describe('a campaign with a video', () => {
+  const video = {
+    url: 'https://example.test/clip.mp4',
+    posterUrl: 'https://example.test/poster.jpg',
+    width: 1280,
+    height: 720,
+  };
+
+  it('is covered by the poster, with a preview that loads nothing yet', () => {
+    const { container } = render(
+      <ProfileCampaignCard
+        copy={COPY.grid.card}
+        locale="en"
+        card={{ ...CARD, coverImage: { url: 'https://example.test/cover.jpg', width: 1600, height: 900 }, video }}
+        funding="shown"
+      />,
+    );
+
+    const src = decodeURIComponent(container.querySelector('img')?.getAttribute('src') ?? '');
+    expect(src).toContain(video.posterUrl);
+    expect(container.querySelector('article')).toHaveAttribute('data-card-video');
+    expect(container.querySelector('video')).not.toHaveAttribute('src');
+  });
+});
