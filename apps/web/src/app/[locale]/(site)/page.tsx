@@ -95,6 +95,14 @@ const FEATURED_SIZE = 2;
 /** How many ending-soon campaigns the first band's desktop half shows: a 2×2 grid. */
 const SPLIT_SIZE = 4;
 
+/**
+ * ONE CAMPAIGN PER BAND ON A PHONE, at the owner's request: every card after the first is
+ * hidden below `sm`, and the band ends in a full-width button to the whole list instead.
+ * Twelve full-height cards a band made the page a scroll of thirty-odd screens before the
+ * categories. A tablet and a desktop are unaffected.
+ */
+const PHONE_FIRST_ONLY = 'max-sm:hidden';
+
 /** The recently-launched list's id, which its arrows name in `aria-controls`. */
 const LAUNCHED_RAIL = 'home-launched-rail';
 
@@ -239,39 +247,41 @@ export default async function HomePage() {
         {closing.length > 0 && featured.length > 0 && (
           /*
             ONE BAND, TWO PARTS — from `lg`. The two halves share their rows through
-            `subgrid`, so the featured card and the grid beside it start on the same line
-            whichever heading wraps. Below `lg` the featured half is not drawn and the band
-            is the ending-soon section it always was.
+            `subgrid`, so the popular cards and the grid beside them start on the same line
+            whichever heading wraps. Below `lg` the two halves are two sections, one above
+            the other.
           */
           <div className="lg:grid lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-x-10">
-            <section className="hidden pb-20 lg:row-span-2 lg:grid lg:grid-rows-subgrid">
-              <FadeUpSection>
-                <div className="pb-8">
-                  <SectionHeading heading={t('featured.heading')} standfirst={t('featured.standfirst')} />
-                </div>
-              </FadeUpSection>
+            <HomeSection
+              heading={t('featured.heading')}
+              standfirst={t('featured.standfirst')}
+              href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'popularity' })}
+              linkLabel={t('featured.link')}
+              className="lg:row-span-2 lg:grid lg:grid-rows-subgrid"
+            >
               {/*
-                Two rows of one card, as tall together as the two rows of the grid beside them.
-                Each cover takes its row's spare height, so neither card ends in empty colour.
+                Two rows of one card from `lg`, as tall together as the two rows of the grid
+                beside them; each cover takes its row's spare height. Two across on a tablet,
+                one on a phone — see `PHONE_FIRST_ONLY`.
               */}
               <ul
                 aria-label={t('featured.heading')}
-                className="grid list-none gap-4"
-                style={{ gridTemplateRows: `repeat(${featured.length}, minmax(0, 1fr))` }}
+                className="grid list-none gap-4 sm:grid-cols-2 lg:auto-rows-fr lg:grid-cols-1"
               >
-                {featured.map((card) => (
-                  <li key={card.id} className="min-h-0">
+                {featured.map((card, index) => (
+                  <li key={card.id} className={index === 0 ? 'min-h-0' : `min-h-0 ${PHONE_FIRST_ONLY}`}>
                     <ProjectCardView
                       card={card}
                       copy={cardCopy}
                       locale={locale}
                       sizes={FEATURED_CARD_SIZES}
+                      priority={index === 0}
                       coverFills
                     />
                   </li>
                 ))}
               </ul>
-            </section>
+            </HomeSection>
 
             <HomeSection
               heading={t('closing.heading')}
@@ -281,18 +291,21 @@ export default async function HomePage() {
               className="lg:row-span-2 lg:grid lg:grid-rows-subgrid"
             >
               {/*
-                The only grid on the page that fetches its covers eagerly. One of them is the
-                largest contentful paint; putting the second rail in the same priority queue
-                would make every image on the page later.
+                Eager covers for the first row of the 2×2 only. The first popular cover is the
+                other one fetched early: on a phone it is the first campaign under the hero.
               */}
               <CampaignGrid
                 campaigns={closing}
-                priorityCount={3}
+                priorityCount={2}
                 label={t('closing.gridLabel')}
                 cardCopy={cardCopy}
                 locale={locale}
                 layout={HOME_SPLIT_GRID}
-                itemClassName={(card) => (splitIds.has(card.id) ? undefined : 'lg:hidden')}
+                itemClassName={(card, index) =>
+                  [splitIds.has(card.id) ? '' : 'lg:hidden', index === 0 ? '' : PHONE_FIRST_ONLY]
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
               />
             </HomeSection>
           </div>
@@ -307,10 +320,11 @@ export default async function HomePage() {
           >
             <CampaignGrid
               campaigns={closing}
-              priorityCount={3}
+              priorityCount={1}
               label={t('closing.gridLabel')}
               cardCopy={cardCopy}
               locale={locale}
+              itemClassName={(_card, index) => (index === 0 ? undefined : PHONE_FIRST_ONLY)}
             />
           </HomeSection>
         )}
@@ -342,24 +356,28 @@ export default async function HomePage() {
               cardCopy={cardCopy}
               locale={locale}
               layout={HOME_RAIL}
-              itemClassName={() => HOME_RAIL_ITEM}
+              itemClassName={(_card, index) =>
+                index === 0 ? HOME_RAIL_ITEM : `${HOME_RAIL_ITEM} ${PHONE_FIRST_ONLY}`
+              }
             />
           </HomeSection>
         )}
 
         {/*
-          FOR CREATORS — desktop only, three pages side by side with a rule down each one's
-          left edge (Kickstarter's editorial band). The title is the link, so there is no
-          "Learn more" button saying nothing. The phone already reaches all three from the
-          drawer and the footer, and the owner asked for it to stay as it was.
+          FOR CREATORS — three pages side by side from `lg` with a rule down each one's left
+          edge (Kickstarter's editorial band), one under another below it. The title is the
+          link, so there is no "Learn more" button saying nothing.
         */}
-        <section className={`hidden pb-20 lg:block ${DIVIDED}`}>
+        <section className={`pb-20 ${DIVIDED}`}>
           <FadeUpSection>
             <div className="pb-8">
               <SectionHeading heading={t('creators.heading')} standfirst={t('creators.standfirst')} />
             </div>
           </FadeUpSection>
-          <ul aria-label={t('creators.label')} className="grid list-none grid-cols-3 gap-10">
+          <ul
+            aria-label={t('creators.label')}
+            className="grid list-none grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10"
+          >
             {creatorPages.map((page) => (
               <li key={page.href} className="border-l-2 border-white/16 pl-6">
                 <h3 className="text-xl font-semibold tracking-[-0.02em] text-white">
@@ -490,7 +508,7 @@ function HomeSection({
       <FadeUpSection>
         <div className="flex flex-col gap-3 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <SectionHeading heading={heading} standfirst={standfirst} />
-          <div className="flex shrink-0 items-center gap-6">
+          <div className="flex shrink-0 items-center gap-6 max-sm:hidden">
             <Link
               href={href}
               className="inline-flex shrink-0 items-center gap-2 rounded-sm text-sm font-medium text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
@@ -504,6 +522,20 @@ function HomeSection({
       </FadeUpSection>
 
       {children}
+
+      {/*
+        ON A PHONE THE WAY ON IS A BUTTON UNDER THE CARD, not a link above it: the band shows
+        one campaign (`PHONE_FIRST_ONLY`), and the reader decides whether to see the rest
+        after looking at it. Same words and address as the header link it replaces, white
+        rather than lime — §1.1 keeps the page's one lime element for urgency.
+      */}
+      <Link
+        href={href}
+        className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/16 px-5 text-center text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] sm:hidden"
+      >
+        {linkLabel}
+        <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+      </Link>
     </section>
   );
 }

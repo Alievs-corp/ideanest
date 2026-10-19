@@ -4288,7 +4288,8 @@
     },
     "featured": {
       "heading": "Hazırda populyar",
-      "standfirst": "Yaşına görə ən sürətlə vəsait toplayan aktiv kampaniyalar."
+      "standfirst": "Yaşına görə ən sürətlə vəsait toplayan aktiv kampaniyalar.",
+      "link": "Bütün populyar kampaniyalara baxın"
     },
     "closing": {
       "heading": "Tezliklə bitənlər",

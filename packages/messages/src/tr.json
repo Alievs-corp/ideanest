@@ -4288,7 +4288,8 @@
     },
     "featured": {
       "heading": "Şu an popüler",
-      "standfirst": "Yaşına göre en hızlı fon toplayan aktif kampanyalar."
+      "standfirst": "Yaşına göre en hızlı fon toplayan aktif kampanyalar.",
+      "link": "Tüm popüler kampanyaları gör"
     },
     "closing": {
       "heading": "Yakında bitenler",

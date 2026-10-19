@@ -1093,8 +1093,8 @@ are derived from these grids and tested against them.
 
 #### The home page from `lg`: bands, as Kickstarter draws them
 
-Below `lg` the home page is the stack it always was: hero, ending soon, recently
-launched, categories, each a heading and a grid. From `lg` the same content is
+Below `lg` the bands are stacked: popular right now, ending soon, recently
+launched, for creators, categories, each a heading and a grid. From `lg` the same content is
 arranged in **bands**, each separated from the next by a `--divider` rule across
 the column, and a band may hold more than one part:
 
@@ -1105,8 +1105,10 @@ the column, and a band may hold more than one part:
 | For creators | Three pages side by side (how it works, pricing, trust and safety), each with a rule down its left edge; the title is the link, so there is no "learn more" button |
 | Browse by category | Unchanged |
 
-The phone and the tablet do not draw the popular half or the creators band, and
-the rail is their ordinary grid. The rail's arrows scroll one page per press,
+**On a phone each campaign band shows one card** and ends in a full-width
+button to the whole list, which replaces the header link there; the creators
+band and the category tiles are shown whole. A tablet shows every card in its
+grid, and the rail is the ordinary grid below `lg`. The rail's arrows scroll one page per press,
 smoothly unless reduced motion is asked for, and are disabled rather than hidden
 at either end. The layouts are `HOME_SPLIT_GRID`, `HOME_RAIL` and
 `HOME_RAIL_ITEM` beside `CAMPAIGN_GRID`.
