@@ -244,7 +244,7 @@ export function ProjectCard({
         ratio="16/9"
         narrowRatio="2/1"
         radius="lg"
-        {...(coverFills ? { className: 'lg:aspect-auto lg:min-h-57 lg:flex-[100_1_0%]' } : {})}
+        {...(coverFills ? { className: 'lg:aspect-auto lg:min-h-65.5 lg:flex-[100_1_0%]' } : {})}
       >
         {card.image != null && (
           <Image

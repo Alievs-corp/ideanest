@@ -92,8 +92,8 @@ const RAIL_SIZE = 12;
 /** How many popular campaigns the first band's left half shows: two rows of one. */
 const FEATURED_SIZE = 2;
 
-/** How many ending-soon campaigns the first band's desktop half shows: a 2×2 grid. */
-const SPLIT_SIZE = 4;
+/** How many ending-soon campaigns the first band's desktop half shows: two columns of three. */
+const SPLIT_SIZE = 6;
 
 /**
  * ONE CAMPAIGN PER BAND ON A PHONE, at the owner's request: every card after the first is
