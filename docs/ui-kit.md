@@ -1148,8 +1148,8 @@ belongs to. Every other rule is unchanged:
 | Closing within 48 hours | `--lime-500` **badge** | Urgent — the one lime element on the card |
 | Status word | `onAccent` tag + icon | Colour never alone (§9.2) |
 
-The cover is inset in the accent card with its own rounded corners, as the app
-draws it, cropped 16:9. On a phone every campaign grid is **one column** and
+The cover runs full-bleed to the card's top and side edges, rounded on the top
+corners only, cropped 16:9. On a phone every campaign grid is **one column** and
 the card is the full one, as the app draws it (#345) — the two-column compact
 card of #339 and #343 is gone. Category tiles on the home page are accent cards with the category's
 icon; the categories index and the landing pages put the icon on a disc of the

@@ -324,7 +324,9 @@ describe('ProjectCard', () => {
       const { container } = renderCard({ badge: 'live', closingSoon: true });
       const tag = screen.getByText(/live/i).closest('span');
 
-      expect(container.querySelector('article')).toHaveClass('max-sm:p-4');
+      // Full-bleed cover: the card has no padding of its own, the text block carries it.
+      expect(container.querySelector('article')).not.toHaveClass('p-2.5', 'max-sm:p-4');
+      expect(container.querySelector('article > div:first-child')).toHaveClass('rounded-t-xl');
       expect(tag).toHaveClass('max-sm:min-h-[26px]', 'max-sm:rounded-full', 'max-sm:text-xs');
       expect(container.querySelector('h3')).toHaveClass('max-sm:leading-[21px]');
       expect(container.querySelector('[role="progressbar"]')).toHaveClass('max-sm:h-1.5');

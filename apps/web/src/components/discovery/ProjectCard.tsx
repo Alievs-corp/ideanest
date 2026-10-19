@@ -207,7 +207,7 @@ export function ProjectCard({
   return (
     <article
       data-on-accent=""
-      className={`group relative flex h-full flex-col rounded-xl p-2.5 max-sm:p-4 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
+      className={`group relative flex h-full flex-col rounded-xl text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
     >
       {/*
         HOVER LIFTS THE CARD AND LEANS INTO THE COVER (#341): a 4px rise and a 5%
@@ -217,8 +217,7 @@ export function ProjectCard({
         applies on a device that can hover, so a tap never leaves a card raised.
       */}
       {/*
-        Inset in the accent card with its own rounded corners, as the app
-        draws it (docs/ui-kit.md §8.2).
+        Full-bleed to the card's top and side edges (docs/ui-kit.md §8.2).
 
         THE BOX IS RESERVED WHETHER OR NOT THERE IS A COVER. `MediaFrame` sets
         the 16:9 crop before anything loads, so a card with a cover and a card
@@ -238,8 +237,7 @@ export function ProjectCard({
       <MediaFrame
         ratio="16/9"
         narrowRatio="2/1"
-        radius="lg"
-        {...(coverClassName === undefined ? {} : { className: coverClassName })}
+        className={coverClassName === undefined ? 'rounded-t-xl' : `rounded-t-xl ${coverClassName}`}
       >
         {card.image != null && (
           <Image
@@ -269,7 +267,7 @@ export function ProjectCard({
         From `lg` up the type climbs back a rung — title 18px, body 14px, meta and tags 12px —
         because on a laptop screen the smaller sizes read as too small at arm's length.
       */}
-      <div className="flex flex-1 flex-col gap-2.5 px-1.5 pt-3.5 pb-1.5 max-sm:gap-2 max-sm:px-0 max-sm:pt-2 max-sm:pb-0">
+      <div className="flex flex-1 flex-col gap-2.5 px-4 pt-3.5 pb-4 max-sm:gap-2 max-sm:pt-3">
         <div className="flex flex-wrap items-center gap-1.5">
           {badge !== null && (
             <Tag variant="onAccent" className={CARD_TAG}>
