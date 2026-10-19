@@ -172,6 +172,11 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
   const launched = campaign.launchedAt === null ? null : formatDate(campaign.launchedAt, locale);
   const closes = campaign.deadline === null ? null : formatDate(campaign.deadline, locale);
   const isPublic = RENDERABLE_STATES.includes(campaign.state);
+  // A campaign with a video is covered by it, as its card and page are (#519).
+  const cover =
+    campaign.video === null
+      ? campaign.coverImage
+      : { url: campaign.video.posterUrl, width: campaign.video.width, height: campaign.video.height };
 
   return (
     <div>
@@ -263,13 +268,13 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
         </p>
       </section>
 
-      {campaign.coverImage !== null && (
+      {cover !== null && (
         <div className="mt-6 overflow-hidden rounded-xl border border-white/8">
           <Image
-            src={campaign.coverImage.url}
+            src={cover.url}
             alt={fillPlaceholders(copy.coverAlt, { title: campaign.title })}
-            width={campaign.coverImage.width}
-            height={campaign.coverImage.height}
+            width={cover.width}
+            height={cover.height}
             className="h-auto w-full"
             /*
              * Unoptimised, deliberately. The optimiser is a public cache keyed on the source
