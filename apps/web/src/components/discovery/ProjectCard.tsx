@@ -89,9 +89,9 @@ const URGENT_DAYS = 2;
  */
 const BADGES: Record<DiscoveryStatus, ReactNode> = {
   upcoming: <CalendarClock className="size-2.5 max-sm:size-3 lg:size-3" />,
-  live: <CircleDot className="size-2.5 max-sm:size-3 lg:size-3" />,
+  live: <CircleDot className="size-2.5 max-sm:size-3 lg:size-3 text-info" />,
   extended: <CalendarPlus className="size-2.5 max-sm:size-3 lg:size-3" />,
-  successful: <CircleCheck className="size-2.5 max-sm:size-3 lg:size-3 max-sm:text-success" />,
+  successful: <CircleCheck className="size-2.5 max-sm:size-3 lg:size-3 text-success" />,
 };
 
 /**
@@ -100,7 +100,7 @@ const BADGES: Record<DiscoveryStatus, ReactNode> = {
  * "Closing soon" is an hourglass, not lime, which stays the one "hurry" element on the card — the
  * last-48-hours countdown. Each is an icon plus a word, so colour never carries the meaning alone.
  */
-const CLOSING_SOON: ReactNode = <Hourglass className="size-2.5 max-sm:size-3 lg:size-3 max-sm:text-warning" />;
+const CLOSING_SOON: ReactNode = <Hourglass className="size-2.5 max-sm:size-3 lg:size-3 text-warning" />;
 const EXTENDED: ReactNode = <CalendarPlus className="size-2.5 max-sm:size-3 lg:size-3" />;
 
 /**
@@ -165,12 +165,7 @@ export interface ProjectCardProps {
    * campaign is half the column wide, and a cover sized for a quarter of it would be blurred.
    */
   sizes?: string;
-  /**
-   * From `lg`, the cover takes whatever height the card has left instead of its 16:9 crop —
-   * for the featured campaign, whose card is stretched to the height of the grid beside it
-   * and would otherwise end in an empty block of colour. It grows a hundred times faster
-   * than the text below it, which is `flex-1` too, so the space goes to the picture.
-   */
+  /** From `lg`, a fixed 398px cover instead of the 16:9 crop — the home page's popular cards. */
   coverFills?: boolean;
 }
 
@@ -244,7 +239,7 @@ export function ProjectCard({
         ratio="16/9"
         narrowRatio="2/1"
         radius="lg"
-        {...(coverFills ? { className: 'lg:aspect-auto lg:min-h-65.5 lg:flex-[100_1_0%]' } : {})}
+        {...(coverFills ? { className: 'lg:aspect-auto lg:h-99.5' } : {})}
       >
         {card.image != null && (
           <Image
