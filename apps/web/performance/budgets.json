@@ -40,7 +40,7 @@
     "/[locale]/admin/payments": 620,
     "/[locale]/admin/payout-destinations": 616,
     "/[locale]/admin/payouts": 624,
-    "/[locale]/admin/plans": 587,
+    "/[locale]/admin/plans": 588,
     "/[locale]/admin/reconciliation": 621,
     "/[locale]/admin/refunds": 626,
     "/[locale]/admin/revenue": 636,

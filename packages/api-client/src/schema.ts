@@ -4500,6 +4500,9 @@ export interface components {
             price: number;
             /** Format: int32 */
             sortOrder?: number;
+            translations?: {
+                [key: string]: components["schemas"]["PlanText"];
+            };
         };
         AddProject: {
             note: string;
@@ -4997,6 +5000,9 @@ export interface components {
             price?: number;
             /** Format: int32 */
             sortOrder?: number;
+            translations?: {
+                [key: string]: components["schemas"]["PlanText"];
+            };
         };
         ChannelTotal: {
             amount?: components["schemas"]["Money"];
@@ -6259,12 +6265,23 @@ export interface components {
             price?: string;
             /** Format: int32 */
             sortOrder?: number;
+            translations?: {
+                [key: string]: components["schemas"]["PlanTranslation"];
+            };
             /** Format: date-time */
             updatedAt?: string;
         };
         PlanPaymentBankTransferRequest: {
             bankReference: string;
             note?: string;
+        };
+        PlanText: {
+            description?: string;
+            name: string;
+        };
+        PlanTranslation: {
+            description?: string;
+            name?: string;
         };
         PlatformAnalyticsResponse: {
             /** Format: date-time */
@@ -8000,6 +8017,8 @@ export type SchemaPayoutRecord = components['schemas']['PayoutRecord'];
 export type SchemaPayoutSummary = components['schemas']['PayoutSummary'];
 export type SchemaPlan = components['schemas']['Plan'];
 export type SchemaPlanPaymentBankTransferRequest = components['schemas']['PlanPaymentBankTransferRequest'];
+export type SchemaPlanText = components['schemas']['PlanText'];
+export type SchemaPlanTranslation = components['schemas']['PlanTranslation'];
 export type SchemaPlatformAnalyticsResponse = components['schemas']['PlatformAnalyticsResponse'];
 export type SchemaPlatformHealth = components['schemas']['PlatformHealth'];
 export type SchemaPlatformStatus = components['schemas']['PlatformStatus'];
@@ -13392,7 +13411,9 @@ export interface operations {
     subscriptionMine: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -13412,7 +13433,9 @@ export interface operations {
     subscriptionSubscribe: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -13436,7 +13459,9 @@ export interface operations {
     subscriptionCancel: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -13622,7 +13647,9 @@ export interface operations {
     subscriptionCatalogue: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
             path?: never;
             cookie?: never;
         };

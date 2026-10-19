@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -110,32 +109,13 @@ public class Taxonomy {
     }
 
     /**
-     * The language to answer in, from an {@code Accept-Language} header.
-     *
-     * <p>RFC 4647 lookup, through {@link Locale#lookupTag}, rather than reading
-     * the first two characters: a browser sends {@code en-GB,en;q=0.9,az;q=0.8}
-     * and the quality values are the user's stated order of preference. Lookup
-     * also truncates a range, so {@code en-GB} finds {@code en} — a client asking
-     * for British English gets English rather than Azerbaijani.
-     *
-     * <p>Anything unparseable, absent, or outside {@link #SUPPORTED_LOCALES}
-     * resolves to {@link #PRIMARY_LOCALE}. A malformed header is a client bug and
-     * must not become a 400 on a public, cacheable read.
+     * The language to answer in, from an {@code Accept-Language} header. {@link
+     * ReaderLocale#fromAcceptLanguage} has the rules; the plan catalogue negotiates the same way.
      *
      * @return one of {@link #SUPPORTED_LOCALES}, never null
      */
     public static String localeFor(String acceptLanguage) {
-        if (acceptLanguage == null || acceptLanguage.isBlank()) {
-            return PRIMARY_LOCALE;
-        }
-        List<Locale.LanguageRange> ranges;
-        try {
-            ranges = Locale.LanguageRange.parse(acceptLanguage);
-        } catch (IllegalArgumentException e) {
-            return PRIMARY_LOCALE;
-        }
-        String matched = Locale.lookupTag(ranges, SUPPORTED_LOCALES);
-        return matched == null ? PRIMARY_LOCALE : matched;
+        return ReaderLocale.fromAcceptLanguage(acceptLanguage);
     }
 
     /**

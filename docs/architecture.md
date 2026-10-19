@@ -2563,7 +2563,9 @@ campaigns the account may have in the platform's hands at once, and the largest
 funding goal a campaign may be submitted with. Both are nullable, and null means
 no limit rather than zero. Plans are rows in `subscription_plans`, administered
 from AD-11's second screen, and the catalogue an operator seeds decides whether
-there is a free tier.
+there is a free tier. A plan's `name` and `description` are Azerbaijani; the
+console adds the other languages beside them (V113's `translations`, keyed by
+locale), and a reader in a language a plan has none in reads the Azerbaijani.
 
 What counts against the campaign limit is a campaign that has left the creator's
 hands and not finished: `SUBMITTED`, `CHANGES_REQUESTED`, `APPROVED`,
@@ -5247,7 +5249,7 @@ PATCH  /v1/admin/maintenance/{id}        # the end (null = until further notice)
 DELETE /v1/admin/maintenance/{id}        # cancels a window that has not started; the row stays
 
 # Creator subscriptions -- §5.6
-GET    /v1/plans                         # the catalogue on sale. Public and cacheable: a price list behind authentication is one nobody can decide to buy from
+GET    /v1/plans                         # the catalogue on sale. Public and cacheable: a price list behind authentication is one nobody can decide to buy from. Names in the Accept-Language language, Vary: Accept-Language
 GET    /v1/me/subscription               # what this account holds, or nothing. 200 with a null subscription rather than 404
 POST   /v1/me/subscription               # buy a plan. A priced one comes back PENDING_PAYMENT with paymentDue FIRST_PERIOD
 POST   /v1/me/subscription/payment       # #449: open the provider's page for what is due now -- the first period, or the next one inside

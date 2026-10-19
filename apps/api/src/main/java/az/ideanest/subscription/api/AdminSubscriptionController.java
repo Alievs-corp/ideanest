@@ -81,7 +81,7 @@ public class AdminSubscriptionController {
     public ResponseEntity<SubscriptionResponses.Catalogue> catalogue(@AuthenticationPrincipal Jwt accessToken) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(SubscriptionResponses.Catalogue.of(plans.catalogue(callerOf(accessToken))));
+                .body(SubscriptionResponses.Catalogue.forConsole(plans.catalogue(callerOf(accessToken))));
     }
 
     /** Adds a plan. On sale from the moment it is written. */
@@ -94,6 +94,7 @@ public class AdminSubscriptionController {
                 request.code(),
                 request.name(),
                 request.description(),
+                textsOf(request.translations()),
                 request.price(),
                 request.currency(),
                 request.billingPeriod(),
@@ -103,7 +104,7 @@ public class AdminSubscriptionController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .cacheControl(CacheControl.noStore())
-                .body(SubscriptionResponses.Plan.of(plan));
+                .body(SubscriptionResponses.Plan.forConsole(plan));
     }
 
     /**
@@ -126,6 +127,7 @@ public class AdminSubscriptionController {
                 planId,
                 request.name(),
                 request.description(),
+                textsOf(request.translations()),
                 request.price(),
                 request.currency(),
                 request.maxActiveCampaigns(),
@@ -137,7 +139,7 @@ public class AdminSubscriptionController {
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(SubscriptionResponses.Plan.of(plan));
+                .body(SubscriptionResponses.Plan.forConsole(plan));
     }
 
     /**
@@ -283,6 +285,7 @@ public class AdminSubscriptionController {
             @NotBlank @Pattern(regexp = "^[A-Za-z][A-Za-z0-9_]{1,39}$") String code,
             @NotBlank @Size(max = 120) String name,
             @Size(max = 2000) String description,
+            Map<String, @Valid PlanText> translations,
             @NotNull @DecimalMin("0") BigDecimal price,
             @NotBlank @Pattern(regexp = "^[A-Z]{3}$") String currency,
             @NotNull BillingPeriod billingPeriod,
@@ -292,12 +295,23 @@ public class AdminSubscriptionController {
     }
 
     /**
+     * A plan's name and description in one of the other languages.
+     *
+     * <p>The keys of the map it sits in are {@code en}, {@code ru} and {@code tr}. The primary
+     * language travels as the request's own {@code name} and {@code description}, and a key
+     * outside those three is refused by the entity as a 400.
+     */
+    public record PlanText(@NotBlank @Size(max = 120) String name, @Size(max = 2000) String description) {
+    }
+
+    /**
      * A change to a plan. Absent means "leave it alone"; the {@code clear*} flags mean
-     * "remove it".
+     * "remove it". {@code translations}, when present, replaces every translation the plan had.
      */
     public record ChangePlanRequest(
             @Size(max = 120) String name,
             @Size(max = 2000) String description,
+            Map<String, @Valid PlanText> translations,
             @DecimalMin("0") BigDecimal price,
             @Pattern(regexp = "^[A-Z]{3}$") String currency,
             @Min(1) Integer maxActiveCampaigns,
@@ -344,6 +358,17 @@ public class AdminSubscriptionController {
 
     /** @param reason required: this takes an entitlement away from somebody */
     public record CancelRequest(@NotBlank @Size(max = 2000) String reason) {
+    }
+
+    /** The request's translations as the entity takes them, or null for "leave them alone". */
+    private static Map<String, SubscriptionPlan.PlanTranslation> textsOf(Map<String, PlanText> translations) {
+        if (translations == null) {
+            return null;
+        }
+        Map<String, SubscriptionPlan.PlanTranslation> texts = new HashMap<>();
+        translations.forEach((locale, text) ->
+                texts.put(locale, text == null ? null : new SubscriptionPlan.PlanTranslation(text.name(), text.description())));
+        return texts;
     }
 
     private static UUID callerOf(Jwt accessToken) {

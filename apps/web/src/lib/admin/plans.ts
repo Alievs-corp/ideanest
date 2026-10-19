@@ -1,6 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { BillingPeriod, Plan } from '../plans/api';
+import type { PlanTranslations } from '@ideanest/plans/catalogue';
 import type { PaymentMethod } from './revenue';
 
 /**
@@ -37,6 +38,7 @@ import type { PaymentMethod } from './revenue';
  */
 
 export type { Plan, BillingPeriod } from '../plans/api';
+export type { PlanText, PlanTranslations } from '@ideanest/plans/catalogue';
 export type { PaymentMethod } from './revenue';
 
 /** The ways a plan can be paid that staff record, in the order the form offers them. */
@@ -84,6 +86,8 @@ export interface AddPlanRequest {
   readonly code: string;
   readonly name: string;
   readonly description: string | null;
+  /** Every language but Azerbaijani, which is `name` and `description`. */
+  readonly translations: PlanTranslations;
   readonly price: string;
   readonly currency: string;
   readonly billingPeriod: BillingPeriod;
@@ -102,6 +106,7 @@ export async function addPlan(request: AddPlanRequest): Promise<Plan> {
       code: request.code,
       name: request.name,
       description: request.description,
+      translations: request.translations,
       price: request.price,
       currency: request.currency,
       billingPeriod: request.billingPeriod,
@@ -128,6 +133,8 @@ export interface ChangePlanRequest {
   readonly planId: string;
   readonly name?: string;
   readonly description?: string;
+  /** Replaces every translation: a language left out is read in Azerbaijani from then on. */
+  readonly translations?: PlanTranslations;
   readonly price?: string;
   readonly currency?: string;
   readonly maxActiveCampaigns?: number;

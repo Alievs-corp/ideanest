@@ -1354,6 +1354,15 @@ export interface PlanManagerCopy extends ConsoleChromeCopy {
   readonly maxActiveLabel: string;
   readonly goalCeilingLabel: string;
   readonly unlimitedHint: string;
+  readonly languageLegend: string;
+  readonly languageHint: string;
+  /** Read after a language's name by a screen reader, beside the visible mark. */
+  readonly languageFilled: string;
+  readonly translationNameMissing: string;
+  readonly editTexts: string;
+  readonly saveTexts: string;
+  /** Carries `{plan}`. */
+  readonly textsSavedNotice: string;
   readonly addPlan: string;
 
   readonly queueHeading: string;
@@ -1451,6 +1460,13 @@ export function planManagerCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCop
     maxActiveLabel: t('screens.plans.maxActiveLabel'),
     goalCeilingLabel: t('screens.plans.goalCeilingLabel'),
     unlimitedHint: t('screens.plans.unlimitedHint'),
+    languageLegend: t('screens.plans.languageLegend'),
+    languageHint: t('screens.plans.languageHint'),
+    languageFilled: t('screens.plans.languageFilled'),
+    translationNameMissing: t('screens.plans.translationNameMissing'),
+    editTexts: t('screens.plans.editTexts'),
+    saveTexts: t('screens.plans.saveTexts'),
+    textsSavedNotice: String(t.raw('screens.plans.textsSavedNotice')),
     addPlan: t('screens.plans.addPlan'),
 
     queueHeading: t('screens.plans.queueHeading'),
