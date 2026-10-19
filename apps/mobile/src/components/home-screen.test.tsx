@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,9 +12,10 @@ import { MotionBudgetProvider } from './ui';
 import { motion } from '../theme';
 
 /**
- * The Home tab — issue #153: the hero, the two rails and the categories in the web's order and
- * on the web's conditions, the three reads in parallel, a failed read hiding only its section,
- * and both campaign reads failing drawing the error rather than the empty card.
+ * The Home tab — issue #153, reshaped to the web's phone layout: the hero, three one-campaign
+ * sections (popular, ending soon, recently launched) each with its button under the card, the
+ * creators' pages and the categories, the reads in parallel, a failed read hiding only its
+ * section, and every campaign read failing drawing the error rather than the empty card.
  *
  * <p>Here rather than beside `app/(tabs)/index.tsx` because every file under `src/app` is a route.
  */
@@ -75,7 +76,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
 type Route = (url: URL) => Response | Promise<Response>;
-let routes: { closing: Route; launched: Route; categories: Route };
+let routes: { popular: Route; closing: Route; launched: Route; categories: Route };
 let requests: URL[];
 let client: QueryClient;
 
@@ -83,6 +84,7 @@ beforeEach(() => {
   mockPush.mockReset();
   requests = [];
   routes = {
+    popular: () => json({ items: [card('Popular', 3)] }),
     closing: () => json({ items: [card('Closing', 0)] }),
     launched: () => json({ items: [card('Launched', 1)] }),
     categories: () => json([{ id: 'cat-1', slug: 'games', name: 'Games' }]),
@@ -92,7 +94,9 @@ beforeEach(() => {
     requests.push(url);
     if (url.pathname.endsWith('/v1/categories')) return routes.categories(url);
     if (url.pathname.endsWith('/v1/discover')) {
-      return url.searchParams.get('sort') === 'ending_soon' ? routes.closing(url) : routes.launched(url);
+      const sort = url.searchParams.get('sort');
+      if (sort === 'popularity') return routes.popular(url);
+      return sort === 'ending_soon' ? routes.closing(url) : routes.launched(url);
     }
     return json({}, 404);
   }) as unknown as typeof fetch;
@@ -121,25 +125,29 @@ const H = en.home;
 const fail = () => Promise.reject(new TypeError('Network request failed'));
 
 describe('the Home tab', () => {
-  it('asks for the three reads at once, with the web’s parameters', async () => {
+  it('asks for one campaign per section, all at once', async () => {
     await renderHome();
     const discover = requests.filter((url) => url.pathname.endsWith('/v1/discover'));
     expect(discover.map((url) => url.search).sort()).toEqual([
-      '?status=live&limit=6',
-      '?status=live&sort=ending_soon&limit=6',
+      '?status=live&limit=1',
+      '?status=live&sort=ending_soon&limit=1',
+      '?status=live&sort=popularity&limit=1',
     ]);
     expect(requests.some((url) => url.pathname.endsWith('/v1/categories'))).toBe(true);
   });
 
-  it('draws the hero, then Ending soon, Recently launched and the categories, in that order', async () => {
+  it('draws the sections in the web phone layout’s order', async () => {
     await renderHome();
     const headings = screen.getAllByRole('header').map((node) => node.props.children);
     expect(headings).toEqual([
       H.hero.title,
+      H.featured.heading,
       H.closing.heading,
       H.launched.heading,
+      H.creators.heading,
       H.categories.heading,
     ]);
+    expect(screen.getByRole('link', { name: 'Popular, by Aysel' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Closing, by Aysel' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Games' })).toBeTruthy();
   });
@@ -147,10 +155,27 @@ describe('the Home tab', () => {
   it('points each rail’s link at the feed it previews', async () => {
     await renderHome();
     const targets = screen.getAllByTestId('link').map((link) => link.props.accessibilityValue.text);
+    expect(targets).toContain('/discover?status=live&sort=popularity');
     expect(targets).toContain('/discover?status=live&sort=ending_soon');
     expect(targets).toContain('/discover?status=live');
     expect(targets).toContain('/categories');
     expect(targets).toContain('/categories/games');
+  });
+
+  it('puts each section’s button under its card', async () => {
+    await renderHome();
+    const order = within(screen.getByTestId('rail-popular'))
+      .getAllByRole('link')
+      .map((node) => node.props.accessibilityLabel as string);
+    expect(order).toEqual(['Popular, by Aysel', H.featured.link]);
+  });
+
+  it('links the three pages a creator reads, in their own words', async () => {
+    await renderHome();
+    const targets = screen.getAllByTestId('link').map((link) => link.props.accessibilityValue.text);
+    expect(targets).toEqual(expect.arrayContaining(['/how-it-works', '/pricing', '/trust-safety']));
+    expect(screen.getByRole('link', { name: en.static.howItWorks.metaTitle })).toBeTruthy();
+    expect(screen.getByText(en.pricing.metaDescription)).toBeTruthy();
   });
 
   it('hides only the section whose read failed', async () => {
@@ -162,7 +187,8 @@ describe('the Home tab', () => {
     expect(screen.queryByTestId('home-error')).toBeNull();
   });
 
-  it('says the service could not be reached, with a retry, when both campaign reads fail', async () => {
+  it('says the service could not be reached, with a retry, when every campaign read fails', async () => {
+    routes.popular = fail;
     routes.closing = fail;
     routes.launched = fail;
     await renderHome();
@@ -177,7 +203,8 @@ describe('the Home tab', () => {
     expect(screen.getByRole('link', { name: 'Back, by Aysel' })).toBeTruthy();
   });
 
-  it('draws the empty card when both rails are empty', async () => {
+  it('draws the empty card when every campaign section is empty', async () => {
+    routes.popular = () => json({ items: [] });
     routes.closing = () => json({ items: [] });
     routes.launched = () => json({ items: [] });
     await renderHome();
