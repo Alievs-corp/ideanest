@@ -1,5 +1,6 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
+import { numberFormat } from '../i18n/formats';
 import { localeOrDefault, type Locale } from '../i18n/locale';
 import type { HeldSubscription, MySubscription } from '@ideanest/plans/catalogue';
 import type { PlanPaymentReturnHint } from '@ideanest/plans/payment';
@@ -176,20 +177,38 @@ export function planPaymentReturnHint(search: string): PlanPaymentReturnHint | n
  * `Number` is safe in a way it would not be if two of these were being added together.
  * Falls back to the raw string when the amount is not a number, which is what a service that
  * sent something unexpected deserves: the reader sees the value rather than `NaN`.
+ *
+ * <h2>Azerbaijani does not go through `Intl`'s currency style</h2>
+ *
+ * `/pricing` renders this on the server and again in the browser, and the two runtimes do not
+ * agree about `az`: Node's full ICU writes `19 ₼`, Chromium falls back to root-locale data and
+ * writes `AZN 19`. React refused the mismatch on every visit (minified error #418) and threw
+ * the server's markup away. So the number goes through `numberFormat`'s #401/#403 bypass,
+ * which both runtimes answer identically, and the manat sign is placed after it the way an
+ * Azerbaijani price is written — `10.000 ₼`, which is what the server already rendered.
  */
 export function formatPrice(amount: string, currency: string, locale: string): string {
   const parsed = Number(amount);
   if (!Number.isFinite(parsed)) return `${amount} ${currency}`;
 
+  const language = localeOrDefault(locale);
+  // Whole manat when the price is whole, which every plan's is: "19 ₼" reads as a price
+  // and "19.00 ₼" reads as an invoice line.
+  const digits = {
+    minimumFractionDigits: Number.isInteger(parsed) ? 0 : 2,
+    maximumFractionDigits: 2,
+  };
+
   try {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-      // Whole manat when the price is whole, which every plan's is: "19 ₼" reads as a price
-      // and "19.00 ₼" reads as an invoice line.
-      minimumFractionDigits: Number.isInteger(parsed) ? 0 : 2,
-      maximumFractionDigits: 2,
-    }).format(parsed);
+    if (language === 'az') {
+      const figure = numberFormat('az', digits, `price:${digits.minimumFractionDigits}`).format(parsed);
+      return `${figure} ${currency === 'AZN' ? '₼' : currency}`;
+    }
+    return numberFormat(
+      language,
+      { style: 'currency', currency, ...digits },
+      `price:${currency}:${digits.minimumFractionDigits}`,
+    ).format(parsed);
   } catch {
     // An unknown currency code throws rather than degrading, and a price list that renders
     // nothing is worse than one that renders "19 XYZ".
