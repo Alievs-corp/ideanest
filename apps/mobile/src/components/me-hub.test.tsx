@@ -116,7 +116,8 @@ const ABOUT = [
 const THIS_PHONE = ['This phone', 'App lock'];
 
 /** What a session the service has not answered for still offers: the lock, and the way out. */
-const HELD = [...THIS_PHONE, ...ABOUT, 'Sign out'];
+const CREATORS = ['Creators', 'Start a campaign', 'Pricing'];
+const HELD = [...CREATORS, ...THIS_PHONE, ...ABOUT, 'Sign out'];
 
 /*
  * The whole Me tab plus a role query over it: the first render also pays for loading the
@@ -167,7 +168,7 @@ describe('the Me tab', () => {
     given('signed-out', null);
     await renderMe();
 
-    expect(readingOrder()).toEqual(['Register', 'Sign in', 'Settings', 'Language', ...ABOUT]);
+    expect(readingOrder()).toEqual(['Register', 'Sign in', ...CREATORS, 'Settings', 'Language', ...ABOUT]);
   });
 
   it('unknown: this phone, About and sign out — no account rows and, above all, no "Sign in"', async () => {
