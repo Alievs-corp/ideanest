@@ -613,7 +613,13 @@ function PlanCard({ plan, copy, locale, current, busy, disabled, onChoose, tone 
   );
 }
 
-/** The reference's three surfaces, in order: light, black, lime. Lime is the one lime element. */
+/**
+ * The reference's three surfaces, in order: light, black, lime. Lime is the one lime element.
+ *
+ * <p>The choose button follows one rule on every card: near-black with white text, except on the
+ * black card, where it inverts to white with near-black text. The lime card's button is
+ * near-black with white text too, not lime text, so the three buttons read as one control.
+ */
 export type PlanTone = 'light' | 'dark' | 'lime';
 const PLAN_TONES: readonly PlanTone[] = ['light', 'dark', 'lime'];
 
@@ -639,7 +645,7 @@ const PLAN_SKIN: Record<
     card: 'bg-lime-500 text-on-lime',
     muted: 'text-on-lime/56',
     tag: 'bg-on-lime text-lime-500',
-    button: 'bg-on-lime text-lime-500 focus-visible:outline-on-lime',
+    button: 'bg-on-lime text-white focus-visible:outline-on-lime',
     context: { 'data-on-lime': '' },
   },
 };
