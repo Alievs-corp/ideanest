@@ -22,11 +22,11 @@
     "remotion": "4.0.534"
   },
   "devDependencies": {
-    "@remotion/bundler": "4.0.534",
-    "@remotion/renderer": "4.0.534",
-    "@types/node": "~22.20.2",
+    "@remotion/bundler": "4.0.536",
+    "@remotion/renderer": "4.0.536",
+    "@types/node": "~22.20.5",
     "@types/react": "^19.3.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.5"
   }
 }
