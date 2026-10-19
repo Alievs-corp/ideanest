@@ -130,6 +130,7 @@ export function HomeSection({
 
 /** "See all" as a small raised pill with the press give. */
 function SectionLink({ href, label }: { readonly href: Href; readonly label: string }) {
+  const t = useT('home');
   const { ring, onFocus, onBlur } = useFocusRing();
   return (
     <View>
@@ -145,7 +146,7 @@ function SectionLink({ href, label }: { readonly href: Href; readonly label: str
             ring,
           ]}
         >
-          <Text style={styles.linkLabel}>{label}</Text>
+          <Text style={styles.linkLabel}>{t('seeAll')}</Text>
           <Icon icon={Glyphs.ArrowRight} size={16} color={TONES.dark.secondary} />
         </PressableScale>
       </Link>

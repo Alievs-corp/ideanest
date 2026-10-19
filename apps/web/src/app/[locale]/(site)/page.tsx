@@ -257,6 +257,7 @@ export default async function HomePage() {
               standfirst={t('featured.standfirst')}
               href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'popularity' })}
               linkLabel={t('featured.link')}
+              seeAll={t('seeAll')}
               className="lg:row-span-2 lg:grid lg:grid-rows-subgrid"
             >
               {/*
@@ -289,6 +290,7 @@ export default async function HomePage() {
               standfirst={t('closing.standfirst')}
               href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' })}
               linkLabel={t('closing.link')}
+              seeAll={t('seeAll')}
               className="lg:row-span-2 lg:grid lg:grid-rows-subgrid"
             >
               {/*
@@ -319,6 +321,7 @@ export default async function HomePage() {
             standfirst={t('closing.standfirst')}
             href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' })}
             linkLabel={t('closing.link')}
+            seeAll={t('seeAll')}
           >
             <CampaignGrid
               campaigns={closing}
@@ -337,6 +340,7 @@ export default async function HomePage() {
             standfirst={t('launched.standfirst')}
             href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'newest' })}
             linkLabel={t('launched.link')}
+            seeAll={t('seeAll')}
             className={DIVIDED}
             controls={
               <RailControls
@@ -406,6 +410,7 @@ export default async function HomePage() {
             standfirst={t('categories.standfirst')}
             href="/categories"
             linkLabel={t('categories.link')}
+            seeAll={t('seeAll')}
             className={DIVIDED}
           >
             {/*
@@ -491,6 +496,7 @@ function HomeSection({
   standfirst,
   href,
   linkLabel,
+  seeAll,
   className,
   controls,
   children,
@@ -498,7 +504,9 @@ function HomeSection({
   readonly heading: string;
   readonly standfirst: string;
   readonly href: string;
+  /** The link's accessible name; `seeAll` is what is shown. */
   readonly linkLabel: string;
+  readonly seeAll: string;
   /** Layout from `lg`: a divider, or the subgrid that lines it up with its neighbour. */
   readonly className?: string;
   /** Drawn beside the link — the rail arrows. */
@@ -513,9 +521,10 @@ function HomeSection({
           <div className="flex shrink-0 items-center gap-6 max-sm:hidden">
             <Link
               href={href}
+              aria-label={linkLabel}
               className="inline-flex shrink-0 items-center gap-2 rounded-sm text-sm font-medium text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
             >
-              {linkLabel}
+              {seeAll}
               <ArrowRight aria-hidden="true" className="size-4" />
             </Link>
             {controls}
@@ -533,9 +542,10 @@ function HomeSection({
       */}
       <Link
         href={href}
+        aria-label={linkLabel}
         className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/16 px-5 text-center text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] sm:hidden"
       >
-        {linkLabel}
+        {seeAll}
         <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
       </Link>
     </section>
