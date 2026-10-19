@@ -55,6 +55,8 @@ export interface CampaignGridProps {
   readonly id?: string;
   /** Passed to every card's cover frame. */
   readonly coverClassName?: string;
+  /** Passed to every card's text below the cover. */
+  readonly bodyClassName?: string;
 }
 
 export function CampaignGrid({
@@ -67,6 +69,7 @@ export function CampaignGrid({
   itemClassName,
   id,
   coverClassName,
+  bodyClassName,
 }: CampaignGridProps) {
   return (
     <ul id={id} aria-label={label} className={layout}>
@@ -78,6 +81,7 @@ export function CampaignGrid({
             copy={cardCopy}
             locale={locale}
             {...(coverClassName === undefined ? {} : { coverClassName })}
+            {...(bodyClassName === undefined ? {} : { bodyClassName })}
           />
         </li>
       ))}

@@ -4,7 +4,7 @@ import { MediaFrame } from '@ideanest/ui/server';
 import { canOptimise } from '../../lib/images/source';
 import type { CampaignStoryCopy } from '../../lib/i18n/campaign-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
-import type { StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
+import type { SectionImage, StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
 
 /**
  * The creator's story, rendered — docs/ui-kit.md §8.4, the long-form exception.
@@ -150,23 +150,40 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
             `alt` is the creator's own, never invented and never empty — `IMAGE_ALT_REQUIRED`
             is why the editor refuses a story image without one.
           */}
-          <MediaFrame ratio={{ width: block.width, height: block.height }} radius="md">
-            <Image
-              src={block.url}
-              alt={block.alt}
-              fill
-              sizes="(min-width: 768px) 68ch, 100vw"
-              /*
-               * An address on a host the optimiser will not fetch is served as it is rather
-               * than thrown over: a raised render in a Server Component takes the whole page
-               * down, and one image in one story must not be able to do that.
-               */
-              unoptimized={!canOptimise(block.url)}
-              className="object-cover"
-            />
-          </MediaFrame>
+          <StoryImage image={block} />
         </div>
       );
+
+    case 'section': {
+      /*
+       * Its own `<section>`, named by its title, so it is a region a screen-reader user can
+       * jump to and the anchor navigation lists (`storyAnchors`). The `h2` is the heading
+       * block's level-2 look; the anchor is on the section, which is what a link scrolls to.
+       */
+      // `__` cannot occur in an anchor (`slugifyHeading`), so this never meets a heading's id.
+      const titleId = `${block.id}__title`;
+      return (
+        <section
+          id={block.id}
+          aria-labelledby={titleId}
+          className="mt-10 scroll-mt-24 first:mt-0"
+        >
+          <h2 id={titleId} className="mb-4 text-2xl font-semibold tracking-[-0.02em] text-white">
+            {block.title}
+          </h2>
+          {block.image !== null && (
+            <div className="mb-6">
+              <StoryImage image={block.image} />
+            </div>
+          )}
+          {block.spans.length > 0 && (
+            <p className={`mb-6 ${BODY}`}>
+              <Spans spans={block.spans} />
+            </p>
+          )}
+        </section>
+      );
+    }
 
     case 'embed':
       /*
@@ -198,6 +215,27 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
         </p>
       );
   }
+}
+
+/** A story picture — an image block's, or a section's — at its own shape. */
+function StoryImage({ image }: { image: SectionImage }): ReactNode {
+  return (
+    <MediaFrame ratio={{ width: image.width, height: image.height }} radius="md">
+      <Image
+        src={image.url}
+        alt={image.alt}
+        fill
+        sizes="(min-width: 768px) 68ch, 100vw"
+        /*
+         * An address on a host the optimiser will not fetch is served as it is rather
+         * than thrown over: a raised render in a Server Component takes the whole page
+         * down, and one image in one story must not be able to do that.
+         */
+        unoptimized={!canOptimise(image.url)}
+        className="object-cover"
+      />
+    </MediaFrame>
+  );
 }
 
 /**

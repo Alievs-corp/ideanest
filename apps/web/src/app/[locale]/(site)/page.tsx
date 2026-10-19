@@ -103,6 +103,14 @@ const SPLIT_SIZE = 6;
  */
 const PHONE_FIRST_ONLY = 'max-sm:hidden';
 
+/*
+ * The ending-soon covers are 10% taller from `lg` (16:7.19 → 16:7.91) and the card is not:
+ * the cover gains 0.719 × width / 16 ≈ 4.5% of the card's width, and the text gives the same
+ * back — 1.25cqw off each end and 0.5cqw off each of the four gaps. In `cqw` so the trade is
+ * exact at every desktop width, against the `@container` each item carries.
+ */
+const CLOSING_BODY = 'lg:gap-[calc(10px-0.5cqw)] lg:pt-[calc(14px-1.25cqw)] lg:pb-[calc(16px-1.25cqw)]';
+
 /** The recently-launched list's id, which its arrows name in `aria-controls`. */
 const LAUNCHED_RAIL = 'home-launched-rail';
 
@@ -304,9 +312,10 @@ export default async function HomePage() {
                 cardCopy={cardCopy}
                 locale={locale}
                 layout={HOME_SPLIT_GRID}
-                coverClassName="lg:aspect-[16/7.19]"
+                coverClassName="lg:aspect-[16/7.91]"
+                bodyClassName={CLOSING_BODY}
                 itemClassName={(card, index) =>
-                  [splitIds.has(card.id) ? '' : 'lg:hidden', index === 0 ? '' : PHONE_FIRST_ONLY]
+                  ['@container', splitIds.has(card.id) ? '' : 'lg:hidden', index === 0 ? '' : PHONE_FIRST_ONLY]
                     .filter(Boolean)
                     .join(' ') || undefined
                 }

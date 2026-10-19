@@ -34,8 +34,9 @@ import { CampaignVideoPlayer } from './campaign-video-player';
  *
  * <h2>The video</h2>
  *
- * The cover stays the picture (it is what the card's cover flies to), or the video's poster when
- * there is no cover, with a play button over it and the clip's length in the corner. The whole box
+ * A campaign with a video is covered by it: the picture is the video's own poster — what the
+ * card shows too (`cardCoverFrom`), so the card's cover flies to the same still — with a play
+ * button over it and the clip's length in the corner. Without a video it is the uploaded cover. The whole box
  * is the button, named "Play the campaign video, 45 seconds long". Nothing plays until it is
  * pressed — never on arrival, and never on a phone that asked for less motion — and the player is
  * not even mounted before then (`CampaignVideoPlayer`), so a page that is only scrolled past opens
@@ -61,7 +62,7 @@ export function CampaignMedia({
 }) {
   return (
     <SharedTarget tag={tag} waitForDisplay>
-      <CoverFrame uri={cover?.url ?? video?.posterUrl ?? null}>
+      <CoverFrame uri={video?.posterUrl ?? cover?.url ?? null}>
         {video === null ? null : <VideoLayer video={video} active={active} />}
       </CoverFrame>
     </SharedTarget>

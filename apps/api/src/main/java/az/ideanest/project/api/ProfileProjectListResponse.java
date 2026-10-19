@@ -96,6 +96,12 @@ public record ProfileProjectListResponse(List<ProfileProjectCard> projects, Stri
                     card.coverImage() == null ? null : card.coverImage().url(),
                     card.coverImage() == null ? null : String.valueOf(card.coverImage().width()),
                     card.coverImage() == null ? null : String.valueOf(card.coverImage().height()));
+            append(
+                    canonical,
+                    card.video() == null ? null : card.video().url(),
+                    card.video() == null ? null : card.video().posterUrl(),
+                    card.video() == null ? null : String.valueOf(card.video().width()),
+                    card.video() == null ? null : String.valueOf(card.video().height()));
         }
         append(canonical, nextCursor);
 

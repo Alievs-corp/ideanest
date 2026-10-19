@@ -112,6 +112,14 @@ public class RewardTier {
     @Column(name = "available_until")
     private Instant availableUntil;
 
+    /** A ready image upload of the creator's, or null. V112. */
+    @Column(name = "image_media_id")
+    private UUID imageMediaId;
+
+    /** A ready video upload of at most {@code reward-max-duration}, or null. V112. */
+    @Column(name = "video_media_id")
+    private UUID videoMediaId;
+
     @Version
     @Column(name = "version", nullable = false)
     private long version;
@@ -169,6 +177,11 @@ public class RewardTier {
      * tier in order to change it, and renaming is the first thing they do; a
      * "(copy)" they have to delete is an edit the platform imposed, and it can
      * push the title past its sixty-character limit.
+     *
+     * <p><strong>The image and the video are not copied.</strong> Replacing or removing a
+     * tier's media deletes the upload once nothing refers to it, so a shared row would
+     * work, but the copy is made to be changed, and a creator who replaces the copy's
+     * picture expects a picture of their own rather than the original's.
      */
     public RewardTier duplicateAt(int sortOrder) {
         RewardTier copy = new RewardTier(Identifiers.newIdentifier(), projectId, title, amount, currency, sortOrder);
@@ -380,6 +393,22 @@ public class RewardTier {
         }
         this.availableFrom = from;
         this.availableUntil = until;
+    }
+
+    public UUID getImageMediaId() {
+        return imageMediaId;
+    }
+
+    public void setImageMediaId(UUID imageMediaId) {
+        this.imageMediaId = imageMediaId;
+    }
+
+    public UUID getVideoMediaId() {
+        return videoMediaId;
+    }
+
+    public void setVideoMediaId(UUID videoMediaId) {
+        this.videoMediaId = videoMediaId;
     }
 
     public long getVersion() {

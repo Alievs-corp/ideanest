@@ -5019,6 +5019,11 @@
         "pickup": "Şəxsən götürülür, heç nə göndərilmir",
         "shipsTo": "{count, plural, other {# ölkəyə göndərilir}}",
         "shipsToFrom": "{count, plural, other {# ölkəyə göndərilir, çatdırılma ən azı {amount}}}"
+      },
+      "media": {
+        "play": "{title} mükafatının videosunu oynat",
+        "pause": "{title} mükafatının videosunu dayandır",
+        "imageAlt": "{title} mükafatının şəkli"
       }
     },
     "media": {
@@ -5391,7 +5396,27 @@
         "notSavedDetail": "Yazdığınız heç nə itmədi — mətn aşağıdakı sahələrdə qalır.",
         "ratesNotSavedDetail": "Mükafat haqqında qalan hər şey yadda saxlanıldı. Yalnız ölkələr üzrə tariflər qəbul olunmadı — onları düzəldib yenidən yadda saxlayın, qalanı ikinci dəfə göndərilməyəcək.",
         "earlyBirdHint": "Bitən sərfəli təklif. Ona ya bağlanma tarixi, ya da məhdud yer sayı lazımdır — onsuz bu, insanları boş yerə tələsdirən etiketli adi mükafatdır.",
-        "secretHint": "İctimai siyahıda görünmür, ona gizli token ilə çatılır. Mükafatı yenidən ictimai etmək tokeni ləğv edir, ona görə artıq göndərilmiş keçidlər işləməyəcək."
+        "secretHint": "İctimai siyahıda görünmür, ona gizli token ilə çatılır. Mükafatı yenidən ictimai etmək tokeni ləğv edir, ona görə artıq göndərilmiş keçidlər işləməyəcək.",
+        "image": "Şəkil",
+        "imageHint": "İstəyə bağlı. Kampaniya səhifəsində mükafat kartının yuxarısında göstərilir.",
+        "imagePrompt": "Bu mükafatın şəklini bura atın",
+        "imageDragPrompt": "Bu şəkli yükləmək üçün buraxın",
+        "imageButtonLabel": "Şəkil seçin",
+        "imageDropHint": "20 MB-a qədər: JPEG, PNG, WebP, AVIF və ya HEIC.",
+        "imageReplace": "Şəkli dəyiş",
+        "imageRemove": "Şəkli sil",
+        "imageUploaded": "Şəkil yükləndi. Saxlamaq üçün mükafatı yadda saxlayın.",
+        "video": {
+          "label": "Video",
+          "hint": "İstəyə bağlı. Ən çox {seconds} saniyəlik klip, mükafat kartında səssiz oynadılır.",
+          "prompt": "Bu mükafatın videosunu bura atın",
+          "set": "Video hazırdır. Saxlamaq üçün mükafatı yadda saxlayın.",
+          "previewLabel": "Mükafat videosunun önizləməsi",
+          "processing": "Video çevrilir…",
+          "notAttached": "Bu videonu mükafata əlavə etmək alınmadı. Onu yenidən yükləyin.",
+          "tooLong": "Bu videonun uzunluğu: {duration}. Mükafat videosu ən çox {seconds} saniyə ola bilər — videonu qısaldıb yenidən seçin.",
+          "refusedTooLong": "Mükafat yadda saxlanılmadı: videosu {seconds} saniyədən uzundur. Daha qısa klip seçin."
+        }
       },
       "deleteItemNamed": "«{name}» silinsin?",
       "deleteRewardNamed": "«{title}» silinsin?",
@@ -5528,7 +5553,8 @@
           "quote": "Sitat",
           "rule": "Ayırıcı",
           "image": "Şəkil",
-          "embed": "Yerləşdirmə"
+          "embed": "Yerləşdirmə",
+          "section": "Bölmə"
         },
         "describe": {
           "position": "{total} blokdan {index}",
@@ -5546,6 +5572,9 @@
           "imageNoAlt": "hələ təsvir yoxdur",
           "embed": "{provider} yerləşdirməsi {position}: {title}",
           "embedNoTitle": "hələ başlıq yoxdur",
+          "section": "Bölmə {position}: {title}",
+          "sectionWithImage": "Şəkilli bölmə {position}: {title}",
+          "sectionEmpty": "hələ başlıq yoxdur",
           "numbered": "Nömrələnmiş",
           "bulleted": "İşarəli"
         },
@@ -5558,7 +5587,9 @@
           "imageNotMeasured": "Bu şəkil hələ ölçülməyib. Ölçüsünün yazılması üçün «Ölç və əlavə et» düyməsini işlədin.",
           "imageNeedsAlt": "Təsvir mütləqdir. Ekran oxuyucusu işlədən dəstəkçi şəklin əvəzinə məhz onu alır.",
           "embedNeedsUrl": "Yerləşdirmənin ünvanı olmalıdır.",
-          "embedNeedsTitle": "Yerləşdirmənin başlığı olmalıdır. Ekran oxuyucusu «freym» əvəzinə məhz onu deyir."
+          "embedNeedsTitle": "Yerləşdirmənin başlığı olmalıdır. Ekran oxuyucusu «freym» əvəzinə məhz onu deyir.",
+          "sectionNeedsTitle": "Bölmənin başlığı olmalıdır.",
+          "sectionTitleTooLong": "Bölmənin başlığı ən çox {max} simvol ola bilər. Qalanını bölmənin mətninə keçirin."
         }
       },
       "panel": {
@@ -5636,7 +5667,8 @@
           "quote": "Ayrıca verilmiş sitat.",
           "image": "Yüklədiyiniz və ya artıq dərc olunmuş şəkil.",
           "embed": "YouTube və ya Vimeo videosu.",
-          "rule": "Üfüqi ayırıcı."
+          "rule": "Üfüqi ayırıcı.",
+          "section": "Başlığı olan hekayə hissəsi, istəyə bağlı şəkillə. Lövbər menyusunda göstərilir."
         },
         "empty": "Hələ burada heç nə yoxdur. Bir abzasla başlayın — kampaniyaların çoxu məhsulun nə olduğu və kimin üçün olduğu ilə açılır.",
         "embedHint": "Başlıq ekran oxuyucusunun «çərçivə» sözü əvəzinə oxuduğu mətndir. Yalnız YouTube və Vimeo videoları yerləşdirilə bilər.",
@@ -5647,7 +5679,22 @@
         "imageDragPrompt": "Bu şəkli yükləmək üçün buraxın",
         "imageButtonLabel": "Şəkil seçin",
         "imageDropHint": "20 MB-a qədər: JPEG, PNG, WebP, AVIF və ya HEIC. Ölçüsü ölçülür ki, səhifə şəkil yüklənməmiş onun yerini ayıra bilsin.",
-        "imageUploadOf": "Yükləmə: {name}"
+        "imageUploadOf": "Yükləmə: {name}",
+        "sectionBlock": {
+          "title": "Bölmənin başlığı",
+          "titlePlaceholder": "Emalatxanamız",
+          "image": "Şəkil",
+          "imageHint": "İstəyə bağlı. Başlığın altında, mətndən əvvəl göstərilir.",
+          "addImage": "Şəkil əlavə et",
+          "replaceImage": "Şəkli dəyiş",
+          "removeImage": "Şəkli sil",
+          "imageAlt": "Şəklin təsviri",
+          "text": "Mətn",
+          "textPlaceholder": "Hekayənin bu hissəsi nədən bəhs edir. Mətni seçib «Qalın» və ya «Kursiv» işlədin.",
+          "addImageTo": "Şəkil əlavə et: {name}",
+          "replaceImageOf": "Şəkli dəyiş: {name}",
+          "removeImageFrom": "Şəkli sil: {name}"
+        }
       },
       "history": {
         "title": "Əvvəlki versiyalar",
@@ -7217,6 +7264,10 @@
     },
     "blocking": {
       "offline": "Bloklamaq üçün internet bağlantısı lazımdır."
+    },
+    "preview": {
+      "cardHint": "Videoya baxmaq üçün basıb saxlayın",
+      "rewardHint": "Videonu oynatmaq üçün basıb saxlayın"
     }
   },
   "blocking": {

@@ -2,6 +2,7 @@ package az.ideanest.discovery.infrastructure;
 
 import az.ideanest.discovery.domain.DiscoveryStatus;
 import az.ideanest.discovery.domain.ProjectCard;
+import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -38,12 +39,22 @@ final class ProjectCardRows {
             p.goal_amount, p.pledged_amount, p.backers_count,
             p.launched_at, p.deadline, p.extended_until,
             p.cover_image_url, p.cover_image_width, p.cover_image_height,
+            vm.storage_key AS video_storage_key, vm.poster_storage_key AS video_poster_storage_key,
+            vm.width AS video_width, vm.height AS video_height,
             u.name AS creator_name, u.slug AS creator_slug, u.avatar_url AS creator_avatar_url,
             (SELECT c.slug FROM categories c WHERE c.id = p.category_id) AS category_slug
             """;
 
+    /**
+     * The campaign video, when it is ready. Outer, because most campaigns have none, and
+     * filtered on the join so a processing or failed upload reads as no video at all.
+     * Every query selecting {@link #COLUMNS} joins this.
+     */
+    static final String VIDEO_JOIN = " LEFT JOIN media vm ON vm.id = p.video_media_id"
+            + " AND vm.status = 'READY' AND vm.kind = 'VIDEO'";
+
     /** The {@code FROM} both feeds share, so the join condition has one spelling. */
-    static final String FROM = " FROM projects p JOIN users u ON u.id = p.creator_id";
+    static final String FROM = " FROM projects p JOIN users u ON u.id = p.creator_id" + VIDEO_JOIN;
 
     private ProjectCardRows() {
     }
@@ -52,8 +63,10 @@ final class ProjectCardRows {
      * @param asOf the instant {@code daysLeft} is measured against — the same one the
      *     sort scored from, so a page is internally consistent and the ETag over it is
      *     stable for the length of the cache window
+     * @param media what turns the selected storage keys into addresses, so a card's video
+     *     URL is built by the same rule as every other
      */
-    static ProjectCard card(ResultSet resultSet, Instant asOf) throws SQLException {
+    static ProjectCard card(ResultSet resultSet, Instant asOf, MediaLibrary media) throws SQLException {
         String currency = resultSet.getString("currency");
         BigDecimal goalAmount = resultSet.getBigDecimal("goal_amount");
         BigDecimal pledgedAmount = resultSet.getBigDecimal("pledged_amount");
@@ -70,6 +83,16 @@ final class ProjectCardRows {
                 : new ProjectCard.CoverImage(
                         coverUrl, resultSet.getInt("cover_image_width"), resultSet.getInt("cover_image_height"));
 
+        String videoKey = resultSet.getString("video_storage_key");
+        // A READY video holds its key, its poster and its extent: V61's and V94's constraints.
+        ProjectCard.Video video = videoKey == null
+                ? null
+                : new ProjectCard.Video(
+                        media.publicUrlOf(videoKey),
+                        media.publicUrlOf(resultSet.getString("video_poster_storage_key")),
+                        resultSet.getInt("video_width"),
+                        resultSet.getInt("video_height"));
+
         return new ProjectCard(
                 resultSet.getObject("id", UUID.class),
                 resultSet.getString("slug"),
@@ -80,6 +103,7 @@ final class ProjectCardRows {
                         resultSet.getString("creator_slug"),
                         resultSet.getString("creator_avatar_url")),
                 cover,
+                video,
                 Money.orNull(goalAmount, currency),
                 Money.of(pledgedAmount, currency),
                 ProjectCard.completionPercent(pledgedAmount, goalAmount),

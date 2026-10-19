@@ -514,6 +514,17 @@ decisions.
 > `hover:` applies only on a device that can hover — so they cost nothing while
 > the pointer rests, never play on a touch screen, and are not the list entry
 > animation §5.1 forbids. Discovery's budget is about what moves on its own.
+>
+> **A campaign video previews under the same rule.** A campaign with a video is
+> covered by it: every card (`ProjectCard`, `ProfileCampaignCard`) shows the
+> video's poster, and `CardVideoPreview` plays the clip muted and looping over it
+> while the card is hovered or focused, and pauses and rewinds it on leave. Only
+> on `(hover: hover)` and never under reduced motion; `preload="none"` and no
+> `src` until the first hover, so the poster stays the largest contentful paint;
+> the clip fades in with `opacity` over 150ms and nothing else moves. A reward's
+> clip on the project page (`RewardVideoPreview`) does the same, plus a visible
+> play/pause button for touch and keyboard — a press is the reader asking, so it
+> plays under reduced motion too.
 
 ### 5.1 What "minimal" buys Discovery, exactly
 

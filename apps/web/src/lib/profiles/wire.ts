@@ -1,5 +1,6 @@
 import type { Page } from '../community/signals';
 import type { Money } from '../money';
+import type { CardVideo } from '@ideanest/discovery/card-media';
 import type {
   CoverImage,
   ProfileLocation,
@@ -121,7 +122,24 @@ function readProjectCard(value: unknown): ProfileProjectCard | null {
     deadline: text(source['deadline']),
     launchedAt: text(source['launchedAt']),
     coverImage: readCoverImage(source['coverImage']),
+    video: readCardVideo(source['video']),
   };
+}
+
+/** The card's video, or `null` when any of the four fields a preview needs is missing. */
+function readCardVideo(value: unknown): CardVideo | null {
+  const source = object(value);
+  if (source === null) return null;
+
+  const url = text(source['url']);
+  const posterUrl = text(source['posterUrl']);
+  const { width, height } = source;
+  if (url === null || posterUrl === null || typeof width !== 'number' || typeof height !== 'number') {
+    return null;
+  }
+  if (width <= 0 || height <= 0) return null;
+
+  return { url, posterUrl, width, height };
 }
 
 function readCoverImage(value: unknown): CoverImage | null {

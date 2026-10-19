@@ -131,6 +131,60 @@ describe('the story', () => {
   });
 });
 
+describe('a section', () => {
+  const SECTIONS = {
+    version: 1,
+    blocks: [
+      { type: 'paragraph', spans: [{ text: 'Before the workshop.', marks: [] }] },
+      {
+        type: 'section',
+        id: 'our-workshop',
+        title: 'Our workshop',
+        image: { url: 'https://cdn.example/workshop.jpg', width: 1440, height: 960, alt: 'Two benches and a kiln' },
+        spans: [
+          { text: 'Every lamp is ', marks: [] },
+          { text: 'hand-blown', marks: ['em'] },
+          { text: ' here.', marks: [] },
+        ],
+      },
+      // The service omits a null field, so a section without a picture may arrive without the key.
+      { type: 'section', id: 'the-team', title: 'The team', spans: [] },
+    ],
+  };
+
+  it('is read by the shared reader, with or without its picture', () => {
+    const story = readStoryDocument(SECTIONS);
+    expect(story).not.toBeNull();
+    expect(story?.blocks[2]).toEqual({ type: 'section', id: 'the-team', title: 'The team', image: null, spans: [] });
+  });
+
+  it('draws its title as a level-2 header, its picture at its own shape, then its text', async () => {
+    await show(readStoryDocument(SECTIONS) as StoryDocument);
+
+    const title = screen.getByRole('header', { name: 'Our workshop' });
+    expect(styleOf(title).fontSize).toBe(24);
+    // The anchor the navigation would scroll to.
+    expect(screen.getByTestId('story-section-our-workshop').props.nativeID).toBe('our-workshop');
+
+    const image = screen.getByRole('image', { name: 'Two benches and a kiln' });
+    expect(image.props.source).toEqual({ uri: 'https://cdn.example/workshop.jpg' });
+    // The box is reserved before the picture decodes, at the picture's own proportions.
+    const frame = screen.getByTestId('story-section-image').parent;
+    expect(StyleSheet.flatten(frame?.props.style).aspectRatio).toBeCloseTo(1440 / 960);
+
+    expect(screen.getByText('hand-blown')).toBeTruthy();
+    expect(styleOf(screen.getByText('hand-blown')).fontStyle).toBe('italic');
+  });
+
+  it('without a picture or text, is its title alone', async () => {
+    await show(readStoryDocument(SECTIONS) as StoryDocument);
+    const team = screen.getByTestId('story-section-the-team');
+    expect(screen.getByRole('header', { name: 'The team' })).toBeTruthy();
+    expect(screen.getAllByTestId('story-section-image')).toHaveLength(1);
+    expect(team.children).toHaveLength(1);
+  });
+});
+
 describe('the story inside the white content sheet (#281)', () => {
   it('takes the sheet’s on-white tones and draws no lime rule on white', async () => {
     const story = readStoryDocument(DOCUMENT) as StoryDocument;

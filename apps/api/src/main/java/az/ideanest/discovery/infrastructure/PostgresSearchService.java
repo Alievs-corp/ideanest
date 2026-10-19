@@ -6,6 +6,7 @@ import az.ideanest.discovery.application.DiscoveryQuery;
 import az.ideanest.discovery.application.FacetCounts;
 import az.ideanest.discovery.application.RankingDiagnostics;
 import az.ideanest.discovery.application.RankingExplanation;
+import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.discovery.application.RankingWeight;
 import az.ideanest.discovery.application.RankingWeightStore;
 import az.ideanest.discovery.application.RankingWeights;
@@ -316,6 +317,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
     private final Taxonomy taxonomy;
     private final CuratedCollections collections;
     private final RankingWeightStore rankingWeights;
+    private final MediaLibrary media;
     private final Clock clock;
 
     public PostgresSearchService(
@@ -323,11 +325,13 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
             Taxonomy taxonomy,
             CuratedCollections collections,
             RankingWeightStore rankingWeights,
+            MediaLibrary media,
             Clock clock) {
         this.jdbc = jdbc;
         this.taxonomy = taxonomy;
         this.collections = collections;
         this.rankingWeights = rankingWeights;
+        this.media = media;
         this.clock = clock;
     }
 
@@ -1526,8 +1530,8 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
     private record FacetRow(String dimension, String key, String extra, long count) {
     }
 
-    private static Row toRow(ResultSet resultSet, Instant asOf) throws SQLException {
-        return new Row(ProjectCardRows.card(resultSet, asOf), resultSet.getBigDecimal("sort_score"));
+    private Row toRow(ResultSet resultSet, Instant asOf) throws SQLException {
+        return new Row(ProjectCardRows.card(resultSet, asOf, media), resultSet.getBigDecimal("sort_score"));
     }
 
     // ---------------------------------------------------------------------------

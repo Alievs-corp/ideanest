@@ -469,6 +469,132 @@ class StoryDocumentsTests {
     }
 
     @Nested
+    @DisplayName("a section")
+    class Sections {
+
+        private static final String IMAGE =
+                "{\"url\": \"https://a.example/b.jpg\", \"width\": 1440, \"height\": 960, \"alt\": \"The bench\"}";
+
+        private static String section(String id, String title, String image) {
+            return "{\"type\": \"section\", \"id\": \"" + id + "\", \"title\": \"" + title + "\", \"image\": "
+                    + image + ", \"spans\": [{\"text\": \"Where it is made.\", \"marks\": []}]}";
+        }
+
+        @Test
+        @DisplayName("a section with an image, and one without, are accepted")
+        void sectionsAreAccepted() {
+            accepted(section("our-workshop", "Our workshop", IMAGE));
+            accepted(section("our-workshop", "Our workshop", "null"));
+            accepted("{\"type\": \"section\", \"id\": \"a\", \"title\": \"A\", \"image\": null, \"spans\": []}");
+        }
+
+        @Test
+        @DisplayName("every key is required, the image as null when there is none")
+        void everyKeyIsRequired() {
+            assertThat(refusal(withBlock(
+                                    "{\"type\": \"section\", \"id\": \"a\", \"title\": \"A\", \"spans\": []}"))
+                            .path())
+                    .isEqualTo("blocks[0].image");
+            assertThat(refusal(withBlock(
+                                    "{\"type\": \"section\", \"id\": \"a\", \"title\": \"A\", \"image\": null}"))
+                            .path())
+                    .isEqualTo("blocks[0].spans");
+            assertThat(refusal(withBlock(
+                                    "{\"type\": \"section\", \"id\": \"a\", \"image\": null, \"spans\": []}"))
+                            .path())
+                    .isEqualTo("blocks[0].title");
+            assertThat(refusal(withBlock(
+                                    "{\"type\": \"section\", \"title\": \"A\", \"image\": null, \"spans\": []}"))
+                            .path())
+                    .isEqualTo("blocks[0].id");
+        }
+
+        @Test
+        @DisplayName("an unknown key is refused, on the section and on its image")
+        void unknownKeysAreRefused() {
+            assertThat(refusal(withBlock("{\"type\": \"section\", \"id\": \"a\", \"title\": \"A\", "
+                                    + "\"image\": null, \"spans\": [], \"level\": 2}"))
+                            .path())
+                    .isEqualTo("blocks[0].level");
+            assertThat(refusal(withBlock(section(
+                                    "a",
+                                    "A",
+                                    "{\"type\": \"image\", \"url\": \"https://a.example/b.jpg\", \"width\": 4,"
+                                            + " \"height\": 3, \"alt\": \"A\"}")))
+                            .path())
+                    .isEqualTo("blocks[0].image.type");
+        }
+
+        @Test
+        @DisplayName("the title follows a heading's rules")
+        void theTitleIsAHeading() {
+            assertThat(refusal(withBlock(section("a", "   ", "null"))).path()).isEqualTo("blocks[0].title");
+            assertThat(refusal(withBlock(section("a", "x".repeat(201), "null"))).path())
+                    .isEqualTo("blocks[0].title");
+            accepted(section("a", "x".repeat(200), "null"));
+        }
+
+        @Test
+        @DisplayName("the image follows an image block's rules")
+        void theImageIsAnImage() {
+            assertThat(refusal(withBlock(section(
+                                    "a", "A", "{\"url\": \"https://a.example/b.jpg\", \"width\": 4, \"height\": 3}")))
+                            .path())
+                    .isEqualTo("blocks[0].image.alt");
+            assertThat(refusal(withBlock(section(
+                                    "a",
+                                    "A",
+                                    "{\"url\": \"javascript:alert(1)\", \"width\": 4, \"height\": 3, \"alt\": \"A\"}")))
+                            .path())
+                    .isEqualTo("blocks[0].image.url");
+            assertThat(refusal(withBlock(section(
+                                    "a",
+                                    "A",
+                                    "{\"url\": \"https://a.example/b.jpg\", \"width\": 0, \"height\": 3, \"alt\": \"A\"}")))
+                            .path())
+                    .isEqualTo("blocks[0].image.width");
+            assertThat(refusal(withBlock(section("a", "A", "\"https://a.example/b.jpg\""))).path())
+                    .isEqualTo("blocks[0].image");
+        }
+
+        @Test
+        @DisplayName("a section's id is an anchor, in the same set as the headings'")
+        void theIdSharesTheHeadingAnchors() {
+            assertThat(refusal(withBlock(section("Our Workshop", "A", "null"))).path())
+                    .isEqualTo("blocks[0].id");
+
+            JsonNode document = document("{\"version\": 1, \"blocks\": ["
+                    + "{\"type\": \"heading\", \"level\": 2, \"id\": \"our-workshop\", \"text\": \"Workshop\"},"
+                    + section("our-workshop", "Our workshop", "null")
+                    + "]}");
+            StoryDocumentInvalidException refused = refusal(document);
+            assertThat(refused.path()).isEqualTo("blocks[1].id");
+            assertThat(refused.getMessage()).contains("unique");
+        }
+
+        @Test
+        @DisplayName("the title and the text are prose; the image's description is not")
+        void theTitleAndTextAreCounted() {
+            // "Our workshop" is twelve, "Where it is made." seventeen.
+            assertThat(StoryDocuments.characterCount(withBlock(section("our-workshop", "Our workshop", IMAGE))))
+                    .isEqualTo(29);
+        }
+
+        @Test
+        @DisplayName("a section with an image counts as one image, and one without as none")
+        void anImageCountsAsMedia() {
+            assertThat(StoryDocuments.mediaCount(withBlock(section("a", "A", IMAGE)))).isEqualTo(1);
+            assertThat(StoryDocuments.mediaCount(withBlock(section("a", "A", "null")))).isZero();
+        }
+
+        @Test
+        @DisplayName("the refusal of an unknown kind lists the section")
+        void theKindsIncludeTheSection() {
+            assertThat(refusal(withBlock("{\"type\": \"video\"}")).getMessage()).contains("section");
+        }
+    }
+
+    @Nested
     @DisplayName("a rule")
     class Rules {
 

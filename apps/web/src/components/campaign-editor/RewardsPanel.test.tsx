@@ -20,6 +20,8 @@ import {
 } from '../../lib/projects/api';
 import { RewardsPanel } from './RewardsPanel';
 import { UploadFailed, uploadImage, type UploadedImage } from '../../lib/media/upload';
+import { uploadVideo, type UploadedVideo } from '../../lib/media/videoUpload';
+import { readVideoDuration } from '../../lib/media/videoDuration';
 import { EDITOR_COPY, REWARDS_COPY } from '../../test-editor-copy';
 
 /**
@@ -60,7 +62,16 @@ vi.mock('../../lib/media/upload', async (importOriginal) => ({
   uploadImage: vi.fn(),
 }));
 
+/* The reward's clip, mocked for the reasons `BasicsPanel.test.tsx` gives for the campaign video. */
+vi.mock('../../lib/media/videoUpload', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/media/videoUpload')>()),
+  uploadVideo: vi.fn(),
+}));
+vi.mock('../../lib/media/videoDuration', () => ({ readVideoDuration: vi.fn() }));
+
 const uploadImageMock = vi.mocked(uploadImage);
+const uploadVideoMock = vi.mocked(uploadVideo);
+const readVideoDurationMock = vi.mocked(readVideoDuration);
 const getProjectEditMock = vi.mocked(getProjectEdit);
 const listItemsMock = vi.mocked(listItems);
 const listRewardsMock = vi.mocked(listRewards);
@@ -702,6 +713,124 @@ describe('RewardsPanel', () => {
         node.textContent?.includes('Collector edition'),
       );
       expect(alert).toBeDefined();
+    });
+  });
+
+  describe('a tier’s picture and clip', () => {
+    const IMAGE: UploadedImage = {
+      mediaId: '0b6a4c1e-6f6d-4b5e-9a65-6a1f8d2e7c10',
+      url: 'https://cdn.example.test/media/0b6a4c1e.jpg',
+      width: 1500,
+      height: 1000,
+      blurDataUrl: 'data:image/jpeg;base64,AAAA',
+    };
+    const CLIP: UploadedVideo = {
+      mediaId: '7d3e2f10-2c4b-4f8a-8e1d-5b9c0a6e4f21',
+      url: 'https://cdn.example.test/media/7d3e2f10.mp4',
+      posterUrl: 'https://cdn.example.test/media/7d3e2f10.poster.webp',
+      width: 1280,
+      height: 720,
+      durationMs: 4_800,
+      blurDataUrl: null,
+    };
+    const clip = (): File => new File(['bytes'], 'mug.mp4', { type: 'video/mp4' });
+
+    /** The drawer has two pickers: the picture's takes images, the clip's takes videos. */
+    function choose(kind: 'image' | 'video', file: File): void {
+      const accept = kind === 'image' ? 'input[type="file"][accept="image/*"]' : 'input[type="file"][accept*="video"]';
+      const input = screen.getByRole('dialog').querySelector<HTMLInputElement>(accept);
+      if (input === null) throw new Error(`The reward drawer has no ${kind} input`);
+      fireEvent.change(input, { target: { files: [file] } });
+    }
+
+    it('creates a tier with an uploaded picture and a clip of up to five seconds', async () => {
+      const user = await openRewards({ rewards: [] });
+      createRewardMock.mockResolvedValue(reward({ id: 'reward-new', title: 'Poster' }));
+      uploadImageMock.mockResolvedValue(IMAGE);
+      readVideoDurationMock.mockResolvedValue(4_800);
+      uploadVideoMock.mockResolvedValue(CLIP);
+
+      await user.click(screen.getByRole('button', { name: 'Add the first reward' }));
+      await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Poster');
+      await user.type(screen.getByRole('textbox', { name: 'Price' }), '19.99');
+      // The clip’s field is fetched when the drawer first draws it.
+      expect(await screen.findByText(/A clip of up to 5 seconds/)).toBeInTheDocument();
+
+      choose('image', new File(['bytes'], 'poster.jpg', { type: 'image/jpeg' }));
+      expect(await screen.findByText('Image uploaded. Save the reward to keep it.')).toBeInTheDocument();
+      choose('video', clip());
+      await tick();
+      await tick();
+      expect(uploadVideoMock).toHaveBeenCalledTimes(1);
+
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+      await tick();
+
+      expect(createRewardMock).toHaveBeenCalledWith(
+        'project-1',
+        expect.objectContaining({ imageMediaId: IMAGE.mediaId, videoMediaId: CLIP.mediaId }),
+      );
+    });
+
+    it('refuses a clip over five seconds before a byte of it is uploaded', async () => {
+      const user = await openRewards({ rewards: [FIRST] });
+      readVideoDurationMock.mockResolvedValue(7_000);
+
+      await user.click(screen.getByRole('button', { name: 'Edit Early bird' }));
+      await screen.findByText(/A clip of up to 5 seconds/);
+      choose('video', clip());
+      await tick();
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'That video runs 0:07. A reward video is at most 5 seconds — trim it and choose it again.',
+      );
+      expect(uploadVideoMock).not.toHaveBeenCalled();
+    });
+
+    it('takes a picture down on a launched tier, whose price is locked but whose media is not', async () => {
+      const withMedia = reward({
+        pricingLocked: true,
+        image: { ...IMAGE },
+        video: { ...CLIP },
+      });
+      const user = await openRewards({ rewards: [withMedia] });
+      patchRewardMock.mockResolvedValue({ ...withMedia, image: null });
+
+      await user.click(screen.getByRole('button', { name: 'Edit Early bird' }));
+      expect(screen.getByRole('textbox', { name: 'Price' })).toBeDisabled();
+      await user.click(screen.getByRole('button', { name: 'Remove image' }));
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+      await tick();
+
+      // Only what changed, and `null` is what takes it down.
+      expect(patchRewardMock).toHaveBeenCalledWith('reward-a', { imageMediaId: null });
+    });
+
+    it('says on the clip’s field when the service measures it as too long', async () => {
+      const user = await openRewards({ rewards: [FIRST] });
+      readVideoDurationMock.mockResolvedValue(null);
+      uploadVideoMock.mockResolvedValue({ ...CLIP, durationMs: 9_000 });
+      patchRewardMock.mockRejectedValue(
+        new ApiError(422, {
+          status: 422,
+          detail: 'The reward video is longer than 5 seconds',
+          code: 'REWARD_VIDEO_TOO_LONG',
+          meta: { field: 'videoMediaId', durationMs: 9_000, maxDurationMs: 5_000 },
+        }),
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Edit Early bird' }));
+      await screen.findByText(/A clip of up to 5 seconds/);
+      choose('video', clip());
+      await tick();
+      await tick();
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+      await tick();
+
+      expect(patchRewardMock).toHaveBeenCalledWith('reward-a', { videoMediaId: CLIP.mediaId });
+      expect(
+        screen.getByText('The reward was not saved: its video is longer than 5 seconds. Choose a shorter clip.'),
+      ).toBeInTheDocument();
     });
   });
 

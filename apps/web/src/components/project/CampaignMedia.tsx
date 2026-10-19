@@ -28,9 +28,9 @@ import { CampaignVideoPlayer } from './CampaignVideoPlayer';
  * "No autoplay" is not a preference. This is the largest element on the largest-contentful-
  * paint-sensitive route in the application (#119), it is the first thing a reader sees, and an
  * autoplaying video costs the connection of somebody on mobile data before they have decided
- * they want it. So the poster is what is served — the cover when the campaign has one, which is
- * the picture the creator chose for the top of their page, and the video's own still when it
- * does not — and the clip is fetched on the press, by `CampaignVideoPlayer`, the client island
+ * they want it. So the poster is what is served — the video's own still when the campaign has a
+ * video, because a campaign with one is covered by it (its cards show the same still), and the
+ * uploaded cover when it does not — and the clip is fetched on the press, by `CampaignVideoPlayer`, the client island
  * that owns the press and mounts the `<video>` element. Nothing else in this header became a
  * client component because of it.
  *
@@ -61,7 +61,7 @@ export async function CampaignMedia({ campaign }: CampaignMediaProps) {
   const t = await getTranslations('campaign.media');
 
   const { video } = campaign;
-  const poster = campaign.coverImage?.url ?? video?.posterUrl ?? null;
+  const poster = video?.posterUrl ?? campaign.coverImage?.url ?? null;
 
   return (
     <MediaFrame ratio="16/9" radius="lg">

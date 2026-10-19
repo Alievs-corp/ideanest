@@ -122,3 +122,89 @@ function deliveryDate(value: unknown): string | null {
   const trimmed = value.trim();
   return /^\d{4}-\d{2}-\d{2}$/u.test(trimmed) && Number.isFinite(Date.parse(trimmed)) ? trimmed : null;
 }
+
+/* -------------------------------------------------------------------------
+ * The card's picture and clip
+ * ---------------------------------------------------------------------- */
+
+/** A reward's picture on its public card — `PublicRewardResponse.image`. */
+export interface RewardCardImage {
+  readonly url: string;
+  readonly width: number;
+  readonly height: number;
+  readonly blurDataUrl: string | null;
+}
+
+/**
+ * A reward's clip — `PublicRewardResponse.video`: at most five seconds, played muted and looping
+ * as a preview, over `posterUrl` until it plays.
+ */
+export interface RewardCardVideo {
+  readonly url: string;
+  readonly posterUrl: string;
+  readonly width: number;
+  readonly height: number;
+  readonly durationMs: number;
+  readonly blurDataUrl: string | null;
+}
+
+export interface RewardMedia {
+  readonly image: RewardCardImage | null;
+  readonly video: RewardCardVideo | null;
+}
+
+/**
+ * The picture and the clip from one entry of the public reward list. Never throws.
+ *
+ * Either is `null` when it is absent or incomplete: a frame reserves its box from the width
+ * and height, so a picture without them is drawn as none rather than as a box of no size.
+ */
+export function readRewardMedia(reward: unknown): RewardMedia {
+  const source = isObject(reward) ? reward : {};
+  return { image: readImage(source['image']), video: readVideo(source['video']) };
+}
+
+function readImage(raw: unknown): RewardCardImage | null {
+  if (!isObject(raw)) return null;
+  const url = webUrl(raw['url']);
+  const width = dimension(raw['width']);
+  const height = dimension(raw['height']);
+  if (url === null || width === null || height === null) return null;
+  return { url, width, height, blurDataUrl: blur(raw['blurDataUrl']) };
+}
+
+function readVideo(raw: unknown): RewardCardVideo | null {
+  if (!isObject(raw)) return null;
+  const url = webUrl(raw['url']);
+  const posterUrl = webUrl(raw['posterUrl']);
+  const width = dimension(raw['width']);
+  const height = dimension(raw['height']);
+  const durationMs = raw['durationMs'];
+  if (url === null || posterUrl === null || width === null || height === null) return null;
+  return {
+    url,
+    posterUrl,
+    width,
+    height,
+    durationMs: typeof durationMs === 'number' && Number.isFinite(durationMs) && durationMs > 0 ? durationMs : 0,
+    blurDataUrl: blur(raw['blurDataUrl']),
+  };
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function webUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return /^https?:\/\//iu.test(trimmed) ? trimmed : null;
+}
+
+function dimension(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function blur(value: unknown): string | null {
+  return typeof value === 'string' && value.startsWith('data:') ? value : null;
+}

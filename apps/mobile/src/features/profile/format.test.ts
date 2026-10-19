@@ -14,6 +14,7 @@ const card = (id: string): ProfileProjectCard => ({
   pledged: null,
   backersCount: 0,
   coverUrl: null,
+  video: null,
 });
 
 describe('knownTotal', () => {
@@ -85,6 +86,23 @@ describe('the wire', () => {
     expect(page.items.map((item) => item.id)).toEqual(['1']);
     expect(page.items[0]?.goal).toEqual({ amount: '10.00', currency: 'AZN' });
     expect(page.nextCursor).toBeNull();
+  });
+
+  it('covers a campaign with a video by its poster, and keeps the clip for the hold preview', () => {
+    const base = { title: 'A', slug: 'a', creatorSlug: 'c', state: 'LIVE', coverImage: { url: 'https://cdn/cover.jpg' } };
+    const page = readProjectCardPage({
+      projects: [
+        { ...base, id: '1', video: { url: 'https://cdn/v.mp4', posterUrl: 'https://cdn/v.jpg', width: 1280, height: 720 } },
+        { ...base, id: '2' },
+        // Incomplete: no size, so it is no video at all rather than a clip without a still.
+        { ...base, id: '3', video: { url: 'https://cdn/v.mp4', posterUrl: 'https://cdn/v.jpg' } },
+      ],
+    });
+    expect(page.items.map((item) => [item.coverUrl, item.video?.url ?? null])).toEqual([
+      ['https://cdn/v.jpg', 'https://cdn/v.mp4'],
+      ['https://cdn/cover.jpg', null],
+      ['https://cdn/cover.jpg', null],
+    ]);
   });
 
   it('opens https only', () => {

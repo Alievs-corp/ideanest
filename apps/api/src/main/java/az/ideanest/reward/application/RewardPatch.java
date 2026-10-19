@@ -6,6 +6,7 @@ import az.ideanest.shared.Patched;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A partial edit of a reward tier, with JSON Merge-Patch semantics (RFC 7396).
@@ -25,6 +26,10 @@ import java.util.List;
  * <em>not</em> here: they are replaced wholesale through
  * {@code PUT /v1/rewards/{id}/shipping-rules}, because a rate table is read as a
  * whole by whatever quotes from it.
+ *
+ * <p>{@code imageMediaId} and {@code videoMediaId} name uploads; null removes the tier's
+ * picture or clip. Neither is locked at launch: a picture shows the reward, and changing
+ * it does not change what a backer is owed.
  */
 public record RewardPatch(
         Patched<String> title,
@@ -39,7 +44,9 @@ public record RewardPatch(
         Patched<Boolean> addon,
         Patched<Instant> availableFrom,
         Patched<Instant> availableUntil,
-        Patched<List<RewardContent>> items) {
+        Patched<List<RewardContent>> items,
+        Patched<UUID> imageMediaId,
+        Patched<UUID> videoMediaId) {
 
     public RewardPatch {
         // Absence, not null, is the neutral value. See Patched.
@@ -56,6 +63,8 @@ public record RewardPatch(
         availableFrom = Patched.orAbsent(availableFrom);
         availableUntil = Patched.orAbsent(availableUntil);
         items = Patched.orAbsent(items);
+        imageMediaId = Patched.orAbsent(imageMediaId);
+        videoMediaId = Patched.orAbsent(videoMediaId);
     }
 
     /**

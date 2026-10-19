@@ -83,6 +83,11 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
 export interface CampaignVideoFieldProps {
   copy: CampaignVideoCopy;
   video: CampaignVideo | null;
+  /**
+   * The longest clip the field takes, in seconds: the campaign video's sixty unless the field
+   * is a reward's (`REWARD_VIDEO_MAX_SECONDS`). Every `{seconds}` in the copy is filled from it.
+   */
+  maxSeconds?: number;
   disabled?: boolean;
   /** A message about the saved value — the service refusing to attach it. */
   error?: string;
@@ -92,6 +97,11 @@ export interface CampaignVideoFieldProps {
    */
   onAccept: (video: CampaignVideo) => void;
   onRemove: () => void;
+  /**
+   * Told when an upload starts and ends, for a form that saves on a button — a reward's
+   * drawer keeps Save disabled until the clip it is waiting for is ready or abandoned.
+   */
+  onBusyChange?: (busy: boolean) => void;
 }
 
 type Stage = 'checking' | 'preparing' | 'uploading' | 'processing';
@@ -101,10 +111,12 @@ type Note = { tone: 'success' | 'danger'; title?: string; text: string };
 export function CampaignVideoField({
   copy,
   video,
+  maxSeconds = VIDEO_MAX_SECONDS,
   disabled = false,
   error,
   onAccept,
   onRemove,
+  onBusyChange,
 }: CampaignVideoFieldProps) {
   const [stage, setStage] = useState<Stage | null>(null);
   /** How much of the file has reached storage, 0 to 1. Meaningful only while `uploading`. */
@@ -122,6 +134,13 @@ export function CampaignVideoField({
   useEffect(() => () => inFlight.current?.abort(), []);
 
   const busy = stage !== null;
+
+  // Read through a ref so a parent passing a new function each render does not re-run this.
+  const busyListener = useRef(onBusyChange);
+  busyListener.current = onBusyChange;
+  useEffect(() => {
+    busyListener.current?.(busy);
+  }, [busy]);
   /** From the first byte on, leaving the page throws work away. */
   const atRisk = stage === 'uploading' || stage === 'processing';
 
@@ -165,7 +184,7 @@ export function CampaignVideoField({
     if (cause instanceof UploadFailed) {
       // The service's sentence only when this build has no words for its code: it is English
       // written for a log, and every code it sends today is in the catalogue.
-      return refusalFor(copy, cause.code) ?? (cause.message === '' ? copy.unusable : cause.message);
+      return refusalFor(copy, cause.code, maxSeconds) ?? (cause.message === '' ? copy.unusable : cause.message);
     }
     return copy.unusable;
   }
@@ -225,7 +244,7 @@ export function CampaignVideoField({
     const tooBig = videoPreflightRefusal({ byteSize: file.size, durationMs: null });
     if (tooBig !== null) {
       setStillProcessing(null);
-      refused(refusalFor(copy, tooBig) ?? copy.unusable);
+      refused(refusalFor(copy, tooBig, maxSeconds) ?? copy.unusable);
       return;
     }
 
@@ -233,12 +252,12 @@ export function CampaignVideoField({
       const durationMs = await readVideoDuration(file, signal);
       if (
         durationMs !== null &&
-        videoPreflightRefusal({ byteSize: file.size, durationMs }) === 'TOO_LONG'
+        videoPreflightRefusal({ byteSize: file.size, durationMs }, maxSeconds) === 'TOO_LONG'
       ) {
         refused(
           fillPlaceholders(copy.tooLong, {
             duration: formatVideoDuration(durationMs),
-            seconds: String(VIDEO_MAX_SECONDS),
+            seconds: String(maxSeconds),
           }),
         );
         return null;
@@ -264,7 +283,7 @@ export function CampaignVideoField({
     <Field
       grouped
       label={copy.label}
-      hint={fillPlaceholders(copy.hint, { seconds: String(VIDEO_MAX_SECONDS) })}
+      hint={fillPlaceholders(copy.hint, { seconds: String(maxSeconds) })}
       error={error}
     >
       <div ref={region} className="flex flex-col gap-3">
@@ -452,10 +471,10 @@ export function CampaignVideoField({
  * An unknown code falls through to the caller: the deployment may refuse for a reason this
  * build has never heard of, and its own sentence is better than silence.
  */
-function refusalFor(copy: CampaignVideoCopy, code: string): string | null {
+function refusalFor(copy: CampaignVideoCopy, code: string, maxSeconds: number): string | null {
   if (!isKnownCode(code)) return null;
   return fillPlaceholders(copy.failures[code], {
-    seconds: String(VIDEO_MAX_SECONDS),
+    seconds: String(maxSeconds),
     megabytes: String(VIDEO_MAX_MEGABYTES),
   });
 }

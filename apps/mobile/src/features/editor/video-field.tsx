@@ -28,17 +28,47 @@ import type { VideoUpload } from './use-video-upload';
  *
  * <p>No camera: the app declares no microphone permission (`app.config.ts`, the image picker's
  * plugin), and a campaign video recorded without sound is not one anybody wants.
+ *
+ * <p>A reward tier's clip is drawn by the same field with its own `words` (its label, its five
+ * seconds, what "ready" means in a drawer that saves on Save) and its own `testID` prefix.
  */
-export function VideoField({ upload, disabled = false }: { readonly upload: VideoUpload; readonly disabled?: boolean }) {
+export interface VideoFieldWords {
+  readonly label: string;
+  readonly hint: string;
+  /** Said once the clip is ready. */
+  readonly set: string;
+  /** The processing stage, which for a minute-long clip says it takes a minute. */
+  readonly processing?: string;
+}
+
+export function VideoField({
+  upload,
+  disabled = false,
+  words,
+  error,
+  testID = 'video',
+}: {
+  readonly upload: VideoUpload;
+  readonly disabled?: boolean;
+  /** The campaign video's own words when absent. */
+  readonly words?: VideoFieldWords;
+  readonly error?: string | undefined;
+  readonly testID?: string;
+}) {
   const t = useT('mobile.editor.video');
   const { video, stage, percent, busy, failure, added } = upload;
   const off = disabled || busy;
+  const stageText = (current: NonNullable<typeof stage>): string => {
+    if (current === 'uploading') return t('stage.uploading', { percent });
+    if (current === 'processing' && words?.processing !== undefined) return words.processing;
+    return t(`stage.${current}`);
+  };
 
   return (
-    <Field label={t('label')} hint={t('hint')} grouped>
+    <Field label={words?.label ?? t('label')} hint={words?.hint ?? t('hint')} error={error} grouped>
       <View style={styles.body}>
         {video === null ? null : (
-          <View style={styles.figure} testID="video-preview">
+          <View style={styles.figure} testID={`${testID}-preview`}>
             <Media
               src={video.posterUrl}
               ratio="16/9"
@@ -47,14 +77,14 @@ export function VideoField({ upload, disabled = false }: { readonly upload: Vide
               decorative
             />
             <View style={styles.caption}>
-              <Caption testID="video-length">{t('length', { duration: clockDuration(video.durationMs) })}</Caption>
+              <Caption testID={`${testID}-length`}>{t('length', { duration: clockDuration(video.durationMs) })}</Caption>
               <Pill
                 label={t('remove')}
                 variant="ghost"
                 size="sm"
                 disabled={disabled}
                 onPress={upload.remove}
-                testID="video-remove"
+                testID={`${testID}-remove`}
               />
             </View>
           </View>
@@ -69,7 +99,7 @@ export function VideoField({ upload, disabled = false }: { readonly upload: Vide
             busy={busy}
             disabled={off}
             onPress={() => void upload.pick()}
-            testID="video-choose"
+            testID={`${testID}-choose`}
           />
         </View>
 
@@ -77,8 +107,8 @@ export function VideoField({ upload, disabled = false }: { readonly upload: Vide
           <InlineAlert
             variant="info"
             politeness="polite"
-            description={stage === 'uploading' ? t('stage.uploading', { percent }) : t(`stage.${stage}`)}
-            testID="video-stage"
+            description={stageText(stage)}
+            testID={`${testID}-stage`}
           />
         )}
         {failure === null ? null : (
@@ -86,7 +116,7 @@ export function VideoField({ upload, disabled = false }: { readonly upload: Vide
             variant="danger"
             title={failure.title}
             description={failure.text}
-            testID="video-failure"
+            testID={`${testID}-failure`}
             action={
               upload.canCheckAgain ? (
                 <View style={styles.start}>
@@ -96,7 +126,7 @@ export function VideoField({ upload, disabled = false }: { readonly upload: Vide
                     size="sm"
                     disabled={disabled}
                     onPress={() => void upload.checkAgain()}
-                    testID="video-check-again"
+                    testID={`${testID}-check-again`}
                   />
                 </View>
               ) : undefined
@@ -104,7 +134,12 @@ export function VideoField({ upload, disabled = false }: { readonly upload: Vide
           />
         )}
         {stage === null && failure === null && added && video !== null ? (
-          <InlineAlert variant="success" politeness="polite" description={t('set')} testID="video-note" />
+          <InlineAlert
+            variant="success"
+            politeness="polite"
+            description={words?.set ?? t('set')}
+            testID={`${testID}-note`}
+          />
         ) : null}
       </View>
     </Field>

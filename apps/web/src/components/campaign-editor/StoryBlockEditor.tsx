@@ -7,13 +7,14 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
-import { useId, useRef, useState } from 'react';
+import { Suspense, lazy, useId, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
   CircleAlert,
   Heading2,
   Image as ImageIcon,
+  LayoutPanelTop,
   List,
   Minus,
   Quote,
@@ -38,11 +39,21 @@ import {
   renameHeading,
   replaceBlock,
   spansToText,
+  storyAnchorIds,
   type StoryBlock,
   type StoryBlockType,
   type StoryDocument,
 } from '@ideanest/campaign-editor/story';
 import { StoryTextField } from './StoryTextField';
+
+/**
+ * A section's fields, fetched the first time a story has a section rather than with the tab,
+ * for the reason `BasicsPanel` gives about its video field: most stories have none, and the
+ * tab's First Load JS pays for every visit.
+ */
+const SectionFields = lazy(() =>
+  import('./StorySectionFields').then((module) => ({ default: module.SectionFields })),
+);
 
 /**
  * The story, as a list of blocks made of real form controls.
@@ -97,6 +108,7 @@ const ADDABLE: readonly { type: StoryBlockType; icon: typeof Text }[] = [
   { type: 'quote', icon: Quote },
   { type: 'image', icon: ImageIcon },
   { type: 'embed', icon: Video },
+  { type: 'section', icon: LayoutPanelTop },
   { type: 'rule', icon: Minus },
 ];
 
@@ -145,8 +157,8 @@ export function StoryBlockEditor({
   }
 
   function add(type: StoryBlockType): void {
-    const headings = blocks.filter((block) => block.type === 'heading').map((block) => block.id);
-    const block = newBlock(type, headings);
+    // Headings and sections share one set of anchors, so a new one avoids both.
+    const block = newBlock(type, storyAnchorIds(blocks));
     // Appended rather than inserted at a focused position: there is no "current
     // block" when the focus is on the add row, and guessing would put a paragraph
     // somewhere the creator did not ask for.
@@ -225,9 +237,7 @@ export function StoryBlockEditor({
               onRemove={() => remove(index)}
               onChange={(next) => update(index, next)}
               onFlush={onFlush}
-              headingIdsInUse={blocks
-                .filter((other, at) => other.type === 'heading' && at !== index)
-                .map((other) => (other.type === 'heading' ? other.id : ''))}
+              headingIdsInUse={storyAnchorIds(blocks, index)}
             />
           ))}
         </ol>
@@ -598,6 +608,24 @@ function BlockFields({
           />
           <p className="text-[13px] text-white/40">{copy.embedHint}</p>
         </div>
+      );
+
+    case 'section':
+      return (
+        <Suspense fallback={<div aria-hidden="true" className="h-48" />}>
+          <SectionFields
+            copy={copy}
+            toolbar={toolbar}
+            block={block}
+            name={name}
+            disabled={disabled}
+            invalid={invalid}
+            describedBy={describedBy}
+            onChange={onChange}
+            onFlush={onFlush}
+            anchorsInUse={headingIdsInUse}
+          />
+        </Suspense>
       );
   }
 }

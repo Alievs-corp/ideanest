@@ -31,6 +31,9 @@ import java.util.UUID;
  * @param creator who is asking for the money
  * @param coverImage null while the campaign has none; §5.3 requires one to submit,
  *     and a {@code PRELAUNCH} teaser has not submitted
+ * @param video the campaign's video when it has a ready one, else null. A client shows
+ *     its poster as the cover and plays it on hover or a long press; {@code coverImage}
+ *     stays the uploaded cover either way
  * @param goal null on a campaign that has not set one — a {@code PRELAUNCH} row
  * @param pledged never null; the column defaults to zero
  * @param completionPercent null when there is no goal to be a percentage of
@@ -54,6 +57,7 @@ public record ProjectCard(
         String title,
         Creator creator,
         CoverImage coverImage,
+        Video video,
         Money goal,
         Money pledged,
         BigDecimal completionPercent,
@@ -82,6 +86,15 @@ public record ProjectCard(
      * that shifts under the reader's cursor.
      */
     public record CoverImage(String url, int width, int height) {
+    }
+
+    /**
+     * The campaign video, as much of it as a card needs to preview: no duration, no
+     * placeholder, nothing a grid does not render.
+     *
+     * @param width of the transcoded frame, so the poster's box is reserved
+     */
+    public record Video(String url, String posterUrl, int width, int height) {
     }
 
     /**

@@ -32,9 +32,10 @@ import java.util.Set;
  *
  * <p>The block union is exactly the epic contract §5 and
  * {@code docs/architecture.md} §4.6: headings, paragraphs, lists, quotes, rules,
- * inline images, and third-party embeds. No block is added here without the
- * public project page being taught to render it, because a document containing
- * one would validate and then display as nothing.
+ * inline images, third-party embeds, and titled sections with an optional image.
+ * No block is added here without the public project page being taught to render
+ * it, because a document containing one would validate and then display as
+ * nothing.
  */
 public final class StoryDocuments {
 
@@ -173,6 +174,8 @@ public final class StoryDocuments {
             switch (type) {
                 case "heading" -> total += codePoints(textOrEmpty(block.get("text")));
                 case "paragraph", "quote" -> total += spanCharacters(block.get("spans"));
+                case "section" -> total += codePoints(textOrEmpty(block.get("title")))
+                        + spanCharacters(block.get("spans"));
                 case "list" -> {
                     JsonNode items = block.get("items");
                     if (items != null && items.isArray()) {
@@ -183,7 +186,8 @@ public final class StoryDocuments {
                 }
                 default -> {
                     // `rule`, `image`, `embed`, and anything an older document
-                    // holds contribute no prose.
+                    // holds contribute no prose. A section's image alt does not
+                    // either, for the reason an image block's does not.
                 }
             }
         }
@@ -220,6 +224,8 @@ public final class StoryDocuments {
         for (JsonNode block : blocks) {
             String type = textOrEmpty(block.get("type"));
             if ("image".equals(type) || "embed".equals(type)) {
+                total++;
+            } else if ("section".equals(type) && hasImage(block)) {
                 total++;
             }
         }
@@ -267,10 +273,11 @@ public final class StoryDocuments {
             case "rule" -> requireOnly(block, path, List.of("type"));
             case "image" -> validateImage(block, path);
             case "embed" -> validateEmbed(block, path);
+            case "section" -> validateSection(block, path, headingIds);
             default -> throw invalid(
                     path + ".type",
                     "\"" + type.stringValue() + "\" is not a kind of story block. The kinds are heading, "
-                            + "paragraph, list, quote, rule, image, and embed.");
+                            + "paragraph, list, quote, rule, image, embed, and section.");
         }
     }
 
@@ -290,12 +297,49 @@ public final class StoryDocuments {
             throw invalid(path + ".text", "A heading of more than 200 characters is a paragraph.");
         }
 
+        requireAnchor(block, path, headingIds, "heading");
+    }
+
+    /**
+     * A titled part of the story: an {@code h2} on the page, an optional image under the
+     * title, then text.
+     *
+     * <p>The title follows a heading's rules and the id shares the headings' set, because
+     * the anchor navigation lists a section exactly as it lists an {@code h2}. The
+     * {@code image} key is required and may be null, so every section has one shape.
+     */
+    private static void validateSection(JsonNode block, String path, Set<String> headingIds) {
+        requireOnly(block, path, List.of("type", "id", "title", "image", "spans"));
+
+        String title = requireNonBlankText(block.get("title"), path + ".title", "A section needs its title.");
+        if (codePoints(title) > 200) {
+            throw invalid(path + ".title", "A section title of more than 200 characters is a paragraph.");
+        }
+        requireAnchor(block, path, headingIds, "section");
+
+        JsonNode image = block.get("image");
+        if (image == null) {
+            throw invalid(path + ".image", "A section says whether it has an image: null when it has none.");
+        }
+        if (!image.isNull()) {
+            if (!image.isObject()) {
+                throw invalid(path + ".image", "A section's image is an object, or null.");
+            }
+            requireOnly(image, path + ".image", List.of("url", "width", "height", "alt"));
+            validateImageFields(image, path + ".image");
+        }
+
+        validateSpans(block.get("spans"), path + ".spans");
+    }
+
+    /** A heading's or a section's anchor: a slug, unique across the document. */
+    private static void requireAnchor(JsonNode block, String path, Set<String> headingIds, String kind) {
         String id = requireNonBlankText(
-                block.get("id"), path + ".id", "A heading needs an id: it is the anchor the navigation links to.");
+                block.get("id"), path + ".id", "A " + kind + " needs an id: it is the anchor the navigation links to.");
         if (!isSlug(id)) {
             throw invalid(
                     path + ".id",
-                    "\"" + id + "\" is not usable as an anchor. A heading id is lowercase letters, digits, "
+                    "\"" + id + "\" is not usable as an anchor. A " + kind + " id is lowercase letters, digits, "
                             + "and single hyphens between them.");
         }
         if (!headingIds.add(id)) {
@@ -330,7 +374,11 @@ public final class StoryDocuments {
 
     private static void validateImage(JsonNode block, String path) {
         requireOnly(block, path, List.of("type", "url", "width", "height", "alt"));
+        validateImageFields(block, path);
+    }
 
+    /** What an image is, whether it is a block of its own or a section's. */
+    private static void validateImageFields(JsonNode block, String path) {
         requireWebUrl(block.get("url"), path + ".url");
         requirePositiveInt(block.get("width"), path + ".width");
         requirePositiveInt(block.get("height"), path + ".height");
@@ -498,6 +546,12 @@ public final class StoryDocuments {
             total += codePoints(textOrEmpty(span.get("text")));
         }
         return total;
+    }
+
+    /** Whether a section carries an image. Tolerant, as the counts that call it are. */
+    private static boolean hasImage(JsonNode block) {
+        JsonNode image = block.get("image");
+        return image != null && image.isObject();
     }
 
     private static int codePoints(String value) {

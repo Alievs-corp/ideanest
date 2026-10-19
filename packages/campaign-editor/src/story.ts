@@ -21,8 +21,10 @@ import { pluralise } from '@ideanest/messages/plurals';
 import type { StoryVocabularyCopy } from './copy';
 import {
   STORY_SCHEMA_VERSION,
+  storyAnchors,
   type HeadingBlock,
-  type HeadingLevel,
+  type SectionBlock,
+  type StoryAnchor,
   type StoryBlock,
   type StoryBlockType,
   type StoryDocument,
@@ -45,6 +47,7 @@ export {
   STORY_SCHEMA_VERSION,
   isEmbedProvider,
   readStoryDocument,
+  storyAnchors,
   type EmbedBlock,
   type EmbedProvider,
   type HeadingBlock,
@@ -54,6 +57,9 @@ export {
   type ParagraphBlock,
   type QuoteBlock,
   type RuleBlock,
+  type SectionBlock,
+  type SectionImage,
+  type StoryAnchor,
   type StoryBlock,
   type StoryBlockType,
   type StoryDocument,
@@ -67,6 +73,9 @@ export const STORY_MIN_CHARACTERS = 500;
 
 /** §5.3: risks and challenges are required, and at least two hundred characters. */
 export const RISKS_MIN_CHARACTERS = 200;
+
+/** A section's title, in code points — the server's ceiling on a heading's text, shared. */
+export const SECTION_TITLE_MAX_CHARACTERS = 200;
 
 export function emptyStory(): StoryDocument {
   return { version: STORY_SCHEMA_VERSION, blocks: [] };
@@ -142,17 +151,28 @@ export function uniqueHeadingId(text: string, taken: Iterable<string>): string {
   return `${base}-${used.size + 1}`;
 }
 
-export interface StoryAnchor {
-  id: string;
-  text: string;
-  level: HeadingLevel;
+/**
+ * The anchor navigation of §4.6: the headings, and each section as a level-2 entry.
+ *
+ * The same list the campaign page draws, because it is `storyAnchors` from the reader.
+ */
+export function headingAnchors(document: StoryDocument): readonly StoryAnchor[] {
+  return storyAnchors(document);
 }
 
-/** The anchor navigation of §4.6, generated from the headings and nothing else. */
-export function headingAnchors(document: StoryDocument): readonly StoryAnchor[] {
-  return document.blocks
-    .filter((block): block is HeadingBlock => block.type === 'heading')
-    .map((heading) => ({ id: heading.id, text: heading.text, level: heading.level }));
+/**
+ * Every anchor in use — headings' and sections' ids, which share one namespace — leaving out
+ * the block at `except`, so a block being renamed does not collide with itself.
+ *
+ * What `newBlock`, `renameHeading` and `renameSection` take as their taken anchors.
+ */
+export function storyAnchorIds(blocks: readonly StoryBlock[], except?: number): readonly string[] {
+  const ids: string[] = [];
+  blocks.forEach((block, at) => {
+    if (at === except) return;
+    if (block.type === 'heading' || block.type === 'section') ids.push(block.id);
+  });
+  return ids;
 }
 
 /* -------------------------------------------------------------------------
@@ -195,9 +215,28 @@ export function storyCharacterCount(document: StoryDocument): number {
       case 'list':
         for (const item of block.items) total += spanCharacters(item);
         break;
+      case 'section':
+        // Its title is prose like a heading's; its picture's description is not.
+        total += characterCount(block.title) + spanCharacters(block.spans);
+        break;
       default:
         break;
     }
+  }
+  return total;
+}
+
+/**
+ * How many pictures and embeds the story holds — the checklist's `STORY_MEDIA`.
+ *
+ * `StoryDocuments.mediaCount` counts the same: each image and embed block, and each section
+ * that has a picture.
+ */
+export function storyMediaCount(document: StoryDocument): number {
+  let total = 0;
+  for (const block of document.blocks) {
+    if (block.type === 'image' || block.type === 'embed') total++;
+    else if (block.type === 'section' && block.image !== null) total++;
   }
   return total;
 }
@@ -508,6 +547,15 @@ export function newBlock(type: StoryBlockType, existingIds: Iterable<string> = [
       return { type: 'image', url: '', width: 0, height: 0, alt: '' };
     case 'embed':
       return { type: 'embed', provider: 'youtube', url: '', title: '' };
+    case 'section':
+      // An anchor now, for the reason a heading gets one; no picture until one is chosen.
+      return {
+        type: 'section',
+        id: uniqueHeadingId('Section', existingIds),
+        title: '',
+        image: null,
+        spans: [],
+      };
   }
 }
 
@@ -600,6 +648,25 @@ export function blockProblem(block: StoryBlock, copy: StoryVocabularyCopy): stri
       }
       return null;
     }
+    case 'section': {
+      if (block.title.trim() === '') return copy.problems.sectionNeedsTitle;
+      if (characterCount(block.title) > SECTION_TITLE_MAX_CHARACTERS) {
+        return fillPlaceholders(copy.problems.sectionTitleTooLong, {
+          max: String(SECTION_TITLE_MAX_CHARACTERS),
+        });
+      }
+      if (slugifyHeading(block.id) !== block.id || block.id === '') {
+        return copy.problems.anchorUnusable;
+      }
+      // The picture, under the image block's rules.
+      const image = block.image;
+      if (image === null) return null;
+      if (image.url.trim() === '') return copy.problems.imageNeedsUrl;
+      if (!isWebUrl(image.url)) return copy.problems.urlScheme;
+      if (image.width <= 0 || image.height <= 0) return copy.problems.imageNotMeasured;
+      if (image.alt.trim() === '') return copy.problems.imageNeedsAlt;
+      return null;
+    }
     default:
       return null;
   }
@@ -632,9 +699,10 @@ export function storyProblems(
       problems.set(index, problem);
       return;
     }
-    if (block.type === 'heading') {
+    if (block.type === 'heading' || block.type === 'section') {
       // Duplicated anchors are the failure that looks like it works: every link in
-      // the navigation resolves and half of them scroll to the wrong heading.
+      // the navigation resolves and half of them scroll to the wrong heading. A
+      // section's anchor is in the same set — both are fragments of one URL.
       if (anchors.has(block.id)) {
         problems.set(index, copy.problems.anchorDuplicate);
         return;
@@ -693,9 +761,25 @@ export function renameHeading(
   text: string,
   taken: Iterable<string>,
 ): HeadingBlock {
-  const generated = slugifyHeading(block.text);
-  const keepsItsAnchor = block.id !== generated && block.text !== '';
-  return { ...block, text, id: keepsItsAnchor ? block.id : uniqueHeadingId(text, taken) };
+  return { ...block, text, id: followedAnchor(block.id, block.text, text, taken) };
+}
+
+/**
+ * A section with a new title, and the anchor that goes with it — {@link renameHeading}'s rule.
+ *
+ * `taken` is every other heading's and section's anchor; see {@link storyAnchorIds}.
+ */
+export function renameSection(
+  block: SectionBlock,
+  title: string,
+  taken: Iterable<string>,
+): SectionBlock {
+  return { ...block, title, id: followedAnchor(block.id, block.title, title, taken) };
+}
+
+function followedAnchor(id: string, before: string, after: string, taken: Iterable<string>): string {
+  const keepsItsAnchor = id !== slugifyHeading(before) && before !== '';
+  return keepsItsAnchor ? id : uniqueHeadingId(after, taken);
 }
 
 /* -------------------------------------------------------------------------
@@ -756,6 +840,11 @@ export function describeBlock(
         position,
         title: block.title.trim() === '' ? copy.describe.embedNoTitle : block.title,
       });
+    case 'section':
+      return fillPlaceholders(
+        block.image === null ? copy.describe.section : copy.describe.sectionWithImage,
+        { position, title: block.title.trim() === '' ? copy.describe.sectionEmpty : block.title },
+      );
   }
 }
 

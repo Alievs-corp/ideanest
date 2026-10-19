@@ -4,7 +4,7 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "The discovery feed's filter state, wire vocabularies, money bounds, empty-state blame, the category taxonomy and curated collections, shared by apps/web and apps/mobile.",
+  "description": "The discovery feed's filter state, wire vocabularies, money bounds, empty-state blame, the category taxonomy, curated collections and the card cover choice, shared by apps/web and apps/mobile.",
   "exports": {
     "./vocabulary": "./src/vocabulary.ts",
     "./filters": "./src/filters.ts",
@@ -14,7 +14,8 @@
     "./copy": "./src/copy.ts",
     "./taxonomy": "./src/taxonomy.ts",
     "./collections": "./src/collections.ts",
-    "./category-look": "./src/category-look.ts"
+    "./category-look": "./src/category-look.ts",
+    "./card-media": "./src/card-media.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

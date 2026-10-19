@@ -12,17 +12,19 @@ import {
   isEmbedProvider,
   parseSpans,
   renameHeading,
+  renameSection,
   spansToText,
   type EmbedBlock,
   type HeadingBlock,
   type ListBlock,
+  type SectionBlock,
   type StoryBlock,
 } from '@ideanest/campaign-editor/story';
 import { Caption, Icon, IconButton, Meta, Pill, Select, TextInput } from '../../../components/ui';
 import { Glyphs } from '../../../icons';
 import { colors, radius, spacing } from '../../../theme';
 import type { StoryCopy } from './story-copy';
-import { StoryImageFields } from './story-image-fields';
+import { StoryImageFields, type StoryPicture } from './story-image-fields';
 import { useStoryScroll } from './story-scroll';
 import { StoryTextField } from './story-text-field';
 
@@ -256,7 +258,7 @@ function BlockFields(props: FieldsProps) {
       return (
         <StoryImageFields
           copy={copy}
-          block={block}
+          value={block}
           name={name}
           disabled={disabled}
           invalid={invalid}
@@ -267,6 +269,8 @@ function BlockFields(props: FieldsProps) {
       );
     case 'embed':
       return <EmbedFields {...props} block={block} />;
+    case 'section':
+      return <SectionFields {...props} block={block} />;
   }
 }
 
@@ -487,6 +491,112 @@ function EmbedFields({
   );
 }
 
+/** What the picture fields edit while a section has none: nothing is stored until one is chosen. */
+const NO_PICTURE: StoryPicture = { url: '', width: 0, height: 0, alt: '' };
+
+/**
+ * A section: its title (the anchor follows it, as a heading's does), an optional picture through
+ * the image block's own fields, and its text with the marks toolbar. A picture is stored only
+ * once it is chosen; until then the section has `image: null`, which is complete.
+ */
+function SectionFields({
+  copy,
+  block,
+  name,
+  disabled,
+  invalid,
+  problem,
+  takenAnchors,
+  autoFocus,
+  onChange,
+  onFlush,
+  testID,
+}: FieldsProps & { readonly block: SectionBlock }) {
+  const blocks = copy.story.blocks;
+  const section = blocks.sectionBlock;
+  // Removing remounts the picture fields, so the "measured" note of the old picture goes with it.
+  const [removals, setRemovals] = useState(0);
+  const image = block.image;
+
+  return (
+    <View style={styles.fields}>
+      <View style={styles.part}>
+        <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {section.title}
+        </Caption>
+        <RevealingInput
+          value={block.title}
+          disabled={disabled}
+          invalid={invalid && block.title.trim() === '' ? true : undefined}
+          accessibilityLabel={fillPlaceholders(blocks.titleOf, { name })}
+          accessibilityHint={problem ?? undefined}
+          placeholder={section.titlePlaceholder}
+          autoFocus={autoFocus}
+          onChangeText={(title) => onChange(renameSection(block, title, takenAnchors()))}
+          onBlur={onFlush}
+          testID={`${testID}-title`}
+        />
+      </View>
+
+      <View style={styles.part} testID={`${testID}-picture`}>
+        <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {`${section.image} · ${section.imageHint}`}
+        </Caption>
+        <StoryImageFields
+          key={removals}
+          copy={copy}
+          value={image ?? NO_PICTURE}
+          name={name}
+          disabled={disabled}
+          invalid={invalid}
+          hideAltUntilMeasured={image === null}
+          onChange={(next, sendNow) =>
+            onChange(
+              { ...block, image: { url: next.url, width: next.width, height: next.height, alt: next.alt } },
+              sendNow,
+            )
+          }
+          onFlush={onFlush}
+          testID={`${testID}-image`}
+        />
+        {image === null ? null : (
+          <View style={styles.start}>
+            <Pill
+              label={section.removeImage}
+              accessibilityLabel={fillPlaceholders(section.removeImageFrom, { name })}
+              iconLeft={Glyphs.Trash}
+              variant="ghost"
+              size="sm"
+              disabled={disabled}
+              onPress={() => {
+                setRemovals((count) => count + 1);
+                onChange({ ...block, image: null }, true);
+              }}
+              testID={`${testID}-image-remove`}
+            />
+          </View>
+        )}
+      </View>
+
+      <View style={styles.part}>
+        <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {section.text}
+        </Caption>
+        <StoryTextField
+          toolbar={copy.story.toolbar}
+          value={spansToText(block.spans)}
+          label={fillPlaceholders(blocks.textOf, { name })}
+          placeholder={section.textPlaceholder}
+          disabled={disabled}
+          onChange={(text) => onChange({ ...block, spans: parseSpans(text) })}
+          onBlur={onFlush}
+          testID={`${testID}-text`}
+        />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     gap: spacing[3],
@@ -502,6 +612,7 @@ const styles = StyleSheet.create({
   // finger meant for "move down" cannot land on "delete".
   buttons: { flexDirection: 'row', gap: spacing[3] },
   fields: { gap: spacing[3] },
+  part: { gap: spacing[2] },
   rule: { gap: spacing[2] },
   line: { height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong },
   item: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },

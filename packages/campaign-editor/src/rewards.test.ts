@@ -16,6 +16,7 @@ import {
   emptyReward,
   fieldErrorsFrom,
   hidePatch,
+  isRewardVideoTooLong,
   isEmptyPatch,
   isHiddenReward,
   isItemField,
@@ -632,5 +633,62 @@ describe('the sentences the list draws (#162)', () => {
     expect(describeItemInUse(inUse(null), [REWARD], REWARDS_COPY)).toBe(
       'It is part of a reward in this campaign. Take it out of that reward first, then delete it.',
     );
+  });
+});
+
+describe('a reward picture and clip', () => {
+  const IMAGE = { mediaId: 'media-image', url: 'https://cdn.example/r.jpg', width: 1200, height: 900 };
+  const VIDEO = {
+    mediaId: 'media-video',
+    url: 'https://cdn.example/r.mp4',
+    posterUrl: 'https://cdn.example/r.jpg',
+    width: 1280,
+    height: 720,
+    durationMs: 4_800,
+  };
+  const WITH_MEDIA: Reward = { ...REWARD, image: IMAGE, video: VIDEO };
+
+  it('carries both into the draft, and none for a tier without them', () => {
+    expect(rewardDraftFrom(WITH_MEDIA)).toMatchObject({ image: IMAGE, video: VIDEO });
+    expect(rewardDraftFrom(REWARD)).toMatchObject({ image: null, video: null });
+    expect(emptyReward('AZN')).toMatchObject({ image: null, video: null });
+  });
+
+  it('creates a tier with the uploads it names, and leaves the keys out when there are none', () => {
+    expect(newRewardFrom(draft({ image: IMAGE, video: VIDEO }))).toMatchObject({
+      imageMediaId: 'media-image',
+      videoMediaId: 'media-video',
+    });
+    const plain = newRewardFrom(draft());
+    expect('imageMediaId' in plain).toBe(false);
+    expect('videoMediaId' in plain).toBe(false);
+  });
+
+  it('sends nothing about media that did not change', () => {
+    expect(isEmptyPatch(rewardPatchFrom(rewardDraftFrom(WITH_MEDIA), WITH_MEDIA))).toBe(true);
+    // A tier whose response left the keys out entirely is the same as one with nulls.
+    expect(isEmptyPatch(rewardPatchFrom(rewardDraftFrom(REWARD), REWARD))).toBe(true);
+  });
+
+  it('sends the new upload when one is replaced, and null when one is taken down', () => {
+    const replaced = { ...rewardDraftFrom(WITH_MEDIA), image: { ...IMAGE, mediaId: 'media-image-2' } };
+    expect(rewardPatchFrom(replaced, WITH_MEDIA)).toEqual({ imageMediaId: 'media-image-2' });
+
+    const cleared = { ...rewardDraftFrom(WITH_MEDIA), video: null };
+    expect(rewardPatchFrom(cleared, WITH_MEDIA)).toEqual({ videoMediaId: null });
+
+    const added = { ...rewardDraftFrom(REWARD), video: VIDEO };
+    expect(rewardPatchFrom(added, REWARD)).toEqual({ videoMediaId: 'media-video' });
+  });
+
+  it('places a refusal about either upload on its field', () => {
+    expect(isRewardField('imageMediaId')).toBe(true);
+    expect(isRewardField('videoMediaId')).toBe(true);
+  });
+
+  it('recognises the service refusing a clip as too long', () => {
+    expect(isRewardVideoTooLong({ code: 'REWARD_VIDEO_TOO_LONG' })).toBe(true);
+    expect(isRewardVideoTooLong({ code: 'REWARD_FIELD_INVALID' })).toBe(false);
+    expect(isRewardVideoTooLong(null)).toBe(false);
   });
 });

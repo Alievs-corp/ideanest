@@ -2,6 +2,7 @@ import { authorizedFetch, publicFetch } from '../api/client';
 import { ApiError, errorFrom } from '../api/problem';
 import type { Page } from '../community/signals';
 import type { Money } from '../money';
+import type { CardVideo } from '@ideanest/discovery/card-media';
 import { readProjectCardPage } from './wire';
 
 /**
@@ -230,6 +231,11 @@ export interface ProfileProjectCard {
   readonly deadline: string | null;
   readonly launchedAt: string | null;
   readonly coverImage: CoverImage | null;
+  /**
+   * The campaign's READY video, which covers the card when present (`cardCoverFrom`).
+   * Optional so a card built by hand without one still type-checks.
+   */
+  readonly video?: CardVideo | null;
 }
 
 /**

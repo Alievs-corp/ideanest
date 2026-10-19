@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ProjectCard as ProjectCardData } from '../../lib/discovery/api';
 import { CAMPAIGN_CARD_SIZES } from '../../lib/images/sizes';
 import { ProjectCard } from './ProjectCard';
@@ -388,5 +388,120 @@ describe('ProjectCard under IDN-EXT-01 (#44)', () => {
 
     expect(screen.queryByText('Succeeds at 80% of the goal')).toBeNull();
     expect(screen.queryByText(/goal$/)).toBeNull();
+  });
+});
+
+/*
+ * A campaign with a video is covered by it: the poster is the still, and the clip previews over
+ * it on hover or focus, on a hover device and never under reduced motion.
+ */
+describe('ProjectCard with a campaign video', () => {
+  const VIDEO = {
+    url: 'https://example.test/clip.mp4',
+    posterUrl: 'https://example.test/poster.jpg',
+    width: 1280,
+    height: 720,
+  };
+  let hover = true;
+  let reduced = false;
+
+  beforeEach(() => {
+    hover = true;
+    reduced = false;
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          media: query,
+          // The preview asks both questions in one query.
+          matches: hover && !reduced,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    );
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  function mount() {
+    const { container } = renderCard({ video: VIDEO });
+    const card = container.querySelector('article');
+    const video = container.querySelector('video');
+    if (card === null || video === null) throw new Error('no card or no preview');
+    return { container, card, video };
+  }
+
+  it('draws the poster instead of the uploaded cover', () => {
+    const { container } = mount();
+    const src = container.querySelector('img')?.getAttribute('src') ?? '';
+
+    expect(decodeURIComponent(src)).toContain(VIDEO.posterUrl);
+    expect(decodeURIComponent(src)).not.toContain('cover.jpg');
+  });
+
+  it('keeps the uploaded cover, and no preview, for a campaign without a video', () => {
+    const { container } = renderCard();
+
+    expect(decodeURIComponent(container.querySelector('img')?.getAttribute('src') ?? '')).toContain('cover.jpg');
+    expect(container.querySelector('video')).toBeNull();
+    expect(container.querySelector('article')).not.toHaveAttribute('data-card-video');
+  });
+
+  it('fetches nothing until the card is hovered, and is hidden from assistive technology', () => {
+    const { video } = mount();
+
+    expect(video).not.toHaveAttribute('src');
+    expect(video).toHaveAttribute('preload', 'none');
+    expect(video.muted).toBe(true);
+    expect(video.loop).toBe(true);
+    expect(video.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+  });
+
+  it('plays the clip on hover and on focus, fades it in once it plays, and stops on leave', () => {
+    const { card, video } = mount();
+
+    fireEvent.pointerEnter(card, { pointerType: 'mouse' });
+    expect(video.getAttribute('src')).toBe(VIDEO.url);
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+
+    fireEvent(video, new Event('playing'));
+    expect(video).toHaveAttribute('data-playing');
+    expect(video.className).toContain('data-playing:opacity-100');
+
+    fireEvent.pointerLeave(card, { pointerType: 'mouse' });
+    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled();
+    expect(video).not.toHaveAttribute('data-playing');
+
+    fireEvent.focusIn(screen.getByRole('link'));
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not play under reduced motion', () => {
+    reduced = true;
+    const { card, video } = mount();
+
+    fireEvent.pointerEnter(card, { pointerType: 'mouse' });
+    fireEvent.focusIn(screen.getByRole('link'));
+
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+    expect(video).not.toHaveAttribute('src');
+  });
+
+  it('does not play on a device that cannot hover, or for a touch', () => {
+    hover = false;
+    const { card } = mount();
+    fireEvent.pointerEnter(card, { pointerType: 'mouse' });
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+
+    cleanup();
+    hover = true;
+    const again = mount();
+    fireEvent.pointerEnter(again.card, { pointerType: 'touch' });
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
   });
 });

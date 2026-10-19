@@ -1158,13 +1158,22 @@ sold alongside a tier.
 > position. Pointer dragging remains a layer that can be added on top of that;
 > it is not a substitute for it.
 >
-> **A tier's images are its items' images.** `reward_tiers` has no image column
-> and neither does its response — §7.2 puts `image_url` on `items` — so the
-> pictures a backer sees for a tier are the pictures of what is in it. Both
-> become references into the media pipeline (§13) when there is one.
+> **A tier has a picture and a short clip of its own (V112).** `image_media_id`
+> and `video_media_id` reference §13's `media` rows, so both go through the same
+> upload, measurement and transcode as a cover; the items keep their own
+> `image_url`. The clip is at most five seconds (`reward-max-duration`, plus the
+> half second of container slack), measured by `ffprobe` and refused when it is
+> attached with `422 REWARD_VIDEO_TOO_LONG`, whose `meta` carries both lengths. Both
+> are editable after launch, a replaced or removed upload is deleted after the edit
+> commits unless another tier or a campaign still shows it, and a duplicate starts
+> without them. `RewardResponse` and `PublicRewardResponse` carry `image` and
+> `video`, or null.
 
 **Story** — rich text editor (headings, emphasis, lists, quotes, rules), inline
-media, third-party embeds, section headings that generate anchor navigation, a
+media, third-party embeds, section headings that generate anchor navigation,
+titled sections with an optional image (the `section` block: `id`, `title`,
+`image` or null, `spans`, rendered as its own `<section>` with an `h2` and listed
+in the navigation like one, its id unique among the headings' anchors), a
 **mandatory risks and challenges** field, FAQ editor, autosave and version
 history.
 
@@ -3365,7 +3374,8 @@ Atomic units: `id`, `project_id`, `name`, `description`, `image_id`,
 `id`, `project_id`, `title`, `description`, `amount` (numeric 14,2), `currency`,
 `estimated_delivery`, `limit_quantity`, `claimed_quantity`, `reserved_quantity`,
 `shipping_type`, `is_early_bird`, `is_featured`, `is_secret`, `secret_token`,
-`is_addon`, `sort_order`, `available_from`, `available_until`, `version`.
+`is_addon`, `sort_order`, `available_from`, `available_until`, `image_media_id`,
+`video_media_id`, `version`.
 
 **Constraint:** `claimed_quantity + reserved_quantity <= limit_quantity`.
 
@@ -6453,7 +6463,9 @@ neither tires the server nor fills the bucket.
 | HDR | iPhones record 10-bit HLG by default. PQ and HLG input is tone-mapped to BT.709 (zscale + Hable) and every output is tagged BT.709; left alone it plays washed out |
 | Small or oversized | A clip whose shorter edge would be under 320px after fitting is refused (`TOO_SMALL`) before encoding. An object over 250MB is refused from its `HEAD` before it is downloaded — the presigned `PUT` does not bind the declared size |
 | Poster | A frame at ~1 s, through the §13.1 libvips path — same EXIF strip, same 320px floor, same blur placeholder |
-| Storage | The raw upload is deleted when the MP4 is written and on every refusal. Replacing or removing a campaign's video deletes the previous one after the edit commits, unless another campaign still shows it |
+| Storage | The raw upload is deleted when the MP4 is written and on every refusal. Replacing or removing a campaign's video deletes the previous one after the edit commits, unless another campaign or a reward tier still shows it |
+| Rewards | A reward tier's clip is the same upload and the same transcode. Its five-second limit (`reward-max-duration`) is the reward's, checked against the measured duration when the clip is attached, not by the sweep |
+| Cards | The discovery, collection and profile cards carry `video {url, posterUrl, width, height}` while the campaign's video is `READY`, joined in the card query. `image` stays the uploaded cover; a client shows the poster instead and plays the clip on hover (web) or while pressed (mobile) |
 | Captions | Not built |
 | Analytics | Not built |
 

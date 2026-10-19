@@ -4899,6 +4899,7 @@ export interface components {
             slug?: string;
             state?: string;
             title?: string;
+            video?: components["schemas"]["CardVideo"];
         };
         CardRegistrationRequest: {
             /** Format: uri */
@@ -4911,6 +4912,22 @@ export interface components {
             provider?: string;
             /** Format: uri */
             redirectUrl?: string;
+        };
+        CardVideo: {
+            /** Format: int32 */
+            height?: number;
+            posterUrl?: string;
+            url?: string;
+            /** Format: int32 */
+            width?: number;
+        };
+        CardVideoBody: {
+            /** Format: int32 */
+            height?: number;
+            posterUrl?: string;
+            url?: string;
+            /** Format: int32 */
+            width?: number;
         };
         Catalogue: {
             documents?: components["schemas"]["Summary"][];
@@ -5211,6 +5228,8 @@ export interface components {
             description?: string;
             /** Format: date */
             estimatedDelivery?: string;
+            /** Format: uuid */
+            imageMediaId?: string;
             isAddon?: boolean;
             isEarlyBird?: boolean;
             isFeatured?: boolean;
@@ -5221,6 +5240,8 @@ export interface components {
             price: components["schemas"]["Money"];
             shippingType?: string;
             title: string;
+            /** Format: uuid */
+            videoMediaId?: string;
         };
         Creator: {
             avatarUrl?: string;
@@ -6414,6 +6435,7 @@ export interface components {
             slug?: string;
             state?: string;
             title?: string;
+            video?: components["schemas"]["CardVideoBody"];
         };
         ProfileProjectListResponse: {
             nextCursor?: string;
@@ -6580,6 +6602,7 @@ export interface components {
             estimatedDelivery?: string;
             /** Format: uuid */
             id?: string;
+            image?: components["schemas"]["RewardImageBody"];
             isEarlyBird?: boolean;
             isFeatured?: boolean;
             items?: components["schemas"]["ItemBody"][];
@@ -6591,6 +6614,7 @@ export interface components {
             shippingRates?: components["schemas"]["ShippingRuleBody"][];
             shippingType?: string;
             title?: string;
+            video?: components["schemas"]["RewardVideoBody"];
         };
         PublishCollection: {
             note: string;
@@ -6882,6 +6906,16 @@ export interface components {
             holderName?: string;
             iban?: string;
         };
+        RewardImageBody: {
+            blurDataUrl?: string;
+            /** Format: int32 */
+            height?: number;
+            /** Format: uuid */
+            mediaId?: string;
+            url?: string;
+            /** Format: int32 */
+            width?: number;
+        };
         RewardItemBody: {
             /** Format: uuid */
             itemId?: string;
@@ -6896,6 +6930,8 @@ export interface components {
             description?: string;
             /** Format: date */
             estimatedDelivery?: string;
+            /** Format: uuid */
+            imageMediaId?: string;
             isAddon?: boolean;
             isEarlyBird?: boolean;
             isFeatured?: boolean;
@@ -6906,6 +6942,8 @@ export interface components {
             price?: components["schemas"]["Money"];
             shippingType?: string;
             title?: string;
+            /** Format: uuid */
+            videoMediaId?: string;
         };
         RewardResponse: {
             /** Format: date-time */
@@ -6921,6 +6959,7 @@ export interface components {
             estimatedDelivery?: string;
             /** Format: uuid */
             id?: string;
+            image?: components["schemas"]["RewardImageBody"];
             isAddon?: boolean;
             isEarlyBird?: boolean;
             isFeatured?: boolean;
@@ -6947,6 +6986,7 @@ export interface components {
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
+            video?: components["schemas"]["RewardVideoBody"];
         };
         RewardSlice: {
             amount?: components["schemas"]["Money"];
@@ -6962,6 +7002,19 @@ export interface components {
             backerCount?: number;
             /** Format: uuid */
             rewardTierId?: string;
+        };
+        RewardVideoBody: {
+            blurDataUrl?: string;
+            /** Format: int32 */
+            durationMs?: number;
+            /** Format: int32 */
+            height?: number;
+            /** Format: uuid */
+            mediaId?: string;
+            posterUrl?: string;
+            url?: string;
+            /** Format: int32 */
+            width?: number;
         };
         Roster: {
             grants?: components["schemas"]["Grant"][];
@@ -7798,6 +7851,8 @@ export type SchemaCaptureVisitRequest = components['schemas']['CaptureVisitReque
 export type SchemaCard = components['schemas']['Card'];
 export type SchemaCardRegistrationRequest = components['schemas']['CardRegistrationRequest'];
 export type SchemaCardRegistrationResponse = components['schemas']['CardRegistrationResponse'];
+export type SchemaCardVideo = components['schemas']['CardVideo'];
+export type SchemaCardVideoBody = components['schemas']['CardVideoBody'];
 export type SchemaCatalogue = components['schemas']['Catalogue'];
 export type SchemaCategory = components['schemas']['Category'];
 export type SchemaCategoryCount = components['schemas']['CategoryCount'];
@@ -8017,11 +8072,13 @@ export type SchemaResolution = components['schemas']['Resolution'];
 export type SchemaResolveRequest = components['schemas']['ResolveRequest'];
 export type SchemaRespondRequest = components['schemas']['RespondRequest'];
 export type SchemaRevealedBankAccount = components['schemas']['RevealedBankAccount'];
+export type SchemaRewardImageBody = components['schemas']['RewardImageBody'];
 export type SchemaRewardItemBody = components['schemas']['RewardItemBody'];
 export type SchemaRewardPatchRequest = components['schemas']['RewardPatchRequest'];
 export type SchemaRewardResponse = components['schemas']['RewardResponse'];
 export type SchemaRewardSlice = components['schemas']['RewardSlice'];
 export type SchemaRewardTierCountBody = components['schemas']['RewardTierCountBody'];
+export type SchemaRewardVideoBody = components['schemas']['RewardVideoBody'];
 export type SchemaRoster = components['schemas']['Roster'];
 export type SchemaRoutedTo = components['schemas']['RoutedTo'];
 export type SchemaRowFailureBody = components['schemas']['RowFailureBody'];

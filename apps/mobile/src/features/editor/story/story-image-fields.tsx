@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
 import { coverImageCopyFrom, type StoryBlocksCopy } from '@ideanest/campaign-editor/copy';
 import { describeSize } from '@ideanest/campaign-editor/cover-image';
-import type { ImageBlock } from '@ideanest/campaign-editor/story';
 import { Caption, InlineAlert, Media, TextInput } from '../../../components/ui';
 import { spacing } from '../../../theme';
 import { ImageSourceControls, imageSourceCopyFrom, useImageSource, type ImageSourceCopy } from '../image-source';
@@ -21,29 +20,43 @@ import { useStoryScroll } from './story-scroll';
  * `ImageBlock` holds — `url`, `width`, `height` — and the description, which is required.
  *
  * <p>The preview keeps the image's own shape, capped at 256pt tall, with "W×H pixels" under it.
+ *
+ * <p>A section's picture is drawn by the same fields: `value` is anything with the image block's
+ * four fields, and what changes is spread back over it. A section that has no picture yet passes
+ * `hideAltUntilMeasured`, so a description cannot be typed for a picture that does not exist.
  */
 
 /** The tallest the preview is drawn, so a portrait photo does not fill the editor. */
 const PREVIEW_MAX_HEIGHT = 256;
 
-export function StoryImageFields({
+/** What an image block and a section's picture both hold. */
+export interface StoryPicture {
+  readonly url: string;
+  readonly width: number;
+  readonly height: number;
+  readonly alt: string;
+}
+
+export function StoryImageFields<T extends StoryPicture>({
   copy,
-  block,
+  value,
   name,
   disabled,
   invalid,
+  hideAltUntilMeasured = false,
   onChange,
   onFlush,
   testID,
 }: {
   readonly copy: StoryCopy;
-  readonly block: ImageBlock;
+  readonly value: T;
   /** The block's description, for every control's name. */
   readonly name: string;
   readonly disabled: boolean;
   readonly invalid: boolean;
+  readonly hideAltUntilMeasured?: boolean;
   /** `sendNow` when there is no blur to wait for — a picture that just arrived. */
-  readonly onChange: (block: ImageBlock, sendNow?: boolean) => void;
+  readonly onChange: (value: T, sendNow?: boolean) => void;
   readonly onFlush: () => void;
   readonly testID: string;
 }) {
@@ -64,15 +77,15 @@ export function StoryImageFields({
   const [added, setAdded] = useState<string | null>(null);
   const source = useImageSource({
     copy: sourceCopy,
-    // `useImageSource` keeps the newest of these, so the block it spreads is the current one.
+    // `useImageSource` keeps the newest of these, so the value it spreads is the current one.
     onImage: (image) => {
       setAdded(fillPlaceholders(blocks.measured, { size: describeSize(image) }));
-      onChange({ ...block, url: image.url, width: image.width, height: image.height }, true);
+      onChange({ ...value, url: image.url, width: image.width, height: image.height }, true);
     },
   });
   const altField = useRef<View>(null);
   const { reveal, release } = useStoryScroll();
-  const measured = block.url !== '' && block.width > 0 && block.height > 0;
+  const measured = value.url !== '' && value.width > 0 && value.height > 0;
 
   return (
     <View style={styles.fields}>
@@ -91,40 +104,42 @@ export function StoryImageFields({
 
       {measured ? (
         <View style={styles.preview}>
-          <View style={[styles.frame, { maxWidth: (PREVIEW_MAX_HEIGHT * block.width) / block.height }]}>
+          <View style={[styles.frame, { maxWidth: (PREVIEW_MAX_HEIGHT * value.width) / value.height }]}>
             <Media
-              src={block.url}
-              ratio={{ width: block.width, height: block.height }}
+              src={value.url}
+              ratio={{ width: value.width, height: value.height }}
               fit="contain"
               radius="md"
               testID={`${testID}-preview`}
-              {...(block.alt.trim() === '' ? { decorative: true as const } : { alt: block.alt })}
+              {...(value.alt.trim() === '' ? { decorative: true as const } : { alt: value.alt })}
             />
           </View>
-          <Caption testID={`${testID}-size`}>{fillPlaceholders(blocks.pixels, { size: describeSize(block) })}</Caption>
+          <Caption testID={`${testID}-size`}>{fillPlaceholders(blocks.pixels, { size: describeSize(value) })}</Caption>
         </View>
       ) : null}
 
-      <View ref={altField} style={styles.alt}>
-        <TextInput
-          value={block.alt}
-          disabled={disabled}
-          invalid={invalid && measured && block.alt.trim() === ''}
-          accessibilityLabel={fillPlaceholders(blocks.descriptionOf, { name })}
-          accessibilityHint={blocks.altHint}
-          placeholder={blocks.imageAltPlaceholder}
-          onChangeText={(alt) => onChange({ ...block, alt })}
-          onFocus={() => reveal(altField.current)}
-          onBlur={() => {
-            release(altField.current);
-            onFlush();
-          }}
-          testID={`${testID}-alt`}
-        />
-        <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {blocks.altHint}
-        </Caption>
-      </View>
+      {hideAltUntilMeasured && !measured ? null : (
+        <View ref={altField} style={styles.alt}>
+          <TextInput
+            value={value.alt}
+            disabled={disabled}
+            invalid={invalid && measured && value.alt.trim() === ''}
+            accessibilityLabel={fillPlaceholders(blocks.descriptionOf, { name })}
+            accessibilityHint={blocks.altHint}
+            placeholder={blocks.imageAltPlaceholder}
+            onChangeText={(alt) => onChange({ ...value, alt })}
+            onFocus={() => reveal(altField.current)}
+            onBlur={() => {
+              release(altField.current);
+              onFlush();
+            }}
+            testID={`${testID}-alt`}
+          />
+          <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            {blocks.altHint}
+          </Caption>
+        </View>
+      )}
     </View>
   );
 }

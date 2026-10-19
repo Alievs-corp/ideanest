@@ -20,8 +20,10 @@ import type {
   NewItem,
   NewReward,
   Reward,
+  RewardImage,
   RewardItemLine,
   RewardPatch,
+  RewardVideo,
   ShippingRate,
   ShippingType,
 } from './contract';
@@ -337,6 +339,15 @@ export interface RewardDraft {
   availableUntil: string;
   items: readonly RewardLineDraft[];
   shippingRules: readonly ShippingRateDraft[];
+  /**
+   * The picture and the clip, as the response shapes them so the drawer can preview them.
+   *
+   * A fresh upload is put here with the `mediaId` the upload produced and the location and
+   * size it reported; only the `mediaId` is ever sent. `null` is none, and on an existing tier
+   * it is what takes the current one down.
+   */
+  image: RewardImage | null;
+  video: RewardVideo | null;
 }
 
 /**
@@ -364,6 +375,8 @@ export function emptyReward(currency: string): RewardDraft {
     availableUntil: '',
     items: [],
     shippingRules: [],
+    image: null,
+    video: null,
   };
 }
 
@@ -388,6 +401,8 @@ export function rewardDraftFrom(reward: Reward): RewardDraft {
       amount: rule.amount,
       additionalItemAmount: rule.additionalItemAmount,
     })),
+    image: reward.image ?? null,
+    video: reward.video ?? null,
   };
 }
 
@@ -413,7 +428,9 @@ export type RewardField =
   | 'availableFrom'
   | 'availableUntil'
   | 'items'
-  | 'rules';
+  | 'rules'
+  | 'imageMediaId'
+  | 'videoMediaId';
 
 export const REWARD_FIELDS: readonly RewardField[] = [
   'title',
@@ -430,6 +447,8 @@ export const REWARD_FIELDS: readonly RewardField[] = [
   'availableUntil',
   'items',
   'rules',
+  'imageMediaId',
+  'videoMediaId',
 ];
 
 export function isRewardField(value: string): value is RewardField {
@@ -643,6 +662,10 @@ export function newRewardFrom(draft: RewardDraft): NewReward {
     availableFrom: fromDateTimeLocal(draft.availableFrom),
     availableUntil: fromDateTimeLocal(draft.availableUntil),
     items: linesOf(draft),
+    // Only when there is one: an absent key is no media, and the body stays what it was for a
+    // tier created without any.
+    ...(draft.image === null ? {} : { imageMediaId: draft.image.mediaId }),
+    ...(draft.video === null ? {} : { videoMediaId: draft.video.mediaId }),
   };
 }
 
@@ -711,6 +734,15 @@ export function rewardPatchFrom(draft: RewardDraft, original: Reward): RewardPat
   const lines = linesOf(draft);
   if (compositionChanged(lines, original.items)) patch.items = lines;
 
+  /*
+   * By upload, and only when it changed: re-sending the current `mediaId` is a no-op the
+   * server would still have to claim and check, and `null` is what takes one down.
+   */
+  const imageId = draft.image?.mediaId ?? null;
+  if (imageId !== (original.image?.mediaId ?? null)) patch.imageMediaId = imageId;
+  const videoId = draft.video?.mediaId ?? null;
+  if (videoId !== (original.video?.mediaId ?? null)) patch.videoMediaId = videoId;
+
   return patch;
 }
 
@@ -722,6 +754,19 @@ function compositionChanged(
 
   const before = new Map(original.map((line) => [line.itemId, line.quantity]));
   return lines.some((line) => before.get(line.itemId) !== line.quantity);
+}
+
+/** The `code` of the 422 that refuses a reward clip over five seconds (`reward-video-too-long`). */
+export const REWARD_VIDEO_TOO_LONG = 'REWARD_VIDEO_TOO_LONG';
+
+/**
+ * Whether a refused save is the service measuring the reward's clip as too long.
+ *
+ * Its own check rather than a field error, so the drawer can say it with the clip's limit in
+ * the sentence (`RewardTierEditorCopy.video.failures.TOO_LONG`) instead of the server's prose.
+ */
+export function isRewardVideoTooLong(failure: Pick<SaveFailure, 'code'> | null): boolean {
+  return failure?.code === REWARD_VIDEO_TOO_LONG;
 }
 
 /**

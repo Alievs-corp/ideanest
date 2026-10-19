@@ -5,6 +5,8 @@ import { formatMoney } from '@ideanest/money';
 import { Glyphs } from '../../icons';
 import { pluralCategory, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
+import { useHoldPreview } from '../../lib/media/hold-preview';
+import { HoldPreviewVideo } from '../../components/hold-preview-video';
 import { font, fontSize, lineHeight, radius, size, spacing } from '../../theme';
 import {
   Body,
@@ -17,6 +19,7 @@ import {
   TONES,
   Tag,
   useFocusRing,
+  useMotionAllowed,
   useSurface,
   wholePercent,
   type IconComponent,
@@ -44,6 +47,9 @@ import type { ProfileProjectCard as Card } from './wire';
  * funding when shown, the backers — is its `accessibilityValue`, so the bar inside is decorative.
  * Every state is an icon and a word; funded and completed take `success`, never lime, and there is
  * no lime anywhere on the card (it sits in the white sheet, where the bar's fill is dark).
+ *
+ * <p>A campaign with a video shows its poster, and plays the clip while the card is held, as the
+ * discovery card does (`useHoldPreview`).
  */
 
 interface StateSpec {
@@ -96,6 +102,9 @@ export const ProfileCampaignCard = memo(function ProfileCampaignCard({
   const surface = useSurface();
   const block = BLOCK[blockSurface(surface)];
   const tone = TONES[surface];
+  const moving = useMotionAllowed('moderate');
+  const previewable = card.video !== null && moving;
+  const preview = useHoldPreview(`profile-card:${card.id}`, previewable);
 
   const stateLabel = isKnown(card.state) ? t(`profile.card.states.${card.state}`) : card.state;
   const spec = isKnown(card.state) ? STATES[card.state] : undefined;
@@ -124,7 +133,10 @@ export const ProfileCampaignCard = memo(function ProfileCampaignCard({
       accessibilityRole="link"
       accessibilityLabel={card.title}
       accessibilityValue={{ text: facts.join(', ') }}
+      accessibilityHint={previewable ? t('mobile.preview.cardHint') : undefined}
       onPress={() => onOpen(card)}
+      onLongPress={previewable ? preview.start : undefined}
+      onPressOut={previewable ? preview.stop : undefined}
       onFocus={ring.onFocus}
       onBlur={ring.onBlur}
       contentStyle={({ pressed }) => [
@@ -146,6 +158,9 @@ export const ProfileCampaignCard = memo(function ProfileCampaignCard({
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           />
+        )}
+        {card.video === null ? null : (
+          <HoldPreviewVideo url={card.video.url} playing={preview.playing} testID="profile-card-preview" />
         )}
       </MediaFrame>
 

@@ -60,7 +60,7 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
      * duration includes the longer of its two streams. Refusing 60.04 seconds as "longer than
      * a minute" would be technically right and useless.
      */
-    private static final long DURATION_TOLERANCE_MS = 500;
+    private static final long DURATION_TOLERANCE_MS = MediaProperties.Video.DURATION_TOLERANCE_MS;
 
     /** Where the poster frame is taken from, unless the clip is shorter than this. */
     private static final double POSTER_AT_SECONDS = 1.0;

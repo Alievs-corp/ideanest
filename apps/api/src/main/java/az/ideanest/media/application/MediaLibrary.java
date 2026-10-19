@@ -8,6 +8,7 @@ import az.ideanest.media.domain.MediaStatus;
 import az.ideanest.media.infrastructure.MediaAssetRepository;
 import java.net.URI;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -180,6 +181,41 @@ public class MediaLibrary {
     @Transactional(readOnly = true)
     public Optional<VideoView> videoViewOf(UUID mediaId) {
         return assets.findById(mediaId).flatMap(this::playableView);
+    }
+
+    /** {@link #videoViewOf}, for a list: one query, and only the ready videos in the map. */
+    @Transactional(readOnly = true)
+    public Map<UUID, VideoView> videoViewsOf(Collection<UUID> mediaIds) {
+        if (mediaIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, VideoView> views = new LinkedHashMap<>();
+        for (MediaAsset asset : assets.findByIdIn(mediaIds)) {
+            playableView(asset).ifPresent(view -> views.put(asset.getId(), view));
+        }
+        return Map.copyOf(views);
+    }
+
+    /** The longest clip a reward tier may show — {@code MediaProperties.Video#rewardMaxDuration}. */
+    public Duration rewardVideoMaxDuration() {
+        return properties.video().rewardMaxDuration();
+    }
+
+    /** Whether a ready video is short enough for a reward, with the transcoder's own slack. */
+    public boolean fitsAReward(VideoView video) {
+        return properties.video().fitsAReward(video.durationMs());
+    }
+
+    /**
+     * The address a browser fetches a stored object from, for a read model that selected
+     * the key itself.
+     *
+     * <p>For SQL projections such as the discovery cards, which join {@code media} in the
+     * same statement rather than asking for views row by row. The address is still built
+     * here, so there is one rule for it.
+     */
+    public String publicUrlOf(String storageKey) {
+        return store.publicUrl(storageKey);
     }
 
     /**
