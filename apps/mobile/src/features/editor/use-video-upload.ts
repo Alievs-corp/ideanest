@@ -3,13 +3,12 @@ import { Keyboard } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
 import type { CampaignVideo } from '@ideanest/campaign-editor/contract';
+import { VIDEO_MAX_SECONDS, videoPreflightRefusal } from '@ideanest/campaign-editor/video';
 import { useT, type Translate } from '../../lib/i18n';
 import {
   UploadFailed,
-  VIDEO_MAX_DURATION_MS,
   forgetPicked,
   isAbortError,
-  isVideoTooLarge,
   isVideoTooLong,
   resumeVideo,
   uploadVideo,
@@ -45,6 +44,14 @@ import {
  *
  * <p>What the field shows is the video chosen here until the saved project agrees with it, then the
  * saved project's own.
+ *
+ * <h2>A reward's clip</h2>
+ *
+ * The reward drawer holds one too, with `maxSeconds` at `REWARD_VIDEO_MAX_SECONDS`: the picker caps
+ * a recording at five seconds and the preflight refuses a longer clip in `tooLong`'s words. Its
+ * `onChosen` puts the clip in the drawer's draft and its `save` does nothing — a tier is saved by
+ * Save, not by an autosave — and `forget` puts the tier's stored clip back when the service refused
+ * the new one.
  */
 
 /** The media service's codes with a sentence of their own in `mobile.editor.video.failures`. */
@@ -101,9 +108,14 @@ export function videoRefusalOf(failure: SaveFailure | null): string | null {
 export const VIDEO_PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
   mediaTypes: ['videos'],
   allowsEditing: true,
-  videoMaxDuration: VIDEO_MAX_DURATION_MS / 1000,
+  videoMaxDuration: VIDEO_MAX_SECONDS,
   videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
 };
+
+/** {@link VIDEO_PICKER_OPTIONS} for a field with a shorter limit. */
+export function videoPickerOptions(maxSeconds: number): ImagePicker.ImagePickerOptions {
+  return maxSeconds === VIDEO_MAX_SECONDS ? VIDEO_PICKER_OPTIONS : { ...VIDEO_PICKER_OPTIONS, videoMaxDuration: maxSeconds };
+}
 
 export interface VideoFailure {
   readonly title?: string;
@@ -133,12 +145,18 @@ export interface VideoUploadOptions {
   readonly saved: CampaignVideo | null;
   /** Queue this patch on the editor's autosave and send it now. */
   readonly save: (patch: { readonly videoMediaId: string | null }) => void;
+  /** The clip `save` was just handed, whole — for a form that keeps the clip rather than its id. */
+  readonly onChosen?: (video: CampaignVideo | null) => void;
   /** The service's sentence when it refused the `videoMediaId` it was sent, else null. */
   readonly refusal: string | null;
   /** Take `videoMediaId` out of the autosave's queue and its stored offer. */
   readonly forget: () => void;
   /** Whether a `videoMediaId` is still waiting in the autosave. */
   readonly pending: boolean;
+  /** The field's limit; the campaign video's sixty seconds when absent. */
+  readonly maxSeconds?: number;
+  /** The sentence for a clip the picker measured as over `maxSeconds`; the catalogue's when absent. */
+  readonly tooLong?: (durationMs: number) => string;
 }
 
 function asCampaignVideo(uploaded: UploadedVideo): CampaignVideo {
@@ -153,7 +171,16 @@ function asCampaignVideo(uploaded: UploadedVideo): CampaignVideo {
   };
 }
 
-export function useVideoUpload({ saved, save, refusal, forget, pending }: VideoUploadOptions): VideoUpload {
+export function useVideoUpload({
+  saved,
+  save,
+  onChosen,
+  refusal,
+  forget,
+  pending,
+  maxSeconds = VIDEO_MAX_SECONDS,
+  tooLong,
+}: VideoUploadOptions): VideoUpload {
   const t = useT('mobile.editor.video');
   const tAll = useT();
   /** `undefined`: show the saved video. Otherwise what was chosen or removed here, not yet saved. */
@@ -169,10 +196,14 @@ export function useVideoUpload({ saved, save, refusal, forget, pending }: VideoU
   // Read through refs: the editor hands new functions every render.
   const saveRef = useRef(save);
   const forgetRef = useRef(forget);
+  const tooLongRef = useRef(tooLong);
+  const onChosenRef = useRef(onChosen);
   useEffect(() => {
     saveRef.current = save;
     forgetRef.current = forget;
-  }, [save, forget]);
+    tooLongRef.current = tooLong;
+    onChosenRef.current = onChosen;
+  }, [save, forget, tooLong, onChosen]);
 
   // Closing the editor abandons the upload; switching tabs does not reach here.
   useEffect(() => () => inFlight.current?.abort(), []);
@@ -197,6 +228,7 @@ export function useVideoUpload({ saved, save, refusal, forget, pending }: VideoU
     setChosen(video);
     setWaitingFor(null);
     saveRef.current({ videoMediaId: video.mediaId });
+    onChosenRef.current?.(video);
     setAdded(true);
   }, []);
 
@@ -237,7 +269,7 @@ export function useVideoUpload({ saved, save, refusal, forget, pending }: VideoU
     setAdded(false);
     let result: ImagePicker.ImagePickerResult;
     try {
-      result = await ImagePicker.launchImageLibraryAsync(VIDEO_PICKER_OPTIONS);
+      result = await ImagePicker.launchImageLibraryAsync(videoPickerOptions(maxSeconds));
     } catch {
       setFailure({ text: t('openFailed') });
       return;
@@ -247,10 +279,18 @@ export function useVideoUpload({ saved, save, refusal, forget, pending }: VideoU
 
     const refuse = (code: VideoFailureCode) => {
       forgetPicked(asset.uri);
-      setFailure({ title: t('notUsedTitle'), text: t(`failures.${code}`) });
+      const custom = code === 'TOO_LONG' ? tooLongRef.current : undefined;
+      const text = custom !== undefined && typeof asset.duration === 'number' ? custom(asset.duration) : t(`failures.${code}`);
+      setFailure({ title: t('notUsedTitle'), text });
     };
-    if (isVideoTooLong(asset.duration)) return refuse('TOO_LONG');
-    if (isVideoTooLarge(asset.fileSize)) return refuse('TOO_LARGE');
+    // The shared preflight when the picker reported a size; without one only the length can be read.
+    const refusal =
+      typeof asset.fileSize === 'number' && asset.fileSize > 0
+        ? videoPreflightRefusal({ byteSize: asset.fileSize, durationMs: asset.duration ?? null }, maxSeconds)
+        : isVideoTooLong(asset.duration, maxSeconds)
+          ? 'TOO_LONG'
+          : null;
+    if (refusal !== null) return refuse(refusal);
 
     setWaitingFor(null);
     await run(
@@ -265,7 +305,7 @@ export function useVideoUpload({ saved, save, refusal, forget, pending }: VideoU
         }),
       asset.uri,
     );
-  }, [run, t]);
+  }, [run, t, maxSeconds]);
 
   const checkAgain = useCallback(async (): Promise<void> => {
     if (waitingFor === null) return;
@@ -280,6 +320,7 @@ export function useVideoUpload({ saved, save, refusal, forget, pending }: VideoU
     setAdded(false);
     setChosen(null);
     saveRef.current({ videoMediaId: null });
+    onChosenRef.current?.(null);
   }, []);
 
   const video = chosen === undefined ? saved : chosen;

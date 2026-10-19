@@ -456,6 +456,10 @@ function blockText(block: Exclude<StoryBlock, { type: 'rule' }>): string {
       return block.alt;
     case 'embed':
       return block.title;
+    case 'section': {
+      const text = spansToText(block.spans);
+      return text === '' ? block.title : `${block.title} · ${text}`;
+    }
   }
 }
 

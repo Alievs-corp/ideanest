@@ -62,9 +62,12 @@ describe('CampaignMedia', () => {
     expect(players).toHaveLength(0);
   });
 
-  it('with a video, offers to play it over the cover, named with its length, and plays nothing yet', async () => {
+  it('with a video, offers to play it over its own poster, named with its length, and plays nothing yet', async () => {
     await show(COVER, VIDEO);
-    expect(screen.getByTestId('campaign-cover', { includeHiddenElements: true }).props.source).toEqual({ uri: COVER.url });
+    // The video is the cover: its poster, not the uploaded picture — what the card shows too.
+    expect(screen.getByTestId('campaign-cover', { includeHiddenElements: true }).props.source).toEqual({
+      uri: VIDEO.posterUrl,
+    });
     const play = screen.getByRole('button', { name: 'Play the campaign video, 45 seconds long' });
     expect(play).toBeTruthy();
     expect(screen.getByTestId('campaign-video-length')).toHaveTextContent('0:45');

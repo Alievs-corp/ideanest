@@ -35,8 +35,9 @@ import { Icon, MediaFrame, PressableScale, TONES, useFocusRing, useSurface } fro
  *
  * Headings (level 2 at 24 semibold, level 3 at 20 medium, both `header` to a screen reader),
  * paragraphs with `em` and `strong` spans, ordered and unordered lists, quotes on a lime-700 rule,
- * dividers, images at their own aspect ratio with the creator's `alt` as their name, and embeds.
- * Never HTML and never a WebView: the creator's words are data.
+ * dividers, images at their own aspect ratio with the creator's `alt` as their name, embeds, and
+ * sections — a level-2 title, its picture under it, then its text. Never HTML and never a
+ * WebView: the creator's words are data.
  *
  * <p>Reading text is 17 on 1.75 with a 68-character measure. On the dark canvas it sits on a
  * surface-2 card; inside the page's white content sheet the sheet is the card, and every tone is
@@ -209,6 +210,38 @@ function Block({
       return (
         <View style={[styles.embedBlock, end]}>
           <EmbedLink title={block.title} url={block.url} provider={block.provider} ink={ink} />
+        </View>
+      );
+
+    case 'section':
+      // The web's `<section aria-labelledby>`: the title is the h2 a reader moves to, and the
+      // picture and text that follow belong to it.
+      return (
+        <View style={end} nativeID={block.id} testID={`story-section-${block.id}`}>
+          <Text accessibilityRole="header" style={[styles.h2, { color: ink.strong }, first && styles.first]}>
+            {block.title}
+          </Text>
+          {block.image === null ? null : (
+            <View style={[styles.figure, last && block.spans.length === 0 && styles.last]}>
+              <MediaFrame ratio={{ width: block.image.width, height: block.image.height }} radius="md">
+                <Image
+                  source={{ uri: block.image.url }}
+                  contentFit="cover"
+                  transition={0}
+                  style={styles.fill}
+                  accessible
+                  accessibilityRole="image"
+                  accessibilityLabel={block.image.alt}
+                  testID="story-section-image"
+                />
+              </MediaFrame>
+            </View>
+          )}
+          {block.spans.length === 0 ? null : (
+            <Text style={[styles.paragraph, { color: ink.reading }, last && styles.last]}>
+              <Spans spans={block.spans} ink={ink} />
+            </Text>
+          )}
         </View>
       );
   }

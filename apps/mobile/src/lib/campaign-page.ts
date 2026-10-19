@@ -4,7 +4,12 @@ import { completionOf } from '@ideanest/campaign/completion';
 import { daysLeftOf } from '@ideanest/campaign/days-left';
 import { isRenderableState, type ProjectState } from '@ideanest/campaign/states';
 import { readStoryDocument, type StoryDocument } from '@ideanest/campaign/story';
-import { readRewardDetails, type RewardDetails } from '@ideanest/campaign/reward-details';
+import {
+  readRewardDetails,
+  readRewardMedia,
+  type RewardDetails,
+  type RewardMedia,
+} from '@ideanest/campaign/reward-details';
 import type { ProjectPage, PublicRewards } from '../api/queries';
 
 /**
@@ -98,6 +103,8 @@ export interface RewardTier {
   readonly remainingQuantity: number | null;
   /** The delivery month, the shipping line and the tags the card adds — #255, read as the web reads them. */
   readonly details: RewardDetails;
+  /** The tier's picture and its clip of at most five seconds, each `null` when absent. */
+  readonly media: RewardMedia;
 }
 
 /**
@@ -169,6 +176,7 @@ export function tiersOf(rewards: PublicRewards | null | undefined): readonly Rew
       remainingQuantity:
         typeof reward.remainingQuantity === 'number' ? reward.remainingQuantity : null,
       details: readRewardDetails(reward),
+      media: readRewardMedia(reward),
     });
   }
   return tiers;

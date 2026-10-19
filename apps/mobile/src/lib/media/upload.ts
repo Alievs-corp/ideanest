@@ -1,4 +1,9 @@
 import { ApiError } from '@ideanest/api-client';
+import {
+  VIDEO_DURATION_SLACK_MS,
+  VIDEO_MAX_BYTES as SHARED_VIDEO_MAX_BYTES,
+  VIDEO_MAX_SECONDS,
+} from '@ideanest/campaign-editor/video';
 import { File, Paths, UploadType } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { api, sendJson } from '../../api/client';
@@ -109,19 +114,23 @@ export const VIDEO_POLL_INTERVAL_MS = 2_000;
 export const VIDEO_POLL_LIMIT = Math.ceil(300_000 / VIDEO_POLL_INTERVAL_MS);
 
 /** `media.video.max-upload-bytes`: the service refuses a larger video with `TOO_LARGE`. */
-export const VIDEO_MAX_BYTES = 250 * 1024 * 1024;
+export const VIDEO_MAX_BYTES = SHARED_VIDEO_MAX_BYTES;
 
 /**
  * `media.video.max-duration` is 60 seconds, measured on the server. The picker's figure is the
  * container's, which can run a frame or two long, so the phone allows half a second over before
- * it refuses with `TOO_LONG` itself; anything really over is still refused by the service.
+ * it refuses with `TOO_LONG` itself; anything really over is still refused by the service. Both
+ * figures are the shared package's, which the web checks against too.
  */
-export const VIDEO_MAX_DURATION_MS = 60_000;
-export const VIDEO_DURATION_TOLERANCE_MS = 500;
+export const VIDEO_MAX_DURATION_MS = VIDEO_MAX_SECONDS * 1000;
+export const VIDEO_DURATION_TOLERANCE_MS = VIDEO_DURATION_SLACK_MS;
 
-/** Whether a picked video is over the minute, by the picker's own measurement. */
-export function isVideoTooLong(durationMs: number | null | undefined): boolean {
-  return typeof durationMs === 'number' && durationMs > VIDEO_MAX_DURATION_MS + VIDEO_DURATION_TOLERANCE_MS;
+/**
+ * Whether a picked video is over its field's limit — the campaign video's minute unless
+ * `maxSeconds` says otherwise (a reward's five) — by the picker's own measurement.
+ */
+export function isVideoTooLong(durationMs: number | null | undefined, maxSeconds: number = VIDEO_MAX_SECONDS): boolean {
+  return typeof durationMs === 'number' && durationMs > maxSeconds * 1000 + VIDEO_DURATION_TOLERANCE_MS;
 }
 
 /** Whether a picked file is over the service's video ceiling, by the picker's own measurement. */

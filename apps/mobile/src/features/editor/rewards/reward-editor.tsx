@@ -15,6 +15,7 @@ import {
   fieldErrorsFrom,
   isEmptyPatch,
   isRewardField,
+  isRewardVideoTooLong,
   isShippedScope,
   isShippingType,
   newRewardFrom,
@@ -28,6 +29,7 @@ import {
   type RewardLineDraft,
   type ShippingRateDraft,
 } from '@ideanest/campaign-editor/rewards';
+import { REWARD_VIDEO_MAX_SECONDS } from '@ideanest/campaign-editor/video';
 import {
   Body,
   Caption,
@@ -51,6 +53,7 @@ import { EditorModal } from '../editor-modal';
 import { MoneyField } from '../money-field';
 import { useDescribeFailure } from '../use-describe-failure';
 import { createReward, patchReward, replaceShippingRules } from './api';
+import { RewardImageField, RewardVideoField } from './reward-media-fields';
 
 /**
  * The web's `RewardTierEditor`, as a full-screen `EditorModal` (#162): what a backer selects and
@@ -77,6 +80,13 @@ import { createReward, patchReward, replaceShippingRules } from './api';
  * The price and both rates are text in `MoneyField`s (the comma rule) and become wire strings only
  * through the package (`newRewardFrom`, `rewardPatchFrom`, `shippingRatesFrom`, all `parseAmount` /
  * `toWireAmount`); rates accept 0. No amount is ever a JavaScript number.
+ *
+ * <h2>Picture and clip</h2>
+ *
+ * Uploaded from the drawer (`reward-media-fields.tsx`) and kept in the draft until Save, which sends
+ * only their ids. They stay editable after launch, unlike the price. A clip the service measured
+ * as over five seconds (`isRewardVideoTooLong`) is taken back out of the draft, and the refusal is
+ * said under the video field.
  *
  * <p>Mount it with a fresh `key` each time it opens, so the form is seeded once.
  */
@@ -123,6 +133,9 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
    * about a table that is not on screen is a Save that silently does nothing.
    */
   const shipped = isShippedScope(draft.shippingType) || draft.shippingRules.length > 0;
+  const videoRefusal = isRewardVideoTooLong(failure)
+    ? fillPlaceholders(words.video.refusedTooLong, { seconds: String(REWARD_VIDEO_MAX_SECONDS) })
+    : (visibleErrors.videoMediaId ?? null);
 
   async function save(): Promise<void> {
     setAttempted(true);
@@ -256,6 +269,23 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
           testID="reward-description"
         />
       </Field>
+
+      <RewardImageField
+        words={words}
+        image={draft.image}
+        disabled={readOnly}
+        error={visibleErrors.imageMediaId}
+        onChange={(image) => setDraft((current) => ({ ...current, image }))}
+      />
+
+      <RewardVideoField
+        words={words}
+        saved={target?.video ?? null}
+        video={draft.video}
+        refusal={videoRefusal}
+        disabled={readOnly}
+        onChange={(video) => setDraft((current) => ({ ...current, video }))}
+      />
 
       <Field
         label={words.price}
