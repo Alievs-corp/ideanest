@@ -44,6 +44,9 @@ import java.util.UUID;
  *     card is not where somebody reads a final result
  * @param creatorSlug null only when the campaign's creator row could not be joined. The two
  *     public tabs exclude those rows rather than serving a half-built link
+ * @param video the campaign's ready video, or null. When present a client shows
+ *     {@code video.posterUrl} as the cover and plays the clip on hover or a long press;
+ *     {@code coverImage} stays the uploaded cover
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record ProfileProjectCard(
@@ -58,7 +61,8 @@ public record ProfileProjectCard(
         int backersCount,
         Instant deadline,
         Instant launchedAt,
-        CoverImageBody coverImage) {
+        CoverImageBody coverImage,
+        CardVideoBody video) {
 
     /**
      * @param campaign the projection. {@code createdAt} on it is deliberately not mapped:
@@ -78,7 +82,8 @@ public record ProfileProjectCard(
                 campaign.backersCount(),
                 campaign.deadline(),
                 campaign.launchedAt(),
-                cover(campaign.cover()));
+                cover(campaign.cover()),
+                CardVideoBody.of(campaign.video()));
     }
 
     /**

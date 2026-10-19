@@ -346,4 +346,27 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
             """)
     List<UUID> findAvailableAlternatives(
             @Param("projectId") UUID projectId, @Param("excluding") UUID excluding, @Param("at") Instant at);
+
+    /**
+     * Whether anything but this tier still shows the upload: another tier, or a campaign's
+     * cover or video. Asked before a released reward image or video is deleted, because one
+     * upload may be attached in more than one place by its owner.
+     *
+     * <p>{@code projects} is read rather than asked about, as {@code pledges} reads this
+     * module's tables: it is one existence check, and the project module has no question
+     * of its own that covers both of its media columns.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT EXISTS (
+                               SELECT 1 FROM reward_tiers
+                                WHERE (image_media_id = :mediaId OR video_media_id = :mediaId)
+                                  AND id <> :excluding)
+                        OR EXISTS (
+                               SELECT 1 FROM projects
+                                WHERE cover_media_id = :mediaId OR video_media_id = :mediaId)
+                    """,
+            nativeQuery = true)
+    boolean isMediaShownElsewhere(@Param("mediaId") UUID mediaId, @Param("excluding") UUID excluding);
 }

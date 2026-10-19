@@ -245,7 +245,9 @@ public class ProjectEditingService {
         }
         project.setVideoMediaId(mediaId);
 
-        if (previous != null && !projects.existsByVideoMediaIdAndIdNot(previous, project.getId())) {
+        if (previous != null
+                && !projects.existsByVideoMediaIdAndIdNot(previous, project.getId())
+                && !projects.isVideoShownByAReward(previous)) {
             media.discardAfterCommit(previous);
         }
     }

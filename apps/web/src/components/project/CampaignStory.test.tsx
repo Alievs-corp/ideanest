@@ -76,6 +76,48 @@ describe('the campaign story', () => {
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
   });
 
+  it('renders a section as its own named region: the anchor, an h2 title, the picture, then the text', () => {
+    const { container } = render(
+      <CampaignStory
+        title="A coffee table book"
+        copy={COPY}
+        story={story([
+          {
+            type: 'section',
+            id: 'our-workshop',
+            title: 'Our workshop',
+            image: { url: 'https://cdn.test/workshop.jpg', width: 1440, height: 960, alt: 'The bench' },
+            spans: spans('Where it is made.', ['strong']),
+          },
+          { type: 'section', id: 'the-team', title: 'The team', image: null, spans: [] },
+        ])}
+      />,
+    );
+
+    const region = screen.getByRole('region', { name: 'Our workshop' });
+    expect(region.tagName).toBe('SECTION');
+    expect(region).toHaveAttribute('id', 'our-workshop');
+    expect(screen.getByRole('heading', { level: 2, name: 'Our workshop' })).toBeInTheDocument();
+
+    // The picture is the image block's: its own shape reserved, the creator's description.
+    const image = screen.getByRole('img', { name: 'The bench' });
+    expect(region).toContainElement(image);
+    expect(image.closest<HTMLElement>('[data-media-frame]')?.style.aspectRatio).toBe('1440 / 960');
+    expect(image).toHaveAttribute('sizes', '(min-width: 768px) 68ch, 100vw');
+
+    // Title, then picture, then text, in document order.
+    const text = screen.getByText('Where it is made.');
+    expect(text.closest('strong')).not.toBeNull();
+    const order = Array.from(region.querySelectorAll('h2, img, p')).map((node) => node.tagName);
+    expect(order).toEqual(['H2', 'IMG', 'P']);
+
+    // A section without a picture or text is its title alone.
+    const bare = screen.getByRole('region', { name: 'The team' });
+    expect(bare.querySelector('img')).toBeNull();
+    expect(bare.querySelector('p')).toBeNull();
+    expect(container.querySelectorAll('section section')).toHaveLength(2);
+  });
+
   it('renders a mark as the element that means it', () => {
     const { container } = render(
       <CampaignStory

@@ -25,6 +25,7 @@ import {
   rejectedBlockIndex,
   removeBlock,
   replaceBlock,
+  storyAnchorIds,
   storyCharacterCount,
   storyProblems,
   type StoryBlockType,
@@ -165,6 +166,7 @@ function documentOf(project: ProjectEdit): StoryDocument | null {
 const ADDABLE: readonly { readonly type: StoryBlockType; readonly glyph: typeof Glyphs.Add }[] = [
   { type: 'paragraph', glyph: Glyphs.TextalignLeft },
   { type: 'heading', glyph: Glyphs.Text },
+  { type: 'section', glyph: Glyphs.DocumentText },
   { type: 'list', glyph: Glyphs.Task },
   { type: 'quote', glyph: Glyphs.QuoteUp },
   { type: 'image', glyph: Glyphs.Gallery },
@@ -431,12 +433,11 @@ function StoryForm({
       if (current === null || readOnlyRef.current) return;
       const blocks = current.document.blocks;
       const total = blocks.length;
-      const headingIds = blocks.flatMap((block) => (block.type === 'heading' ? [block.id] : []));
       const key = keyFor();
       setFocusKey(key);
       commit(
         {
-          document: { ...current.document, blocks: insertBlock(blocks, total, newBlock(type, headingIds)) },
+          document: { ...current.document, blocks: insertBlock(blocks, total, newBlock(type, storyAnchorIds(blocks))) },
           keys: [...current.keys, key],
         },
         true,
@@ -502,8 +503,7 @@ function StoryForm({
       takenAnchors: (key) => {
         const current = draftRef.current;
         if (current === null) return [];
-        const index = current.keys.indexOf(key);
-        return current.document.blocks.flatMap((block, at) => (block.type === 'heading' && at !== index ? [block.id] : []));
+        return storyAnchorIds(current.document.blocks, current.keys.indexOf(key));
       },
       registerHead: (key, node) => {
         if (node === null) heads.current.delete(key);

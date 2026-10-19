@@ -9,6 +9,7 @@ import az.ideanest.discovery.domain.DiscoverySort;
 import az.ideanest.discovery.domain.DiscoveryStatus;
 import az.ideanest.discovery.domain.InvalidCursorException;
 import az.ideanest.discovery.domain.ProjectCard;
+import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.Taxonomy;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -95,10 +96,12 @@ public class PostgresCuratedCollections implements CuratedCollections {
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
+    private final MediaLibrary media;
     private final Clock clock;
 
-    public PostgresCuratedCollections(NamedParameterJdbcTemplate jdbc, Clock clock) {
+    public PostgresCuratedCollections(NamedParameterJdbcTemplate jdbc, MediaLibrary media, Clock clock) {
         this.jdbc = jdbc;
+        this.media = media;
         this.clock = clock;
     }
 
@@ -183,6 +186,7 @@ public class PostgresCuratedCollections implements CuratedCollections {
                         + " FROM collection_projects cp"
                         + " JOIN projects p ON p.id = cp.project_id"
                         + " JOIN users u ON u.id = p.creator_id"
+                        + ProjectCardRows.VIDEO_JOIN
                         + " WHERE cp.collection_id = :collectionId"
                         // The campaign-level half of the visibility rule. See the class
                         // comment: the membership row outlives the campaign's right to
@@ -193,7 +197,7 @@ public class PostgresCuratedCollections implements CuratedCollections {
                         + " LIMIT :limit",
                 params,
                 (resultSet, index) ->
-                        new Placed(ProjectCardRows.card(resultSet, asOf), resultSet.getInt("position")));
+                        new Placed(ProjectCardRows.card(resultSet, asOf, media), resultSet.getInt("position")));
 
         boolean hasMore = rows.size() > limit;
         List<Placed> page = hasMore ? rows.subList(0, limit) : rows;

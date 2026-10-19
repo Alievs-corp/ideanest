@@ -190,6 +190,9 @@ public record MediaProperties(
      *     a phone that shoots larger can trim or lower its quality. The raw object is deleted
      *     the moment the transcode is written, so this is transfer, not storage
      * @param maxDuration the longest clip accepted, measured from the file
+     * @param rewardMaxDuration the longest clip a reward tier may show. Not a transcode
+     *     limit: any clip under {@code maxDuration} is processed, and the reward module
+     *     refuses a longer one when it is attached, so one upload path serves both slots
      * @param longestEdge what the frame is reduced to. Never enlarged
      * @param maxFrameRate frames a second. Sixty doubles the bits of a talking head
      * @param crf x264's constant rate factor: lower is larger and sharper
@@ -204,6 +207,7 @@ public record MediaProperties(
     public record Video(
             long maxUploadBytes,
             Duration maxDuration,
+            Duration rewardMaxDuration,
             int longestEdge,
             int maxFrameRate,
             int crf,
@@ -215,6 +219,17 @@ public record MediaProperties(
 
         private static final long DEFAULT_MAX_UPLOAD_BYTES = 250L * 1024 * 1024;
         private static final Duration DEFAULT_MAX_DURATION = Duration.ofSeconds(60);
+        private static final Duration DEFAULT_REWARD_MAX_DURATION = Duration.ofSeconds(5);
+
+        /**
+         * How far over a ceiling a measured clip may run and still be accepted.
+         *
+         * <p>A container's duration includes the longer of its streams, so a clip trimmed
+         * to exactly a minute measures 60.04 seconds. Refusing that as "longer than a
+         * minute" would be technically right and useless. The client preflight in
+         * {@code packages/campaign-editor/src/video.ts} uses the same number.
+         */
+        public static final long DURATION_TOLERANCE_MS = 500;
         private static final int DEFAULT_LONGEST_EDGE = 1280;
         private static final int DEFAULT_MAX_FRAME_RATE = 30;
         private static final int DEFAULT_CRF = 26;
@@ -225,12 +240,13 @@ public record MediaProperties(
         private static final String DEFAULT_SCHEDULE = "*/5 * * * * *";
 
         static Video defaults() {
-            return new Video(0, null, 0, 0, 0, 0, 0, 0, null, null);
+            return new Video(0, null, null, 0, 0, 0, 0, 0, 0, null, null);
         }
 
         public Video {
             maxUploadBytes = maxUploadBytes == 0 ? DEFAULT_MAX_UPLOAD_BYTES : maxUploadBytes;
             maxDuration = maxDuration == null ? DEFAULT_MAX_DURATION : maxDuration;
+            rewardMaxDuration = rewardMaxDuration == null ? DEFAULT_REWARD_MAX_DURATION : rewardMaxDuration;
             longestEdge = longestEdge == 0 ? DEFAULT_LONGEST_EDGE : longestEdge;
             maxFrameRate = maxFrameRate == 0 ? DEFAULT_MAX_FRAME_RATE : maxFrameRate;
             crf = crf == 0 ? DEFAULT_CRF : crf;
@@ -246,6 +262,9 @@ public record MediaProperties(
             if (!maxDuration.isPositive()) {
                 throw new IllegalArgumentException("A video may last some time");
             }
+            if (!rewardMaxDuration.isPositive() || rewardMaxDuration.compareTo(maxDuration) > 0) {
+                throw new IllegalArgumentException("A reward's clip lasts some time, and no longer than any video");
+            }
             if (longestEdge < 16 || longestEdge % 2 != 0) {
                 throw new IllegalArgumentException("H.264 needs an even frame edge of a usable size");
             }
@@ -255,6 +274,11 @@ public record MediaProperties(
             if (threads < 1 || !timeout.isPositive()) {
                 throw new IllegalArgumentException("A transcode uses at least one thread for some time");
             }
+        }
+
+        /** Whether a measured clip fits a reward, with {@link #DURATION_TOLERANCE_MS} of slack. */
+        public boolean fitsAReward(int durationMs) {
+            return durationMs <= rewardMaxDuration.toMillis() + DURATION_TOLERANCE_MS;
         }
     }
 

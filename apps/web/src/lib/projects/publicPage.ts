@@ -8,7 +8,12 @@ import type { ProjectState } from './api';
 import { readStoryDocument, type StoryDocument } from '@ideanest/campaign/story';
 import { RENDERABLE_STATES } from '@ideanest/campaign/states';
 import { daysLeftOf } from '@ideanest/campaign/days-left';
-import { readRewardDetails, type RewardDetails } from '@ideanest/campaign/reward-details';
+import {
+  readRewardDetails,
+  readRewardMedia,
+  type RewardDetails,
+  type RewardMedia,
+} from '@ideanest/campaign/reward-details';
 
 /**
  * The campaign page's view model — what §4.4's page actually renders.
@@ -244,6 +249,8 @@ export function previewOf(page: CampaignPage): PublicProjectPreview {
  */
 export interface CampaignRewardTier extends PublicRewardTier {
   readonly details: RewardDetails;
+  /** The tier's picture and clip, either `null` when it has none (`readRewardMedia`). */
+  readonly media: RewardMedia;
 }
 
 /**
@@ -264,6 +271,7 @@ export function tiersOf(rewards: PublicRewardListResponse | null): readonly Camp
     if (typeof reward?.id !== 'string' || typeof reward.title !== 'string' || price === null) {
       continue;
     }
+    const media = readRewardMedia(reward);
     tiers.push({
       id: reward.id,
       title: reward.title,
@@ -272,8 +280,10 @@ export function tiersOf(rewards: PublicRewardListResponse | null): readonly Camp
       // Absent and null both mean unlimited, which is the common case; zero is a tier that
       // is shown and cannot be taken (PL-01) and is not the same thing.
       remainingQuantity: typeof reward.remainingQuantity === 'number' ? reward.remainingQuantity : null,
-      imageUrl: null,
+      // The still a backer sees on the card, so the `Product` node pictures the same thing.
+      imageUrl: media.image?.url ?? media.video?.posterUrl ?? null,
       details: readRewardDetails(reward),
+      media,
     });
   }
   return tiers;

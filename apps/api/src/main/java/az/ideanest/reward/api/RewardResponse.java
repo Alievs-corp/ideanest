@@ -55,6 +55,9 @@ import java.util.UUID;
  *     <p>There is deliberately no counterpart for {@code limitQuantity}. §5.3
  *     permits raising it at any time, so no boolean describes it honestly: a lock
  *     the client could read as "not editable" would disable a control that works
+ * @param image the tier's picture, or null
+ * @param video the tier's clip, or null. Null as well while an attached upload is not
+ *     servable, which a ready one always is
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record RewardResponse(
@@ -82,6 +85,8 @@ public record RewardResponse(
         List<ShippingZoneRateBody> shippingZoneRates,
         long version,
         boolean pricingLocked,
+        RewardImageBody image,
+        RewardVideoBody video,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -115,6 +120,8 @@ public record RewardResponse(
                         .toList(),
                 tier.getVersion(),
                 detail.locks().rewardPriceLocked(),
+                RewardImageBody.of(detail.image()),
+                RewardVideoBody.of(detail.video()),
                 tier.getCreatedAt(),
                 tier.getUpdatedAt());
     }

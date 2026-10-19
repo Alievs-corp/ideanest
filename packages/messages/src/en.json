@@ -5012,6 +5012,11 @@
         "pickup": "Collected in person, nothing shipped",
         "shipsTo": "{count, plural, one {Ships to # country} other {Ships to # countries}}",
         "shipsToFrom": "{count, plural, one {Ships to # country, shipping from {amount}} other {Ships to # countries, shipping from {amount}}}"
+      },
+      "media": {
+        "play": "Play the video of {title}",
+        "pause": "Pause the video of {title}",
+        "imageAlt": "Picture of {title}"
       }
     },
     "media": {
@@ -5384,7 +5389,27 @@
         "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below.",
         "ratesNotSavedDetail": "Everything else about the reward was saved. Only the per-country rates were refused, so fix them and save again — the rest will not be sent twice.",
         "earlyBirdHint": "A better deal that runs out. It needs either a closing date or a limited number of places — without one it is an ordinary reward with a label that hurries people for nothing.",
-        "secretHint": "Left out of the public list and reached by a private token instead. Making it public again destroys that token, so any link already sent stops working."
+        "secretHint": "Left out of the public list and reached by a private token instead. Making it public again destroys that token, so any link already sent stops working.",
+        "image": "Image",
+        "imageHint": "Optional. Shown at the top of the reward’s card on the campaign page.",
+        "imagePrompt": "Drop an image of this reward here",
+        "imageDragPrompt": "Release to upload this image",
+        "imageButtonLabel": "Choose an image",
+        "imageDropHint": "Up to 20 MB: JPEG, PNG, WebP, AVIF or HEIC.",
+        "imageReplace": "Replace image",
+        "imageRemove": "Remove image",
+        "imageUploaded": "Image uploaded. Save the reward to keep it.",
+        "video": {
+          "label": "Video",
+          "hint": "Optional. A clip of up to {seconds} seconds that plays, without sound, on the reward’s card.",
+          "prompt": "Drop a video of this reward here",
+          "set": "Video ready. Save the reward to keep it.",
+          "previewLabel": "Preview of the reward video",
+          "processing": "Converting the video…",
+          "notAttached": "That video could not be added to the reward. Upload it again.",
+          "tooLong": "That video runs {duration}. A reward video is at most {seconds} seconds — trim it and choose it again.",
+          "refusedTooLong": "The reward was not saved: its video is longer than {seconds} seconds. Choose a shorter clip."
+        }
       },
       "deleteItemNamed": "Delete {name}?",
       "deleteRewardNamed": "Delete {title}?",
@@ -5521,7 +5546,8 @@
           "quote": "Quote",
           "rule": "Divider",
           "image": "Image",
-          "embed": "Embed"
+          "embed": "Embed",
+          "section": "Section"
         },
         "describe": {
           "position": "{index} of {total}",
@@ -5539,6 +5565,9 @@
           "imageNoAlt": "no description yet",
           "embed": "{provider} embed {position}: {title}",
           "embedNoTitle": "no title yet",
+          "section": "Section {position}: {title}",
+          "sectionWithImage": "Section {position}, with an image: {title}",
+          "sectionEmpty": "no title yet",
           "numbered": "Numbered",
           "bulleted": "Bulleted"
         },
@@ -5551,7 +5580,9 @@
           "imageNotMeasured": "This image has not been measured yet. Use “Measure and add” so its size is recorded.",
           "imageNeedsAlt": "A description is required. It is what a backer using a screen reader receives instead of the picture.",
           "embedNeedsUrl": "An embed needs an address.",
-          "embedNeedsTitle": "An embed needs a title. It is what a screen reader announces instead of “frame”."
+          "embedNeedsTitle": "An embed needs a title. It is what a screen reader announces instead of “frame”.",
+          "sectionNeedsTitle": "A section needs a title.",
+          "sectionTitleTooLong": "A section title is at most {max} characters. Move the rest into the section’s text."
         }
       },
       "panel": {
@@ -5629,7 +5660,8 @@
           "quote": "A pulled-out quotation.",
           "image": "An image you upload, or one that is already published.",
           "embed": "A YouTube or Vimeo video.",
-          "rule": "A horizontal divider."
+          "rule": "A horizontal divider.",
+          "section": "A titled part of the story, with an optional image. It is listed in the anchor menu."
         },
         "empty": "Nothing here yet. Add a paragraph to begin — most campaigns open with what the product is and who it is for.",
         "embedHint": "The title is what a screen reader announces instead of “frame”. Only YouTube and Vimeo can be embedded.",
@@ -5640,7 +5672,22 @@
         "imageDragPrompt": "Release to upload this image",
         "imageButtonLabel": "Choose an image",
         "imageDropHint": "Up to 20 MB: JPEG, PNG, WebP, AVIF or HEIC. Its size is measured, so the page can reserve its space before it loads.",
-        "imageUploadOf": "Upload to {name}"
+        "imageUploadOf": "Upload to {name}",
+        "sectionBlock": {
+          "title": "Section title",
+          "titlePlaceholder": "Our workshop",
+          "image": "Image",
+          "imageHint": "Optional. Shown under the title, before the text.",
+          "addImage": "Add an image",
+          "replaceImage": "Replace image",
+          "removeImage": "Remove image",
+          "imageAlt": "Image description",
+          "text": "Text",
+          "textPlaceholder": "What this part of the story is about. Select text and use Bold or Italic.",
+          "addImageTo": "Add an image to {name}",
+          "replaceImageOf": "Replace the image of {name}",
+          "removeImageFrom": "Remove the image from {name}"
+        }
       },
       "history": {
         "title": "Earlier versions",
@@ -7210,6 +7257,10 @@
     },
     "blocking": {
       "offline": "Blocking needs a connection."
+    },
+    "preview": {
+      "cardHint": "Press and hold to preview the video",
+      "rewardHint": "Press and hold to play the video"
     }
   },
   "blocking": {

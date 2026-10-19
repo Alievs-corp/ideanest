@@ -1,23 +1,30 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { formatMoney, type Money } from '@ideanest/money';
-import type { RewardShipping } from '@ideanest/campaign/reward-details';
+import type { RewardMedia, RewardShipping } from '@ideanest/campaign/reward-details';
 import { Glyphs } from '../../icons';
 import type { RewardTier } from '../../lib/campaign-page';
 import { checkoutHref } from '../../lib/campaign-actions';
 import { formatDeliveryMonth, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { font, fontSize, lineHeight, radius, size, spacing, tracking } from '../../theme';
+import { clockDuration } from '../../lib/media/duration';
+import { useHoldPreview } from '../../lib/media/hold-preview';
+import { colors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../../theme';
+import { HoldPreviewVideo } from '../hold-preview-video';
 import { toneColor } from '../text';
 import {
   Icon,
+  MediaFrame,
   Pill,
   PressableScale,
   SurfaceProvider,
   TONES,
   Tag,
   haptics,
+  useAssistiveTechnology,
+  useMotionAllowed,
   useSurface,
   type IconComponent,
 } from '../ui';
@@ -51,7 +58,17 @@ import { BLOCK, blockSurface } from '../ui/surface';
  * control a screen reader meets, and the card's words stay readable one by one rather than being
  * swallowed into a button's name.
  *
- * <p>Drawn only when there is at least one tier; no images, as on the web.
+ * <h2>Picture and clip</h2>
+ *
+ * A tier with a picture opens with it, in the reward imagery's 3:2 box (reserved, so the card does
+ * not jump when it decodes), named "Picture of {title}". A tier with a clip shows the clip's poster
+ * with a play glyph and its length, and plays it — muted, looping, at most five seconds — while it
+ * is pressed and held, stopping on release; one preview plays at a time, app-wide. A tap on it
+ * selects the tier like the rest of the card. With a screen reader or switch control on, a hold is
+ * not something to ask for: the clip is a button that plays and pauses it ("Play the video of
+ * {title}"). Under Reduce Motion it never plays on a hold.
+ *
+ * <p>Drawn only when there is at least one tier.
  */
 export interface CampaignRewardsProps {
   readonly projectId: string;
@@ -110,6 +127,7 @@ export function CampaignRewards({ projectId, tiers, pledgeable }: CampaignReward
             : null;
         return (
           <RewardCard key={tier.id} onSelect={select} testID={`reward-${tier.id}`}>
+            <TierMedia id={tier.id} title={tier.title} media={tier.media} onSelect={select} />
             <TierText price={formatMoney(tier.price)} title={tier.title} />
             {details.earlyBird || details.featured ? (
               <View style={styles.tags}>
@@ -196,6 +214,86 @@ function RewardCard({
   );
 }
 
+/** The tier's picture, or its clip's poster with the hold preview; nothing for a tier with neither. */
+function TierMedia({
+  id,
+  title,
+  media,
+  onSelect,
+}: {
+  readonly id: string;
+  readonly title: string;
+  readonly media: RewardMedia;
+  readonly onSelect: (() => void) | null;
+}) {
+  const t = useT('campaign.rewards.media');
+  const hint = useT('mobile.preview');
+  const assisted = useAssistiveTechnology();
+  const moving = useMotionAllowed('moderate');
+  const video = media.video;
+  // A screen reader's button is an explicit request to play, so it is offered under Reduce Motion too.
+  const playable = video !== null && (moving || assisted);
+  const preview = useHoldPreview(`reward:${id}`, playable);
+
+  if (video === null) {
+    if (media.image === null) return null;
+    return (
+      <MediaFrame ratio="3/2" radius="lg" testID={`reward-image-${id}`}>
+        <Image
+          source={{ uri: media.image.url }}
+          placeholder={media.image.blurDataUrl === null ? undefined : { uri: media.image.blurDataUrl }}
+          contentFit="cover"
+          transition={0}
+          style={styles.fill}
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={t('imageAlt', { title })}
+        />
+      </MediaFrame>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={preview.playing ? t('pause', { title }) : t('play', { title })}
+      accessibilityHint={playable && !assisted ? hint('rewardHint') : undefined}
+      accessibilityState={{ disabled: !playable && onSelect === null }}
+      onPress={() => {
+        if (assisted && playable) {
+          if (preview.playing) preview.stop();
+          else preview.start();
+          return;
+        }
+        onSelect?.();
+      }}
+      onLongPress={playable && !assisted ? preview.start : undefined}
+      onPressOut={playable && !assisted ? preview.stop : undefined}
+      testID={`reward-video-${id}`}
+    >
+      <MediaFrame ratio="3/2" radius="lg">
+        <Image
+          source={{ uri: video.posterUrl }}
+          placeholder={video.blurDataUrl === null ? undefined : { uri: video.blurDataUrl }}
+          contentFit="cover"
+          transition={0}
+          style={styles.fill}
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          testID={`reward-poster-${id}`}
+        />
+        <HoldPreviewVideo url={video.url} playing={preview.playing} testID={`reward-preview-${id}`} />
+        {/* Decorative: the button's name says it is a video. */}
+        <View style={styles.badge} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Icon icon={Glyphs.Play} variant="bold" size={14} color={colors.textPrimary} />
+          {video.durationMs > 0 ? <Text style={styles.length}>{clockDuration(video.durationMs)}</Text> : null}
+        </View>
+      </MediaFrame>
+    </Pressable>
+  );
+}
+
 function TierText({ price, title }: { readonly price: string; readonly title: string }) {
   const tone = TONES[useSurface()];
   return (
@@ -267,6 +365,27 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.small,
   },
   stock: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  fill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  // The campaign video's length chip: light words on a dark scrim, over any poster.
+  badge: {
+    position: 'absolute',
+    right: spacing[2],
+    bottom: spacing[2],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+    paddingHorizontal: spacing[2],
+    borderRadius: radius.full,
+    backgroundColor: tint(colors.black, 0.64),
+  },
+  // The canvas's own light text: the scrim is dark on either surface.
+  length: {
+    ...font.medium,
+    fontSize: fontSize.caption,
+    lineHeight: lineHeight.small,
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   select: { marginTop: spacing[2], alignItems: 'flex-start' },
 });

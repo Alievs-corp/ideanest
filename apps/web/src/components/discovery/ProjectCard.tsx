@@ -13,6 +13,8 @@ import {
 import type { CSSProperties, ReactNode } from 'react';
 import { Avatar, MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
 import { campaignAccent } from '@ideanest/discovery/category-look';
+import { cardCoverFrom } from '@ideanest/discovery/card-media';
+import { CardVideoPreview } from './CardVideoPreview';
 import { ACCENT_SURFACE } from '../browse/accent-surface';
 import { CAMPAIGN_CARD_SIZES } from '../../lib/images/sizes';
 import { canOptimise } from '../../lib/images/source';
@@ -73,6 +75,11 @@ import { pluralise } from '../../lib/i18n/plurals';
  * to content crossfade only" (docs/motion-system.md §5) and §8 forbids animation
  * in long lists outright — fifty animated cards in a feed produce visible jank.
  * The one `FadeUp` on this surface is on the page heading, in `DiscoveryView`.
+ *
+ * A CAMPAIGN WITH A VIDEO IS COVERED BY IT. `cardCoverFrom` draws the video's poster as the
+ * still, and `CardVideoPreview` — the card's only client code — plays the clip, muted, over it
+ * while the card is hovered or focused, on a hover device and never under reduced motion. Like
+ * the zoom it is an answer to the pointer, not an entry, so it is not what §5.1 forbids.
  */
 
 /** Under two days left, which is what §8.1 calls "closing within 48 hours". */
@@ -175,6 +182,10 @@ export interface ProjectCardProps {
 
 const COVER_SCALE = 1.177;
 
+/** The cover's 5% lean under the pointer (#341), shared by the still and the clip over it. */
+const COVER_ZOOM =
+  'transition-transform duration-500 ease-in-out motion-safe:group-hover:scale-105';
+
 function coverCrop(scale: number): CSSProperties {
   return {
     '--media-ratio': `16 / ${(9 * scale).toFixed(2)}`,
@@ -201,6 +212,11 @@ export function ProjectCard({
   const badge = card.badge == null ? null : BADGES[card.badge];
   const accent = campaignAccent(card);
   const days = card.daysLeft ?? null;
+  /*
+   * A campaign with a video is covered by it: the still is the video's poster and the clip
+   * previews over it on hover. The app asks the same function, so both draw one picture.
+   */
+  const cover = cardCoverFrom(card);
 
   /*
    * A COUNTDOWN ONLY WHILE THERE IS SOMETHING TO COUNT DOWN TO. `daysLeft` is
@@ -222,6 +238,8 @@ export function ProjectCard({
   return (
     <article
       data-on-accent=""
+      // The hover and focus `CardVideoPreview` listens to, when there is a clip to preview.
+      data-card-video={cover.video === null ? undefined : ''}
       className={`group relative flex h-full flex-col rounded-xl text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
     >
       {/*
@@ -255,9 +273,9 @@ export function ProjectCard({
         className={coverClassName === undefined ? 'rounded-t-xl' : `rounded-t-xl ${coverClassName}`}
         {...(coverScale === 1 ? {} : { style: coverCrop(coverScale) })}
       >
-        {card.image != null && (
+        {cover.url !== null && (
           <Image
-            src={card.image.url}
+            src={cover.url}
             alt=""
             fill
             sizes={sizes}
@@ -268,11 +286,12 @@ export function ProjectCard({
              * component blanks the whole feed — one creator's typo must not be
              * able to do that. See `lib/images/source.ts`.
              */
-            unoptimized={!canOptimise(card.image.url)}
+            unoptimized={!canOptimise(cover.url)}
             priority={priority}
-            className="object-cover transition-transform duration-500 ease-in-out motion-safe:group-hover:scale-105"
+            className={`object-cover ${COVER_ZOOM}`}
           />
         )}
+        {cover.video !== null && <CardVideoPreview src={cover.video.url} className={COVER_ZOOM} />}
       </MediaFrame>
 
       {/*

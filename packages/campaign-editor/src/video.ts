@@ -16,6 +16,14 @@
 export const VIDEO_MAX_SECONDS = 60;
 
 /**
+ * The longest clip a reward tier takes — `MediaProperties.Video.rewardMaxDuration`.
+ *
+ * A reward's clip is a looping preview on its card rather than something watched, so five
+ * seconds. The app imports this rather than keeping its own five.
+ */
+export const REWARD_VIDEO_MAX_SECONDS = 5;
+
+/**
  * The service's own allowance for container rounding.
  *
  * A clip recorded as "one minute" on a phone is routinely 60.02 seconds in its container, and
@@ -79,23 +87,39 @@ export function videoContentType(file: {
 /** The refusals this module can make before anything is sent. A subset of the service's. */
 export type VideoPreflightRefusal = 'EMPTY' | 'TOO_LARGE' | 'TOO_LONG';
 
+/** What a client knows about a clip before sending it. */
+export interface VideoPreflightFacts {
+  readonly byteSize: number;
+  /**
+   * The length the client read, or `null` when it could not read one. Unknown is not too long:
+   * a browser that cannot parse a container's header may still be holding a file the service
+   * can transcode, and the service measures the length itself. Refusing on "I could not tell"
+   * would turn a gap in one browser's decoders into a rule.
+   */
+  readonly durationMs: number | null;
+}
+
 /**
  * Why a clip would be refused, or `null` when it is worth uploading.
  *
- * @param durationMs the length the client read, or `null` when it could not read one. Unknown
- *     is not too long: a browser that cannot parse a container's header may still be holding a
- *     file the service can transcode, and the service measures the length itself. Refusing on
- *     "I could not tell" would turn a gap in one browser's decoders into a rule.
+ * @param maxSeconds the field's limit: the campaign video's sixty unless a field says otherwise.
+ *     The slack is the same for every field, because it is the container's rounding, not the
+ *     field's.
  */
-export function videoPreflightRefusal(facts: {
-  readonly byteSize: number;
-  readonly durationMs: number | null;
-}): VideoPreflightRefusal | null {
+export function videoPreflightRefusal(
+  facts: VideoPreflightFacts,
+  maxSeconds: number = VIDEO_MAX_SECONDS,
+): VideoPreflightRefusal | null {
   if (facts.byteSize <= 0) return 'EMPTY';
   if (facts.byteSize > VIDEO_MAX_BYTES) return 'TOO_LARGE';
-  const limitMs = VIDEO_MAX_SECONDS * 1000 + VIDEO_DURATION_SLACK_MS;
+  const limitMs = maxSeconds * 1000 + VIDEO_DURATION_SLACK_MS;
   if (facts.durationMs !== null && facts.durationMs > limitMs) return 'TOO_LONG';
   return null;
+}
+
+/** {@link videoPreflightRefusal} against a reward tier's five seconds. */
+export function rewardVideoPreflightRefusal(facts: VideoPreflightFacts): VideoPreflightRefusal | null {
+  return videoPreflightRefusal(facts, REWARD_VIDEO_MAX_SECONDS);
 }
 
 /**

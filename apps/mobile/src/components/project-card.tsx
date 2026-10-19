@@ -5,14 +5,17 @@ import Animated from 'react-native-reanimated';
 import { Glyphs } from '../icons';
 import { StyleSheet, Text, View } from 'react-native';
 import type { DiscoveryStatus } from '@ideanest/discovery/vocabulary';
+import { cardCoverFrom } from '@ideanest/discovery/card-media';
 import { campaignAccent, hashAccent } from '@ideanest/discovery/category-look';
 import { formatMoney } from '@ideanest/money';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import type { Card } from '../api/queries';
 import { pluralCategory, useT } from '../lib/i18n';
 import { useLocale } from '../lib/locale';
+import { useHoldPreview } from '../lib/media/hold-preview';
 import { font, fontSize, lineHeight, radius, spacing, type Accent } from '../theme';
 import { coverSnapshot, coverTag } from './campaign/campaign-media';
+import { HoldPreviewVideo } from './hold-preview-video';
 import { Body, CardTitle, Meta } from './text';
 import {
   AccentCard,
@@ -24,6 +27,7 @@ import {
   TONES,
   Tag,
   useFocusRing,
+  useMotionAllowed,
   useSharedSource,
   wholePercent,
   type IconComponent,
@@ -73,6 +77,14 @@ import {
  * #279): pressing the card launches the flight and pushes the page with `transition: 'shared'`,
  * which the root stack answers with a fade so the cover is the thing that moves. Under Reduce
  * Motion the param is left out and the page pushes like any other.
+ *
+ * <h2>A campaign with a video</h2>
+ *
+ * Is covered by it (`cardCoverFrom`, shared with the web): the still is the video's poster, which
+ * is also what flies to the page. Pressing and holding the card plays the clip over the poster,
+ * muted and looping, until the finger lifts (`useHoldPreview`, one preview app-wide); a tap still
+ * opens the campaign, and a hold opens nothing. The hint says so. Under Reduce Motion the clip
+ * never plays and the hint is not given.
  */
 
 /** Two days or fewer left — what §8.1 calls "closing within 48 hours". */
@@ -145,8 +157,13 @@ export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }
   const t = useT();
   const locale = useLocale();
   const ring = useFocusRing();
-  const cover = card.image?.url ?? null;
-  const shared = useSharedSource(coverTag(card.creatorSlug, card.slug), coverSnapshot(cover));
+  const media = cardCoverFrom(card);
+  const cover = media.url;
+  const tag = coverTag(card.creatorSlug, card.slug);
+  const shared = useSharedSource(tag, coverSnapshot(cover));
+  const moving = useMotionAllowed('moderate');
+  const previewable = media.video !== null && moving;
+  const preview = useHoldPreview(tag, previewable);
 
   const title = card.title ?? t('mobile.campaign.untitled');
   const creator = card.creator?.name ?? '';
@@ -210,9 +227,12 @@ export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }
         accessibilityRole="link"
         accessibilityLabel={byline === '' ? title : `${title}, ${byline}`}
         accessibilityValue={{ text: facts.join(', ') }}
+        accessibilityHint={previewable ? t('mobile.preview.cardHint') : undefined}
         onFocus={ring.onFocus}
         onBlur={ring.onBlur}
         onPress={shared.launch}
+        onLongPress={previewable ? preview.start : undefined}
+        onPressOut={previewable ? preview.stop : undefined}
         contentStyle={[styles.target, ring.ring]}
         testID="campaign-card"
       >
@@ -234,6 +254,9 @@ export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
               />
+            )}
+            {media.video === null ? null : (
+              <HoldPreviewVideo url={media.video.url} playing={preview.playing} testID="campaign-card-preview" />
             )}
           </MediaFrame>
           </Animated.View>

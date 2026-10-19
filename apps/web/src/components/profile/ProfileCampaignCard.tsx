@@ -4,6 +4,8 @@ import { Link } from '../../i18n/navigation';
 import { CalendarClock, CircleCheck, CircleDot, CircleSlash, Package, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
+import { cardCoverFrom } from '@ideanest/discovery/card-media';
+import { CardVideoPreview } from '../discovery/CardVideoPreview';
 import { canOptimise } from '../../lib/images/source';
 import { PROFILE_CARD_SIZES } from '../../lib/images/sizes';
 import { formatMoney } from '../../lib/money';
@@ -60,6 +62,8 @@ import type { ProfileCardCopy } from '../../lib/i18n/profile-copy';
  * docs/motion-system.md §8 forbids animation in long lists outright, and a profile's created
  * list is unbounded downward in exactly the way a feed is. The cover's box is reserved by
  * `MediaFrame` before the bytes arrive, so a grid of twelve does not reflow as they decode.
+ * The one exception answers the pointer rather than the page: a campaign with a video previews
+ * it over the poster while hovered or focused (`CardVideoPreview`), never under reduced motion.
  */
 
 /**
@@ -144,28 +148,34 @@ export function ProfileCampaignCard({
       : null;
   // Rounded down, as the discovery card and the campaign page round: 99.5% is not "100%".
   const percent = completion?.toFixed(0, Decimal.ROUND_DOWN) ?? '';
+  // The video covers the card when there is one, as on the discovery card.
+  const cover = cardCoverFrom({ image: card.coverImage, video: card.video });
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-white/8 bg-surface-2 transition-colors duration-300 ease-in-out hover:bg-surface-3">
+    <article
+      // The hover and focus `CardVideoPreview` listens to, when there is a clip to preview.
+      data-card-video={cover.video === null ? undefined : ''}
+      className="group relative flex flex-col overflow-hidden rounded-lg border border-white/8 bg-surface-2 transition-colors duration-300 ease-in-out hover:bg-surface-3">
       {/*
         The box is reserved whether or not there is a cover, so a campaign with a photograph
         and one without are the same height and the grid below never moves (docs/ui-kit.md
         §7.16). `alt` is empty by decision: the title is the next element and it is the link.
       */}
       <MediaFrame ratio="16/9">
-        {card.coverImage !== null && (
+        {cover.url !== null && (
           <Image
-            src={card.coverImage.url}
+            src={cover.url}
             alt=""
             fill
             sizes={PROFILE_CARD_SIZES}
             /* A host the optimiser will not fetch is served as it is rather than thrown
                over — one creator's typo must not blank the whole grid. */
-            unoptimized={!canOptimise(card.coverImage.url)}
+            unoptimized={!canOptimise(cover.url)}
             priority={priority}
             className="object-cover"
           />
         )}
+        {cover.video !== null && <CardVideoPreview src={cover.video.url} />}
       </MediaFrame>
 
       {/*

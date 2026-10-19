@@ -184,6 +184,25 @@ export const COLLECTION_COVER_SIZES = sizesFor([
   { size: 'calc(100vw - 40px)' },
 ]);
 
+/**
+ * A reward tier's picture or video poster on the campaign page — `CampaignRewards`.
+ *
+ * The page is `mx-auto w-full max-w-[1200px] px-5 sm:px-6`, and from `lg` (1024px) the rewards
+ * are the right-hand track of `lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-10`. The
+ * card is `p-5` with a 1px border, so the picture is 42px narrower than its track.
+ *
+ *   ≥1200: the container stops growing — (1152 − 40) / 2.6 − 42 = 385.7, so 386px
+ *   ≥1024: the right-hand track       — (100vw − 48 − 40) / 2.6 − 42
+ *    ≥640: one column, `px-6`         — 100vw − 48 − 42
+ *    else: one column, `px-5`         — 100vw − 40 − 42
+ */
+export const REWARD_MEDIA_SIZES = sizesFor([
+  { minWidth: 1200, size: '386px' },
+  { minWidth: 1024, size: 'calc((100vw - 88px) / 2.6 - 42px)' },
+  { minWidth: 640, size: 'calc(100vw - 90px)' },
+  { size: 'calc(100vw - 82px)' },
+]);
+
 /*
  * THERE IS NO EDITOR ENTRY, deliberately. The campaign editor's previews render
  * a plain `<img>` rather than `next/image` — `CoverImageField` says why — so

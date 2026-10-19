@@ -1,4 +1,5 @@
 import type { Money } from '@ideanest/money';
+import { cardCoverFrom, type CardVideo, type WireCardMedia } from '@ideanest/discovery/card-media';
 
 /**
  * `GET /v1/users/{slug}` and its two lists, narrowed once — the web's `lib/profiles/wire.ts`
@@ -50,7 +51,10 @@ export interface ProfileProjectCard {
   readonly goal: Money | null;
   readonly pledged: Money | null;
   readonly backersCount: number;
+  /** The still to draw: the video's poster when the campaign has a video, else its cover. */
   readonly coverUrl: string | null;
+  /** The clip a held card previews, or `null`. */
+  readonly video: CardVideo | null;
 }
 
 export interface ProfilePage {
@@ -118,8 +122,32 @@ function readProjectCard(value: unknown): ProfileProjectCard | null {
     goal: money(source['goal']),
     pledged: money(source['pledged']),
     backersCount: count(source['backersCount']),
-    coverUrl: text(object(source['coverImage'])?.['url']),
+    ...coverOf(source),
   };
+}
+
+/** The card's still and clip, chosen as every campaign card chooses them (`cardCoverFrom`). */
+function coverOf(source: Record<string, unknown>): Pick<ProfileProjectCard, 'coverUrl' | 'video'> {
+  const image = object(source['coverImage']);
+  const video = object(source['video']);
+  const wire: WireCardMedia = {
+    image: image === null ? null : { url: text(image['url']), width: size(image['width']), height: size(image['height']) },
+    video:
+      video === null
+        ? null
+        : {
+            url: text(video['url']),
+            posterUrl: text(video['posterUrl']),
+            width: size(video['width']),
+            height: size(video['height']),
+          },
+  };
+  const cover = cardCoverFrom(wire);
+  return { coverUrl: cover.url, video: cover.video };
+}
+
+function size(value: unknown): number | null {
+  return typeof value === 'number' ? value : null;
 }
 
 function readLocation(value: unknown): ProfileLocation | null {

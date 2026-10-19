@@ -7,6 +7,7 @@ import az.ideanest.shared.Patched;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A partial edit of a reward tier, with JSON Merge-Patch semantics (RFC 7396).
@@ -29,6 +30,9 @@ import java.util.List;
  * <p>The per-country rates are deliberately not here. They are replaced through
  * {@code PUT /v1/rewards/{id}/shipping-rules}, because a rate table is read as a whole
  * by whatever quotes from it.
+ *
+ * <p>{@code imageMediaId} and {@code videoMediaId} name an upload, or are null to remove
+ * the tier's picture or clip. Editable after launch.
  */
 public record RewardPatchRequest(
         Patched<String> title,
@@ -43,7 +47,9 @@ public record RewardPatchRequest(
         Patched<Boolean> isAddon,
         Patched<Instant> availableFrom,
         Patched<Instant> availableUntil,
-        Patched<List<RewardItemBody>> items) {
+        Patched<List<RewardItemBody>> items,
+        Patched<UUID> imageMediaId,
+        Patched<UUID> videoMediaId) {
 
     public RewardPatchRequest {
         // Absence is the neutral value. See Patched: Jackson's absent hook already does
@@ -61,6 +67,8 @@ public record RewardPatchRequest(
         availableFrom = Patched.orAbsent(availableFrom);
         availableUntil = Patched.orAbsent(availableUntil);
         items = Patched.orAbsent(items);
+        imageMediaId = Patched.orAbsent(imageMediaId);
+        videoMediaId = Patched.orAbsent(videoMediaId);
     }
 
     /**
@@ -87,7 +95,9 @@ public record RewardPatchRequest(
                 isAddon,
                 availableFrom,
                 availableUntil,
-                items.map(RewardPatchRequest::contents));
+                items.map(RewardPatchRequest::contents),
+                imageMediaId,
+                videoMediaId);
     }
 
     /** {@code "items": null} is an empty composition, not an absent field. */

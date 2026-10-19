@@ -4,6 +4,7 @@ import type { Money } from '../money';
 import { toSearchParams, type DiscoveryFilters } from '@ideanest/discovery/filters';
 import type { AmountBand, CompletionBand, DiscoveryStatus } from '@ideanest/discovery/vocabulary';
 import { PAGE_SIZE, type DiscoveryFacets } from '@ideanest/discovery/facets';
+import type { CardVideo } from '@ideanest/discovery/card-media';
 
 /**
  * The typed client for `GET /v1/discover` and `GET /v1/discover/facets`.
@@ -51,6 +52,11 @@ export interface ProjectCard {
   title: string;
   creator: DiscoveryCreator;
   image?: DiscoveryImage | null;
+  /**
+   * The campaign's READY video, absent when it has none. When present it is the card's cover:
+   * its poster is drawn instead of `image` and the clip previews on hover (`cardCoverFrom`).
+   */
+  video?: CardVideo | null;
   /** Absent for a campaign that has not set one — every `PRELAUNCH` row. */
   goal?: Money | null;
   pledged: Money;

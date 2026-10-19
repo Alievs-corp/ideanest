@@ -32,6 +32,13 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     boolean existsByVideoMediaIdAndIdNot(UUID videoMediaId, UUID id);
 
     /**
+     * Whether a reward tier shows this video. Asked beside the question above, because a
+     * clip short enough for a reward may also be a campaign's video.
+     */
+    @Query(value = "SELECT EXISTS (SELECT 1 FROM reward_tiers WHERE video_media_id = :mediaId)", nativeQuery = true)
+    boolean isVideoShownByAReward(@Param("mediaId") UUID mediaId);
+
+    /**
      * Whether this creator already has a campaign under this slug.
      *
      * <p>Scoped to the creator because the unique index is: the public URL is

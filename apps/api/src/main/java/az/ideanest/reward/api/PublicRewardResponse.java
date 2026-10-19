@@ -53,6 +53,8 @@ import java.util.UUID;
  *     {@code PublicRewardCatalogue}
  * @param shippingRates per destination, so a client can quote PL-05's shipping charge
  *     before the backer reaches checkout. Empty when the tier is not shipped
+ * @param image the tier's picture, or null
+ * @param video the tier's clip of at most five seconds, or null
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record PublicRewardResponse(
@@ -67,7 +69,9 @@ public record PublicRewardResponse(
         boolean isEarlyBird,
         boolean isFeatured,
         List<ItemBody> items,
-        List<ShippingRuleBody> shippingRates) {
+        List<ShippingRuleBody> shippingRates,
+        RewardImageBody image,
+        RewardVideoBody video) {
 
     /** The one place a tier becomes a public response. */
     public static PublicRewardResponse of(PublicRewardCatalogue.PublicReward reward) {
@@ -87,7 +91,9 @@ public record PublicRewardResponse(
                 // Reused rather than redefined: a rate is a country and two amounts
                 // in both directions, and a second record for it would be a second
                 // place for the wire format of money to drift.
-                reward.shippingRates().stream().map(ShippingRuleBody::of).toList());
+                reward.shippingRates().stream().map(ShippingRuleBody::of).toList(),
+                RewardImageBody.of(reward.image()),
+                RewardVideoBody.of(reward.video()));
     }
 
     /**

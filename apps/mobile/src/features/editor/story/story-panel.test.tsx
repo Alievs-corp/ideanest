@@ -343,9 +343,9 @@ describe('StoryPanel — adding, moving and removing blocks', () => {
     expect(storyPatches().at(-1)?.blocks).toHaveLength(3);
   });
 
-  it('names the seven add pills as actions', async () => {
+  it('names the eight add pills as actions', async () => {
     await show();
-    for (const type of ['paragraph', 'heading', 'list', 'quote', 'image', 'embed', 'rule'] as const) {
+    for (const type of ['paragraph', 'heading', 'section', 'list', 'quote', 'image', 'embed', 'rule'] as const) {
       expect(screen.getByTestId(`story-add-${type}`)).toBeTruthy();
     }
     expect(screen.getByTestId('story-add-paragraph').props.accessibilityLabel).toBe(
@@ -951,5 +951,73 @@ describe('StoryPanel — the keyboard', () => {
     await layOut();
     // Only the address moves into sight above the keyboard; paragraph 2 (at 300) is not revisited.
     expect(scrollTo.mock.calls).toEqual([[{ y: 1900 + 90 + spacing[4] - (FRAME.height - 336), animated: false }]]);
+  });
+});
+
+describe('StoryPanel — sections', () => {
+  it('adds a section, held until it has a title, then saved with its anchor and listed in the menu', async () => {
+    mockProject = async () => project({ story: doc([]) });
+    await show();
+    await fireEvent.press(screen.getByTestId('story-add-section'));
+    await settle();
+    expect(screen.getByTestId('story-add-section').props.accessibilityLabel).toContain(STORY.blocks.hints.section);
+    expect(within(screen.getByTestId('story-block-0')).getByText(STORY.vocabulary.problems.sectionNeedsTitle)).toBeTruthy();
+    expect(storyPatches()).toEqual([]);
+
+    await fireEvent.changeText(screen.getByTestId('story-block-0-title'), 'Our workshop');
+    await fireEvent.changeText(screen.getByTestId('story-block-0-text'), 'Every lamp is **blown** here.');
+    await blur('story-block-0-text');
+    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+      type: 'section',
+      id: 'our-workshop',
+      title: 'Our workshop',
+      image: null,
+      spans: parseSpans('Every lamp is **blown** here.'),
+    });
+    expect(within(screen.getByTestId('story-anchors')).getByText('#our-workshop')).toBeTruthy();
+    // No picture yet: no description to type for one.
+    expect(screen.queryByTestId('story-block-0-image-alt')).toBeNull();
+  });
+
+  it('takes its anchor from the same set as the headings', async () => {
+    await show();
+    await fireEvent.press(screen.getByTestId('story-add-section'));
+    await settle();
+    await fireEvent.changeText(screen.getByTestId('story-block-3-title'), 'The plan');
+    await blur('story-block-3-title');
+    expect(storyPatches().at(-1)?.blocks[3]).toMatchObject({ type: 'section', id: 'the-plan-2', title: 'The plan' });
+  });
+
+  it('takes a picture from the library, needs its description, and can let it go again', async () => {
+    mockProject = async () =>
+      project({ story: doc([{ type: 'section', id: 'our-workshop', title: 'Our workshop', image: null, spans: [] }]) });
+    picker.__setNextResult({ canceled: false, assets: [{ uri: 'file:///bench.heic', mimeType: 'image/jpeg' }] });
+    upload.mockResolvedValue({ mediaId: 'm1', url: 'https://cdn.example.com/m1.jpg', width: 1440, height: 960, blurDataUrl: '' });
+    await show();
+
+    await fireEvent.press(screen.getByTestId('story-block-0-image-source-library'));
+    await settle();
+    expect(screen.getByTestId('story-block-0-image-size')).toHaveTextContent('1440×960 pixels');
+    expect(within(screen.getByTestId('story-block-0')).getByText(STORY.vocabulary.problems.imageNeedsAlt)).toBeTruthy();
+    expect(storyPatches()).toEqual([]);
+
+    await fireEvent.changeText(screen.getByTestId('story-block-0-image-alt'), 'Two benches and a kiln');
+    await blur('story-block-0-image-alt');
+    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+      type: 'section',
+      id: 'our-workshop',
+      title: 'Our workshop',
+      image: { url: 'https://cdn.example.com/m1.jpg', width: 1440, height: 960, alt: 'Two benches and a kiln' },
+      spans: [],
+    });
+
+    const remove = screen.getByTestId('story-block-0-image-remove');
+    expect(remove.props.accessibilityLabel).toBe(
+      'Remove the image from Section 1 of 1, with an image: Our workshop',
+    );
+    await fireEvent.press(remove);
+    await settle();
+    expect(storyPatches().at(-1)?.blocks[0]).toMatchObject({ type: 'section', image: null });
+    expect(screen.queryByTestId('story-block-0-image-size')).toBeNull();
   });
 });

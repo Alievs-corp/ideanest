@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EMBED_PROVIDERS, STORY_SCHEMA_VERSION, isEmbedProvider, readStoryDocument } from './story';
+import { EMBED_PROVIDERS, STORY_SCHEMA_VERSION, isEmbedProvider, readStoryDocument, storyAnchors } from './story';
 
 /**
  * The story reader both campaign pages render through (#140, #155).
@@ -24,6 +24,42 @@ describe('readStoryDocument', () => {
     };
 
     expect(readStoryDocument(wire)?.blocks).toHaveLength(7);
+  });
+
+  it('reads a section, with and without its picture', () => {
+    const image = { url: 'https://a.example/w.jpg', width: 1440, height: 960, alt: 'The bench' };
+    const spans = [{ text: 'Where it is made.', marks: [] }];
+
+    expect(
+      readStoryDocument({
+        version: 1,
+        blocks: [
+          { type: 'section', id: 'our-workshop', title: 'Our workshop', image, spans },
+          { type: 'section', id: 'the-team', title: 'The team', image: null, spans: [] },
+        ],
+      })?.blocks,
+    ).toEqual([
+      { type: 'section', id: 'our-workshop', title: 'Our workshop', image, spans },
+      { type: 'section', id: 'the-team', title: 'The team', image: null, spans: [] },
+    ]);
+  });
+
+  it('reads a section whose null picture the service left out', () => {
+    // `non_null` serialisation turns `image: null` into an absent key.
+    expect(
+      readStoryDocument({ version: 1, blocks: [{ type: 'section', id: 'a', title: 'A', spans: [] }] })?.blocks,
+    ).toEqual([{ type: 'section', id: 'a', title: 'A', image: null, spans: [] }]);
+  });
+
+  it('refuses a malformed section', () => {
+    const section = { type: 'section', id: 'a', title: 'A', image: null, spans: [] };
+    expect(readStoryDocument({ version: 1, blocks: [{ ...section, title: 5 }] })).toBeNull();
+    expect(readStoryDocument({ version: 1, blocks: [{ ...section, id: undefined }] })).toBeNull();
+    expect(readStoryDocument({ version: 1, blocks: [{ ...section, spans: 'text' }] })).toBeNull();
+    expect(
+      readStoryDocument({ version: 1, blocks: [{ ...section, image: { url: 'u', width: 1.5, height: 2, alt: 'a' } }] }),
+    ).toBeNull();
+    expect(readStoryDocument({ version: 1, blocks: [{ ...section, image: 'https://a/b.jpg' }] })).toBeNull();
   });
 
   it('refuses a document it does not fully recognise', () => {
@@ -80,5 +116,25 @@ describe('the schema version and the embed providers', () => {
     expect(isEmbedProvider('vimeo')).toBe(true);
     expect(isEmbedProvider('tiktok')).toBe(false);
     expect(isEmbedProvider(undefined)).toBe(false);
+  });
+});
+
+describe('storyAnchors', () => {
+  it('lists headings and sections in document order, a section as level 2', () => {
+    expect(
+      storyAnchors({
+        version: 1,
+        blocks: [
+          { type: 'heading', level: 2, id: 'the-plan', text: 'The plan' },
+          { type: 'paragraph', spans: [] },
+          { type: 'heading', level: 3, id: 'stage-one', text: 'Stage one' },
+          { type: 'section', id: 'our-workshop', title: 'Our workshop', image: null, spans: [] },
+        ],
+      }),
+    ).toEqual([
+      { id: 'the-plan', text: 'The plan', level: 2 },
+      { id: 'stage-one', text: 'Stage one', level: 3 },
+      { id: 'our-workshop', text: 'Our workshop', level: 2 },
+    ]);
   });
 });

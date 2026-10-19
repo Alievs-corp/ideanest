@@ -332,6 +332,9 @@ ideanest:
       # The RAW upload, which is deleted as soon as the transcode is written.
       max-upload-bytes: ${MEDIA_VIDEO_MAX_UPLOAD_BYTES:262144000}
       max-duration: PT60S
+      # A reward's clip. Checked when the reward is saved, against what ffprobe
+      # measured, with the same half-second slack as max-duration.
+      reward-max-duration: PT5S
       longest-edge: 1280
       max-frame-rate: 30
       crf: 26

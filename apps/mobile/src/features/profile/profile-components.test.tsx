@@ -49,6 +49,7 @@ const card = (overrides: Partial<ProfileProjectCard> = {}): ProfileProjectCard =
   pledged: { amount: '795.00', currency: 'AZN' },
   backersCount: 12,
   coverUrl: null,
+  video: null,
   ...overrides,
 });
 

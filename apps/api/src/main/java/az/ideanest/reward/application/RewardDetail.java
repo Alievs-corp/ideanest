@@ -1,5 +1,6 @@
 package az.ideanest.reward.application;
 
+import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.EditLocks;
 import az.ideanest.reward.domain.RewardTier;
 import az.ideanest.reward.domain.RewardTierItem;
@@ -35,13 +36,17 @@ import java.util.List;
  *     because the answer that reaches the client must be the one the service used —
  *     see {@code RewardResponse.pricingLocked} for what a client does with it, and
  *     #183 for what happened when there was nothing to do it with
+ * @param image the tier's picture, or null when it has none or it is not servable
+ * @param video the tier's clip, or null likewise
  */
 public record RewardDetail(
         RewardTier tier,
         List<RewardTierItem> contents,
         List<ShippingRule> shippingRules,
         List<ShippingZoneRule> shippingZoneRules,
-        EditLocks locks) {
+        EditLocks locks,
+        MediaLibrary.MediaView image,
+        MediaLibrary.VideoView video) {
 
     public RewardDetail {
         contents = List.copyOf(contents);

@@ -12,7 +12,11 @@ import {
   rejectedBlockIndex,
   removeBlock,
   renameHeading,
+  renameSection,
+  SECTION_TITLE_MAX_CHARACTERS,
   slugifyHeading,
+  storyAnchorIds,
+  storyMediaCount,
   spansToText,
   storyCharacterCount,
   storyProblems,
@@ -464,5 +468,110 @@ describe('renameHeading', () => {
       id: 'faq',
       text: 'Your questions',
     });
+  });
+});
+
+describe('a section block', () => {
+  const IMAGE = { url: 'https://a.example/w.jpg', width: 1440, height: 960, alt: 'The bench' };
+  const section = (overrides: Partial<Extract<StoryBlock, { type: 'section' }>> = {}): StoryBlock => ({
+    type: 'section',
+    id: 'our-workshop',
+    title: 'Our workshop',
+    image: null,
+    spans: [],
+    ...overrides,
+  });
+
+  it('is added with an anchor nothing else is using, and no picture', () => {
+    expect(newBlock('section', [])).toEqual({ type: 'section', id: 'section', title: '', image: null, spans: [] });
+    expect(newBlock('section', ['section'])).toMatchObject({ id: 'section-2' });
+  });
+
+  it('needs a title, of at most two hundred characters', () => {
+    expect(blockProblem(section({ title: '  ' }), STORY_COPY.vocabulary)).toBe(
+      STORY_COPY.vocabulary.problems.sectionNeedsTitle,
+    );
+    expect(blockProblem(section({ title: 'a'.repeat(SECTION_TITLE_MAX_CHARACTERS) }), STORY_COPY.vocabulary)).toBeNull();
+    expect(blockProblem(section({ title: 'a'.repeat(SECTION_TITLE_MAX_CHARACTERS + 1) }), STORY_COPY.vocabulary)).toContain(
+      String(SECTION_TITLE_MAX_CHARACTERS),
+    );
+    // Code points, as the server counts: two hundred emoji are two hundred characters.
+    expect(blockProblem(section({ title: '🙂'.repeat(200) }), STORY_COPY.vocabulary)).toBeNull();
+  });
+
+  it('refuses an anchor the server would refuse', () => {
+    expect(blockProblem(section({ id: 'Not A Slug' }), STORY_COPY.vocabulary)).toBe(
+      STORY_COPY.vocabulary.problems.anchorUnusable,
+    );
+    expect(blockProblem(section({ id: '' }), STORY_COPY.vocabulary)).toBe(STORY_COPY.vocabulary.problems.anchorUnusable);
+  });
+
+  it('holds its picture to the image block rules', () => {
+    expect(blockProblem(section({ image: IMAGE }), STORY_COPY.vocabulary)).toBeNull();
+    expect(blockProblem(section({ image: { ...IMAGE, alt: ' ' } }), STORY_COPY.vocabulary)).toBe(
+      STORY_COPY.vocabulary.problems.imageNeedsAlt,
+    );
+    expect(blockProblem(section({ image: { ...IMAGE, width: 0 } }), STORY_COPY.vocabulary)).toBe(
+      STORY_COPY.vocabulary.problems.imageNotMeasured,
+    );
+    expect(blockProblem(section({ image: { ...IMAGE, url: 'javascript:alert(1)' } }), STORY_COPY.vocabulary)).toBe(
+      STORY_COPY.vocabulary.problems.urlScheme,
+    );
+  });
+
+  it('shares one set of anchors with the headings', () => {
+    const problems = storyProblems(
+      document([{ type: 'heading', level: 2, id: 'our-workshop', text: 'Our workshop' }, section()]),
+      STORY_COPY.vocabulary,
+    );
+    expect(problems.get(0)).toBeUndefined();
+    expect(problems.get(1)).toBe(STORY_COPY.vocabulary.problems.anchorDuplicate);
+
+    const blocks = [{ type: 'heading', level: 2, id: 'the-plan', text: 'The plan' } as const, section(), { type: 'rule' } as const];
+    expect(storyAnchorIds(blocks)).toEqual(['the-plan', 'our-workshop']);
+    expect(storyAnchorIds(blocks, 1)).toEqual(['the-plan']);
+  });
+
+  it('counts its title and its text as prose, and its picture description as neither', () => {
+    expect(
+      storyCharacterCount(
+        document([section({ title: 'abcd', image: IMAGE, spans: [{ text: 'ef', marks: [] }, { text: 'g', marks: ['em'] }] })]),
+      ),
+    ).toBe(7);
+  });
+
+  it('counts as media only when it has a picture', () => {
+    expect(storyMediaCount(document([section(), { type: 'paragraph', spans: [] }]))).toBe(0);
+    expect(
+      storyMediaCount(
+        document([
+          section({ image: IMAGE }),
+          { type: 'image', url: 'https://a.example/b.jpg', width: 4, height: 3, alt: 'A' },
+          { type: 'embed', provider: 'youtube', url: 'https://y.example/1', title: 'A' },
+        ]),
+      ),
+    ).toBe(3);
+  });
+
+  it('is in the anchor navigation like a level-2 heading', () => {
+    expect(headingAnchors(document([section()]))).toEqual([{ id: 'our-workshop', text: 'Our workshop', level: 2 }]);
+  });
+
+  it('is described by its title, and says whether it has a picture', () => {
+    expect(describeBlock(section(), 1, 3, STORY_COPY.vocabulary)).toBe('Section 2 of 3: Our workshop');
+    expect(describeBlock(section({ image: IMAGE }), 1, 3, STORY_COPY.vocabulary)).toBe(
+      'Section 2 of 3, with an image: Our workshop',
+    );
+    expect(describeBlock(section({ title: '' }), 0, 1, STORY_COPY.vocabulary)).toBe('Section 1 of 1: no title yet');
+  });
+
+  it('takes its anchor from the first words of its title, and keeps one set by hand', () => {
+    const fresh = newBlock('section');
+    if (fresh.type !== 'section') throw new Error('expected a section');
+    expect(renameSection(fresh, 'Our workshop', [])).toMatchObject({ title: 'Our workshop', id: 'our-workshop' });
+    expect(renameSection(fresh, 'Our workshop', ['our-workshop'])).toMatchObject({ id: 'our-workshop-2' });
+
+    const handSet = { type: 'section', id: 'workshop', title: 'Our workshop', image: null, spans: [] } as const;
+    expect(renameSection(handSet, 'The workshop', [])).toMatchObject({ id: 'workshop', title: 'The workshop' });
   });
 });

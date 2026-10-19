@@ -241,6 +241,7 @@ export function ImageSourceControls({
   source,
   copy,
   disabled = false,
+  allowAddress = true,
   onAddressFocus,
   onAddressBlur,
   testID = 'image-source',
@@ -248,6 +249,11 @@ export function ImageSourceControls({
   readonly source: ImageSource;
   readonly copy: ImageSourceCopy;
   readonly disabled?: boolean;
+  /**
+   * Offer "Use an image address". Off where only an upload will do — a reward's picture is named
+   * by its `mediaId`, which an address does not have.
+   */
+  readonly allowAddress?: boolean;
   /**
    * The address field took focus — with the field's frame, for a screen that scrolls a focused
    * field into view above the keyboard (the Story tab's `reveal`).
@@ -284,7 +290,7 @@ export function ImageSourceControls({
           onPress={() => void source.pick('camera')}
           testID={`${testID}-camera`}
         />
-        {addressOpen ? null : (
+        {addressOpen || !allowAddress ? null : (
           <Pill
             label={t('address')}
             iconLeft={Glyphs.Link}
@@ -297,7 +303,7 @@ export function ImageSourceControls({
         )}
       </View>
 
-      {addressOpen ? (
+      {addressOpen && allowAddress ? (
         <Field label={copy.urlLabel}>
           <View ref={addressField} style={styles.address} collapsable={false}>
             <TextInput

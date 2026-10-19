@@ -610,4 +610,27 @@ class SearchTextApiTests extends DiscoveryTestSupport {
         assertThat(items(search("?q={q}&limit=100", "%"))).isEmpty();
         assertThat(items(search("?q={q}&limit=100", "_"))).isEmpty();
     }
+
+    @Test
+    @DisplayName("a story section's title is searchable, and an embed's title still is not")
+    void aSectionTitleIsSearchable() {
+        UUID creator = Campaigns.creator(dataSource, "section-creator", "Section Creator");
+        UUID projectId = Campaigns.seed(dataSource, creator, "with-section").state("LIVE").insert();
+        new JdbcTemplate(dataSource)
+                .update(
+                        "UPDATE projects SET story = ?::jsonb WHERE id = ?",
+                        """
+                        {"version": 1, "blocks": [
+                          {"type": "section", "id": "the-tank", "title": "Akvarium", "image": null,
+                           "spans": [{"text": "Balıqlar", "marks": []}]},
+                          {"type": "embed", "provider": "youtube", "url": "https://youtube.com/watch?v=x",
+                           "title": "Planetarium"}
+                        ]}
+                        """,
+                        projectId);
+
+        assertThat(slugs(search("?q={q}&limit=100", "akvarium"))).containsExactly("with-section");
+        assertThat(slugs(search("?q={q}&limit=100", "baliqlar"))).containsExactly("with-section");
+        assertThat(items(search("?q={q}&limit=100", "planetarium"))).isEmpty();
+    }
 }

@@ -447,6 +447,35 @@ export interface ShippingRate {
 }
 
 /**
+ * A reward's picture — `RewardImageBody`. RESPONSE ONLY: a request names it by
+ * {@link RewardPatch.imageMediaId}, and the rest is what the media pipeline measured.
+ */
+export interface RewardImage {
+  mediaId: string;
+  url: string;
+  width: number;
+  height: number;
+  /** The §13.1 placeholder, as a data URL. */
+  blurDataUrl?: string | null;
+}
+
+/**
+ * A reward's clip — `RewardVideoBody`, at most `REWARD_VIDEO_MAX_SECONDS` long (`./video`).
+ *
+ * RESPONSE ONLY, like {@link CampaignVideo}, and the same shape: a request names it by
+ * {@link RewardPatch.videoMediaId}.
+ */
+export interface RewardVideo {
+  mediaId: string;
+  url: string;
+  posterUrl: string;
+  width: number;
+  height: number;
+  durationMs: number;
+  blurDataUrl?: string | null;
+}
+
+/**
  * A reward tier as the creator's editor sees it — `RewardResponse`.
  *
  * The response of every endpoint that touches a tier, so the editor applies the same update
@@ -506,6 +535,9 @@ export interface Reward {
    * There is no counterpart for `limitQuantity` because §5.3 permits raising it at any time.
    */
   pricingLocked: boolean;
+  /** Absent or null for a tier without one. Editable after launch, unlike the price. */
+  image?: RewardImage | null;
+  video?: RewardVideo | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -525,6 +557,10 @@ export interface NewReward {
   availableFrom?: string | null;
   availableUntil?: string | null;
   items?: readonly RewardItemLine[];
+  /** The caller's own READY image upload. */
+  imageMediaId?: string | null;
+  /** The caller's own READY video upload, of at most five seconds. */
+  videoMediaId?: string | null;
 }
 
 /**
@@ -551,6 +587,16 @@ export interface RewardPatch {
   availableFrom?: string | null;
   availableUntil?: string | null;
   items?: readonly RewardItemLine[];
+  /**
+   * The upload to show as the tier's picture, or `null` to take it down. A replaced or cleared
+   * upload is deleted once the edit commits.
+   */
+  imageMediaId?: string | null;
+  /**
+   * The upload to play on the tier's card, or `null` to take it down. A clip longer than five
+   * seconds is answered `422` with `code` `REWARD_VIDEO_TOO_LONG` (see `isRewardVideoTooLong`).
+   */
+  videoMediaId?: string | null;
 }
 
 /* -------------------------------------------------------------------------

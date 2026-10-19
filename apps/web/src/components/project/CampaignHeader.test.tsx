@@ -318,6 +318,23 @@ describe('the media player', () => {
     );
   });
 
+  it('is covered by the video’s own still even when the campaign has a cover', async () => {
+    render(
+      await resolveServerTree(
+        <CampaignMedia
+          campaign={campaign({
+            coverImage: { url: 'https://cdn.test/cover.jpg', width: 1600, height: 900 },
+            video: VIDEO,
+          } as Partial<ProjectPageResponse>)}
+        />,
+      ),
+    );
+
+    const src = document.querySelector('img')?.getAttribute('src') ?? '';
+    expect(src).toContain(encodeURIComponent(VIDEO.posterUrl));
+    expect(src).not.toContain(encodeURIComponent('https://cdn.test/cover.jpg'));
+  });
+
   it('leaves no automatically detectable violation with a video, before or after the press', async () => {
     const user = userEvent.setup();
     const { container } = render(
