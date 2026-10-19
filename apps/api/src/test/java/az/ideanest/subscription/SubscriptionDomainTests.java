@@ -110,8 +110,8 @@ class SubscriptionDomainTests {
             SubscriptionPlan plan = plan("GROWTH", "49.00");
             plan.rename("Böyümə", "Böyüyən yaradıcılar üçün");
             plan.translate(Map.of(
-                    "en", new SubscriptionPlan.Text(" Growth ", null),
-                    "ru", new SubscriptionPlan.Text("Рост", "Для растущих авторов")));
+                    "en", new SubscriptionPlan.PlanTranslation(" Growth ", null),
+                    "ru", new SubscriptionPlan.PlanTranslation("Рост", "Для растущих авторов")));
 
             assertThat(plan.nameIn("en")).isEqualTo("Growth");
             assertThat(plan.descriptionIn("en")).isEqualTo("Böyüyən yaradıcılar üçün");
@@ -126,8 +126,8 @@ class SubscriptionDomainTests {
         @DisplayName("replaces every translation, so a language left out is read in the primary one")
         void translatingReplacesTheWholeSet() {
             SubscriptionPlan plan = plan("GROWTH", "49.00");
-            plan.translate(Map.of("en", new SubscriptionPlan.Text("Growth", null)));
-            plan.translate(Map.of("tr", new SubscriptionPlan.Text("Büyüme", null)));
+            plan.translate(Map.of("en", new SubscriptionPlan.PlanTranslation("Growth", null)));
+            plan.translate(Map.of("tr", new SubscriptionPlan.PlanTranslation("Büyüme", null)));
 
             assertThat(plan.getTranslations()).containsOnlyKeys("tr");
             assertThat(plan.nameIn("en")).isEqualTo("A plan");
@@ -138,11 +138,11 @@ class SubscriptionDomainTests {
         void translationsAreChecked() {
             SubscriptionPlan plan = plan("GROWTH", "49.00");
 
-            assertThatThrownBy(() -> plan.translate(Map.of("az", new SubscriptionPlan.Text("Böyümə", null))))
+            assertThatThrownBy(() -> plan.translate(Map.of("az", new SubscriptionPlan.PlanTranslation("Böyümə", null))))
                     .isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> plan.translate(Map.of("de", new SubscriptionPlan.Text("Wachstum", null))))
+            assertThatThrownBy(() -> plan.translate(Map.of("de", new SubscriptionPlan.PlanTranslation("Wachstum", null))))
                     .isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> plan.translate(Map.of("en", new SubscriptionPlan.Text("  ", null))))
+            assertThatThrownBy(() -> plan.translate(Map.of("en", new SubscriptionPlan.PlanTranslation("  ", null))))
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }

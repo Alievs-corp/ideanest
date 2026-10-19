@@ -57,7 +57,7 @@ public class SubscriptionPlan {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private static final TypeReference<TreeMap<String, Text>> TRANSLATIONS = new TypeReference<>() {};
+    private static final TypeReference<TreeMap<String, PlanTranslation>> TRANSLATIONS = new TypeReference<>() {};
 
     /**
      * A plan's name and description in one language other than {@link ReaderLocale#PRIMARY}.
@@ -65,7 +65,7 @@ public class SubscriptionPlan {
      * @param description null when the language has none, and the reader then gets the
      *     primary language's
      */
-    public record Text(String name, String description) {
+    public record PlanTranslation(String name, String description) {
     }
 
     @Id
@@ -82,7 +82,7 @@ public class SubscriptionPlan {
     private String description;
 
     /**
-     * V111's column: {@link Text} by locale code, never holding the primary language, which
+     * V111's column: {@link PlanTranslation} by locale code, never holding the primary language, which
      * is {@link #name} and {@link #description}. Mapped as a string and read through
      * {@link #getTranslations()} so that Hibernate compares the column by value.
      */
@@ -162,7 +162,7 @@ public class SubscriptionPlan {
             String code,
             String name,
             String description,
-            Map<String, Text> translations,
+            Map<String, PlanTranslation> translations,
             Money price,
             BillingPeriod billingPeriod,
             Integer maxActiveCampaigns,
@@ -199,8 +199,8 @@ public class SubscriptionPlan {
      *     is {@link #rename}'s, and a language the platform does not have is refused because
      *     nobody could ever read it
      */
-    public void translate(Map<String, Text> translations) {
-        TreeMap<String, Text> checked = new TreeMap<>();
+    public void translate(Map<String, PlanTranslation> translations) {
+        TreeMap<String, PlanTranslation> checked = new TreeMap<>();
         if (translations != null) {
             translations.forEach((locale, text) -> {
                 if (!ReaderLocale.supported(locale) || ReaderLocale.PRIMARY.equals(locale)) {
@@ -209,7 +209,7 @@ public class SubscriptionPlan {
                 if (text == null) {
                     return;
                 }
-                checked.put(locale, new Text(requireName(text.name()), trimmedOrNull(text.description(), DESCRIPTION_MAX)));
+                checked.put(locale, new PlanTranslation(requireName(text.name()), trimmedOrNull(text.description(), DESCRIPTION_MAX)));
             });
         }
         this.translations = JSON.writeValueAsString(checked);
@@ -297,7 +297,7 @@ public class SubscriptionPlan {
     }
 
     /** Every translation, by locale code. Empty when the plan is in the primary language only. */
-    public Map<String, Text> getTranslations() {
+    public Map<String, PlanTranslation> getTranslations() {
         if (translations == null || translations.isBlank()) {
             return Map.of();
         }
@@ -306,13 +306,13 @@ public class SubscriptionPlan {
 
     /** The name a reader of {@code locale} sees: theirs when the plan has it, the primary one otherwise. */
     public String nameIn(String locale) {
-        Text text = getTranslations().get(locale);
+        PlanTranslation text = getTranslations().get(locale);
         return text == null ? name : text.name();
     }
 
     /** The description a reader of {@code locale} sees, falling back the way {@link #nameIn} does. */
     public String descriptionIn(String locale) {
-        Text text = getTranslations().get(locale);
+        PlanTranslation text = getTranslations().get(locale);
         return text == null || text.description() == null ? description : text.description();
     }
 

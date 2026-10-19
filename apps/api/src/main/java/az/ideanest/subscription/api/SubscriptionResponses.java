@@ -45,7 +45,7 @@ public final class SubscriptionResponses {
             String code,
             String name,
             String description,
-            Map<String, SubscriptionPlan.Text> translations,
+            Map<String, SubscriptionPlan.PlanTranslation> translations,
             String price,
             String currency,
             BillingPeriod billingPeriod,
@@ -66,7 +66,7 @@ public final class SubscriptionResponses {
         }
 
         private static Plan of(
-                SubscriptionPlan plan, String name, String description, Map<String, SubscriptionPlan.Text> translations) {
+                SubscriptionPlan plan, String name, String description, Map<String, SubscriptionPlan.PlanTranslation> translations) {
             return new Plan(
                     plan.getId(),
                     plan.getCode(),

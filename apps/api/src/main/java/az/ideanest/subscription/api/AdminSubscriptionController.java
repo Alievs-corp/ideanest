@@ -361,13 +361,13 @@ public class AdminSubscriptionController {
     }
 
     /** The request's translations as the entity takes them, or null for "leave them alone". */
-    private static Map<String, SubscriptionPlan.Text> textsOf(Map<String, PlanText> translations) {
+    private static Map<String, SubscriptionPlan.PlanTranslation> textsOf(Map<String, PlanText> translations) {
         if (translations == null) {
             return null;
         }
-        Map<String, SubscriptionPlan.Text> texts = new HashMap<>();
+        Map<String, SubscriptionPlan.PlanTranslation> texts = new HashMap<>();
         translations.forEach((locale, text) ->
-                texts.put(locale, text == null ? null : new SubscriptionPlan.Text(text.name(), text.description())));
+                texts.put(locale, text == null ? null : new SubscriptionPlan.PlanTranslation(text.name(), text.description())));
         return texts;
     }
 
