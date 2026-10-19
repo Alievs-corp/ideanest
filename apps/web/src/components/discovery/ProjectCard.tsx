@@ -171,7 +171,7 @@ export interface ProjectCardProps {
   coverScale?: number;
 }
 
-const COVER_SCALE = 1.07;
+const COVER_SCALE = 1.177;
 
 function coverCrop(scale: number): CSSProperties {
   return {
@@ -383,12 +383,14 @@ export function ProjectCard({
               track: a mark at 80% would be a second meaning the bar carries in colour and
               position alone (ui-kit §9.2), and the discovery budget allows no motion to explain it.
             */}
+            {/* Hidden for now at the owner's request.
             <p className="text-[11px] lg:text-xs text-on-accent/72 max-sm:text-xs max-sm:leading-[21px]">{copy.rule}</p>
             {card.goal != null && (
               <p className="text-[11px] lg:text-xs text-on-accent/72 tabular-nums max-sm:text-xs max-sm:leading-[21px]">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}
               </p>
             )}
+            */}
           </div>
         ) : (
           <p className="mt-auto pt-1.5 text-xs lg:text-sm text-on-accent/72">{copy.notOpen}</p>
