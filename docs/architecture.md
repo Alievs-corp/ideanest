@@ -2564,7 +2564,7 @@ funding goal a campaign may be submitted with. Both are nullable, and null means
 no limit rather than zero. Plans are rows in `subscription_plans`, administered
 from AD-11's second screen, and the catalogue an operator seeds decides whether
 there is a free tier. A plan's `name` and `description` are Azerbaijani; the
-console adds the other languages beside them (V111's `translations`, keyed by
+console adds the other languages beside them (V113's `translations`, keyed by
 locale), and a reader in a language a plan has none in reads the Azerbaijani.
 
 What counts against the campaign limit is a campaign that has left the creator's

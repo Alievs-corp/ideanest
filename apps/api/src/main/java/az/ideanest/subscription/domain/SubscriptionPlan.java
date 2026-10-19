@@ -82,7 +82,7 @@ public class SubscriptionPlan {
     private String description;
 
     /**
-     * V111's column: {@link PlanTranslation} by locale code, never holding the primary language, which
+     * V113's column: {@link PlanTranslation} by locale code, never holding the primary language, which
      * is {@link #name} and {@link #description}. Mapped as a string and read through
      * {@link #getTranslations()} so that Hibernate compares the column by value.
      */
