@@ -4274,6 +4274,7 @@
   },
   "home": {
     "metaTitle": "IdeyaNest — ödül temelli kitlesel fonlama",
+    "seeAll": "Tümünü gör",
     "hero": {
       "title": "Henüz var olmayanı fonlayın",
       "standfirst": "Yaratıcılar hedefi ve son tarihi olan bir kampanya yayımlar. Destekçiler destek verir. Bir kampanya hedefinin %80'inde başarılı sayılır.",
@@ -4285,6 +4286,11 @@
       },
       "browse": "Kampanyalara göz atın",
       "start": "Kampanya başlatın"
+    },
+    "featured": {
+      "heading": "Şu an popüler",
+      "standfirst": "Yaşına göre en hızlı fon toplayan aktif kampanyalar.",
+      "link": "Tüm popüler kampanyaları gör"
     },
     "closing": {
       "heading": "Yakında bitenler",
@@ -4298,10 +4304,19 @@
       "link": "Tüm etkin kampanyaları görün",
       "gridLabel": "Yeni başlayan kampanyalar"
     },
+    "rail": {
+      "previous": "Önceki kampanyalar",
+      "next": "Sonraki kampanyalar"
+    },
     "categories": {
       "heading": "Kategorilere göre göz atın",
       "standfirst": "On beş kategori, her birinin kendi sayfası — ve her birinin kendi alt kategorileri var.",
       "link": "Tüm kategorileri görün"
+    },
+    "creators": {
+      "heading": "Yaratıcılar için",
+      "standfirst": "Bir kampanyanın burada nasıl yürüdüğü, ne kadara mal olduğu ve nelere izin verilmediği.",
+      "label": "Yaratıcılar için sayfalar"
     },
     "empty": {
       "heading": "Şu anda gösterilecek kampanya yok",

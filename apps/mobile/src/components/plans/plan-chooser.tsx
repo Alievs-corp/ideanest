@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import type { Locale } from '@ideanest/messages/locale';
 import {
@@ -11,17 +11,19 @@ import {
 } from '@ideanest/plans/catalogue';
 import { Glyphs } from '../../icons';
 import { formatDay, useT, type Translate } from '../../lib/i18n';
-import { colors, spacing } from '../../theme';
+import { colors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../../theme';
 import {
   Body,
   Card,
   CardTitle,
   Eyebrow,
-  Heading,
   Icon,
   InlineAlert,
   Pill,
+  PressableScale,
+  SurfaceProvider,
   Tag,
+  TONES,
   type InlineAlertVariant,
 } from '../ui';
 
@@ -183,9 +185,10 @@ export function PlanCards({
   const blocked = blocksChoice(held);
   return (
     <View style={styles.cards} testID="pricing-plans">
-      {plans.map((plan) => (
+      {plans.map((plan, index) => (
         <PlanCard
           key={plan.id}
+          tone={PLAN_TONES[index % PLAN_TONES.length] ?? 'white'}
           plan={plan}
           current={isHeldPlan(held, plan.id)}
           onChoose={onChoose === undefined ? undefined : () => onChoose(plan)}
@@ -197,83 +200,111 @@ export function PlanCards({
   );
 }
 
+/** The web's plan surfaces, in order: light, black, lime (one lime element on the screen). */
+const PLAN_TONES = ['white', 'dark', 'lime'] as const;
+type PlanTone = (typeof PLAN_TONES)[number];
+
+const PLAN_SKIN: Record<PlanTone, { card: string; button: string; label: string; border?: string }> = {
+  white: { card: colors.whiteMuted, button: colors.textOnWhite, label: colors.whiteSurface },
+  dark: { card: colors.black, button: colors.whiteSurface, label: colors.textOnWhite, border: tint(colors.textPrimary, 0.08) },
+  lime: { card: colors.lime500, button: colors.textOnLime, label: colors.lime500 },
+};
+
 function PlanCard({
   plan,
   current,
   onChoose,
   busy,
   disabled,
+  tone,
 }: {
   readonly plan: Plan;
   readonly current: boolean;
   readonly onChoose?: () => void;
   readonly busy: boolean;
   readonly disabled: boolean;
+  readonly tone: PlanTone;
 }) {
   const t = useT();
   const free = isFreePrice(plan.price);
+  const skin = PLAN_SKIN[tone];
+  const ink = TONES[tone];
+  const period = plan.billingPeriod === 'YEARLY' ? t('pricing.perYear') : t('pricing.perMonth');
+  const points = [
+    ...(plan.description == null ? [] : [plan.description]),
+    plan.maxActiveCampaigns == null
+      ? t('pricing.limits.campaignsUnlimited')
+      : t('pricing.limits.campaigns', { count: String(plan.maxActiveCampaigns) }),
+    plan.goalCeiling == null
+      ? t('pricing.limits.goalUnlimited')
+      : t('pricing.limits.goalCeiling', {
+          amount: formatMoney({ amount: plan.goalCeiling, currency: plan.currency }),
+        }),
+  ];
+
   return (
-    <Card testID={`pricing-plan-${plan.code || plan.id}`}>
-      <View style={styles.stack}>
+    <SurfaceProvider surface={tone}>
+      <View
+        style={[
+          styles.plan,
+          { backgroundColor: skin.card },
+          skin.border === undefined ? null : { borderWidth: 1, borderColor: skin.border },
+        ]}
+        testID={`pricing-plan-${plan.code || plan.id}`}
+      >
         <View style={styles.nameRow}>
-          <CardTitle style={styles.name}>{plan.name}</CardTitle>
+          <CardTitle style={[styles.name, font.semibold]}>{plan.name}</CardTitle>
           {current ? <Tag label={t('pricing.held.currentTag')} testID="pricing-current" /> : null}
         </View>
-        <View style={styles.priceRow}>
-          <Heading>{free ? t('pricing.free') : formatMoney({ amount: plan.price, currency: plan.currency })}</Heading>
-          {free ? null : (
-            <Body>{plan.billingPeriod === 'YEARLY' ? t('pricing.perYear') : t('pricing.perMonth')}</Body>
-          )}
-        </View>
-        {plan.description == null ? null : <Body>{plan.description}</Body>}
         <View style={styles.limits}>
-          <Limit
-            text={
-              plan.maxActiveCampaigns == null
-                ? t('pricing.limits.campaignsUnlimited')
-                : t('pricing.limits.campaigns', { count: String(plan.maxActiveCampaigns) })
-            }
-          />
-          <Limit
-            text={
-              plan.goalCeiling == null
-                ? t('pricing.limits.goalUnlimited')
-                : t('pricing.limits.goalCeiling', {
-                    amount: formatMoney({ amount: plan.goalCeiling, currency: plan.currency }),
-                  })
-            }
-          />
+          {points.map((point) => (
+            <View key={point} style={styles.limit}>
+              <Icon icon={Glyphs.Add} size={18} color={ink.primary} />
+              <Body style={styles.limitText}>{point}</Body>
+            </View>
+          ))}
+        </View>
+        <View style={styles.priceRow}>
+          <Text style={[styles.price, { color: ink.primary }]}>
+            {free ? t('pricing.free') : formatMoney({ amount: plan.price, currency: plan.currency })}
+          </Text>
+          {free ? null : <Body tone="tertiary">{period}</Body>}
         </View>
         {onChoose === undefined ? null : (
-          <View style={styles.start}>
-            <Pill
-              label={busy ? t('pricing.choosing') : t('pricing.choose')}
-              accessibilityLabel={t('mobile.pricing.chooseNamed', { plan: plan.name })}
-              variant={current ? 'ghost' : 'primary'}
-              busy={busy}
-              disabled={disabled}
-              onPress={onChoose}
-              testID={`pricing-choose-${plan.code || plan.id}`}
-            />
-          </View>
+          <PressableScale
+            accessibilityRole="button"
+            accessibilityLabel={t('mobile.pricing.chooseNamed', { plan: plan.name })}
+            accessibilityState={{ disabled: disabled || busy, busy }}
+            disabled={disabled || busy}
+            onPress={onChoose}
+            contentStyle={[styles.choose, { backgroundColor: skin.button, opacity: disabled || busy ? 0.4 : 1 }]}
+            testID={`pricing-choose-${plan.code || plan.id}`}
+          >
+            <Text style={[styles.chooseLabel, { color: skin.label }]} numberOfLines={1}>
+              {busy ? t('pricing.choosing') : t('pricing.choose')}
+            </Text>
+            <Icon icon={Glyphs.ArrowRight} size={20} color={skin.label} />
+          </PressableScale>
         )}
       </View>
-    </Card>
-  );
-}
-
-/** A limit is a fact, so the tick beside it is decoration: the words carry it. */
-function Limit({ text }: { readonly text: string }) {
-  return (
-    <View style={styles.limit}>
-      <Icon icon={Glyphs.TickCircle} size={18} color={colors.success} />
-      <Body style={styles.limitText}>{text}</Body>
-    </View>
+    </SurfaceProvider>
   );
 }
 
 const styles = StyleSheet.create({
   cards: { gap: spacing[4] },
+  plan: { gap: spacing[4], padding: spacing[6], borderRadius: radius.xl },
+  price: { ...font.semibold, fontSize: fontSize.display, lineHeight: lineHeight.display, letterSpacing: tracking.display, fontVariant: ['tabular-nums'] },
+  choose: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing[4],
+    minHeight: size.touchTarget,
+    paddingHorizontal: spacing[5],
+    borderRadius: radius.full,
+  },
+  chooseLabel: { ...font.medium, fontSize: fontSize.sm, flexShrink: 1 },
   stack: { gap: spacing[3] },
   nameRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing[3] },
   name: { flexShrink: 1 },

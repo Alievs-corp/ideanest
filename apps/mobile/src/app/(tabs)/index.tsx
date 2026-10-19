@@ -6,12 +6,15 @@ import { useCategories, useDiscoveryFeed, type Card } from '../../api/queries';
 import { CampaignColumn } from '../../components/campaign-column';
 import {
   CategoryTiles,
+  CreatorPages,
   HomeEmpty,
   HomeHero,
   HomeSection,
   RailSkeleton,
   TilesSkeleton,
 } from '../../components/home/home-parts';
+import { FadeUp } from '../../components/motion';
+import { Body, Heading } from '../../components/text';
 import { InlineAlert, Pill, Screen } from '../../components/ui';
 import { definedRouteParams } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
@@ -21,9 +24,16 @@ import { withScreenRoot } from '../../components/screen-root';
 /**
  * Home — the web's `/` (`app/[locale]/(site)/page.tsx`), issue #153.
  *
- * Top to bottom, as on the web: a small hero, then "Ending soon", "Recently launched" and
- * "Browse by category", each only when it has something in it, and the empty card when both
- * campaign rails are empty. The three reads run in parallel.
+ * Top to bottom, as on the web's phone layout: a small hero, then "Popular right now", "Ending
+ * soon", "Recently launched", "For creators" and "Browse by category", each campaign section only
+ * when it has something in it, and the empty card when every campaign read came back empty. The
+ * reads run in parallel.
+ *
+ * <h2>One campaign per section</h2>
+ *
+ * The owner asked for each campaign section to show a single card and a button to the whole list
+ * under it, as the web does on a phone. So each read asks for one campaign: a section that draws
+ * one card has no use for six.
  *
  * <h2>Failure is per section</h2>
  *
@@ -42,31 +52,51 @@ import { withScreenRoot } from '../../components/screen-root';
  * (`useTabBarInset()`) and draws the pull to refresh.
  */
 
-/** Six to a rail, the web's `RAIL_SIZE`. */
-const RAIL_SIZE = 6;
+/** One campaign per section, and the section's button opens the rest. */
+const SECTION_SIZE = 1;
 
+/** The feed's own popularity ranking: money raised against the campaign's age. */
+const POPULAR: DiscoveryFilters = { ...NO_FILTERS, statuses: ['live'], sort: 'popularity' };
 const CLOSING: DiscoveryFilters = { ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' };
 const LAUNCHED: DiscoveryFilters = { ...NO_FILTERS, statuses: ['live'] };
 
 function HomeScreen() {
   const t = useT('home');
   const tFeed = useT('discovery.feed');
+  const tPages = useT('static');
+  const tPricing = useT('pricing');
   const router = useRouter();
 
-  const closing = useDiscoveryFeed(CLOSING, { limit: RAIL_SIZE });
-  const launched = useDiscoveryFeed(LAUNCHED, { limit: RAIL_SIZE });
+  const popular = useDiscoveryFeed(POPULAR, { limit: SECTION_SIZE });
+  const closing = useDiscoveryFeed(CLOSING, { limit: SECTION_SIZE });
+  const launched = useDiscoveryFeed(LAUNCHED, { limit: SECTION_SIZE });
   const categories = useCategories();
 
+  const popularCards = useFirstPage(popular.data);
   const closingCards = useFirstPage(closing.data);
   const launchedCards = useFirstPage(launched.data);
   const taxonomy = categories.data ?? [];
 
-  const bothFailed = closing.isError && launched.isError;
+  const reads = [popular, closing, launched];
+  const anyPending = reads.some((read) => read.isPending);
+  const allFailed = reads.every((read) => read.isError);
+  const allEmpty = popularCards.length === 0 && closingCards.length === 0 && launchedCards.length === 0;
+
+  const creatorPages = [
+    { href: '/how-it-works', title: tPages('howItWorks.metaTitle'), body: tPages('howItWorks.metaDescription') },
+    { href: '/pricing', title: tPricing('metaTitle'), body: tPricing('metaDescription') },
+    { href: '/trust-safety', title: tPages('trustSafety.metaTitle'), body: tPages('trustSafety.metaDescription') },
+  ] as const;
   // The pull's own spinner: a retry, a reconnect or a stale refetch is not somebody pulling.
   const [pulling, setPulling] = useState(false);
 
   function refresh(): Promise<unknown> {
-    return Promise.allSettled([closing.refetch(), launched.refetch(), categories.refetch()]);
+    return Promise.allSettled([
+      popular.refetch(),
+      closing.refetch(),
+      launched.refetch(),
+      categories.refetch(),
+    ]);
   }
 
   function openFeed(filters: DiscoveryFilters = NO_FILTERS): void {
@@ -86,6 +116,22 @@ function HomeScreen() {
       <View style={styles.page}>
         <HomeHero onBrowse={() => openFeed()} onStart={() => router.push('/campaigns/new')} />
 
+        {popular.isPending ? (
+          <RailSkeleton label={tFeed('loading')} />
+        ) : popularCards.length > 0 ? (
+          <HomeSection
+            heading={t('featured.heading')}
+            standfirst={t('featured.standfirst')}
+            href={{ pathname: '/discover', params: definedRouteParams(POPULAR) }}
+            linkLabel={t('featured.link')}
+            index={1}
+            testID="rail-popular"
+          >
+            {/* The first campaign under the hero, so its cover is fetched first. */}
+            <CampaignColumn cards={popularCards} priority={1} coverScale={1} />
+          </HomeSection>
+        ) : null}
+
         {closing.isPending ? (
           <RailSkeleton label={tFeed('loading')} />
         ) : closingCards.length > 0 ? (
@@ -94,11 +140,10 @@ function HomeScreen() {
             standfirst={t('closing.standfirst')}
             href={{ pathname: '/discover', params: definedRouteParams(CLOSING) }}
             linkLabel={t('closing.link')}
-            index={1}
+            index={2}
             testID="rail-closing"
           >
-            {/* The only rail whose covers are fetched first: it is what the screen opens on. */}
-            <CampaignColumn cards={closingCards} priority={3} />
+            <CampaignColumn cards={closingCards} />
           </HomeSection>
         ) : null}
 
@@ -110,12 +155,22 @@ function HomeScreen() {
             standfirst={t('launched.standfirst')}
             href={{ pathname: '/discover', params: definedRouteParams(LAUNCHED) }}
             linkLabel={t('launched.link')}
-            index={2}
+            index={3}
             testID="rail-launched"
           >
             <CampaignColumn cards={launchedCards} />
           </HomeSection>
         ) : null}
+
+        <View style={styles.creators} testID="creators">
+          <FadeUp index={4}>
+            <View style={styles.titles}>
+              <Heading accessibilityRole="header">{t('creators.heading')}</Heading>
+              <Body>{t('creators.standfirst')}</Body>
+            </View>
+          </FadeUp>
+          <CreatorPages pages={creatorPages} />
+        </View>
 
         {categories.isPending ? (
           <TilesSkeleton label={tFeed('loading')} />
@@ -125,14 +180,14 @@ function HomeScreen() {
             standfirst={t('categories.standfirst')}
             href="/categories"
             linkLabel={t('categories.link')}
-            index={3}
+            index={5}
             testID="categories"
           >
             <CategoryTiles categories={taxonomy} />
           </HomeSection>
         ) : null}
 
-        {closing.isPending || launched.isPending ? null : bothFailed ? (
+        {anyPending ? null : allFailed ? (
           <InlineAlert
             variant="danger"
             title={tFeed('errorTitle')}
@@ -143,14 +198,14 @@ function HomeScreen() {
                   label={tFeed('tryAgain')}
                   variant="ghost"
                   size="sm"
-                  busy={closing.isFetching || launched.isFetching}
+                  busy={reads.some((read) => read.isFetching)}
                   onPress={() => void refresh()}
                 />
               </View>
             }
             testID="home-error"
           />
-        ) : closingCards.length === 0 && launchedCards.length === 0 ? (
+        ) : allEmpty ? (
           <HomeEmpty onOpenFeed={() => openFeed()} />
         ) : null}
       </View>
@@ -165,6 +220,8 @@ function useFirstPage(data: { pages: readonly { items?: readonly Card[] }[] } | 
 
 const styles = StyleSheet.create({
   page: { gap: spacing[12], paddingTop: spacing[4] },
+  creators: { gap: spacing[4] },
+  titles: { gap: spacing[2] },
   retry: { flexDirection: 'row' },
 });
 

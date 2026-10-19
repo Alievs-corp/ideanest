@@ -118,17 +118,22 @@ export function HomeSection({
           <Body>{standfirst}</Body>
         </View>
       </FadeUp>
-      <SectionLink href={href} label={linkLabel} />
       {children}
+      {/*
+        THE WAY ON IS A BUTTON UNDER THE CARD, as on the web's phone layout: the section shows
+        one campaign and the reader decides whether to see the rest after looking at it.
+      */}
+      <SectionLink href={href} label={linkLabel} />
     </View>
   );
 }
 
 /** "See all" as a small raised pill with the press give. */
 function SectionLink({ href, label }: { readonly href: Href; readonly label: string }) {
+  const t = useT('home');
   const { ring, onFocus, onBlur } = useFocusRing();
   return (
-    <View style={styles.linkRow}>
+    <View>
       <Link href={href} asChild>
         <PressableScale
           accessibilityRole="link"
@@ -141,7 +146,7 @@ function SectionLink({ href, label }: { readonly href: Href; readonly label: str
             ring,
           ]}
         >
-          <Text style={styles.linkLabel}>{label}</Text>
+          <Text style={styles.linkLabel}>{t('seeAll')}</Text>
           <Icon icon={Glyphs.ArrowRight} size={16} color={TONES.dark.secondary} />
         </PressableScale>
       </Link>
@@ -150,6 +155,56 @@ function SectionLink({ href, label }: { readonly href: Href; readonly label: str
 }
 
 /** "Browse by category": accent tiles in two columns, each a link to its category. */
+/** One page a creator reads before starting: its title, its own description, and where it is. */
+export interface CreatorPage {
+  readonly href: Href;
+  readonly title: string;
+  readonly body: string;
+}
+
+/**
+ * "For creators" — the web's editorial band (`app/[locale]/(site)/page.tsx`): how it works,
+ * pricing, and trust and safety, one under another. Each row is a raised dark block (§2: never a
+ * border-only box) and the whole row is the link, so there is no "Learn more" saying nothing.
+ * The words are each page's own `metaTitle` and `metaDescription`, so the row cannot promise
+ * what the page does not say.
+ */
+export function CreatorPages({ pages }: { readonly pages: readonly CreatorPage[] }) {
+  return (
+    <View style={styles.pages}>
+      {pages.map((page) => (
+        <CreatorPageRow key={page.title} page={page} />
+      ))}
+    </View>
+  );
+}
+
+function CreatorPageRow({ page }: { readonly page: CreatorPage }) {
+  const { ring, onFocus, onBlur } = useFocusRing();
+  return (
+    <Link href={page.href} asChild>
+      <PressableScale
+        accessibilityRole="link"
+        accessibilityLabel={page.title}
+        accessibilityHint={page.body}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        contentStyle={({ pressed }) => [
+          styles.page,
+          { backgroundColor: pressed ? BLOCK.dark.pressed : BLOCK.dark.rest },
+          ring,
+        ]}
+      >
+        <View style={styles.pageText}>
+          <CardTitle>{page.title}</CardTitle>
+          <Body>{page.body}</Body>
+        </View>
+        <Icon icon={Glyphs.ArrowRight} size={18} color={TONES.dark.secondary} />
+      </PressableScale>
+    </Link>
+  );
+}
+
 export function CategoryTiles({ categories }: { readonly categories: readonly Category[] }) {
   return (
     <View style={styles.grid}>
@@ -254,21 +309,33 @@ const styles = StyleSheet.create({
   action: { flex: 1 },
   section: { gap: spacing[4] },
   titles: { gap: spacing[2] },
-  linkRow: { flexDirection: 'row' },
+  /* Full width under the card, the web phone layout's button. */
   link: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing[2],
     minHeight: size.touchTarget,
     paddingHorizontal: spacing[4],
     borderRadius: radius.full,
   },
   linkLabel: {
+    flexShrink: 1,
+    textAlign: 'center',
     ...font.medium,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
     color: TONES.dark.primary,
   },
+  pages: { gap: spacing[3] },
+  page: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[4],
+    padding: spacing[5],
+    borderRadius: radius.xl,
+  },
+  pageText: { flex: 1, gap: spacing[2] },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -spacing[3] / 2, rowGap: spacing[3] },
   cell: { width: '50%', paddingHorizontal: spacing[3] / 2 },
   tileTarget: { borderRadius: radius.xl },

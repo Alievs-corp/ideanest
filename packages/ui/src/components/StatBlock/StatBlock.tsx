@@ -27,7 +27,7 @@ export function StatBlock({
       <div className="flex items-start gap-1.5">
         <span
           className={cn(
-            'font-display font-semibold tracking-[-0.04em] tabular-nums',
+            'font-semibold tracking-[-0.04em] tabular-nums',
             size === 'lg'
               ? 'text-[clamp(2.5rem,2rem+2.2vw,4rem)] leading-none'
               : 'text-3xl leading-none',

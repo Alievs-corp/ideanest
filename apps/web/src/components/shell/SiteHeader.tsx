@@ -7,7 +7,8 @@ import { TopBar, cn } from '@ideanest/ui';
 import { useSession } from '../session/SessionProvider';
 import { AccountMenu } from './AccountMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { SearchField } from '../search/SearchField';
+// Hidden for now at the owner's request; restore together with the field below.
+// import { SearchField } from '../search/SearchField';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { isCurrent } from './navigation';
 import type { ShellCopy } from '../../lib/i18n/shell-copy';
@@ -126,7 +127,12 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
       }
       actions={
         <>
-          <SearchField copy={copy.search} className="hidden lg:block" />
+          {/*
+            THE SEARCH FIELD IS OFF FOR NOW, at the owner's request. It is commented out rather
+            than deleted so it comes back as one line; the drawer's field and `/search` itself
+            are untouched.
+            <SearchField copy={copy.search} className="hidden lg:block" />
+          */}
 
           {/*
             THE LANGUAGE CONTROL IS HERE AND NOT ONLY IN THE FOOTER. Somebody who landed in a

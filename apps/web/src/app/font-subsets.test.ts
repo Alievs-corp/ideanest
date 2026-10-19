@@ -79,11 +79,23 @@ const AZERBAIJANI = [...'əğıöşüçƏĞİÖŞÜÇ'];
  */
 const RUSSIAN = [...'абяжюыёАБЯЖЮЫЁ'];
 
-/** The subsets actually passed to `Inter()` in the root layout. */
+/**
+ * The subsets passed to each face in the root layout — Inter for text, Geologica for headings.
+ * Both draw the same four languages, so both are held to every assertion below.
+ */
+function declaredSubsetLists(): string[][] {
+  const lists = [...layoutSource.matchAll(/subsets:\s*\[([^\]]*)\]/g)].map((match) =>
+    [...(match[1] ?? '').matchAll(/'([^']+)'/g)].map((m) => m[1] as string),
+  );
+  if (lists.length === 0) throw new Error('No `subsets:` array found in layout.tsx');
+  return lists;
+}
+
+/** Every face's subsets, one after another; a face missing a cut fails on its own list. */
+const FACES = declaredSubsetLists();
+
 function declaredSubsets(): string[] {
-  const match = /subsets:\s*\[([^\]]*)\]/.exec(layoutSource);
-  if (!match?.[1]) throw new Error('No `subsets:` array found in layout.tsx');
-  return [...match[1].matchAll(/'([^']+)'/g)].map((m) => m[1] as string);
+  return FACES.flat();
 }
 
 function covers(subsets: readonly string[], codePoint: number): boolean {
@@ -92,10 +104,17 @@ function covers(subsets: readonly string[], codePoint: number): boolean {
   );
 }
 
-describe('Inter subsets', () => {
-  it('declares every subset it needs and no more', () => {
-    expect(declaredSubsets().sort()).toEqual(['cyrillic', 'latin', 'latin-ext']);
+describe('font subsets', () => {
+  it('loads two faces, text and headings', () => {
+    expect(FACES).toHaveLength(2);
   });
+
+  it.each(FACES.map((subsets, index) => [index, subsets]))(
+    'face %s declares every subset it needs and no more',
+    (_index, subsets) => {
+      expect([...subsets].sort()).toEqual(['cyrillic', 'latin', 'latin-ext']);
+    },
+  );
 
   it.each(AZERBAIJANI.map((character) => [character, character.codePointAt(0) as number]))(
     'covers %s (U+%s)',

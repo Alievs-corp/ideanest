@@ -3,6 +3,9 @@ import { Link } from '../../../../i18n/navigation';
 import { StaticPage } from '../../../../components/content/StaticPage';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { publicPageMetadata } from '../../../../lib/seo/metadata';
+import { StructuredData } from '../../../../components/seo/StructuredData';
+import { sitePageGraph } from '../../../../lib/seo/structured-data/graphs';
+import { graphContext } from '../../../../lib/i18n/shell-copy.server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -73,47 +76,50 @@ export default async function AboutPage() {
   const t = await getTranslations('static.about');
 
   return (
-    <StaticPage title={t('title')} summary={t('summary')}>
-      <p>{t('intro')}</p>
+    <>
+      <StructuredData nodes={sitePageGraph({ crumb: { name: t('metaTitle'), path: '/about' }, ...(await graphContext()) })} />
+      <StaticPage title={t('title')} summary={t('summary')}>
+        <p>{t('intro')}</p>
 
-      <h2>{t('allOrNothing.heading')}</h2>
-      <p>{t('allOrNothing.first')}</p>
-      <p>{t('allOrNothing.second')}</p>
+        <h2>{t('allOrNothing.heading')}</h2>
+        <p>{t('allOrNothing.first')}</p>
+        <p>{t('allOrNothing.second')}</p>
 
-      <h2>{t('cost.heading')}</h2>
-      <ul>
-        <li>
-          {t.rich('cost.successful', {
-            b: BOLD,
-            pricing: (chunks) => (
-              <Link href="/pricing" className={INLINE_LINK}>
+        <h2>{t('cost.heading')}</h2>
+        <ul>
+          <li>
+            {t.rich('cost.successful', {
+              b: BOLD,
+              pricing: (chunks) => (
+                <Link href="/pricing" className={INLINE_LINK}>
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </li>
+          <li>{t.rich('cost.unsuccessful', { b: BOLD })}</li>
+        </ul>
+        <p>{t('cost.note')}</p>
+
+        <h2>{t('notAPurchase.heading')}</h2>
+        <p>{t('notAPurchase.body')}</p>
+
+        <h2>{t('next.heading')}</h2>
+        <p>
+          {t.rich('next.body', {
+            howItWorks: (chunks) => (
+              <Link href="/how-it-works" className={INLINE_LINK}>
+                {chunks}
+              </Link>
+            ),
+            trustSafety: (chunks) => (
+              <Link href="/trust-safety" className={INLINE_LINK}>
                 {chunks}
               </Link>
             ),
           })}
-        </li>
-        <li>{t.rich('cost.unsuccessful', { b: BOLD })}</li>
-      </ul>
-      <p>{t('cost.note')}</p>
-
-      <h2>{t('notAPurchase.heading')}</h2>
-      <p>{t('notAPurchase.body')}</p>
-
-      <h2>{t('next.heading')}</h2>
-      <p>
-        {t.rich('next.body', {
-          howItWorks: (chunks) => (
-            <Link href="/how-it-works" className={INLINE_LINK}>
-              {chunks}
-            </Link>
-          ),
-          trustSafety: (chunks) => (
-            <Link href="/trust-safety" className={INLINE_LINK}>
-              {chunks}
-            </Link>
-          ),
-        })}
-      </p>
-    </StaticPage>
+        </p>
+      </StaticPage>
+    </>
   );
 }

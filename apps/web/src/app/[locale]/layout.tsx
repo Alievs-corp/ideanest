@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Geologica, Inter } from 'next/font/google';
 import { hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -61,15 +61,19 @@ import '../globals.css';
  * swap does not move the layout. That fallback is what keeps cumulative layout
  * shift under the 0.05 that docs/motion-system.md §8 asks for.
  *
- * Only `--font-sans` is bound here. `--font-display` still asks for General
- * Sans first (docs/ui-kit.md §5.1's first choice), which is a Fontshare licence
- * and a vendored binary rather than a build-time download; until somebody makes
- * that call it resolves to Inter, which is exactly the substitution §5.1 names.
+ * Headings are Geologica (`--font-display`, `h1`/`h2`); text and numerals stay Inter.
+ * Same three subsets — `font-subsets.test.ts` holds both calls.
  */
 const inter = Inter({
   subsets: ['latin', 'latin-ext', 'cyrillic'],
   display: 'swap',
   variable: '--font-inter',
+});
+
+const geologica = Geologica({
+  subsets: ['latin', 'latin-ext', 'cyrillic'],
+  display: 'swap',
+  variable: '--font-geologica',
 });
 
 /**
@@ -121,7 +125,7 @@ export function generateStaticParams(): Array<{ locale: string }> {
  * unfurler still cannot drift apart (docs/architecture.md §21.1).
  *
  * The font variable class goes on `<html>` rather than `<body>` so that
- * `--font-inter` is in scope for anything portalled to `document.body` — every
+ * `--font-inter` and `--font-geologica` are in scope for anything portalled to `document.body` — every
  * overlay in the kit renders there, and a modal in a different typeface than the
  * page under it is the kind of defect nobody reports and everybody sees.
  *
@@ -170,7 +174,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale} className={`${inter.variable} ${geologica.variable}`}>
       <body className="min-h-dvh bg-surface-1">
         {/*
           A call to the service that meets the maintenance problem sends the reader to the

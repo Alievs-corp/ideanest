@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import type { PublicProjectPreview } from '../metadata';
 import type { JsonLdNode } from './document';
 import type { PublicRewardTier } from './product';
-import { categoryPageGraph, discoverPageGraph, homePageGraph, projectPageGraph } from './graphs';
+import {
+  categoryPageGraph,
+  discoverPageGraph,
+  homePageGraph,
+  projectPageGraph,
+  sitePageGraph,
+} from './graphs';
 
 const env = { IDEANEST_SITE_URL: 'https://ideanest.az' } as const;
 
@@ -63,6 +69,22 @@ describe('discoverPageGraph', () => {
    */
   it('carries the trail and no longer the site identity', () => {
     expect(types(discoverPageGraph(context))).toEqual(['BreadcrumbList']);
+  });
+});
+
+describe('sitePageGraph', () => {
+  it("is a two-step trail from home to the page, in the page's own words", () => {
+    const nodes = sitePageGraph({ ...context, crumb: { name: 'Plans and pricing', path: '/pricing' } });
+
+    expect(types(nodes)).toEqual(['BreadcrumbList']);
+    expect(nodes[0]?.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://ideanest.az/en' },
+      { '@type': 'ListItem', position: 2, name: 'Plans and pricing', item: 'https://ideanest.az/en/pricing' },
+    ]);
+  });
+
+  it('claims nothing when the page has no name to give the step', () => {
+    expect(sitePageGraph({ ...context, crumb: { name: ' ', path: '/about' } })).toEqual([]);
   });
 });
 

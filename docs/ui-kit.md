@@ -260,8 +260,17 @@ single-storey feel at display sizes.
 > with the rest of the lowercase. Where there is doubt, choose **Inter**, in
 > which it is part of the original design.
 
-**Decision:** General Sans for display and headings, Inter for body and
-numerals. Two families, no more.
+**Decision (revised):** Geologica for page and section headings (`h1`, `h2`,
+`--font-display`), Inter for body, card titles and numerals. Two families, no
+more.
+
+General Sans was the first choice and was never served: it has no Cyrillic, and
+the site is read in Russian, so every heading fell through to Inter. An audit
+then named Inter on every page as the face AI-built sites default to. Geologica
+was chosen by the owner against the same Latin Extended check above, side by side
+with the fallback — Sofia Sans Condensed, Wix Madefor Display and Dela Gothic One
+all drew `ə` from another font. Numerals stay in Inter. The mobile app keeps
+Inter.
 
 ### 5.2 Scale
 
@@ -638,9 +647,12 @@ not shout as loudly as a campaign about to close.
                   transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 .progress--complete .progress__fill {
   background: var(--success);
-  box-shadow: 0 0 12px var(--lime-glow);
 }
 ```
+
+No glow on a complete bar. A lime halo around a success fill mixes the two
+meanings §8.1 keeps apart, and the track's `overflow: hidden` clipped it to a
+tint anyway; the colour change says "goal reached" on its own.
 
 The track fills to 100% and stops, but the value may exceed it. An overfunded
 campaign shows its real figure as text while the track stays full.
@@ -1088,6 +1100,28 @@ the floor — nothing on a card goes below it), tags `22px` high rather than
 and motion are unchanged. The cover `sizes` strings in `lib/images/sizes.ts`
 are derived from these grids and tested against them.
 
+#### The home page from `lg`: bands, as Kickstarter draws them
+
+Below `lg` the bands are stacked: popular right now, ending soon, recently
+launched, for creators, categories, each a heading and a grid. From `lg` the same content is
+arranged in **bands**, each separated from the next by a `--divider` rule across
+the column, and a band may hold more than one part:
+
+| Band | Shape from `lg` |
+|---|---|
+| Popular right now + Ending soon | Two halves. Left: the two campaigns at the top of the `popularity` sort, one per row, each cover filling its card so the column ends level with the grid beside it. Right: six ending-soon campaigns, two columns of three. The halves share their heading row through `subgrid`, so both grids start on one line |
+| Recently launched | One row that scrolls sideways under two arrows — three cards at `lg`, four at `xl`, the widths `CAMPAIGN_GRID` gives there |
+| For creators | Three pages side by side (how it works, pricing, trust and safety), each with a rule down its left edge; the title is the link, so there is no "learn more" button |
+| Browse by category | Unchanged |
+
+**On a phone each campaign band shows one card** and ends in a full-width
+button to the whole list, which replaces the header link there; the creators
+band and the category tiles are shown whole. A tablet shows every card in its
+grid, and the rail is the ordinary grid below `lg`. The rail's arrows scroll one page per press,
+smoothly unless reduced motion is asked for, and are disabled rather than hidden
+at either end. The layouts are `HOME_SPLIT_GRID`, `HOME_RAIL` and
+`HOME_RAIL_ITEM` beside `CAMPAIGN_GRID`.
+
 #### In a filtered feed, urgency is a lime badge — not a lime card
 
 §8.1 maps "closing within 48 hours" to a `--lime-500` card, and §1.1 says
@@ -1114,8 +1148,8 @@ belongs to. Every other rule is unchanged:
 | Closing within 48 hours | `--lime-500` **badge** | Urgent — the one lime element on the card |
 | Status word | `onAccent` tag + icon | Colour never alone (§9.2) |
 
-The cover is inset in the accent card with its own rounded corners, as the app
-draws it, cropped 16:9. On a phone every campaign grid is **one column** and
+The cover runs full-bleed to the card's top and side edges, rounded on the top
+corners only, cropped 16:9. On a phone every campaign grid is **one column** and
 the card is the full one, as the app draws it (#345) — the two-column compact
 card of #339 and #343 is gone. Category tiles on the home page are accent cards with the category's
 icon; the categories index and the landing pages put the icon on a disc of the
@@ -1239,7 +1273,7 @@ stop, not a destination.
 | Nav pill, at rest | transparent, transparent border | `--text-primary` |
 | Nav pill, collapsed | `--white-surface`, `--radius-full`, `--border` | `--text-on-white` |
 | Header primary action | `--lime-500` | `--text-on-lime` |
-| Footer | `--surface-1` | `--text-tertiary`, headings `--text-secondary` |
+| Footer | `--surface-1` | links `--text-secondary`, headings `--text-primary` semibold |
 | Footer rule | `--divider` | — |
 
 **The skip link is not optional and it is part of this component.** It is the

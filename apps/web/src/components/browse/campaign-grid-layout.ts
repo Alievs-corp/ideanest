@@ -25,6 +25,31 @@ export const CAMPAIGN_GRID =
   'grid w-full list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
 
 /**
+ * The home page's two desktop shapes — Kickstarter's front page, asked for by the owner. Below
+ * `lg` both are exactly `CAMPAIGN_GRID`'s one and two columns, so a phone and a tablet draw
+ * the page they always did.
+ *
+ * `HOME_SPLIT_GRID` is the right half of the first band: two columns from `sm` and still two
+ * at `lg`, where the band gives it half the width beside the popular campaigns. Its rows are
+ * equal from `lg`, as the two popular cards' are, so the two halves end their rows on one line.
+ *
+ * `HOME_RAIL` turns a grid into a row from `lg`: one line of cards that scrolls sideways under
+ * the section's arrows, three across at `lg` and four at `xl` — the same widths
+ * `CAMPAIGN_GRID` gives there, so `CAMPAIGN_CARD_SIZES` still describes every cover. The
+ * vertical padding is room the row would otherwise cut off: an `overflow-x` container clips
+ * the other axis too, so a hovered card's 4px lift would lose its top edge and the accent
+ * glow under every card (`0 16px 32px -12px`, 36px deep) would end in a hard line. The
+ * negative margins give the same room back, so the row sits where a grid would.
+ */
+export const HOME_SPLIT_GRID = 'grid w-full list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:auto-rows-fr';
+
+export const HOME_RAIL =
+  'grid w-full list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:-mt-2 lg:-mb-10 lg:flex lg:snap-x lg:snap-mandatory lg:overflow-x-auto lg:pt-2 lg:pb-10 lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden';
+
+export const HOME_RAIL_ITEM =
+  'lg:w-[calc((100%-2rem)/3)] lg:shrink-0 lg:snap-start xl:w-[calc((100%-3rem)/4)]';
+
+/**
  * A profile's created and backed lists, edge to edge in the profile page's narrower
  * `max-w-[1120px]` column. Three tracks rather than four: in that column a fourth would make
  * each card 256px, smaller than the card's interior was drawn for.

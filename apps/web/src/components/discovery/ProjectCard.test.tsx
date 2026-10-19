@@ -105,7 +105,6 @@ describe('ProjectCard', () => {
     });
 
     expect(screen.getByText('999,999,999,999.99 AZN')).toBeInTheDocument();
-    expect(screen.getByText('of 999,999,999,999.99 AZN goal')).toBeInTheDocument();
   });
 
   it('reads the completion from the string rather than rounding a float', () => {
@@ -260,8 +259,8 @@ describe('ProjectCard', () => {
     it('reserves the card’s crop before the photograph arrives', () => {
       const { container } = renderCard();
 
-      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9');
-      expect(frame(container).style.getPropertyValue('--media-ratio-narrow')).toBe('2 / 1');
+      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 10.59');
+      expect(frame(container).style.getPropertyValue('--media-ratio-narrow')).toBe('16 / 9.42');
     });
 
     it('reserves the same box for a campaign with no cover', () => {
@@ -269,7 +268,7 @@ describe('ProjectCard', () => {
       // one it painted, which is the shift the reservation exists to prevent.
       const { container } = renderCard({ image: null });
 
-      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9');
+      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 10.59');
       expect(container.querySelector('img')).toBeNull();
     });
 
@@ -280,7 +279,7 @@ describe('ProjectCard', () => {
         image: { url: 'https://example.test/tall.jpg', width: 900, height: 1600 },
       });
 
-      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9');
+      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 10.59');
     });
 
     it('declares how wide the card really is at every breakpoint', () => {
@@ -324,7 +323,9 @@ describe('ProjectCard', () => {
       const { container } = renderCard({ badge: 'live', closingSoon: true });
       const tag = screen.getByText(/live/i).closest('span');
 
-      expect(container.querySelector('article')).toHaveClass('max-sm:p-4');
+      // Full-bleed cover: the card has no padding of its own, the text block carries it.
+      expect(container.querySelector('article')).not.toHaveClass('p-2.5', 'max-sm:p-4');
+      expect(container.querySelector('article > div:first-child')).toHaveClass('rounded-t-xl');
       expect(tag).toHaveClass('max-sm:min-h-[26px]', 'max-sm:rounded-full', 'max-sm:text-xs');
       expect(container.querySelector('h3')).toHaveClass('max-sm:leading-[21px]');
       expect(container.querySelector('[role="progressbar"]')).toHaveClass('max-sm:h-1.5');
@@ -382,9 +383,10 @@ describe('ProjectCard', () => {
 });
 
 describe('ProjectCard under IDN-EXT-01 (#44)', () => {
-  it('states the 80% rule beside the progress bar', () => {
-    renderCard();
+  it('leaves the 80% rule and the goal line off the card for now', () => {
+    renderCard({ goal: { amount: '1000.00', currency: 'AZN' } });
 
-    expect(screen.getByText('Succeeds at 80% of the goal')).toBeInTheDocument();
+    expect(screen.queryByText('Succeeds at 80% of the goal')).toBeNull();
+    expect(screen.queryByText(/goal$/)).toBeNull();
   });
 });

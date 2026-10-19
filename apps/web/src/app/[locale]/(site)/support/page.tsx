@@ -10,6 +10,9 @@ import { Link } from '../../../../i18n/navigation';
 import { StaticPage } from '../../../../components/content/StaticPage';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { publicPageMetadata } from '../../../../lib/seo/metadata';
+import { StructuredData } from '../../../../components/seo/StructuredData';
+import { sitePageGraph } from '../../../../lib/seo/structured-data/graphs';
+import { graphContext } from '../../../../lib/i18n/shell-copy.server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -88,63 +91,66 @@ export default async function SupportPage() {
   const privacy = link('/legal/privacy-policy');
 
   return (
-    <StaticPage title={t('title')} summary={t('summary')}>
-      <h2>{t('contact.heading')}</h2>
-      <p>{t('contact.intro')}</p>
-      <ul>
-        <li>
-          {t.rich('contact.email', {
-            b: BOLD,
-            email: external(supportMailto()),
-            address: SUPPORT_EMAIL,
-          })}
-        </li>
-        <li>
-          {t.rich('contact.phone', {
-            b: BOLD,
-            phone: external(`tel:${SUPPORT_PHONE}`),
-            number: displayPhone(SUPPORT_PHONE),
-          })}
-        </li>
-      </ul>
-      <p>{t.rich('contact.operator', { operator: OPERATOR_NAME, privacy })}</p>
+    <>
+      <StructuredData nodes={sitePageGraph({ crumb: { name: t('metaTitle'), path: '/support' }, ...(await graphContext()) })} />
+      <StaticPage title={t('title')} summary={t('summary')}>
+        <h2>{t('contact.heading')}</h2>
+        <p>{t('contact.intro')}</p>
+        <ul>
+          <li>
+            {t.rich('contact.email', {
+              b: BOLD,
+              email: external(supportMailto()),
+              address: SUPPORT_EMAIL,
+            })}
+          </li>
+          <li>
+            {t.rich('contact.phone', {
+              b: BOLD,
+              phone: external(`tel:${SUPPORT_PHONE}`),
+              number: displayPhone(SUPPORT_PHONE),
+            })}
+          </li>
+        </ul>
+        <p>{t.rich('contact.operator', { operator: OPERATOR_NAME, privacy })}</p>
 
-      <h2>{t('answers.heading')}</h2>
-      <ul>
-        <li>{t.rich('answers.howItWorks', { link: link('/how-it-works') })}</li>
-        <li>{t.rich('answers.pricing', { link: link('/pricing') })}</li>
-        <li>{t.rich('answers.trustSafety', { link: link('/trust-safety') })}</li>
-        <li>{t.rich('answers.legal', { link: link('/legal') })}</li>
-      </ul>
+        <h2>{t('answers.heading')}</h2>
+        <ul>
+          <li>{t.rich('answers.howItWorks', { link: link('/how-it-works') })}</li>
+          <li>{t.rich('answers.pricing', { link: link('/pricing') })}</li>
+          <li>{t.rich('answers.trustSafety', { link: link('/trust-safety') })}</li>
+          <li>{t.rich('answers.legal', { link: link('/legal') })}</li>
+        </ul>
 
-      <h2>{t('report.heading')}</h2>
-      <p>{t.rich('report.body', { trustSafety: link('/trust-safety') })}</p>
+        <h2>{t('report.heading')}</h2>
+        <p>{t.rich('report.body', { trustSafety: link('/trust-safety') })}</p>
 
-      <h2 id={DELETE_ACCOUNT_ANCHOR} className="scroll-mt-24">
-        {t('deletion.heading')}
-      </h2>
-      <p>{t('deletion.intro')}</p>
-      <ul>
-        <li>{t.rich('deletion.app', { b: BOLD })}</li>
-        <li>{t.rich('deletion.web', { b: BOLD, privacy: link('/settings/privacy') })}</li>
-        <li>
-          {t.rich('deletion.email', {
-            b: BOLD,
-            email: external(supportMailto(t('deletion.subject'))),
-            address: SUPPORT_EMAIL,
-            subject: t('deletion.subject'),
-          })}
-        </li>
-      </ul>
-      <p>{t('deletion.grace')}</p>
-      <p>{t.rich('deletion.removed', { b: BOLD })}</p>
-      <p>{t('deletion.keptIntro')}</p>
-      <ul>
-        <li>{t.rich('deletion.records', { b: BOLD, privacy })}</li>
-        <li>{t.rich('deletion.pledges', { b: BOLD })}</li>
-        <li>{t.rich('deletion.rewards', { b: BOLD })}</li>
-        <li>{t.rich('deletion.creators', { b: BOLD })}</li>
-      </ul>
-    </StaticPage>
+        <h2 id={DELETE_ACCOUNT_ANCHOR} className="scroll-mt-24">
+          {t('deletion.heading')}
+        </h2>
+        <p>{t('deletion.intro')}</p>
+        <ul>
+          <li>{t.rich('deletion.app', { b: BOLD })}</li>
+          <li>{t.rich('deletion.web', { b: BOLD, privacy: link('/settings/privacy') })}</li>
+          <li>
+            {t.rich('deletion.email', {
+              b: BOLD,
+              email: external(supportMailto(t('deletion.subject'))),
+              address: SUPPORT_EMAIL,
+              subject: t('deletion.subject'),
+            })}
+          </li>
+        </ul>
+        <p>{t('deletion.grace')}</p>
+        <p>{t.rich('deletion.removed', { b: BOLD })}</p>
+        <p>{t('deletion.keptIntro')}</p>
+        <ul>
+          <li>{t.rich('deletion.records', { b: BOLD, privacy })}</li>
+          <li>{t.rich('deletion.pledges', { b: BOLD })}</li>
+          <li>{t.rich('deletion.rewards', { b: BOLD })}</li>
+          <li>{t.rich('deletion.creators', { b: BOLD })}</li>
+        </ul>
+      </StaticPage>
+    </>
   );
 }

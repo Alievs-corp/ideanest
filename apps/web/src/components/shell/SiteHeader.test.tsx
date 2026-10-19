@@ -326,14 +326,13 @@ describe('the language control', () => {
 });
 
 describe('the search entry', () => {
-  it('is a labelled search form, so it is reachable by landmark', async () => {
+  it('is hidden from the bar for now', () => {
     renderHeader();
 
-    const searches = screen.getAllByRole('search');
-    expect(searches.length).toBeGreaterThan(0);
-    expect(
-      within(searches[0] as HTMLElement).getByRole('searchbox', { name: 'Search campaigns' }),
-    ).toBeInTheDocument();
+    // The field is commented out at the owner's request. When it returns, this goes back to
+    // asserting a labelled search landmark with a "Search campaigns" searchbox in it.
+    expect(screen.queryByRole('search')).not.toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
   });
 });
 

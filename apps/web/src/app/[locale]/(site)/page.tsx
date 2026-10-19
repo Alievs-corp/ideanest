@@ -3,6 +3,14 @@ import { Link } from '../../../i18n/navigation';
 import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { CampaignGrid } from '../../../components/browse/CampaignGrid';
+import {
+  HOME_RAIL,
+  HOME_RAIL_ITEM,
+  HOME_SPLIT_GRID,
+} from '../../../components/browse/campaign-grid-layout';
+import { ProjectCard as ProjectCardView } from '../../../components/discovery/ProjectCard';
+import { RailControls } from '../../../components/home/RailControls';
+import { FEATURED_CARD_SIZES } from '../../../lib/images/sizes';
 import { ACCENT_SURFACE } from '../../../components/browse/accent-surface';
 import { CategoryIcon } from '../../../components/browse/CategoryLook';
 import { categoryLook } from '@ideanest/discovery/category-look';
@@ -81,6 +89,29 @@ export async function generateMetadata({
 /** Twelve per rail: full rows at two, three and four columns, and never a half-empty row. */
 const RAIL_SIZE = 12;
 
+/** How many popular campaigns the first band's left half shows: two rows of one. */
+const FEATURED_SIZE = 2;
+
+/** How many ending-soon campaigns the first band's desktop half shows: two columns of three. */
+const SPLIT_SIZE = 6;
+
+/**
+ * ONE CAMPAIGN PER BAND ON A PHONE, at the owner's request: every card after the first is
+ * hidden below `sm`, and the band ends in a full-width button to the whole list instead.
+ * Twelve full-height cards a band made the page a scroll of thirty-odd screens before the
+ * categories. A tablet and a desktop are unaffected.
+ */
+const PHONE_FIRST_ONLY = 'max-sm:hidden';
+
+/** The recently-launched list's id, which its arrows name in `aria-controls`. */
+const LAUNCHED_RAIL = 'home-launched-rail';
+
+/**
+ * The hairline between two bands, from `lg` — Kickstarter separates its sections with a rule
+ * across the column rather than with space alone. Not on a phone, which stays as it was.
+ */
+const DIVIDED = 'lg:border-t lg:border-white/6 lg:pt-14';
+
 export default async function HomePage() {
   const t = await getTranslations('home');
   const locale = localeOrDefault(await getLocale());
@@ -91,18 +122,55 @@ export default async function HomePage() {
    * answered, so serialising them would add the other two round trips to the time to first
    * byte of the platform's front door for nothing.
    */
-  const [endingSoon, latest, categories] = await Promise.all([
+  const [endingSoon, latest, popular, categories, pages, pricing] = await Promise.all([
     fetchDiscoveryFeed(
       feedQuery({ ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' }, { limit: RAIL_SIZE }),
     ),
     fetchDiscoveryFeed(
       feedQuery({ ...NO_FILTERS, statuses: ['live'], sort: 'newest' }, { limit: RAIL_SIZE }),
     ),
+    /*
+     * Two campaigns, for the featured half of the first band on a desktop — two rows, one
+     * card each, beside the 2×2 grid. Popularity is the feed's own ranking — money raised
+     * against the campaign's age — so the slot claims what the sort measures and nothing more.
+     */
+    fetchDiscoveryFeed(
+      feedQuery({ ...NO_FILTERS, statuses: ['live'], sort: 'popularity' }, { limit: FEATURED_SIZE }),
+    ),
     fetchCategories(),
+    getTranslations('static'),
+    getTranslations('pricing'),
   ]);
 
   const closing = itemsOf(endingSoon);
   const launched = itemsOf(latest);
+  const featured = itemsOf(popular).slice(0, FEATURED_SIZE);
+  const featuredIds = new Set(featured.map((card) => card.id));
+
+  /*
+   * THE FIRST BAND ON A DESKTOP IS KICKSTARTER'S: the popular campaigns on the left, four of
+   * the ending-soon campaigns in a 2×2 grid on the right. The phone and the tablet keep all
+   * twelve in the grid they always had, so the four are chosen here and the rest are hidden
+   * from `lg` only. A popular campaign is skipped if it is also closing, so a desktop
+   * never shows one campaign twice side by side.
+   */
+  const splitIds = new Set(
+    closing
+      .filter((card) => !featuredIds.has(card.id))
+      .slice(0, SPLIT_SIZE)
+      .map((card) => card.id),
+  );
+
+  /*
+   * The pages a creator reads before starting, in each page's own words: the title and the
+   * description its `<meta>` already carries, so this band cannot promise what the page does
+   * not say.
+   */
+  const creatorPages = [
+    { href: '/how-it-works', title: pages('howItWorks.metaTitle'), body: pages('howItWorks.metaDescription') },
+    { href: '/pricing', title: pricing('metaTitle'), body: pricing('metaDescription') },
+    { href: '/trust-safety', title: pages('trustSafety.metaTitle'), body: pages('trustSafety.metaDescription') },
+  ] as const;
 
   return (
     <>
@@ -176,24 +244,92 @@ export default async function HomePage() {
           <HeroScene caption={t('hero.sceneCaption')} />
         </section>
 
-        {closing.length > 0 && (
+        {closing.length > 0 && featured.length > 0 && (
+          /*
+            ONE BAND, TWO PARTS — from `lg`. The two halves share their rows through
+            `subgrid`, so the popular cards and the grid beside them start on the same line
+            whichever heading wraps. Below `lg` the two halves are two sections, one above
+            the other.
+          */
+          <div className="lg:grid lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-x-10">
+            <HomeSection
+              heading={t('featured.heading')}
+              standfirst={t('featured.standfirst')}
+              href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'popularity' })}
+              linkLabel={t('featured.link')}
+              seeAll={t('seeAll')}
+              className="lg:row-span-2 lg:grid lg:grid-rows-subgrid"
+            >
+              {/*
+                Two rows of one card from `lg`, as tall together as the two rows of the grid
+                beside them; each cover takes its row's spare height. Two across on a tablet,
+                one on a phone — see `PHONE_FIRST_ONLY`.
+              */}
+              <ul
+                aria-label={t('featured.heading')}
+                className="grid list-none gap-4 sm:grid-cols-2 lg:auto-rows-fr lg:grid-cols-1"
+              >
+                {featured.map((card, index) => (
+                  <li key={card.id} className={index === 0 ? 'min-h-0' : `min-h-0 ${PHONE_FIRST_ONLY}`}>
+                    <ProjectCardView
+                      card={card}
+                      copy={cardCopy}
+                      locale={locale}
+                      sizes={FEATURED_CARD_SIZES}
+                      priority={index === 0}
+                      coverClassName="lg:aspect-auto lg:min-h-65.5 lg:flex-[100_1_0%]"
+                      coverScale={1}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </HomeSection>
+
+            <HomeSection
+              heading={t('closing.heading')}
+              standfirst={t('closing.standfirst')}
+              href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' })}
+              linkLabel={t('closing.link')}
+              seeAll={t('seeAll')}
+              className="lg:row-span-2 lg:grid lg:grid-rows-subgrid"
+            >
+              {/*
+                Eager covers for the first row of the 2×2 only. The first popular cover is the
+                other one fetched early: on a phone it is the first campaign under the hero.
+              */}
+              <CampaignGrid
+                campaigns={closing}
+                priorityCount={2}
+                label={t('closing.gridLabel')}
+                cardCopy={cardCopy}
+                locale={locale}
+                layout={HOME_SPLIT_GRID}
+                coverClassName="lg:aspect-[16/7.19]"
+                itemClassName={(card, index) =>
+                  [splitIds.has(card.id) ? '' : 'lg:hidden', index === 0 ? '' : PHONE_FIRST_ONLY]
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
+              />
+            </HomeSection>
+          </div>
+        )}
+
+        {closing.length > 0 && featured.length === 0 && (
           <HomeSection
             heading={t('closing.heading')}
             standfirst={t('closing.standfirst')}
             href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' })}
             linkLabel={t('closing.link')}
+            seeAll={t('seeAll')}
           >
-            {/*
-              The only grid on the page that fetches its covers eagerly. One of them is the
-              largest contentful paint; putting the second rail in the same priority queue
-              would make every image on the page later.
-            */}
             <CampaignGrid
               campaigns={closing}
-              priorityCount={3}
+              priorityCount={1}
               label={t('closing.gridLabel')}
               cardCopy={cardCopy}
               locale={locale}
+              itemClassName={(_card, index) => (index === 0 ? undefined : PHONE_FIRST_ONLY)}
             />
           </HomeSection>
         )}
@@ -204,15 +340,69 @@ export default async function HomePage() {
             standfirst={t('launched.standfirst')}
             href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'newest' })}
             linkLabel={t('launched.link')}
+            seeAll={t('seeAll')}
+            className={DIVIDED}
+            controls={
+              <RailControls
+                target={LAUNCHED_RAIL}
+                previous={t('rail.previous')}
+                next={t('rail.next')}
+              />
+            }
           >
+            {/*
+              A ROW FROM `lg`, a grid below it. Kickstarter's shape for a list that is a
+              sample of something larger: one line of cards and two arrows, rather than a
+              second wall of twelve straight after the first.
+            */}
             <CampaignGrid
+              id={LAUNCHED_RAIL}
               campaigns={launched}
               label={t('launched.gridLabel')}
               cardCopy={cardCopy}
               locale={locale}
+              layout={HOME_RAIL}
+              itemClassName={(_card, index) =>
+                index === 0 ? HOME_RAIL_ITEM : `${HOME_RAIL_ITEM} ${PHONE_FIRST_ONLY}`
+              }
             />
           </HomeSection>
         )}
+
+        {/*
+          FOR CREATORS — three pages side by side from `lg` with a rule down each one's left
+          edge (Kickstarter's editorial band), one under another below it. The title is the
+          link, so there is no "Learn more" button saying nothing.
+        */}
+        <section className={`pb-20 ${DIVIDED}`}>
+          <FadeUpSection>
+            <div className="pb-8">
+              <SectionHeading heading={t('creators.heading')} standfirst={t('creators.standfirst')} />
+            </div>
+          </FadeUpSection>
+          <ul
+            aria-label={t('creators.label')}
+            className="grid list-none grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10"
+          >
+            {creatorPages.map((page) => (
+              <li key={page.href} className="border-l-2 border-white/16 pl-6">
+                <h3 className="text-xl font-semibold tracking-[-0.02em] text-white">
+                  <Link
+                    href={page.href}
+                    className="group inline-flex items-center gap-2 rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  >
+                    {page.title}
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="size-4 shrink-0 text-white/64 transition-transform duration-150 ease-in-out motion-safe:group-hover:translate-x-1"
+                    />
+                  </Link>
+                </h3>
+                <p className="mt-3 max-w-[44ch] leading-relaxed text-white/64">{page.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         {categories !== null && categories.length > 0 && (
           <HomeSection
@@ -220,6 +410,8 @@ export default async function HomePage() {
             standfirst={t('categories.standfirst')}
             href="/categories"
             linkLabel={t('categories.link')}
+            seeAll={t('seeAll')}
+            className={DIVIDED}
           >
             {/*
               ACCENT TILES, AS THE APP DRAWS THEM (#335). Each category wears its accent and its
@@ -304,35 +496,74 @@ function HomeSection({
   standfirst,
   href,
   linkLabel,
+  seeAll,
+  className,
+  controls,
   children,
 }: {
   readonly heading: string;
   readonly standfirst: string;
   readonly href: string;
+  /** The link's accessible name; `seeAll` is what is shown. */
   readonly linkLabel: string;
+  readonly seeAll: string;
+  /** Layout from `lg`: a divider, or the subgrid that lines it up with its neighbour. */
+  readonly className?: string;
+  /** Drawn beside the link — the rail arrows. */
+  readonly controls?: ReactNode;
   readonly children: ReactNode;
 }) {
   return (
-    <section className="pb-20">
+    <section className={className === undefined ? 'pb-20' : `pb-20 ${className}`}>
       <FadeUpSection>
         <div className="flex flex-col gap-3 pb-8 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
-              {heading}
-            </h2>
-            <p className="mt-2 max-w-[60ch] text-white/64">{standfirst}</p>
+          <SectionHeading heading={heading} standfirst={standfirst} />
+          <div className="flex shrink-0 items-center gap-6 max-sm:hidden">
+            <Link
+              href={href}
+              aria-label={linkLabel}
+              className="inline-flex shrink-0 items-center gap-2 rounded-sm text-sm font-medium text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            >
+              {seeAll}
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
+            {controls}
           </div>
-          <Link
-            href={href}
-            className="inline-flex shrink-0 items-center gap-2 rounded-sm text-sm font-medium text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
-          >
-            {linkLabel}
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </Link>
         </div>
       </FadeUpSection>
 
       {children}
+
+      {/*
+        ON A PHONE THE WAY ON IS A BUTTON UNDER THE CARD, not a link above it: the band shows
+        one campaign (`PHONE_FIRST_ONLY`), and the reader decides whether to see the rest
+        after looking at it. Same words and address as the header link it replaces, white
+        rather than lime — §1.1 keeps the page's one lime element for urgency.
+      */}
+      <Link
+        href={href}
+        aria-label={linkLabel}
+        className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/16 px-5 text-center text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] sm:hidden"
+      >
+        {seeAll}
+        <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+      </Link>
     </section>
+  );
+}
+
+/** A band's heading and its one sentence — shared by every band, the featured half included. */
+function SectionHeading({
+  heading,
+  standfirst,
+}: {
+  readonly heading: string;
+  readonly standfirst: string;
+}) {
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">{heading}</h2>
+      <p className="mt-2 max-w-[60ch] text-white/64">{standfirst}</p>
+    </div>
   );
 }

@@ -7,6 +7,9 @@ import { fetchPlanCatalogue } from '../../../../lib/api/server';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { pricingCopy } from '../../../../lib/i18n/shell-copy.server';
 import { publicPageMetadata } from '../../../../lib/seo/metadata';
+import { StructuredData } from '../../../../components/seo/StructuredData';
+import { sitePageGraph } from '../../../../lib/seo/structured-data/graphs';
+import { graphContext } from '../../../../lib/i18n/shell-copy.server';
 
 export async function generateMetadata({
   params,
@@ -77,29 +80,32 @@ export default async function PricingPage({
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-5 py-12 sm:px-8">
-      <h1 className="text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">{t('title')}</h1>
-      <p className="mt-3 max-w-[62ch] text-[15px] text-white/64">{t('intro')}</p>
+    <>
+      <StructuredData nodes={sitePageGraph({ crumb: { name: t('metaTitle'), path: '/pricing' }, ...(await graphContext()) })} />
+      <div className="mx-auto w-full max-w-[1100px] px-5 py-12 sm:px-8">
+        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">{t('title')}</h1>
+        <p className="mt-3 max-w-[62ch] text-[15px] text-white/64">{t('intro')}</p>
 
-      <div className="mt-10">
-        {plans === null ? (
-          /*
-            The service refused or could not be reached. Said plainly rather than rendered as
-            an empty catalogue, which would read as "this platform has no plans" — the one
-            wrong answer on a page whose whole purpose is to say what the plans are.
-          */
-          <p className="text-sm text-white/64">{t('unavailable')}</p>
-        ) : (
-          <PlanChooser
-            plans={plans}
-            copy={copy}
-            locale={localeOrDefault(locale)}
-            fromProjectId={query.from === 'submit' ? query.project : undefined}
-          />
-        )}
+        <div className="mt-10">
+          {plans === null ? (
+            /*
+              The service refused or could not be reached. Said plainly rather than rendered as
+              an empty catalogue, which would read as "this platform has no plans" — the one
+              wrong answer on a page whose whole purpose is to say what the plans are.
+            */
+            <p className="text-sm text-white/64">{t('unavailable')}</p>
+          ) : (
+            <PlanChooser
+              plans={plans}
+              copy={copy}
+              locale={localeOrDefault(locale)}
+              fromProjectId={query.from === 'submit' ? query.project : undefined}
+            />
+          )}
+        </div>
+
+        <FeeDisclosure disclosure={fees} audience="creator" locale={localeOrDefault(locale)} />
       </div>
-
-      <FeeDisclosure disclosure={fees} audience="creator" locale={localeOrDefault(locale)} />
-    </div>
+    </>
   );
 }

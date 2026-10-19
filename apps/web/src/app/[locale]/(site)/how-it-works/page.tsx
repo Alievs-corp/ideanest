@@ -4,6 +4,9 @@ import { PromoFilm } from '../../../../components/content/PromoFilm';
 import { StaticPage } from '../../../../components/content/StaticPage';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { publicPageMetadata } from '../../../../lib/seo/metadata';
+import { StructuredData } from '../../../../components/seo/StructuredData';
+import { sitePageGraph } from '../../../../lib/seo/structured-data/graphs';
+import { graphContext } from '../../../../lib/i18n/shell-copy.server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -65,30 +68,33 @@ export default async function HowItWorksPage({ params }: { params: Promise<{ loc
   );
 
   return (
-    <StaticPage title={t('title')} summary={t('summary')}>
-      <PromoFilm locale={localeOrDefault(locale)} />
+    <>
+      <StructuredData nodes={sitePageGraph({ crumb: { name: t('metaTitle'), path: '/how-it-works' }, ...(await graphContext()) })} />
+      <StaticPage title={t('title')} summary={t('summary')}>
+        <PromoFilm locale={localeOrDefault(locale)} />
 
-      <h2>{t('backing.heading')}</h2>
-      <p>{t.rich('backing.first', { b: BOLD })}</p>
-      <p>{t('backing.second')}</p>
-      <p>{t('backing.third')}</p>
+        <h2>{t('backing.heading')}</h2>
+        <p>{t.rich('backing.first', { b: BOLD })}</p>
+        <p>{t('backing.second')}</p>
+        <p>{t('backing.third')}</p>
 
-      <h2>{t('surveys.heading')}</h2>
-      <p>{t.rich('surveys.first', { surveys: link('/account/surveys') })}</p>
-      <p>{t.rich('surveys.second', { deliveries: link('/account/deliveries') })}</p>
+        <h2>{t('surveys.heading')}</h2>
+        <p>{t.rich('surveys.first', { surveys: link('/account/surveys') })}</p>
+        <p>{t.rich('surveys.second', { deliveries: link('/account/deliveries') })}</p>
 
-      <h2>{t('running.heading')}</h2>
-      <ul>
-        <li>{t.rich('running.draft', { b: BOLD })}</li>
-        <li>{t.rich('running.rewards', { b: BOLD })}</li>
-        <li>{t.rich('running.submit', { b: BOLD })}</li>
-        <li>{t.rich('running.launch', { b: BOLD })}</li>
-        <li>{t.rich('running.deliver', { b: BOLD })}</li>
-      </ul>
+        <h2>{t('running.heading')}</h2>
+        <ul>
+          <li>{t.rich('running.draft', { b: BOLD })}</li>
+          <li>{t.rich('running.rewards', { b: BOLD })}</li>
+          <li>{t.rich('running.submit', { b: BOLD })}</li>
+          <li>{t.rich('running.launch', { b: BOLD })}</li>
+          <li>{t.rich('running.deliver', { b: BOLD })}</li>
+        </ul>
 
-      <h2>{t('agreeing.heading')}</h2>
-      <p>{t('agreeing.first')}</p>
-      <p>{t.rich('agreeing.second', { trustSafety: link('/trust-safety') })}</p>
-    </StaticPage>
+        <h2>{t('agreeing.heading')}</h2>
+        <p>{t('agreeing.first')}</p>
+        <p>{t.rich('agreeing.second', { trustSafety: link('/trust-safety') })}</p>
+      </StaticPage>
+    </>
   );
 }

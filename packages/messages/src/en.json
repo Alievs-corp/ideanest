@@ -4274,6 +4274,7 @@
   },
   "home": {
     "metaTitle": "IdeyaNest — reward-based crowdfunding",
+    "seeAll": "See all",
     "hero": {
       "title": "Fund what does not exist yet",
       "standfirst": "Creators publish a campaign with a goal and a deadline. Backers pledge. A campaign succeeds at 80% of its goal.",
@@ -4285,6 +4286,11 @@
       },
       "browse": "Browse campaigns",
       "start": "Start a campaign"
+    },
+    "featured": {
+      "heading": "Popular right now",
+      "standfirst": "The live campaigns raising money fastest for their age.",
+      "link": "See every popular campaign"
     },
     "closing": {
       "heading": "Ending soon",
@@ -4298,10 +4304,19 @@
       "link": "See every live campaign",
       "gridLabel": "Recently launched campaigns"
     },
+    "rail": {
+      "previous": "Previous campaigns",
+      "next": "Next campaigns"
+    },
     "categories": {
       "heading": "Browse by category",
       "standfirst": "Fifteen categories, each with its own page — and each of those with its subcategories.",
       "link": "See all categories"
+    },
+    "creators": {
+      "heading": "For creators",
+      "standfirst": "How a campaign runs here, what it costs, and what is not allowed.",
+      "label": "Pages for creators"
     },
     "empty": {
       "heading": "No campaigns to show right now",

@@ -10,7 +10,7 @@ import {
   Hourglass,
   Users,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Avatar, MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
 import { campaignAccent } from '@ideanest/discovery/category-look';
 import { ACCENT_SURFACE } from '../browse/accent-surface';
@@ -89,9 +89,9 @@ const URGENT_DAYS = 2;
  */
 const BADGES: Record<DiscoveryStatus, ReactNode> = {
   upcoming: <CalendarClock className="size-2.5 max-sm:size-3 lg:size-3" />,
-  live: <CircleDot className="size-2.5 max-sm:size-3 lg:size-3" />,
+  live: <CircleDot className="size-2.5 max-sm:size-3 lg:size-3 text-info" />,
   extended: <CalendarPlus className="size-2.5 max-sm:size-3 lg:size-3" />,
-  successful: <CircleCheck className="size-2.5 max-sm:size-3 lg:size-3 max-sm:text-success" />,
+  successful: <CircleCheck className="size-2.5 max-sm:size-3 lg:size-3 text-success" />,
 };
 
 /**
@@ -100,7 +100,7 @@ const BADGES: Record<DiscoveryStatus, ReactNode> = {
  * "Closing soon" is an hourglass, not lime, which stays the one "hurry" element on the card — the
  * last-48-hours countdown. Each is an icon plus a word, so colour never carries the meaning alone.
  */
-const CLOSING_SOON: ReactNode = <Hourglass className="size-2.5 max-sm:size-3 lg:size-3 max-sm:text-warning" />;
+const CLOSING_SOON: ReactNode = <Hourglass className="size-2.5 max-sm:size-3 lg:size-3 text-warning" />;
 const EXTENDED: ReactNode = <CalendarPlus className="size-2.5 max-sm:size-3 lg:size-3" />;
 
 /**
@@ -160,9 +160,35 @@ export interface ProjectCardProps {
   copy: ProjectCardCopy;
   /** The language, for the two counted sentences. Both change with the number in front. */
   locale: Locale;
+  /**
+   * The cover's `sizes`, for a card drawn outside `CAMPAIGN_GRID` — the home page's featured
+   * campaign is half the column wide, and a cover sized for a quarter of it would be blurred.
+   */
+  sizes?: string;
+  /** Extra classes for the cover's frame — the home page sizes its covers per band. */
+  coverClassName?: string;
+  /** Cover height against the 16:9 / 2:1 crop; the owner asked for 7% taller everywhere but the popular band. */
+  coverScale?: number;
 }
 
-export function ProjectCard({ card, priority = false, copy, locale }: ProjectCardProps) {
+const COVER_SCALE = 1.177;
+
+function coverCrop(scale: number): CSSProperties {
+  return {
+    '--media-ratio': `16 / ${(9 * scale).toFixed(2)}`,
+    '--media-ratio-narrow': `16 / ${(8 * scale).toFixed(2)}`,
+  } as CSSProperties;
+}
+
+export function ProjectCard({
+  card,
+  priority = false,
+  copy,
+  locale,
+  sizes = CAMPAIGN_CARD_SIZES,
+  coverClassName,
+  coverScale = COVER_SCALE,
+}: ProjectCardProps) {
   const completion = completionOf(card);
   /*
    * Rounded DOWN, as `LiveFunding` rounds the campaign page's figure (#252, #255): `toFixed(0)`
@@ -193,7 +219,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
   return (
     <article
       data-on-accent=""
-      className={`group relative flex h-full flex-col rounded-xl p-2.5 max-sm:p-4 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
+      className={`group relative flex h-full flex-col rounded-xl text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
     >
       {/*
         HOVER LIFTS THE CARD AND LEANS INTO THE COVER (#341): a 4px rise and a 5%
@@ -203,8 +229,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         applies on a device that can hover, so a tap never leaves a card raised.
       */}
       {/*
-        Inset in the accent card with its own rounded corners, as the app
-        draws it (docs/ui-kit.md §8.2).
+        Full-bleed to the card's top and side edges (docs/ui-kit.md §8.2).
 
         THE BOX IS RESERVED WHETHER OR NOT THERE IS A COVER. `MediaFrame` sets
         the 16:9 crop before anything loads, so a card with a cover and a card
@@ -221,13 +246,18 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         same campaign, and there is nothing this component could invent that
         the creator did not write.
       */}
-      <MediaFrame ratio="16/9" narrowRatio="2/1" radius="lg">
+      <MediaFrame
+        ratio="16/9"
+        narrowRatio="2/1"
+        className={coverClassName === undefined ? 'rounded-t-xl' : `rounded-t-xl ${coverClassName}`}
+        {...(coverScale === 1 ? {} : { style: coverCrop(coverScale) })}
+      >
         {card.image != null && (
           <Image
             src={card.image.url}
             alt=""
             fill
-            sizes={CAMPAIGN_CARD_SIZES}
+            sizes={sizes}
             /*
              * An address on a host the optimiser will not fetch is served as
              * it is rather than thrown over. `next/image` raises on a URL no
@@ -250,7 +280,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         From `lg` up the type climbs back a rung — title 18px, body 14px, meta and tags 12px —
         because on a laptop screen the smaller sizes read as too small at arm's length.
       */}
-      <div className="flex flex-1 flex-col gap-2.5 px-1.5 pt-3.5 pb-1.5 max-sm:gap-2 max-sm:px-0 max-sm:pt-2 max-sm:pb-0">
+      <div className="flex flex-1 flex-col gap-2.5 px-4 pt-3.5 pb-4 max-sm:gap-2 max-sm:pt-3">
         <div className="flex flex-wrap items-center gap-1.5">
           {badge !== null && (
             <Tag variant="onAccent" className={CARD_TAG}>
@@ -353,12 +383,14 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               track: a mark at 80% would be a second meaning the bar carries in colour and
               position alone (ui-kit §9.2), and the discovery budget allows no motion to explain it.
             */}
+            {/* Hidden for now at the owner's request.
             <p className="text-[11px] lg:text-xs text-on-accent/72 max-sm:text-xs max-sm:leading-[21px]">{copy.rule}</p>
             {card.goal != null && (
               <p className="text-[11px] lg:text-xs text-on-accent/72 tabular-nums max-sm:text-xs max-sm:leading-[21px]">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}
               </p>
             )}
+            */}
           </div>
         ) : (
           <p className="mt-auto pt-1.5 text-xs lg:text-sm text-on-accent/72">{copy.notOpen}</p>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CircleCheck } from 'lucide-react';
+import { MoveRight, Plus } from 'lucide-react';
 import { InlineAlert, Pill } from '@ideanest/ui';
 import { newIdempotencyKey } from '@ideanest/checkout/idempotency';
 import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
@@ -358,7 +358,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
         <p className="text-sm text-white/64">{copy.empty}</p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => (
+          {plans.map((plan, index) => (
             <PlanCard
               key={plan.id}
               plan={plan}
@@ -371,6 +371,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
               busy={busyPlan === plan.id}
               disabled={busyPlan !== null || (held !== null && held.state !== 'CANCELED')}
               onChoose={() => void choose(plan.id)}
+              tone={planTone(index)}
             />
           ))}
         </ul>
@@ -543,85 +544,108 @@ interface PlanCardProps {
   busy: boolean;
   disabled: boolean;
   onChoose: () => void;
+  tone: PlanTone;
 }
 
-function PlanCard({ plan, copy, locale, current, busy, disabled, onChoose }: PlanCardProps) {
+function PlanCard({ plan, copy, locale, current, busy, disabled, onChoose, tone }: PlanCardProps) {
   const price =
     Number(plan.price) === 0 ? copy.free : formatPrice(plan.price, plan.currency, locale);
   const period = plan.billingPeriod === 'YEARLY' ? copy.perYear : copy.perMonth;
+  const skin = PLAN_SKIN[tone];
+  const points = [
+    ...(plan.description == null ? [] : [plan.description]),
+    plan.maxActiveCampaigns == null
+      ? copy.limits.campaignsUnlimited
+      : fillPlaceholders(copy.limits.campaigns, { count: String(plan.maxActiveCampaigns) }),
+    plan.goalCeiling == null
+      ? copy.limits.goalUnlimited
+      : fillPlaceholders(copy.limits.goalCeiling, {
+          amount: formatPrice(plan.goalCeiling, plan.currency, locale),
+        }),
+  ];
 
   return (
-    <li className="flex flex-col rounded-2xl border border-white/8 bg-surface-2 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-[17px] font-medium text-white">{plan.name}</h3>
+    <li
+      {...skin.context}
+      className={`group flex min-h-[420px] flex-col rounded-2xl p-6 transition-transform duration-300 ease-in-out motion-safe:hover:-translate-y-1 motion-safe:focus-within:-translate-y-1 ${skin.card}`}
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-[22px] font-semibold tracking-[-0.02em]">{plan.name}</h3>
         {current && (
-          <span className="rounded-full bg-surface-4 px-2 py-0.5 text-[12px] text-white">
+          <span className={`rounded-full px-2.5 py-0.5 text-[12px] ${skin.tag}`}>
             {copy.held.currentTag}
           </span>
         )}
       </div>
 
-      <p className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-white">
+      <ul className="mt-5 flex flex-col gap-2.5 text-[15px] leading-snug">
+        {points.map((point) => (
+          <li key={point} className="flex items-start gap-2.5">
+            <Plus aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.5} />
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+
+      <p className="mt-auto pt-8 text-5xl font-semibold tracking-[-0.04em] tabular-nums">
         {price}
         {Number(plan.price) !== 0 && (
-          <span className="ml-1 text-[13px] font-normal text-white/64">{period}</span>
+          <span className={`ml-2 text-sm font-normal tracking-normal ${skin.muted}`}>{period}</span>
         )}
       </p>
 
-      {plan.description != null && <p className="mt-2 text-sm text-white/64">{plan.description}</p>}
-
-      {/*
-        The limits are the product. A card that showed only a price would leave a creator
-        choosing between three numbers with nothing to weigh them against -- and the whole
-        reason a plan costs what it costs is on these two lines.
-      */}
-      <ul className="mt-4 flex flex-col gap-2 text-sm text-white/80">
-        <Limit
-          text={
-            plan.maxActiveCampaigns == null
-              ? copy.limits.campaignsUnlimited
-              : fillPlaceholders(copy.limits.campaigns, { count: String(plan.maxActiveCampaigns) })
-          }
-        />
-        <Limit
-          text={
-            plan.goalCeiling == null
-              ? copy.limits.goalUnlimited
-              : fillPlaceholders(copy.limits.goalCeiling, {
-                  amount: formatPrice(plan.goalCeiling, plan.currency, locale),
-                })
-          }
-        />
-      </ul>
-
-      <div className="mt-5">
-        <Pill
-          variant={current ? 'ghost' : 'accent'}
-          size="md"
-          aria-disabled={disabled || busy}
-          className={disabled || busy ? 'opacity-40' : undefined}
-          onClick={() => {
-            if (disabled || busy) return;
-            onChoose();
-          }}
-        >
+      <button
+        type="button"
+        aria-disabled={disabled || busy}
+        onClick={() => {
+          if (disabled || busy) return;
+          onChoose();
+        }}
+        className={`mt-5 flex h-12 w-full items-center justify-between gap-4 rounded-full px-5 text-sm font-medium transition-opacity duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 ${skin.button} ${disabled || busy ? 'opacity-40' : 'hover:opacity-90'}`}
+      >
+        <span>
           {busy ? copy.choosing : copy.choose}
-          {/* Named, because three identical "Choose" buttons are three indistinguishable
-              links in a screen reader's list. */}
           <span className="sr-only">: {plan.name}</span>
-        </Pill>
-      </div>
+        </span>
+        <MoveRight aria-hidden="true" className="h-4 w-16 shrink-0 transition-transform duration-300 ease-in-out motion-safe:group-hover:translate-x-1.5" strokeWidth={1.5} />
+      </button>
     </li>
   );
 }
 
-function Limit({ text }: { text: string }) {
-  return (
-    <li className="flex items-start gap-2">
-      <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" />
-      <span>{text}</span>
-    </li>
-  );
+/** The reference's three surfaces, in order: light, black, lime. Lime is the one lime element. */
+export type PlanTone = 'light' | 'dark' | 'lime';
+const PLAN_TONES: readonly PlanTone[] = ['light', 'dark', 'lime'];
+
+const PLAN_SKIN: Record<
+  PlanTone,
+  { card: string; muted: string; tag: string; button: string; context: Record<string, string> }
+> = {
+  light: {
+    card: 'bg-[var(--white-muted)] text-on-white',
+    muted: 'text-on-white/48',
+    tag: 'bg-on-white text-white',
+    button: 'bg-on-white text-white focus-visible:outline-on-white',
+    context: { 'data-on-white': '' },
+  },
+  dark: {
+    card: 'border border-white/8 bg-black text-white',
+    muted: 'text-white/40',
+    tag: 'bg-white text-on-white',
+    button: 'bg-white text-on-white focus-visible:outline-[var(--lime-500)]',
+    context: {},
+  },
+  lime: {
+    card: 'bg-lime-500 text-on-lime',
+    muted: 'text-on-lime/56',
+    tag: 'bg-on-lime text-lime-500',
+    button: 'bg-on-lime text-lime-500 focus-visible:outline-on-lime',
+    context: { 'data-on-lime': '' },
+  },
+};
+
+export function planTone(index: number): PlanTone {
+  return PLAN_TONES[index % PLAN_TONES.length] as PlanTone;
 }
 
 /* -------------------------------------------------------------------------

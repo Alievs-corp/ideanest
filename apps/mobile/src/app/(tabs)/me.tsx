@@ -446,7 +446,10 @@ function MeScreen() {
               <Group titleKey="shell.footer.groups.creators" rows={CREATOR} index={next()} />
               <Group titleKey="account.groups.settings" rows={SETTINGS} index={next()} />
             </>
-          ) : null}
+          ) : (
+            // Plans are public, so a reader with no account reaches them from here too.
+            <Group titleKey="shell.footer.groups.creators" rows={CREATOR} index={next()} />
+          )}
 
           {holdsSession ? (
             <Group titleKey="mobile.me.thisPhone" rows={THIS_PHONE} index={next()} />

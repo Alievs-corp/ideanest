@@ -43,7 +43,7 @@ import { TONES, useSurface, type Surface } from './surface';
  */
 
 export type TagVariant =
-  'default' | 'onLime' | 'onWhite' | 'success' | 'warning' | 'danger' | 'hot' | 'urgent';
+  'default' | 'onLime' | 'onWhite' | 'success' | 'warning' | 'danger' | 'info' | 'hot' | 'urgent';
 
 export interface TagProps {
   /** The visible text AND what a screen reader reads. Required: a tag is never colour alone. */
@@ -62,6 +62,7 @@ const SKIN: Record<TagVariant, { background: string; text: string }> = {
   success: { background: tint(colors.success, 0.12), text: colors.success },
   warning: { background: tint(colors.warning, 0.12), text: colors.warning },
   danger: { background: tint(colors.danger, 0.12), text: colors.danger },
+  info: { background: tint(colors.info, 0.12), text: colors.info },
   hot: { background: tint(colors.hot, 0.12), text: colors.hot },
   /*
    * "Act now": a lime FILL with near-black words — the one way lime may carry text (§2.3, §9.1).

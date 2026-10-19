@@ -99,6 +99,22 @@ export const CAMPAIGN_CARD_SIZES = sizesFor([
 ]);
 
 /**
+ * The home page's popular campaigns — the left half of its first band from `lg` (1024px),
+ * a two-column grid on a tablet and one column on a phone.
+ *
+ *   ≥1400: the container stops growing — (1352 − 40) / 2 = 656px
+ *   ≥1024: half the band      — (100vw − 48 − 40) / 2 = 50vw − 44px
+ *    ≥640: two columns        — (100vw − 48 − 16) / 2 = 50vw − 32px
+ *    else: one column         —  100vw − 40
+ */
+export const FEATURED_CARD_SIZES = sizesFor([
+  { minWidth: 1400, size: '656px' },
+  { minWidth: 1024, size: 'calc(50vw - 44px)' },
+  { minWidth: 640, size: 'calc(50vw - 32px)' },
+  { size: 'calc(100vw - 40px)' },
+]);
+
+/**
  * A campaign card's cover on a profile — `ProfileCampaignCard`, in `PROFILE_CAMPAIGN_GRID`.
  *
  * The whole of the profile page's `mx-auto w-full max-w-[1120px] px-5 sm:px-6` column, with
