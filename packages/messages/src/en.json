@@ -4286,6 +4286,10 @@
       "browse": "Browse campaigns",
       "start": "Start a campaign"
     },
+    "featured": {
+      "heading": "Popular right now",
+      "standfirst": "The live campaigns raising money fastest for their age."
+    },
     "closing": {
       "heading": "Ending soon",
       "standfirst": "Campaigns whose deadline is closest. A campaign succeeds at 80% of its goal, so these are the ones a pledge still changes.",
@@ -4298,10 +4302,19 @@
       "link": "See every live campaign",
       "gridLabel": "Recently launched campaigns"
     },
+    "rail": {
+      "previous": "Previous campaigns",
+      "next": "Next campaigns"
+    },
     "categories": {
       "heading": "Browse by category",
       "standfirst": "Fifteen categories, each with its own page — and each of those with its subcategories.",
       "link": "See all categories"
+    },
+    "creators": {
+      "heading": "For creators",
+      "standfirst": "How a campaign runs here, what it costs, and what is not allowed.",
+      "label": "Pages for creators"
     },
     "empty": {
       "heading": "No campaigns to show right now",

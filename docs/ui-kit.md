@@ -1091,6 +1091,26 @@ the floor — nothing on a card goes below it), tags `22px` high rather than
 and motion are unchanged. The cover `sizes` strings in `lib/images/sizes.ts`
 are derived from these grids and tested against them.
 
+#### The home page from `lg`: bands, as Kickstarter draws them
+
+Below `lg` the home page is the stack it always was: hero, ending soon, recently
+launched, categories, each a heading and a grid. From `lg` the same content is
+arranged in **bands**, each separated from the next by a `--divider` rule across
+the column, and a band may hold more than one part:
+
+| Band | Shape from `lg` |
+|---|---|
+| Popular right now + Ending soon | Two halves. Left: the two campaigns at the top of the `popularity` sort, one per row, each cover taking its row's spare height. Right: four ending-soon campaigns in a 2×2 grid. The halves share their rows through `subgrid` and `auto-rows-fr`, so both end each row on one line |
+| Recently launched | One row that scrolls sideways under two arrows — three cards at `lg`, four at `xl`, the widths `CAMPAIGN_GRID` gives there |
+| For creators | Three pages side by side (how it works, pricing, trust and safety), each with a rule down its left edge; the title is the link, so there is no "learn more" button |
+| Browse by category | Unchanged |
+
+The phone and the tablet do not draw the popular half or the creators band, and
+the rail is their ordinary grid. The rail's arrows scroll one page per press,
+smoothly unless reduced motion is asked for, and are disabled rather than hidden
+at either end. The layouts are `HOME_SPLIT_GRID`, `HOME_RAIL` and
+`HOME_RAIL_ITEM` beside `CAMPAIGN_GRID`.
+
 #### In a filtered feed, urgency is a lime badge — not a lime card
 
 §8.1 maps "closing within 48 hours" to a `--lime-500` card, and §1.1 says

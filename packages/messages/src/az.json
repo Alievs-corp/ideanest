@@ -4286,6 +4286,10 @@
       "browse": "Kampaniyalara baxın",
       "start": "Kampaniya başladın"
     },
+    "featured": {
+      "heading": "Hazırda populyar",
+      "standfirst": "Yaşına görə ən sürətlə vəsait toplayan aktiv kampaniyalar."
+    },
     "closing": {
       "heading": "Tezliklə bitənlər",
       "standfirst": "Son tarixi ən yaxın olan kampaniyalar. Kampaniya hədəfinin 80%-ində uğurlu sayılır, ona görə dəstəyiniz ən çox məhz bunlarda nəyisə dəyişir.",
@@ -4298,10 +4302,19 @@
       "link": "Bütün aktiv kampaniyalara baxın",
       "gridLabel": "Yeni başlayan kampaniyalar"
     },
+    "rail": {
+      "previous": "Əvvəlki kampaniyalar",
+      "next": "Növbəti kampaniyalar"
+    },
     "categories": {
       "heading": "Kateqoriyalar üzrə baxın",
       "standfirst": "On beş kateqoriya, hər birinin öz səhifəsi — və hər birinin öz alt kateqoriyaları var.",
       "link": "Bütün kateqoriyalara baxın"
+    },
+    "creators": {
+      "heading": "Müəlliflər üçün",
+      "standfirst": "Kampaniyanın burada necə getdiyi, nəyə başa gəldiyi və nəyə icazə verilmədiyi.",
+      "label": "Müəlliflər üçün səhifələr"
     },
     "empty": {
       "heading": "Hal-hazırda göstəriləcək kampaniya yoxdur",

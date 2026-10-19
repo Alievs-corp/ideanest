@@ -160,9 +160,28 @@ export interface ProjectCardProps {
   copy: ProjectCardCopy;
   /** The language, for the two counted sentences. Both change with the number in front. */
   locale: Locale;
+  /**
+   * The cover's `sizes`, for a card drawn outside `CAMPAIGN_GRID` — the home page's featured
+   * campaign is half the column wide, and a cover sized for a quarter of it would be blurred.
+   */
+  sizes?: string;
+  /**
+   * From `lg`, the cover takes whatever height the card has left instead of its 16:9 crop —
+   * for the featured campaign, whose card is stretched to the height of the grid beside it
+   * and would otherwise end in an empty block of colour. It grows a hundred times faster
+   * than the text below it, which is `flex-1` too, so the space goes to the picture.
+   */
+  coverFills?: boolean;
 }
 
-export function ProjectCard({ card, priority = false, copy, locale }: ProjectCardProps) {
+export function ProjectCard({
+  card,
+  priority = false,
+  copy,
+  locale,
+  sizes = CAMPAIGN_CARD_SIZES,
+  coverFills = false,
+}: ProjectCardProps) {
   const completion = completionOf(card);
   /*
    * Rounded DOWN, as `LiveFunding` rounds the campaign page's figure (#252, #255): `toFixed(0)`
@@ -221,13 +240,18 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         same campaign, and there is nothing this component could invent that
         the creator did not write.
       */}
-      <MediaFrame ratio="16/9" narrowRatio="2/1" radius="lg">
+      <MediaFrame
+        ratio="16/9"
+        narrowRatio="2/1"
+        radius="lg"
+        {...(coverFills ? { className: 'lg:aspect-auto lg:min-h-80 lg:flex-[100_1_0%]' } : {})}
+      >
         {card.image != null && (
           <Image
             src={card.image.url}
             alt=""
             fill
-            sizes={CAMPAIGN_CARD_SIZES}
+            sizes={sizes}
             /*
              * An address on a host the optimiser will not fetch is served as
              * it is rather than thrown over. `next/image` raises on a URL no

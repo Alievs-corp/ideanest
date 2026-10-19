@@ -47,6 +47,12 @@ export interface CampaignGridProps {
   readonly cardCopy: ProjectCardCopy;
   /** The language, for the card's two counted sentences. */
   readonly locale: Locale;
+  /** The list's grid. `CAMPAIGN_GRID` unless a page draws its own shape — see the layout file. */
+  readonly layout?: string;
+  /** Classes for one item, by position: what lets the home page hide or size a card per width. */
+  readonly itemClassName?: (card: ProjectCardData, index: number) => string | undefined;
+  /** Addressed by the home page's rail arrows through `aria-controls`. */
+  readonly id?: string;
 }
 
 export function CampaignGrid({
@@ -55,11 +61,14 @@ export function CampaignGrid({
   label,
   cardCopy,
   locale,
+  layout = CAMPAIGN_GRID,
+  itemClassName,
+  id,
 }: CampaignGridProps) {
   return (
-    <ul aria-label={label} className={CAMPAIGN_GRID}>
+    <ul id={id} aria-label={label} className={layout}>
       {campaigns.map((card, index) => (
-        <li key={card.id}>
+        <li key={card.id} className={itemClassName?.(card, index)}>
           <ProjectCard
             card={card}
             priority={index < priorityCount}

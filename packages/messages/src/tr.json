@@ -4286,6 +4286,10 @@
       "browse": "Kampanyalara göz atın",
       "start": "Kampanya başlatın"
     },
+    "featured": {
+      "heading": "Şu an popüler",
+      "standfirst": "Yaşına göre en hızlı fon toplayan aktif kampanyalar."
+    },
     "closing": {
       "heading": "Yakında bitenler",
       "standfirst": "Son tarihi en yakın olan kampanyalar. Bir kampanya hedefinin %80'inde başarılı sayıldığı için desteğiniz en çok bunlarda bir şeyi değiştirir.",
@@ -4298,10 +4302,19 @@
       "link": "Tüm etkin kampanyaları görün",
       "gridLabel": "Yeni başlayan kampanyalar"
     },
+    "rail": {
+      "previous": "Önceki kampanyalar",
+      "next": "Sonraki kampanyalar"
+    },
     "categories": {
       "heading": "Kategorilere göre göz atın",
       "standfirst": "On beş kategori, her birinin kendi sayfası — ve her birinin kendi alt kategorileri var.",
       "link": "Tüm kategorileri görün"
+    },
+    "creators": {
+      "heading": "Yaratıcılar için",
+      "standfirst": "Bir kampanyanın burada nasıl yürüdüğü, ne kadara mal olduğu ve nelere izin verilmediği.",
+      "label": "Yaratıcılar için sayfalar"
     },
     "empty": {
       "heading": "Şu anda gösterilecek kampanya yok",

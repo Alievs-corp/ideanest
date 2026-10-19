@@ -99,6 +99,22 @@ export const CAMPAIGN_CARD_SIZES = sizesFor([
 ]);
 
 /**
+ * The home page's featured campaign — the left half of its first band from `lg` (1024px).
+ *
+ * Two equal columns with a 40px gap inside the 1400px `px-6` column; below `lg` the card is
+ * not drawn at all, so the smallest stop is never downloaded (the cover is lazy, and a lazy
+ * image under `display: none` is not fetched).
+ *
+ *   ≥1400: the container stops growing — (1352 − 40) / 2 = 656px
+ *   ≥1024: two columns        — (100vw − 48 − 40) / 2 = 50vw − 44px
+ */
+export const FEATURED_CARD_SIZES = sizesFor([
+  { minWidth: 1400, size: '656px' },
+  { minWidth: 1024, size: 'calc(50vw - 44px)' },
+  { size: 'calc(100vw - 40px)' },
+]);
+
+/**
  * A campaign card's cover on a profile — `ProfileCampaignCard`, in `PROFILE_CAMPAIGN_GRID`.
  *
  * The whole of the profile page's `mx-auto w-full max-w-[1120px] px-5 sm:px-6` column, with
