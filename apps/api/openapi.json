@@ -7173,6 +7173,14 @@
     "/v1/me/subscription" : {
       "delete" : {
         "operationId" : "subscriptionCancel",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "Accept-Language",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
@@ -7189,6 +7197,14 @@
       },
       "get" : {
         "operationId" : "subscriptionMine",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "Accept-Language",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
@@ -7205,6 +7221,14 @@
       },
       "post" : {
         "operationId" : "subscriptionSubscribe",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "Accept-Language",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7441,6 +7465,14 @@
     "/v1/plans" : {
       "get" : {
         "operationId" : "subscriptionCatalogue",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "Accept-Language",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
@@ -11183,6 +11215,12 @@
           "sortOrder" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "translations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/PlanText"
+            }
           }
         },
         "required" : [ "billingPeriod", "code", "currency", "name", "price" ]
@@ -12520,6 +12558,12 @@
           "sortOrder" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "translations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/PlanText"
+            }
           }
         }
       },
@@ -15853,6 +15897,12 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "translations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/PlanTranslation"
+            }
+          },
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -15874,6 +15924,33 @@
           }
         },
         "required" : [ "bankReference" ]
+      },
+      "PlanText" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "name" ]
+      },
+      "PlanTranslation" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        }
       },
       "PlatformAnalyticsResponse" : {
         "type" : "object",
