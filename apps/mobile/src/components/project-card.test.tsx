@@ -230,23 +230,21 @@ describe('the money on the card', () => {
     expect(StyleSheet.flatten(fill.props.style).backgroundColor).toBe(colors.success);
   });
 
-  it('formats pledged and the goal with @ideanest/money', async () => {
+  it('formats pledged with @ideanest/money', async () => {
     await renderCard(LIVE);
     expect(screen.getByText(formatMoney(LIVE.pledged))).toBeTruthy();
-    expect(screen.getByText(`of ${formatMoney(LIVE.goal)} goal`)).toBeTruthy();
   });
 
-  it('prints the 80% rule, and no words on the bar itself', async () => {
+  it('prints no words on the bar itself', async () => {
     await renderCard(LIVE);
-    expect(screen.getByText('Succeeds at 80% of the goal')).toBeTruthy();
     // Printed once, beside the bar: the bar's own "% funded" line is off.
     expect(screen.getAllByText('42% funded', { includeHiddenElements: true })).toHaveLength(1);
   });
 
-  it('leaves out "of goal" when there is no goal', async () => {
-    await renderCard({ ...LIVE, goal: undefined });
+  it('leaves the 80% rule and the goal line off the card for now', async () => {
+    await renderCard(LIVE);
+    expect(screen.queryByText('Succeeds at 80% of the goal')).toBeNull();
     expect(screen.queryByText(/^of .* goal$/)).toBeNull();
-    expect(screen.getByText('Succeeds at 80% of the goal')).toBeTruthy();
   });
 });
 

@@ -128,7 +128,7 @@ function HomeScreen() {
             testID="rail-popular"
           >
             {/* The first campaign under the hero, so its cover is fetched first. */}
-            <CampaignColumn cards={popularCards} priority={1} />
+            <CampaignColumn cards={popularCards} priority={1} coverScale={1} />
           </HomeSection>
         ) : null}
 

@@ -101,7 +101,7 @@ interface BadgeSpec {
  */
 const BADGES: Record<DiscoveryStatus, BadgeSpec> = {
   upcoming: { icon: Glyphs.Calendar, variant: 'default' },
-  live: { icon: Glyphs.RecordCircle, variant: 'default' },
+  live: { icon: Glyphs.RecordCircle, variant: 'info' },
   extended: { icon: Glyphs.CalendarAdd, variant: 'default' },
   successful: { icon: Glyphs.TickCircle, variant: 'success' },
 };
@@ -135,9 +135,13 @@ export interface ProjectCardProps {
    * it opens — and nothing else, so twenty-four covers do not share one priority queue.
    */
   readonly priority?: boolean;
+  /** Cover height against 2:1; every card but the home's popular ones is 17.7% taller. */
+  readonly coverScale?: number;
 }
 
-export function ProjectCard({ card, priority = false }: ProjectCardProps) {
+const COVER_SCALE = 1.177;
+
+export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }: ProjectCardProps) {
   const t = useT();
   const locale = useLocale();
   const ring = useFocusRing();
@@ -218,8 +222,8 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
             same height before anything decodes. The cover is decorative: the card's name already
             says what it is a picture of.
           */}
-          <Animated.View {...shared.props}>
-          <MediaFrame ratio="2/1" radius="lg">
+          <Animated.View {...shared.props} style={[shared.props.style, styles.bleed]}>
+          <MediaFrame ratio={{ width: 16, height: 8 * coverScale }} style={styles.coverFrame}>
             {cover === null ? null : (
               <Image
                 source={{ uri: cover }}
@@ -295,6 +299,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
                 <Text style={styles.pledged}>{formatMoney(card.pledged)}</Text>
                 <Text style={styles.funded}>{t('common.card.funded', { percent })}</Text>
               </View>
+              {/* Hidden for now at the owner's request, as on the web.
               <Meta tone="secondary" style={styles.small}>
                 {t('common.card.rule')}
               </Meta>
@@ -303,6 +308,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
                   {t('common.card.ofGoal', { amount: formatMoney(card.goal) })}
                 </Meta>
               )}
+              */}
             </View>
           ) : (
             <Body tone="tertiary" style={styles.notOpen}>
@@ -333,6 +339,9 @@ const styles = StyleSheet.create({
   // The focus ring follows the accent card's corners.
   target: { borderRadius: radius.xl },
   cover: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  // Full-bleed: out through the compact card's padding to its top and side edges.
+  bleed: { marginTop: -spacing[4], marginHorizontal: -spacing[4] },
+  coverFrame: { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
   tags: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing[2] },
   creatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   byline: { flexShrink: 1, fontSize: fontSize.sm, lineHeight: lineHeight.small },

@@ -94,9 +94,11 @@ export interface CampaignColumnProps {
   /** How many of the first covers load with high priority. */
   readonly priority?: number;
   readonly testID?: string;
+  /** Passed to every card; see `ProjectCard`. */
+  readonly coverScale?: number;
 }
 
-export function CampaignColumn({ cards, priority = 0, testID }: CampaignColumnProps) {
+export function CampaignColumn({ cards, priority = 0, testID, coverScale }: CampaignColumnProps) {
   const gate = useEntryGate(cards);
   return (
     <View style={styles.column} testID={testID}>
@@ -104,7 +106,11 @@ export function CampaignColumn({ cards, priority = 0, testID }: CampaignColumnPr
         const key = cardKey(card);
         return (
           <CardEntry key={key} gate={gate} entryKey={key} index={index}>
-            <ProjectCard card={card} priority={index < priority} />
+            <ProjectCard
+              card={card}
+              priority={index < priority}
+              {...(coverScale === undefined ? {} : { coverScale })}
+            />
           </CardEntry>
         );
       })}
