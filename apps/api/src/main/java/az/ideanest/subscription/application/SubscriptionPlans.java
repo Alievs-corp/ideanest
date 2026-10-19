@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -120,6 +121,7 @@ public class SubscriptionPlans {
             String code,
             String name,
             String description,
+            Map<String, SubscriptionPlan.Text> translations,
             BigDecimal price,
             String currency,
             BillingPeriod billingPeriod,
@@ -135,6 +137,7 @@ public class SubscriptionPlans {
                 code,
                 name,
                 description,
+                translations,
                 Money.of(price, currency),
                 billingPeriod,
                 maxActiveCampaigns,
@@ -189,6 +192,7 @@ public class SubscriptionPlans {
             UUID planId,
             String name,
             String description,
+            Map<String, SubscriptionPlan.Text> translations,
             BigDecimal price,
             String currency,
             Integer maxActiveCampaigns,
@@ -208,6 +212,9 @@ public class SubscriptionPlans {
             // on the pricing card and editing them separately produces a card whose second
             // line describes the plan's previous name.
             plan.rename(name == null ? plan.getName() : name, description == null ? plan.getDescription() : description);
+        }
+        if (translations != null) {
+            plan.translate(translations);
         }
         if (price != null) {
             plan.price(Money.of(price, currency == null ? plan.getPrice().currency() : currency));
@@ -244,7 +251,7 @@ public class SubscriptionPlans {
     /** Puts a plan on sale, or takes it off. The one way a plan leaves the catalogue. */
     @Transactional
     public SubscriptionPlan list(UUID staffId, UUID planId, boolean listed) {
-        return change(staffId, planId, null, null, null, null, null, false, null, false, listed, null);
+        return change(staffId, planId, null, null, null, null, null, null, false, null, false, listed, null);
     }
 
     /**
@@ -256,9 +263,10 @@ public class SubscriptionPlans {
      * worded".
      */
     private static String describe(SubscriptionPlan plan) {
-        return "code=%s; price=%s; period=%s; maxActive=%s; goalCeiling=%s; listed=%s"
+        return "code=%s; languages=%s; price=%s; period=%s; maxActive=%s; goalCeiling=%s; listed=%s"
                 .formatted(
                         plan.getCode(),
+                        plan.getTranslations().keySet(),
                         plan.getPrice(),
                         plan.getBillingPeriod(),
                         plan.getMaxActiveCampaigns() == null ? "none" : plan.getMaxActiveCampaigns(),

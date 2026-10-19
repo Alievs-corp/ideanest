@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -31,6 +32,10 @@ public final class SubscriptionResponses {
     /**
      * One plan, as the pricing page draws it.
      *
+     * @param name in the reader's language when the plan has it, otherwise the primary
+     *     language's. The console always gets the primary language's
+     * @param translations the console's only: every other language's name and description,
+     *     by locale code. Absent from the public catalogue, which sends one language
      * @param listed sent to the console, which shows retired plans, and true for
      *     everything the public catalogue returns. Kept on both so that one type serves
      *     both readers — the alternative is two records that drift
@@ -40,6 +45,7 @@ public final class SubscriptionResponses {
             String code,
             String name,
             String description,
+            Map<String, SubscriptionPlan.Text> translations,
             String price,
             String currency,
             BillingPeriod billingPeriod,
@@ -49,12 +55,24 @@ public final class SubscriptionResponses {
             int sortOrder,
             Instant updatedAt) {
 
-        public static Plan of(SubscriptionPlan plan) {
+        /** The plan as a reader of {@code locale} sees it. */
+        public static Plan of(SubscriptionPlan plan, String locale) {
+            return of(plan, plan.nameIn(locale), plan.descriptionIn(locale), null);
+        }
+
+        /** The plan as the console edits it: the primary language, and every translation beside it. */
+        public static Plan forConsole(SubscriptionPlan plan) {
+            return of(plan, plan.getName(), plan.getDescription(), plan.getTranslations());
+        }
+
+        private static Plan of(
+                SubscriptionPlan plan, String name, String description, Map<String, SubscriptionPlan.Text> translations) {
             return new Plan(
                     plan.getId(),
                     plan.getCode(),
-                    plan.getName(),
-                    plan.getDescription(),
+                    name,
+                    description,
+                    translations,
                     plan.getPrice().amount().toPlainString(),
                     plan.getPrice().currency(),
                     plan.getBillingPeriod(),
@@ -65,16 +83,17 @@ public final class SubscriptionResponses {
                     plan.getUpdatedAt());
         }
 
-        public static List<Plan> of(List<SubscriptionPlan> plans) {
-            return plans.stream().map(Plan::of).toList();
-        }
     }
 
     /** The catalogue. A wrapper rather than a bare array, as every list response here is. */
     public record Catalogue(List<Plan> plans) {
 
-        public static Catalogue of(List<SubscriptionPlan> plans) {
-            return new Catalogue(Plan.of(plans));
+        public static Catalogue of(List<SubscriptionPlan> plans, String locale) {
+            return new Catalogue(plans.stream().map(plan -> Plan.of(plan, locale)).toList());
+        }
+
+        public static Catalogue forConsole(List<SubscriptionPlan> plans) {
+            return new Catalogue(plans.stream().map(Plan::forConsole).toList());
         }
     }
 
@@ -113,6 +132,7 @@ public final class SubscriptionResponses {
         public static Held of(
                 Subscription subscription,
                 SubscriptionPlan plan,
+                String locale,
                 Instant now,
                 Subscription.DuePayment paymentDue,
                 Instant renewalOpensAt) {
@@ -120,7 +140,7 @@ public final class SubscriptionResponses {
                     subscription.getId(),
                     subscription.getState(),
                     subscription.entitlesAt(now),
-                    Plan.of(plan),
+                    Plan.of(plan, locale),
                     subscription.getPrice().amount().toPlainString(),
                     subscription.getPrice().currency(),
                     subscription.getBillingPeriod(),

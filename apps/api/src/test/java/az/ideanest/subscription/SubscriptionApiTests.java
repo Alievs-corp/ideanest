@@ -516,6 +516,52 @@ class SubscriptionApiTests extends AbstractIntegrationTest {
         assertThat(planById(plan).get("maxActiveCampaigns")).isNull();
     }
 
+    @Test
+    @DisplayName("a plan reads in the reader's language, and in Azerbaijani where it has none")
+    void thePricingPageIsTranslated() {
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("code", "SPOKEN");
+        body.put("name", "Danışan");
+        body.put("description", "Azərbaycanca təsvir");
+        body.put("price", "5.00");
+        body.put("currency", "AZN");
+        body.put("billingPeriod", "MONTHLY");
+        body.put("translations", Map.of("en", Map.of("name", "Spoken", "description", "In English")));
+        ResponseEntity<Map<String, Object>> created = post("/v1/admin/plans", admin().accessToken(), body);
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        assertThat(planIn("SPOKEN", "en-GB,en;q=0.9")).containsEntry("name", "Spoken")
+                .containsEntry("description", "In English")
+                .doesNotContainKey("translations");
+        assertThat(planIn("SPOKEN", "ru")).containsEntry("name", "Danışan")
+                .containsEntry("description", "Azərbaycanca təsvir");
+
+        UUID id = UUID.fromString((String) created.getBody().get("id"));
+        assertThat(planById(id)).containsEntry("name", "Danışan")
+                .containsEntry("translations", Map.of("en", Map.of("name", "Spoken", "description", "In English")));
+
+        patchPlan(id, Map.of("translations", Map.of("tr", Map.of("name", "Konuşan"))));
+        assertThat(planIn("SPOKEN", "tr")).containsEntry("name", "Konuşan");
+        assertThat(planIn("SPOKEN", "en")).containsEntry("name", "Danışan");
+    }
+
+    @Test
+    @DisplayName("a translation into a language the platform does not have is refused")
+    void anUnknownLanguageIsRefused() {
+        ResponseEntity<Map<String, Object>> created = post(
+                "/v1/admin/plans",
+                admin().accessToken(),
+                Map.of(
+                        "code", "GERMAN",
+                        "name", "Alman",
+                        "price", "5.00",
+                        "currency", "AZN",
+                        "billingPeriod", "MONTHLY",
+                        "translations", Map.of("de", Map.of("name", "Deutsch"))));
+
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
     /* ------------------------------------------------------------------
      * Fixtures
      * --------------------------------------------------------------- */
@@ -629,6 +675,18 @@ class SubscriptionApiTests extends AbstractIntegrationTest {
 
     private Map<String, Object> planNamed(String code) {
         return plansIn(get("/v1/plans", null).getBody()).stream()
+                .filter(plan -> code.equals(plan.get("code")))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private Map<String, Object> planIn(String code, String acceptLanguage) {
+        HttpHeaders headers = jsonHeaders();
+        headers.set(HttpHeaders.ACCEPT_LANGUAGE, acceptLanguage);
+        ResponseEntity<Map<String, Object>> catalogue =
+                rest.exchange("/v1/plans", HttpMethod.GET, new HttpEntity<>(headers), mapType());
+        assertThat(catalogue.getHeaders().getVary()).contains(HttpHeaders.ACCEPT_LANGUAGE);
+        return plansIn(catalogue.getBody()).stream()
                 .filter(plan -> code.equals(plan.get("code")))
                 .findFirst()
                 .orElseThrow();

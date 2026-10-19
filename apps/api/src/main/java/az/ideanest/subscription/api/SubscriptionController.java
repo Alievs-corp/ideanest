@@ -1,6 +1,7 @@
 package az.ideanest.subscription.api;
 
 import az.ideanest.payment.application.SubscriptionPaymentPage;
+import az.ideanest.shared.ReaderLocale;
 import az.ideanest.shared.idempotency.IdempotencyKey;
 import az.ideanest.shared.idempotency.IdempotentRequests;
 import az.ideanest.shared.idempotency.RecordedResponse;
@@ -18,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -89,12 +91,18 @@ public class SubscriptionController {
      * <p>Five minutes, public. Long enough that the page is served from a cache under any
      * load worth caring about; short enough that an operator who repriced a plan does not
      * spend an afternoon being told the browser is broken.
+     *
+     * <p>In the reader's language, negotiated from {@code Accept-Language} the way the
+     * category tree is, and {@code Vary} says so to every shared cache in between.
      */
     @GetMapping("/v1/plans")
-    public ResponseEntity<SubscriptionResponses.Catalogue> catalogue() {
+    public ResponseEntity<SubscriptionResponses.Catalogue> catalogue(
+            @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
-                .body(SubscriptionResponses.Catalogue.of(plans.onSale()));
+                .varyBy(HttpHeaders.ACCEPT_LANGUAGE)
+                .body(SubscriptionResponses.Catalogue.of(
+                        plans.onSale(), ReaderLocale.fromAcceptLanguage(acceptLanguage)));
     }
 
     /**
@@ -104,8 +112,12 @@ public class SubscriptionController {
      * says why.
      */
     @GetMapping("/v1/me/subscription")
-    public ResponseEntity<SubscriptionResponses.Mine> mine(@AuthenticationPrincipal Jwt accessToken) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(describe(callerOf(accessToken)));
+    public ResponseEntity<SubscriptionResponses.Mine> mine(
+            @AuthenticationPrincipal Jwt accessToken,
+            @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(describe(callerOf(accessToken), acceptLanguage));
     }
 
     /**
@@ -117,14 +129,16 @@ public class SubscriptionController {
      */
     @PostMapping("/v1/me/subscription")
     public ResponseEntity<SubscriptionResponses.Mine> subscribe(
-            @AuthenticationPrincipal Jwt accessToken, @Valid @RequestBody SubscribeRequest request) {
+            @AuthenticationPrincipal Jwt accessToken,
+            @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage,
+            @Valid @RequestBody SubscribeRequest request) {
 
         UUID accountId = callerOf(accessToken);
         subscriptions.subscribe(accountId, request.planId());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .cacheControl(CacheControl.noStore())
-                .body(describe(accountId));
+                .body(describe(accountId, acceptLanguage));
     }
 
     /**
@@ -182,11 +196,13 @@ public class SubscriptionController {
     }
 
     @DeleteMapping("/v1/me/subscription")
-    public ResponseEntity<SubscriptionResponses.Mine> cancel(@AuthenticationPrincipal Jwt accessToken) {
+    public ResponseEntity<SubscriptionResponses.Mine> cancel(
+            @AuthenticationPrincipal Jwt accessToken,
+            @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage) {
         UUID accountId = callerOf(accessToken);
         subscriptions.cancel(accountId);
 
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(describe(accountId));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(describe(accountId, acceptLanguage));
     }
 
     /** @param planId which plan, from {@code GET /v1/plans} */
@@ -201,7 +217,7 @@ public class SubscriptionController {
      * looked up by identifier — including an unlisted one, which is exactly the case a
      * catalogue lookup would miss.
      */
-    private SubscriptionResponses.Mine describe(UUID accountId) {
+    private SubscriptionResponses.Mine describe(UUID accountId, String acceptLanguage) {
         Instant now = clock.instant();
 
         return subscriptions
@@ -209,6 +225,7 @@ public class SubscriptionController {
                 .map(held -> new SubscriptionResponses.Mine(SubscriptionResponses.Held.of(
                         held,
                         planOf(held),
+                        ReaderLocale.fromAcceptLanguage(acceptLanguage),
                         now,
                         cardPayments.dueFor(held, now).orElse(null),
                         cardPayments.renewalOpensAt(held))))

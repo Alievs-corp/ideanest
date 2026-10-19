@@ -53,4 +53,33 @@ public final class ReaderLocale {
     public static Locale of(String tag) {
         return Locale.forLanguageTag(supported(tag) ? tag : PRIMARY);
     }
+
+    /**
+     * The language to answer in, from an {@code Accept-Language} header.
+     *
+     * <p>RFC 4647 lookup, through {@link Locale#lookupTag}, rather than reading
+     * the first two characters: a browser sends {@code en-GB,en;q=0.9,az;q=0.8}
+     * and the quality values are the user's stated order of preference. Lookup
+     * also truncates a range, so {@code en-GB} finds {@code en} — a client asking
+     * for British English gets English rather than Azerbaijani.
+     *
+     * <p>Anything unparseable, absent, or outside {@link #SUPPORTED} resolves to
+     * {@link #PRIMARY}. A malformed header is a client bug and must not become a
+     * 400 on a public, cacheable read.
+     *
+     * @return one of {@link #SUPPORTED}, never null
+     */
+    public static String fromAcceptLanguage(String acceptLanguage) {
+        if (acceptLanguage == null || acceptLanguage.isBlank()) {
+            return PRIMARY;
+        }
+        List<Locale.LanguageRange> ranges;
+        try {
+            ranges = Locale.LanguageRange.parse(acceptLanguage);
+        } catch (IllegalArgumentException e) {
+            return PRIMARY;
+        }
+        String matched = Locale.lookupTag(ranges, SUPPORTED);
+        return matched == null ? PRIMARY : matched;
+    }
 }

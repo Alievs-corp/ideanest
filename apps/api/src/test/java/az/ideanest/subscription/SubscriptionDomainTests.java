@@ -11,6 +11,7 @@ import az.ideanest.subscription.domain.SubscriptionState;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -101,6 +102,48 @@ class SubscriptionDomainTests {
 
             assertThat(plan.getMaxActiveCampaigns()).isNull();
             assertThat(plan.getGoalCeiling()).isNull();
+        }
+
+        @Test
+        @DisplayName("reads in the reader's language, and in the primary one where it has none")
+        void translationsFallBackToThePrimaryLanguage() {
+            SubscriptionPlan plan = plan("GROWTH", "49.00");
+            plan.rename("Böyümə", "Böyüyən yaradıcılar üçün");
+            plan.translate(Map.of(
+                    "en", new SubscriptionPlan.Text(" Growth ", null),
+                    "ru", new SubscriptionPlan.Text("Рост", "Для растущих авторов")));
+
+            assertThat(plan.nameIn("en")).isEqualTo("Growth");
+            assertThat(plan.descriptionIn("en")).isEqualTo("Böyüyən yaradıcılar üçün");
+            assertThat(plan.nameIn("ru")).isEqualTo("Рост");
+            assertThat(plan.descriptionIn("ru")).isEqualTo("Для растущих авторов");
+            assertThat(plan.nameIn("tr")).isEqualTo("Böyümə");
+            assertThat(plan.nameIn("az")).isEqualTo("Böyümə");
+            assertThat(plan.getTranslations()).containsOnlyKeys("en", "ru");
+        }
+
+        @Test
+        @DisplayName("replaces every translation, so a language left out is read in the primary one")
+        void translatingReplacesTheWholeSet() {
+            SubscriptionPlan plan = plan("GROWTH", "49.00");
+            plan.translate(Map.of("en", new SubscriptionPlan.Text("Growth", null)));
+            plan.translate(Map.of("tr", new SubscriptionPlan.Text("Büyüme", null)));
+
+            assertThat(plan.getTranslations()).containsOnlyKeys("tr");
+            assertThat(plan.nameIn("en")).isEqualTo("A plan");
+        }
+
+        @Test
+        @DisplayName("refuses the primary language, a language the platform lacks, and a blank name")
+        void translationsAreChecked() {
+            SubscriptionPlan plan = plan("GROWTH", "49.00");
+
+            assertThatThrownBy(() -> plan.translate(Map.of("az", new SubscriptionPlan.Text("Böyümə", null))))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> plan.translate(Map.of("de", new SubscriptionPlan.Text("Wachstum", null))))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> plan.translate(Map.of("en", new SubscriptionPlan.Text("  ", null))))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -328,6 +371,7 @@ class SubscriptionDomainTests {
                 code,
                 "A plan",
                 null,
+                Map.of(),
                 Money.of(new BigDecimal(price), "AZN"),
                 BillingPeriod.MONTHLY,
                 3,

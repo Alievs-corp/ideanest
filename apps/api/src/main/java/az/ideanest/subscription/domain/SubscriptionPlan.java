@@ -1,5 +1,6 @@
 package az.ideanest.subscription.domain;
 
+import az.ideanest.shared.ReaderLocale;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.money.MoneyAmountConverter;
 import jakarta.persistence.Column;
@@ -12,8 +13,14 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * One thing the platform sells a creator — V62's row.
@@ -48,6 +55,19 @@ public class SubscriptionPlan {
 
     private static final int DESCRIPTION_MAX = 2000;
 
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    private static final TypeReference<TreeMap<String, Text>> TRANSLATIONS = new TypeReference<>() {};
+
+    /**
+     * A plan's name and description in one language other than {@link ReaderLocale#PRIMARY}.
+     *
+     * @param description null when the language has none, and the reader then gets the
+     *     primary language's
+     */
+    public record Text(String name, String description) {
+    }
+
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
@@ -60,6 +80,15 @@ public class SubscriptionPlan {
 
     @Column(name = "description")
     private String description;
+
+    /**
+     * V111's column: {@link Text} by locale code, never holding the primary language, which
+     * is {@link #name} and {@link #description}. Mapped as a string and read through
+     * {@link #getTranslations()} so that Hibernate compares the column by value.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "translations", nullable = false)
+    private String translations = "{}";
 
     @Convert(converter = MoneyAmountConverter.class)
     @Column(name = "price", nullable = false)
@@ -119,6 +148,7 @@ public class SubscriptionPlan {
      *     log line and a support conversation agree on, and renaming it would break all
      *     three at once. The display {@link #getName()} is what changes when the marketing
      *     does
+     * @param translations the name and description in the other languages; may be empty
      * @param price may be zero, which means a free tier. May not be negative
      * @param maxActiveCampaigns null for no limit
      * @param goalCeiling null for no ceiling. In {@code price}'s currency, because a plan
@@ -132,6 +162,7 @@ public class SubscriptionPlan {
             String code,
             String name,
             String description,
+            Map<String, Text> translations,
             Money price,
             BillingPeriod billingPeriod,
             Integer maxActiveCampaigns,
@@ -147,6 +178,7 @@ public class SubscriptionPlan {
         SubscriptionPlan plan = new SubscriptionPlan(id, requireCode(code), now, createdBy);
         plan.price(price);
         plan.rename(name, description);
+        plan.translate(translations);
         plan.billingPeriod = Objects.requireNonNull(billingPeriod, "A plan bills over some period");
         plan.limits(maxActiveCampaigns, goalCeiling);
         plan.sortOrder = sortOrder;
@@ -157,6 +189,30 @@ public class SubscriptionPlan {
     public void rename(String name, String description) {
         this.name = requireName(name);
         this.description = trimmedOrNull(description, DESCRIPTION_MAX);
+    }
+
+    /**
+     * What the pricing page calls it in the other languages. Replaces every translation:
+     * a language left out is read in the primary language from now on.
+     *
+     * @param translations by locale code. The primary language is refused here because it
+     *     is {@link #rename}'s, and a language the platform does not have is refused because
+     *     nobody could ever read it
+     */
+    public void translate(Map<String, Text> translations) {
+        TreeMap<String, Text> checked = new TreeMap<>();
+        if (translations != null) {
+            translations.forEach((locale, text) -> {
+                if (!ReaderLocale.supported(locale) || ReaderLocale.PRIMARY.equals(locale)) {
+                    throw new IllegalArgumentException("A plan is translated into en, ru or tr, not " + locale);
+                }
+                if (text == null) {
+                    return;
+                }
+                checked.put(locale, new Text(requireName(text.name()), trimmedOrNull(text.description(), DESCRIPTION_MAX)));
+            });
+        }
+        this.translations = JSON.writeValueAsString(checked);
     }
 
     /**
@@ -238,6 +294,26 @@ public class SubscriptionPlan {
 
     public String getDescription() {
         return description;
+    }
+
+    /** Every translation, by locale code. Empty when the plan is in the primary language only. */
+    public Map<String, Text> getTranslations() {
+        if (translations == null || translations.isBlank()) {
+            return Map.of();
+        }
+        return JSON.readValue(translations, TRANSLATIONS);
+    }
+
+    /** The name a reader of {@code locale} sees: theirs when the plan has it, the primary one otherwise. */
+    public String nameIn(String locale) {
+        Text text = getTranslations().get(locale);
+        return text == null ? name : text.name();
+    }
+
+    /** The description a reader of {@code locale} sees, falling back the way {@link #nameIn} does. */
+    public String descriptionIn(String locale) {
+        Text text = getTranslations().get(locale);
+        return text == null || text.description() == null ? description : text.description();
     }
 
     /** The price, assembled at the entity's edge — {@code MoneyAmountConverter} says why. */
