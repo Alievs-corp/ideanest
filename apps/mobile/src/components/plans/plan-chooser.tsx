@@ -35,8 +35,9 @@ import {
  * offers a button). Reused by the campaign editor's review step later, so nothing here reads a
  * route.
  *
- * <p>Plan choices are white `primary` pills, not lime: the kit allows at most one accent per screen,
- * and a choice between plans is not "act now". The held plan's pill is `ghost`.
+ * <p>Plan choices are never lime buttons: the kit allows at most one accent per screen, and a choice
+ * between plans is not "act now". Each card's button is near-black with a white label, inverted to
+ * white on the black card (`PLAN_SKIN`). The held plan's cancel pill is `ghost`.
  *
  * <h2>Paying and renewing happen on the website (#452)</h2>
  *
@@ -200,14 +201,20 @@ export function PlanCards({
   );
 }
 
-/** The web's plan surfaces, in order: light, black, lime (one lime element on the screen). */
+/**
+ * The web's plan surfaces, in order: light, black, lime (one lime element on the screen).
+ *
+ * <p>The choose button is near-black with a white label on every card except the black one, where
+ * it inverts to white with a near-black label — the lime card included, so the three read as one
+ * control rather than one of them carrying lime text.
+ */
 const PLAN_TONES = ['white', 'dark', 'lime'] as const;
 type PlanTone = (typeof PLAN_TONES)[number];
 
 const PLAN_SKIN: Record<PlanTone, { card: string; button: string; label: string; border?: string }> = {
   white: { card: colors.whiteMuted, button: colors.textOnWhite, label: colors.whiteSurface },
   dark: { card: colors.black, button: colors.whiteSurface, label: colors.textOnWhite, border: tint(colors.textPrimary, 0.08) },
-  lime: { card: colors.lime500, button: colors.textOnLime, label: colors.lime500 },
+  lime: { card: colors.lime500, button: colors.textOnLime, label: colors.whiteSurface },
 };
 
 function PlanCard({
