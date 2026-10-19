@@ -26,12 +26,24 @@ export type BillingPeriod = 'MONTHLY' | 'YEARLY';
 
 export type SubscriptionState = 'PENDING_PAYMENT' | 'ACTIVE' | 'CANCELED' | 'EXPIRED';
 
+/** A plan's name and description in one language other than Azerbaijani. */
+export interface PlanText {
+  readonly name: string;
+  readonly description?: string | null;
+}
+
+/** The languages a plan is translated into. Azerbaijani is the plan's own `name` and `description`. */
+export type PlanTranslations = Readonly<Partial<Record<'en' | 'ru' | 'tr', PlanText>>>;
+
 export interface Plan {
   readonly id: string;
   /** Stable, upper case. What an operator and a support conversation agree on. */
   readonly code: string;
+  /** In the reader's language where the plan has it; the console always gets the Azerbaijani. */
   readonly name: string;
   readonly description?: string | null;
+  /** The console's only: every other language, by locale code. The public catalogue sends one language. */
+  readonly translations?: PlanTranslations | null;
   /** A decimal amount, as text. */
   readonly price: string;
   readonly currency: string;

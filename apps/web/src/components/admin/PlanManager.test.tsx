@@ -15,6 +15,7 @@ import { lookUpNames } from '../../lib/admin/directory';
 import { bankDay } from '../../lib/admin/payouts';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { PlanManager } from './PlanManager';
+import { LOCALE_NAMES } from '../../lib/i18n/locale';
 import { translatorFor } from '../../test-copy';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
 import { planManagerCopyFrom } from '../../lib/i18n/admin/money-copy';
@@ -165,6 +166,69 @@ describe('the plan manager', () => {
     expect(sent?.goalCeiling).toBeNull();
     // Upper-cased on the way out, so "growth" and "GROWTH" are not two plans.
     expect(sent?.code).toBe('GROWTH');
+  });
+
+  it('opens the plan texts on Azerbaijani and sends the other languages beside it', async () => {
+    ready();
+    addPlanMock.mockResolvedValue(STARTER);
+
+    render(<PlanManager copy={COPY} />);
+    await screen.findAllByText(/Starter/);
+
+    expect(screen.getByRole('button', { name: LOCALE_NAMES.az })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.type(screen.getByLabelText(COPY.codeLabel), 'growth');
+    await userEvent.type(screen.getByLabelText(COPY.nameLabel), 'Böyümə');
+    await userEvent.type(screen.getByLabelText(COPY.descriptionLabel), 'Böyüyənlər üçün');
+
+    await userEvent.click(screen.getByRole('button', { name: LOCALE_NAMES.en }));
+    expect(screen.getByLabelText(COPY.nameLabel)).toHaveValue('');
+    await userEvent.type(screen.getByLabelText(COPY.nameLabel), 'Growth');
+    expect(screen.getByRole('button', { name: `${LOCALE_NAMES.en}, ${COPY.languageFilled}` })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: COPY.addPlan }));
+
+    await waitFor(() => expect(addPlanMock).toHaveBeenCalled());
+    const sent = addPlanMock.mock.calls[0]?.[0];
+    expect(sent?.name).toBe('Böyümə');
+    expect(sent?.description).toBe('Böyüyənlər üçün');
+    expect(sent?.translations).toEqual({ en: { name: 'Growth', description: null } });
+  });
+
+  it('refuses a language with a description and no name', async () => {
+    ready();
+
+    render(<PlanManager copy={COPY} />);
+    await screen.findAllByText(/Starter/);
+
+    await userEvent.type(screen.getByLabelText(COPY.codeLabel), 'growth');
+    await userEvent.type(screen.getByLabelText(COPY.nameLabel), 'Böyümə');
+    await userEvent.click(screen.getByRole('button', { name: LOCALE_NAMES.ru }));
+    await userEvent.type(screen.getByLabelText(COPY.descriptionLabel), 'Для растущих');
+
+    expect(screen.getByText(COPY.translationNameMissing)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.addPlan })).toBeDisabled();
+  });
+
+  it('edits an existing plan in every language', async () => {
+    ready([{ ...STARTER, translations: { ru: { name: 'Стартер' } } }]);
+    changePlanMock.mockResolvedValue(STARTER);
+
+    render(<PlanManager copy={COPY} />);
+    await userEvent.click(await screen.findByRole('button', { name: new RegExp(COPY.editTexts) }));
+
+    const row = screen.getByRole('listitem');
+    await userEvent.click(within(row).getByRole('button', { name: new RegExp(`^${LOCALE_NAMES.tr}`) }));
+    await userEvent.type(within(row).getByLabelText(COPY.nameLabel), 'Başlangıç');
+    await userEvent.click(within(row).getByRole('button', { name: COPY.saveTexts }));
+
+    await waitFor(() =>
+      expect(changePlanMock).toHaveBeenCalledWith({
+        planId: STARTER.id,
+        name: STARTER.name,
+        description: STARTER.description,
+        translations: { ru: { name: 'Стартер', description: null }, tr: { name: 'Başlangıç', description: null } },
+      }),
+    );
   });
 
   it('records a payment against a subscription that is waiting for one', async () => {

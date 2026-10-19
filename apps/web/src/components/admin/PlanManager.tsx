@@ -26,11 +26,20 @@ import { shortId } from '../../lib/admin/refusals';
 import { formatMoney } from '@ideanest/money/format';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { Locale } from '../../lib/i18n/locale';
 import type { PlanManagerCopy } from '../../lib/i18n/admin/money-copy';
 import { ConsoleRefusal } from './ConsoleRefusal';
 import { Confirm } from './ConsoleConfirm';
 import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
+import {
+  PlanTextFields,
+  emptyPlanTexts,
+  namelessLanguage,
+  planTextsOf,
+  translationsFrom,
+  type PlanTextDraft,
+} from './PlanTextFields';
 
 const PERIODS: readonly BillingPeriod[] = ['MONTHLY', 'YEARLY'];
 
@@ -121,8 +130,8 @@ export function PlanManager({ copy }: PlanManagerProps) {
   );
 
   const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [texts, setTexts] = useState<PlanTextDraft>(emptyPlanTexts);
+  const [language, setLanguage] = useState<Locale>('az');
   const [price, setPrice] = useState('19.00');
   const [period, setPeriod] = useState<BillingPeriod>('MONTHLY');
   const [maxActive, setMaxActive] = useState('1');
@@ -144,7 +153,12 @@ export function PlanManager({ copy }: PlanManagerProps) {
   const newLimit = campaignLimitFrom(maxActive);
   const newCeiling = ceilingFrom(goalCeiling);
   const addReady =
-    code.trim() !== '' && name.trim() !== '' && newPrice !== undefined && newLimit !== undefined && newCeiling !== undefined;
+    code.trim() !== '' &&
+    texts.az.name.trim() !== '' &&
+    namelessLanguage(texts) === undefined &&
+    newPrice !== undefined &&
+    newLimit !== undefined &&
+    newCeiling !== undefined;
 
   async function add(event: React.FormEvent): Promise<void> {
     event.preventDefault();
@@ -155,8 +169,9 @@ export function PlanManager({ copy }: PlanManagerProps) {
     try {
       const plan = await addPlan({
         code: code.trim().toUpperCase(),
-        name: name.trim(),
-        description: description.trim() === '' ? null : description.trim(),
+        name: texts.az.name.trim(),
+        description: texts.az.description.trim() === '' ? null : texts.az.description.trim(),
+        translations: translationsFrom(texts),
         price: newPrice,
         currency: 'AZN',
         billingPeriod: period,
@@ -167,8 +182,8 @@ export function PlanManager({ copy }: PlanManagerProps) {
 
       setAdded({ variant: 'success', title: copy.doneTitle, body: fillPlaceholders(copy.addedNotice, { plan: plan.name }) });
       setCode('');
-      setName('');
-      setDescription('');
+      setTexts(emptyPlanTexts());
+      setLanguage('az');
       catalogue.reload();
     } catch (cause) {
       setAdded({ variant: 'danger', title: copy.failedTitle, body: refusalOf(cause) });
@@ -253,22 +268,11 @@ export function PlanManager({ copy }: PlanManagerProps) {
         </h2>
 
         <form onSubmit={(event) => void add(event)} className="mt-4 flex flex-col gap-3">
-          <div className="flex flex-wrap items-start gap-3">
-            <Field label={copy.codeLabel} hint={copy.codeHint} className="min-w-[180px]">
-              <TextInput value={code} onChange={(event) => setCode(event.target.value)} maxLength={40} />
-            </Field>
-            <Field label={copy.nameLabel} className="min-w-[220px] flex-1">
-              <TextInput value={name} onChange={(event) => setName(event.target.value)} maxLength={120} />
-            </Field>
-          </div>
-
-          <Field label={copy.descriptionLabel} hint={copy.descriptionHint}>
-            <TextInput
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              maxLength={2000}
-            />
+          <Field label={copy.codeLabel} hint={copy.codeHint} className="max-w-[280px]">
+            <TextInput value={code} onChange={(event) => setCode(event.target.value)} maxLength={40} />
           </Field>
+
+          <PlanTextFields draft={texts} onChange={setTexts} language={language} onLanguage={setLanguage} copy={copy} />
 
           <div className="flex flex-wrap items-start gap-3">
             <Field
@@ -418,7 +422,10 @@ interface PlanRowProps {
 
 function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
   const [next, setNext] = useState(plan.price);
-  const [asking, setAsking] = useState<'none' | 'reprice' | 'retire'>('none');
+  const [asking, setAsking] = useState<'none' | 'reprice' | 'retire' | 'texts'>('none');
+  const [texts, setTexts] = useState<PlanTextDraft>(() => planTextsOf(plan));
+  const [language, setLanguage] = useState<Locale>('az');
+  const textsReady = texts.az.name.trim() !== '' && namelessLanguage(texts) === undefined;
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<Said | null>(null);
   const nextPrice = priceFrom(next);
@@ -481,6 +488,34 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
             onBack={() => setAsking('none')}
           />
         </div>
+      ) : asking === 'texts' ? (
+        <form
+          className="mt-3 flex flex-col gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!textsReady) return;
+            void write(
+              () =>
+                changePlan({
+                  planId: plan.id,
+                  name: texts.az.name.trim(),
+                  description: texts.az.description.trim(),
+                  translations: translationsFrom(texts),
+                }),
+              fillPlaceholders(copy.textsSavedNotice, { plan: texts.az.name.trim() }),
+            );
+          }}
+        >
+          <PlanTextFields draft={texts} onChange={setTexts} language={language} onLanguage={setLanguage} copy={copy} />
+          <div className="flex flex-wrap gap-3">
+            <Pill type="submit" variant="outline" size="sm" disabled={busy || !textsReady}>
+              {busy ? copy.saving : copy.saveTexts}
+            </Pill>
+            <Pill variant="ghost" size="sm" disabled={busy} onClick={() => setAsking('none')}>
+              {copy.back}
+            </Pill>
+          </div>
+        </form>
       ) : asking === 'retire' ? (
         <div className="mt-3">
           <Confirm
@@ -512,6 +547,21 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
             onClick={() => setAsking('reprice')}
           >
             {copy.reprice}
+            <span className="sr-only">: {plan.name}</span>
+          </Pill>
+
+          <Pill
+            variant="ghost"
+            size="sm"
+            className="mt-8"
+            disabled={busy}
+            onClick={() => {
+              setTexts(planTextsOf(plan));
+              setLanguage('az');
+              setAsking('texts');
+            }}
+          >
+            {copy.editTexts}
             <span className="sr-only">: {plan.name}</span>
           </Pill>
 
