@@ -260,8 +260,17 @@ single-storey feel at display sizes.
 > with the rest of the lowercase. Where there is doubt, choose **Inter**, in
 > which it is part of the original design.
 
-**Decision:** General Sans for display and headings, Inter for body and
-numerals. Two families, no more.
+**Decision (revised):** Geologica for page and section headings (`h1`, `h2`,
+`--font-display`), Inter for body, card titles and numerals. Two families, no
+more.
+
+General Sans was the first choice and was never served: it has no Cyrillic, and
+the site is read in Russian, so every heading fell through to Inter. An audit
+then named Inter on every page as the face AI-built sites default to. Geologica
+was chosen by the owner against the same Latin Extended check above, side by side
+with the fallback — Sofia Sans Condensed, Wix Madefor Display and Dela Gothic One
+all drew `ə` from another font. Numerals stay in Inter. The mobile app keeps
+Inter.
 
 ### 5.2 Scale
 

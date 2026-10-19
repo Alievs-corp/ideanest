@@ -53,7 +53,7 @@
      the `var()` the whole declaration would be invalid and drop, taking
      `system-ui` down with it. */
   --font-sans: var(--font-inter, 'Inter'), system-ui, -apple-system, sans-serif;
-  --font-display: 'General Sans', var(--font-inter, 'Inter'), system-ui, sans-serif;
+  --font-display: var(--font-geologica, 'Geologica'), var(--font-inter, 'Inter'), system-ui, sans-serif;
 
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -69,6 +69,12 @@
     color: var(--text-primary);
     font-family: var(--font-sans);
     letter-spacing: -0.01em;
+  }
+
+  /* docs/ui-kit.md §5.1: h3 and below stay in the text face. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
   }
 
   /* Thin scrollbars suit a dark surface. */

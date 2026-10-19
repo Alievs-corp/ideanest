@@ -143,7 +143,7 @@ export async function CampaignRewards({
               key={tier.id}
               className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5"
             >
-              <p className="font-display text-2xl font-semibold tracking-[-0.03em] text-white tabular-nums">
+              <p className="text-2xl font-semibold tracking-[-0.03em] text-white tabular-nums">
                 {formatMoney(tier.price)}
               </p>
               <h3 className="text-base font-medium text-white">{tier.title}</h3>
