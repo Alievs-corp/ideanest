@@ -260,8 +260,8 @@ describe('ProjectCard', () => {
     it('reserves the card’s crop before the photograph arrives', () => {
       const { container } = renderCard();
 
-      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9');
-      expect(frame(container).style.getPropertyValue('--media-ratio-narrow')).toBe('2 / 1');
+      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9.63');
+      expect(frame(container).style.getPropertyValue('--media-ratio-narrow')).toBe('16 / 8.56');
     });
 
     it('reserves the same box for a campaign with no cover', () => {
@@ -269,7 +269,7 @@ describe('ProjectCard', () => {
       // one it painted, which is the shift the reservation exists to prevent.
       const { container } = renderCard({ image: null });
 
-      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9');
+      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9.63');
       expect(container.querySelector('img')).toBeNull();
     });
 
@@ -280,7 +280,7 @@ describe('ProjectCard', () => {
         image: { url: 'https://example.test/tall.jpg', width: 900, height: 1600 },
       });
 
-      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9');
+      expect(frame(container).style.getPropertyValue('--media-ratio')).toBe('16 / 9.63');
     });
 
     it('declares how wide the card really is at every breakpoint', () => {

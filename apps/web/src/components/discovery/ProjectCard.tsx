@@ -10,7 +10,7 @@ import {
   Hourglass,
   Users,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Avatar, MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
 import { campaignAccent } from '@ideanest/discovery/category-look';
 import { ACCENT_SURFACE } from '../browse/accent-surface';
@@ -167,6 +167,17 @@ export interface ProjectCardProps {
   sizes?: string;
   /** Extra classes for the cover's frame — the home page sizes its covers per band. */
   coverClassName?: string;
+  /** Cover height against the 16:9 / 2:1 crop; the owner asked for 7% taller everywhere but the popular band. */
+  coverScale?: number;
+}
+
+const COVER_SCALE = 1.07;
+
+function coverCrop(scale: number): CSSProperties {
+  return {
+    '--media-ratio': `16 / ${(9 * scale).toFixed(2)}`,
+    '--media-ratio-narrow': `16 / ${(8 * scale).toFixed(2)}`,
+  } as CSSProperties;
 }
 
 export function ProjectCard({
@@ -176,6 +187,7 @@ export function ProjectCard({
   locale,
   sizes = CAMPAIGN_CARD_SIZES,
   coverClassName,
+  coverScale = COVER_SCALE,
 }: ProjectCardProps) {
   const completion = completionOf(card);
   /*
@@ -238,6 +250,7 @@ export function ProjectCard({
         ratio="16/9"
         narrowRatio="2/1"
         className={coverClassName === undefined ? 'rounded-t-xl' : `rounded-t-xl ${coverClassName}`}
+        {...(coverScale === 1 ? {} : { style: coverCrop(coverScale) })}
       >
         {card.image != null && (
           <Image
