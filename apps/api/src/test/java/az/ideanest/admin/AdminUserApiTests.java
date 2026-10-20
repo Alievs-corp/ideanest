@@ -10,6 +10,7 @@ import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -481,9 +482,18 @@ class AdminUserApiTests extends AbstractIntegrationTest {
         return value == null ? 0 : value;
     }
 
+    /**
+     * The rows for one action, oldest first.
+     *
+     * <p>Sorted, because {@code findAll()} promises no order and the tests read
+     * {@code getLast()} as "the row this test just wrote". Other tests in the run write the same
+     * action for the same staff account, and unsorted the last row was whichever one the
+     * database returned last — a different test's search, some of the time.
+     */
     private List<AuditEntry> auditRows(AuditAction action) {
         return auditEntries.findAll().stream()
                 .filter(entry -> entry.getAction().equals(action.action()))
+                .sorted(Comparator.comparing(AuditEntry::getOccurredAt))
                 .toList();
     }
 

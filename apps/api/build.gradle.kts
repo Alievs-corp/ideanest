@@ -203,6 +203,15 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // The tests run in Azerbaijani, the platform's own language, and not in whatever the CI
+    // runner happens to be. Azerbaijani and Turkish case-map the letter i differently from
+    // every other locale ("I".lowercase() is "ı"), which is the classic way a server breaks:
+    // Hibernate lowercased a JPQL `MIN` to `mın` and every public legal page failed, on any JVM
+    // running in az or tr, while CI ran in English and stayed green. Here a locale-sensitive
+    // call fails in the build, on any machine: these are passed on the test JVM's command line,
+    // after JAVA_TOOL_OPTIONS, so a runner's own locale settings do not undo them.
+    systemProperty("user.language", "az")
+    systemProperty("user.country", "AZ")
     testLogging {
         events("failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
