@@ -140,7 +140,18 @@ public interface LegalDocumentRepository extends JpaRepository<LegalDocument, UU
     List<LegalDocument> tookEffectBetween(
             @Param("locale") String locale, @Param("after") Instant after, @Param("upTo") Instant upTo);
 
-    /** The soonest date any published version is still waiting for, or null when none is. */
-    @Query("SELECT MIN(d.effectiveFrom) FROM LegalDocument d WHERE d.publishedAt IS NOT NULL AND d.effectiveFrom > :now")
+    /**
+     * The soonest date any published version is still waiting for, or null when none is.
+     *
+     * <p>{@code min} in lower case, and that is the fix rather than a style. Hibernate lowercases
+     * a JPQL function's name with the JVM's default locale before it looks it up, and in
+     * Azerbaijani or Turkish {@code "MIN"} lowercases to {@code "mın"} with a dotless i — a
+     * function PostgreSQL does not have. Every public read of a legal document asks this question
+     * for its cache directive, so on such a JVM the terms, the privacy policy and the rules all
+     * failed, and the failure reached the reader as a 401 from {@code /error}. A name that is
+     * already lower case lowercases to itself in every locale. The test JVM runs in {@code az_AZ}
+     * so that the next query written this way fails in CI rather than in production.
+     */
+    @Query("SELECT min(d.effectiveFrom) FROM LegalDocument d WHERE d.publishedAt IS NOT NULL AND d.effectiveFrom > :now")
     Instant nextTakingEffect(@Param("now") Instant now);
 }
