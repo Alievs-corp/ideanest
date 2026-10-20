@@ -210,7 +210,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
   return (
     <div className="flex flex-col gap-8">
       <section aria-labelledby="queue-heading" aria-busy={queue.status === 'loading'}>
-        <h2 id="queue-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="queue-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {/*
             The heading said "Open tickets" and the intro "most urgent first" over every view,
             "Resolved" included, which is neither open nor in that order. A filter reads the

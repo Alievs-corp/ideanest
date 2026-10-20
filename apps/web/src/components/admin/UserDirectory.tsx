@@ -245,7 +245,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
           id="admin-users-heading"
           ref={headingRef}
           tabIndex={-1}
-          className="text-lg font-medium tracking-[-0.02em] text-white"
+          className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
         >
           {copy.heading}
           {status === 'ready' && (
@@ -314,7 +314,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 p-5">
+              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
                 <Skeleton height="1.125rem" width="30%" />
                 <Skeleton height="0.875rem" width="45%" className="mt-3" />
               </div>
@@ -342,7 +342,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
             return (
               <li
                 key={user.id}
-                className="rounded-lg border border-white/8 bg-surface-2 p-5"
+                className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5"
                 aria-busy={busyIds.has(user.id)}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">

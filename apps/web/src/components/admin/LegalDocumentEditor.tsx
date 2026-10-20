@@ -324,7 +324,7 @@ function DocumentWorkspace({
       )}
 
       <section aria-labelledby="legal-draft-heading">
-        <h2 id="legal-draft-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="legal-draft-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.draftHeading}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.draftIntro}</p>
@@ -363,7 +363,7 @@ function DocumentWorkspace({
       </section>
 
       <section aria-labelledby="legal-publish-heading">
-        <h2 id="legal-publish-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="legal-publish-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.publishHeading}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.publishIntro}</p>
@@ -433,7 +433,7 @@ function DocumentWorkspace({
       </section>
 
       <section aria-labelledby="legal-history-heading">
-        <h2 id="legal-history-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="legal-history-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.historyHeading}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.historyIntro}</p>

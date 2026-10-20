@@ -124,7 +124,7 @@ export function PlanPaymentReturns({ copy, canIssue, canOpenAccount }: PlanPayme
 
   return (
     <section aria-labelledby="plan-payments-heading">
-      <h2 id="plan-payments-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="plan-payments-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {words.heading}
       </h2>
       <p className="mt-2 max-w-[62ch] text-sm text-white/64">{words.intro}</p>

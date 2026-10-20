@@ -244,7 +244,7 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
   if (status === 'loading') {
     return (
       <SkeletonGroup label={copy.loadingList}>
-        <div className="rounded-xl border border-white/8 bg-surface-1 p-5">
+        <div className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
           <Skeleton height="1.25rem" width="40%" />
           <Skeleton height="0.875rem" width="60%" className="mt-3" />
           <Skeleton height="0.875rem" width="80%" className="mt-2" />
@@ -300,13 +300,13 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
 
       <section
         aria-labelledby="report-heading"
-        className="rounded-xl border border-white/8 bg-surface-1 p-5"
+        className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2
               id="report-heading"
-              className="text-lg font-medium tracking-[-0.02em] text-white"
+              className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
             >
               {copy.moderation.reason[report.reason]}
             </h2>
@@ -427,7 +427,7 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
 
       {open && (
         <section
-          className="mt-8 rounded-xl border border-white/8 bg-surface-1 p-5"
+          className="mt-8 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
           role="group"
           aria-label={copy.decideGroup}
         >
@@ -457,7 +457,7 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
       <section aria-labelledby="report-history-heading" className="mt-8">
         <h2
           id="report-history-heading"
-          className="text-lg font-medium tracking-[-0.02em] text-white"
+          className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
         >
           {copy.historyHeading}
         </h2>

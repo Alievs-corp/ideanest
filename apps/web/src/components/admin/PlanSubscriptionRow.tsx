@@ -87,7 +87,7 @@ export function SubscriptionRow({ subscription, names, accountName, copy, locale
     <li className="rounded-lg border border-white/8 bg-surface-2 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[15px] text-white">
+          <p className="text-sm sm:text-[15px] text-white">
             {plan} <EntityName id={subscription.accountId} names={names} kind="account" copy={copy.identity} />
           </p>
           <p className="mt-1 text-[13px] text-white/64">

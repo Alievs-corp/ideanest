@@ -225,7 +225,7 @@ export function PartnerManager({ copy }: PartnerManagerProps) {
       {/* ---- who is a partner ---------------------------------------------- */}
 
       <section aria-labelledby="partner-roster-heading">
-        <h2 id="partner-roster-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="partner-roster-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.rosterHeading}
         </h2>
 
@@ -305,7 +305,7 @@ export function PartnerManager({ copy }: PartnerManagerProps) {
       {/* ---- adding one ---------------------------------------------------- */}
 
       <section aria-labelledby="partner-add-heading">
-        <h2 id="partner-add-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="partner-add-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.addHeading}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.addIntro}</p>

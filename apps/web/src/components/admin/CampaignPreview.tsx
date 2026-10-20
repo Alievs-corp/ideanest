@@ -134,7 +134,7 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
   if (status === 'loading') {
     return (
       <SkeletonGroup label={copy.loadingPreview}>
-        <div className="rounded-xl border border-white/8 bg-surface-1 p-5">
+        <div className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
           <Skeleton height="1.5rem" width="55%" />
           <Skeleton height="0.875rem" width="35%" className="mt-3" />
           <Skeleton height="0.875rem" width="70%" className="mt-2" />
@@ -191,13 +191,13 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
 
       <section
         aria-labelledby="campaign-preview-heading"
-        className="mt-6 rounded-xl border border-white/8 bg-surface-1 p-5"
+        className="mt-6 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id="campaign-preview-heading"
-              className="text-lg font-medium tracking-[-0.02em] text-white"
+              className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
             >
               {campaign.title}
             </h2>
@@ -289,7 +289,7 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
       <section aria-labelledby="campaign-preview-story" className="mt-8">
         <h2
           id="campaign-preview-story"
-          className="text-lg font-medium tracking-[-0.02em] text-white"
+          className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
         >
           {copy.storyHeading}
         </h2>
@@ -305,7 +305,7 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
       <section aria-labelledby="campaign-preview-risks" className="mt-8">
         <h2
           id="campaign-preview-risks"
-          className="text-lg font-medium tracking-[-0.02em] text-white"
+          className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
         >
           {copy.risksHeading}
         </h2>

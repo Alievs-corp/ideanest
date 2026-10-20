@@ -174,7 +174,7 @@ export function CampaignDirectory({ copy }: CampaignDirectoryProps) {
 
   return (
     <section aria-labelledby="campaign-directory-heading">
-      <h2 id="campaign-directory-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="campaign-directory-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
           <ConsoleCount loaded={campaigns.length} more={cursor !== null} copy={copy.count} />
@@ -247,7 +247,7 @@ export function CampaignDirectory({ copy }: CampaignDirectoryProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-4">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 p-5">
+              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
                 <Skeleton height="1.125rem" width="40%" />
                 <Skeleton height="0.875rem" width="60%" className="mt-3" />
                 <Skeleton height="0.875rem" width="30%" className="mt-2" />
@@ -329,7 +329,7 @@ function CampaignRow({ campaign, locale, copy }: CampaignRowProps) {
   const closes = day(campaign.deadline, locale);
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-2 p-5">
+    <li className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-base font-medium text-white">

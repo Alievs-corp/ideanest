@@ -101,7 +101,7 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
       </InlineAlert>
 
       <section aria-labelledby="tree-heading">
-        <h2 id="tree-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="tree-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.categories}
           {tree.data !== null && (
             <span className="ml-2 text-xs font-normal text-white/40">{branches.length}</span>
@@ -167,7 +167,7 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
       />
 
       <section aria-labelledby="tags-heading">
-        <h2 id="tags-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="tags-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.tagsHeading}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.tagsIntro}</p>
@@ -249,7 +249,7 @@ function Branch({
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[15px] text-white">
+          <p className="text-sm sm:text-[15px] text-white">
             {nameIn(branch.category, locale)}
             <span className="ml-2 font-mono text-xs text-white/40">{branch.category.slug}</span>
           </p>

@@ -116,7 +116,7 @@ function ModuleRow({
 }) {
   const words = copy.modules[module.code];
   const heading = (
-    <span className="text-[15px] font-medium text-white">
+    <span className="text-sm sm:text-[15px] font-medium text-white">
       <span className="mr-2 font-mono text-xs tracking-[0.04em] text-white/40">{module.code}</span>
       {words?.title}
     </span>
@@ -185,7 +185,7 @@ export function ConsoleIndex({ copy }: ConsoleIndexProps) {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
+      <h1 className="text-xl font-semibold tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">
         {copy.title}
       </h1>
       <p className="mt-2 max-w-[68ch] text-sm text-white/64">

@@ -345,7 +345,7 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
       {data !== null && (
         <>
           <section aria-labelledby="maintenance-current-heading">
-            <h2 id="maintenance-current-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 id="maintenance-current-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
               {copy.currentHeading}
             </h2>
             {data.current === null ? (
@@ -356,7 +356,7 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
           </section>
 
           <section aria-labelledby="maintenance-upcoming-heading">
-            <h2 id="maintenance-upcoming-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 id="maintenance-upcoming-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
               {copy.upcomingHeading}
             </h2>
             {data.upcoming.length === 0 ? (
@@ -377,7 +377,7 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
 
       {data !== null && (
         <section aria-labelledby="maintenance-recent-heading">
-          <h2 id="maintenance-recent-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+          <h2 id="maintenance-recent-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
             {copy.recentHeading}
           </h2>
           {recent.length === 0 ? (
@@ -517,7 +517,7 @@ function ScheduleForm({ copy, busy, error, onSchedule }: ScheduleFormProps) {
 
   return (
     <section aria-labelledby="maintenance-schedule-heading">
-      <h2 id="maintenance-schedule-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="maintenance-schedule-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.scheduleHeading}
       </h2>
       {zone !== '' && (

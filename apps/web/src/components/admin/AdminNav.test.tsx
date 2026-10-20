@@ -107,33 +107,32 @@ describe('the console rail', () => {
   });
 
   /**
-   * #177. Below the breakpoint the list, not the rail, is the scroll container, and it clipped
-   * the first link's ring on the left and the last link's on the right. It pads its own sides
-   * and gives them back there, and resets above the breakpoint where the rail does it instead.
+   * Below the breakpoint the rail is not drawn at all — `AdminNavDrawer` carries the same
+   * entries behind the menu button. The sideways phone row it replaces showed one group of
+   * six and gave no sign of the rest.
    */
-  it('keeps room for the focus ring on the phone row too', () => {
+  it('is not drawn below the breakpoint, where the drawer carries it', () => {
     renderRail(SUPER_ADMIN);
 
-    const row = screen.getByRole('navigation', { name: COPY.navLabel }).querySelector('ul') as HTMLElement;
-    expect(row).toHaveClass('overflow-x-auto');
-    expect(row).toHaveClass('px-1');
-    expect(row).toHaveClass('-mx-1');
-    expect(row).toHaveClass('pb-2');
-    expect(row).toHaveClass('lg:px-0');
-    expect(row).toHaveClass('lg:mx-0');
+    const rail = screen.getByRole('navigation', { name: COPY.navLabel });
+    expect(rail).toHaveClass('hidden');
+    expect(rail).toHaveClass('lg:block');
+    expect(rail.querySelector('ul')).not.toHaveClass('overflow-x-auto');
   });
 
-  it('still draws every destination for a reader who holds every capability', () => {
-    renderRail(SUPER_ADMIN);
+  it('draws the same entries as a plain vertical list inside the drawer', () => {
+    render(
+      <ConsoleMembershipProvider given={{ status: 'ready', membership: SUPER_ADMIN }}>
+        <AdminNav copy={COPY} layout="drawer" />
+      </ConsoleMembershipProvider>,
+    );
 
-    const destinations = CONSOLE_GROUPS.flatMap((group) => group.links);
-
-    // If this count ever drops, the rail got shorter and somebody should say why rather
-    // than the scroll quietly becoming decoration.
-    expect(new Set(destinations).size).toBeGreaterThanOrEqual(26);
-    for (const link of destinations) {
-      expect(screen.getByRole('link', { name: COPY.links[link] })).toBeInTheDocument();
-    }
+    const nav = screen.getByRole('navigation', { name: COPY.navLabel });
+    expect(nav).not.toHaveClass('hidden');
+    expect(screen.getAllByRole('link')).toHaveLength(
+      CONSOLE_GROUPS.reduce((sum, group) => sum + group.links.length, 0),
+    );
+    expect(screen.getByRole('link', { current: 'page' })).toHaveAttribute('href', '/en/admin/audit');
   });
 
   /**

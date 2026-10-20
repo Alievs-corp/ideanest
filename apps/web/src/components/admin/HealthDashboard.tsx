@@ -127,7 +127,7 @@ export function HealthDashboard({ copy }: HealthDashboardProps) {
       )}
 
       <section aria-labelledby="overall-heading">
-        <h2 id="overall-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="overall-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.overall} <StatusTag status={snapshot.status} copy={copy} />
         </h2>
         <p className="mt-2 text-xs text-white/64">
@@ -144,7 +144,7 @@ export function HealthDashboard({ copy }: HealthDashboardProps) {
       </section>
 
       <section aria-labelledby="queues-heading">
-        <h2 id="queues-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="queues-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.queues}
         </h2>
         <ul className="mt-4 flex list-none flex-col gap-2">
@@ -168,7 +168,7 @@ export function HealthDashboard({ copy }: HealthDashboardProps) {
       </section>
 
       <section aria-labelledby="jobs-heading">
-        <h2 id="jobs-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="jobs-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.jobs}
         </h2>
         <p className="mt-2 text-xs text-white/64">
@@ -184,7 +184,7 @@ export function HealthDashboard({ copy }: HealthDashboardProps) {
       </section>
 
       <section aria-labelledby="providers-heading">
-        <h2 id="providers-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="providers-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.providers}
         </h2>
         {byKind(snapshot.providers).map(([kind, providers]) => (

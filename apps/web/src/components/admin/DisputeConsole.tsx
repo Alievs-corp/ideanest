@@ -137,7 +137,7 @@ export function DisputeConsole({ copy }: DisputeConsoleProps) {
       </InlineAlert>
 
       <section aria-labelledby="dispute-queue-heading">
-        <h2 id="dispute-queue-heading" className="flex items-baseline text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="dispute-queue-heading" className="flex items-baseline text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.heading}
           {queue.data !== null && (
             <ConsoleCount
@@ -632,7 +632,7 @@ function ResolvedCases({ copy, round }: { readonly copy: DisputeConsoleCopy; rea
 
   return (
     <section aria-labelledby="dispute-closed-heading">
-      <h2 id="dispute-closed-heading" className="flex items-baseline text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="dispute-closed-heading" className="flex items-baseline text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.resolvedHeading}
         {closed.status === 'ready' && closed.data !== null && (
           <ConsoleCount loaded={disputes.length} more={closed.data.hasMore} copy={copy.count} className="ml-2" />

@@ -2,6 +2,7 @@ import { Link } from '../../i18n/navigation';
 import type { ReactNode } from 'react';
 import { MAIN_CONTENT_ID, SkipLink } from '../shell/SkipLink';
 import { AdminNav } from './AdminNav';
+import { AdminNavDrawer } from './AdminNavDrawer';
 import { ConsoleGate } from './ConsoleGate';
 import { ConsoleMembershipProvider } from './ConsoleMembership';
 import { ConsoleReader } from './ConsoleReader';
@@ -120,17 +121,27 @@ export async function AdminArea({ children }: AdminAreaProps) {
           that draws no navigation.
         */}
         <div className="border-b border-white/8 bg-surface-1">
-          <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-4 px-5 py-4 sm:px-6">
-            <Link
-              href="/admin"
-              className="rounded-lg text-sm font-semibold tracking-[-0.01em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
-            >
-              <BrandMark className="mr-2 inline-block h-5 w-auto align-[-0.2em] text-[var(--lime-500)]" />
-              IdeyaNest{' '}
-              <span className="font-normal text-white/48">{copy.console}</span>
-            </Link>
+          <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:py-4">
+            <div className="flex min-w-0 items-center gap-3">
+              {/* The rail, below the breakpoint. Nothing at all above it. */}
+              <AdminNavDrawer copy={copy} />
 
-            <div className="flex flex-wrap items-center gap-4">
+              <Link
+              href="/admin"
+                className="truncate rounded-lg text-sm font-semibold tracking-[-0.01em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              >
+                <BrandMark className="mr-2 inline-block h-5 w-auto align-[-0.2em] text-[var(--lime-500)]" />
+                IdeyaNest{' '}
+                <span className="font-normal text-white/48">{copy.console}</span>
+              </Link>
+            </div>
+
+            {/*
+              Above the breakpoint only. On a phone the reader line and the way out are inside
+              `AdminNavDrawer`'s panel — a sentence carrying a name and four roles does not fit
+              beside the wordmark, and wrapped it made the bar taller than the screen's title.
+            */}
+            <div className="hidden flex-wrap items-center gap-4 lg:flex">
               {/* Who is reading, and with what authority. Nothing at all for anybody else. */}
               <ConsoleReader copy={copy} />
 
@@ -155,10 +166,11 @@ export async function AdminArea({ children }: AdminAreaProps) {
         <main
           id={MAIN_CONTENT_ID}
           tabIndex={-1}
-          className="mx-auto w-full max-w-[1280px] flex-1 px-5 py-10 focus:outline-none sm:px-6 sm:py-12"
+          className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 focus:outline-none sm:px-6 sm:py-10 lg:py-12"
         >
-          <div className="flex flex-col gap-10 lg:flex-row lg:gap-14">
-            <div className="lg:w-[15rem] lg:shrink-0">
+          <div className="flex flex-col lg:flex-row lg:gap-14">
+            {/* The rail is `hidden` below the breakpoint, so this wrapper is too. */}
+            <div className="hidden lg:block lg:w-[15rem] lg:shrink-0">
               <AdminNav copy={copy} />
             </div>
             {/*

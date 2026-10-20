@@ -154,7 +154,7 @@ function Statistics({
       </div>
 
       <section aria-labelledby="stats-today-heading">
-        <h2 id="stats-today-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="stats-today-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.todayHeading}
         </h2>
         <p className="mt-1 text-xs text-white/48">{dayLabel(statistics.today.date, locale)}</p>
@@ -162,7 +162,7 @@ function Statistics({
       </section>
 
       <section aria-labelledby="stats-month-heading">
-        <h2 id="stats-month-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="stats-month-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.monthHeading}
         </h2>
         <p className="mt-1 text-xs text-white/48">{monthLabel(statistics.thisMonth.month, locale)}</p>
@@ -170,7 +170,7 @@ function Statistics({
       </section>
 
       <section aria-labelledby="stats-daily-heading">
-        <h2 id="stats-daily-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="stats-daily-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.dailyHeading}
         </h2>
         <FiguresTable
@@ -189,7 +189,7 @@ function Statistics({
       </section>
 
       <section aria-labelledby="stats-monthly-heading">
-        <h2 id="stats-monthly-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="stats-monthly-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.monthlyHeading}
         </h2>
         {/*
@@ -214,7 +214,7 @@ function Statistics({
       </section>
 
       <section aria-labelledby="stats-plans-heading">
-        <h2 id="stats-plans-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="stats-plans-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.planHeading}
         </h2>
         <FiguresTable
@@ -305,30 +305,33 @@ function FiguresTable({
   }
 
   return (
-    <Table caption={caption} className="mt-4">
+    <Table caption={caption} className="text-xs sm:text-sm" containerClassName="mt-4">
       <TableHead>
         <TableRow interactive={false}>
-          <TableHeaderCell>{firstColumn}</TableHeaderCell>
-          <TableHeaderCell align="right">{copy.revenue}</TableHeaderCell>
-          <TableHeaderCell align="right">{copy.subscriptions}</TableHeaderCell>
-          <TableHeaderCell align="right">{copy.reversals}</TableHeaderCell>
+          <TableHeaderCell className={CELL}>{firstColumn}</TableHeaderCell>
+          <TableHeaderCell align="right" className={CELL}>{copy.revenue}</TableHeaderCell>
+          <TableHeaderCell align="right" className={CELL}>{copy.subscriptions}</TableHeaderCell>
+          <TableHeaderCell align="right" className={CELL}>{copy.reversals}</TableHeaderCell>
         </TableRow>
       </TableHead>
       <TableBody>
         {rows.map((row) => (
           <TableRow key={row.key}>
-            <TableCell>{row.label}</TableCell>
-            <TableCell align="right">
+            <TableCell className={CELL}>{row.label}</TableCell>
+            <TableCell align="right" className={CELL}>
               {formatMoney({ amount: row.figures.revenue, currency: row.figures.currency })}
             </TableCell>
-            <TableCell align="right">{formatCount(row.figures.subscriptions, formatting)}</TableCell>
-            <TableCell align="right">{formatCount(row.figures.reversals, formatting)}</TableCell>
+            <TableCell align="right" className={CELL}>{formatCount(row.figures.subscriptions, formatting)}</TableCell>
+            <TableCell align="right" className={CELL}>{formatCount(row.figures.reversals, formatting)}</TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
   );
 }
+
+/** The kit's cells, tightened below `sm` so four columns fit a phone without a sideways scroll. */
+const CELL = 'px-3 py-2 sm:px-4 sm:py-3';
 
 const BAKU = 'Asia/Baku';
 

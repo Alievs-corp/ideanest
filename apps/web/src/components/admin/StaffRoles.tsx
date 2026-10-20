@@ -214,7 +214,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
   return (
     <div className="flex flex-col gap-10">
       <section aria-labelledby="my-standing-heading">
-        <h2 id="my-standing-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="my-standing-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.myHeading}
         </h2>
 
@@ -269,7 +269,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
       </section>
 
       <section aria-labelledby="roster-heading">
-        <h2 id="roster-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="roster-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.rosterHeading}
         </h2>
 
@@ -400,7 +400,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
 
       {roster.status !== 'forbidden' && (
         <section aria-labelledby="grant-heading">
-          <h2 id="grant-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+          <h2 id="grant-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
             {copy.grantHeading}
           </h2>
           <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.grantIntro}</p>

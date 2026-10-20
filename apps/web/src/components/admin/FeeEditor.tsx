@@ -256,7 +256,7 @@ export function FeeEditor({ copy }: FeeEditorProps) {
       </InlineAlert>
 
       <section aria-labelledby="in-force-heading">
-        <h2 id="in-force-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="in-force-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.inForceHeading}
         </h2>
 
@@ -310,7 +310,7 @@ export function FeeEditor({ copy }: FeeEditorProps) {
       </section>
 
       <section aria-labelledby="replace-heading">
-        <h2 id="replace-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="replace-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.replaceHeading}
         </h2>
 
@@ -452,13 +452,13 @@ export function FeeEditor({ copy }: FeeEditorProps) {
             <p className="max-w-[62ch] text-sm text-white/80">
               {fillPlaceholders(copy.confirm.intro, { scope: scopeName(scope, ref || null) })}
             </p>
-            <table className="w-full max-w-[560px] text-left text-sm">
+            <table className="w-full max-w-[560px] text-left text-xs sm:text-sm">
               <thead>
                 <tr className="text-xs text-white/48">
-                  <th scope="col" className="py-1 pr-4 font-normal">
+                  <th scope="col" className="py-1 pr-3 sm:pr-4 font-normal">
                     <span className="sr-only">{copy.scopeLabel}</span>
                   </th>
-                  <th scope="col" className="py-1 pr-4 font-normal">
+                  <th scope="col" className="py-1 pr-3 sm:pr-4 font-normal">
                     {copy.confirm.was}
                   </th>
                   <th scope="col" className="py-1 font-normal">
@@ -515,7 +515,7 @@ export function FeeEditor({ copy }: FeeEditorProps) {
 
       {history.status === 'ready' && closed.length > 0 && (
         <section aria-labelledby="past-terms-heading">
-          <h2 id="past-terms-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+          <h2 id="past-terms-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
             {copy.pastHeading}
           </h2>
           <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.pastIntro}</p>
@@ -553,10 +553,10 @@ function ChangeRow({
 }) {
   return (
     <tr className="border-t border-white/8">
-      <th scope="row" className="py-1.5 pr-4 font-normal text-white/64">
+      <th scope="row" className="py-1.5 pr-3 sm:pr-4 font-normal text-white/64">
         {label}
       </th>
-      <td className="py-1.5 pr-4 font-mono tabular-nums text-white/64">{was}</td>
+      <td className="py-1.5 pr-3 sm:pr-4 font-mono tabular-nums text-white/64">{was}</td>
       <td className={same ? 'py-1.5 font-mono tabular-nums text-white/48' : 'py-1.5 font-mono font-medium tabular-nums text-white'}>
         {becomes}
         {same && <span className="ml-2 font-sans text-xs">({unchanged})</span>}

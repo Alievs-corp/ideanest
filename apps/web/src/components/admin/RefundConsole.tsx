@@ -200,7 +200,7 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
       {canIssue && <IssueRefund copy={copy} onIssued={refunds.reload} />}
 
       <section aria-labelledby="refund-log-heading">
-        <h2 id="refund-log-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="refund-log-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.logHeading}
         </h2>
 
@@ -487,7 +487,7 @@ function IssueRefund({ copy, onIssued }: { readonly copy: RefundConsoleCopy; rea
 
   return (
     <section aria-labelledby="issue-refund-heading">
-      <h2 id="issue-refund-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="issue-refund-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.issueHeading}
       </h2>
       <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.issueIntro}</p>

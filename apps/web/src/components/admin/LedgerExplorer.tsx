@@ -229,7 +229,7 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
 
   return (
     <section aria-labelledby="ledger-heading">
-      <h2 id="ledger-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="ledger-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
           <ConsoleCount loaded={postings.length} more={cursor !== null} copy={copy.count} />
