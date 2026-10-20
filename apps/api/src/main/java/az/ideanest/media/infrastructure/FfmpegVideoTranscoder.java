@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -205,8 +206,20 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
                 "-threads", threads,
                 // A probe and an encoder can disagree about a broken container's length by
                 // more than the tolerance. This is the bound that does not depend on either.
-                "-t", "%.3f".formatted(limitMs / 1000.0),
+                "-t", seconds(limitMs / 1000.0),
                 derived.toString());
+    }
+
+    /**
+     * Seconds as ffmpeg reads them: three decimals and a full stop.
+     *
+     * <p>{@code Locale.ROOT} because {@code "%.3f".formatted} uses the JVM's default locale, and in
+     * Azerbaijani, Turkish or Russian the decimal separator is a comma. ffmpeg read {@code -t 15,000}
+     * as an invalid argument and every campaign video upload failed on such a JVM. The backend
+     * tests run in {@code az_AZ} for this reason (see {@code build.gradle.kts}).
+     */
+    static String seconds(double value) {
+        return String.format(Locale.ROOT, "%.3f", value);
     }
 
     /** One frame of the output, as PNG so the only lossy step is the poster's own encode. */
@@ -215,7 +228,7 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
         CommandResult grabbed = run(
                 List.of(
                         "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
-                        "-ss", "%.3f".formatted(at),
+                        "-ss", seconds(at),
                         "-i", video.toString(),
                         "-frames:v", "1",
                         poster.toString()),
