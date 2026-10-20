@@ -110,7 +110,7 @@ export function FlagConsole({ copy }: FlagConsoleProps) {
       </InlineAlert>
 
       <section aria-labelledby="flags-heading">
-        <h2 id="flags-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="flags-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.heading}
           {flags.data !== null && (
             <span className="ml-2 text-xs font-normal text-white/48">{list.length}</span>
@@ -520,7 +520,7 @@ function AddFlag({ copy, onCreated }: { readonly copy: FlagConsoleCopy; readonly
 
   return (
     <section aria-labelledby="new-flag-heading">
-      <h2 id="new-flag-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="new-flag-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.addHeading}
       </h2>
       <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.addIntro}</p>

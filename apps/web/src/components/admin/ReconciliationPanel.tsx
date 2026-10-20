@@ -152,7 +152,7 @@ export function ReconciliationPanel({ copy }: ReconciliationPanelProps) {
 
       {found.findings.length > 0 && (
         <section aria-labelledby="findings-heading">
-          <h2 id="findings-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+          <h2 id="findings-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
             {copy.findingsHeading}
           </h2>
           {groupByKind(found.findings).map(([kind, findings]) => (

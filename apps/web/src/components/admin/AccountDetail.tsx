@@ -180,7 +180,7 @@ export function AccountDetail({ userId, copy }: AccountDetailProps) {
 
       {status === 'loading' && (
         <SkeletonGroup label={copy.loadingAccount} className="mt-6">
-          <div className="rounded-lg border border-white/8 bg-surface-2 p-5">
+          <div className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
             <Skeleton height="1.25rem" width="35%" />
             <Skeleton height="0.875rem" width="50%" className="mt-3" />
             <Skeleton height="0.875rem" width="25%" className="mt-2" />
@@ -268,12 +268,12 @@ function Standing({
 
   return (
     <section aria-labelledby="account-standing-heading" className="mt-6">
-      <div className="rounded-lg border border-white/8 bg-surface-2 p-5">
+      <div className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id="account-standing-heading"
-              className="truncate text-lg font-medium tracking-[-0.02em] text-white"
+              className="truncate text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
             >
               {account.name}
             </h2>
@@ -854,7 +854,7 @@ function BackedPledges({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   {pledge.project == null ? (
-                    <p className="text-[15px] font-medium text-white/64">{copy.campaignGone}</p>
+                    <p className="text-sm sm:text-[15px] font-medium text-white/64">{copy.campaignGone}</p>
                   ) : (
                     <Link
                       href={`/admin/campaigns/${encodeURIComponent(pledge.project.id)}`}
@@ -989,7 +989,7 @@ function HeldSubscriptions({
                 <li key={subscription.id} className="rounded-lg border border-white/8 bg-surface-1 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[15px] font-medium text-white">
+                      <p className="text-sm sm:text-[15px] font-medium text-white">
                         {subscription.planName ?? subscription.planCode ?? subscription.id}
                       </p>
                       <p className="mt-1 text-sm text-white/48">{windowOf(subscription, locale, copy)}</p>

@@ -44,6 +44,9 @@ export interface AdminShellCopy {
   /** The word beside the wordmark. The brand itself is never translated. */
   readonly console: string;
   readonly backToSite: string;
+  /** The burger that opens the rail below the breakpoint, and the control that closes it. */
+  readonly openMenu: string;
+  readonly closeMenu: string;
   readonly navLabel: string;
   /** Keyed by `ConsoleGroup.heading`. */
   readonly groups: Readonly<Record<string, string>>;
@@ -104,6 +107,8 @@ export function adminShellCopyFrom(t: AdminTranslator): AdminShellCopy {
   return {
     console: t('console'),
     backToSite: t('backToSite'),
+    openMenu: t('openMenu'),
+    closeMenu: t('closeMenu'),
     navLabel: t('navLabel'),
     groups: t.raw('groups') as Readonly<Record<string, string>>,
     links: t.raw('links') as Readonly<Record<string, string>>,

@@ -290,7 +290,7 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
     <section aria-labelledby="audit-trail-heading">
       <h2
         id="audit-trail-heading"
-        className="text-lg font-medium tracking-[-0.02em] text-white"
+        className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
       >
         {copy.heading}
         {status === 'ready' && (
@@ -526,7 +526,7 @@ function AuditRow({
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <p className="text-[15px] font-medium text-white">{actionLabel(entry.action, copy.action)}</p>
+          <p className="text-sm sm:text-[15px] font-medium text-white">{actionLabel(entry.action, copy.action)}</p>
           <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm text-white/64">
             {!aboutItsActor && (
               <>

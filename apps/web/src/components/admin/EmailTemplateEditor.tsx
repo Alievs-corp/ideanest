@@ -303,7 +303,7 @@ function LanguageEditor({
       </div>
 
       <section aria-labelledby="shipped-heading">
-        <h2 id="shipped-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="shipped-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.shippedHeading}
         </h2>
         <div className="mt-3 flex flex-col gap-3">
@@ -319,7 +319,7 @@ function LanguageEditor({
       </section>
 
       <section aria-labelledby="edit-heading">
-        <h2 id="edit-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="edit-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.yourHeading}
         </h2>
 
@@ -462,7 +462,7 @@ function LanguageEditor({
 
       {preview !== null && (
         <section aria-labelledby="preview-heading">
-          <h2 id="preview-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+          <h2 id="preview-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
             {copy.previewHeading}
           </h2>
           <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.previewIntro}</p>
@@ -480,7 +480,7 @@ function LanguageEditor({
       )}
 
       <section aria-labelledby="history-heading">
-        <h2 id="history-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="history-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.versionsHeading}
         </h2>
 

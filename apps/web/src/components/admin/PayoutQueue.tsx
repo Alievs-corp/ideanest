@@ -236,7 +236,7 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
   return (
     <div className="flex flex-col gap-10">
       <section aria-labelledby="calculate-heading">
-        <h2 id="calculate-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="calculate-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.calculateHeading}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.calculateIntro}</p>
@@ -274,7 +274,7 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
       </section>
 
       <section aria-labelledby="payout-queue-heading">
-        <h2 id="payout-queue-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="payout-queue-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.queueHeading}
           {queue.status === 'ready' && (
             <span className="ml-2 text-xs font-normal text-white/40">{queue.data?.payouts.length ?? 0}</span>
@@ -361,7 +361,7 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
       </section>
 
       <section aria-labelledby="payout-history-heading">
-        <h2 id="payout-history-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="payout-history-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.history.heading}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.history.intro}</p>

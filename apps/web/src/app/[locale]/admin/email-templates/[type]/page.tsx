@@ -66,7 +66,7 @@ export default async function EmailTemplatePage({
 
   return (
     <div className="max-w-[880px]">
-      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">{name}</h1>
+      <h1 className="text-xl font-semibold tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">{name}</h1>
       <p className="mt-2 max-w-[62ch] text-sm text-white/64">{t('pages.emailTemplatesType.intro')}</p>
 
       <div className="mt-8">

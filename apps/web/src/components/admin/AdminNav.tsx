@@ -68,6 +68,16 @@ import { useConsoleMembership } from './ConsoleMembership';
  * the half that makes it independent rather than merely scrollable — without it, reaching the
  * end of the rail hands the wheel to the page and scrolls the screen nobody was looking at.
  *
+ * <h2>Two layouts, one list — the rail and the drawer</h2>
+ *
+ * <p>Below the breakpoint this used to be a horizontal row of twenty-six links across six
+ * groups, scrolled sideways above every screen. On a phone that showed one group and the edge
+ * of the next, gave no sign of the other five, and pushed the screen itself half a viewport
+ * down. It is now `hidden` there, and `AdminNavDrawer` draws the same entries as a vertical
+ * list behind a menu button in the bar. `layout` is the only difference: the entries, the
+ * capability filter and `aria-current` are this component's in both places, so the rail and
+ * the drawer cannot disagree about what exists.
+ *
  * <h2>Motion: none</h2>
  *
  * docs/motion-system.md §5 gives an administrative surface the same budget as account
@@ -77,9 +87,14 @@ import { useConsoleMembership } from './ConsoleMembership';
 export interface AdminNavProps {
   /** The rail's words, resolved by the layout — see `lib/i18n/admin-copy.ts`. */
   readonly copy: AdminShellCopy;
+  /**
+   * `rail` beside the screen above the breakpoint and nothing below it; `drawer` inside
+   * `AdminNavDrawer`'s panel, at every width it is drawn at.
+   */
+  readonly layout?: 'rail' | 'drawer';
 }
 
-export function AdminNav({ copy }: AdminNavProps) {
+export function AdminNav({ copy, layout = 'rail' }: AdminNavProps) {
   const pathname = usePathname();
   const { membership } = useConsoleMembership();
 
@@ -93,15 +108,42 @@ export function AdminNav({ copy }: AdminNavProps) {
 
   if (groups.length === 0) return null;
 
+  if (layout === 'drawer') {
+    return (
+      <nav aria-label={copy.navLabel}>
+        <ul className="flex list-none flex-col gap-6">
+          {groups.map((group) => (
+            <li key={group.heading}>
+              <h2 className="px-3 text-[11px] font-medium tracking-[0.08em] text-white/40 uppercase">
+                {copy.groups[group.heading]}
+              </h2>
+              <ul className="mt-1.5 flex list-none flex-col gap-0.5">
+                {group.links.map((link) => (
+                  <li key={link}>
+                    <NavLink link={link} label={copy.links[link]} current={isCurrentConsoleLink(link, pathname)} />
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    );
+  }
+
   return (
     <nav
       aria-label={copy.navLabel}
       className={[
-        'lg:sticky lg:top-8',
         /*
-          The rail is its own scroll container above the breakpoint — see the docblock. The
-          offset is the `top-8` above it (2rem) plus 2rem, so the last entry does not sit
-          flush against the bottom edge of the viewport.
+          Nothing below the breakpoint: a phone reaches the same entries through the menu
+          button in the bar — see "Two layouts, one list" above.
+        */
+        'hidden lg:sticky lg:top-8 lg:block',
+        /*
+          The rail is its own scroll container — see the docblock. The offset is the `top-8`
+          above it (2rem) plus 2rem, so the last entry does not sit flush against the bottom
+          edge of the viewport.
         */
         'lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto lg:overscroll-contain',
         /*
@@ -114,51 +156,52 @@ export function AdminNav({ copy }: AdminNavProps) {
       ].join(' ')}
     >
       {/*
-        `-mx-1 px-1`, below the breakpoint only: the same room for the ring on the phone row
-        (#177). There the list itself is the scroll container, and without it the first
-        link's ring was cut off on the left and the last link's on the right. `pb-2` already
-        clears the bottom and the group headings sit above the top. Above the breakpoint the
-        list stops scrolling and the rail's own `lg:-mx-1 lg:px-1` takes over, so it resets.
-
-        `onFocus`: a link Tab lands on while it is half off the row's edge is scrolled fully
-        into view, which Chromium does not do by itself (#181, `revealFocusedItem` in
-        `@ideanest/ui`). Above the breakpoint the same call keeps the focused link inside the
-        rail's own vertical scroll.
+        `onFocus`: a link Tab lands on near the rail's bottom edge is scrolled fully into view
+        inside the rail's own vertical scroll (#181, `revealFocusedItem` in `@ideanest/ui`).
       */}
-      <ul
-        className="-mx-1 flex list-none gap-x-6 gap-y-8 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-1"
-        onFocus={revealFocusedItem}
-      >
+      <ul className="flex list-none flex-col gap-8 pb-1" onFocus={revealFocusedItem}>
         {groups.map((group) => (
-          <li key={group.heading} className="min-w-max lg:min-w-0">
+          <li key={group.heading}>
             <h2 className="px-3 text-xs font-medium tracking-[0.08em] text-white/40 uppercase">
               {copy.groups[group.heading]}
             </h2>
-            <ul className="mt-2 flex list-none gap-1 lg:flex-col">
-              {group.links.map((link) => {
-                const current = isCurrentConsoleLink(link, pathname);
-                return (
-                  <li key={link}>
-                    <Link
-                      href={link}
-                      aria-current={current ? 'page' : undefined}
-                      className={[
-                        'block rounded-lg border-l-2 px-3 py-2 text-[15px] transition-colors duration-150 ease-in-out',
-                        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
-                        current
-                          ? 'border-[var(--lime-500)] bg-surface-2 text-white'
-                          : 'border-transparent text-white/64 hover:bg-surface-2 hover:text-white',
-                      ].join(' ')}
-                    >
-                      {copy.links[link]}
-                    </Link>
-                  </li>
-                );
-              })}
+            <ul className="mt-2 flex list-none flex-col gap-1">
+              {group.links.map((link) => (
+                <li key={link}>
+                  <NavLink link={link} label={copy.links[link]} current={isCurrentConsoleLink(link, pathname)} />
+                </li>
+              ))}
             </ul>
           </li>
         ))}
       </ul>
     </nav>
+  );
+}
+
+/** One entry. The current one is white on `--surface-2` with a lime rule down its leading edge. */
+function NavLink({
+  link,
+  label,
+  current,
+}: {
+  readonly link: string;
+  readonly label: string | undefined;
+  readonly current: boolean;
+}) {
+  return (
+    <Link
+      href={link}
+      aria-current={current ? 'page' : undefined}
+      className={[
+        'block rounded-lg border-l-2 px-3 py-2 text-sm transition-colors duration-150 ease-in-out lg:text-[15px]',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+        current
+          ? 'border-[var(--lime-500)] bg-surface-2 text-white'
+          : 'border-transparent text-white/64 hover:bg-surface-2 hover:text-white',
+      ].join(' ')}
+    >
+      {label}
+    </Link>
   );
 }

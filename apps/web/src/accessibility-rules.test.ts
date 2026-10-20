@@ -111,9 +111,14 @@ describe('the static half of the accessibility rules', () => {
     ).toEqual([]);
   });
 
-  /** Pinned, so a fourth backdrop is something somebody looks at rather than a count that grew. */
-  it('has exactly the three modal backdrops as its exception', () => {
+  /**
+   * Pinned, so a fifth backdrop is something somebody looks at rather than a count that grew.
+   * The fourth is the console's drawer below the breakpoint, which closes on Escape and on its
+   * own close button like the site's.
+   */
+  it('has exactly the four modal backdrops as its exception', () => {
     expect(clickHandlers.map((handler) => handler.file).sort()).toEqual([
+      join('components', 'admin', 'AdminNavDrawer.tsx'),
       join('components', 'moderation', 'ReportControl.tsx'),
       join('components', 'shell', 'MobileNavDrawer.tsx'),
       join('components', 'shell', 'WhatsAppLauncher.tsx'),

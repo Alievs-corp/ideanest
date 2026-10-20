@@ -346,17 +346,17 @@ export function ConsoleColumnChart({
           tabIndex={0}
           className="mt-3 max-h-80 overflow-auto rounded-[var(--radius-md)] border border-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
         >
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full border-collapse text-xs sm:text-sm">
             <caption className="sr-only">{summary}</caption>
             <thead>
               <tr className="border-b border-white/8 text-left text-white/64">
-                <th scope="col" className="px-4 py-3 font-medium">
+                <th scope="col" className="px-3 py-2 sm:px-4 sm:py-3 font-medium">
                   {copy.periodColumn}
                 </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
+                <th scope="col" className="px-3 py-2 sm:px-4 sm:py-3 text-right font-medium">
                   {copy.countColumn}
                 </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
+                <th scope="col" className="px-3 py-2 sm:px-4 sm:py-3 text-right font-medium">
                   {copy.amountColumn}
                 </th>
               </tr>
@@ -364,11 +364,11 @@ export function ConsoleColumnChart({
             <tbody>
               {buckets.map((bucket) => (
                 <tr key={bucket.from} className="border-b border-white/6 last:border-0">
-                  <th scope="row" className="px-4 py-2.5 text-left font-normal text-white">
+                  <th scope="row" className="px-3 py-2 sm:px-4 sm:py-2.5 text-left font-normal text-white">
                     {period(bucket)}
                   </th>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-white/64">{bucket.count}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-white">{money(bucket.amount)}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-2.5 text-right tabular-nums text-white/64">{bucket.count}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-2.5 text-right tabular-nums text-white">{money(bucket.amount)}</td>
                 </tr>
               ))}
             </tbody>

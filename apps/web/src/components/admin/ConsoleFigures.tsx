@@ -9,9 +9,11 @@ import type { ReactNode } from 'react';
  * one ended. The front page's tiles were already the right size, so both screens use them.
  *
  * <p><strong>A description list</strong>, because that is what a set of labelled figures is, and a
- * screen reader announces each value with its term. <strong>One column below 420px</strong>: two
- * manat amounts side by side at 375px left each about 150px, which a seven-digit amount does not
- * fit, and `break-words` is the last resort for an amount that still does not.
+ * screen reader announces each value with its term. <strong>Two columns on a phone</strong>, at
+ * `text-lg`: one column put eight figures in a stack taller than two screens, which is a
+ * dashboard nobody takes in at a glance. A seven-digit amount at 375px breaks at the space before
+ * its currency rather than inside the number, and `break-words` is the last resort for an
+ * amount that still does not fit.
  *
  * <p>No kit imports, so the front page can use it without the barrel (see `ConsoleDashboard`).
  * MOTION: none.
@@ -29,7 +31,7 @@ export function FigureGrid({
   return (
     <dl
       aria-label={label}
-      className={`grid grid-cols-1 gap-x-4 gap-y-5 min-[420px]:grid-cols-2 sm:grid-cols-3 ${className}`}
+      className={`grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3 sm:gap-y-5 ${className}`}
     >
       {children}
     </dl>
@@ -54,7 +56,7 @@ export function FigureTile({
   return (
     <div className="min-w-0">
       <dt className="text-xs text-white/48">{term}</dt>
-      <dd className="mt-1 break-words text-xl font-semibold tabular-nums text-white sm:text-2xl">
+      <dd className="mt-1 break-words text-lg font-semibold tabular-nums text-white sm:text-2xl">
         {children}
         {note !== undefined && note !== null && note !== false && (
           <span className="mt-1 block text-xs font-normal text-white/48">{note}</span>
@@ -66,5 +68,5 @@ export function FigureTile({
 
 /** What a tile says in place of a value it does not have yet. */
 export function NoFigure({ children }: { readonly children: ReactNode }) {
-  return <span className="text-base font-normal text-white/48">{children}</span>;
+  return <span className="text-sm font-normal text-white/48 sm:text-base">{children}</span>;
 }

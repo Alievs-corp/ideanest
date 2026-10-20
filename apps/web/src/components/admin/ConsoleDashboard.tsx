@@ -127,7 +127,7 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">{copy.title}</h1>
+      <h1 className="text-xl font-semibold tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">{copy.title}</h1>
       <p className="mt-2 max-w-[68ch] text-sm text-white/64">{copy.standfirst}</p>
 
       <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
@@ -197,7 +197,7 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
       {/* Only once the membership is known: before it is, a partner — who is about to be sent to
           their statistics — would see "nothing here for your roles" for a moment first. */}
       {page !== null && page.sections.length === 0 && capabilities !== null && !isPartner && (
-        <div className="mt-8 rounded-lg border border-white/8 bg-surface-1 p-5">
+        <div className="mt-8 rounded-lg border border-white/8 bg-surface-1 p-4 sm:p-5">
           <p className="text-sm font-medium text-white">{copy.emptyTitle}</p>
           <p className="mt-1 max-w-[62ch] text-sm text-white/64">{copy.emptyBody}</p>
         </div>
@@ -251,7 +251,7 @@ function SectionCard({
         section.key === 'figures' ? 'lg:col-span-2' : ''
       }`}
     >
-      <h2 id={headingId} className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id={headingId} className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.section[section.key] ?? section.key}
       </h2>
 

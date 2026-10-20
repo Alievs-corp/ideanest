@@ -471,7 +471,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
       {/* ---- the figures --------------------------------------------------- */}
 
       <section aria-labelledby={`${ids}-totals`} aria-busy={report.status === 'loading'}>
-        <h2 id={`${ids}-totals`} className="text-lg font-semibold text-white">
+        <h2 id={`${ids}-totals`} className="text-base font-semibold text-white sm:text-lg">
           {copy.totalsHeading}
         </h2>
         {data !== null && lastDay !== null && (
@@ -548,7 +548,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
       {data !== null && data.plans.length > 0 && (
         <section aria-labelledby={`${ids}-plans`}>
-          <h2 id={`${ids}-plans`} className="text-lg font-semibold text-white">
+          <h2 id={`${ids}-plans`} className="text-base font-semibold text-white sm:text-lg">
             {copy.byPlanHeading}
           </h2>
           <ul className="mt-4 flex list-none flex-col gap-2">
@@ -558,7 +558,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
                 className="flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 px-4 py-3"
               >
                 <span className="flex min-w-0 flex-wrap items-baseline gap-2">
-                  <span className="text-[15px] font-medium text-white">{plan.planName}</span>
+                  <span className="text-sm sm:text-[15px] font-medium text-white">{plan.planName}</span>
                   <span className="font-mono text-xs text-white/64">{plan.planCode}</span>
                 </span>
                 <span className="flex items-baseline gap-3">
@@ -573,7 +573,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
       {data !== null && data.methods.length > 0 && (
         <section aria-labelledby={`${ids}-methods`}>
-          <h2 id={`${ids}-methods`} className="text-lg font-semibold text-white">
+          <h2 id={`${ids}-methods`} className="text-base font-semibold text-white sm:text-lg">
             {copy.byMethodHeading}
           </h2>
           <ul className="mt-4 flex list-none flex-col gap-2">
@@ -582,7 +582,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
                 key={`${row.method}-${row.currency}`}
                 className="flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 px-4 py-3"
               >
-                <span className="text-[15px] text-white">{copy.method[row.method]}</span>
+                <span className="text-sm sm:text-[15px] text-white">{copy.method[row.method]}</span>
                 <span className="flex items-baseline gap-3">
                   <span className="text-xs text-white/64">{pluralise(locale, copy.entries, row.entries)}</span>
                   <span className="font-mono tabular-nums text-white">{moneyOf(row.net, row.currency)}</span>
@@ -597,7 +597,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
       <section aria-labelledby={`${ids}-payments`} aria-busy={firstPage.status === 'loading'}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id={`${ids}-payments`} className="flex items-center gap-3 text-lg font-semibold text-white">
+          <h2 id={`${ids}-payments`} className="flex items-center gap-3 text-base font-semibold text-white sm:text-lg">
             {copy.listHeading}
             {listReady && <ConsoleCount loaded={rows.length} more={cursor !== null} copy={copy.count} />}
           </h2>
@@ -693,7 +693,7 @@ function PaymentRow({
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-baseline gap-2 text-[15px] font-medium text-white">
+          <p className="flex flex-wrap items-baseline gap-2 text-sm sm:text-[15px] font-medium text-white">
             <span className="font-mono tabular-nums">{moneyOf(payment.amount, payment.currency)}</span>
             <span>{payment.planName}</span>
             {payment.reversal && (

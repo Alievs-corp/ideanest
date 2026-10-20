@@ -251,7 +251,7 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
 
   return (
     <section aria-labelledby="payment-log-heading">
-      <h2 id="payment-log-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="payment-log-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
           <ConsoleCount loaded={rows.length} more={cursor !== null} copy={copy.count} />
@@ -458,7 +458,7 @@ function TransactionRow({
   return (
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <p className="min-w-0 text-[15px] font-medium text-white">
+        <p className="min-w-0 text-sm sm:text-[15px] font-medium text-white">
           {formatMoney(transaction.amount)}{' '}
           <span className="font-normal text-white/48">{copy.type[transaction.type]}</span>
         </p>

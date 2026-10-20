@@ -185,7 +185,7 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
   if (status === 'loading') {
     return (
       <SkeletonGroup label={copy.loadingList}>
-        <div className="rounded-xl border border-white/8 bg-surface-1 p-5">
+        <div className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
           <Skeleton height="1.25rem" width="40%" />
           <Skeleton height="0.875rem" width="60%" className="mt-3" />
         </div>
@@ -285,13 +285,13 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
 
       <section
         aria-labelledby="collection-heading"
-        className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-5"
+        className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id="collection-heading"
-              className="text-lg font-medium tracking-[-0.02em] text-white"
+              className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
             >
               {collectionTitle(collection)}
             </h2>
@@ -340,7 +340,7 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
       )}
 
       <section aria-labelledby="members-heading" className="mt-8">
-        <h2 id="members-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="members-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
           {copy.campaigns}
           <span className="ml-2 text-xs font-normal text-white/40">{members.length}</span>
         </h2>
@@ -374,7 +374,7 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 p-4"
               >
                 <div className="min-w-0">
-                  <p className="text-[15px] text-white">{member.title}</p>
+                  <p className="text-sm sm:text-[15px] text-white">{member.title}</p>
                   <p className="mt-1 font-mono text-xs text-white/40">{member.slug}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -551,7 +551,7 @@ function CollectionDetails({
 
   return (
     <section aria-labelledby="details-heading" className="mt-10">
-      <h2 id="details-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="details-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.detailsHeading}
       </h2>
       <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.detailsIntro}</p>

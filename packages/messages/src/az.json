@@ -698,6 +698,8 @@
   "admin": {
     "console": "Konsol",
     "backToSite": "Sayta qayıt",
+    "openMenu": "Konsol menyusunu aç",
+    "closeMenu": "Konsol menyusunu bağla",
     "navLabel": "İdarəetmə konsolu",
     "groups": {
       "content": "Məzmun",

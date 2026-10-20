@@ -120,7 +120,7 @@ export function PlacementEditor({ copy }: PlacementEditorProps) {
 
   return (
     <section aria-labelledby="placement-heading">
-      <h2 id="placement-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 id="placement-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
           <span className="ml-2 text-xs font-normal text-white/40">{ordered.length}</span>
@@ -173,7 +173,7 @@ export function PlacementEditor({ copy }: PlacementEditorProps) {
               <div className="min-w-0">
                 <Link
                   href={`/admin/curation/${encodeURIComponent(collection.slug)}`}
-                  className="rounded-lg text-[15px] font-medium text-white underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="rounded-lg text-sm sm:text-[15px] font-medium text-white underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
                 >
                   {collectionTitle(collection)}
                 </Link>

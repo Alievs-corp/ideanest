@@ -142,7 +142,7 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
       {data !== null && (
         <>
           <section aria-labelledby="totals-heading">
-            <h2 id="totals-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 id="totals-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
               {fillPlaceholders(copy.range, {
                 from: calendarDate(data.from, locale),
                 to: calendarDate(data.to, locale),
@@ -171,7 +171,7 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
           {/* A count of this moment, not of the window, so it is not drawn among the window's
               figures: the window buttons do not move it. */}
           <section aria-labelledby="now-heading">
-            <h2 id="now-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 id="now-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
               {copy.nowHeading}
             </h2>
             <FigureGrid className="mt-4 lg:grid-cols-4">
@@ -180,7 +180,7 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
           </section>
 
           <section aria-labelledby="outcomes-heading">
-            <h2 id="outcomes-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 id="outcomes-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
               {copy.outcomesHeading}
             </h2>
 
@@ -196,7 +196,7 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
           </section>
 
           <section aria-labelledby="daily-heading">
-            <h2 id="daily-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 id="daily-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
               {copy.dailyHeading}
             </h2>
 
@@ -217,7 +217,7 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
 
           {data.notBuilt.length > 0 && (
             <section aria-labelledby="not-built-heading">
-              <h2 id="not-built-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+              <h2 id="not-built-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
                 {copy.notBuiltHeading}
               </h2>
               <ul className="mt-2 flex list-none flex-col gap-2">

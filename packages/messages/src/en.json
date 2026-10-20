@@ -698,6 +698,8 @@
   "admin": {
     "console": "Console",
     "backToSite": "Back to the site",
+    "openMenu": "Open the console menu",
+    "closeMenu": "Close the console menu",
     "navLabel": "Administration console",
     "groups": {
       "content": "Content",

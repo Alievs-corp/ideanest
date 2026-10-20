@@ -69,7 +69,7 @@ export function ReportedContentPanel({
     <section aria-labelledby="report-evidence-heading" className="mt-8">
       <h2
         id="report-evidence-heading"
-        className="text-lg font-medium tracking-[-0.02em] text-white"
+        className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
       >
         {copy.heading}
       </h2>
@@ -103,7 +103,7 @@ export function ReportedContentPanel({
       )}
 
       {content !== null && content.state === 'ADDRESSED_DIRECTLY' && (
-        <div className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-5">
+        <div className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
           <p className="max-w-[62ch] text-sm text-white/64">{copy.addressedBody}</p>
           {content.project != null && (
             <p className="mt-3">
@@ -114,7 +114,7 @@ export function ReportedContentPanel({
       )}
 
       {content !== null && (content.state === 'PRESENT' || content.state === 'REMOVED') && (
-        <div className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-5">
+        <div className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
           {content.state === 'REMOVED' && (
             /*
               Amber and a word, never a colour alone — docs/ui-kit.md §9.2. This is the one
@@ -133,7 +133,7 @@ export function ReportedContentPanel({
                 </Tag>
               )}
               {content.title != null && (
-                <span className="text-[15px] font-medium text-white">{content.title}</span>
+                <span className="text-sm sm:text-[15px] font-medium text-white">{content.title}</span>
               )}
             </p>
           )}
