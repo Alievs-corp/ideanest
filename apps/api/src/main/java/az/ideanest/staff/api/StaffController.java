@@ -1,10 +1,15 @@
 package az.ideanest.staff.api;
 
+import az.ideanest.shared.access.StaffCapability;
+import az.ideanest.staff.application.RoleCapabilities;
 import az.ideanest.staff.application.StaffAdministrationService;
 import az.ideanest.staff.application.StaffDirectory;
 import az.ideanest.staff.domain.StaffRole;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -70,10 +75,15 @@ public class StaffController {
 
     private final StaffDirectory directory;
     private final StaffAdministrationService administration;
+    private final RoleCapabilities roleCapabilities;
 
-    public StaffController(StaffDirectory directory, StaffAdministrationService administration) {
+    public StaffController(
+            StaffDirectory directory,
+            StaffAdministrationService administration,
+            RoleCapabilities roleCapabilities) {
         this.directory = directory;
         this.administration = administration;
+        this.roleCapabilities = roleCapabilities;
     }
 
     /** What the caller may do. See the class comment on why this one refuses nobody. */
@@ -143,7 +153,38 @@ public class StaffController {
      *
      * @param note bounded to V48's {@code staff_role_grants_note_length}
      */
+    /** What every adjustable role confers, for the console's editor. Needs {@code ADMINISTER_STAFF}. */
+    @GetMapping("/roles")
+    public ResponseEntity<StaffResponses.RoleCapabilityMatrix> roles(@AuthenticationPrincipal Jwt accessToken) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(StaffResponses.RoleCapabilityMatrix.of(roleCapabilities.matrix(callerOf(accessToken))));
+    }
+
+    /**
+     * Makes a role confer exactly the capabilities sent. {@code PUT}, because what a role confers
+     * is a state: sending the same set twice leaves the same role, and sending its defaults puts
+     * it back to them.
+     */
+    @PutMapping("/roles/{role}/capabilities")
+    public ResponseEntity<StaffResponses.RoleCapabilitySet> changeRole(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable StaffRole role,
+            @Valid @RequestBody RoleCapabilitiesRequest request) {
+
+        Set<StaffCapability> wanted = EnumSet.noneOf(StaffCapability.class);
+        wanted.addAll(request.capabilities());
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(StaffResponses.RoleCapabilitySet.of(
+                        roleCapabilities.change(callerOf(accessToken), role, wanted)));
+    }
+
     public record GrantRequest(@Size(max = 2000) String note) {
+    }
+
+    public record RoleCapabilitiesRequest(@NotNull @Size(max = 64) Set<@NotNull StaffCapability> capabilities) {
     }
 
     /**

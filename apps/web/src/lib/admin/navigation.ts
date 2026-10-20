@@ -644,3 +644,17 @@ export function builtModuleCount(): number {
 export function screensOf(module: ConsoleModule): readonly string[] {
   return module.href === null ? [] : [module.href, ...(module.otherScreens ?? [])];
 }
+
+/**
+ * The console pages a capability opens, in rail order — for the role editor on `/admin/staff`,
+ * which shows a capability as the pages it reaches rather than as an identifier.
+ *
+ * <p>Read off {@link CONSOLE_LINK_CAPABILITIES}, so the editor and the rail cannot disagree about
+ * which capability opens what. Empty for a capability that works inside other pages — opening an
+ * identity document, reading bank details — rather than opening one of its own.
+ */
+export function pagesOpenedBy(capability: StaffCapability): readonly string[] {
+  return CONSOLE_GROUPS.flatMap((group) => group.links).filter((link) =>
+    (CONSOLE_LINK_CAPABILITIES[link] ?? []).includes(capability),
+  );
+}

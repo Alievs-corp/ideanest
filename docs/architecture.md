@@ -188,6 +188,19 @@ So the role is deliberately narrow in both directions: it holds no
 roles, which shows on the staff screen. Widening moderation instead would have hidden
 it. Roles are additive and nothing here takes a capability away.
 
+**The table above is each role's default, and a super admin can change four of them**
+(V114). On `/admin/staff` a super admin picks Moderator, Curator, Finance or Compliance
+and switches capabilities on or off, each shown with the console pages it opens.
+`StaffRole` keeps the defaults in code and `staff_role_capability_overrides` stores only
+what was added or removed, so a capability a later release gives a role still reaches
+it; "restore the default" deletes the role's rows. The service reads the adjustments on
+every request, so a capability taken away is refused on the next call. Every change is
+`staff.role_capabilities_changed` in the trail, with the set before and after. Two limits
+are the server's, not the screen's: `SUPER_ADMIN` and `PARTNER` cannot be adjusted (the
+first holds everything, so nobody can lock the administrators out; the second is shaped
+per account by its sections), and no role can be given `ADMINISTER_STAFF`, which would let
+it grant itself `SUPER_ADMIN`, or `VIEW_PARTNER_STATISTICS`.
+
 **Verifying a payout destination is Compliance's and not Finance's.** Finance already
 holds "initiate a payout"; the same role deciding both *where* money goes and *that
 the destination is correct* is one person holding both halves, which is the

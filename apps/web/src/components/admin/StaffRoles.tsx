@@ -8,6 +8,7 @@ import {
   ROLE_CAPABILITIES,
   grantRole,
   readMembership,
+  readRoleMatrix,
   readRoster,
   revokeRole,
   type StaffCapability,
@@ -21,6 +22,7 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { formatDate } from '../../lib/time';
 import type { StaffRolesCopy } from '../../lib/i18n/admin/people-copy';
 import { AccountPicker } from './AccountPicker';
+import { RoleCapabilityEditor } from './RoleCapabilityEditor';
 import { ConsoleRefusal } from './ConsoleRefusal';
 import { EntityName } from './ConsoleIdentity';
 import { useConsoleResource } from './useConsoleResource';
@@ -90,6 +92,12 @@ function writeMessageFor(cause: unknown, copy: StaffRolesCopy): string {
  * identifier stays beside it, small, because it is what somebody quotes when asking for a role
  * and what the service names back in a refusal.
  *
+ * <h2>A super admin gets the role editor there instead — V114</h2>
+ *
+ * <p>Somebody who holds `ADMINISTER_STAFF` already holds every capability, so a list of them
+ * told a super admin nothing. In its place is `RoleCapabilityEditor`: choose a role and switch
+ * on or off what it confers. Everybody else keeps the read-only list of their own.
+ *
  * <h2>Bootstrapped administrators are called out</h2>
  *
  * An account that is staff through `MODERATOR_EMAILS` rather than through a grant cannot be
@@ -129,6 +137,19 @@ export function StaffRoles({ copy }: StaffRolesProps) {
     copy.subject,
     copy.refusals,
     [],
+  );
+
+  /*
+   * The role editor's read, made only for a reader who may use it: everybody else would get a
+   * 403 for a panel they are not shown. `null` is "not asked", and the grant form then falls back
+   * to the defaults in `ROLE_CAPABILITIES`.
+   */
+  const administers = me.data?.capabilities.includes('ADMINISTER_STAFF') ?? false;
+  const matrix = useConsoleResource(
+    (signal) => (administers ? readRoleMatrix(signal) : Promise.resolve(null)),
+    copy.editor.subject,
+    copy.refusals,
+    [administers],
   );
 
   const [account, setAccount] = useState<AdminUser | null>(null);
@@ -215,8 +236,9 @@ export function StaffRoles({ copy }: StaffRolesProps) {
     <div className="flex flex-col gap-10">
       <section aria-labelledby="my-standing-heading">
         <h2 id="my-standing-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
-          {copy.myHeading}
+          {administers ? copy.editor.heading : copy.myHeading}
         </h2>
+        {administers && <p className="mt-2 max-w-[68ch] text-sm text-white/64">{copy.editor.intro}</p>}
 
         {me.status === 'loading' && (
           <SkeletonGroup label={copy.loadingMe} className="mt-4">
@@ -263,9 +285,13 @@ export function StaffRoles({ copy }: StaffRolesProps) {
               </InlineAlert>
             )}
 
-            <CapabilityList capabilities={me.data.capabilities} copy={copy} className="mt-4" />
+            {!administers && (
+              <CapabilityList capabilities={me.data.capabilities} copy={copy} className="mt-4" />
+            )}
           </div>
         )}
+
+        {administers && <RoleCapabilityEditor matrix={matrix} copy={copy} />}
       </section>
 
       <section aria-labelledby="roster-heading">
@@ -460,7 +486,15 @@ export function StaffRoles({ copy }: StaffRolesProps) {
             <p className="text-sm text-white/64">
               {fillPlaceholders(copy.confers, { role: copy.role[role] })}
             </p>
-            <CapabilityList capabilities={ROLE_CAPABILITIES[role]} copy={copy} className="mt-3" />
+            {/* What the role confers now, as a super admin last left it, where it is known. */}
+            <CapabilityList
+              capabilities={
+                matrix.data?.roles.find((set) => set.role === role)?.capabilities ??
+                ROLE_CAPABILITIES[role]
+              }
+              copy={copy}
+              className="mt-3"
+            />
           </div>
 
           {writeError && (

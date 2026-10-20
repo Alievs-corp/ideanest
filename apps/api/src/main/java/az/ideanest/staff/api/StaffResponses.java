@@ -1,6 +1,7 @@
 package az.ideanest.staff.api;
 
 import az.ideanest.shared.access.StaffCapability;
+import az.ideanest.staff.application.RoleCapabilities;
 import az.ideanest.staff.application.StaffMember;
 import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.staff.domain.StaffRoleGrant;
@@ -89,6 +90,33 @@ public final class StaffResponses {
                     .sorted(Comparator.comparing(StaffRoleGrant::grantedAt))
                     .map(Grant::of)
                     .toList());
+        }
+    }
+
+    /**
+     * What one adjustable role confers now, what it would by default, and what may be changed on
+     * it at all — the last so the console draws its checkboxes from the server's rule rather than
+     * from a copy of it.
+     */
+    public record RoleCapabilitySet(
+            StaffRole role,
+            List<StaffCapability> capabilities,
+            List<StaffCapability> defaults,
+            List<StaffCapability> adjustable) {
+
+        public static RoleCapabilitySet of(RoleCapabilities.RoleSet set) {
+            return new RoleCapabilitySet(
+                    set.role(),
+                    set.capabilities().stream().sorted().toList(),
+                    set.defaults().stream().sorted().toList(),
+                    StaffRole.adjustableCapabilities().stream().sorted().toList());
+        }
+    }
+
+    public record RoleCapabilityMatrix(List<RoleCapabilitySet> roles) {
+
+        public static RoleCapabilityMatrix of(List<RoleCapabilities.RoleSet> sets) {
+            return new RoleCapabilityMatrix(sets.stream().map(RoleCapabilitySet::of).toList());
         }
     }
 }

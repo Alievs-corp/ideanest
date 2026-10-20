@@ -1162,7 +1162,8 @@
           "taxonomy": "Taksonomi",
           "legal_document": "Hukuki belgeler",
           "subscription_charge": "Plan ödemeleri",
-          "user": "Kullanıcı hesapları"
+          "user": "Kullanıcı hesapları",
+          "staff_role": "Personel rolleri"
         },
         "action": {
           "account": {
@@ -1263,7 +1264,8 @@
           },
           "staff": {
             "role_granted": "Personel rolü verildi",
-            "role_revoked": "Personel rolü geri alındı"
+            "role_revoked": "Personel rolü geri alındı",
+            "role_capabilities_changed": "Personel rolü yetkileri değiştirildi"
           },
           "subscription": {
             "activated": "Abonelik başlatıldı",
@@ -1350,7 +1352,8 @@
           "taxonomy": "Taksonomi",
           "maintenance_window": "Bakım penceresi",
           "user": "Kullanıcı hesabı",
-          "collection": "Koleksiyon"
+          "collection": "Koleksiyon",
+          "staff_role": "Personel rolü"
         }
       },
       "health": {
@@ -2219,6 +2222,18 @@
         "subject": "ekip listesini",
         "meSubject": "kendi durumunuzu",
         "myHeading": "Ne yapabilirsiniz",
+        "editorHeading": "Her rol neler yapabilir",
+        "editorIntro": "Bir rol seçin ve açtığı sayfaları açın ya da kapatın. Değişiklik, bu role sahip herkes için bir sonraki istekte geçerli olur. Süper yönetici her zaman tüm yetkilere sahiptir; ortağın bölümleri ise ortak listesinde ayarlanır.",
+        "editorSubject": "rollerin yetkileri",
+        "editorLoading": "Roller yükleniyor",
+        "editorPages": "Açar: {pages}",
+        "editorNoPages": "Başka sayfaların içinde çalışır, kendi sayfası yok",
+        "editorChanged": "Varsayılandan değiştirildi",
+        "editorUnsaved": "Kaydedilmemiş değişiklikler var",
+        "editorSave": "Kaydet",
+        "editorSaving": "Kaydediliyor",
+        "editorReset": "Varsayılana döndür",
+        "editorSaved": "{role} kaydedildi. Bu role sahip herkes yeni yetkileri bir sonraki istekte alır.",
         "loadingMe": "Durumunuz okunuyor",
         "notStaffTitle": "Burada çalışmıyorsunuz",
         "notStaffBody": "Hesabınız hiçbir platform rolü taşımıyor, bu yüzden konsolun size gösterecek bir şeyi yok. Bu bir hata değil — servis bunun arkasındaki her ekranı reddeder ve bu sayfa yalnızca bunu dürüstçe söylüyor.",
@@ -2296,7 +2311,9 @@
         "withdrawConfirm": "Rolü geri al",
         "errors": {
           "ACCOUNT_IS_PARTNER": "Bu hesap bir ortak ve başka bir ekip rolü taşıyamaz. Önce Ortaklar sayfasında ortaklığı bitirin.",
-          "PARTNER_ROLE_MANAGED_ELSEWHERE": "Ortak rolü payıyla birlikte yalnızca Ortaklar sayfasında verilir ve geri alınır."
+          "PARTNER_ROLE_MANAGED_ELSEWHERE": "Ortak rolü payıyla birlikte yalnızca Ortaklar sayfasında verilir ve geri alınır.",
+          "ROLE_NOT_ADJUSTABLE": "Süper yönetici her zaman tüm yetkilere sahiptir; ortağın erişimi ortak listesinde ayarlanır.",
+          "CAPABILITY_NOT_ADJUSTABLE": "Personel yönetimi süper yöneticilerde, ortak istatistikleri ise ortaklarda kalır."
         }
       },
       "payments": {

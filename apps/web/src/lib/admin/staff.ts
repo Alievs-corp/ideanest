@@ -184,6 +184,51 @@ export async function revokeRole(
 }
 
 /**
+ * What one role confers now, what it would by default, and which capabilities may be changed on
+ * it — V114. `adjustable` comes from the service so the editor draws the server's rule rather than
+ * a copy of it: `ADMINISTER_STAFF` and `VIEW_PARTNER_STATISTICS` are never in it.
+ */
+export interface RoleCapabilitySet {
+  role: StaffRole;
+  capabilities: StaffCapability[];
+  defaults: StaffCapability[];
+  adjustable: StaffCapability[];
+}
+
+export interface RoleCapabilityMatrix {
+  /** The four adjustable roles. Super admin and partner are not in it — the service says why. */
+  roles: RoleCapabilitySet[];
+}
+
+/** What every adjustable role confers. Needs `ADMINISTER_STAFF`. */
+export async function readRoleMatrix(signal?: AbortSignal): Promise<RoleCapabilityMatrix> {
+  const response = await authorizedFetch('/v1/admin/roles', { signal });
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as RoleCapabilityMatrix;
+}
+
+/**
+ * Makes a role confer exactly these capabilities. `PUT`, because it is a state: the same set
+ * twice is the same role, and a role's own defaults put it back to them. Needs `ADMINISTER_STAFF`.
+ */
+export async function changeRoleCapabilities(
+  role: StaffRole,
+  capabilities: readonly StaffCapability[],
+  signal?: AbortSignal,
+): Promise<RoleCapabilitySet> {
+  const response = await authorizedFetch(`/v1/admin/roles/${role}/capabilities`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ capabilities }),
+    signal,
+  });
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as RoleCapabilitySet;
+}
+
+/**
  * The twelve capabilities, as values.
  *
  * <p>What each one is <em>for</em> lives in `admin.screens.staff.capability` since #324. The
@@ -218,7 +263,13 @@ export const STAFF_CAPABILITIES: readonly StaffCapability[] = Object.freeze([
   'VIEW_PARTNER_STATISTICS',
 ]);
 
-/** What holding each role confers, mirroring `StaffRole` in the service. */
+/**
+ * What holding each role confers by default, mirroring `StaffRole` in the service.
+ *
+ * <p>A super admin may since have changed the four adjustable roles (V114), and the reader's own
+ * `GET /v1/admin/me` is what reports the result. This table is the default the editor's "restore"
+ * returns to and what a reader who cannot read `GET /v1/admin/roles` is shown in the grant form.
+ */
 export const ROLE_CAPABILITIES: Readonly<Record<StaffRole, readonly StaffCapability[]>> =
   Object.freeze({
     MODERATOR: ['MODERATE_CONTENT', 'ADMINISTER_ACCOUNTS', 'HANDLE_SUPPORT', 'VIEW_AUDIT'],

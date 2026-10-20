@@ -69,15 +69,18 @@ public class StaffDirectory implements PlatformStaff {
     private final StaffRoleRepository grants;
     private final PartnerProfileRepository partners;
     private final UserAccounts accounts;
+    private final RoleCapabilities roleCapabilities;
 
     public StaffDirectory(
             StaffProperties properties,
             StaffRoleRepository grants,
             PartnerProfileRepository partners,
-            UserAccounts accounts) {
+            UserAccounts accounts,
+            RoleCapabilities roleCapabilities) {
         this.grants = grants;
         this.partners = partners;
         this.accounts = accounts;
+        this.roleCapabilities = roleCapabilities;
         // Normalised through EmailAddress at start-up rather than per call, so a
         // malformed entry stops the process with the value in the message instead of
         // silently never matching anybody.
@@ -142,8 +145,10 @@ public class StaffDirectory implements PlatformStaff {
             return StaffMember.none(accountId);
         }
 
+        // What the roles confer as a super admin last left them (V114), read on every request for
+        // the reason the grants are: a capability taken from a role stops working on the next call.
         Set<StaffCapability> capabilities = EnumSet.noneOf(StaffCapability.class);
-        roles.forEach(role -> capabilities.addAll(role.capabilities()));
+        capabilities.addAll(roleCapabilities.effective(roles));
 
         // A partner's extra access is whatever sections a super admin opened, read on every
         // request like the roles are: a section closed has to stop working on the next call,

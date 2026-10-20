@@ -1,11 +1,14 @@
 package az.ideanest.staff.api;
 
 import az.ideanest.staff.application.AccountIsPartnerException;
+import az.ideanest.staff.application.CapabilityNotAdjustableException;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import az.ideanest.staff.application.PartnerRoleManagedElsewhereException;
+import az.ideanest.staff.application.RoleNotAdjustableException;
 import az.ideanest.staff.application.UnknownStaffAccountException;
 import java.net.URI;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -71,6 +74,30 @@ public class StaffExceptionHandler {
         problem.setTitle("Account is a partner");
         problem.setDetail("A partner may hold no other staff role. End the partnership first.");
         problem.setProperty("code", "ACCOUNT_IS_PARTNER");
+        return problem;
+    }
+
+    @ExceptionHandler(RoleNotAdjustableException.class)
+    public ProblemDetail handleRoleNotAdjustable(RoleNotAdjustableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/role-not-adjustable"));
+        problem.setTitle("This role cannot be changed");
+        problem.setDetail("A super admin holds everything, and a partner's access is set on the partner list.");
+        problem.setProperty("code", "ROLE_NOT_ADJUSTABLE");
+        problem.setProperty("meta", Map.of("role", exception.role().name()));
+        return problem;
+    }
+
+    @ExceptionHandler(CapabilityNotAdjustableException.class)
+    public ProblemDetail handleCapabilityNotAdjustable(CapabilityNotAdjustableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        problem.setType(URI.create("https://ideanest.az/problems/capability-not-adjustable"));
+        problem.setTitle("Not something a role can be given");
+        problem.setDetail("Administering staff stays with super admins, and partner statistics with partners.");
+        problem.setProperty("code", "CAPABILITY_NOT_ADJUSTABLE");
+        problem.setProperty(
+                "meta",
+                Map.of("capabilities", exception.capabilities().stream().map(Enum::name).sorted().toList()));
         return problem;
     }
 }

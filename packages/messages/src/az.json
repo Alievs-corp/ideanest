@@ -1162,7 +1162,8 @@
           "taxonomy": "Taksonomiya",
           "legal_document": "Hüquqi sənədlər",
           "subscription_charge": "Plan ödənişləri",
-          "user": "İstifadəçi hesabları"
+          "user": "İstifadəçi hesabları",
+          "staff_role": "İşçi rolları"
         },
         "action": {
           "account": {
@@ -1263,7 +1264,8 @@
           },
           "staff": {
             "role_granted": "İşçi rolu verildi",
-            "role_revoked": "İşçi rolu geri alındı"
+            "role_revoked": "İşçi rolu geri alındı",
+            "role_capabilities_changed": "İşçi rolunun hüquqları dəyişdirildi"
           },
           "subscription": {
             "activated": "Abunəlik başladı",
@@ -1350,7 +1352,8 @@
           "taxonomy": "Taksonomiya",
           "maintenance_window": "Texniki xidmət pəncərəsi",
           "user": "İstifadəçi hesabı",
-          "collection": "Kolleksiya"
+          "collection": "Kolleksiya",
+          "staff_role": "İşçi rolu"
         }
       },
       "health": {
@@ -2219,6 +2222,18 @@
         "subject": "işçi siyahısını",
         "meSubject": "öz vəziyyətinizi",
         "myHeading": "Nə edə bilərsiniz",
+        "editorHeading": "Hər rol nə edə bilər",
+        "editorIntro": "Rolu seçin və onun açdığı səhifələri yandırın və ya söndürün. Dəyişiklik bu rola sahib olan hər kəs üçün növbəti sorğudan qüvvəyə minir. Super admin həmişə bütün hüquqlara malikdir, tərəfdaşın bölmələri isə tərəfdaşlar siyahısında təyin olunur.",
+        "editorSubject": "rolların hüquqları",
+        "editorLoading": "Rollar yüklənir",
+        "editorPages": "Açır: {pages}",
+        "editorNoPages": "Başqa səhifələrin içində işləyir, öz səhifəsi yoxdur",
+        "editorChanged": "Standartdan dəyişdirilib",
+        "editorUnsaved": "Yadda saxlanmamış dəyişikliklər var",
+        "editorSave": "Yadda saxla",
+        "editorSaving": "Yadda saxlanılır",
+        "editorReset": "Standarta qaytar",
+        "editorSaved": "{role} yadda saxlanıldı. Ona sahib olan hər kəs üçün yeni hüquqlar növbəti sorğudan qüvvədədir.",
         "loadingMe": "Vəziyyətiniz oxunur",
         "notStaffTitle": "Siz burada işləmirsiniz",
         "notStaffBody": "Hesabınız heç bir platforma rolu daşımır, ona görə konsolun sizə göstərəcəyi heç nə yoxdur. Bu, səhv deyil — xidmət bunun arxasındakı hər ekranı rədd edir və bu səhifə sadəcə bunu dürüstcə deyir.",
@@ -2296,7 +2311,9 @@
         "withdrawConfirm": "Rolu geri al",
         "errors": {
           "ACCOUNT_IS_PARTNER": "Bu hesab tərəfdaşdır və başqa işçi rolu ala bilməz. Əvvəlcə Tərəfdaşlar səhifəsində tərəfdaşlığı bitirin.",
-          "PARTNER_ROLE_MANAGED_ELSEWHERE": "Tərəfdaş rolu payı ilə birlikdə yalnız Tərəfdaşlar səhifəsində verilir və geri alınır."
+          "PARTNER_ROLE_MANAGED_ELSEWHERE": "Tərəfdaş rolu payı ilə birlikdə yalnız Tərəfdaşlar səhifəsində verilir və geri alınır.",
+          "ROLE_NOT_ADJUSTABLE": "Super admin həmişə bütün hüquqlara malikdir, tərəfdaşın girişi isə tərəfdaşlar siyahısında təyin olunur.",
+          "CAPABILITY_NOT_ADJUSTABLE": "İşçilərin idarə olunması super adminlərdə, tərəfdaş statistikası isə tərəfdaşlarda qalır."
         }
       },
       "payments": {

@@ -1,6 +1,8 @@
 package az.ideanest.staff.domain;
 
 import az.ideanest.shared.access.StaffCapability;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 /**
@@ -158,7 +160,13 @@ public enum StaffRole {
         this.capabilities = Set.copyOf(capabilities);
     }
 
-    /** What holding this role confers. Immutable; the caller may not add to it. */
+    /**
+     * What holding this role confers by default. Immutable; the caller may not add to it.
+     *
+     * <p>For an {@linkplain #isAdjustable() adjustable} role a super admin may have changed
+     * that since (V114), and {@code RoleCapabilities} is what answers with the change applied.
+     * Authorisation reads that, never this directly.
+     */
     public Set<StaffCapability> capabilities() {
         return capabilities;
     }
@@ -170,5 +178,34 @@ public enum StaffRole {
      */
     public boolean isSuperAdmin() {
         return this == SUPER_ADMIN;
+    }
+
+    /**
+     * Whether a super admin may change what this role confers, from the console.
+     *
+     * <p>Not {@link #SUPER_ADMIN}: it holds everything by construction, and an administrator
+     * who could narrow it could lock every administrator out of the screen that would undo it.
+     * Not {@link #PARTNER}: a partner's access is shaped per account by its sections (#204), so
+     * there is no shared set to adjust. V114's CHECK names the same four.
+     */
+    public boolean isAdjustable() {
+        return this != SUPER_ADMIN && this != PARTNER;
+    }
+
+    /**
+     * The capabilities a super admin may add to or take from an {@linkplain #isAdjustable()
+     * adjustable} role.
+     *
+     * <p>Every capability but two. {@link StaffCapability#ADMINISTER_STAFF} grants roles, so a
+     * role given it could grant itself {@link #SUPER_ADMIN} — the editor would be a way round
+     * the one rule it exists under. {@link StaffCapability#VIEW_PARTNER_STATISTICS} is the
+     * partner's own read, scaled to a partner's share, and means nothing on a role nobody holds
+     * a share in.
+     */
+    public static Set<StaffCapability> adjustableCapabilities() {
+        Set<StaffCapability> adjustable = EnumSet.allOf(StaffCapability.class);
+        adjustable.remove(StaffCapability.ADMINISTER_STAFF);
+        adjustable.remove(StaffCapability.VIEW_PARTNER_STATISTICS);
+        return Collections.unmodifiableSet(adjustable);
     }
 }

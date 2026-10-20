@@ -1540,6 +1540,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["staffRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/roles/{role}/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["staffChangeRole"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/staff": {
         parameters: {
             query?: never;
@@ -7033,6 +7065,19 @@ export interface components {
             /** Format: int32 */
             width?: number;
         };
+        RoleCapabilitiesRequest: {
+            capabilities: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+        };
+        RoleCapabilityMatrix: {
+            roles?: components["schemas"]["RoleCapabilitySet"][];
+        };
+        RoleCapabilitySet: {
+            adjustable?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+            defaults?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+            /** @enum {string} */
+            role?: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "SUPER_ADMIN" | "PARTNER";
+        };
         Roster: {
             grants?: components["schemas"]["Grant"][];
         };
@@ -8098,6 +8143,9 @@ export type SchemaRewardResponse = components['schemas']['RewardResponse'];
 export type SchemaRewardSlice = components['schemas']['RewardSlice'];
 export type SchemaRewardTierCountBody = components['schemas']['RewardTierCountBody'];
 export type SchemaRewardVideoBody = components['schemas']['RewardVideoBody'];
+export type SchemaRoleCapabilitiesRequest = components['schemas']['RoleCapabilitiesRequest'];
+export type SchemaRoleCapabilityMatrix = components['schemas']['RoleCapabilityMatrix'];
+export type SchemaRoleCapabilitySet = components['schemas']['RoleCapabilitySet'];
 export type SchemaRoster = components['schemas']['Roster'];
 export type SchemaRoutedTo = components['schemas']['RoutedTo'];
 export type SchemaRowFailureBody = components['schemas']['RowFailureBody'];
@@ -10782,6 +10830,52 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    staffRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleCapabilityMatrix"];
+                };
+            };
+        };
+    };
+    staffChangeRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "SUPER_ADMIN" | "PARTNER";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleCapabilitiesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleCapabilitySet"];
+                };
             };
         };
     };

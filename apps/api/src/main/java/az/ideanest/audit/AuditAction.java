@@ -399,6 +399,16 @@ public enum AuditAction {
     STAFF_ROLE_REVOKED("staff.role_revoked", "account"),
 
     /**
+     * A super admin changed what a staff role confers (V114).
+     *
+     * <p>As consequential as a grant and wider: one change reaches every account that holds the
+     * role. The entity is the role, through a name-based identifier, so "every change to the
+     * finance role" is one query. The detail carries the set before and after, because the
+     * override rows are replaced and would otherwise leave no record of what the role used to do.
+     */
+    STAFF_ROLE_CAPABILITIES_CHANGED("staff.role_capabilities_changed", "staff_role"),
+
+    /**
      * #204: a super admin made an account a partner, or changed their percentage or the
      * sections opened to them.
      *
