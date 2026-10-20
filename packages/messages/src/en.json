@@ -1162,7 +1162,8 @@
           "taxonomy": "Taxonomy",
           "legal_document": "Legal documents",
           "subscription_charge": "Plan payments",
-          "user": "User accounts"
+          "user": "User accounts",
+          "staff_role": "Staff roles"
         },
         "action": {
           "account": {
@@ -1263,7 +1264,8 @@
           },
           "staff": {
             "role_granted": "Staff role granted",
-            "role_revoked": "Staff role withdrawn"
+            "role_revoked": "Staff role withdrawn",
+            "role_capabilities_changed": "Staff role permissions changed"
           },
           "subscription": {
             "activated": "Subscription activated",
@@ -1350,7 +1352,8 @@
           "taxonomy": "Taxonomy",
           "maintenance_window": "Maintenance window",
           "user": "User account",
-          "collection": "Collection"
+          "collection": "Collection",
+          "staff_role": "Staff role"
         }
       },
       "health": {
@@ -2219,6 +2222,18 @@
         "subject": "the staff roster",
         "meSubject": "your own standing",
         "myHeading": "What you may do",
+        "editorHeading": "What each role may do",
+        "editorIntro": "Choose a role and switch the pages it opens on or off. A change reaches everybody who holds the role on their next request. A super admin always holds everything, and a partner's sections are set on the partner list.",
+        "editorSubject": "what each role may do",
+        "editorLoading": "Loading the roles",
+        "editorPages": "Opens: {pages}",
+        "editorNoPages": "Works inside other pages; opens none of its own",
+        "editorChanged": "Changed from the default",
+        "editorUnsaved": "Unsaved changes",
+        "editorSave": "Save",
+        "editorSaving": "Saving",
+        "editorReset": "Restore the default",
+        "editorSaved": "{role} saved. Everybody who holds it has the new set on their next request.",
         "loadingMe": "Reading your standing",
         "notStaffTitle": "You do not work here",
         "notStaffBody": "Your account holds no platform role, so the console has nothing to show you. This is not an error — the service refuses every screen behind this one, and the page you are on is simply saying so honestly.",
@@ -2296,7 +2311,9 @@
         "withdrawConfirm": "Withdraw role",
         "errors": {
           "ACCOUNT_IS_PARTNER": "This account is a partner and may hold no other staff role. End the partnership on the partner list first.",
-          "PARTNER_ROLE_MANAGED_ELSEWHERE": "The partner role is granted and withdrawn with its share, on the partner list only."
+          "PARTNER_ROLE_MANAGED_ELSEWHERE": "The partner role is granted and withdrawn with its share, on the partner list only.",
+          "ROLE_NOT_ADJUSTABLE": "A super admin always holds everything, and a partner's access is set on the partner list.",
+          "CAPABILITY_NOT_ADJUSTABLE": "Administering staff stays with super admins, and partner statistics with partners."
         }
       },
       "payments": {

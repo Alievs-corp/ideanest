@@ -235,6 +235,7 @@ export const AUDIT_ENTITY_TYPES: readonly string[] = Object.freeze([
   'feature_flag',
   'taxonomy',
   'maintenance_window',
+  'staff_role',
   'user',
 ]);
 

@@ -3528,6 +3528,61 @@
         "tags" : [ "risk-controller" ]
       }
     },
+    "/v1/admin/roles" : {
+      "get" : {
+        "operationId" : "staffRoles",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RoleCapabilityMatrix"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "staff-controller" ]
+      }
+    },
+    "/v1/admin/roles/{role}/capabilities" : {
+      "put" : {
+        "operationId" : "staffChangeRole",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "role",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "SUPER_ADMIN", "PARTNER" ]
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RoleCapabilitiesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RoleCapabilitySet"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "staff-controller" ]
+      }
+    },
     "/v1/admin/staff" : {
       "get" : {
         "operationId" : "staffRoster",
@@ -18027,6 +18082,63 @@
           "width" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "RoleCapabilitiesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "capabilities" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "MODERATE_CONTENT", "ADMINISTER_ACCOUNTS", "CURATE", "VIEW_FINANCE", "ISSUE_REFUND", "MANAGE_DISPUTES", "APPROVE_PAYOUT", "HANDLE_SUPPORT", "CONFIGURE_PLATFORM", "VIEW_AUDIT", "VIEW_HEALTH", "PUBLISH_LEGAL_DOCUMENT", "READ_ACCEPTANCE_RECORD", "READ_SIGNED_AGREEMENT", "REVIEW_IDENTITY_VERIFICATION", "OPEN_IDENTITY_DOCUMENT", "VERIFY_PAYOUT_DESTINATION", "READ_BANK_DETAILS", "GRANT_COMPLIANCE_OVERRIDE", "ADMINISTER_STAFF", "VIEW_PARTNER_STATISTICS" ]
+            },
+            "maxItems" : 64,
+            "minItems" : 0,
+            "uniqueItems" : true
+          }
+        },
+        "required" : [ "capabilities" ]
+      },
+      "RoleCapabilityMatrix" : {
+        "type" : "object",
+        "properties" : {
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RoleCapabilitySet"
+            }
+          }
+        }
+      },
+      "RoleCapabilitySet" : {
+        "type" : "object",
+        "properties" : {
+          "adjustable" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "MODERATE_CONTENT", "ADMINISTER_ACCOUNTS", "CURATE", "VIEW_FINANCE", "ISSUE_REFUND", "MANAGE_DISPUTES", "APPROVE_PAYOUT", "HANDLE_SUPPORT", "CONFIGURE_PLATFORM", "VIEW_AUDIT", "VIEW_HEALTH", "PUBLISH_LEGAL_DOCUMENT", "READ_ACCEPTANCE_RECORD", "READ_SIGNED_AGREEMENT", "REVIEW_IDENTITY_VERIFICATION", "OPEN_IDENTITY_DOCUMENT", "VERIFY_PAYOUT_DESTINATION", "READ_BANK_DETAILS", "GRANT_COMPLIANCE_OVERRIDE", "ADMINISTER_STAFF", "VIEW_PARTNER_STATISTICS" ]
+            }
+          },
+          "capabilities" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "MODERATE_CONTENT", "ADMINISTER_ACCOUNTS", "CURATE", "VIEW_FINANCE", "ISSUE_REFUND", "MANAGE_DISPUTES", "APPROVE_PAYOUT", "HANDLE_SUPPORT", "CONFIGURE_PLATFORM", "VIEW_AUDIT", "VIEW_HEALTH", "PUBLISH_LEGAL_DOCUMENT", "READ_ACCEPTANCE_RECORD", "READ_SIGNED_AGREEMENT", "REVIEW_IDENTITY_VERIFICATION", "OPEN_IDENTITY_DOCUMENT", "VERIFY_PAYOUT_DESTINATION", "READ_BANK_DETAILS", "GRANT_COMPLIANCE_OVERRIDE", "ADMINISTER_STAFF", "VIEW_PARTNER_STATISTICS" ]
+            }
+          },
+          "defaults" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "MODERATE_CONTENT", "ADMINISTER_ACCOUNTS", "CURATE", "VIEW_FINANCE", "ISSUE_REFUND", "MANAGE_DISPUTES", "APPROVE_PAYOUT", "HANDLE_SUPPORT", "CONFIGURE_PLATFORM", "VIEW_AUDIT", "VIEW_HEALTH", "PUBLISH_LEGAL_DOCUMENT", "READ_ACCEPTANCE_RECORD", "READ_SIGNED_AGREEMENT", "REVIEW_IDENTITY_VERIFICATION", "OPEN_IDENTITY_DOCUMENT", "VERIFY_PAYOUT_DESTINATION", "READ_BANK_DETAILS", "GRANT_COMPLIANCE_OVERRIDE", "ADMINISTER_STAFF", "VIEW_PARTNER_STATISTICS" ]
+            }
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "SUPER_ADMIN", "PARTNER" ]
           }
         }
       },

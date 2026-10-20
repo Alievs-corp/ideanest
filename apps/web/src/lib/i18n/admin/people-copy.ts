@@ -608,6 +608,8 @@ export interface StaffRolesCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly meSubject: string;
   readonly myHeading: string;
+  /** The role editor a super admin sees in place of their own list — V114. */
+  readonly editor: RoleEditorCopy;
   readonly loadingMe: string;
   readonly notStaffTitle: string;
   readonly notStaffBody: string;
@@ -660,6 +662,25 @@ export interface StaffRolesCopy extends ConsoleChromeCopy {
   readonly capability: Readonly<Record<StaffCapability, string>>;
 }
 
+export interface RoleEditorCopy {
+  readonly heading: string;
+  readonly intro: string;
+  readonly subject: string;
+  readonly loading: string;
+  /** Carries `{pages}`. */
+  readonly pages: string;
+  readonly noPages: string;
+  readonly changed: string;
+  readonly unsaved: string;
+  readonly save: string;
+  readonly saving: string;
+  readonly reset: string;
+  /** Carries `{role}`. */
+  readonly saved: string;
+  /** Each console page's name, keyed by href — the rail's own words, so the two agree. */
+  readonly links: Readonly<Record<string, string>>;
+}
+
 export function staffRolesCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
@@ -669,6 +690,21 @@ export function staffRolesCopyFrom(
     subject: t('screens.staff.subject'),
     meSubject: t('screens.staff.meSubject'),
     myHeading: t('screens.staff.myHeading'),
+    editor: {
+      heading: t('screens.staff.editorHeading'),
+      intro: t('screens.staff.editorIntro'),
+      subject: t('screens.staff.editorSubject'),
+      loading: t('screens.staff.editorLoading'),
+      pages: String(t.raw('screens.staff.editorPages')),
+      noPages: t('screens.staff.editorNoPages'),
+      changed: t('screens.staff.editorChanged'),
+      unsaved: t('screens.staff.editorUnsaved'),
+      save: t('screens.staff.editorSave'),
+      saving: t('screens.staff.editorSaving'),
+      reset: t('screens.staff.editorReset'),
+      saved: String(t.raw('screens.staff.editorSaved')),
+      links: t.raw('links') as Readonly<Record<string, string>>,
+    },
     loadingMe: t('screens.staff.loadingMe'),
     notStaffTitle: t('screens.staff.notStaffTitle'),
     notStaffBody: t('screens.staff.notStaffBody'),
