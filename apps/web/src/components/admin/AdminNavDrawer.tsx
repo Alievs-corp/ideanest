@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { useDismiss, useFocusTrap, useScrollLock } from '@ideanest/ui';
+import { useDismiss, useScrollLock } from '@ideanest/ui/use-dismiss';
+import { useFocusTrap } from '@ideanest/ui/use-focus-trap';
 import { Link, usePathname } from '../../i18n/navigation';
 import type { AdminShellCopy } from '../../lib/i18n/admin-copy';
 import { AdminNav } from './AdminNav';
@@ -32,9 +33,11 @@ import { ConsoleReader } from './ConsoleReader';
  * everything that is not motion — `useFocusTrap`, `useDismiss`, `useScrollLock` — and the
  * panel appears and disappears outright.
  *
- * <p>Those three come from the kit's root barrel, which `AdminArea` warns about. The warning
- * is about a route that would otherwise not load it; every console screen already does, for
- * `Pill`, `Field` and `InlineAlert`, so this adds nothing to what a console route downloads.
+ * <p>Those three come from their own subpaths, `@ideanest/ui/use-dismiss` and
+ * `@ideanest/ui/use-focus-trap`, and not from the kit's root barrel `AdminArea` warns about.
+ * The drawer is in the shell, so it is on every console route, and `/admin` and
+ * `/admin/modules` load no barrel of their own: importing the hooks from the root put 70 KiB
+ * and 47 KiB on those two pages for three hooks that import nothing but React.
  *
  * <h2>The focus contract — docs/ui-kit.md §7.14</h2>
  *

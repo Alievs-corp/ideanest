@@ -8,6 +8,8 @@
     "./server": "./src/server.ts",
     "./motion": "./src/motion.ts",
     "./reveal-focused-item": "./src/lib/reveal-focused-item.ts",
+    "./use-dismiss": "./src/components/overlay/useDismiss.ts",
+    "./use-focus-trap": "./src/components/overlay/useFocusTrap.ts",
     "./styles.css": "./src/styles.css"
   },
   "scripts": {
