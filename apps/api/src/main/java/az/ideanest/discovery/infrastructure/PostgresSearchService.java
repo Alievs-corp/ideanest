@@ -553,8 +553,12 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
         // every campaign on the platform beside a list of the four that match the
         // query would be describing a different result set from the one on screen —
         // see SearchService.facets.
+        // The market narrows the base set rather than being a dimension: a reader browsing
+        // for Georgia is not offered counts for campaigns that are not for Georgia (#533).
         String publicStates = and(
-                statePredicate("p", DiscoveryStatus.LISTED_STATES, params),
+                and(
+                        statePredicate("p", DiscoveryStatus.LISTED_STATES, params),
+                        marketPredicate("p", query.market(), params)),
                 textPredicate("p", query, exactTierMatches(query.text()), params));
 
         String matchesStatus = query.statuses().isEmpty()
@@ -723,6 +727,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
         params.addValue("fragment", likePattern(query.text()));
         params.addValue("limit", query.limit());
         params.addValue("states", List.copyOf(DiscoveryStatus.LISTED_STATES));
+        params.addValue("market", query.market());
         // The same visibility predicate as everything else in this class, and for the
         // same reason: a suggestion is a campaign's title shown to whoever is typing,
         // so a draft leaking here leaks exactly as much as one leaking into the feed.
@@ -738,6 +743,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
                   FROM projects p
                   JOIN users u ON u.id = p.creator_id
                  WHERE p.state IN (:states)
+                   AND (CAST(:market AS text) IS NULL OR p.countries @> ARRAY[CAST(:market AS text)])
                    AND ideanest_fold(p.title) LIKE '%' || ideanest_fold(:fragment) || '%' ESCAPE '\\'
                  ORDER BY is_prefix DESC, p.pledged_amount DESC, p.id ASC
                  LIMIT :limit
@@ -885,6 +891,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
      */
     private static void filters(
             String alias, DiscoveryQuery query, List<String> where, MapSqlParameterSource params) {
+        add(where, marketPredicate(alias, query.market(), params));
         add(where, categoryPredicate(alias, query.categorySlugs(), params));
         add(where, subcategoryPredicate(alias, query.subcategorySlugs(), params));
         add(where, tagPredicate(alias, query.tagSlugs(), params));
@@ -1223,6 +1230,18 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
      * method therefore only ever asks about {@code FEATURED}, and it takes no
      * parameters because the view carries the whole predicate.
      */
+    /**
+     * The campaigns for the reader's country (#533): those whose {@code countries} contain
+     * it. GIN-indexed by V116.
+     */
+    private static String marketPredicate(String alias, String market, MapSqlParameterSource params) {
+        if (market == null) {
+            return "true";
+        }
+        params.addValue("market", market);
+        return alias + ".countries @> ARRAY[CAST(:market AS text)]";
+    }
+
     private static String featuredPredicate(String alias, Set<ShowOnly> showOnly) {
         if (!showOnly.contains(ShowOnly.FEATURED)) {
             return "true";

@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DEFAULT_CURRENCY } from '@ideanest/money';
 import { LOCALE_NAMES, SUPPORTED_LOCALES, isLocale, type Locale } from '@ideanest/messages';
+import { ALL_MARKETS, COUNTRY_CODES } from '@ideanest/messages/country';
+import { countryName } from '../checkout/format';
+import { setMarket, useMarket } from '../../lib/market';
 import { api } from '../../api/client';
 import { queryKeys } from '../../api/queries';
 import {
@@ -49,6 +52,7 @@ export function LanguageSettingsScreen() {
         <Subheading accessibilityRole="header">{t('languageHeading')}</Subheading>
         <LanguageChoice />
       </View>
+      <CountrySection />
       {signedIn ? <CurrencySection /> : null}
     </SettingsPage>
   );
@@ -113,6 +117,35 @@ function LanguageChoice() {
         />
       )}
     </>
+  );
+}
+
+/**
+ * Which country's campaigns the lists show — issue #533. Kept on this phone and chosen here,
+ * beside the language, because the app has no header for a control of its own. Every list's
+ * query key carries the market, so choosing one reads them again.
+ */
+function CountrySection() {
+  const t = useT('shell.market');
+  const locale = useLocale();
+  const market = useMarket();
+  const options = useMemo(
+    () => [
+      { value: ALL_MARKETS, label: t('all') },
+      ...COUNTRY_CODES.map((code) => ({ value: code, label: countryName(code, locale) })).sort((left, right) =>
+        left.label.localeCompare(right.label, locale),
+      ),
+    ],
+    [t, locale],
+  );
+
+  return (
+    <View style={styles.section}>
+      <Subheading accessibilityRole="header">{t('label')}</Subheading>
+      <Card size="sm">
+        <Select options={options} value={market} label={t('label')} onChange={setMarket} testID="market-select" />
+      </Card>
+    </View>
   );
 }
 

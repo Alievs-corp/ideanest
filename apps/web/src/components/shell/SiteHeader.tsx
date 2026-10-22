@@ -7,6 +7,7 @@ import { TopBar, cn } from '@ideanest/ui';
 import { useSession } from '../session/SessionProvider';
 import { AccountMenu } from './AccountMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { CountrySwitcher } from './CountrySwitcher';
 // Hidden for now at the owner's request; restore together with the field below.
 // import { SearchField } from '../search/SearchField';
 import { MobileNavDrawer } from './MobileNavDrawer';
@@ -148,6 +149,14 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
             on a phone comes from the register pill below and from `TopBar`'s phone gutter.
           */}
           <LanguageSwitcher label={copy.language.label} phoneAlign="center" />
+          {/*
+            #533: which country's campaigns the lists show, chosen the way the language is. Not
+            on a phone: a fourth round button pushed the register pill off a 390-pixel screen,
+            so there it is the first row of the drawer, under the search.
+          */}
+          <div className="hidden sm:block">
+            <CountrySwitcher copy={copy.market} />
+          </div>
 
           {status === 'signed-in' && session !== null && (
             <>

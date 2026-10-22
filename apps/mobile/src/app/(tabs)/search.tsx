@@ -11,6 +11,7 @@ import { definedRouteParams, useFeedProblem } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
 import { colors, font, spacing } from '../../theme';
 import { withScreenRoot } from '../../components/screen-root';
+import { MarketEmptyNotice } from '../../components/browse/market-empty-notice';
 
 /**
  * Search — the web's `/search` (`app/[locale]/(site)/search/page.tsx`), issue #153.
@@ -150,6 +151,7 @@ function SearchScreen() {
             action={<Pill label={t('emptyAction')} onPress={() => openFeed(false)} />}
             testID="search-empty"
           />
+          <MarketEmptyNotice />
         </View>
       );
     }

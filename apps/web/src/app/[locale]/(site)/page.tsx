@@ -26,7 +26,8 @@ import { homePageMetadata } from '../../../lib/seo/metadata';
 import { homePageGraph } from '../../../lib/seo/structured-data/graphs';
 import { graphContext } from '../../../lib/i18n/shell-copy.server';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { projectCardCopy } from '../../../lib/i18n/shell-copy.server';
+import { marketCopy, projectCardCopy } from '../../../lib/i18n/shell-copy.server';
+import { MarketEmptyNotice } from '../../../components/shell/MarketEmptyNotice';
 
 /**
  * `/` — §4.13 WS-04, issue #264.
@@ -467,7 +468,9 @@ export default async function HomePage() {
             page cannot tell the two apart and must not pretend to. What it says is what is
             true either way, and it still offers the feed, which is where the answer is.
           */
-          <section className="pb-20">
+          <section className="flex flex-col gap-4 pb-20">
+            {/* #533: the lists were for one country, and every country is one press away. */}
+            <MarketEmptyNotice copy={await marketCopy()} />
             <div className="rounded-lg border border-white/8 bg-surface-2 px-6 py-12 text-center">
               <h2 className="text-xl font-medium text-white">{t('empty.heading')}</h2>
               <p className="mx-auto mt-2 max-w-[52ch] text-white/64">

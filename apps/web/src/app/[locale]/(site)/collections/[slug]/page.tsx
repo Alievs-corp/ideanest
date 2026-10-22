@@ -9,7 +9,8 @@ import {
   resolveCollectionLanding,
 } from '../../../../../lib/collections/landing';
 import { collectionPageGraph } from '../../../../../lib/seo/structured-data/graphs';
-import { graphContext } from '../../../../../lib/i18n/shell-copy.server';
+import { graphContext, marketCopy } from '../../../../../lib/i18n/shell-copy.server';
+import { MarketEmptyNotice } from '../../../../../components/shell/MarketEmptyNotice';
 import { localeOrDefault } from '../../../../../lib/i18n/locale';
 import {
   isFetchableImageUrl,
@@ -172,6 +173,11 @@ export default async function CollectionPage({ params }: RouteParams) {
             locale={locale}
             cardCopy={card}
           />
+          {campaigns.length === 0 && (
+            <div className="mt-4">
+              <MarketEmptyNotice copy={await marketCopy()} />
+            </div>
+          )}
         </div>
       </div>
     </>

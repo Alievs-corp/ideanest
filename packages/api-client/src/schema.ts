@@ -12226,7 +12226,9 @@ export interface operations {
     };
     collectionIndex: {
         parameters: {
-            query?: never;
+            query?: {
+                market?: string;
+            };
             header?: {
                 "Accept-Language"?: string;
             };
@@ -12251,6 +12253,7 @@ export interface operations {
             query?: {
                 cursor?: string;
                 limit?: string;
+                market?: string;
             };
             header?: {
                 "Accept-Language"?: string;
@@ -12398,8 +12401,10 @@ export interface operations {
                 raisedMin?: string;
                 /** @description Most raised, as a decimal string. */
                 raisedMax?: string;
-                /** @description ISO country codes. */
+                /** @description ISO country codes of where a campaign is located. */
                 country?: string[];
+                /** @description The country the reader browses for (#533): only campaigns whose countries contain this ISO 3166-1 alpha-2 code. Absent is every country; anything that is not a country is refused. */
+                market?: string;
                 /** @description City slugs. */
                 city?: string[];
                 /** @description A point, as "lat,lon". Required when sort=near-me, which is why asking for that sort without it is refused rather than silently answered as newest. */
@@ -12463,8 +12468,10 @@ export interface operations {
                 raisedMin?: string;
                 /** @description Most raised, as a decimal string. */
                 raisedMax?: string;
-                /** @description ISO country codes. */
+                /** @description ISO country codes of where a campaign is located. */
                 country?: string[];
+                /** @description The country the reader browses for (#533): only campaigns whose countries contain this ISO 3166-1 alpha-2 code. Absent is every country; anything that is not a country is refused. */
+                market?: string;
                 /** @description City slugs. */
                 city?: string[];
                 /** @description A point, as "lat,lon". Required when sort=near-me, which is why asking for that sort without it is refused rather than silently answered as newest. */
@@ -15650,8 +15657,10 @@ export interface operations {
                 raisedMin?: string;
                 /** @description Most raised, as a decimal string. */
                 raisedMax?: string;
-                /** @description ISO country codes. */
+                /** @description ISO country codes of where a campaign is located. */
                 country?: string[];
+                /** @description The country the reader browses for (#533): only campaigns whose countries contain this ISO 3166-1 alpha-2 code. Absent is every country; anything that is not a country is refused. */
+                market?: string;
                 /** @description City slugs. */
                 city?: string[];
                 /** @description A point, as "lat,lon". Required when sort=near-me, which is why asking for that sort without it is refused rather than silently answered as newest. */
@@ -15691,6 +15700,7 @@ export interface operations {
             query?: {
                 q?: string;
                 limit?: string;
+                market?: string;
             };
             header?: {
                 "Accept-Language"?: string;

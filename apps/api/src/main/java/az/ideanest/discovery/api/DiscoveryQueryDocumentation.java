@@ -117,7 +117,10 @@ public class DiscoveryQueryDocumentation implements OperationCustomizer {
                 query("raisedBand", "A named raised range, as an alternative to raisedMin and raisedMax."),
                 query("raisedMin", "Least raised, as a decimal string."),
                 query("raisedMax", "Most raised, as a decimal string."),
-                repeated("country", "ISO country codes."),
+                repeated("country", "ISO country codes of where a campaign is located."),
+                query("market", "The country the reader browses for (#533): only campaigns whose countries"
+                        + " contain this ISO 3166-1 alpha-2 code. Absent is every country; anything that is not"
+                        + " a country is refused."),
                 repeated("city", "City slugs."),
                 query("near", "A point, as \"lat,lon\". Required when sort=near-me, which is why asking for that"
                         + " sort without it is refused rather than silently answered as newest."),

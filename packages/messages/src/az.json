@@ -76,6 +76,16 @@
     "language": {
       "label": "Dil seçin"
     },
+    "market": {
+      "label": "Ölkə seçin",
+      "current": "Ölkə: {name}",
+      "all": "Bütün ölkələr",
+      "filter": "Ölkə axtarın",
+      "noMatch": "Belə ölkə tapılmadı",
+      "emptyTitle": "Hələ {name} üçün kampaniya yoxdur",
+      "emptyDetail": "Başqa ölkələrin kampaniyalarına baxa bilərsiniz.",
+      "emptyAction": "Bütün ölkələrə baxın"
+    },
     "footer": {
       "label": "Altlıq",
       "languageHeading": "Dil",

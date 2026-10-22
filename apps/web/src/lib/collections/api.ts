@@ -13,6 +13,7 @@ import type { Locale } from '../i18n/locale';
 import { publicFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import { PAGE_SIZE, type ProjectCard } from '../discovery/api';
+import { withMarket } from '../market/cookie';
 
 /**
  * §4.3's D-08 — curated collections and open calls, as `GET /v1/collections` and
@@ -159,7 +160,7 @@ export async function getCollectionCampaigns(
   cursor: string,
   options: { signal?: AbortSignal } = {},
 ): Promise<CollectionCampaignPage> {
-  const query = collectionQuery({ cursor });
+  const query = withMarket(new URLSearchParams(collectionQuery({ cursor }))).toString();
   const response = await publicFetch(`/v1/collections/${encodeURIComponent(slug)}?${query}`, {
     ...(options.signal === undefined ? {} : { signal: options.signal }),
   });

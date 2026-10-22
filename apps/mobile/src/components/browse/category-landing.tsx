@@ -28,6 +28,7 @@ import {
   SkeletonGroup,
 } from '../ui';
 import { Breadcrumb, LinkPill, PILL_HEIGHT, type Crumb } from './breadcrumb';
+import { MarketEmptyNotice } from './market-empty-notice';
 
 /**
  * A category's or a subcategory's landing page — the web's `CategoryLanding`
@@ -259,13 +260,16 @@ function LandingBody({
               `empty`, not `filtered`: nothing here is a filter the reader chose — they followed a
               link to a category with nothing published in it — so there is nothing to clear.
             */
-            <EmptyState
-              variant="empty"
-              title={t('emptyTitle', { title })}
-              description={t('emptyBody')}
-              action={<Pill label={t('emptyAction')} onPress={() => openFeed()} />}
-              testID="landing-empty"
-            />
+            <>
+              <EmptyState
+                variant="empty"
+                title={t('emptyTitle', { title })}
+                description={t('emptyBody')}
+                action={<Pill label={t('emptyAction')} onPress={() => openFeed()} />}
+                testID="landing-empty"
+              />
+              <MarketEmptyNotice />
+            </>
           ) : (
             <>
               <View accessibilityLabel={t('gridLabel', { title })} testID="landing-cards">

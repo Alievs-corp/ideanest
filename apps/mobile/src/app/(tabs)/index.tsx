@@ -20,6 +20,7 @@ import { definedRouteParams } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
 import { spacing } from '../../theme';
 import { withScreenRoot } from '../../components/screen-root';
+import { MarketEmptyNotice } from '../../components/browse/market-empty-notice';
 
 /**
  * Home — the web's `/` (`app/[locale]/(site)/page.tsx`), issue #153.
@@ -206,7 +207,10 @@ function HomeScreen() {
             testID="home-error"
           />
         ) : allEmpty ? (
-          <HomeEmpty onOpenFeed={() => openFeed()} />
+          <>
+            <HomeEmpty onOpenFeed={() => openFeed()} />
+            <MarketEmptyNotice />
+          </>
         ) : null}
       </View>
     </Screen>

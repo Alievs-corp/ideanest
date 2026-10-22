@@ -1,4 +1,7 @@
 import { getLocale } from 'next-intl/server';
+import { headers } from 'next/headers';
+import { ALL_MARKETS } from '@ideanest/messages/country';
+import { MARKET_HEADER } from '../market/market';
 import {
   ApiError,
   createApiClient,
@@ -79,6 +82,11 @@ export interface ServerReadOptions {
   readonly locale?: string;
   /** Overrides the shared window below. Per call, because a caller may know better. */
   readonly revalidateSeconds?: number;
+  /**
+   * The reader's market (#533): a country code, or null for every country. Read from the
+   * proxy's request header when not given, which only the pages that list campaigns carry.
+   */
+  readonly market?: string | null;
 }
 
 /**
@@ -148,6 +156,25 @@ async function readOptions(options: ServerReadOptions, ...tags: readonly string[
       tags: [...tags],
     },
   };
+}
+
+/**
+ * `{ market }` for the service, or nothing — #533.
+ *
+ * The proxy puts the reader's market on the request for the pages that list campaigns and
+ * removes it from every other, so a page every reader shares reads every country here. Outside
+ * a request (a test, a build step) `headers()` throws, and that is every country too.
+ */
+async function marketQuery(options: ServerReadOptions): Promise<{ market?: string }> {
+  let market = options.market;
+  if (market === undefined) {
+    try {
+      market = (await headers()).get(MARKET_HEADER);
+    } catch {
+      market = null;
+    }
+  }
+  return market === null || market === ALL_MARKETS ? {} : { market };
 }
 
 async function localeFor(options: ServerReadOptions): Promise<string> {
@@ -227,7 +254,7 @@ export async function fetchDiscoveryFeed(
 ): Promise<DiscoveryFeed | null> {
   try {
     const feed = await client(options).get('/v1/discover', {
-      query: parametersOf(query),
+      query: { ...parametersOf(query), ...(await marketQuery(options)) },
       ...(await readOptions(options, DISCOVERY)),
     });
     /*
@@ -263,7 +290,7 @@ export async function fetchSearchResults(
 ): Promise<DiscoveryFeed | null> {
   try {
     const feed = await client(options).get('/v1/search', {
-      query: parametersOf(query),
+      query: { ...parametersOf(query), ...(await marketQuery(options)) },
       ...(await readOptions(options, DISCOVERY)),
     });
     // Cast for the reason the discovery reader gives: `lib/discovery/api.ts` owns the wire
@@ -381,7 +408,10 @@ export async function fetchCollections(
   options: ServerReadOptions = {},
 ): Promise<readonly Collection[] | null> {
   try {
-    const index = await client(options).get('/v1/collections', await readOptions(options, COLLECTIONS));
+    const index = await client(options).get('/v1/collections', {
+      query: await marketQuery(options),
+      ...(await readOptions(options, COLLECTIONS)),
+    });
     /*
      * Narrowed through `lib/collections/api.ts` rather than cast. The generated schema marks
      * every field optional — springdoc marks a record component required only when it can
@@ -423,7 +453,7 @@ export async function fetchCollection(
   try {
     const body = await client(options).get('/v1/collections/{slug}', {
       path: { slug },
-      query: collectionQueryParams(page),
+      query: { ...collectionQueryParams(page), ...(await marketQuery(options)) },
       /*
        * Both, because the landing page is two facts: the collection's own fields, which the
        * index also renders, and the campaigns in it, which staff add and remove one at a

@@ -5396,6 +5396,13 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -5439,6 +5446,13 @@
         }, {
           "in" : "query",
           "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "market",
           "required" : false,
           "schema" : {
             "type" : "string"
@@ -5728,7 +5742,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "ISO country codes.",
+          "description" : "ISO country codes of where a campaign is located.",
           "explode" : true,
           "in" : "query",
           "name" : "country",
@@ -5738,6 +5752,14 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }, {
+          "description" : "The country the reader browses for (#533): only campaigns whose countries contain this ISO 3166-1 alpha-2 code. Absent is every country; anything that is not a country is refused.",
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
           }
         }, {
           "description" : "City slugs.",
@@ -5963,7 +5985,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "ISO country codes.",
+          "description" : "ISO country codes of where a campaign is located.",
           "explode" : true,
           "in" : "query",
           "name" : "country",
@@ -5973,6 +5995,14 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }, {
+          "description" : "The country the reader browses for (#533): only campaigns whose countries contain this ISO 3166-1 alpha-2 code. Absent is every country; anything that is not a country is refused.",
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
           }
         }, {
           "description" : "City slugs.",
@@ -10275,7 +10305,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "ISO country codes.",
+          "description" : "ISO country codes of where a campaign is located.",
           "explode" : true,
           "in" : "query",
           "name" : "country",
@@ -10285,6 +10315,14 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }, {
+          "description" : "The country the reader browses for (#533): only campaigns whose countries contain this ISO 3166-1 alpha-2 code. Absent is every country; anything that is not a country is refused.",
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
           }
         }, {
           "description" : "City slugs.",
@@ -10389,6 +10427,13 @@
         }, {
           "in" : "query",
           "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "market",
           "required" : false,
           "schema" : {
             "type" : "string"

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { COUNTRY_HEADER } from './lib/i18n/country';
 import { LOCALE_COOKIE } from './lib/i18n/locale';
+import { DETECTED_MARKET_COOKIE, MARKET_COOKIE } from '@ideanest/messages/country';
+import { MARKET_HEADER, MARKET_PAGE_CACHE_CONTROL } from './lib/market/market';
 
 /*
  * next-intl's middleware is stubbed rather than run.
@@ -13,8 +15,12 @@ import { LOCALE_COOKIE } from './lib/i18n/locale';
  * with what status, and — the loop guard — which ones are passed through untouched. The stub
  * makes "passed through" observable as a response with no `location` on it.
  */
+let forwarded: NextRequest | null = null;
 vi.mock('next-intl/middleware', () => ({
-  default: () => () => NextResponse.next(),
+  default: () => (request: NextRequest) => {
+    forwarded = request;
+    return NextResponse.next();
+  },
 }));
 
 const { default: proxy, config } = await import('./proxy');
@@ -41,9 +47,13 @@ beforeEach(() => {
  * shared with, and a path that already names a language being redirected again is an
  * infinite loop that only reproduces for people who have a cookie set.
  */
-function request(path: string, cookie?: string, country?: string): NextRequest {
+function request(path: string, cookie?: string, country?: string, market?: string): NextRequest {
   const headers = new Headers();
-  if (cookie !== undefined) headers.set('cookie', `${LOCALE_COOKIE}=${cookie}`);
+  const cookies = [
+    ...(cookie === undefined ? [] : [`${LOCALE_COOKIE}=${cookie}`]),
+    ...(market === undefined ? [] : [`${MARKET_COOKIE}=${market}`]),
+  ];
+  if (cookies.length > 0) headers.set('cookie', cookies.join('; '));
   if (country !== undefined) headers.set(COUNTRY_HEADER, country);
   return new NextRequest(`https://ideanest.az${path}`, { headers });
 }
@@ -149,6 +159,39 @@ describe('the locale proxy', () => {
     for (const path of ['/az', '/en/discover', '/ru/projects/aysel/kilims', '/tr/settings']) {
       expect((await proxy(request(path, 'az', 'TR'))).headers.get('location')).toBeNull();
     }
+  });
+});
+
+describe('the reader’s market (#533)', () => {
+  it('hands a campaign list the country the reader is in, and keeps it out of shared caches', async () => {
+    const response = await proxy(request('/az/discover', undefined, 'DE'));
+
+    expect(forwarded?.headers.get(MARKET_HEADER)).toBe('DE');
+    expect(response.headers.get('cache-control')).toBe(MARKET_PAGE_CACHE_CONTROL);
+    expect(response.cookies.get(DETECTED_MARKET_COOKIE)?.value).toBe('DE');
+  });
+
+  it('lets the reader’s choice outrank where they are, and does not overwrite it', async () => {
+    const response = await proxy(request('/en', undefined, 'DE', 'ALL'));
+
+    expect(forwarded?.headers.get(MARKET_HEADER)).toBe('ALL');
+    expect(response.cookies.get(DETECTED_MARKET_COOKIE)).toBeUndefined();
+  });
+
+  it('starts in Azerbaijan when Cloudflare does not know the country', async () => {
+    await proxy(request('/az/categories/games', undefined, 'XX'));
+    expect(forwarded?.headers.get(MARKET_HEADER)).toBe('AZ');
+  });
+
+  it('removes a market header a client sent to a page every reader shares', async () => {
+    const shared = new NextRequest('https://ideanest.az/az/projects/1/lamp', {
+      headers: { [MARKET_HEADER]: 'DE' },
+    });
+    const response = await proxy(shared);
+
+    expect(forwarded?.headers.get(MARKET_HEADER)).toBeNull();
+    expect(response.headers.get('cache-control')).not.toBe(MARKET_PAGE_CACHE_CONTROL);
+    expect(response.cookies.get(DETECTED_MARKET_COOKIE)).toBeUndefined();
   });
 });
 

@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -35,7 +36,31 @@ import org.springframework.util.MultiValueMap;
  */
 final class DiscoveryQueryBinder {
 
+    /** Every ISO 3166-1 alpha-2 code, the vocabulary of {@code market} and of a campaign's countries. */
+    private static final Set<String> COUNTRIES = Locale.getISOCountries(Locale.IsoCountryCode.PART1_ALPHA2);
+
     private DiscoveryQueryBinder() {
+    }
+
+    /**
+     * {@code market}: the country the reader browses for (#533), or null for every country.
+     *
+     * <p>Refused when it is not a country rather than read as "every country": a reader who
+     * chose Georgia and was shown the world because a code was mistyped would not know it.
+     */
+    static String market(MultiValueMap<String, String> parameters) {
+        return market(single(parameters, "market"));
+    }
+
+    static String market(String market) {
+        if (market == null || market.isBlank()) {
+            return null;
+        }
+        String code = market.strip().toUpperCase(Locale.ROOT);
+        if (!COUNTRIES.contains(code)) {
+            throw new UnknownFilterValueException("market", market, List.of());
+        }
+        return code;
     }
 
     static DiscoveryQuery bind(MultiValueMap<String, String> parameters, String locale) {
@@ -56,6 +81,7 @@ final class DiscoveryQueryBinder {
                 .goal(amountRange(parameters, "goalBand", "goalMin", "goalMax"))
                 .raised(amountRange(parameters, "raisedBand", "raisedMin", "raisedMax"))
                 .location(location(parameters))
+                .market(market(parameters))
                 .showOnly(closedSet(parameters, "showOnly", ShowOnly::fromWireValue, ShowOnly.wireValues()));
 
         String sort = single(parameters, "sort");

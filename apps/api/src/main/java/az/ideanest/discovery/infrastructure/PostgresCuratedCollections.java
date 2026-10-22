@@ -85,6 +85,10 @@ public class PostgresCuratedCollections implements CuratedCollections {
      * {@code collection_projects} by its primary key prefix, and the alternative would
      * make every column of the outer row a grouping key.
      */
+    /** The campaigns for the reader's country (#533), or every campaign when there is none. */
+    private static final String MARKET =
+            " (CAST(:market AS text) IS NULL OR p.countries @> ARRAY[CAST(:market AS text)])";
+
     private static final String COLLECTION_COLUMNS =
             """
             c.id, c.slug, c.kind, c.opens_at, c.closes_at, c.grants_badge,
@@ -92,7 +96,8 @@ public class PostgresCuratedCollections implements CuratedCollections {
             (SELECT count(*)
                FROM collection_projects cp
                JOIN projects p ON p.id = cp.project_id
-              WHERE cp.collection_id = c.id AND p.state IN (:states)) AS project_count
+              WHERE cp.collection_id = c.id AND p.state IN (:states) AND""" + MARKET + """
+            ) AS project_count
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -107,8 +112,8 @@ public class PostgresCuratedCollections implements CuratedCollections {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CuratedCollection> index(String locale) {
-        MapSqlParameterSource params = publicStates();
+    public List<CuratedCollection> index(String locale, String market) {
+        MapSqlParameterSource params = publicStates(market);
         List<Header> headers = jdbc.query(
                 "SELECT " + COLLECTION_COLUMNS
                         + " FROM collections c WHERE " + VISIBLE
@@ -129,8 +134,8 @@ public class PostgresCuratedCollections implements CuratedCollections {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<CuratedCollection> find(String slug, String locale) {
-        MapSqlParameterSource params = publicStates();
+    public Optional<CuratedCollection> find(String slug, String locale, String market) {
+        MapSqlParameterSource params = publicStates(market);
         params.addValue("slug", slug);
         List<Header> headers = jdbc.query(
                 "SELECT " + COLLECTION_COLUMNS + " FROM collections c WHERE c.slug = :slug AND " + VISIBLE,
@@ -161,11 +166,12 @@ public class PostgresCuratedCollections implements CuratedCollections {
      */
     @Override
     @Transactional(readOnly = true)
-    public DiscoveryPage projects(CuratedCollection collection, int limit, DiscoveryCursor cursor) {
+    public DiscoveryPage projects(
+            CuratedCollection collection, int limit, DiscoveryCursor cursor, String market) {
         Instant asOf = cursor == null ? bucketedNow() : cursor.asOf();
-        String fingerprint = fingerprintOf(collection);
+        String fingerprint = fingerprintOf(collection, market);
 
-        MapSqlParameterSource params = publicStates();
+        MapSqlParameterSource params = publicStates(market);
         params.addValue("collectionId", collection.id());
         // One more row than asked for: its existence is the only reliable answer to
         // "is there a next page", and it costs one row rather than a COUNT(*) over the
@@ -192,6 +198,7 @@ public class PostgresCuratedCollections implements CuratedCollections {
                         // comment: the membership row outlives the campaign's right to
                         // be shown, and this is what keeps the two apart.
                         + " AND p.state IN (:states)"
+                        + " AND " + MARKET
                         + keyset
                         + " ORDER BY cp.position ASC, p.id ASC"
                         + " LIMIT :limit",
@@ -264,8 +271,8 @@ public class PostgresCuratedCollections implements CuratedCollections {
      * body — and a readable fingerprint makes a mismatched cursor diagnosable from the
      * token itself.
      */
-    private static String fingerprintOf(CuratedCollection collection) {
-        return "collection:" + collection.id();
+    private static String fingerprintOf(CuratedCollection collection, String market) {
+        return market == null ? "collection:" + collection.id() : "collection:" + collection.id() + ":" + market;
     }
 
     private static int position(DiscoveryCursor cursor) {
@@ -284,9 +291,10 @@ public class PostgresCuratedCollections implements CuratedCollections {
         return Instant.ofEpochSecond(Math.floorDiv(now.getEpochSecond(), seconds) * seconds);
     }
 
-    private static MapSqlParameterSource publicStates() {
+    private static MapSqlParameterSource publicStates(String market) {
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("states", List.copyOf(DiscoveryStatus.LISTED_STATES));
+        params.addValue("market", market);
         return params;
     }
 

@@ -14,8 +14,10 @@ package az.ideanest.discovery.application;
  * @param limit how many suggestions to return at most, already clamped into
  *     {@link #MIN_LIMIT}..{@link #MAX_LIMIT}
  * @param locale the negotiated language, which decides what a category is called
+ * @param market the country the reader browses for (#533), or null for every country.
+ *     Narrows the campaign suggestions only; a category is offered wherever it is
  */
-public record SuggestQuery(String text, int limit, String locale) {
+public record SuggestQuery(String text, int limit, String locale, String market) {
 
     /**
      * Suggestions when the caller does not say.
@@ -46,6 +48,7 @@ public record SuggestQuery(String text, int limit, String locale) {
         text = text == null || text.isBlank() ? null : text.trim();
         limit = Math.clamp(limit, MIN_LIMIT, MAX_LIMIT);
         locale = locale == null ? "az" : locale;
+        market = market == null || market.isBlank() ? null : market.strip().toUpperCase(java.util.Locale.ROOT);
     }
 
     /**
