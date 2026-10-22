@@ -80,7 +80,7 @@ export function Table({
       aria-label={scrollLabel ?? caption ?? 'Data table'}
       tabIndex={0}
       className={cn(
-        'w-full overflow-x-auto rounded-lg border border-white/8 bg-surface-2',
+        'w-full overflow-x-auto rounded-lg border border-fg/8 bg-surface-2',
         containerClassName,
       )}
     >
@@ -89,7 +89,7 @@ export function Table({
         {...props}
       >
         {caption && (
-          <caption className="px-4 pt-4 pb-3 text-left text-sm text-white/64">{caption}</caption>
+          <caption className="px-4 pt-4 pb-3 text-left text-sm text-fg-64">{caption}</caption>
         )}
         <TableSortContext.Provider value={{ sort, onSortChange }}>
           {children}
@@ -100,7 +100,7 @@ export function Table({
 }
 
 export function TableHead({ className, ...props }: ComponentPropsWithoutRef<'thead'>) {
-  return <thead className={cn('border-b border-white/8', className)} {...props} />;
+  return <thead className={cn('border-b border-fg/8', className)} {...props} />;
 }
 
 export function TableBody({ className, ...props }: ComponentPropsWithoutRef<'tbody'>) {
@@ -116,7 +116,7 @@ export function TableRow({ interactive = true, className, ...props }: TableRowPr
   return (
     <tr
       className={cn(
-        'border-b border-white/6 last:border-b-0',
+        'border-b border-fg/6 last:border-b-0',
         interactive && 'transition-colors duration-150 ease-in-out hover:bg-surface-3',
         className,
       )}
@@ -154,7 +154,7 @@ export function TableHeaderCell({
       scope="col"
       aria-sort={ariaSort}
       className={cn(
-        'px-4 py-3 text-xs font-medium text-white/64',
+        'px-4 py-3 text-xs font-medium text-fg-64',
         align === 'right' ? 'text-right' : 'text-left',
         className,
       )}
@@ -172,8 +172,8 @@ export function TableHeaderCell({
             })
           }
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-sm text-white/64 transition-colors',
-            'duration-150 ease-in-out hover:text-white',
+            'inline-flex items-center gap-1.5 rounded-sm text-fg-64 transition-colors',
+            'duration-150 ease-in-out hover:text-fg',
             align === 'right' && 'flex-row-reverse',
           )}
         >
@@ -196,7 +196,7 @@ export function TableCell({ align = 'left', className, ...props }: TableCellProp
   return (
     <td
       className={cn(
-        'px-4 py-3 text-white',
+        'px-4 py-3 text-fg',
         // Numerals only line up by place value when they are the same width.
         align === 'right' ? 'text-right tabular-nums' : 'text-left',
         className,

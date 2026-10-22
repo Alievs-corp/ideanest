@@ -78,8 +78,8 @@ export function InlineAlert({
       <Icon aria-hidden="true" className={cn('mt-px size-4 shrink-0', tone)} />
 
       <div className="min-w-0 flex-1">
-        {title && <p className="font-medium text-white">{title}</p>}
-        {children && <div className={cn('text-white/64', title && 'mt-1')}>{children}</div>}
+        {title && <p className="font-medium text-fg">{title}</p>}
+        {children && <div className={cn('text-fg-64', title && 'mt-1')}>{children}</div>}
       </div>
 
       {onDismiss && (
@@ -88,8 +88,8 @@ export function InlineAlert({
           aria-label={dismissLabel}
           onClick={onDismiss}
           className={cn(
-            '-m-1 shrink-0 rounded-full p-1 text-white/40',
-            'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-white',
+            '-m-1 shrink-0 rounded-full p-1 text-fg-40',
+            'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-fg',
           )}
         >
           <X aria-hidden="true" className="size-4" />

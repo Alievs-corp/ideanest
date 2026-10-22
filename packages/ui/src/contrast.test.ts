@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accent, colors } from '@ideanest/design-tokens';
+import { accent, colors, lightColors } from '@ideanest/design-tokens';
 
 /**
  * Contrast, as arithmetic rather than as a promise — issue 129.
@@ -26,7 +26,7 @@ import { accent, colors } from '@ideanest/design-tokens';
  * `textSecondary` is `rgba(255,255,255,0.64)`, which has no contrast ratio of its own — what a
  * reader sees is that white composited over whichever surface is behind it. So every ratio
  * below is computed against a named background, and the same token is checked more than once
- * because the answer genuinely differs: `text-white/64` is comfortable on `--surface-1` and
+ * because the answer genuinely differs: `text-fg-64` is comfortable on `--surface-1` and
  * illegible on lime, which is the mistake `docs/ui-kit.md` warns about in as many words.
  *
  * <h2>What the thresholds are</h2>
@@ -107,7 +107,7 @@ describe('contrast', () => {
   });
 
   /**
-   * And the other direction: `text-white/64` on a lime card, which `CLAUDE.md` names as the
+   * And the other direction: `text-fg-64` on a lime card, which `CLAUDE.md` names as the
    * reason the `onLime` variants exist. It is close to invisible, and this says by how much.
    */
   it('refuses translucent white on lime, which is why the onLime variants exist', () => {
@@ -213,6 +213,92 @@ describe('contrast', () => {
     for (const status of [colors.success, colors.warning, colors.danger, colors.info, colors.hot]) {
       expect(ratio(status, colors.surface1), status).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
       expect(ratio(status, colors.surface2), status).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+    }
+  });
+});
+
+/**
+ * The light theme — docs/ui-kit.md §11.
+ *
+ * Its inks are solid, so each is measured as drawn. The scale is held to the same promises the
+ * dark one makes: everything from `fg-48` up reads as body text on every surface, `fg-40` is
+ * the tertiary colour and keeps the large-text floor, and lime as ink is replaced by a colour
+ * that is legible on a light ground.
+ */
+describe('contrast, light theme', () => {
+  const LIGHT_SURFACES = [
+    ['surface-1', lightColors.surface1],
+    ['surface-2', lightColors.surface2],
+    ['surface-3', lightColors.surface3],
+    ['surface-4', lightColors.surface4],
+  ] as const;
+
+  const READABLE = [
+    ['fg', lightColors.fg],
+    ['fg-80', lightColors.fg80],
+    ['fg-72', lightColors.fg72],
+    ['fg-64', lightColors.fg64],
+    ['fg-56', lightColors.fg56],
+    ['fg-48', lightColors.fg48],
+    ['reading', lightColors.textReading],
+    ['lime-ink', lightColors.limeInk],
+  ] as const;
+
+  it.each(LIGHT_SURFACES)('reads every body ink on %s', (_name, surface) => {
+    for (const [ink, value] of READABLE) {
+      expect(ratio(value, surface), ink).toBeGreaterThanOrEqual(BODY);
+    }
+  });
+
+  it.each(LIGHT_SURFACES)('keeps tertiary text above the large-text floor on %s', (_name, surface) => {
+    expect(ratio(lightColors.fg40, surface)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+  });
+
+  it('keeps the secondary and tertiary tokens on the fg scale', () => {
+    expect(lightColors.textSecondary).toBe(lightColors.fg64);
+    expect(lightColors.textTertiary).toBe(lightColors.fg40);
+  });
+
+  /** Why `--lime-ink` and `--focus-ring` exist: lime itself, on a light ground, measured. */
+  it.each(LIGHT_SURFACES)('refuses lime as ink on %s', (_name, surface) => {
+    expect(ratio(colors.lime500, surface)).toBeLessThan(LARGE_OR_NON_TEXT);
+  });
+
+  it.each(LIGHT_SURFACES)('draws a visible focus ring on %s', (_name, surface) => {
+    expect(ratio(lightColors.focusRing, surface)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+  });
+
+  it('reads the inverted primary pill and gives it an edge on the page', () => {
+    expect(ratio(lightColors.onInverse, lightColors.inverse)).toBeGreaterThanOrEqual(BODY);
+    expect(ratio(lightColors.onInverse, lightColors.inverseMuted)).toBeGreaterThanOrEqual(BODY);
+    for (const [name, surface] of LIGHT_SURFACES) {
+      expect(ratio(lightColors.inverse, surface), name).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+    }
+  });
+
+  it('reads near-black text on lime, which does not change with the theme', () => {
+    expect(ratio(colors.textOnLime, colors.lime500)).toBeGreaterThanOrEqual(BODY);
+  });
+
+  /** On the light theme `danger` deepens, so its label turns white — the dark rule reversed. */
+  it('reads the danger label on the light danger fill', () => {
+    expect(ratio(lightColors.textOnDanger, lightColors.danger)).toBeGreaterThanOrEqual(BODY);
+  });
+
+  it('reads every status colour as text on the page and on a card', () => {
+    const statuses = [
+      lightColors.success,
+      lightColors.warning,
+      lightColors.danger,
+      lightColors.info,
+      lightColors.hot,
+    ];
+    for (const status of statuses) {
+      expect(ratio(status, lightColors.surface1), status).toBeGreaterThanOrEqual(BODY);
+      expect(ratio(status, lightColors.surface2), status).toBeGreaterThanOrEqual(BODY);
+      for (const [name, surface] of LIGHT_SURFACES) {
+        expect(ratio(status, surface), `${status} on ${name}`).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+      }
     }
   });
 });

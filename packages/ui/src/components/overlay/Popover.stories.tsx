@@ -46,7 +46,7 @@ function PopoverDemo({ placement }: { placement: Placement }) {
         placement={placement}
         label="Fee breakdown"
       >
-        <p className="text-white">Where the money goes</p>
+        <p className="text-fg">Where the money goes</p>
         <dl className="mt-3 flex flex-col gap-1.5">
           <div className="flex justify-between gap-8">
             <dt>Platform fee</dt>

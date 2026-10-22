@@ -158,7 +158,7 @@ the trigger on close; `Escape` closes the topmost overlay only. See
 Conflating them tells a backer the opposite of the truth.
 
 **2. Context decides the colour.**
-Inside a lime card, `text-white/64` and `Tag variant="default"` are invisible —
+Inside a lime card, `text-fg-64` and `Tag variant="default"` are invisible —
 use the `onLime` variants. The same applies to the white `FloatingPanel`, where
 `text-on-white/64` is correct.
 

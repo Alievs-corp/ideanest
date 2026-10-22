@@ -76,13 +76,13 @@ export const ProjectCard: Story = {
         <CardTitle className="mt-3">Woven Archive</CardTitle>
         <CardSubtitle>Amara Osei · Art</CardSubtitle>
         <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-white/40">Funding</span>
+          <span className="text-xs text-fg-40">Funding</span>
           <DotIndicator percent={87} />
         </div>
         <ProgressBar value={87} className="mt-2" />
         <div className="mt-2 flex items-baseline justify-between">
           <span className="text-sm font-medium tabular-nums">87%</span>
-          <span className="text-xs text-white/40">12 days left</span>
+          <span className="text-xs text-fg-40">12 days left</span>
         </div>
         <CardFooter>
           <Tag>Art</Tag>

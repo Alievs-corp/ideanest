@@ -119,8 +119,8 @@ export function Popover({
       tabIndex={-1}
       style={{ position: 'fixed', top: position?.top ?? 0, left: position?.left ?? 0 }}
       className={cn(
-        'z-50 max-w-[320px] rounded-md border border-white/8 bg-surface-3 p-4',
-        'text-sm text-white/64',
+        'z-50 max-w-[320px] rounded-md border border-fg/8 bg-surface-3 p-4',
+        'text-sm text-fg-64',
         className,
       )}
       {...entry}

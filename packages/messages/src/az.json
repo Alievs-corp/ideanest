@@ -86,6 +86,11 @@
       "emptyDetail": "Başqa ölkələrin kampaniyalarına baxa bilərsiniz.",
       "emptyAction": "Bütün ölkələrə baxın"
     },
+    "theme": {
+      "label": "Tema",
+      "toLight": "Açıq temaya keç",
+      "toDark": "Qaranlıq temaya keç"
+    },
     "footer": {
       "label": "Altlıq",
       "languageHeading": "Dil",

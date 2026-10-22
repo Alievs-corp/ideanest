@@ -1,12 +1,27 @@
 /**
- * IdeyaNest — dark surface + lime accent theme.
- * Specification: docs/ui-kit.md §2–4, §10
+ * IdeyaNest — dark surface + lime accent theme, with a light theme beside it.
+ * Specification: docs/ui-kit.md §2–4, §10, §11
  *
  * This file is the single source of truth for colour. If you find a literal
  * hex value inside a component, that is a bug — `pnpm test` enforces it.
+ *
+ * Dark is the default and is declared on `:root`. `[data-theme='light']` on
+ * `<html>` swaps the colour tokens below; `[data-theme='dark']` on any element
+ * puts the dark set back for its subtree, which is how the admin console stays
+ * dark whatever the reader chose (docs/ui-kit.md §11).
+ *
+ * A white panel (`data-on-white`: the modal, the floating panel), a lime
+ * surface and an accent card look the same in both themes, so what sits on
+ * them was drawn against the dark set — the `in-data-on-white:` variants, the
+ * dark progress track on a campaign card. Under the light theme they keep
+ * that set, and a modal or a card looks the same whichever theme shows it.
  */
 
-:root {
+:root,
+[data-theme='dark'],
+[data-theme='light'] [data-on-white],
+[data-theme='light'] [data-on-lime],
+[data-theme='light'] [data-on-accent] {
   color-scheme: dark;
 
   /* ── Neutral surfaces ────────────────────────────────────
@@ -34,6 +49,33 @@
 
   /* Long-form reading. Slightly under pure white to reduce halation. */
   --text-reading: rgb(255 255 255 / 0.92);
+
+  /* ── Foreground scale ───────────────────────────────────
+     What `text-fg`, `text-fg-64` and `border-fg/8` resolve to.
+     On dark these are white at the named opacity; the light
+     theme replaces each with a solid ink measured to hold the
+     same role on a light ground (§11).                       */
+  --fg: #ffffff;
+  --fg-80: rgb(255 255 255 / 0.8);
+  --fg-72: rgb(255 255 255 / 0.72);
+  --fg-64: rgb(255 255 255 / 0.64);
+  --fg-56: rgb(255 255 255 / 0.56);
+  --fg-48: rgb(255 255 255 / 0.48);
+  --fg-40: rgb(255 255 255 / 0.4);
+  --fg-32: rgb(255 255 255 / 0.32);
+  --fg-24: rgb(255 255 255 / 0.24);
+
+  /* The primary pill: white on dark, near-black on light. */
+  --inverse: #ffffff;
+  --inverse-muted: #f4f4f4;
+  --on-inverse: #0a0a0a;
+
+  /* Lime as ink — a label, an active marker. On dark it is lime
+     itself; on light lime measures 1.1:1, so it darkens.     */
+  --lime-ink: var(--lime-500);
+
+  /* The keyboard focus ring. */
+  --focus-ring: var(--lime-500);
 
   /* ── Lime — brand accent ─────────────────────────────────
      RULE: lime is always a SURFACE, never text on light.
@@ -68,18 +110,85 @@
   --accent-mint-glow: rgb(46 242 196 / 0.32);
   --accent-sky: #26a6f7;
   --accent-sky-glow: rgb(38 166 247 / 0.32);
+}
 
+/* ── Shadow — floating white panels only ─────────────────
+   A dark shadow under a dark card is invisible cost. Outside
+   the block above because a white panel casts its shadow on
+   the page, so it takes the page's theme, not its own.     */
+:root,
+[data-theme='dark'] {
+  --shadow-panel: 0 8px 32px -8px rgb(0 0 0 / 0.5);
+  --shadow-float: 0 24px 64px -12px rgb(0 0 0 / 0.7);
+}
+
+/**
+ * The light theme (docs/ui-kit.md §11). Only colour changes: radius, motion
+ * and type are the same product in either.
+ *
+ * Every ink below is solid rather than black at an opacity, because the
+ * opacity steps the dark theme uses do not mirror: black at 40% on a light
+ * ground measures 2.9:1, where white at 40% on the dark ground measures 3.8:1.
+ * `packages/ui/src/contrast.test.ts` holds each one against all four surfaces.
+ *
+ * Lime stays the brand surface with near-black text on it. What changes is
+ * every place lime was ink or outline — `--lime-ink`, `--focus-ring` — and the
+ * status hues, which darken until they read as text on a light ground. A
+ * danger fill then takes white text, the reverse of the dark theme.
+ */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --surface-1: #f4f4f1;
+  --surface-2: #ffffff;
+  --surface-3: #ecece7;
+  --surface-4: #e2e2dc;
+
+  --border: rgb(10 10 10 / 0.1);
+  --border-strong: rgb(10 10 10 / 0.2);
+  --divider: rgb(10 10 10 / 0.07);
+
+  --fg: #0a0a0a;
+  --fg-80: #262624;
+  --fg-72: #323230;
+  --fg-64: #454542;
+  --fg-56: #51514e;
+  --fg-48: #5c5c58;
+  --fg-40: #686863;
+  --fg-32: #8a8a85;
+  --fg-24: #a9a9a4;
+
+  --text-primary: #0a0a0a;
+  --text-secondary: #454542;
+  --text-tertiary: #686863;
+  --text-disabled: #a9a9a4;
+  --text-reading: #1a1a18;
+  --text-on-danger: #ffffff;
+
+  --inverse: #0a0a0a;
+  --inverse-muted: #2a2a2a;
+  --on-inverse: #ffffff;
+
+  --lime-ink: #4e6b00;
+  --focus-ring: #0a0a0a;
+
+  --success: #12712f;
+  --warning: #9a5800;
+  --danger: #c9281e;
+  --info: #1e66c8;
+  --hot: #bf3f0c;
+
+  --shadow-panel: 0 8px 32px -8px rgb(10 10 10 / 0.14);
+  --shadow-float: 0 24px 64px -12px rgb(10 10 10 / 0.22);
+}
+
+:root {
   /* ── Radius ──────────────────────────────────────────────*/
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-xl: 28px;
   --radius-full: 9999px;
-
-  /* ── Shadow — floating white panels only ─────────────────
-     A dark shadow under a dark card is invisible cost.      */
-  --shadow-panel: 0 8px 32px -8px rgb(0 0 0 / 0.5);
-  --shadow-float: 0 24px 64px -12px rgb(0 0 0 / 0.7);
 
   /* ── Motion (docs/motion-system.md §3) ───────────────────*/
   --transition-fast: 0.15s ease-in-out;
@@ -89,9 +198,9 @@
   --stagger-step: 50ms;
 }
 
-/* Focus rings have to survive a dark theme. */
+/* Focus rings have to survive both themes: lime on dark, near-black on light. */
 :focus-visible {
-  outline: 2px solid var(--lime-500);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 

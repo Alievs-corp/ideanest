@@ -114,7 +114,7 @@ export type SkeletonCardProps = Omit<ComponentPropsWithoutRef<'div'>, 'children'
 export function SkeletonCard({ className, ...props }: SkeletonCardProps) {
   return (
     <div
-      className={cn('rounded-lg border border-white/8 bg-surface-2 p-5', className)}
+      className={cn('rounded-lg border border-fg/8 bg-surface-2 p-5', className)}
       {...props}
     >
       <Skeleton height="7rem" className="rounded-md" />

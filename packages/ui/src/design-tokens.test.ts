@@ -6,6 +6,8 @@ import {
   colors,
   duration,
   easing,
+  lightColors,
+  lightShadow,
   radius,
   shadow,
   STAGGER_STEP,
@@ -96,17 +98,44 @@ describe('token contract', () => {
  */
 describe('theme.css and index.ts agree', () => {
   const css = readFileSync(join(import.meta.dirname, '../../design-tokens/src/theme.css'), 'utf8');
-  const properties = [...css.matchAll(/^\s*--([a-z0-9-]+):\s*([^;]+);/gm)].map(
-    ([, name, value]) => [name, value?.replace(/\/\*.*?\*\//g, '').trim()] as [string, string],
-  );
+
+  /*
+   * The file has three rule blocks that declare properties: the dark colours, the light
+   * colours, and the theme-independent rest. Each is compared with its own export, and a
+   * `var()` is resolved inside its block first — `--focus-ring: var(--lime-500)` is lime.
+   */
+  const blocks = [...css.matchAll(/^([^{}@/*\s][^{}]*)\{([^{}]*)\}/gm)].map(([, selector, body]) => ({
+    selector: (selector ?? '').trim(),
+    properties: [...(body ?? '').matchAll(/^\s*--([a-z0-9-]+):\s*([^;]+);/gm)].map(
+      ([, name, value]) => [name, value?.replace(/\/\*.*?\*\//g, '').trim()] as [string, string],
+    ),
+  }));
+  const light = blocks.find((block) => block.selector === "[data-theme='light']")?.properties ?? [];
+  const rest = blocks
+    .filter((block) => block.selector !== "[data-theme='light']")
+    .flatMap((block) => block.properties);
+  const resolve = (value: string, within: Array<[string, string]>) =>
+    value.replace(/var\(--([a-z0-9-]+)\)/g, (match, name: string) =>
+      within.find(([candidate]) => candidate === name)?.[1] ?? match,
+    );
 
   it('finds the custom properties to compare', () => {
-    expect(properties.length).toBeGreaterThan(30);
+    expect(rest.length).toBeGreaterThan(30);
+    expect(light.length).toBeGreaterThan(20);
   });
 
-  it.each(properties)('exports --%s from index.ts with the same value', (name, value) => {
+  it.each(rest)('exports --%s from index.ts with the same value', (name, value) => {
     expect(counterpart(name), `--${name} has no counterpart in index.ts`).toBeDefined();
-    expect(normalise(String(counterpart(name)))).toBe(normalise(value));
+    expect(normalise(String(counterpart(name)))).toBe(normalise(resolve(value, rest)));
+  });
+
+  it.each(light)('exports the light --%s from lightColors with the same value', (name, value) => {
+    const camel = name.replace(/-(.)/g, (_match, next: string) => next.toUpperCase());
+    const exported = name.startsWith('shadow-')
+      ? (lightShadow as Record<string, string>)[name.slice('shadow-'.length)]
+      : (lightColors as Record<string, string>)[camel];
+    expect(exported, `light --${name} has no counterpart in index.ts`).toBeDefined();
+    expect(normalise(String(exported))).toBe(normalise(resolve(value, [...light, ...rest])));
   });
 });
 

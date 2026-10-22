@@ -20,7 +20,7 @@ import { useFocusTrap } from './useFocusTrap';
  * (drawer, popover, tooltip, toast) stays dark, because it belongs to the page
  * rather than interrupting it.
  *
- * Text inside is near-black. `text-white/64` is invisible here; use
+ * Text inside is near-black. `text-fg-64` is invisible here; use
  * `text-on-white/64`.
  *
  * Controlled only. There is no uncontrolled mode: whether a payment dialog is

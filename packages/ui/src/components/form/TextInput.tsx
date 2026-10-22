@@ -39,7 +39,7 @@ export function TextInput({
   return (
     <div className="relative">
       {leading && (
-        <span className="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-white/40 [&_svg]:size-4">
+        <span className="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-fg-40 [&_svg]:size-4">
           {leading}
         </span>
       )}
@@ -60,7 +60,7 @@ export function TextInput({
       />
 
       {trailing && (
-        <span className="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&_svg]:size-4">
+        <span className="absolute inset-y-0 right-3 grid place-items-center text-fg-40 [&_svg]:size-4">
           {trailing}
         </span>
       )}

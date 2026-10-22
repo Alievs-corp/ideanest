@@ -77,9 +77,9 @@ export function PasswordInput({
           title={label}
           onClick={() => setVisible((current) => !current)}
           className={cn(
-            'grid size-8 place-items-center rounded-full text-white/64',
+            'grid size-8 place-items-center rounded-full text-fg-64',
             'transition-[color,background-color] duration-150 ease-in-out',
-            'hover:bg-surface-4 hover:text-white',
+            'hover:bg-surface-4 hover:text-fg',
             'disabled:pointer-events-none disabled:opacity-40',
             toggleProps?.className,
           )}

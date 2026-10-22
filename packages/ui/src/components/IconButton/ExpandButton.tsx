@@ -36,7 +36,7 @@ export function ExpandButton({
         'hover:translate-x-0.5 hover:-translate-y-0.5',
         onLime
           ? 'bg-on-lime/10 text-on-lime hover:bg-on-lime/20'
-          : 'bg-surface-4 text-white hover:bg-white/16',
+          : 'bg-surface-4 text-fg hover:bg-fg/16',
         className,
       )}
       {...props}

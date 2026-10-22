@@ -17,13 +17,13 @@ import { cva } from 'class-variance-authority';
  */
 export const inputSkin = cva(
   [
-    'w-full rounded-md bg-surface-3 text-white',
-    'border border-white/8',
+    'w-full rounded-md bg-surface-3 text-fg',
+    'border border-fg/8',
     // --text-tertiary, the floor for readable text. --text-disabled (24%)
     // measures 2.6:1 and is prohibited for text (docs/ui-kit.md §9.2).
-    'placeholder:text-white/40',
+    'placeholder:text-fg-40',
     'transition-[background-color,border-color] duration-150 ease-in-out',
-    'hover:border-white/16 focus:border-white/16',
+    'hover:border-fg/16 focus:border-fg/16',
     'disabled:pointer-events-none disabled:opacity-40',
     'in-data-on-white:bg-on-white/4 in-data-on-white:text-on-white',
     'in-data-on-white:border-on-white/16 in-data-on-white:placeholder:text-on-white/48',

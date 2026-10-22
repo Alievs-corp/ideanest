@@ -34,8 +34,8 @@ export function Chip({
         'rounded-full px-4 text-[13px] font-medium',
         'transition-[background-color,color,border-color] duration-150 ease-in-out',
         active
-          ? 'border border-transparent bg-white text-on-white'
-          : 'border border-white/8 bg-surface-2 text-white/64 hover:bg-surface-3 hover:text-white',
+          ? 'border border-transparent bg-inverse text-on-inverse'
+          : 'border border-fg/8 bg-surface-2 text-fg-64 hover:bg-surface-3 hover:text-fg',
         className,
       )}
       {...props}
@@ -43,7 +43,7 @@ export function Chip({
       {icon}
       {children}
       {count !== undefined && (
-        <span className={cn('tabular-nums', active ? 'text-on-white/50' : 'text-white/40')}>
+        <span className={cn('tabular-nums', active ? 'text-on-inverse/50' : 'text-fg-40')}>
           {count}
         </span>
       )}
@@ -92,16 +92,16 @@ export function RemovableChip({
       aria-label={removeLabel}
       className={cn(
         'inline-flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap',
-        'rounded-full border border-transparent bg-white px-3 pl-4 text-[13px] font-medium',
-        'text-on-white',
+        'rounded-full border border-transparent bg-inverse px-3 pl-4 text-[13px] font-medium',
+        'text-on-inverse',
         'transition-[background-color,color] duration-150 ease-in-out',
-        'hover:bg-[var(--white-muted)]',
+        'hover:bg-inverse-muted',
         className,
       )}
       {...props}
     >
       {children}
-      <X aria-hidden="true" className="size-3.5 text-on-white/56" />
+      <X aria-hidden="true" className="size-3.5 text-on-inverse/56" />
     </button>
   );
 }

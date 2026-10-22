@@ -61,7 +61,7 @@ export function Avatar({ src, name, size, className, ...props }: AvatarProps) {
         aria-label={name}
         className={cn(
           avatar({ size }),
-          'grid place-items-center font-medium text-white/64',
+          'grid place-items-center font-medium text-fg-64',
           className,
         )}
       >
@@ -139,7 +139,7 @@ export function AvatarGroup({ max, total, className, children, ...props }: Avata
             SLOT,
             visible.length > 0 && '-ml-2.5',
             'grid size-10 place-items-center rounded-full',
-            'bg-surface-3 text-xs font-medium text-white/64 ring-2 ring-[var(--surface-1)]',
+            'bg-surface-3 text-xs font-medium text-fg-64 ring-2 ring-[var(--surface-1)]',
           )}
           style={slotStyle(visible.length)}
         >

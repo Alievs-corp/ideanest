@@ -21,15 +21,15 @@ const iconButton = cva(
   {
     variants: {
       variant: {
-        default: 'bg-surface-3 text-white hover:bg-surface-4',
+        default: 'bg-surface-3 text-fg hover:bg-surface-4',
         light: [
-          'bg-white text-on-white hover:bg-[var(--white-muted)]',
-          'in-data-on-white:bg-surface-1 in-data-on-white:text-white',
+          'bg-inverse text-on-inverse hover:bg-inverse-muted',
+          'in-data-on-white:bg-surface-1 in-data-on-white:text-fg',
           'in-data-on-white:hover:bg-surface-3',
         ],
         accent: 'bg-lime-500 text-on-lime hover:bg-lime-400',
         danger: 'bg-danger text-on-danger hover:brightness-110',
-        ghost: 'bg-transparent text-white/64 hover:bg-surface-3 hover:text-white',
+        ghost: 'bg-transparent text-fg-64 hover:bg-surface-3 hover:text-fg',
       },
       size: {
         sm: 'size-8 [&_svg]:size-4',

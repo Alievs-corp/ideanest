@@ -33,7 +33,7 @@ export const NavigationRail: Story = {
         <RailItem icon={<Settings />} label="Settings" />
       </Rail>
       <div className="flex-1 p-8">
-        <p className="text-sm text-white/64">
+        <p className="text-sm text-fg-64">
           The active item is a lime <em>icon</em>, never a lime surface. Permanent chrome should not
           shout as loudly as a campaign about to close.
         </p>
@@ -61,7 +61,7 @@ export const CollapsingTopBar: Story = {
         actions={<Pill size="sm">Sign in</Pill>}
       />
       <div className="px-7 py-10">
-        <p className="max-w-md text-sm text-white/64">At the top of the page: transparent, wide.</p>
+        <p className="max-w-md text-sm text-fg-64">At the top of the page: transparent, wide.</p>
       </div>
     </div>
   ),
@@ -88,7 +88,7 @@ export const CollapsedTopBar: Story = {
         }
       />
       <div className="px-7 py-10">
-        <p className="max-w-md text-sm text-white/64">
+        <p className="max-w-md text-sm text-fg-64">
           After scrolling: the pill narrows, turns white, and padding tightens — all on the same
           300ms curve.
         </p>
@@ -116,7 +116,7 @@ export const CampaignTimeline: Story = {
           { id: 'end', at: END, label: 'Closes' },
         ]}
       />
-      <p className="mt-6 text-sm text-white/64">
+      <p className="mt-6 text-sm text-fg-64">
         A lime surface is right here — a live campaign is time-bound, and the strip exists to say
         the clock is running.
       </p>

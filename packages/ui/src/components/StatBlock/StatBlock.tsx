@@ -42,14 +42,14 @@ export function StatBlock({
               'text-[11px] font-semibold tabular-nums',
               badgeTone === 'up' && 'bg-lime-500 text-on-lime',
               badgeTone === 'down' && 'bg-danger text-on-danger',
-              badgeTone === 'neutral' && 'bg-surface-4 text-white/64',
+              badgeTone === 'neutral' && 'bg-surface-4 text-fg-64',
             )}
           >
             {badge}
           </span>
         )}
       </div>
-      <span className="text-sm text-white/64">{label}</span>
+      <span className="text-sm text-fg-64">{label}</span>
     </div>
   );
 }

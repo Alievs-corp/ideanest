@@ -12,7 +12,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The **only** place shadow is used. Inside it `text-white/64` does not work — use `text-on-white/64`.',
+          'The **only** place shadow is used. Inside it `text-fg-64` does not work — use `text-on-white/64`.',
       },
     },
   },

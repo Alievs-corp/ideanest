@@ -76,11 +76,11 @@ export const WithIcons: Story = {
 export const InContext: Story = {
   parameters: { layout: 'padded' },
   render: () => (
-    <div className="w-[420px] rounded-xl border border-white/8 bg-surface-2 p-6">
+    <div className="w-[420px] rounded-xl border border-fg/8 bg-surface-2 p-6">
       <div className="font-display text-3xl font-semibold tracking-[-0.03em] tabular-nums">
         1,111,561
       </div>
-      <div className="mt-1 text-sm text-white/64">pledged of 100,000 goal</div>
+      <div className="mt-1 text-sm text-fg-64">pledged of 100,000 goal</div>
       <div className="mt-5 flex gap-2">
         <Pill variant="accent" fullWidth>
           Back this project

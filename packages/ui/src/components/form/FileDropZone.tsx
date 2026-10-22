@@ -101,7 +101,7 @@ export function FileDropZone({
       className={cn(
         'flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-8 text-center',
         'transition-[background-color,border-color] duration-150 ease-in-out',
-        dragging ? 'border-lime-500 bg-surface-3' : 'border-white/16 bg-surface-2',
+        dragging ? 'border-lime-ink bg-surface-3' : 'border-fg/16 bg-surface-2',
         disabled && 'pointer-events-none opacity-40',
         className,
       )}
@@ -122,10 +122,10 @@ export function FileDropZone({
 
       <Upload
         aria-hidden="true"
-        className={cn('size-5', dragging ? 'text-lime-500' : 'text-white/40')}
+        className={cn('size-5', dragging ? 'text-lime-ink' : 'text-fg-40')}
       />
 
-      <p className="text-sm text-white">{dragging ? dragPrompt : prompt}</p>
+      <p className="text-sm text-fg">{dragging ? dragPrompt : prompt}</p>
 
       <button
         type="button"
@@ -133,13 +133,13 @@ export function FileDropZone({
         onClick={() => inputRef.current?.click()}
         className={cn(
           'mt-1 inline-flex h-9 items-center rounded-full px-4 text-[13px] font-medium',
-          'bg-surface-3 text-white transition-colors duration-150 ease-in-out hover:bg-surface-4',
+          'bg-surface-3 text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4',
         )}
       >
         {buttonLabel}
       </button>
 
-      {hint && <p className="text-[13px] text-white/40">{hint}</p>}
+      {hint && <p className="text-[13px] text-fg-40">{hint}</p>}
     </div>
   );
 }

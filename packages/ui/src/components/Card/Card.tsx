@@ -19,7 +19,7 @@ const card = cva(
   {
     variants: {
       variant: {
-        default: ['bg-surface-2 border border-white/8 text-white', 'hover:bg-surface-3'],
+        default: ['bg-surface-2 border border-fg/8 text-fg', 'hover:bg-surface-3'],
         // data-on-lime switches the focus ring to near-black (see theme.css)
         active: ['bg-lime-500 border border-transparent text-on-lime', 'hover:bg-lime-400'],
         floating: ['bg-white text-on-white border-transparent shadow-float'],
@@ -75,7 +75,7 @@ export function CardSubtitle({
 }: ComponentPropsWithoutRef<'p'> & { onLime?: boolean }) {
   return (
     <p
-      className={cn('mt-0.5 text-sm', onLime ? 'text-on-lime/70' : 'text-white/64', className)}
+      className={cn('mt-0.5 text-sm', onLime ? 'text-on-lime/70' : 'text-fg-64', className)}
       {...props}
     />
   );

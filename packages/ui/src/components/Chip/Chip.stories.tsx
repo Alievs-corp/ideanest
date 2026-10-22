@@ -39,7 +39,7 @@ export const Row: Story = {
             </Chip>
           ))}
         </ChipRow>
-        <p className="mt-4 text-sm text-white/40">Selected: {active}</p>
+        <p className="mt-4 text-sm text-fg-40">Selected: {active}</p>
       </div>
     );
   },
@@ -68,7 +68,7 @@ export const Removable: Story = {
             </RemovableChip>
           ))}
         </ChipRow>
-        {applied.length === 0 && <p className="mt-4 text-sm text-white/40">No filters applied.</p>}
+        {applied.length === 0 && <p className="mt-4 text-sm text-fg-40">No filters applied.</p>}
       </div>
     );
   },

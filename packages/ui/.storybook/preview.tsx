@@ -12,6 +12,7 @@ const preview: Preview = {
         'surface-2': { name: 'surface-2 (card)', value: '#161616' },
         black: { name: 'black', value: '#000000' },
         white: { name: 'white (floating panel context)', value: '#FFFFFF' },
+        light: { name: 'light theme page (pair with the Theme toolbar)', value: '#F4F4F1' },
       },
     },
 
@@ -26,13 +27,33 @@ const preview: Preview = {
     },
   },
 
+  // docs/ui-kit.md §11: the same component under either theme's tokens.
+  globalTypes: {
+    theme: {
+      description: 'Colour theme',
+      toolbar: {
+        title: 'Theme',
+        icon: 'mirror',
+        items: [
+          { value: 'dark', title: 'Dark' },
+          { value: 'light', title: 'Light' },
+        ],
+        dynamicTitle: true,
+      },
+    },
+  },
+
   initialGlobals: {
     backgrounds: { value: 'surface-1' },
+    theme: 'dark',
   },
 
   decorators: [
-    (Story) => (
-      <div className="font-sans text-white antialiased">
+    (Story, context) => (
+      <div
+        data-theme={context.globals.theme === 'light' ? 'light' : 'dark'}
+        className="font-sans text-fg antialiased"
+      >
         <Story />
       </div>
     ),

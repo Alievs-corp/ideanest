@@ -133,7 +133,7 @@ export function Field({
     <>
       {label}
       {required && (
-        <span aria-hidden="true" className="ml-0.5 text-white/40 in-data-on-white:text-on-white/48">
+        <span aria-hidden="true" className="ml-0.5 text-fg-40 in-data-on-white:text-on-white/48">
           *
         </span>
       )}
@@ -152,11 +152,11 @@ export function Field({
     >
       <div className={cn('flex flex-col gap-1.5', className)} {...props}>
         {grouped ? (
-          <span id={labelId} className="text-sm font-medium text-white in-data-on-white:text-on-white">
+          <span id={labelId} className="text-sm font-medium text-fg in-data-on-white:text-on-white">
             {labelContent}
           </span>
         ) : (
-          <label id={labelId} htmlFor={controlId} className="text-sm font-medium text-white in-data-on-white:text-on-white">
+          <label id={labelId} htmlFor={controlId} className="text-sm font-medium text-fg in-data-on-white:text-on-white">
             {labelContent}
           </label>
         )}
@@ -164,7 +164,7 @@ export function Field({
         {children}
 
         {hint && (
-          <p id={hintId} className="text-[13px] text-white/64 in-data-on-white:text-on-white/64">
+          <p id={hintId} className="text-[13px] text-fg-64 in-data-on-white:text-on-white/64">
             {hint}
           </p>
         )}

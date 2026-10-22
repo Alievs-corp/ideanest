@@ -24,10 +24,10 @@ const flipButton = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-white text-on-white hover:bg-[var(--white-muted)]',
+        primary: 'bg-inverse text-on-inverse hover:bg-inverse-muted',
         accent: 'bg-lime-500 text-on-lime hover:bg-lime-400',
-        ghost: 'bg-surface-3 text-white hover:bg-surface-4',
-        outline: 'border border-white/16 bg-transparent text-white hover:bg-surface-3',
+        ghost: 'bg-surface-3 text-fg hover:bg-surface-4',
+        outline: 'border border-fg/16 bg-transparent text-fg hover:bg-surface-3',
       },
       size: {
         sm: 'h-8 px-3.5 text-[13px]',

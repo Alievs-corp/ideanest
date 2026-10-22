@@ -30,7 +30,7 @@ export function RailHeader({
     <header className={cn('flex flex-col gap-3', className)} {...props}>
       <div className="flex items-center gap-3">
         <h2 className="font-display text-2xl font-semibold tracking-[-0.03em]">{title}</h2>
-        {count !== undefined && <span className="text-xs text-white/40">{count}</span>}
+        {count !== undefined && <span className="text-xs text-fg-40">{count}</span>}
 
         {actions && <div className="ml-auto flex items-center gap-2">{actions}</div>}
         {filters && (

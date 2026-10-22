@@ -100,7 +100,7 @@ export function Tooltip({ label, children, placement = 'top', className }: Toolt
             style={{ position: 'fixed', top: position?.top ?? 0, left: position?.left ?? 0 }}
             className={cn(
               'pointer-events-none z-50 max-w-[240px] rounded-sm px-2.5 py-1.5',
-              'border border-white/8 bg-surface-4 text-xs text-white',
+              'border border-fg/8 bg-surface-4 text-xs text-fg',
               className,
             )}
             {...entry}

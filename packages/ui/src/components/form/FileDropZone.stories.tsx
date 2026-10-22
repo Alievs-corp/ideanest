@@ -43,7 +43,7 @@ export const InAField: Story = {
       <Field label="Campaign gallery" hint="The first image becomes the card thumbnail." grouped>
         <FileDropZone {...args} onFiles={(files) => setNames(files.map((f) => f.name))} />
         {names.length > 0 && (
-          <ul className="mt-1 text-[13px] text-white/64">
+          <ul className="mt-1 text-[13px] text-fg-64">
             {names.map((n) => (
               <li key={n}>{n}</li>
             ))}
