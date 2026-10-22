@@ -5,6 +5,7 @@ import az.ideanest.shared.money.Money;
 import az.ideanest.shared.Patched;
 import tools.jackson.databind.JsonNode;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -37,7 +38,8 @@ public record ProjectPatch(
         Patched<JsonNode> story,
         Patched<String> risks,
         Patched<CoverImageSelection> coverImage,
-        Patched<UUID> videoMediaId) {
+        Patched<UUID> videoMediaId,
+        Patched<List<String>> countries) {
 
     public ProjectPatch {
         // Absence, not null, is the neutral value. Normalised here so that no
@@ -54,6 +56,7 @@ public record ProjectPatch(
         risks = Patched.orAbsent(risks);
         coverImage = Patched.orAbsent(coverImage);
         videoMediaId = Patched.orAbsent(videoMediaId);
+        countries = Patched.orAbsent(countries);
     }
 
     /**

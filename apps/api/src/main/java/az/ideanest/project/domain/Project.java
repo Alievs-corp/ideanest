@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.hibernate.annotations.Generated;
@@ -145,6 +146,14 @@ public class Project {
     private UUID videoMediaId;
 
     /**
+     * The countries the campaign is for, as ISO 3166-1 alpha-2 codes — V115. Never empty, and
+     * Azerbaijan until the creator says otherwise.
+     */
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "countries", nullable = false)
+    private String[] countries = {DEFAULT_COUNTRY};
+
+    /**
      * §5.1's decision, frozen — V29's four columns, written once by
      * {@link #finalise} and never again.
      *
@@ -203,6 +212,9 @@ public class Project {
     protected Project() {
         // JPA.
     }
+
+    /** Where a campaign is for when its creator has not said: the platform's home country. */
+    public static final String DEFAULT_COUNTRY = "AZ";
 
     private Project(UUID id, UUID creatorId, String title, String slug, String currency) {
         this.id = id;
@@ -506,6 +518,17 @@ public class Project {
 
     public void setVideoMediaId(UUID videoMediaId) {
         this.videoMediaId = videoMediaId;
+    }
+
+    public List<String> getCountries() {
+        return List.of(countries);
+    }
+
+    public void setCountries(List<String> countries) {
+        if (countries.isEmpty()) {
+            throw new IllegalArgumentException("A campaign is for at least one country");
+        }
+        this.countries = countries.toArray(String[]::new);
     }
 
     public void extendUntil(Instant until, Instant at) {

@@ -447,6 +447,62 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("a campaign is for Azerbaijan until its creator chooses its countries")
+    void countriesDefaultToAzerbaijanAndAreReplacedWhole() {
+        Creator creator = creator();
+        Map<String, Object> created = draft(creator, "A campaign");
+        UUID id = idOf(created);
+        assertThat(created.get("countries")).isEqualTo(List.of("AZ"));
+
+        ResponseEntity<Map<String, Object>> chosen = patch(
+                "/v1/projects/" + id, creator.accessToken(), Map.of("countries", List.of("az", "TR", "GE", "TR")));
+        assertThat(chosen.getStatusCode()).isEqualTo(HttpStatus.OK);
+        // Upper-cased and each once, in the order the creator chose them.
+        assertThat(chosen.getBody().get("countries")).isEqualTo(List.of("AZ", "TR", "GE"));
+
+        ResponseEntity<Map<String, Object>> narrowed =
+                patch("/v1/projects/" + id, creator.accessToken(), Map.of("countries", List.of("GE")));
+        assertThat(narrowed.getBody().get("countries")).isEqualTo(List.of("GE"));
+    }
+
+    @Test
+    @DisplayName("no countries, or a code that is not a country, is refused by field")
+    void invalidCountriesAreNamed() {
+        Creator creator = creator();
+        UUID id = idOf(draft(creator, "A campaign"));
+
+        // Literal JSON, because a Map would lose the nulls on the way out; see patchJson.
+        for (String countries : List.of("[]", "[\"XX\"]", "[\"AZE\"]", "[\"AZ\", null]", "null")) {
+            ResponseEntity<Map<String, Object>> refused =
+                    patchJson("/v1/projects/" + id, creator.accessToken(), "{\"countries\": " + countries + "}");
+            assertThat(refused.getStatusCode()).as(countries).isEqualTo(HttpStatus.BAD_REQUEST);
+            assertThat(refused.getBody().get("meta")).isEqualTo(Map.of("field", "countries"));
+        }
+
+        assertThat(get("/v1/projects/" + id + "/edit", creator.accessToken()).getBody().get("countries"))
+                .isEqualTo(List.of("AZ"));
+    }
+
+    @Test
+    @DisplayName("a launched campaign can add countries and cannot remove one")
+    void aLaunchedCampaignOnlyGainsCountries() {
+        Creator creator = creator();
+        UUID id = idOf(draft(creator, "A campaign"));
+        patch("/v1/projects/" + id, creator.accessToken(), Map.of("countries", List.of("AZ", "TR")));
+        Campaigns.launch(dataSource, id);
+
+        ResponseEntity<Map<String, Object>> removed =
+                patch("/v1/projects/" + id, creator.accessToken(), Map.of("countries", List.of("AZ")));
+        assertThat(removed.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(removed.getBody().get("meta")).isEqualTo(Map.of("field", "countries"));
+
+        ResponseEntity<Map<String, Object>> added = patch(
+                "/v1/projects/" + id, creator.accessToken(), Map.of("countries", List.of("TR", "AZ", "GE")));
+        assertThat(added.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(added.getBody().get("countries")).isEqualTo(List.of("TR", "AZ", "GE"));
+    }
+
+    @Test
     @DisplayName("a subcategory has to belong to the chosen category")
     void filingIsConsistent() {
         Creator creator = creator();

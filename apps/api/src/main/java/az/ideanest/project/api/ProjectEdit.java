@@ -27,6 +27,7 @@ import java.util.UUID;
  *
  * @param goal the funding target, as an amount and a currency. The amount is a
  *     string on the wire — §10.3, and {@link Money} for why
+ * @param countries the countries the campaign is for, ISO 3166-1 alpha-2, never empty
  * @param lockedFields which fields may no longer be changed, given the state the
  *     campaign is in. Empty until launch; from {@code LIVE} onwards it lists
  *     {@code goal}, {@code durationDays}, and {@code scheduledLaunchAt}, which §5.3
@@ -55,6 +56,7 @@ public record ProjectEdit(
         String risks,
         CoverImageBody coverImage,
         CampaignVideoBody video,
+        List<String> countries,
         List<String> lockedFields,
         Instant createdAt,
         Instant updatedAt) {

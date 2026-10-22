@@ -18,6 +18,9 @@ import az.ideanest.shared.Slugs;
 import tools.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -54,6 +57,8 @@ public class ProjectEditingService {
 
     /** §5.3. Also {@code projects_blurb_length}. */
     private static final int BLURB_MAX = 135;
+
+    private static final Set<String> ISO_COUNTRIES = Locale.getISOCountries(Locale.IsoCountryCode.PART1_ALPHA2);
 
     /** §5.3: 30–60 days (#390). Tighter than {@code projects_duration_in_range}, which keeps 1–60. */
     private static final int DURATION_MIN = SubmissionChecklist.DURATION_MIN_DAYS;
@@ -167,6 +172,7 @@ public class ProjectEditingService {
         patch.scheduledLaunchAt().ifPresent(project::setScheduledLaunchAt);
         patch.coverImage().ifPresent(selection -> project.setCoverImage(resolveCover(selection, accountId)));
         patch.videoMediaId().ifPresent(mediaId -> replaceVideo(project, accountId, mediaId));
+        patch.countries().ifPresent(countries -> project.setCountries(validCountries(project, countries)));
         patch.durationDays().ifPresent(days -> project.setDurationDays(validDuration(days)));
         patch.goal().ifPresent(goal -> applyGoal(project, goal));
 
@@ -283,7 +289,8 @@ public class ProjectEditingService {
                 || patch.durationDays().isPresent()
                 || patch.scheduledLaunchAt().isPresent()
                 || patch.coverImage().isPresent()
-                || patch.videoMediaId().isPresent()) {
+                || patch.videoMediaId().isPresent()
+                || patch.countries().isPresent()) {
             needed.add(Capability.EDIT_BASICS);
         }
         return needed;
@@ -439,6 +446,32 @@ public class ProjectEditingService {
             throw new ProjectFieldRejectedException("title", "A campaign needs a title.");
         }
         return withinLength("title", trimmed, TITLE_MAX);
+    }
+
+    /**
+     * The countries a campaign is for: known ISO 3166-1 alpha-2 codes, at least one, each once.
+     *
+     * <p>After launch the list may grow and may not shrink. A backer who pledged from a country
+     * was promised a reward there, and taking that country off the campaign would not take the
+     * promise with it.
+     */
+    private static List<String> validCountries(Project project, List<String> requested) {
+        if (requested == null || requested.isEmpty()) {
+            throw new ProjectFieldRejectedException("countries", "Choose at least one country.");
+        }
+        Set<String> chosen = new LinkedHashSet<>();
+        for (String code : requested) {
+            String normalised = code == null ? "" : code.strip().toUpperCase(Locale.ROOT);
+            if (!ISO_COUNTRIES.contains(normalised)) {
+                throw new ProjectFieldRejectedException("countries", "That is not a country code.");
+            }
+            chosen.add(normalised);
+        }
+        if (project.getLaunchedAt() != null && !chosen.containsAll(project.getCountries())) {
+            throw new ProjectFieldRejectedException(
+                    "countries", "A launched campaign can add countries but not remove them.");
+        }
+        return List.copyOf(chosen);
     }
 
     private static String withinLength(String field, String value, int max) {
