@@ -77,7 +77,7 @@ export async function BackCampaignCta({ projectId, state, deadline, now }: BackC
   return (
     <Link
       href={`/projects/${encodeURIComponent(projectId)}/back`}
-      className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+      className="inline-flex h-12 items-center justify-center rounded-full bg-inverse px-6 text-base font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
     >
       {label}
     </Link>

@@ -17,8 +17,8 @@ export interface CountryListProps {
 
 const ROW = [
   'flex w-full items-center justify-between gap-3 rounded-sm px-3 py-2.5 text-left text-sm',
-  'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-white',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+  'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-fg',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
 ].join(' ');
 
 /** Every country by name in the reader's language, with a filter and every country on top. */
@@ -68,7 +68,7 @@ export function CountryList({ copy, locale, current, onChoose }: CountryListProp
             <Row label={country.name} active={current === country.code} onClick={() => onChoose(country.code)} />
           </li>
         ))}
-        {shown.length === 0 && <li className="px-3 py-2.5 text-sm text-white/64">{copy.noMatch}</li>}
+        {shown.length === 0 && <li className="px-3 py-2.5 text-sm text-fg-64">{copy.noMatch}</li>}
       </ul>
     </div>
   );
@@ -88,7 +88,7 @@ function Row({
       type="button"
       aria-current={active ? 'true' : undefined}
       onClick={onClick}
-      className={cn(ROW, active ? 'text-white' : 'text-white/64')}
+      className={cn(ROW, active ? 'text-fg' : 'text-fg-64')}
     >
       {label}
       {active && <Check aria-hidden="true" className="size-4 shrink-0" />}

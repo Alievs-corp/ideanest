@@ -91,7 +91,7 @@ export async function CampaignUpdates({
 
   return (
     <section aria-labelledby="campaign-updates" className="flex flex-col gap-6">
-      <h2 id="campaign-updates" className="text-xl font-medium tracking-[-0.02em] text-white">
+      <h2 id="campaign-updates" className="text-xl font-medium tracking-[-0.02em] text-fg">
         {t('heading')}
       </h2>
 
@@ -103,11 +103,11 @@ export async function CampaignUpdates({
          * story, the tiers, the header — rendered fine, so the page is not an error; this one
          * section is.
          */
-        <p className="text-sm text-white/64">
+        <p className="text-sm text-fg-64">
           {t('failed')}
         </p>
       ) : page.updates.length === 0 ? (
-        <p className="text-sm text-white/64">
+        <p className="text-sm text-fg-64">
           {paged ? t('noOlder') : t('none')}
         </p>
       ) : (
@@ -125,7 +125,7 @@ export async function CampaignUpdates({
           <Link
             href={olderHref}
             scroll={false}
-            className="rounded-sm text-sm text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-sm text-sm text-fg underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {t('older')}
           </Link>
@@ -159,15 +159,15 @@ async function UpdateEntry({
   return (
     <article
       aria-labelledby={`update-${update.number}`}
-      className="flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
+      className="flex flex-col gap-3 rounded-lg border border-fg/8 bg-surface-2 p-5 sm:p-6"
     >
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-medium tracking-[0.04em] text-white/40 uppercase">
+        <span className="text-xs font-medium tracking-[0.04em] text-fg-40 uppercase">
           {t('number', { number: String(update.number) })}
         </span>
 
         {serverDay !== null && (
-          <span className="text-xs text-white/40">
+          <span className="text-xs text-fg-40">
             <ViewerInstant instant={update.publishedAt} serverText={serverDay} precision="day" />
           </span>
         )}
@@ -185,7 +185,7 @@ async function UpdateEntry({
         )}
       </div>
 
-      <h3 id={`update-${update.number}`} className="text-base font-medium text-white">
+      <h3 id={`update-${update.number}`} className="text-base font-medium text-fg">
         {update.title}
       </h3>
 
@@ -204,7 +204,7 @@ async function UpdateEntry({
       )}
 
       {update.id !== null && (
-        <div className="border-t border-white/6 pt-3">
+        <div className="border-t border-fg/6 pt-3">
           <ReportControl
             target={{ kind: 'update', id: update.id }}
             name={update.title}

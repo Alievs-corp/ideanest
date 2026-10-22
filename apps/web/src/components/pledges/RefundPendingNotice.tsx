@@ -34,7 +34,7 @@ export function RefundPendingNotice({
       <p className="mt-2">{copy.already}</p>
       <p className="mt-2">
         {fillNodes(copy.reference, {
-          reference: <span className="select-all break-all font-mono text-white">{pledgeId}</span>,
+          reference: <span className="select-all break-all font-mono text-fg">{pledgeId}</span>,
         })}
       </p>
       <p className="mt-3">
@@ -42,7 +42,7 @@ export function RefundPendingNotice({
           href={draftHref(fillPlaceholders(copy.message, { reference: pledgeId }))}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-sm font-medium text-white underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="rounded-sm font-medium text-fg underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {copy.contact}
         </a>

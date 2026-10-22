@@ -324,10 +324,10 @@ function DocumentWorkspace({
       )}
 
       <section aria-labelledby="legal-draft-heading">
-        <h2 id="legal-draft-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="legal-draft-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.draftHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.draftIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.draftIntro}</p>
 
         <div className="mt-4 flex flex-col gap-3">
           <Field label={copy.languageLabel} hint={copy.languageHint} className="max-w-[360px]">
@@ -363,16 +363,16 @@ function DocumentWorkspace({
       </section>
 
       <section aria-labelledby="legal-publish-heading">
-        <h2 id="legal-publish-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="legal-publish-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.publishHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.publishIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.publishIntro}</p>
 
         {drafted.length === 0 ? (
           <EmptyState className="mt-4" variant="empty" title={copy.nothingDraftedTitle} description={copy.nothingDraftedBody} />
         ) : (
           <div className="mt-4 flex flex-col gap-3">
-            <p className="text-sm text-white/64">
+            <p className="text-sm text-fg-64">
               {fillPlaceholders(copy.willPublish, { languages: drafted.map(languageOf).join(', ') })}
             </p>
 
@@ -394,7 +394,7 @@ function DocumentWorkspace({
             <Field label={copy.effectiveFromLabel} hint={copy.effectiveFromHint} className="max-w-[280px]">
               <TextInput type="date" min={earliest} value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} />
             </Field>
-            {dateTooEarly && <p className="text-sm text-white">{copy.errors['EFFECTIVE_DATE_IN_THE_PAST']}</p>}
+            {dateTooEarly && <p className="text-sm text-fg">{copy.errors['EFFECTIVE_DATE_IN_THE_PAST']}</p>}
 
             {asking?.kind === 'publish' ? (
               <Confirm
@@ -433,10 +433,10 @@ function DocumentWorkspace({
       </section>
 
       <section aria-labelledby="legal-history-heading">
-        <h2 id="legal-history-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="legal-history-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.historyHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.historyIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.historyIntro}</p>
 
         {versions.length === 0 ? (
           <EmptyState className="mt-4" variant="empty" title={copy.noVersionsTitle} description={copy.noVersionsBody} />
@@ -448,9 +448,9 @@ function DocumentWorkspace({
               const shown = version === inForceVersion;
               const path = publicPath(kind, version);
               return (
-                <li key={version} className="flex flex-col gap-2 rounded-lg border border-white/12 p-3">
+                <li key={version} className="flex flex-col gap-2 rounded-lg border border-fg/12 p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-sm font-medium text-fg">
                       {fillPlaceholders(copy.versionLabel, { version: String(version) })}
                     </span>
                     {rows.map((row) => (
@@ -461,8 +461,8 @@ function DocumentWorkspace({
                       <Tag variant="warning">{fillPlaceholders(copy.takesEffect, { date: bakuDate(effective, readerLocale) })}</Tag>
                     )}
                   </div>
-                  <p className="text-sm text-white/80">{governing.title}</p>
-                  <p className="break-all text-[13px] text-white/64">
+                  <p className="text-sm text-fg-80">{governing.title}</p>
+                  <p className="break-all text-[13px] text-fg-64">
                     {fillPlaceholders(copy.versionMeta, {
                       from: effective === null ? '' : bakuDate(effective, readerLocale),
                       /*
@@ -476,7 +476,7 @@ function DocumentWorkspace({
                     {path !== null && (
                       <Link
                         href={path}
-                        className="rounded text-sm text-white underline decoration-white/24 underline-offset-2 hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                        className="rounded text-sm text-fg underline decoration-fg/24 underline-offset-2 hover:decoration-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                       >
                         {copy.openOnSite}
                       </Link>

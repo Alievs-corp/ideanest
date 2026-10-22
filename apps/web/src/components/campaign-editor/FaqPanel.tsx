@@ -322,13 +322,13 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">
               {words.heading}{' '}
               {/* Tertiary at 12px: present, never competing with the title
                   (docs/ui-kit.md §7.12). */}
-              <span className="text-xs font-normal text-white/40">({faqs.length})</span>
+              <span className="text-xs font-normal text-fg-40">({faqs.length})</span>
             </h2>
-            <p className="mt-1 max-w-[60ch] text-[13px] text-white/64">{words.explanation}</p>
+            <p className="mt-1 max-w-[60ch] text-[13px] text-fg-64">{words.explanation}</p>
           </div>
 
           <Pill
@@ -366,7 +366,7 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
                 already triggered, and what the creator needs is to be told which
                 questions the two lists disagreed about.
               */
-              <p className="mt-2 text-white/64">{describeOrderRefusal(failure, faqs, words)}</p>
+              <p className="mt-2 text-fg-64">{describeOrderRefusal(failure, faqs, words)}</p>
             )}
           </InlineAlert>
         )}
@@ -509,9 +509,9 @@ function FaqRow({
   onDelete,
 }: FaqRowProps) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-white/8 bg-surface-2 p-4">
+    <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-fg/8 bg-surface-2 p-4">
       <div className="min-w-0 flex-1">
-        <h3 className="text-[15px] font-medium text-white">{faq.question}</h3>
+        <h3 className="text-[15px] font-medium text-fg">{faq.question}</h3>
         {/*
           Two lines of the answer, as text. The public tab renders the whole
           thing with its paragraph breaks; here the creator needs to recognise
@@ -520,7 +520,7 @@ function FaqRow({
           the whole string in the accessible name of nothing — it is a
           paragraph, so a screen reader still reads what is there.
         */}
-        <p className="mt-1 line-clamp-2 max-w-[60ch] text-[13px] whitespace-pre-line text-white/64">
+        <p className="mt-1 line-clamp-2 max-w-[60ch] text-[13px] whitespace-pre-line text-fg-64">
           {faq.answer}
         </p>
       </div>

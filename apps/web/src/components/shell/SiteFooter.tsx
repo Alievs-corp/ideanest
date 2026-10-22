@@ -81,7 +81,7 @@ export async function SiteFooter() {
   const copy = await footerCopy();
 
   return (
-    <footer className="mt-24 border-t border-white/6 bg-surface-1">
+    <footer className="mt-24 border-t border-fg/6 bg-surface-1">
       {/*
         THE BOTTOM PADDING CLEARS THE FLOATING WHATSAPP CONTROL. That button is fixed to the
         bottom-right corner of the viewport, so at the very end of a page it sits over
@@ -97,17 +97,17 @@ export async function SiteFooter() {
             most often assumes wrongly — §5.1 is the rule it describes.
           */}
           <div className="max-w-[38ch]">
-            <p className="inline-flex items-center gap-2 text-lg font-medium tracking-[-0.02em] text-white">
+            <p className="inline-flex items-center gap-2 text-lg font-medium tracking-[-0.02em] text-fg">
               <BrandMark />
               IdeyaNest
             </p>
-            <p className="mt-3 text-[15px] leading-relaxed text-white/64">{copy.tagline}</p>
+            <p className="mt-3 text-[15px] leading-relaxed text-fg-64">{copy.tagline}</p>
           </div>
 
           <nav aria-label={copy.label} className="grid grid-cols-2 gap-x-10 gap-y-10 sm:grid-cols-3">
             {copy.groups.map((group) => (
               <div key={group.heading}>
-                <h2 className="text-sm font-semibold tracking-[-0.01em] text-white">
+                <h2 className="text-sm font-semibold tracking-[-0.01em] text-fg">
                   {group.heading}
                 </h2>
                 <ul className="mt-4 flex list-none flex-col gap-3">
@@ -115,7 +115,7 @@ export async function SiteFooter() {
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="text-base text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                        className="text-base text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                       >
                         {link.label}
                       </Link>
@@ -127,7 +127,7 @@ export async function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-14 flex flex-col gap-4 border-t border-white/6 pt-8 text-sm text-white/40 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-14 flex flex-col gap-4 border-t border-fg/6 pt-8 text-sm text-fg-40 sm:flex-row sm:items-center sm:justify-between">
           {/*
             No year. A copyright line built from `new Date()` is a value that differs between
             the server render and the browser, which React reports as a hydration mismatch —
@@ -154,7 +154,7 @@ export async function SiteFooter() {
             </div>
             <dl className="flex items-center gap-2">
               <dt>{copy.currencyHeading}</dt>
-              <dd className="text-white/64">{copy.currencyValue}</dd>
+              <dd className="text-fg-64">{copy.currencyValue}</dd>
             </dl>
           </div>
         </div>

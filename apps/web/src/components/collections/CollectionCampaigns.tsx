@@ -130,7 +130,7 @@ export function CollectionCampaigns({
         action={
           <Link
             href="/discover"
-            className="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+            className="inline-flex h-10 items-center rounded-full bg-inverse px-5 text-sm font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
           >
             {copy.emptyAction}
           </Link>
@@ -148,7 +148,7 @@ export function CollectionCampaigns({
         total, and a figure here that silently meant "the first twenty-four" would be a wrong
         number a reader has no way to tell from a right one.
       */}
-      <p className="text-sm text-white/64 tabular-nums">
+      <p className="text-sm text-fg-64 tabular-nums">
         {pluralise(locale, cursor === null ? copy.shown : copy.shownMore, items.length)}
       </p>
 

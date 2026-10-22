@@ -97,7 +97,7 @@ export function ConsoleReader({ copy }: ConsoleReaderProps) {
   if (membership === null || !membership.staff) return null;
 
   return (
-    <p className="text-sm text-white/64">
+    <p className="text-sm text-fg-64">
       {fillPlaceholders(copy.signedInAs, {
         // The name where the directory had one, the identifier where it did not — the same
         // fallback every console screen uses, for the same reason.

@@ -181,11 +181,11 @@ export function PreferencesPanel({ copy }: PreferencesPanelProps) {
         id="preferences-heading"
         tabIndex={-1}
         ref={headingRef}
-        className="text-lg font-medium tracking-[-0.02em] text-white"
+        className="text-lg font-medium tracking-[-0.02em] text-fg"
       >
         {copy.heading}
         {status === 'ready' && stored === 0 && (
-          <span className="ml-2 text-xs font-normal text-white/40">{copy.defaults}</span>
+          <span className="ml-2 text-xs font-normal text-fg-40">{copy.defaults}</span>
         )}
       </h2>
 
@@ -211,7 +211,7 @@ export function PreferencesPanel({ copy }: PreferencesPanelProps) {
         <SkeletonGroup label={copy.loading} className="mt-4">
           <div className="space-y-3">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 px-5 py-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-2 px-5 py-4">
                 <Skeleton height="1rem" width="30%" />
                 <div className="mt-3 flex gap-3">
                   <Skeleton height="2.25rem" width="10rem" />
@@ -233,10 +233,10 @@ export function PreferencesPanel({ copy }: PreferencesPanelProps) {
             return (
               <div
                 key={category}
-                className="rounded-lg border border-white/8 bg-surface-2 px-5 py-4"
+                className="rounded-lg border border-fg/8 bg-surface-2 px-5 py-4"
               >
-                <h3 className="text-sm font-medium text-white">{categoryLabel(category, copy)}</h3>
-                <p className="mt-1 max-w-[60ch] text-xs text-white/56">
+                <h3 className="text-sm font-medium text-fg">{categoryLabel(category, copy)}</h3>
+                <p className="mt-1 max-w-[60ch] text-xs text-fg-56">
                   {categoryDescription(category, copy)}
                 </p>
 
@@ -252,7 +252,7 @@ export function PreferencesPanel({ copy }: PreferencesPanelProps) {
                       <div key={channel}>
                         <label
                           htmlFor={controlId}
-                          className="mb-1 block text-xs font-medium text-white/72"
+                          className="mb-1 block text-xs font-medium text-fg-72"
                         >
                           {channelLabel(channel, copy)}
                         </label>
@@ -279,12 +279,12 @@ export function PreferencesPanel({ copy }: PreferencesPanelProps) {
                           `changeable` instead of leaving the switch out.
                         */}
                         {!preference.changeable && (
-                          <p className="mt-1 text-[0.6875rem] text-white/56">
+                          <p className="mt-1 text-[0.6875rem] text-fg-56">
                             {mandatoryReason(category, copy)}
                           </p>
                         )}
                         {preference.changeable && !preference.stored && (
-                          <p className="mt-1 text-[0.6875rem] text-white/40">{copy.default}</p>
+                          <p className="mt-1 text-[0.6875rem] text-fg-40">{copy.default}</p>
                         )}
                       </div>
                     );

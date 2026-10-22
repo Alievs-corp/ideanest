@@ -122,14 +122,14 @@ export function DeliveryList({ copy }: DeliveryListProps) {
         return (
           <li
             key={row.fulfilment.pledgeId}
-            className="rounded-xl border border-white/8 bg-surface-2 px-5 py-5"
+            className="rounded-xl border border-fg/8 bg-surface-2 px-5 py-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
-                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-white">
+                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-fg">
                   {row.projectTitle ?? copy.unlisted}
                 </h2>
-                <p className="mt-1 text-sm text-white/64">{state.detail}</p>
+                <p className="mt-1 text-sm text-fg-64">{state.detail}</p>
               </div>
               <Tag variant={state.tone}>{state.label}</Tag>
             </div>
@@ -137,15 +137,15 @@ export function DeliveryList({ copy }: DeliveryListProps) {
             <dl className="mt-4 grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
               {row.fulfilment.carrier !== null && row.fulfilment.carrier !== '' && (
                 <div className="flex gap-2">
-                  <dt className="text-white/40">{copy.carrier}</dt>
-                  <dd className="text-white/64">{row.fulfilment.carrier}</dd>
+                  <dt className="text-fg-40">{copy.carrier}</dt>
+                  <dd className="text-fg-64">{row.fulfilment.carrier}</dd>
                 </div>
               )}
 
               {row.fulfilment.trackingNumber !== null && row.fulfilment.trackingNumber !== '' && (
                 <div className="flex min-w-0 gap-2">
-                  <dt className="text-white/40">{copy.tracking}</dt>
-                  <dd className="min-w-0 break-all text-white/64">
+                  <dt className="text-fg-40">{copy.tracking}</dt>
+                  <dd className="min-w-0 break-all text-fg-64">
                     {followable ? (
                       <a
                         href={row.fulfilment.trackingUrl ?? undefined}
@@ -157,7 +157,7 @@ export function DeliveryList({ copy }: DeliveryListProps) {
                          */
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                        className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                       >
                         {row.fulfilment.trackingNumber}
                       </a>
@@ -170,15 +170,15 @@ export function DeliveryList({ copy }: DeliveryListProps) {
 
               {row.fulfilment.shippedAt !== null && row.fulfilment.shippedAt !== '' && (
                 <div className="flex gap-2">
-                  <dt className="text-white/40">{copy.sent}</dt>
-                  <dd className="text-white/64">{formatExactTime(row.fulfilment.shippedAt, locale)}</dd>
+                  <dt className="text-fg-40">{copy.sent}</dt>
+                  <dd className="text-fg-64">{formatExactTime(row.fulfilment.shippedAt, locale)}</dd>
                 </div>
               )}
 
               {row.fulfilment.deliveredAt !== null && row.fulfilment.deliveredAt !== '' && (
                 <div className="flex gap-2">
-                  <dt className="text-white/40">{copy.arrived}</dt>
-                  <dd className="text-white/64">{formatExactTime(row.fulfilment.deliveredAt, locale)}</dd>
+                  <dt className="text-fg-40">{copy.arrived}</dt>
+                  <dd className="text-fg-64">{formatExactTime(row.fulfilment.deliveredAt, locale)}</dd>
                 </div>
               )}
             </dl>
@@ -186,14 +186,14 @@ export function DeliveryList({ copy }: DeliveryListProps) {
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
               <Link
                 href={addressHref}
-                className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {copy.shippingAddress}
               </Link>
               {row.creatorSlug !== null && row.projectSlug !== null && (
                 <Link
                   href={`/projects/${encodeURIComponent(row.creatorSlug)}/${encodeURIComponent(row.projectSlug)}`}
-                  className="rounded-sm text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="rounded-sm text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   {copy.theCampaign}
                 </Link>

@@ -66,7 +66,7 @@ export interface AccountMenuProps {
 }
 
 const ROW =
-  'block rounded-sm px-3 py-2.5 text-sm text-white/64 transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+  'block rounded-sm px-3 py-2.5 text-sm text-fg-64 transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]';
 
 export function AccountMenu({ session, onSignOut, copy }: AccountMenuProps) {
   const pathname = usePathname();
@@ -129,8 +129,8 @@ export function AccountMenu({ session, onSignOut, copy }: AccountMenuProps) {
         onClick={() => setOpen((current) => !current)}
         className={cn(
           'inline-flex h-10 items-center gap-2 rounded-full pl-1 pr-2.5',
-          'text-sm font-medium text-white transition-colors duration-150 ease-in-out',
-          'hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+          'text-sm font-medium text-fg transition-colors duration-150 ease-in-out',
+          'hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
           open && 'bg-surface-3',
         )}
       >
@@ -146,15 +146,15 @@ export function AccountMenu({ session, onSignOut, copy }: AccountMenuProps) {
           <Avatar name={session.name} size="sm" />
         </span>
         <span className="max-sm:sr-only sm:max-w-[12ch] sm:truncate">{session.name}</span>
-        <ChevronDown aria-hidden="true" className="size-4 text-white/40" />
+        <ChevronDown aria-hidden="true" className="size-4 text-fg-40" />
       </button>
 
       {open && (
         <div
           id="account-menu"
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[248px] rounded-md border border-white/8 bg-surface-2 p-2 shadow-[var(--shadow-panel)]"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[248px] rounded-md border border-fg/8 bg-surface-2 p-2 shadow-[var(--shadow-panel)]"
         >
-          <p className="truncate px-3 pb-2 pt-1 text-xs text-white/40" title={session.email}>
+          <p className="truncate px-3 pb-2 pt-1 text-xs text-fg-40" title={session.email}>
             {session.email}
           </p>
 
@@ -166,7 +166,7 @@ export function AccountMenu({ session, onSignOut, copy }: AccountMenuProps) {
             from carrying it in any case.
           */}
           {!session.emailVerified && (
-            <p className="mx-1 mb-2 rounded-sm bg-surface-3 px-3 py-2 text-xs leading-relaxed text-white/64">
+            <p className="mx-1 mb-2 rounded-sm bg-surface-3 px-3 py-2 text-xs leading-relaxed text-fg-64">
               {fillPlaceholders(copy.unverified, { email: session.email })}
             </p>
           )}
@@ -222,7 +222,7 @@ export function AccountMenu({ session, onSignOut, copy }: AccountMenuProps) {
             )}
           </ul>
 
-          <div className="mt-2 border-t border-white/6 pt-2">
+          <div className="mt-2 border-t border-fg/6 pt-2">
             <button
               type="button"
               onClick={() => {

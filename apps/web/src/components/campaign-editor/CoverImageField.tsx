@@ -163,7 +163,7 @@ export function CoverImageField({
     >
       <div className="flex flex-col gap-3">
         {cover !== null && (
-          <figure className="overflow-hidden rounded-lg border border-white/8 bg-surface-2">
+          <figure className="overflow-hidden rounded-lg border border-fg/8 bg-surface-2">
             {/*
               THE 16:9 CROP, NOT THE INTRINSIC SHAPE. This preview answers "what
               will the discovery card look like", and the card crops (§8.2). A
@@ -187,7 +187,7 @@ export function CoverImageField({
               placeholder={placeholder ?? undefined}
               decorative
             />
-            <figcaption className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-[13px] text-white/64">
+            <figcaption className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-[13px] text-fg-64">
               {/*
                 Two whole sentences rather than one with a fragment appended. " · uploaded"
                 was a literal here until #86, and a translator handed a dangling suffix has

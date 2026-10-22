@@ -140,13 +140,13 @@ function Statistics({
           Which view this is, from the response. For a partner: their share, said once. For a
           super admin: that these are the real figures. Neither is repeated on any number.
         */}
-        <p className="rounded-lg border border-white/8 bg-surface-2 px-4 py-3 text-sm text-white">
+        <p className="rounded-lg border border-fg/8 bg-surface-2 px-4 py-3 text-sm text-fg">
           {statistics.view === 'PARTNER'
             ? fillPlaceholders(copy.partnerLine, { percentage: trimPercent(statistics.sharePercentage) })
             : copy.realLine}
         </p>
         {/* "Baku time", not "Asia/Baku": the identifier is for a computer. */}
-        <p className="mt-2 text-xs text-white/48">
+        <p className="mt-2 text-xs text-fg-48">
           {statistics.timeZone === BAKU
             ? copy.zoneNoteBaku
             : fillPlaceholders(copy.zoneNote, { zone: statistics.timeZone })}
@@ -154,23 +154,23 @@ function Statistics({
       </div>
 
       <section aria-labelledby="stats-today-heading">
-        <h2 id="stats-today-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="stats-today-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.todayHeading}
         </h2>
-        <p className="mt-1 text-xs text-white/48">{dayLabel(statistics.today.date, locale)}</p>
+        <p className="mt-1 text-xs text-fg-48">{dayLabel(statistics.today.date, locale)}</p>
         <Figures figures={statistics.today.currencies} formatting={formatting} copy={copy} />
       </section>
 
       <section aria-labelledby="stats-month-heading">
-        <h2 id="stats-month-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="stats-month-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.monthHeading}
         </h2>
-        <p className="mt-1 text-xs text-white/48">{monthLabel(statistics.thisMonth.month, locale)}</p>
+        <p className="mt-1 text-xs text-fg-48">{monthLabel(statistics.thisMonth.month, locale)}</p>
         <Figures figures={statistics.thisMonth.currencies} formatting={formatting} copy={copy} />
       </section>
 
       <section aria-labelledby="stats-daily-heading">
-        <h2 id="stats-daily-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="stats-daily-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.dailyHeading}
         </h2>
         <FiguresTable
@@ -189,7 +189,7 @@ function Statistics({
       </section>
 
       <section aria-labelledby="stats-monthly-heading">
-        <h2 id="stats-monthly-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="stats-monthly-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.monthlyHeading}
         </h2>
         {/*
@@ -214,7 +214,7 @@ function Statistics({
       </section>
 
       <section aria-labelledby="stats-plans-heading">
-        <h2 id="stats-plans-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="stats-plans-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.planHeading}
         </h2>
         <FiguresTable
@@ -249,7 +249,7 @@ function Figures({
   readonly copy: PartnerStatisticsCopy;
 }) {
   if (figures.length === 0) {
-    return <p className="mt-3 text-sm text-white/64">{copy.nothingRecorded}</p>;
+    return <p className="mt-3 text-sm text-fg-64">{copy.nothingRecorded}</p>;
   }
 
   return (
@@ -257,20 +257,20 @@ function Figures({
       {figures.map((row) => (
         <dl key={row.currency} className="grid max-w-[560px] grid-cols-3 gap-4">
           <div>
-            <dt className="text-xs text-white/48">{copy.revenue}</dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">
+            <dt className="text-xs text-fg-48">{copy.revenue}</dt>
+            <dd className="mt-1 text-xl font-semibold tabular-nums text-fg">
               {formatMoney({ amount: row.revenue, currency: row.currency })}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-white/48">{copy.subscriptions}</dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">
+            <dt className="text-xs text-fg-48">{copy.subscriptions}</dt>
+            <dd className="mt-1 text-xl font-semibold tabular-nums text-fg">
               {formatCount(row.subscriptions, formatting)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-white/48">{copy.reversals}</dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">
+            <dt className="text-xs text-fg-48">{copy.reversals}</dt>
+            <dd className="mt-1 text-xl font-semibold tabular-nums text-fg">
               {formatCount(row.reversals, formatting)}
             </dd>
           </div>

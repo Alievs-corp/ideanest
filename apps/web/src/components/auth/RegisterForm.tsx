@@ -131,23 +131,23 @@ export function RegisterForm({ copy }: RegisterFormProps) {
             sentence whose word order is the translation's to decide.
           */}
           {fillNodes(copy.sentIntro, {
-            address: <span className="text-white">{sentTo}</span>,
+            address: <span className="text-fg">{sentTo}</span>,
           })}
         </AuthPageHeader>
 
-        <div className="flex items-start gap-3 rounded-lg border border-white/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-white/64">
-          <MailCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-white/40" />
+        <div className="flex items-start gap-3 rounded-lg border border-fg/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-fg-64">
+          <MailCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-fg-40" />
           <div>
             <p>{copy.sentLifetime}</p>
             <p className="mt-3">{copy.sentExisting}</p>
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-white/64">
+        <p className="mt-8 text-center text-sm text-fg-64">
           {copy.verified}{' '}
           <Link
             href={signInHrefWith(returnTo)}
-            className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.signIn}
           </Link>
@@ -213,11 +213,11 @@ export function RegisterForm({ copy }: RegisterFormProps) {
           {submitting ? copy.submitting : copy.submit}
         </Pill>
 
-        <p className="text-center text-sm text-white/64">
+        <p className="text-center text-sm text-fg-64">
           {copy.haveAccount}{' '}
           <Link
             href={signInHrefWith(returnTo)}
-            className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.signIn}
           </Link>

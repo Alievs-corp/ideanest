@@ -45,11 +45,11 @@ export function ItemsSection({
   return (
     <section aria-labelledby="items-heading" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="items-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 id="items-heading" className="text-lg font-medium tracking-[-0.02em] text-fg">
           {copy.itemsHeading}{' '}
           {/* The count is tertiary at 12px: present, never competing with the
               title (docs/ui-kit.md §7.12). */}
-          <span className="text-xs font-normal text-white/40">({items.length})</span>
+          <span className="text-xs font-normal text-fg-40">({items.length})</span>
         </h2>
 
         <Pill
@@ -86,12 +86,12 @@ export function ItemsSection({
           {items.map((item) => (
             <li
               key={item.id}
-              className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-white/8 bg-surface-2 p-4"
+              className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-fg/8 bg-surface-2 p-4"
             >
               <div className="min-w-0">
-                <h3 className="text-[15px] font-medium text-white">{item.name}</h3>
+                <h3 className="text-[15px] font-medium text-fg">{item.name}</h3>
                 {item.description != null && item.description !== '' && (
-                  <p className="mt-0.5 text-[13px] text-white/64">{item.description}</p>
+                  <p className="mt-0.5 text-[13px] text-fg-64">{item.description}</p>
                 )}
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">

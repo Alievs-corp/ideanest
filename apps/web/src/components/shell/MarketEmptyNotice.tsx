@@ -37,9 +37,9 @@ export function MarketEmptyNotice({ copy }: MarketEmptyNoticeProps) {
   }
 
   return (
-    <div className="rounded-lg border border-white/8 bg-surface-2 px-6 py-8 text-center">
-      <p className="text-lg font-medium text-white">{fillPlaceholders(copy.emptyTitle, { name })}</p>
-      <p className="mx-auto mt-2 max-w-[52ch] text-white/64">{copy.emptyDetail}</p>
+    <div className="rounded-lg border border-fg/8 bg-surface-2 px-6 py-8 text-center">
+      <p className="text-lg font-medium text-fg">{fillPlaceholders(copy.emptyTitle, { name })}</p>
+      <p className="mx-auto mt-2 max-w-[52ch] text-fg-64">{copy.emptyDetail}</p>
       <Pill
         size="sm"
         variant="ghost"

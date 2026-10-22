@@ -189,10 +189,10 @@ export function CollectionManager({
       {allowCreate && (
         <form
           onSubmit={(event) => void create(event)}
-          className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
+          className="rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5"
         >
-          <h3 className="text-sm font-medium text-white">{copy.newHeading}</h3>
-          <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.newIntro}</p>
+          <h3 className="text-sm font-medium text-fg">{copy.newHeading}</h3>
+          <p className="mt-1 max-w-[62ch] text-sm text-fg-48">{copy.newIntro}</p>
 
           <div className="mt-4 grid items-start gap-3 sm:grid-cols-3">
             <Field label={copy.handleLabel} required hint={copy.handleHint} error={handleError}>
@@ -250,10 +250,10 @@ export function CollectionManager({
       )}
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="collections-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="collections-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.heading}
           {status === 'ready' && (
-            <span className="ml-2 text-xs font-normal text-white/40">{visible.length}</span>
+            <span className="ml-2 text-xs font-normal text-fg-40">{visible.length}</span>
           )}
         </h2>
       </div>
@@ -262,7 +262,7 @@ export function CollectionManager({
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="35%" />
                 <Skeleton height="0.875rem" width="55%" className="mt-3" />
               </div>
@@ -365,16 +365,16 @@ function CollectionRow({
   const published = isPublished(collection);
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
             href={`/admin/curation/${encodeURIComponent(collection.slug)}`}
-            className="rounded-lg text-sm sm:text-[15px] font-medium text-white underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-lg text-sm sm:text-[15px] font-medium text-fg underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {collectionTitle(collection)}
           </Link>
-          <p className="mt-1 font-mono text-xs text-white/40">/collections/{collection.slug}</p>
+          <p className="mt-1 font-mono text-xs text-fg-40">/collections/{collection.slug}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -392,7 +392,7 @@ function CollectionRow({
         </Pill>
         <Link
           href={`/admin/curation/${encodeURIComponent(collection.slug)}`}
-          className="rounded-lg px-2 text-sm text-white/64 underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="rounded-lg px-2 text-sm text-fg-64 underline-offset-2 transition-colors duration-150 ease-in-out hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {copy.manage}
         </Link>

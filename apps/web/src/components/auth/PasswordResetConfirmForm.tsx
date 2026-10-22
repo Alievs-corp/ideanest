@@ -170,7 +170,7 @@ export function PasswordResetConfirmForm({ copy }: PasswordResetConfirmFormProps
           <p>{deadLink}</p>
         </InlineAlert>
 
-        <div className="rounded-lg border border-white/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-white/64">
+        <div className="rounded-lg border border-fg/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-fg-64">
           <p>{fillPlaceholders(copy.deadExplain, { lifetime: copy.lifetime })}</p>
         </div>
 
@@ -194,7 +194,7 @@ export function PasswordResetConfirmForm({ copy }: PasswordResetConfirmFormProps
 
         <Link
           href="/sign-in"
-          className="inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+          className="inline-flex h-12 w-full items-center justify-center rounded-full bg-inverse px-6 text-base font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
         >
           {copy.signIn}
         </Link>
@@ -254,17 +254,17 @@ export function PasswordResetConfirmForm({ copy }: PasswordResetConfirmFormProps
 /** The one way off every state of this screen that cannot go forward. */
 function AskAgain({ label, signIn }: { readonly label: string; readonly signIn: string }) {
   return (
-    <p className="mt-8 text-center text-sm text-white/64">
+    <p className="mt-8 text-center text-sm text-fg-64">
       <Link
         href="/reset-password"
-        className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {label}
       </Link>
       {' · '}
       <Link
         href="/sign-in"
-        className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {signIn}
       </Link>

@@ -68,10 +68,10 @@ export function AddonChoice({ addons, quantityOf, onChange, disabled = false,
         The size is unchanged: `text-sm` is what the design asks for here, and a heading's
         level is its place in the document rather than its size on the page.
       */}
-      <h2 id="checkout-addons" className="text-sm font-medium text-white">
+      <h2 id="checkout-addons" className="text-sm font-medium text-fg">
           {copy.heading}
         </h2>
-        <p className="mt-1 text-[13px] text-white/64">
+        <p className="mt-1 text-[13px] text-fg-64">
           {copy.intro}
         </p>
       </div>
@@ -83,12 +83,12 @@ export function AddonChoice({ addons, quantityOf, onChange, disabled = false,
           <Card key={addon.id} className={soldOut ? 'p-4 opacity-50' : 'p-4'}>
             <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
               <div className="min-w-0">
-                <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-white">
+                <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-fg">
                   <span className="font-medium">{addon.title}</span>
-                  <span className="tabular-nums text-white/64">{formatMoney(addon.price)}</span>
+                  <span className="tabular-nums text-fg-64">{formatMoney(addon.price)}</span>
                 </p>
                 {addon.description != null && addon.description !== '' && (
-                  <p className="mt-1 text-[13px] text-white/64">{addon.description}</p>
+                  <p className="mt-1 text-[13px] text-fg-64">{addon.description}</p>
                 )}
               </div>
 
@@ -98,12 +98,12 @@ export function AddonChoice({ addons, quantityOf, onChange, disabled = false,
                  * saying "0" is indistinguishable from one the backer set to
                  * zero themselves (docs/ui-kit.md §9.2).
                  */
-                <p className="inline-flex items-center gap-1.5 text-[13px] text-white/64">
+                <p className="inline-flex items-center gap-1.5 text-[13px] text-fg-64">
                   <Ban aria-hidden="true" className="size-3.5 shrink-0" />
                   {copy.soldOut}
                 </p>
               ) : (
-                <label className="flex items-center gap-2 text-[13px] text-white/64">
+                <label className="flex items-center gap-2 text-[13px] text-fg-64">
                   {copy.quantity}
                   {/*
                     The add-on's title is part of the accessible name because a

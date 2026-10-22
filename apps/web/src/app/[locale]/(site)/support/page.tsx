@@ -71,8 +71,8 @@ const DELETE_ACCOUNT_ANCHOR = 'delete-account';
  * (`StaticPage` says why).
  */
 /** See `about/page.tsx` — the same two shapes, named for the same reason. */
-const INLINE_LINK = 'text-white underline underline-offset-4';
-const BOLD = (chunks: ReactNode) => <strong className="font-medium text-white">{chunks}</strong>;
+const INLINE_LINK = 'text-fg underline underline-offset-4';
+const BOLD = (chunks: ReactNode) => <strong className="font-medium text-fg">{chunks}</strong>;
 
 export default async function SupportPage() {
   const t = await getTranslations('static.support');

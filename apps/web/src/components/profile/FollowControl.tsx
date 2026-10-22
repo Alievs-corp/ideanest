@@ -95,9 +95,9 @@ export interface FollowControlProps {
 
 /** `Pill`'s outline variant at `sm`, on the link a signed-out reader is given instead. */
 const SIGN_IN_PILL =
-  'inline-flex h-8 items-center justify-center gap-2 rounded-full border border-white/16 ' +
+  'inline-flex h-8 items-center justify-center gap-2 rounded-full border border-fg/16 ' +
   'bg-transparent px-3.5 text-[13px] font-medium tracking-[-0.01em] whitespace-nowrap ' +
-  'text-white transition-colors duration-150 ease-in-out hover:bg-surface-3';
+  'text-fg transition-colors duration-150 ease-in-out hover:bg-surface-3';
 
 function messageFor(cause: unknown, copy: FollowControlCopy): string {
   if (cause instanceof ApiError) {
@@ -242,8 +242,8 @@ function FollowToggle({ slug, name, returnTo, copy, notice: placement = 'flow' }
         aria-live="polite"
         className={
           placement === 'overlay'
-            ? 'absolute end-0 top-full mt-1 w-max max-w-[min(20rem,calc(100vw-2.5rem))] text-end text-xs text-white/64'
-            : 'min-h-[1.25rem] text-xs text-white/64'
+            ? 'absolute end-0 top-full mt-1 w-max max-w-[min(20rem,calc(100vw-2.5rem))] text-end text-xs text-fg-64'
+            : 'min-h-[1.25rem] text-xs text-fg-64'
         }
       >
         {notice}

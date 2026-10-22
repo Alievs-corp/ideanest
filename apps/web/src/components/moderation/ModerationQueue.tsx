@@ -374,11 +374,11 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
           id="moderation-queue-heading"
           ref={headingRef}
           tabIndex={-1}
-          className="text-lg font-medium tracking-[-0.02em] text-white"
+          className="text-lg font-medium tracking-[-0.02em] text-fg"
         >
           {copy.heading[state]}
           {status === 'ready' && (
-            <span className="ml-2 text-xs font-normal text-white/40">{visible.length}</span>
+            <span className="ml-2 text-xs font-normal text-fg-40">{visible.length}</span>
           )}
         </h2>
       </div>
@@ -463,7 +463,7 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
       )}
 
       {status === 'ready' && refined && (
-        <p className="mt-4 text-sm text-white/40">
+        <p className="mt-4 text-sm text-fg-40">
           {fillPlaceholders(copy.showing, {
             reports: pluralise(locale, copy.moderation.reportCount, visible.length),
             loaded: String(loaded.length),
@@ -476,7 +476,7 @@ export function ModerationQueue({ pinnedTarget, detailHrefBase, copy }: Moderati
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-4">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 p-5">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-2 p-5">
                 <Skeleton height="1.125rem" width="35%" />
                 <Skeleton height="0.875rem" width="55%" className="mt-3" />
                 <Skeleton height="0.875rem" width="80%" className="mt-2" />

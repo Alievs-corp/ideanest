@@ -35,7 +35,7 @@ export default async function RegisterPage() {
   const t = await getTranslations('auth');
 
   return (
-    <Suspense fallback={<p className="text-white/40">{t('loadingForm')}</p>}>
+    <Suspense fallback={<p className="text-fg-40">{t('loadingForm')}</p>}>
       <RegisterForm copy={await registerCopy()} />
     </Suspense>
   );

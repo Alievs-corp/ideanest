@@ -236,10 +236,10 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
   return (
     <div className="flex flex-col gap-10">
       <section aria-labelledby="calculate-heading">
-        <h2 id="calculate-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="calculate-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.calculateHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.calculateIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.calculateIntro}</p>
 
         <form onSubmit={(event) => void calculate(event)} className="mt-4 flex flex-wrap items-start gap-3">
           <Field label={copy.campaignLabel} hint={copy.campaignHint} className="min-w-[280px] flex-1">
@@ -274,10 +274,10 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
       </section>
 
       <section aria-labelledby="payout-queue-heading">
-        <h2 id="payout-queue-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="payout-queue-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.queueHeading}
           {queue.status === 'ready' && (
-            <span className="ml-2 text-xs font-normal text-white/40">{queue.data?.payouts.length ?? 0}</span>
+            <span className="ml-2 text-xs font-normal text-fg-40">{queue.data?.payouts.length ?? 0}</span>
           )}
         </h2>
 
@@ -291,7 +291,7 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <div className="space-y-3">
               {[0, 1].map((row) => (
-                <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <Skeleton height="1rem" width="45%" />
                   <Skeleton height="0.875rem" width="70%" className="mt-3" />
                 </div>
@@ -361,10 +361,10 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
       </section>
 
       <section aria-labelledby="payout-history-heading">
-        <h2 id="payout-history-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="payout-history-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.history.heading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.history.intro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.history.intro}</p>
 
         <ChipRow aria-label={copy.history.filterLabel} className="mt-4">
           {SETTLED_STATES.map((state) => (
@@ -485,13 +485,13 @@ function PayoutRow({
   const word = open ? copy.close : copy.open;
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1">
+    <li className="rounded-lg border border-fg/8 bg-surface-1">
       <div className="flex flex-wrap items-start justify-between gap-3 p-4">
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-white">
+          <p className="text-sm text-fg">
             <EntityName id={payout.projectId} names={names} kind="project" copy={copy.identity} />
           </p>
-          <p className="mt-1 text-xs text-white/64">
+          <p className="mt-1 text-xs text-fg-64">
             {fillNodes(copy.toCreator, {
               id: <EntityName id={payout.creatorId} names={names} kind="account" copy={copy.identity} />,
             })}
@@ -525,7 +525,7 @@ function PayoutRow({
       </div>
 
       {open && (
-        <div id={fileId} className="border-t border-white/8 p-4">
+        <div id={fileId} className="border-t border-fg/8 p-4">
           {children}
         </div>
       )}
@@ -554,15 +554,15 @@ function Breakdown({ payout, copy }: { readonly payout: Payout; readonly copy: P
 
   return (
     <dl className="grid w-full max-w-[420px] grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-sm">
-      <dt className="text-white/64">{copy.collected}</dt>
-      <dd className="text-right font-mono tabular-nums text-white/80">{formatMoney(payout.gross)}</dd>
+      <dt className="text-fg-64">{copy.collected}</dt>
+      <dd className="text-right font-mono tabular-nums text-fg-80">{formatMoney(payout.gross)}</dd>
       {deductions
         .filter(([, amount]) => !isZero(amount))
         .map(([label, amount]) => (
           <Line key={label} label={label} value={`− ${formatMoney(amount)}`} />
         ))}
-      <dt className="mt-1 border-t border-white/8 pt-1 font-medium text-white">{copy.net}</dt>
-      <dd className="mt-1 border-t border-white/8 pt-1 text-right font-mono text-base font-medium tabular-nums text-white">
+      <dt className="mt-1 border-t border-fg/8 pt-1 font-medium text-fg">{copy.net}</dt>
+      <dd className="mt-1 border-t border-fg/8 pt-1 text-right font-mono text-base font-medium tabular-nums text-fg">
         {formatMoney(payout.net)}
       </dd>
     </dl>
@@ -572,8 +572,8 @@ function Breakdown({ payout, copy }: { readonly payout: Payout; readonly copy: P
 function Line({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <>
-      <dt className="text-white/48">{label}</dt>
-      <dd className="text-right font-mono tabular-nums text-white/64">{value}</dd>
+      <dt className="text-fg-48">{label}</dt>
+      <dd className="text-right font-mono tabular-nums text-fg-64">{value}</dd>
     </>
   );
 }
@@ -744,9 +744,9 @@ function PayoutDetail({
 
   return (
     <div>
-      <h3 className="text-sm font-medium text-white">
+      <h3 className="text-sm font-medium text-fg">
         {copy.signatures}
-        <span className="ml-2 text-xs font-normal text-white/48">
+        <span className="ml-2 text-xs font-normal text-fg-48">
           {fillPlaceholders(copy.signatureCount, {
             have: String(approvals.length),
             need: String(payout.approvalsRequired),
@@ -755,14 +755,14 @@ function PayoutDetail({
       </h3>
 
       {approvals.length === 0 ? (
-        <p className="mt-2 text-xs text-white/48">
+        <p className="mt-2 text-xs text-fg-48">
           {copy.noSignatures}
           {payout.approvalsRequired > 1 ? ` ${copy.needsTwo}` : ''}
         </p>
       ) : (
         <ul className="mt-2 flex list-none flex-col gap-1">
           {approvals.map((approval) => (
-            <li key={approval.approverId} className="text-xs text-white/64">
+            <li key={approval.approverId} className="text-xs text-fg-64">
               {fillNodes(copy.approvalLine, {
                 approver: <EntityName id={approval.approverId} names={names} kind="account" copy={copy.identity} />,
                 date: bakuDateTime(approval.approvedAt, locale),
@@ -815,11 +815,11 @@ function PayoutDetail({
       )}
 
       {inFlight && !canAct && membership !== null && (
-        <p className="mt-4 border-t border-white/8 pt-4 text-xs text-white/48">{copy.needsApprovePayout}</p>
+        <p className="mt-4 border-t border-fg/8 pt-4 text-xs text-fg-48">{copy.needsApprovePayout}</p>
       )}
 
       {inFlight && canAct && (
-        <div className="mt-4 flex flex-col gap-3 border-t border-white/8 pt-4">
+        <div className="mt-4 flex flex-col gap-3 border-t border-fg/8 pt-4">
           {signable ? (
             <div className="flex flex-wrap items-start gap-3">
               <Field label={copy.noteLabel} hint={copy.noteHint} className="min-w-[240px] flex-1">
@@ -841,7 +841,7 @@ function PayoutDetail({
               </Pill>
             </div>
           ) : (
-            notSignable !== null && <p className="text-xs text-white/48">{notSignable}</p>
+            notSignable !== null && <p className="text-xs text-fg-48">{notSignable}</p>
           )}
 
           {/* Offered only to somebody who has a signature to take back. */}
@@ -863,7 +863,7 @@ function PayoutDetail({
       {byBankTransfer && (
         <Suspense
           fallback={
-            <SkeletonGroup label={copy.loadingPayout} className="mt-4 border-t border-white/8 pt-4">
+            <SkeletonGroup label={copy.loadingPayout} className="mt-4 border-t border-fg/8 pt-4">
               <Skeleton height="0.875rem" width="40%" />
             </SkeletonGroup>
           }
@@ -929,12 +929,12 @@ function PayoutDetail({
                     {copy.send}
                   </Pill>
                   {stillNeeded > 0 && (
-                    <span className="text-xs text-white/48">
+                    <span className="text-xs text-fg-48">
                       {fillPlaceholders(copy.sendNeedsSignatures, { count: String(stillNeeded) })}
                     </span>
                   )}
                   {stillNeeded === 0 && payout.heldForDestination && (
-                    <span className="text-xs text-white/48">{copy.sendHeldForDestination}</span>
+                    <span className="text-xs text-fg-48">{copy.sendHeldForDestination}</span>
                   )}
                 </>
               )}
@@ -951,9 +951,9 @@ function PayoutDetail({
                 {copy.cancelPayout}
               </Pill>
               {transferring && (
-                <span className="text-xs text-white/48">{copy.refusal.PAYOUT_BANK_TRANSFER_IN_PROGRESS}</span>
+                <span className="text-xs text-fg-48">{copy.refusal.PAYOUT_BANK_TRANSFER_IN_PROGRESS}</span>
               )}
-              {unconfirmed && <span className="text-xs text-white/48">{copy.refusal.PAYOUT_SEND_UNCONFIRMED}</span>}
+              {unconfirmed && <span className="text-xs text-fg-48">{copy.refusal.PAYOUT_SEND_UNCONFIRMED}</span>}
             </div>
           )}
         </div>
@@ -1128,20 +1128,20 @@ function HistoryRow({
         : fillPlaceholders(words.calculatedOn, { date: bakuDate(payout.calculatedAt, locale) });
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-white">
+          <p className="text-sm text-fg">
             <EntityName id={payout.projectId} names={names} kind="project" copy={copy.identity} />
           </p>
-          <p className="mt-1 text-xs text-white/64">
+          <p className="mt-1 text-xs text-fg-64">
             {fillNodes(copy.toCreator, {
               id: <EntityName id={payout.creatorId} names={names} kind="account" copy={copy.identity} />,
             })}
           </p>
-          <p className="mt-1 text-xs text-white/48">{when}</p>
+          <p className="mt-1 text-xs text-fg-48">{when}</p>
           {payout.state === 'FAILED' && (
-            <p className="mt-1 text-xs text-white/64">
+            <p className="mt-1 text-xs text-fg-64">
               {fillPlaceholders(words.failure, { reason: failureOf(payout, copy.outcome.noReason) })}
             </p>
           )}

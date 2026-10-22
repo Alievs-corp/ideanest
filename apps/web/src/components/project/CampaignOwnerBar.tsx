@@ -46,9 +46,9 @@ export function CampaignOwnerBar({ creatorSlug, editHref, dashboardHref, copy }:
   return (
     <nav
       aria-label={copy.label}
-      className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border border-white/8 bg-surface-2 px-4 py-3"
+      className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border border-fg/8 bg-surface-2 px-4 py-3"
     >
-      <span aria-hidden="true" className="mr-auto text-sm text-white/64">
+      <span aria-hidden="true" className="mr-auto text-sm text-fg-64">
         {copy.label}
       </span>
       {dashboardHref !== null && (

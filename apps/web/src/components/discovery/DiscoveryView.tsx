@@ -214,10 +214,10 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy, marketCopy }: Di
   return (
     <div className="mx-auto w-full max-w-[1400px] px-5 py-10 sm:px-6">
       <FadeUp>
-        <h1 className="text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+        <h1 className="text-3xl font-semibold tracking-[-0.035em] text-fg sm:text-4xl">
           {copy.title}
         </h1>
-        <p className="mt-2 max-w-[60ch] text-white/64">{copy.standfirst}</p>
+        <p className="mt-2 max-w-[60ch] text-fg-64">{copy.standfirst}</p>
       </FadeUp>
 
       {/*
@@ -247,19 +247,19 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy, marketCopy }: Di
         aria-label={copy.filtersLabel}
         inert={!railOpen}
         className={cn(
-          'fixed right-0 top-0 z-50 flex h-dvh w-full max-w-[380px] flex-col border-l border-white/8 bg-surface-2',
+          'fixed right-0 top-0 z-50 flex h-dvh w-full max-w-[380px] flex-col border-l border-fg/8 bg-surface-2',
           'shadow-[var(--shadow-panel)] transition-[transform,visibility] duration-300 ease-out motion-reduce:transition-none',
           railOpen ? 'visible translate-x-0' : 'invisible translate-x-full',
         )}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-5 py-4">
-          <h2 className="text-base font-semibold text-white">{copy.railLabel}</h2>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-fg/8 px-5 py-4">
+          <h2 className="text-base font-semibold text-fg">{copy.railLabel}</h2>
           <button
             ref={closeButton}
             type="button"
             aria-label={copy.closeFilters}
             onClick={closeRail}
-            className="inline-grid size-9 place-items-center rounded-full bg-surface-3 text-white transition-colors duration-150 hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="inline-grid size-9 place-items-center rounded-full bg-surface-3 text-fg transition-colors duration-150 hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             <X aria-hidden="true" className="size-4" />
           </button>
@@ -269,14 +269,14 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy, marketCopy }: Di
           <FilterRail filters={draft} facets={facets} onChange={setDraft} copy={copy} locale={locale} />
         </div>
 
-        <div className="shrink-0 border-t border-white/8 bg-surface-2 p-4">
+        <div className="shrink-0 border-t border-fg/8 bg-surface-2 p-4">
           <button
             type="button"
             onClick={() => {
               apply(draft);
               closeRail();
             }}
-            className="h-12 w-full rounded-full bg-[var(--lime-500)] text-sm font-semibold text-[var(--text-on-lime)] transition-colors duration-150 hover:bg-[var(--lime-400)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="h-12 w-full rounded-full bg-[var(--lime-500)] text-sm font-semibold text-[var(--text-on-lime)] transition-colors duration-150 hover:bg-[var(--lime-400)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
           >
             {copy.apply}
           </button>
@@ -310,7 +310,7 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy, marketCopy }: Di
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <p className="text-sm text-white/64 tabular-nums">
+              <p className="text-sm text-fg-64 tabular-nums">
                 {feed.status === 'loading'
                   ? copy.loading
                   : pluralise(locale, hasMore ? copy.shownMore : copy.shown, feed.items.length)}
@@ -417,14 +417,14 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy, marketCopy }: Di
                   ) : blamed.length === 1 ? (
                     <>
                       {fillNodes(copy.blamedOne, {
-                        filter: <strong className="text-white">{blamed[0]?.label}</strong>,
+                        filter: <strong className="text-fg">{blamed[0]?.label}</strong>,
                       })}
                     </>
                   ) : (
                     <>
                       {fillNodes(copy.blamedMany, {
                         filters: (
-                          <strong className="text-white">
+                          <strong className="text-fg">
                             {blamed.map((filter) => filter.label).join(', ')}
                           </strong>
                         ),
@@ -530,7 +530,7 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy, marketCopy }: Di
                       <div ref={sentinel} aria-hidden="true" className="h-px w-full" />
                     </>
                   ) : (
-                    <p className="text-sm text-white/40">
+                    <p className="text-sm text-fg-40">
                       {feed.items.length <= PAGE_SIZE ? copy.endAll : copy.endFeed}
                     </p>
                   )}

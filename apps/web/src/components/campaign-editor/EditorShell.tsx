@@ -85,10 +85,10 @@ export function EditorShell({
       */}
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
-          <p className="text-xs font-medium tracking-[0.06em] text-white/40 uppercase">
+          <p className="text-xs font-medium tracking-[0.06em] text-fg-40 uppercase">
             {copy.eyebrow}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">
             {/* An untitled project is impossible — creation requires a title —
                 but a project still loading has no title to show yet. */}
             {title ?? copy.loadingTitle}
@@ -144,7 +144,7 @@ export function EditorShell({
                     aria-disabled="true"
                     className={cn(
                       TAB_BASE,
-                      'cursor-default border-white/8 bg-surface-2 text-white/64',
+                      'cursor-default border-fg/8 bg-surface-2 text-fg-64',
                     )}
                   >
                     {copy.tabs[tab.key]}
@@ -158,7 +158,7 @@ export function EditorShell({
                       text (docs/ui-kit.md §9.2), and dimness alone would be
                       colour carrying meaning by itself.
                     */}
-                    <span aria-hidden="true" className="text-white/40">
+                    <span aria-hidden="true" className="text-fg-40">
                       {copy.soon}
                     </span>
                     {/* The comma is load-bearing. An accessible name is the
@@ -181,8 +181,8 @@ export function EditorShell({
                     // White for "you are here", never lime: a section is not
                     // urgent (docs/ui-kit.md §7.3).
                     current
-                      ? 'border-transparent bg-white text-on-white'
-                      : 'border-white/8 bg-surface-2 text-white/64 hover:bg-surface-3 hover:text-white',
+                      ? 'border-transparent bg-inverse text-on-inverse'
+                      : 'border-fg/8 bg-surface-2 text-fg-64 hover:bg-surface-3 hover:text-fg',
                   )}
                 >
                   {copy.tabs[tab.key]}

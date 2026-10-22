@@ -67,7 +67,7 @@ function StockLine({
 
   if (isSoldOut(reward)) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-white/64">
+      <span className="inline-flex items-center gap-1.5 text-fg-64">
         <Ban aria-hidden="true" className="size-3.5 shrink-0" />
         {copy.soldOut}
       </span>
@@ -75,7 +75,7 @@ function StockLine({
   }
 
   return (
-    <span className="tabular-nums text-white/64">
+    <span className="tabular-nums text-fg-64">
       {fillPlaceholders(copy.left, {
         remaining: String(reward.remainingQuantity ?? reward.limitQuantity),
         limit: String(reward.limitQuantity),
@@ -104,7 +104,7 @@ function RewardDetail({
           {reward.items.map((item) => (
             <span key={`${item.name}-${item.quantity}`}>
               {item.quantity} × {item.name}
-              {item.isDigital && <span className="text-white/40"> — {copy.digitalItem}</span>}
+              {item.isDigital && <span className="text-fg-40"> — {copy.digitalItem}</span>}
             </span>
           ))}
         </span>
@@ -112,18 +112,18 @@ function RewardDetail({
 
       <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {delivery != null && (
-          <span className="text-white/64">
+          <span className="text-fg-64">
             {fillPlaceholders(copy.estimatedDelivery, { month: delivery })}
           </span>
         )}
         {isShipped(reward.shippingType) ? (
-          <span className="text-white/64">
+          <span className="text-fg-64">
             {reward.shippingType === 'DOMESTIC' ? copy.postedDomestic : copy.postedWorldwide}
           </span>
         ) : reward.shippingType === 'LOCAL_PICKUP' ? (
-          <span className="text-white/64">{copy.inPerson}</span>
+          <span className="text-fg-64">{copy.inPerson}</span>
         ) : reward.shippingType === 'DIGITAL' ? (
-          <span className="text-white/64">{copy.digital}</span>
+          <span className="text-fg-64">{copy.digital}</span>
         ) : null}
         <StockLine reward={reward} copy={copy} />
       </span>
@@ -175,7 +175,7 @@ export function RewardChoice({ rewards, value, onChange, disabled = false,
                 label={
                   <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <span className="font-medium">{reward.title}</span>
-                    <span className="tabular-nums text-white/64">{formatMoney(reward.price)}</span>
+                    <span className="tabular-nums text-fg-64">{formatMoney(reward.price)}</span>
                     {reward.isEarlyBird && <Tag>{copy.earlyBird}</Tag>}
                     {reward.isFeatured && <Tag>{copy.featured}</Tag>}
                   </span>

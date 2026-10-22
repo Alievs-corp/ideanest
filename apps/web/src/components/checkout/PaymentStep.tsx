@@ -33,7 +33,7 @@ export interface PaymentStepProps {
 export function PaymentStep({ copy }: PaymentStepProps) {
   return (
     <section aria-labelledby="checkout-payment" className="flex flex-col gap-3">
-      <h3 id="checkout-payment" className="text-sm font-medium text-white">
+      <h3 id="checkout-payment" className="text-sm font-medium text-fg">
         {copy.heading}
       </h3>
 

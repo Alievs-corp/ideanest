@@ -267,7 +267,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
         {failure !== null && (
           <InlineAlert variant="danger" title={story.notSavedTitle}>
             <p>{failure.message}</p>
-            <p className="mt-2 text-white/64">{story.notSavedDetail}</p>
+            <p className="mt-2 text-fg-64">{story.notSavedDetail}</p>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
               {copy.tryAgain}
             </Pill>
@@ -289,7 +289,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[13px] text-white/64">
+            <p className="text-[13px] text-fg-64">
               {fillPlaceholders(story.charactersNeeded, {
                 /* The reader's own digit grouping, not English's. */
                 count: storyCharacters.toLocaleString(INTL_LOCALE[story.locale]),
@@ -335,11 +335,11 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
           */
           <section
             aria-labelledby="story-anchors-heading"
-            className="rounded-lg border border-white/8 bg-surface-2 p-4"
+            className="rounded-lg border border-fg/8 bg-surface-2 p-4"
           >
             <h2
               id="story-anchors-heading"
-              className="text-[13px] font-medium tracking-[0.06em] text-white/40 uppercase"
+              className="text-[13px] font-medium tracking-[0.06em] text-fg-40 uppercase"
             >
               {story.anchorMenu}
             </h2>
@@ -349,8 +349,8 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
                   key={anchor.id}
                   className={anchor.level === 3 ? 'pl-4 text-[13px]' : 'text-[15px]'}
                 >
-                  <span className="text-white">{anchor.text || story.untitledSection}</span>
-                  <span className="ml-2 text-[13px] text-white/40">#{anchor.id}</span>
+                  <span className="text-fg">{anchor.text || story.untitledSection}</span>
+                  <span className="ml-2 text-[13px] text-fg-40">#{anchor.id}</span>
                 </li>
               ))}
             </ol>

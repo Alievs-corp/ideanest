@@ -37,7 +37,7 @@ export default async function SignInPage() {
     <>
       <AuthPageHeader title={copy.title}>{copy.intro}</AuthPageHeader>
 
-      <Suspense fallback={<p className="text-white/40">{t('loadingForm')}</p>}>
+      <Suspense fallback={<p className="text-fg-40">{t('loadingForm')}</p>}>
         <SignInForm copy={copy} />
       </Suspense>
     </>

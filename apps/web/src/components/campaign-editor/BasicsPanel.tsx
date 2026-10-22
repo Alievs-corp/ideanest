@@ -278,7 +278,7 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
         {failure !== null && (
           <InlineAlert variant="danger" title={basics.notSavedTitle}>
             <p>{failure.message}</p>
-            <p className="mt-2 text-white/64">{basics.notSavedDetail}</p>
+            <p className="mt-2 text-fg-64">{basics.notSavedDetail}</p>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
               {copy.tryAgain}
             </Pill>

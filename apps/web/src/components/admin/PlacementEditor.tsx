@@ -120,13 +120,13 @@ export function PlacementEditor({ copy }: PlacementEditorProps) {
 
   return (
     <section aria-labelledby="placement-heading">
-      <h2 id="placement-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="placement-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
-          <span className="ml-2 text-xs font-normal text-white/40">{ordered.length}</span>
+          <span className="ml-2 text-xs font-normal text-fg-40">{ordered.length}</span>
         )}
       </h2>
-      <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.intro}</p>
+      <p className="mt-1 max-w-[62ch] text-sm text-fg-48">{copy.intro}</p>
 
       <div role="status" aria-live="polite" className="empty:hidden">
         {notice !== null && (
@@ -146,7 +146,7 @@ export function PlacementEditor({ copy }: PlacementEditorProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-2">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="40%" />
               </div>
             ))}
@@ -168,16 +168,16 @@ export function PlacementEditor({ copy }: PlacementEditorProps) {
           {ordered.map((collection, index) => (
             <li
               key={collection.slug}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 p-4"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-fg/8 bg-surface-1 p-4"
             >
               <div className="min-w-0">
                 <Link
                   href={`/admin/curation/${encodeURIComponent(collection.slug)}`}
-                  className="rounded-lg text-sm sm:text-[15px] font-medium text-white underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="rounded-lg text-sm sm:text-[15px] font-medium text-fg underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   {collectionTitle(collection)}
                 </Link>
-                <p className="mt-1 text-xs text-white/40">
+                <p className="mt-1 text-xs text-fg-40">
                   <span className="font-mono">{index + 1}</span> ·{' '}
                   {copy.curation.kind[collection.kind]}
                 </p>

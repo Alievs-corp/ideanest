@@ -125,7 +125,7 @@ export async function CampaignComments({
   return (
     <BlockedAuthorsProvider>
       <section aria-labelledby="campaign-comments" className="flex flex-col gap-6">
-        <h2 id="campaign-comments" className="text-xl font-medium tracking-[-0.02em] text-white">
+        <h2 id="campaign-comments" className="text-xl font-medium tracking-[-0.02em] text-fg">
           {t('heading')}
         </h2>
 
@@ -134,7 +134,7 @@ export async function CampaignComments({
             <Link
               href={allThreadsHref}
               scroll={false}
-              className="rounded-sm text-sm text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="rounded-sm text-sm text-fg underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               {t('all')}
             </Link>
@@ -163,11 +163,11 @@ export async function CampaignComments({
            * read was refused or could not be made. "Nobody has commented" printed over a
            * restarting service is a statement about the campaign that happens to be false.
            */
-          <p className="text-sm text-white/64">
+          <p className="text-sm text-fg-64">
             {t('failed')}
           </p>
         ) : page.threads.length === 0 ? (
-          <p className="text-sm text-white/64">{t('empty')}</p>
+          <p className="text-sm text-fg-64">{t('empty')}</p>
         ) : (
           <ol className="flex flex-col gap-6">
             {page.threads.map((thread) => (
@@ -180,7 +180,7 @@ export async function CampaignComments({
                   />
 
                   {(thread.replies.length > 0 || thread.nextReplyCursor !== null) && (
-                    <ol className="mt-3 flex flex-col gap-3 border-l border-white/8 pl-4 sm:pl-6">
+                    <ol className="mt-3 flex flex-col gap-3 border-l border-fg/8 pl-4 sm:pl-6">
                       {thread.replies.map((reply) => (
                         <HiddenIfBlocked key={reply.id} authorId={reply.authorId}>
                           <li>
@@ -198,7 +198,7 @@ export async function CampaignComments({
                           <Link
                             href={threadHrefs[thread.root.id] as string}
                             scroll={false}
-                            className="rounded-sm text-xs text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                            className="rounded-sm text-xs text-fg underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                           >
                             {t('showReplies')}
                           </Link>
@@ -217,7 +217,7 @@ export async function CampaignComments({
             <Link
               href={olderHref}
               scroll={false}
-              className="rounded-sm text-sm text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="rounded-sm text-sm text-fg underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               {t('older')}
             </Link>
@@ -252,7 +252,7 @@ async function CommentEntry({
 
   if (comment.deleted) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-white/8 bg-surface-2 px-4 py-3 text-sm text-white/40">
+      <div className="flex items-center gap-2 rounded-lg border border-fg/8 bg-surface-2 px-4 py-3 text-sm text-fg-40">
         <MessageSquareOff aria-hidden="true" className="size-4" />
         {/*
           NO NAME AND NO ACTOR. §4.9: author, campaign team and staff may all remove, and
@@ -268,8 +268,8 @@ async function CommentEntry({
     <article
       className={
         comment.byCreator
-          ? 'flex flex-col gap-2 rounded-lg border border-white/8 border-l-2 border-l-white/40 bg-surface-3 p-4'
-          : 'flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-4'
+          ? 'flex flex-col gap-2 rounded-lg border border-fg/8 border-l-2 border-l-fg/40 bg-surface-3 p-4'
+          : 'flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-2 p-4'
       }
     >
       <div className="flex flex-wrap items-center gap-2">
@@ -293,10 +293,10 @@ async function CommentEntry({
                 className="size-6 shrink-0 rounded-full object-cover"
               />
             )}
-            <span className="text-sm font-medium text-white">{comment.author.name}</span>
+            <span className="text-sm font-medium text-fg">{comment.author.name}</span>
           </span>
         ) : (
-          !comment.byCreator && <span className="text-sm text-white/64">{t('unnamedAuthor')}</span>
+          !comment.byCreator && <span className="text-sm text-fg-64">{t('unnamedAuthor')}</span>
         )}
 
         {comment.byCreator && (
@@ -310,7 +310,7 @@ async function CommentEntry({
         )}
 
         {serverInstant !== null && (
-          <span className="text-xs text-white/40">
+          <span className="text-xs text-fg-40">
             <ViewerInstant instant={comment.createdAt} serverText={serverInstant} />
           </span>
         )}

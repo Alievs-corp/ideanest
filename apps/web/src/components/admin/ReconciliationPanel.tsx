@@ -117,7 +117,7 @@ export function ReconciliationPanel({ copy }: ReconciliationPanelProps) {
   if (report.status === 'loading' && report.data === null) {
     return (
       <SkeletonGroup label={copy.loadingList}>
-        <div className="rounded-lg border border-white/8 bg-surface-1 p-4">
+        <div className="rounded-lg border border-fg/8 bg-surface-1 p-4">
           <Skeleton height="1rem" width="40%" />
           <Skeleton height="0.875rem" width="65%" className="mt-3" />
         </div>
@@ -152,7 +152,7 @@ export function ReconciliationPanel({ copy }: ReconciliationPanelProps) {
 
       {found.findings.length > 0 && (
         <section aria-labelledby="findings-heading">
-          <h2 id="findings-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+          <h2 id="findings-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
             {copy.findingsHeading}
           </h2>
           {groupByKind(found.findings).map(([kind, findings]) => (
@@ -163,7 +163,7 @@ export function ReconciliationPanel({ copy }: ReconciliationPanelProps) {
                 out and never took" — and four findings of one kind printed it four times,
                 which is a paragraph the reader learns to skip past the rows that matter.
               */}
-              <p className="max-w-[68ch] text-xs text-white/48">{copy.findingMeaning[kind]}</p>
+              <p className="max-w-[68ch] text-xs text-fg-48">{copy.findingMeaning[kind]}</p>
               <ul className="mt-2 flex list-none flex-col gap-3">
                 {findings.map((finding, index) => (
                   <FindingCard
@@ -183,7 +183,7 @@ export function ReconciliationPanel({ copy }: ReconciliationPanelProps) {
         <Pill variant="ghost" size="sm" onClick={() => void check()} disabled={running}>
           {running ? copy.checking : copy.checkAgain}
         </Pill>
-        <p className="text-xs text-white/48">{copy.runNote}</p>
+        <p className="text-xs text-fg-48">{copy.runNote}</p>
       </div>
     </div>
   );
@@ -306,14 +306,14 @@ function FindingCard({
   readonly copy: ReconciliationCopy;
 }) {
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-white">{copy.findingTitle[finding.kind]}</p>
+        <p className="text-sm text-fg">{copy.findingTitle[finding.kind]}</p>
         {/* The currency as a tag rather than in the sentence: a finding is about exactly
             one, and it is what somebody scans the list by. */}
         <Tag>{finding.currency}</Tag>
       </div>
-      <p className="mt-2 break-words text-sm text-white/64">{describe(finding, names, copy)}</p>
+      <p className="mt-2 break-words text-sm text-fg-64">{describe(finding, names, copy)}</p>
     </li>
   );
 }

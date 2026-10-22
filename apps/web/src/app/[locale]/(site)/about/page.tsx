@@ -65,12 +65,12 @@ export async function generateMetadata({
  *
  * Named rather than repeated because `t.rich` takes each tag as a function, and a class
  * typed twice in two of them is a difference nobody sees until one link is underlined and
- * the other is not. `BOLD` is `font-medium text-white` rather than a bare `<strong>`: these
+ * the other is not. `BOLD` is `font-medium text-fg` rather than a bare `<strong>`: these
  * pages set body text in `text-reading`, so an unstyled strong is heavier but not brighter,
  * which reads as a rendering fault rather than as emphasis.
  */
-const INLINE_LINK = 'text-white underline underline-offset-4';
-const BOLD = (chunks: ReactNode) => <strong className="font-medium text-white">{chunks}</strong>;
+const INLINE_LINK = 'text-fg underline underline-offset-4';
+const BOLD = (chunks: ReactNode) => <strong className="font-medium text-fg">{chunks}</strong>;
 
 export default async function AboutPage() {
   const t = await getTranslations('static.about');

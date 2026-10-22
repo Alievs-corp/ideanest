@@ -284,7 +284,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
             <p className="mt-2">
               <Link
                 href={`/projects/${fromProjectId}/edit/review`}
-                className="text-white underline underline-offset-4"
+                className="text-fg underline underline-offset-4"
               >
                 {copy.fromSubmit.resume}
               </Link>
@@ -296,7 +296,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
             <p className="mt-2">
               <Link
                 href={`/projects/${fromProjectId}/edit/review`}
-                className="text-white underline underline-offset-4"
+                className="text-fg underline underline-offset-4"
               >
                 {copy.fromSubmit.back}
               </Link>
@@ -329,11 +329,11 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
         )}
       </div>
 
-      {status === 'loading' && <p className="text-sm text-white/64">{copy.loading}</p>}
+      {status === 'loading' && <p className="text-sm text-fg-64">{copy.loading}</p>}
 
       {status === 'signed-out' && (
         <InlineAlert variant="info" title={copy.signedOut}>
-          <Link href="/sign-in" className="text-white underline underline-offset-4">
+          <Link href="/sign-in" className="text-fg underline underline-offset-4">
             {copy.signIn}
           </Link>
         </InlineAlert>
@@ -355,7 +355,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       )}
 
       {plans.length === 0 ? (
-        <p className="text-sm text-white/64">{copy.empty}</p>
+        <p className="text-sm text-fg-64">{copy.empty}</p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan, index) => (
@@ -407,9 +407,9 @@ function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, o
   return (
     <section
       aria-labelledby="pricing-held-heading"
-      className="rounded-2xl border border-white/8 bg-surface-2 p-5"
+      className="rounded-2xl border border-fg/8 bg-surface-2 p-5"
     >
-      <h2 id="pricing-held-heading" className="text-[13px] font-medium tracking-[0.06em] text-white/40 uppercase">
+      <h2 id="pricing-held-heading" className="text-[13px] font-medium tracking-[0.06em] text-fg-40 uppercase">
         {copy.held.heading}
       </h2>
 
@@ -628,7 +628,7 @@ const PLAN_SKIN: Record<
   { card: string; muted: string; tag: string; button: string; context: Record<string, string> }
 > = {
   light: {
-    card: 'bg-[var(--white-muted)] text-on-white',
+    card: 'bg-[var(--white-muted)] text-on-white in-data-[theme=light]:border in-data-[theme=light]:border-black/8 in-data-[theme=light]:bg-white',
     muted: 'text-on-white/48',
     tag: 'bg-on-white text-white',
     button: 'bg-on-white text-white focus-visible:outline-on-white',
@@ -636,10 +636,10 @@ const PLAN_SKIN: Record<
   },
   dark: {
     card: 'border border-white/8 bg-black text-white',
-    muted: 'text-white/40',
+    muted: 'text-fg-40',
     tag: 'bg-white text-on-white',
-    button: 'bg-white text-on-white focus-visible:outline-[var(--lime-500)]',
-    context: {},
+    button: 'bg-white text-on-white focus-visible:outline-[var(--focus-ring)]',
+    context: { 'data-theme': 'dark' },
   },
   lime: {
     card: 'bg-lime-500 text-on-lime',

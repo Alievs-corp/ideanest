@@ -217,10 +217,10 @@ export function StoryVersionHistory({
         {status === 'ready' && versions.length > 0 && (
           <ul className="flex flex-col gap-3">
             {versions.map((version, position) => (
-              <li key={version.number} className="rounded-lg border border-white/8 bg-surface-3 p-4">
+              <li key={version.number} className="rounded-lg border border-fg/8 bg-surface-3 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-[15px] font-medium text-white">
+                    <p className="text-[15px] font-medium text-fg">
                       {fillPlaceholders(copy.version, { number: String(version.number) })}
                       {/*
                         "Current" is a word, not a colour: the difference between the
@@ -228,12 +228,12 @@ export function StoryVersionHistory({
                         depend on telling two greys apart (docs/ui-kit.md §9.2).
                       */}
                       {position === 0 && (
-                        <span className="ml-2 text-[13px] font-normal text-white/64">
+                        <span className="ml-2 text-[13px] font-normal text-fg-64">
                           {copy.mostRecent}
                         </span>
                       )}
                     </p>
-                    <p className="mt-0.5 text-[13px] text-white/64">
+                    <p className="mt-0.5 text-[13px] text-fg-64">
                       <time dateTime={version.createdAt}>
                         {formatMoment(version.createdAt, locale)}
                       </time>
@@ -271,11 +271,11 @@ export function StoryVersionHistory({
                 </div>
 
                 {previewing === version.number && (
-                  <div className="mt-3 border-t border-white/8 pt-3">
+                  <div className="mt-3 border-t border-fg/8 pt-3">
                     {previewProblem !== null ? (
                       <InlineAlert variant="warning">{previewProblem}</InlineAlert>
                     ) : preview === null ? (
-                      <p className="text-[13px] text-white/64">{copy.loadingVersion}</p>
+                      <p className="text-[13px] text-fg-64">{copy.loadingVersion}</p>
                     ) : (
                       <StoryPreview copy={copy} vocabulary={vocabulary} document={preview} />
                     )}
@@ -368,12 +368,12 @@ function StoryPreview({
   document: StoryDocument;
 }) {
   if (document.blocks.length === 0) {
-    return <p className="text-[13px] text-white/64">{copy.noBlocks}</p>;
+    return <p className="text-[13px] text-fg-64">{copy.noBlocks}</p>;
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[13px] text-white/40">
+      <p className="text-[13px] text-fg-40">
         {fillPlaceholders(
           pluralise(vocabulary.locale, copy.previewSummary, document.blocks.length),
           {
@@ -387,8 +387,8 @@ function StoryPreview({
       </p>
       <ol className="flex flex-col gap-2 text-[13px]">
         {document.blocks.map((block, index) => (
-          <li key={index} className="text-white/64">
-            <span className="text-white/40">{vocabulary.blockLabel[block.type]}: </span>
+          <li key={index} className="text-fg-64">
+            <span className="text-fg-40">{vocabulary.blockLabel[block.type]}: </span>
             {blockText(block)}
           </li>
         ))}

@@ -288,7 +288,7 @@ export function CampaignVideoField({
     >
       <div ref={region} className="flex flex-col gap-3">
         {video !== null && !busy && (
-          <figure className="overflow-hidden rounded-lg border border-white/8 bg-surface-2">
+          <figure className="overflow-hidden rounded-lg border border-fg/8 bg-surface-2">
             {/*
               THE CAMPAIGN PAGE'S BOX, NOT THE CLIP'S. The page reserves a 16:9 frame and
               letterboxes the video inside it (`CampaignMedia`), so a portrait clip from a phone
@@ -309,7 +309,7 @@ export function CampaignVideoField({
                 className="absolute inset-0 size-full object-contain"
               />
             </MediaFrame>
-            <figcaption className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-[13px] text-white/64">
+            <figcaption className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-[13px] text-fg-64">
               <span>
                 {fillPlaceholders(copy.caption, {
                   duration: formatVideoDuration(video.durationMs),
@@ -370,7 +370,7 @@ export function CampaignVideoField({
         )}
 
         {busy && (
-          <div className="flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-5">
+          <div className="flex flex-col gap-3 rounded-lg border border-fg/8 bg-surface-2 p-5">
             {stage === 'uploading' && (
               <div className="flex items-center gap-3">
                 {/*
@@ -389,14 +389,14 @@ export function CampaignVideoField({
                   className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-3"
                 >
                   <div
-                    className="h-full w-full rounded-full bg-white"
+                    className="h-full w-full rounded-full bg-fg"
                     style={{ transform: `translateX(${percent - 100}%)` }}
                   />
                 </div>
                 {/* The bar's value already carries the figure for a screen reader. */}
                 <span
                   aria-hidden="true"
-                  className="w-12 text-right text-[13px] tabular-nums text-white/64"
+                  className="w-12 text-right text-[13px] tabular-nums text-fg-64"
                 >
                   {percentText}
                 </span>
@@ -408,7 +408,7 @@ export function CampaignVideoField({
               heard where the focus lands when the upload starts.
             */}
             {atRisk && (
-              <p id={keepOpenId} className="text-[13px] text-white/64">
+              <p id={keepOpenId} className="text-[13px] text-fg-64">
                 {copy.keepOpen}
               </p>
             )}

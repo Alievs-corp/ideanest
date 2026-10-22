@@ -139,7 +139,7 @@ function ToggleLabel({ shown, other }: { readonly shown: string; readonly other:
 /** `Pill`'s ghost variant at `sm`, on the link a signed-out reader is given instead of Save. */
 const SIGN_IN_PILL =
   'inline-flex h-8 items-center justify-center gap-2 rounded-full bg-surface-3 px-3.5 ' +
-  'text-[13px] font-medium tracking-[-0.01em] whitespace-nowrap text-white ' +
+  'text-[13px] font-medium tracking-[-0.01em] whitespace-nowrap text-fg ' +
   'transition-colors duration-150 ease-in-out hover:bg-surface-4';
 
 export function CampaignActions({ projectId, state, title, path,
@@ -364,7 +364,7 @@ export function CampaignActions({ projectId, state, title, path,
         say: a live region inserted at the moment of the announcement is a region most screen
         readers do not announce at all.
       */}
-      <p aria-live="polite" className="min-h-[1.25rem] text-xs text-white/64">
+      <p aria-live="polite" className="min-h-[1.25rem] text-xs text-fg-64">
         {notice}
       </p>
     </div>

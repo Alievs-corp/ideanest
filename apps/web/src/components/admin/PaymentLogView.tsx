@@ -251,7 +251,7 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
 
   return (
     <section aria-labelledby="payment-log-heading">
-      <h2 id="payment-log-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="payment-log-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
           <ConsoleCount loaded={rows.length} more={cursor !== null} copy={copy.count} />
@@ -290,7 +290,7 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
             <fieldset className="flex items-center gap-4">
               <legend className="sr-only">{copy.scopeLegend}</legend>
               {(['project', 'pledge'] as const).map((option) => (
-                <label key={option} className="flex items-center gap-2 text-sm text-white/64">
+                <label key={option} className="flex items-center gap-2 text-sm text-fg-64">
                   <input
                     type="radio"
                     name="payment-scope"
@@ -325,7 +325,7 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
           </div>
         </div>
 
-        <p id={hintId} className="mt-1.5 text-[13px] text-white/64">
+        <p id={hintId} className="mt-1.5 text-[13px] text-fg-64">
           {copy.identifierHint}
         </p>
         {idError !== null && (
@@ -364,7 +364,7 @@ export function PaymentLogView({ copy }: PaymentLogViewProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="40%" />
                 <Skeleton height="0.875rem" width="65%" className="mt-3" />
               </div>
@@ -456,11 +456,11 @@ function TransactionRow({
   const failure = code == null || code === '' ? null : (copy.failure[code] ?? null);
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <p className="min-w-0 text-sm sm:text-[15px] font-medium text-white">
+        <p className="min-w-0 text-sm sm:text-[15px] font-medium text-fg">
           {formatMoney(transaction.amount)}{' '}
-          <span className="font-normal text-white/48">{copy.type[transaction.type]}</span>
+          <span className="font-normal text-fg-48">{copy.type[transaction.type]}</span>
         </p>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -470,7 +470,7 @@ function TransactionRow({
           </Tag>
           <time
             dateTime={transaction.createdAt}
-            className="text-xs text-white/40"
+            className="text-xs text-fg-40"
             title={transaction.createdAt}
           >
             {formatExactTime(transaction.createdAt, locale)}
@@ -478,7 +478,7 @@ function TransactionRow({
         </div>
       </div>
 
-      <p className="mt-1 text-sm text-white/64">
+      <p className="mt-1 text-sm text-fg-64">
         {/*
           Three fragments joined by a separator rather than one template with two optional
           holes: the pledge is absent on a payout, and a sentence built around it would
@@ -522,7 +522,7 @@ function TransactionRow({
       </p>
 
       {reference != null && reference !== '' ? (
-        <p className="mt-2 break-all font-mono text-xs text-white/40">{reference}</p>
+        <p className="mt-2 break-all font-mono text-xs text-fg-40">{reference}</p>
       ) : (
         /*
           A pending or failed call with no reference may be a request that never got an
@@ -530,17 +530,17 @@ function TransactionRow({
           somebody without the platform knowing. A succeeded one plainly reached the
           provider, and saying it "may have" would be absurd, so it only notes the gap.
         */
-        <p className="mt-2 text-xs text-white/40">
+        <p className="mt-2 text-xs text-fg-40">
           {transaction.status === 'SUCCEEDED' ? copy.noReferenceSettled : copy.noReference}
         </p>
       )}
 
       {code != null && code !== '' && (
-        <p className="mt-2 text-sm text-white/64" title={transaction.failureMessage ?? undefined}>
+        <p className="mt-2 text-sm text-fg-64" title={transaction.failureMessage ?? undefined}>
           {failure ?? (
             <>
               {copy.failureUnknown}{' '}
-              <span className="font-mono text-white/48">{code}</span>
+              <span className="font-mono text-fg-48">{code}</span>
             </>
           )}
         </p>

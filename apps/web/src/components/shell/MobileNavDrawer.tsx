@@ -5,6 +5,7 @@ import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { Menu, X } from 'lucide-react';
 import { CountrySwitcher } from './CountrySwitcher';
+import { ThemeToggle } from './ThemeToggle';
 import { cn, useDismiss, useFocusTrap, useScrollLock } from '@ideanest/ui';
 import { useSession } from '../session/SessionProvider';
 import { SearchField } from '../search/SearchField';
@@ -84,7 +85,7 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
         aria-label={copy.drawer.open}
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="inline-grid size-10 place-items-center rounded-full bg-surface-3 text-white transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] md:hidden"
+        className="inline-grid size-10 place-items-center rounded-full bg-surface-3 text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] md:hidden"
       >
         <Menu aria-hidden="true" className="size-[18px]" />
       </button>
@@ -113,12 +114,12 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
             tabIndex={-1}
             className={cn(
               'absolute inset-y-0 right-0 flex w-[min(20rem,88vw)] flex-col',
-              'border-l border-white/8 bg-surface-1',
+              'border-l border-fg/8 bg-surface-1',
               'motion-safe:animate-[nav-panel_200ms_ease-out]',
             )}
           >
             <div className="flex items-center justify-between px-5 py-5">
-              <span className="inline-flex items-center gap-2 text-lg font-semibold tracking-[-0.03em] text-white">
+              <span className="inline-flex items-center gap-2 text-lg font-semibold tracking-[-0.03em] text-fg">
                 <BrandMark />
                 IdeyaNest
               </span>
@@ -126,7 +127,7 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
                 type="button"
                 aria-label={copy.drawer.close}
                 onClick={close}
-                className="inline-grid size-10 place-items-center rounded-full bg-surface-3 text-white transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="inline-grid size-10 place-items-center rounded-full bg-surface-3 text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 <X aria-hidden="true" className="size-[18px]" />
               </button>
@@ -144,8 +145,13 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
 
             {/* #533: the header's country control, which a phone's bar has no room for. */}
             <div className="flex items-center justify-between gap-3 px-5 pb-2">
-              <span aria-hidden="true" className="text-sm text-white/64">{copy.market.label}</span>
+              <span aria-hidden="true" className="text-sm text-fg-64">{copy.market.label}</span>
               <CountrySwitcher copy={copy.market} />
+            </div>
+
+            <div className="flex items-center justify-between gap-3 px-5 pb-2">
+              <span aria-hidden="true" className="text-sm text-fg-64">{copy.theme.label}</span>
+              <ThemeToggle copy={copy.theme} />
             </div>
 
             <nav aria-label={copy.nav.label} className="flex-1 overflow-y-auto px-3 py-4">
@@ -159,8 +165,8 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
                         aria-current={current ? 'page' : undefined}
                         className={cn(
                           'block rounded-sm px-3 py-3 text-base font-medium transition-colors duration-150 ease-in-out',
-                          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
-                          current ? 'bg-surface-3 text-white' : 'text-white/64 hover:text-white',
+                          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+                          current ? 'bg-surface-3 text-fg' : 'text-fg-64 hover:text-fg',
                         )}
                       >
                         {link.label}
@@ -170,7 +176,7 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
                 })}
               </ul>
 
-              <div className="mt-4 border-t border-white/6 pt-4">
+              <div className="mt-4 border-t border-fg/6 pt-4">
                 {status === 'signed-in' && session !== null && (
                   <ul className="list-none">
                     {/* The same rows as `AccountMenu`, for the same reasons. */}
@@ -233,7 +239,7 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
                     </Link>
                     <Link
                       href="/sign-in"
-                      className="inline-flex h-11 items-center justify-center rounded-full border border-white/16 text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
+                      className="inline-flex h-11 items-center justify-center rounded-full border border-fg/16 text-sm font-medium text-fg transition-colors duration-150 ease-in-out hover:bg-surface-3"
                     >
                       {copy.actions.signIn}
                     </Link>
@@ -249,4 +255,4 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
 }
 
 const DRAWER_ROW =
-  'block rounded-sm px-3 py-3 text-base text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+  'block rounded-sm px-3 py-3 text-base text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]';

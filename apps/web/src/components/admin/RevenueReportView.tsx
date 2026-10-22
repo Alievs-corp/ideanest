@@ -391,7 +391,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
       */}
       <form onSubmit={ask} className="flex flex-col gap-5" noValidate>
         <fieldset>
-          <legend className="mb-2 text-sm font-medium text-white">{copy.periodLegend}</legend>
+          <legend className="mb-2 text-sm font-medium text-fg">{copy.periodLegend}</legend>
           <div className="flex flex-wrap items-end gap-3">
             <Field label={copy.fromLabel} className="w-[calc(50%-0.375rem)] sm:w-44">
               <TextInput
@@ -420,7 +420,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
               </Pill>
             </div>
           </div>
-          <p id={periodHintId} className="mt-1.5 text-[13px] text-white/64">
+          <p id={periodHintId} className="mt-1.5 text-[13px] text-fg-64">
             {copy.toHint}
           </p>
           {periodError !== null && (
@@ -445,7 +445,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
                 maxLength={40}
               />
             </Field>
-            <p id={planHintId} className="order-2 -mt-1.5 basis-full text-[13px] text-white/64 sm:order-last">
+            <p id={planHintId} className="order-2 -mt-1.5 basis-full text-[13px] text-fg-64 sm:order-last">
               {copy.planHint}
             </p>
             <Field label={copy.methodLabel} className="order-3 w-full sm:w-56">
@@ -471,11 +471,11 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
       {/* ---- the figures --------------------------------------------------- */}
 
       <section aria-labelledby={`${ids}-totals`} aria-busy={report.status === 'loading'}>
-        <h2 id={`${ids}-totals`} className="text-base font-semibold text-white sm:text-lg">
+        <h2 id={`${ids}-totals`} className="text-base font-semibold text-fg sm:text-lg">
           {copy.totalsHeading}
         </h2>
         {data !== null && lastDay !== null && (
-          <p className="mt-1 text-sm text-white/64">
+          <p className="mt-1 text-sm text-fg-64">
             {fillPlaceholders(copy.periodCaption, {
               from: dayInWords(bakuDay(data.from), locale),
               to: dayInWords(lastDay, locale),
@@ -515,28 +515,28 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
         {data !== null && data.currencies.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-3">
             {data.currencies.map((total) => (
-              <li key={total.currency} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <li key={total.currency} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
-                    <dt className="text-xs text-white/64">{copy.gross}</dt>
-                    <dd className="font-mono text-base tabular-nums text-white">
+                    <dt className="text-xs text-fg-64">{copy.gross}</dt>
+                    <dd className="font-mono text-base tabular-nums text-fg">
                       {moneyOf(total.gross, total.currency)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-white/64">{copy.reversed}</dt>
-                    <dd className="font-mono text-base tabular-nums text-white">
+                    <dt className="text-xs text-fg-64">{copy.reversed}</dt>
+                    <dd className="font-mono text-base tabular-nums text-fg">
                       {moneyOf(total.reversed, total.currency)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-white/64">{copy.net}</dt>
-                    <dd className="font-mono text-base font-semibold tabular-nums text-white">
+                    <dt className="text-xs text-fg-64">{copy.net}</dt>
+                    <dd className="font-mono text-base font-semibold tabular-nums text-fg">
                       {moneyOf(total.net, total.currency)}
                     </dd>
                   </div>
                 </dl>
-                <p className="mt-3 text-xs text-white/64">
+                <p className="mt-3 text-xs text-fg-64">
                   {pluralise(locale, copy.payments, total.payments)} ·{' '}
                   {pluralise(locale, copy.reversals, total.reversals)}
                 </p>
@@ -548,22 +548,22 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
       {data !== null && data.plans.length > 0 && (
         <section aria-labelledby={`${ids}-plans`}>
-          <h2 id={`${ids}-plans`} className="text-base font-semibold text-white sm:text-lg">
+          <h2 id={`${ids}-plans`} className="text-base font-semibold text-fg sm:text-lg">
             {copy.byPlanHeading}
           </h2>
           <ul className="mt-4 flex list-none flex-col gap-2">
             {data.plans.map((plan) => (
               <li
                 key={`${plan.planCode}-${plan.planName}-${plan.currency}-${plan.billingPeriod}`}
-                className="flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 px-4 py-3"
+                className="flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-fg/8 bg-surface-1 px-4 py-3"
               >
                 <span className="flex min-w-0 flex-wrap items-baseline gap-2">
-                  <span className="text-sm sm:text-[15px] font-medium text-white">{plan.planName}</span>
-                  <span className="font-mono text-xs text-white/64">{plan.planCode}</span>
+                  <span className="text-sm sm:text-[15px] font-medium text-fg">{plan.planName}</span>
+                  <span className="font-mono text-xs text-fg-64">{plan.planCode}</span>
                 </span>
                 <span className="flex items-baseline gap-3">
-                  <span className="text-xs text-white/64">{pluralise(locale, copy.entries, plan.entries)}</span>
-                  <span className="font-mono tabular-nums text-white">{moneyOf(plan.net, plan.currency)}</span>
+                  <span className="text-xs text-fg-64">{pluralise(locale, copy.entries, plan.entries)}</span>
+                  <span className="font-mono tabular-nums text-fg">{moneyOf(plan.net, plan.currency)}</span>
                 </span>
               </li>
             ))}
@@ -573,19 +573,19 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
       {data !== null && data.methods.length > 0 && (
         <section aria-labelledby={`${ids}-methods`}>
-          <h2 id={`${ids}-methods`} className="text-base font-semibold text-white sm:text-lg">
+          <h2 id={`${ids}-methods`} className="text-base font-semibold text-fg sm:text-lg">
             {copy.byMethodHeading}
           </h2>
           <ul className="mt-4 flex list-none flex-col gap-2">
             {data.methods.map((row) => (
               <li
                 key={`${row.method}-${row.currency}`}
-                className="flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 px-4 py-3"
+                className="flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-fg/8 bg-surface-1 px-4 py-3"
               >
-                <span className="text-sm sm:text-[15px] text-white">{copy.method[row.method]}</span>
+                <span className="text-sm sm:text-[15px] text-fg">{copy.method[row.method]}</span>
                 <span className="flex items-baseline gap-3">
-                  <span className="text-xs text-white/64">{pluralise(locale, copy.entries, row.entries)}</span>
-                  <span className="font-mono tabular-nums text-white">{moneyOf(row.net, row.currency)}</span>
+                  <span className="text-xs text-fg-64">{pluralise(locale, copy.entries, row.entries)}</span>
+                  <span className="font-mono tabular-nums text-fg">{moneyOf(row.net, row.currency)}</span>
                 </span>
               </li>
             ))}
@@ -597,7 +597,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
 
       <section aria-labelledby={`${ids}-payments`} aria-busy={firstPage.status === 'loading'}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id={`${ids}-payments`} className="flex items-center gap-3 text-base font-semibold text-white sm:text-lg">
+          <h2 id={`${ids}-payments`} className="flex items-center gap-3 text-base font-semibold text-fg sm:text-lg">
             {copy.listHeading}
             {listReady && <ConsoleCount loaded={rows.length} more={cursor !== null} copy={copy.count} />}
           </h2>
@@ -635,7 +635,7 @@ export function RevenueReportView({ copy, offerFile }: RevenueReportViewProps) {
           </>
         )}
 
-        {listReady && rows.length === 0 && <p className="mt-4 text-sm text-white/64">{copy.listEmpty}</p>}
+        {listReady && rows.length === 0 && <p className="mt-4 text-sm text-fg-64">{copy.listEmpty}</p>}
 
         {rows.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-2">
@@ -690,30 +690,30 @@ function PaymentRow({
   const email = payment.accountEmail == null || payment.accountEmail === '' ? null : payment.accountEmail;
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-baseline gap-2 text-sm sm:text-[15px] font-medium text-white">
+          <p className="flex flex-wrap items-baseline gap-2 text-sm sm:text-[15px] font-medium text-fg">
             <span className="font-mono tabular-nums">{moneyOf(payment.amount, payment.currency)}</span>
             <span>{payment.planName}</span>
             {payment.reversal && (
-              <span className="rounded-full border border-white/16 px-2 text-xs font-normal text-white/80">
+              <span className="rounded-full border border-fg/16 px-2 text-xs font-normal text-fg-80">
                 {copy.reversal}
               </span>
             )}
           </p>
-          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 break-all text-sm text-white/64">
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 break-all text-sm text-fg-64">
             {name === null && email === null ? (
               <span>{copy.closedAccount}</span>
             ) : (
               <>
-                {name !== null && <span className="font-medium text-white">{name}</span>}
+                {name !== null && <span className="font-medium text-fg">{name}</span>}
                 {email !== null && <span>{email}</span>}
               </>
             )}
           </p>
         </div>
-        <p className="text-right text-xs text-white/64">
+        <p className="text-right text-xs text-fg-64">
           <span className="block">{copy.method[payment.method]}</span>
           <span className="block">
             {fillPlaceholders(copy.receivedOn, { date: formatExactTime(payment.receivedAt, locale) })}
@@ -726,7 +726,7 @@ function PaymentRow({
         </p>
       </div>
       {payment.reference != null && payment.reference !== '' && (
-        <p className="mt-2 break-all font-mono text-xs text-white/64">
+        <p className="mt-2 break-all font-mono text-xs text-fg-64">
           {fillPlaceholders(copy.reference, { reference: payment.reference })}
         </p>
       )}

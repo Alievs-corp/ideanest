@@ -111,7 +111,7 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
       <div className="flex flex-wrap items-center gap-3">
         <h1
           id="finance-heading"
-          className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl"
+          className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl"
         >
           {copy.heading}
         </h1>
@@ -122,7 +122,7 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
         <Tag>{projected ? copy.projected : copy.settled}</Tag>
       </div>
 
-      <p className="mt-3 max-w-[62ch] text-sm text-white/64">
+      <p className="mt-3 max-w-[62ch] text-sm text-fg-64">
         {projected ? copy.projectedIntro : copy.settledIntro}
       </p>
 
@@ -135,7 +135,7 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
         <StatBlock label={copy.paidOut} value={formatMoney(finance.paidOut)} />
       </StatRow>
 
-      <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-fg">
         {copy.deductionsHeading}
       </h2>
       <table className="mt-4 w-full border-collapse text-sm">
@@ -177,11 +177,11 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
         </tbody>
       </table>
 
-      <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-fg">
         {copy.payoutsHeading}
       </h2>
       {finance.payouts.length === 0 ? (
-        <p className="mt-3 max-w-[62ch] text-sm text-white/64">{copy.payoutsEmpty}</p>
+        <p className="mt-3 max-w-[62ch] text-sm text-fg-64">{copy.payoutsEmpty}</p>
       ) : (
         <ul className="mt-4 flex list-none flex-col gap-3">
           {finance.payouts.map((payout) => (
@@ -190,10 +190,10 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
         </ul>
       )}
 
-      <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-white">
+      <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-fg">
         {copy.booksHeading}
       </h2>
-      <p className="mt-3 max-w-[62ch] text-sm text-white/64">{copy.booksIntro}</p>
+      <p className="mt-3 max-w-[62ch] text-sm text-fg-64">{copy.booksIntro}</p>
 
       {!finance.reconciled && (
         <div className="mt-4">
@@ -209,12 +209,12 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
       )}
 
       {finance.ledger.length === 0 ? (
-        <p className="mt-4 text-sm text-white/64">{copy.ledgerEmpty}</p>
+        <p className="mt-4 text-sm text-fg-64">{copy.ledgerEmpty}</p>
       ) : (
         <table className="mt-4 w-full border-collapse text-sm">
           <caption className="sr-only">{copy.ledgerCaption}</caption>
           <thead>
-            <tr className="border-b border-white/8 text-left text-white/64">
+            <tr className="border-b border-fg/8 text-left text-fg-64">
               <th scope="col" className="py-2 font-medium">
                 {copy.account}
               </th>
@@ -225,9 +225,9 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
           </thead>
           <tbody>
             {finance.ledger.map((balance) => (
-              <tr key={`${balance.account}-${balance.net.currency}`} className="border-b border-white/8">
-                <td className="py-2 font-mono text-white/64">{balance.account}</td>
-                <td className="py-2 text-right tabular-nums text-white">
+              <tr key={`${balance.account}-${balance.net.currency}`} className="border-b border-fg/8">
+                <td className="py-2 font-mono text-fg-64">{balance.account}</td>
+                <td className="py-2 text-right tabular-nums text-fg">
                   {formatMoney(balance.net)}
                 </td>
               </tr>
@@ -237,7 +237,7 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
       )}
 
       {finance.computedAt !== null && (
-        <p className="mt-6 text-sm text-white/64">
+        <p className="mt-6 text-sm text-fg-64">
           {/*
             The instant is a `<time>` rather than a string, so the sentence is filled with
             nodes. Splitting it into a "before" and an "after" key would buy the element at
@@ -269,12 +269,12 @@ function Row({
   readonly total?: boolean;
 }) {
   return (
-    <tr className={total ? 'border-t border-white/16' : 'border-b border-white/8'}>
-      <th scope="row" className={`py-3 text-left font-medium ${total ? 'text-white' : 'text-white/64'}`}>
+    <tr className={total ? 'border-t border-fg/16' : 'border-b border-fg/8'}>
+      <th scope="row" className={`py-3 text-left font-medium ${total ? 'text-fg' : 'text-fg-64'}`}>
         {label}
-        {note !== undefined && <span className="mt-1 block text-xs font-normal text-white/64">{note}</span>}
+        {note !== undefined && <span className="mt-1 block text-xs font-normal text-fg-64">{note}</span>}
       </th>
-      <td className={`py-3 text-right tabular-nums ${total ? 'font-medium text-white' : 'text-white'}`}>
+      <td className={`py-3 text-right tabular-nums ${total ? 'font-medium text-fg' : 'text-fg'}`}>
         {amount}
       </td>
     </tr>
@@ -293,17 +293,17 @@ function PayoutRow({
   const when = payoutInstant(payout);
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-white/8 bg-surface-2 px-4 py-3">
+    <li className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-fg/8 bg-surface-2 px-4 py-3">
       <span className="flex flex-wrap items-center gap-3">
         {/* The state as a word. A coloured dot alone says nothing to a screen reader. */}
         <Tag>{states[payout.state] ?? payout.state}</Tag>
         {when !== null && (
-          <span className="text-sm text-white/64">
+          <span className="text-sm text-fg-64">
             <time dateTime={when}>{formatExactTime(when, locale)}</time>
           </span>
         )}
       </span>
-      <span className="tabular-nums text-white">{formatMoney(payout.net)}</span>
+      <span className="tabular-nums text-fg">{formatMoney(payout.net)}</span>
     </li>
   );
 }

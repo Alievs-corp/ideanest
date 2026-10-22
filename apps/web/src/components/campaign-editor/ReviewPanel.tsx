@@ -286,7 +286,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
                 : words.changesRequestedTitle
             }
           >
-            <p className="whitespace-pre-line text-white">
+            <p className="whitespace-pre-line text-fg">
               {moderation.note ?? words.noReason}
             </p>
             <p className="mt-2">
@@ -326,7 +326,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
             */}
             {refusal.limit != null && (
               <p className="mt-3">
-                <Link href="/pricing" className="text-white underline underline-offset-4">
+                <Link href="/pricing" className="text-fg underline underline-offset-4">
                   {words.seeOtherPlans}
                 </Link>
               </p>
@@ -340,7 +340,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
         <section aria-labelledby="review-progress-heading">
           <h2
             id="review-progress-heading"
-            className="text-[13px] font-medium tracking-[0.06em] text-white/40 uppercase"
+            className="text-[13px] font-medium tracking-[0.06em] text-fg-40 uppercase"
           >
             {words.completeness}
           </h2>
@@ -349,7 +349,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
             both would say the same number twice, and the counts are the half that
             answers "is what is left optional".
           */}
-          <p className="mt-2 text-[15px] text-white">{describeProgress(progress, words.progressSummary)}</p>
+          <p className="mt-2 text-[15px] text-fg">{describeProgress(progress, words.progressSummary)}</p>
           <ProgressBar
             aria-hidden="true"
             value={progress.score}
@@ -421,7 +421,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
               {submitting ? words.submitting : words.submit}
             </Pill>
 
-            <p id="review-submit-explanation" className="text-[13px] text-white/64">
+            <p id="review-submit-explanation" className="text-[13px] text-fg-64">
               {held
                 ? `${pluralise(words.locale, words.blockersRemaining, blockers.length)} ${
                     suggestions.length > 0
@@ -475,12 +475,12 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
               <div
                 role="group"
                 aria-labelledby="review-launch-confirm-heading"
-                className="rounded-2xl border border-white/8 bg-surface-2 p-5"
+                className="rounded-2xl border border-fg/8 bg-surface-2 p-5"
               >
-                <h3 id="review-launch-confirm-heading" className="text-[15px] font-medium text-white">
+                <h3 id="review-launch-confirm-heading" className="text-[15px] font-medium text-fg">
                   {words.confirmLaunchTitle}
                 </h3>
-                <p className="mt-2 text-[13px] text-white/64">{words.confirmLaunchBody}</p>
+                <p className="mt-2 text-[13px] text-fg-64">{words.confirmLaunchBody}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Pill
                     variant="accent"
@@ -523,7 +523,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
                 {/* Not drawn beside the confirmation, which says the same thing at the moment
                     it matters. Two copies of one warning on one screen is one of them being
                     read and the other being scrolled past. */}
-                <p id="review-launch-explanation" className="text-[13px] text-white/64">
+                <p id="review-launch-explanation" className="text-[13px] text-fg-64">
                   {words.launchExplanation}
                 </p>
               </>
@@ -575,11 +575,11 @@ function ChecklistSection({
         id={`${id}-heading`}
         ref={headingRef}
         tabIndex={-1}
-        className="text-[15px] font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+        className="text-[15px] font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-fg"
       >
         {heading}
       </h2>
-      <p className="mt-1 text-[13px] text-white/64">{description}</p>
+      <p className="mt-1 text-[13px] text-fg-64">{description}</p>
 
       <ul className="mt-4 flex flex-col gap-2">
         {items.map((item) => (
@@ -625,7 +625,7 @@ function ChecklistRow({
       : words.recommendedNotDone;
 
   return (
-    <li className="flex items-start gap-3 rounded-lg border border-white/8 bg-surface-2 p-3">
+    <li className="flex items-start gap-3 rounded-lg border border-fg/8 bg-surface-2 p-3">
       {item.satisfied ? (
         <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" />
       ) : tone === 'blocking' ? (
@@ -635,12 +635,12 @@ function ChecklistRow({
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] text-white">
+        <p className="text-[15px] text-fg">
           {item.label}
           <span className="sr-only">, {status}</span>
         </p>
         {!item.satisfied && item.detail != null && (
-          <p className="mt-1 text-[13px] text-white/64">{item.detail}</p>
+          <p className="mt-1 text-[13px] text-fg-64">{item.detail}</p>
         )}
       </div>
 
@@ -652,7 +652,7 @@ function ChecklistRow({
         */
         <Link
           href={href}
-          className="shrink-0 rounded-full bg-surface-3 px-3 py-1 text-[13px] text-white transition-colors duration-150 ease-in-out hover:bg-surface-4"
+          className="shrink-0 rounded-full bg-surface-3 px-3 py-1 text-[13px] text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4"
         >
           {fillPlaceholders(words.fixIn, { section: tabs[item.section] })}
           <span className="sr-only">: {item.label}</span>

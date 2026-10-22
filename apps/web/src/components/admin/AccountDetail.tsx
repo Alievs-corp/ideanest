@@ -110,7 +110,7 @@ const SuspendDialog = lazy(() =>
  * bare anchors with no focus style, which reloaded the whole console on every click.
  */
 const ROW_LINK =
-  'rounded text-[15px] font-medium text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+  'rounded text-[15px] font-medium text-fg underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]';
 
 /** The day, in the reader's language. An instant to the second says more than anybody needs. */
 function day(instant: string | null | undefined, locale: Locale): string | null {
@@ -173,14 +173,14 @@ export function AccountDetail({ userId, copy }: AccountDetailProps) {
           The same control `CampaignPreview` uses to return to its own directory. */}
       <Link
         href="/admin/users"
-        className="rounded-lg text-sm text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded-lg text-sm text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {copy.backToDirectory}
       </Link>
 
       {status === 'loading' && (
         <SkeletonGroup label={copy.loadingAccount} className="mt-6">
-          <div className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
+          <div className="rounded-lg border border-fg/8 bg-surface-2 p-4 sm:p-5">
             <Skeleton height="1.25rem" width="35%" />
             <Skeleton height="0.875rem" width="50%" className="mt-3" />
             <Skeleton height="0.875rem" width="25%" className="mt-2" />
@@ -268,24 +268,24 @@ function Standing({
 
   return (
     <section aria-labelledby="account-standing-heading" className="mt-6">
-      <div className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
+      <div className="rounded-lg border border-fg/8 bg-surface-2 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id="account-standing-heading"
-              className="truncate text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+              className="truncate text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
             >
               {account.name}
             </h2>
-            <p className="truncate text-sm text-white/64">{account.email}</p>
-            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs text-white/40">
+            <p className="truncate text-sm text-fg-64">{account.email}</p>
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs text-fg-40">
               <span className="truncate">
                 /{account.slug} ·{' '}
                 {fillPlaceholders(copy.joined, {
                   date: day(account.createdAt, locale) ?? copy.unknownDate,
                 })}
               </span>
-              <span className="font-mono text-white/32" title={account.id}>
+              <span className="font-mono text-fg-32" title={account.id}>
                 {account.id.slice(0, 8)}
               </span>
               <CopyIdentifier id={account.id} copy={copy.identity} />
@@ -303,7 +303,7 @@ function Standing({
         </div>
 
         {account.suspended && (
-          <p className="mt-3 text-sm text-white/64">
+          <p className="mt-3 text-sm text-fg-64">
             {fillPlaceholders(copy.suspendedOn, {
               date: day(account.suspendedAt, locale) ?? copy.unknownDate,
             })}
@@ -312,7 +312,7 @@ function Standing({
         )}
 
         {account.deletionScheduledAt !== null && (
-          <p className="mt-2 text-sm text-white/48">
+          <p className="mt-2 text-sm text-fg-48">
             {fillPlaceholders(copy.leavingOn, {
               date: day(account.deletionScheduledAt, locale) ?? copy.unknownDate,
             })}
@@ -453,26 +453,26 @@ function PayoutDetails({
     <section aria-labelledby="account-payout-heading" className="mt-8">
       <h2
         id="account-payout-heading"
-        className="text-base font-medium tracking-[-0.02em] text-white"
+        className="text-base font-medium tracking-[-0.02em] text-fg"
       >
         {copy.payoutHeading}
       </h2>
 
       {loading ? (
         <SkeletonGroup label={copy.loadingPayout} className="mt-3">
-          <div className="rounded-lg border border-white/8 bg-surface-1 p-4">
+          <div className="rounded-lg border border-fg/8 bg-surface-1 p-4">
             <Skeleton height="1rem" width="40%" />
             <Skeleton height="0.875rem" width="30%" className="mt-2" />
           </div>
         </SkeletonGroup>
       ) : (
-        <div className="mt-3 rounded-lg border border-white/8 bg-surface-1 p-4">
+        <div className="mt-3 rounded-lg border border-fg/8 bg-surface-1 p-4">
           <dl className="flex flex-col gap-3 text-sm">
             <LegalSubjectRows half={subject} copy={copy} />
             <CardRow half={card} copy={copy} />
           </dl>
           {card.kind === 'ready' && card.value.recorded && (
-            <div className="mt-4 border-t border-white/8 pt-4">
+            <div className="mt-4 border-t border-fg/8 pt-4">
               <PayoutDestinationReview
                 destination={card.value}
                 copy={copy.destination}
@@ -499,8 +499,8 @@ function LegalSubjectRows({
   if (half.kind === 'forbidden' || half.kind === 'failed') {
     return (
       <div className="flex flex-wrap gap-x-3 gap-y-1">
-        <dt className="text-white/40">{copy.taxIdLabel}</dt>
-        <dd className="text-white/64">
+        <dt className="text-fg-40">{copy.taxIdLabel}</dt>
+        <dd className="text-fg-64">
           {half.kind === 'forbidden' ? copy.legalSubjectForbidden : copy.legalSubjectFailed}
         </dd>
       </div>
@@ -514,8 +514,8 @@ function LegalSubjectRows({
   return (
     <>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <dt className="text-white/40">{copy.subjectLabel}</dt>
-        <dd className="flex flex-wrap items-center gap-2 text-white/80">
+        <dt className="text-fg-40">{copy.subjectLabel}</dt>
+        <dd className="flex flex-wrap items-center gap-2 text-fg-80">
           {recorded.recorded ? (
             <>
               <span>
@@ -525,18 +525,18 @@ function LegalSubjectRows({
               {!recorded.complete && <Tag variant="warning">{copy.subjectIncomplete}</Tag>}
             </>
           ) : (
-            <span className="text-white/64">{copy.subjectNone}</span>
+            <span className="text-fg-64">{copy.subjectNone}</span>
           )}
         </dd>
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <dt className="text-white/40">{copy.taxIdLabel}</dt>
+        <dt className="text-fg-40">{copy.taxIdLabel}</dt>
         <dd className="flex items-center gap-2">
           {taxId === null ? (
             <Tag>{copy.taxIdMissing}</Tag>
           ) : (
             <>
-              <span className="font-mono text-white">{taxId}</span>
+              <span className="font-mono text-fg">{taxId}</span>
               <CopyIdentifier id={taxId} copy={copy.identity} />
             </>
           )}
@@ -557,10 +557,10 @@ function CardRow({
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <dt className="text-white/40">{copy.cardLabel}</dt>
-      <dd className="flex flex-wrap items-center gap-2 text-white/80">
-        {half.kind === 'forbidden' && <span className="text-white/64">{copy.cardForbidden}</span>}
-        {half.kind === 'failed' && <span className="text-white/64">{copy.cardFailed}</span>}
+      <dt className="text-fg-40">{copy.cardLabel}</dt>
+      <dd className="flex flex-wrap items-center gap-2 text-fg-80">
+        {half.kind === 'forbidden' && <span className="text-fg-64">{copy.cardForbidden}</span>}
+        {half.kind === 'failed' && <span className="text-fg-64">{copy.cardFailed}</span>}
         {half.kind === 'ready' && (
           <>
             {half.value.recorded && (
@@ -581,7 +581,7 @@ function CardRow({
               {copy.cardStanding[half.value.recorded ? half.value.standing : 'NONE'] ?? half.value.standing}
             </Tag>
             {half.value.recorded && half.value.rejectionReason != null && (
-              <span className="text-white/64">
+              <span className="text-fg-64">
                 {fillPlaceholders(copy.destination.rejectedFor, {
                   reason:
                     copy.destination.rejectionReason[half.value.rejectionReason] ?? half.value.rejectionReason,
@@ -673,7 +673,7 @@ function CreatedCampaigns({
     <section aria-labelledby="account-campaigns-heading" className="mt-8">
       <h2
         id="account-campaigns-heading"
-        className="text-base font-medium tracking-[-0.02em] text-white"
+        className="text-base font-medium tracking-[-0.02em] text-fg"
       >
         {copy.campaignsHeading}
       </h2>
@@ -688,7 +688,7 @@ function CreatedCampaigns({
         <SkeletonGroup label={copy.loadingCampaigns} className="mt-3">
           <div className="space-y-2">
             {[0, 1].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="45%" />
                 <Skeleton height="0.875rem" width="30%" className="mt-2" />
               </div>
@@ -704,7 +704,7 @@ function CreatedCampaigns({
       {!failed && campaigns !== null && campaigns.length > 0 && (
         <ul className="mt-3 flex list-none flex-col gap-2">
           {campaigns.map((campaign) => (
-            <li key={campaign.projectId} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+            <li key={campaign.projectId} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   {/* The staff preview, not the public page: half of these states have no
@@ -715,7 +715,7 @@ function CreatedCampaigns({
                   >
                     {campaign.title}
                   </Link>
-                  <p className="mt-1 text-sm text-white/48">
+                  <p className="mt-1 text-sm text-fg-48">
                     {fillPlaceholders(copy.startedOn, {
                       date: day(campaign.createdAt, locale) ?? copy.unknownDate,
                     })}
@@ -724,7 +724,7 @@ function CreatedCampaigns({
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Tag>{copy.state[campaign.state] ?? campaign.state}</Tag>
-                  <span className="text-sm text-white/64">
+                  <span className="text-sm text-fg-64">
                     {formatMoney(campaign.pledged)}
                   </span>
                 </div>
@@ -819,7 +819,7 @@ function BackedPledges({
     <section aria-labelledby="account-pledges-heading" className="mt-8">
       <h2
         id="account-pledges-heading"
-        className="text-base font-medium tracking-[-0.02em] text-white"
+        className="text-base font-medium tracking-[-0.02em] text-fg"
       >
         {copy.pledgesHeading}
       </h2>
@@ -834,7 +834,7 @@ function BackedPledges({
         <SkeletonGroup label={copy.loadingPledges} className="mt-3">
           <div className="space-y-2">
             {[0, 1].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="50%" />
                 <Skeleton height="0.875rem" width="25%" className="mt-2" />
               </div>
@@ -850,11 +850,11 @@ function BackedPledges({
       {!failed && pledges !== null && pledges.length > 0 && (
         <ul className="mt-3 flex list-none flex-col gap-2">
           {pledges.map((pledge) => (
-            <li key={pledge.pledgeId} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+            <li key={pledge.pledgeId} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   {pledge.project == null ? (
-                    <p className="text-sm sm:text-[15px] font-medium text-white/64">{copy.campaignGone}</p>
+                    <p className="text-sm sm:text-[15px] font-medium text-fg-64">{copy.campaignGone}</p>
                   ) : (
                     <Link
                       href={`/admin/campaigns/${encodeURIComponent(pledge.project.id)}`}
@@ -863,7 +863,7 @@ function BackedPledges({
                       {pledge.project.title}
                     </Link>
                   )}
-                  <p className="mt-1 text-sm text-white/48">
+                  <p className="mt-1 text-sm text-fg-48">
                     {pledge.confirmedAt != null
                       ? fillPlaceholders(copy.backedOn, {
                           date: day(pledge.confirmedAt, locale) ?? copy.unknownDate,
@@ -874,7 +874,7 @@ function BackedPledges({
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Tag>{copy.pledgeState[pledge.state] ?? pledge.state}</Tag>
-                  <span className="text-sm text-white/64">
+                  <span className="text-sm text-fg-64">
                     {formatMoney(pledge.amounts.total)}
                   </span>
                 </div>
@@ -952,7 +952,7 @@ function HeldSubscriptions({
     <section aria-labelledby="account-subscriptions-heading" className="mt-8">
       <h2
         id="account-subscriptions-heading"
-        className="text-base font-medium tracking-[-0.02em] text-white"
+        className="text-base font-medium tracking-[-0.02em] text-fg"
       >
         {copy.subscriptionsHeading}
       </h2>
@@ -965,7 +965,7 @@ function HeldSubscriptions({
 
       {!failed && history === null && (
         <SkeletonGroup label={copy.loadingSubscriptions} className="mt-3">
-          <div className="rounded-lg border border-white/8 bg-surface-1 p-4">
+          <div className="rounded-lg border border-fg/8 bg-surface-1 p-4">
             <Skeleton height="1rem" width="40%" />
             <Skeleton height="0.875rem" width="30%" className="mt-2" />
           </div>
@@ -986,20 +986,20 @@ function HeldSubscriptions({
           {history.subscriptions.length > 0 && (
             <ul className="mt-3 flex list-none flex-col gap-2">
               {history.subscriptions.map((subscription) => (
-                <li key={subscription.id} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <li key={subscription.id} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm sm:text-[15px] font-medium text-white">
+                      <p className="text-sm sm:text-[15px] font-medium text-fg">
                         {subscription.planName ?? subscription.planCode ?? subscription.id}
                       </p>
-                      <p className="mt-1 text-sm text-white/48">{windowOf(subscription, locale, copy)}</p>
+                      <p className="mt-1 text-sm text-fg-48">{windowOf(subscription, locale, copy)}</p>
                       {subscription.cancelAtPeriodEnd && subscription.entitled && (
-                        <p className="mt-1 text-sm text-white/48">{copy.notRenewing}</p>
+                        <p className="mt-1 text-sm text-fg-48">{copy.notRenewing}</p>
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Tag>{stateLabelOf(subscription, copy)}</Tag>
-                      <span className="text-sm text-white/64">
+                      <span className="text-sm text-fg-64">
                         {formatMoney({ amount: subscription.price, currency: subscription.currency })}
                       </span>
                     </div>
@@ -1009,17 +1009,17 @@ function HeldSubscriptions({
             </ul>
           )}
 
-          <h3 className="mt-5 text-sm font-medium text-white">{copy.paymentsHeading}</h3>
+          <h3 className="mt-5 text-sm font-medium text-fg">{copy.paymentsHeading}</h3>
           {history.payments.length === 0 ? (
-            <p className="mt-2 text-sm text-white/48">{copy.noPaymentsBody}</p>
+            <p className="mt-2 text-sm text-fg-48">{copy.noPaymentsBody}</p>
           ) : (
             <ul className="mt-2 flex list-none flex-col gap-2">
               {history.payments.map((payment) => (
                 <li
                   key={payment.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-fg/8 bg-surface-1 px-4 py-3"
                 >
-                  <span className="min-w-0 text-sm text-white/64">
+                  <span className="min-w-0 text-sm text-fg-64">
                     {payment.planName} · {copy.paymentMethod[payment.method] ?? payment.method} ·{' '}
                     {fillPlaceholders(copy.paymentReceived, {
                       date: day(payment.receivedAt, locale) ?? copy.unknownDate,
@@ -1028,7 +1028,7 @@ function HeldSubscriptions({
                   <span className="flex items-center gap-2">
                     {/* The word, beside the negative amount, so a reversal is not carried by a sign alone. */}
                     {payment.reversal && <Tag>{copy.reversal}</Tag>}
-                    <span className="text-sm text-white">
+                    <span className="text-sm text-fg">
                       {formatMoney({ amount: payment.amount, currency: payment.currency })}
                     </span>
                   </span>

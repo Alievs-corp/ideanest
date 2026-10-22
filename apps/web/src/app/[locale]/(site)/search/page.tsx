@@ -83,7 +83,7 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto w-full max-w-[1400px] px-5 py-10 sm:px-6">
-      <h1 className="text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+      <h1 className="text-3xl font-semibold tracking-[-0.035em] text-fg sm:text-4xl">
         {query === '' ? t('title') : t('resultsTitle', { query })}
       </h1>
 
@@ -97,12 +97,12 @@ export default async function SearchPage({
       </div>
 
       {query === '' ? (
-        <p className="mt-6 max-w-[60ch] text-white/64">
+        <p className="mt-6 max-w-[60ch] text-fg-64">
           {t.rich('prompt', {
             feed: (chunks) => (
               <Link
                 href="/discover"
-                className="text-white underline underline-offset-4 hover:text-white/80"
+                className="text-fg underline underline-offset-4 hover:text-fg-80"
               >
                 {chunks}
               </Link>
@@ -116,7 +116,7 @@ export default async function SearchPage({
             many there are is the number of cards on screen is one a screen-reader user has to
             count.
           */}
-          <p className="mt-6 text-sm text-white/64 tabular-nums">
+          <p className="mt-6 text-sm text-fg-64 tabular-nums">
             {/*
               ICU PLURALS RATHER THAN A TERNARY. "campaign" against "campaigns" is the whole
               of English and none of Russian, which has three forms and picks between them by
@@ -138,7 +138,7 @@ export default async function SearchPage({
                   action={
                     <Link
                       href="/discover"
-                      className="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                      className="inline-flex h-10 items-center rounded-full bg-inverse px-5 text-sm font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
                     >
                       {t('emptyAction')}
                     </Link>
@@ -166,7 +166,7 @@ export default async function SearchPage({
                 <div className="mt-10 flex justify-center">
                   <Link
                     href={inDiscovery}
-                    className="inline-flex h-11 items-center rounded-full border border-white/16 px-6 text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
+                    className="inline-flex h-11 items-center rounded-full border border-fg/16 px-6 text-sm font-medium text-fg transition-colors duration-150 ease-in-out hover:bg-surface-3"
                   >
                     {t(hasMore ? 'moreInFeed' : 'refineInFeed')}
                   </Link>

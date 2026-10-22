@@ -210,7 +210,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
   return (
     <div className="flex flex-col gap-8">
       <section aria-labelledby="queue-heading" aria-busy={queue.status === 'loading'}>
-        <h2 id="queue-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="queue-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {/*
             The heading said "Open tickets" and the intro "most urgent first" over every view,
             "Resolved" included, which is neither open nor in that order. A filter reads the
@@ -231,7 +231,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
             />
           )}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">
           {filtering ? copy.listIntro : copy.intro}
         </p>
 
@@ -329,7 +329,7 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <div className="space-y-3">
               {[0, 1, 2].map((row) => (
-                <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <Skeleton height="1rem" width="45%" />
                   <Skeleton height="0.875rem" width="70%" className="mt-3" />
                 </div>
@@ -368,16 +368,16 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
                   type="button"
                   onClick={() => setOpenTicket(openTicket === ticket.id ? null : ticket.id)}
                   aria-expanded={openTicket === ticket.id}
-                  className="w-full rounded-lg border border-white/8 bg-surface-1 p-4 text-left transition-colors duration-150 ease-in-out hover:border-white/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="w-full rounded-lg border border-fg/8 bg-surface-1 p-4 text-left transition-colors duration-150 ease-in-out hover:border-fg/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-sm text-white">{ticket.subject}</p>
+                    <p className="text-sm text-fg">{ticket.subject}</p>
                     <span className="flex items-center gap-2">
                       <Tag variant={PRIORITY_TONE[ticket.priority]}>{copy.priority[ticket.priority]}</Tag>
                       <Tag>{copy.state[ticket.state]}</Tag>
                     </span>
                   </div>
-                  <p className="mt-2 flex flex-wrap items-baseline gap-x-1 text-xs text-white/40">
+                  <p className="mt-2 flex flex-wrap items-baseline gap-x-1 text-xs text-fg-40">
                     {/*
                       #402: a ticket read as "7d09800a · 2026-08-22 · 4a10278a" — the person
                       who asked and the person handling it, neither of them nameable, on the
@@ -509,7 +509,7 @@ function TicketDetail({
   if (file === null) {
     if (context.status === 'loading') {
       return (
-        <SkeletonGroup label={copy.loadingTicket} className="mt-2 rounded-lg border border-white/8 p-4">
+        <SkeletonGroup label={copy.loadingTicket} className="mt-2 rounded-lg border border-fg/8 p-4">
           <Skeleton height="0.875rem" width="60%" />
         </SkeletonGroup>
       );
@@ -534,12 +534,12 @@ function TicketDetail({
   const me = membership?.accountId ?? null;
 
   return (
-    <div className="mt-2 rounded-lg border border-white/8 bg-surface-1 p-4" aria-busy={busy}>
+    <div className="mt-2 rounded-lg border border-fg/8 bg-surface-1 p-4" aria-busy={busy}>
       {/* What the conversation is about, when it is about something the console can show. */}
       {ticket.subjectType !== 'NONE' && ticket.subjectRef != null && (
-        <p className="mb-3 flex flex-wrap items-baseline gap-x-2 text-xs text-white/48">
+        <p className="mb-3 flex flex-wrap items-baseline gap-x-2 text-xs text-fg-48">
           <span>{copy.aboutLabel}:</span>
-          <span className="text-white/64">{copy.about[ticket.subjectType] ?? ticket.subjectType}</span>
+          <span className="text-fg-64">{copy.about[ticket.subjectType] ?? ticket.subjectType}</span>
           {ticket.subjectType === 'ACCOUNT' && (
             <EntityName id={ticket.subjectRef} names={names} kind="account" copy={copy.identity} />
           )}
@@ -548,7 +548,7 @@ function TicketDetail({
           )}
           {ticket.subjectType === 'PLEDGE' && (
             <>
-              <span className="font-mono text-white/64" title={ticket.subjectRef}>
+              <span className="font-mono text-fg-64" title={ticket.subjectRef}>
                 {ticket.subjectRef.slice(0, 8)}
               </span>
               <CopyIdentifier id={ticket.subjectRef} copy={copy.identity} />
@@ -563,11 +563,11 @@ function TicketDetail({
             key={message.id}
             className={
               message.internal
-                ? 'rounded-md border border-dashed border-white/16 p-3'
-                : 'rounded-md border border-white/8 p-3'
+                ? 'rounded-md border border-dashed border-fg/16 p-3'
+                : 'rounded-md border border-fg/8 p-3'
             }
           >
-            <p className="flex flex-wrap items-baseline gap-x-1 text-xs text-white/40">
+            <p className="flex flex-wrap items-baseline gap-x-1 text-xs text-fg-40">
               {names.accounts.has(message.authorId) ? (
                 <EntityName id={message.authorId} names={names} kind="account" copy={copy.identity} />
               ) : (
@@ -578,12 +578,12 @@ function TicketDetail({
               {/* The minute, not only the day: a conversation is read in order. */}
               <time dateTime={message.createdAt}>{formatExactTime(message.createdAt, locale)}</time>
             </p>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-white/80">{message.body}</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-fg-80">{message.body}</p>
           </li>
         ))}
       </ul>
 
-      <div className="mt-4 flex flex-col gap-2 border-t border-white/8 pt-4">
+      <div className="mt-4 flex flex-col gap-2 border-t border-fg/8 pt-4">
         <Field label={copy.replyLabel}>
           <Textarea
             rows={3}
@@ -615,7 +615,7 @@ function TicketDetail({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-white/8 pt-4">
+      <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-fg/8 pt-4">
         <Field label={copy.priorityLabel} className="min-w-[150px]">
           <Select
             value={ticket.priority}
@@ -651,11 +651,11 @@ function TicketDetail({
         </Field>
       </div>
 
-      <div className="mt-4 border-t border-white/8 pt-4">
-        <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-white/64">
+      <div className="mt-4 border-t border-fg/8 pt-4">
+        <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-fg-64">
           <span>{copy.assigneePrefix}</span>
           {ticket.assigneeId == null ? (
-            <span className="text-white/48">{copy.unassigned}</span>
+            <span className="text-fg-48">{copy.unassigned}</span>
           ) : (
             <EntityName id={ticket.assigneeId} names={names} kind="account" copy={copy.identity} />
           )}
@@ -711,13 +711,13 @@ function TicketDetail({
       )}
 
       {others.length > 0 && (
-        <div className="mt-4 border-t border-white/8 pt-4">
-          <h4 className="text-xs font-medium text-white/64">
+        <div className="mt-4 border-t border-fg/8 pt-4">
+          <h4 className="text-xs font-medium text-fg-64">
             {pluralise(locale, copy.otherTickets, others.length)}
           </h4>
           <ul className="mt-2 flex list-none flex-col gap-1">
             {others.slice(0, 8).map((other: Ticket) => (
-              <li key={other.id} className="text-xs text-white/48">
+              <li key={other.id} className="text-xs text-fg-48">
                 {formatDate(other.createdAt, locale)} · {other.subject} · {copy.state[other.state]}
               </li>
             ))}

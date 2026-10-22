@@ -110,10 +110,10 @@ export function FlagConsole({ copy }: FlagConsoleProps) {
       </InlineAlert>
 
       <section aria-labelledby="flags-heading">
-        <h2 id="flags-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="flags-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.heading}
           {flags.data !== null && (
-            <span className="ml-2 text-xs font-normal text-white/48">{list.length}</span>
+            <span className="ml-2 text-xs font-normal text-fg-48">{list.length}</span>
           )}
         </h2>
 
@@ -121,7 +121,7 @@ export function FlagConsole({ copy }: FlagConsoleProps) {
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <div className="space-y-3">
               {[0, 1].map((row) => (
-                <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <Skeleton height="1rem" width="35%" />
                   <Skeleton height="0.875rem" width="65%" className="mt-3" />
                 </div>
@@ -272,13 +272,13 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
   const full = current.enabledAccounts.length >= MAX_ENABLED_ACCOUNTS;
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p id={nameId} className="font-mono text-sm text-white">
+          <p id={nameId} className="font-mono text-sm text-fg">
             {flag.key}
           </p>
-          {!editing && <p className="mt-1 whitespace-pre-line text-xs text-white/64">{flag.description}</p>}
+          {!editing && <p className="mt-1 whitespace-pre-line text-xs text-fg-64">{flag.description}</p>}
         </div>
 
         {/* Named by the flag, so a screen reader hears "checkout-v2, switch, on". */}
@@ -347,10 +347,10 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
         </Pill>
       )}
 
-      <p className="mt-3 text-sm text-white/80">{reachSentence(current, copy, locale)}</p>
+      <p className="mt-3 text-sm text-fg-80">{reachSentence(current, copy, locale)}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-white/64">
+        <span className="text-xs text-fg-64">
           {fillPlaceholders(copy.rolloutNow, { percent: percentOf(flag.rolloutPercentage, locale) })}
         </span>
         <div
@@ -377,17 +377,17 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
       </div>
 
       <div className="mt-4" role="group" aria-labelledby={accountsId}>
-        <p id={accountsId} className="text-xs text-white/64">
+        <p id={accountsId} className="text-xs text-fg-64">
           {copy.accountsHeading}
         </p>
         {current.enabledAccounts.length === 0 ? (
-          <p className="mt-1 text-xs text-white/48">{copy.accountsNone}</p>
+          <p className="mt-1 text-xs text-fg-48">{copy.accountsNone}</p>
         ) : (
           <ul className="mt-2 flex list-none flex-wrap gap-2">
             {current.enabledAccounts.map((account) => (
               <li
                 key={account}
-                className="flex items-center gap-2 rounded-full border border-white/8 py-1 pl-3 pr-1 text-xs text-white"
+                className="flex items-center gap-2 rounded-full border border-fg/8 py-1 pl-3 pr-1 text-xs text-fg"
               >
                 <span title={account}>{accountName(account)}</span>
                 {canPickAccounts && (
@@ -410,7 +410,7 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
 
         {canPickAccounts ? (
           full ? (
-            <p className="mt-2 text-xs text-white/48">{copy.accountsFull}</p>
+            <p className="mt-2 text-xs text-fg-48">{copy.accountsFull}</p>
           ) : adding ? (
             <>
               <Suspense fallback={null}>
@@ -441,7 +441,7 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
             </Pill>
           )
         ) : (
-          <p className="mt-2 text-xs text-white/48">{copy.accountsReadOnly}</p>
+          <p className="mt-2 text-xs text-fg-48">{copy.accountsReadOnly}</p>
         )}
       </div>
 
@@ -470,7 +470,7 @@ function FlagRow({ flag, copy, locale, names, canPickAccounts, onSaved, onStale 
       )}
 
       {flag.updatedAt !== '' && (
-        <p className="mt-3 text-xs text-white/48">
+        <p className="mt-3 text-xs text-fg-48">
           {fillPlaceholders(copy.lastChanged, {
             date: bakuDateTime(flag.updatedAt, locale),
             name: accountName(flag.updatedBy),
@@ -520,10 +520,10 @@ function AddFlag({ copy, onCreated }: { readonly copy: FlagConsoleCopy; readonly
 
   return (
     <section aria-labelledby="new-flag-heading">
-      <h2 id="new-flag-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="new-flag-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.addHeading}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.addIntro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.addIntro}</p>
 
       {/*
         Stacked rather than a row with the button at its end: a hint or an error under one field
@@ -542,7 +542,7 @@ function AddFlag({ copy, onCreated }: { readonly copy: FlagConsoleCopy; readonly
             placeholder="checkout-v2"
           />
         </Field>
-        <p id={nameHintId} className="-mt-2 text-xs text-white/48">
+        <p id={nameHintId} className="-mt-2 text-xs text-fg-48">
           {copy.nameHint}
         </p>
 

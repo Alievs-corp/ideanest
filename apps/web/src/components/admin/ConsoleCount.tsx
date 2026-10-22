@@ -60,7 +60,7 @@ export function ConsoleCount({ loaded, more, copy, className }: ConsoleCountProp
 
   return (
     <span
-      className={className ?? 'ml-2 text-xs font-normal text-white/40'}
+      className={className ?? 'ml-2 text-xs font-normal text-fg-40'}
       aria-label={fillPlaceholders(label, { count: String(loaded) })}
       title={fillPlaceholders(label, { count: String(loaded) })}
     >

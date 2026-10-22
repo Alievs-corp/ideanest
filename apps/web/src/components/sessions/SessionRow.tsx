@@ -89,25 +89,25 @@ export function SessionRow({ session, now, locale, copy, busy, onSignOut }: Sess
     <li className="flex items-start gap-4 px-5 py-4 transition-colors duration-150 ease-in-out hover:bg-surface-3">
       <span
         aria-hidden="true"
-        className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-md bg-surface-3 text-white/64"
+        className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-md bg-surface-3 text-fg-64"
       >
         <Icon className="size-[18px]" />
       </span>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-base font-medium tracking-[-0.02em] text-white">{name}</p>
+          <p className="text-base font-medium tracking-[-0.02em] text-fg">{name}</p>
           {session.current && <Tag>{copy.thisDevice}</Tag>}
         </div>
 
-        <p className="mt-1 text-sm text-white/64">{detail || copy.noDetails}</p>
+        <p className="mt-1 text-sm text-fg-64">{detail || copy.noDetails}</p>
 
         {/*
           `--text-tertiary` is only AA at 16px and up, and on a security screen
           "when was this last used" is the fact the whole page turns on. It gets
           `--text-secondary` (9.2:1) rather than the usual meta treatment.
         */}
-        <p className="mt-0.5 text-sm text-white/64">
+        <p className="mt-0.5 text-sm text-fg-64">
           {/*
             One sentence with two instants in it, filled with nodes rather than split into
             three literals: Azerbaijani and Turkish put "signed in" after the time rather

@@ -50,8 +50,8 @@ export interface SortControlProps {
 
 const ROW = [
   'flex w-full items-center justify-between gap-3 rounded-sm px-3 py-2.5 text-left text-sm',
-  'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-white',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+  'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-fg',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
 ].join(' ');
 
 export function SortControl({ sort, hasQuery, onChange, copy }: SortControlProps) {
@@ -79,7 +79,7 @@ export function SortControl({ sort, hasQuery, onChange, copy }: SortControlProps
 
   return (
     <div ref={container} className="relative w-full sm:w-56">
-      <span id={`${triggerId}-label`} className="mb-1.5 block text-[13px] text-white/64">
+      <span id={`${triggerId}-label`} className="mb-1.5 block text-[13px] text-fg-64">
         {copy.sortLabel}
       </span>
       <button
@@ -90,14 +90,14 @@ export function SortControl({ sort, hasQuery, onChange, copy }: SortControlProps
         aria-labelledby={`${triggerId}-label ${triggerId}`}
         onClick={() => setOpen((was) => !was)}
         className={cn(
-          'flex h-10 w-full items-center justify-between gap-3 rounded-full bg-surface-3 px-4 text-sm text-white',
+          'flex h-10 w-full items-center justify-between gap-3 rounded-full bg-surface-3 px-4 text-sm text-fg',
           'transition-colors duration-150 ease-in-out hover:bg-surface-4',
-          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
           open && 'bg-surface-4',
         )}
       >
         <span>{labelOf(copy.filters.sort, sort)}</span>
-        <ChevronDown aria-hidden="true" className="size-4 text-white/64" />
+        <ChevronDown aria-hidden="true" className="size-4 text-fg-64" />
       </button>
 
       {open && (
@@ -105,7 +105,7 @@ export function SortControl({ sort, hasQuery, onChange, copy }: SortControlProps
           id={panelId}
           role="group"
           aria-labelledby={`${triggerId}-label`}
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-full min-w-[200px] rounded-md border border-white/8 bg-surface-2 p-2 shadow-[var(--shadow-panel)]"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-full min-w-[200px] rounded-md border border-fg/8 bg-surface-2 p-2 shadow-[var(--shadow-panel)]"
         >
           {options.map((option) => (
             <button
@@ -120,7 +120,7 @@ export function SortControl({ sort, hasQuery, onChange, copy }: SortControlProps
               }}
             >
               <span>{labelOf(copy.filters.sort, option)}</span>
-              {option === sort && <Check aria-hidden="true" className="size-4 text-[var(--lime-500)]" />}
+              {option === sort && <Check aria-hidden="true" className="size-4 text-[var(--lime-ink)]" />}
             </button>
           ))}
         </div>

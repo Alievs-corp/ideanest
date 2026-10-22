@@ -169,7 +169,7 @@ export function ReportControl({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-sm text-sm text-white/40 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="inline-flex items-center gap-2 rounded-sm text-sm text-fg-40 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         <Flag aria-hidden="true" className="size-4" />
         {about}
@@ -196,15 +196,15 @@ export function ReportControl({
             tabIndex={-1}
             className={cn(
               'relative flex w-full max-w-[32rem] flex-col gap-5',
-              'max-h-[85vh] overflow-y-auto rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8',
+              'max-h-[85vh] overflow-y-auto rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8',
               'motion-safe:animate-[dialog-panel_200ms_ease-out]',
             )}
           >
-            <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{about}</h2>
+            <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{about}</h2>
 
             {status === 'signed-out' ? (
               <>
-                <p className="text-[15px] leading-relaxed text-white/64">{copy.signedOutBody}</p>
+                <p className="text-[15px] leading-relaxed text-fg-64">{copy.signedOutBody}</p>
                 <div className="flex flex-wrap gap-3">
                   <a href={localeHref(signInHref(returnTo), locale)}>
                     <Pill type="button">{copy.signIn}</Pill>

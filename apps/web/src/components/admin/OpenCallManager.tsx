@@ -103,10 +103,10 @@ export function OpenCallManager({ copy }: OpenCallManagerProps) {
 
   return (
     <section aria-labelledby="open-calls-heading">
-      <h2 id="open-calls-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="open-calls-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
-          <span className="ml-2 text-xs font-normal text-white/40">{openCalls.length}</span>
+          <span className="ml-2 text-xs font-normal text-fg-40">{openCalls.length}</span>
         )}
       </h2>
 
@@ -128,7 +128,7 @@ export function OpenCallManager({ copy }: OpenCallManagerProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="35%" />
                 <Skeleton height="0.875rem" width="60%" className="mt-3" />
               </div>
@@ -216,16 +216,16 @@ function OpenCallRow({
   const backwards = opens !== '' && closes !== '' && closes <= opens;
 
   return (
-    <li className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
+    <li className="rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
             href={`/admin/curation/${encodeURIComponent(collection.slug)}`}
-            className="rounded-lg text-sm sm:text-[15px] font-medium text-white underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-lg text-sm sm:text-[15px] font-medium text-fg underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {collectionTitle(collection)}
           </Link>
-          <p className="mt-1 font-mono text-xs text-white/40">/collections/{collection.slug}</p>
+          <p className="mt-1 font-mono text-xs text-fg-40">/collections/{collection.slug}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Tag variant={running ? 'success' : 'default'}>
@@ -238,7 +238,7 @@ function OpenCallRow({
       </div>
 
       {published && !running && (
-        <p className="mt-2 text-sm text-white/48">{copy.outsideWindow}</p>
+        <p className="mt-2 text-sm text-fg-48">{copy.outsideWindow}</p>
       )}
 
       <form
@@ -277,7 +277,7 @@ function OpenCallRow({
         </Pill>
       </form>
 
-      <p className="mt-2 text-xs text-white/32">{copy.utcNote}</p>
+      <p className="mt-2 text-xs text-fg-32">{copy.utcNote}</p>
     </li>
   );
 }

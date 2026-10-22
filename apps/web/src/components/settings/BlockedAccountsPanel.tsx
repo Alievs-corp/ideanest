@@ -68,9 +68,9 @@ export function BlockedAccountsPanel({ copy }: BlockedAccountsPanelProps) {
   const rows = [...restored, ...items];
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.title}</h2>
-      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">{copy.intro}</p>
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{copy.title}</h2>
+      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-fg-64">{copy.intro}</p>
 
       <div className="mt-6 flex flex-col gap-4">
         {status === 'loading' ? (
@@ -85,8 +85,8 @@ export function BlockedAccountsPanel({ copy }: BlockedAccountsPanelProps) {
           </InlineAlert>
         ) : rows.length === 0 ? (
           <div>
-            <p className="text-[15px] font-medium text-white">{copy.emptyTitle}</p>
-            <p className="mt-1 text-sm text-white/64">{copy.emptyBody}</p>
+            <p className="text-[15px] font-medium text-fg">{copy.emptyTitle}</p>
+            <p className="mt-1 text-sm text-fg-64">{copy.emptyBody}</p>
           </div>
         ) : (
           <>
@@ -104,21 +104,21 @@ export function BlockedAccountsPanel({ copy }: BlockedAccountsPanelProps) {
               {rows.map((account) => (
                 <li
                   key={account.userId}
-                  className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/8 bg-surface-3 px-5 py-4"
+                  className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-fg/8 bg-surface-3 px-5 py-4"
                 >
                   <div className="flex min-w-0 items-center gap-4">
                     <Avatar name={account.name} src={account.avatarUrl ?? undefined} size="md" />
                     <div className="min-w-0">
-                      <p className="truncate text-[15px] font-medium text-white">
+                      <p className="truncate text-[15px] font-medium text-fg">
                         <Link
                           href={profileHref(account.slug)}
-                          className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                          className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                         >
                           {account.name}
                         </Link>
                       </p>
                       {account.blockedAt !== '' && (
-                        <p className="mt-1 text-sm text-white/40">
+                        <p className="mt-1 text-sm text-fg-40">
                           {fillPlaceholders(copy.meta, {
                             time: formatRelativeTime(account.blockedAt, now, locale),
                           })}

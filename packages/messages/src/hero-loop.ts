@@ -9,6 +9,10 @@ import { PROMO_FILM_BASE } from './promo-film';
  *
  * A new render goes to a new `v<n>/` folder and the files are cached for a year as immutable, so
  * bump `HERO_LOOP_VERSION` with the upload.
+ *
+ * The web's light theme (docs/ui-kit.md §11) plays a second set, `HERO_LOOP_LIGHT`, rendered from
+ * the same drawing on the light ground (`render.mjs … light`). They sit in the same folder under
+ * their own names, so adding them changed no file the dark set or the app already plays.
  */
 export const HERO_LOOP_VERSION = 1;
 
@@ -38,6 +42,13 @@ export const HERO_LOOP = {
   tablet: cut('tablet', 960, 864),
   /** The web below 640px, and the app. */
   phone: cut('phone', 720, 720),
+} as const;
+
+/** The same three cuts on the light theme's ground. The web only; the app is dark. */
+export const HERO_LOOP_LIGHT = {
+  desktop: cut('desktop-light', 1200, 1080),
+  tablet: cut('tablet-light', 960, 864),
+  phone: cut('phone-light', 720, 720),
 } as const;
 
 /** One loop of the scene. */

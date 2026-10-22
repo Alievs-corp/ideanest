@@ -268,10 +268,10 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
         </InlineAlert>
       )}
 
-      <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
+      <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
-            <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">
               {summary === null ? (
                 /* The campaign could not be named — see the module comment. Saying so is
                    better than printing an identifier nobody can read. */
@@ -279,7 +279,7 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
               ) : (
                 <Link
                   href={pledgeCampaignHref(summary.project)}
-                  className="rounded-sm hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="rounded-sm hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   {summary.project.title}
                 </Link>
@@ -292,14 +292,14 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
             </div>
 
             {pledge.confirmedAt != null && (
-              <p className="mt-3 text-sm text-white/40">
+              <p className="mt-3 text-sm text-fg-40">
                 {fillPlaceholders(pledges.confirmedAt, {
                   time: formatExactTime(pledge.confirmedAt, locale),
                 })}
               </p>
             )}
             {pledge.canceledAt != null && (
-              <p className="mt-3 text-sm text-white/40">
+              <p className="mt-3 text-sm text-fg-40">
                 {fillPlaceholders(pledges.withdrawnAt, {
                   time: formatExactTime(pledge.canceledAt, locale),
                 })}
@@ -335,7 +335,7 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
               <p className="text-sm text-on-white/64">
                 <Link
                   href={`/pledges/${encodeURIComponent(pledge.id)}/address`}
-                  className="rounded-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="rounded-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   {pledges.whereGoing}
                 </Link>
@@ -345,8 +345,8 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
         </div>
 
         {pledge.supplements.length > 0 && (
-          <div className="mt-6 border-t border-white/6 pt-6">
-            <h3 className="text-[15px] font-medium text-white">{pledges.supplementsHeading}</h3>
+          <div className="mt-6 border-t border-fg/6 pt-6">
+            <h3 className="text-[15px] font-medium text-fg">{pledges.supplementsHeading}</h3>
             {/*
               §4.8's PM-09 and PM-10 are charged separately and are NOT part of the total above:
               V29 froze the comparison §5.1 made at the deadline, so a later purchase cannot be
@@ -356,15 +356,15 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
             <ul className="mt-3 flex list-none flex-col gap-2 text-sm">
               {pledge.supplements.map((supplement) => (
                 <li key={supplement.id} className="flex items-baseline justify-between gap-4">
-                  <span className="text-white/64">
+                  <span className="text-fg-64">
                     {supplement.kind === 'UPGRADE' ? pledges.upgrade : pledges.extraAddons} ·{' '}
                     {formatExactTime(supplement.createdAt, locale)}
                   </span>
-                  <span className="tabular-nums text-white">{formatMoney(supplement.amount)}</span>
+                  <span className="tabular-nums text-fg">{formatMoney(supplement.amount)}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-white/40">{pledges.supplementsNote}</p>
+            <p className="mt-3 text-xs text-fg-40">{pledges.supplementsNote}</p>
           </div>
         )}
       </section>

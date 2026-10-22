@@ -97,10 +97,10 @@ export default async function LegalIndexRoute({
 
             return (
               <li key={slug}>
-                <Link href={legalPath(slug)} className="text-white underline underline-offset-4">
+                <Link href={legalPath(slug)} className="text-fg underline underline-offset-4">
                   {t(`documents.${slug}.title`)}
                 </Link>
-                {!published && <span className="text-white/64"> {t('index.notPublished')}</span>}
+                {!published && <span className="text-fg-64"> {t('index.notPublished')}</span>}
               </li>
             );
           })}

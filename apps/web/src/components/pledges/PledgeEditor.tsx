@@ -142,10 +142,10 @@ const LONGEST_TIMEOUT_MS = 2 ** 31 - 1;
  * `Pill` is a `<button>`, and leaving for another page is a link's job.
  */
 const PILL_LINK =
-  'inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-white px-3.5 ' +
-  'text-[13px] font-medium tracking-[-0.01em] text-on-white transition-[background-color,transform] ' +
-  'duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--white-muted)] active:translate-y-0 ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+  'inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-inverse px-3.5 ' +
+  'text-[13px] font-medium tracking-[-0.01em] text-on-inverse transition-[background-color,transform] ' +
+  'duration-150 ease-in-out hover:-translate-y-px hover:bg-inverse-muted active:translate-y-0 ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]';
 
 export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: PledgeEditorProps) {
   const raising = mode === 'raise';
@@ -372,11 +372,11 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: 
     quote !== null && !quote.ok ? refusalMessage(quote.refusal, copy) : null;
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">
         {raising ? pledges.raiseHeading : pledges.heading}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
+      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-fg-64">
         {raising ? pledges.raiseIntro : pledges.intro}
       </p>
 

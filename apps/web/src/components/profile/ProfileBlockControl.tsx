@@ -43,13 +43,13 @@ export interface ProfileBlockControlProps {
 
 /** The link-like trigger, matching `ReportControl`'s on the same row. */
 const TRIGGER =
-  'inline-flex items-center gap-2 rounded-sm text-sm text-white/40 transition-colors duration-150 ease-in-out ' +
-  'hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] ' +
+  'inline-flex items-center gap-2 rounded-sm text-sm text-fg-40 transition-colors duration-150 ease-in-out ' +
+  'hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] ' +
   'disabled:opacity-40';
 
 const ACTION =
   'rounded-sm text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 ' +
-  'focus-visible:outline-[var(--lime-500)] disabled:opacity-40';
+  'focus-visible:outline-[var(--focus-ring)] disabled:opacity-40';
 
 export function ProfileBlockControl(props: ProfileBlockControlProps) {
   const { session } = useSession();
@@ -107,11 +107,11 @@ function BlockToggle({ slug, copy, className }: ProfileBlockControlProps) {
     <div className={className}>
       {blocked === true ? (
         <div className="flex flex-wrap items-center gap-3">
-          <p className="inline-flex items-center gap-2 text-sm text-white/64">
+          <p className="inline-flex items-center gap-2 text-sm text-fg-64">
             <Ban aria-hidden="true" className="size-4" />
             {copy.blockedState}
           </p>
-          <button type="button" disabled={busy} onClick={() => void change(false)} className={`${ACTION} text-white`}>
+          <button type="button" disabled={busy} onClick={() => void change(false)} className={`${ACTION} text-fg`}>
             {busy ? copy.unblocking : copy.unblock}
           </button>
         </div>
@@ -121,25 +121,25 @@ function BlockToggle({ slug, copy, className }: ProfileBlockControlProps) {
           {copy.trigger}
         </button>
       ) : blocked === false ? (
-        <div className="flex max-w-[40rem] flex-col gap-3 rounded-lg border border-white/8 bg-surface-3 p-4">
+        <div className="flex max-w-[40rem] flex-col gap-3 rounded-lg border border-fg/8 bg-surface-3 p-4">
           <p className="text-sm text-reading">{copy.warning}</p>
           <div className="flex flex-wrap gap-4">
             <button
               type="button"
               disabled={busy}
               onClick={() => void change(true)}
-              className={`${ACTION} font-medium text-white`}
+              className={`${ACTION} font-medium text-fg`}
             >
               {busy ? copy.blocking : copy.confirm}
             </button>
-            <button type="button" onClick={() => setConfirming(false)} className={`${ACTION} text-white/64`}>
+            <button type="button" onClick={() => setConfirming(false)} className={`${ACTION} text-fg-64`}>
               {copy.cancel}
             </button>
           </div>
         </div>
       ) : null}
 
-      <p aria-live="polite" className="mt-2 min-h-[1.25rem] text-xs text-white/64">
+      <p aria-live="polite" className="mt-2 min-h-[1.25rem] text-xs text-fg-64">
         {notice}
       </p>
     </div>

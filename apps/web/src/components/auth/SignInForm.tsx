@@ -222,20 +222,20 @@ export function SignInForm({ copy }: SignInFormProps) {
         in should meet the button first, and this is the way out for the one the screen has just
         failed.
       */}
-      <p className="text-center text-sm text-white/64">
+      <p className="text-center text-sm text-fg-64">
         <Link
           href="/reset-password"
-          className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {copy.forgot}
         </Link>
       </p>
 
-      <p className="text-center text-sm text-white/64">
+      <p className="text-center text-sm text-fg-64">
         {copy.noAccount}{' '}
         <Link
           href={registerHref(searchParams.get(RETURN_TO_PARAM))}
-          className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {copy.createOne}
         </Link>

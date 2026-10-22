@@ -111,8 +111,8 @@ export function StoryMarkToolbar({
               active
                 ? // White for "on", never lime: emphasising a word is not urgent
                   // (docs/ui-kit.md §7.3).
-                  'border-transparent bg-white text-on-white'
-                : 'border-white/8 bg-surface-3 text-white/64 hover:bg-surface-4 hover:text-white',
+                  'border-transparent bg-inverse text-on-inverse'
+                : 'border-fg/8 bg-surface-3 text-fg-64 hover:bg-surface-4 hover:text-fg',
             )}
           >
             <Icon aria-hidden="true" className="size-4" />

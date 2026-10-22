@@ -61,10 +61,10 @@ export default async function CategoriesPage() {
       <StructuredData nodes={categoryPageGraph({ trail: [], ...(await graphContext()) })} />
 
       <div className="mx-auto w-full max-w-[1400px] px-5 py-10 sm:px-6">
-        <h1 className="text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+        <h1 className="text-3xl font-semibold tracking-[-0.035em] text-fg sm:text-4xl">
           {t('title')}
         </h1>
-        <p className="mt-2 max-w-[60ch] text-white/64">
+        <p className="mt-2 max-w-[60ch] text-fg-64">
           {t('intro')}
         </p>
 
@@ -74,12 +74,12 @@ export default async function CategoriesPage() {
             pretend to tell them apart. Either way the feed is reachable and carries
             everything, which is the one useful thing to say.
           */
-          <p className="mt-10 max-w-[60ch] text-white/64">
+          <p className="mt-10 max-w-[60ch] text-fg-64">
             {t.rich('unavailable', {
               feed: (chunks) => (
                 <Link
                   href="/discover"
-                  className="text-white underline underline-offset-4 hover:text-white/80"
+                  className="text-fg underline underline-offset-4 hover:text-fg-80"
                 >
                   {chunks}
                 </Link>
@@ -94,14 +94,14 @@ export default async function CategoriesPage() {
                   The category's icon on its accent, beside the name — the mark the app draws on
                   the same list (#335). Decorative: the name is the link and says it all.
                 */}
-                <h2 className="group flex items-center gap-3 text-xl font-medium tracking-[-0.02em] text-white">
+                <h2 className="group flex items-center gap-3 text-xl font-medium tracking-[-0.02em] text-fg">
                   <CategoryBadge
                     slug={category.slug}
                     className="transition-transform duration-300 ease-in-out motion-safe:group-hover:-rotate-6 motion-safe:group-hover:scale-110"
                   />
                   <Link
                     href={categoryPath(category.slug)}
-                    className="rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                    className="rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
                     {category.name}
                   </Link>
@@ -113,7 +113,7 @@ export default async function CategoriesPage() {
                       <li key={subcategory.id}>
                         <Link
                           href={subcategoryPath(category.slug, subcategory.slug)}
-                          className="rounded-sm text-[15px] text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                          className="rounded-sm text-[15px] text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                         >
                           {subcategory.name}
                         </Link>

@@ -155,7 +155,7 @@ export function ProfileCampaignCard({
     <article
       // The hover and focus `CardVideoPreview` listens to, when there is a clip to preview.
       data-card-video={cover.video === null ? undefined : ''}
-      className="group relative flex flex-col overflow-hidden rounded-lg border border-white/8 bg-surface-2 transition-colors duration-300 ease-in-out hover:bg-surface-3">
+      className="group relative flex flex-col overflow-hidden rounded-lg border border-fg/8 bg-surface-2 transition-colors duration-300 ease-in-out hover:bg-surface-3">
       {/*
         The box is reserved whether or not there is a cover, so a campaign with a photograph
         and one without are the same height and the grid below never moves (docs/ui-kit.md
@@ -200,7 +200,7 @@ export function ProfileCampaignCard({
           </div>
         )}
 
-        <h3 className="text-base lg:text-lg font-medium tracking-[-0.02em] break-words text-white">
+        <h3 className="text-base lg:text-lg font-medium tracking-[-0.02em] break-words text-fg">
           {/* One link for the whole card: one tab stop and one announcement per campaign,
               with the pointer target still the size of the card. */}
           <Link
@@ -212,7 +212,7 @@ export function ProfileCampaignCard({
         </h3>
 
         {card.blurb !== null && card.blurb !== '' && (
-          <p className="line-clamp-2 text-xs lg:text-sm text-white/64">{card.blurb}</p>
+          <p className="line-clamp-2 text-xs lg:text-sm text-fg-64">{card.blurb}</p>
         )}
 
         {funding === 'shown' && completion !== null && pledged !== null ? (
@@ -225,13 +225,13 @@ export function ProfileCampaignCard({
               label={fillPlaceholders(copy.progressLabel, { percent })}
             />
             <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1 text-xs lg:text-sm">
-              <span className="font-medium tabular-nums text-white">{formatMoney(pledged)}</span>
-              <span className="tabular-nums text-white/64">
+              <span className="font-medium tabular-nums text-fg">{formatMoney(pledged)}</span>
+              <span className="tabular-nums text-fg-64">
                 {fillPlaceholders(copy.funded, { percent })}
               </span>
             </div>
             {goal !== null && (
-              <p className="text-[11px] lg:text-xs tabular-nums text-white/40">
+              <p className="text-[11px] lg:text-xs tabular-nums text-fg-40">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(goal) })}
               </p>
             )}
@@ -246,7 +246,7 @@ export function ProfileCampaignCard({
           about the person whose profile this is, and is what makes the row legible as a
           campaign rather than as a title on its own.
         */}
-        <div className="flex items-center gap-3.5 text-[11px] lg:text-xs text-white/40">
+        <div className="flex items-center gap-3.5 text-[11px] lg:text-xs text-fg-40">
           <span className="inline-flex items-center gap-1">
             <Users aria-hidden="true" className="size-3 lg:size-3.5" />
             <span className="tabular-nums">

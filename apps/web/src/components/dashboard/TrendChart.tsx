@@ -95,10 +95,10 @@ export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
         ) : null}
       </svg>
 
-      <figcaption className="mt-2 flex flex-wrap justify-between gap-x-4 text-sm text-white/64">
+      <figcaption className="mt-2 flex flex-wrap justify-between gap-x-4 text-sm text-fg-64">
         <span>{label}</span>
         {peak !== undefined ? (
-          <span className="text-white">
+          <span className="text-fg">
             {fillPlaceholders(copy.peak, {
               amount: formatMoney(peak.cumulativeAmount),
               day: peak.day,
@@ -108,19 +108,19 @@ export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
       </figcaption>
 
       <details className="mt-3">
-        <summary className="cursor-pointer text-sm text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]">
+        <summary className="cursor-pointer text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]">
           {copy.showDaily}
         </summary>
         <div
           role="region"
           aria-label={copy.dailyLabel}
           tabIndex={0}
-          className="mt-3 overflow-x-auto rounded-[14px] border border-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+          className="mt-3 overflow-x-auto rounded-[14px] border border-fg/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
         >
           <table className="w-full min-w-[420px] border-collapse text-sm">
             <caption className="sr-only">{label}</caption>
             <thead>
-              <tr className="border-b border-white/8 text-left text-white/64">
+              <tr className="border-b border-fg/8 text-left text-fg-64">
                 <th scope="col" className="px-4 py-3 font-medium">
                   {copy.day}
                 </th>
@@ -137,15 +137,15 @@ export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
             </thead>
             <tbody>
               {days.map((day) => (
-                <tr key={day.day} className="border-b border-white/6 last:border-0">
-                  <th scope="row" className="px-4 py-3 text-left font-normal text-white">
+                <tr key={day.day} className="border-b border-fg/6 last:border-0">
+                  <th scope="row" className="px-4 py-3 text-left font-normal text-fg">
                     {day.day}
                   </th>
-                  <td className="px-4 py-3 text-right tabular-nums text-white/64">{day.pledgeCount}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-white/64">
+                  <td className="px-4 py-3 text-right tabular-nums text-fg-64">{day.pledgeCount}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-fg-64">
                     {formatMoney(day.amount)}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-white">
+                  <td className="px-4 py-3 text-right tabular-nums text-fg">
                     {formatMoney(day.cumulativeAmount)}
                   </td>
                 </tr>

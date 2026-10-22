@@ -62,10 +62,10 @@ export function CollectionIndex({ collections, locale, copy }: CollectionIndexPr
 
   return (
     <div className="mx-auto w-full max-w-[1400px] px-5 py-10 sm:px-6">
-      <h1 className="text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+      <h1 className="text-3xl font-semibold tracking-[-0.035em] text-fg sm:text-4xl">
         {copy.title}
       </h1>
-      <p className="mt-2 max-w-[60ch] text-white/64">{copy.intro}</p>
+      <p className="mt-2 max-w-[60ch] text-fg-64">{copy.intro}</p>
 
       <div className="mt-12">
         {items.length === 0 ? (
@@ -82,7 +82,7 @@ export function CollectionIndex({ collections, locale, copy }: CollectionIndexPr
             action={
               <Link
                 href="/discover"
-                className="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                className="inline-flex h-10 items-center rounded-full bg-inverse px-5 text-sm font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
               >
                 {copy.emptyAction}
               </Link>

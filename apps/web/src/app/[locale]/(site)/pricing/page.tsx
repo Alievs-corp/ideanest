@@ -83,8 +83,8 @@ export default async function PricingPage({
     <>
       <StructuredData nodes={sitePageGraph({ crumb: { name: t('metaTitle'), path: '/pricing' }, ...(await graphContext()) })} />
       <div className="mx-auto w-full max-w-[1100px] px-5 py-12 sm:px-8">
-        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">{t('title')}</h1>
-        <p className="mt-3 max-w-[62ch] text-[15px] text-white/64">{t('intro')}</p>
+        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-fg sm:text-4xl">{t('title')}</h1>
+        <p className="mt-3 max-w-[62ch] text-[15px] text-fg-64">{t('intro')}</p>
 
         <div className="mt-10">
           {plans === null ? (
@@ -93,7 +93,7 @@ export default async function PricingPage({
               an empty catalogue, which would read as "this platform has no plans" — the one
               wrong answer on a page whose whole purpose is to say what the plans are.
             */
-            <p className="text-sm text-white/64">{t('unavailable')}</p>
+            <p className="text-sm text-fg-64">{t('unavailable')}</p>
           ) : (
             <PlanChooser
               plans={plans}

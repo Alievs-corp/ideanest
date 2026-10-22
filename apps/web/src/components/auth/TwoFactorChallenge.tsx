@@ -165,8 +165,8 @@ export function TwoFactorChallenge({
         />
       </Field>
 
-      <details className="rounded-lg border border-white/6 bg-surface-1 px-4 py-3">
-        <summary className="cursor-pointer text-sm text-white/64 marker:text-white/40 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]">
+      <details className="rounded-lg border border-fg/6 bg-surface-1 px-4 py-3">
+        <summary className="cursor-pointer text-sm text-fg-64 marker:text-fg-40 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]">
           {copy.cannotReach}
         </summary>
         <div className="mt-4">
@@ -190,11 +190,11 @@ export function TwoFactorChallenge({
         {submitting ? copy.submitting : copy.submit}
       </Pill>
 
-      <p className="text-center text-sm text-white/64">
+      <p className="text-center text-sm text-fg-64">
         <button
           type="button"
           onClick={onStartOver}
-          className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {copy.differentAccount}
         </button>

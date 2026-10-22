@@ -98,7 +98,7 @@ export function SearchField({
         <span className="sr-only">{copy.label}</span>
         <Search
           aria-hidden="true"
-          className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-white/40"
+          className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-fg-40"
         />
         <input
           type="search"
@@ -107,10 +107,10 @@ export function SearchField({
           onChange={(event) => setDraft(event.target.value)}
           placeholder={copy.label}
           className={cn(
-            'h-10 w-full rounded-full border border-white/8 bg-surface-3 pl-10 pr-4',
-            'text-sm text-white placeholder:text-white/40',
-            'transition-colors duration-150 ease-in-out hover:border-white/16 focus:border-white/16',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+            'h-10 w-full rounded-full border border-fg/8 bg-surface-3 pl-10 pr-4',
+            'text-sm text-fg placeholder:text-fg-40',
+            'transition-colors duration-150 ease-in-out hover:border-fg/16 focus:border-fg/16',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
           )}
         />
       </label>

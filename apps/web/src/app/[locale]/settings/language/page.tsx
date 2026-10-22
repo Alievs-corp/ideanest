@@ -84,7 +84,7 @@ export default async function LanguageSettingsPage() {
       <AccountPageHeader title={t('title')}>{t('intro')}</AccountPageHeader>
 
       <div className="mt-8">
-        <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">
           {t('languageHeading')}
         </h2>
 
@@ -104,8 +104,8 @@ export default async function LanguageSettingsPage() {
       </div>
 
       <div className="mt-10">
-        <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{currency('title')}</h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{currency('intro')}</p>
+        <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{currency('title')}</h2>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{currency('intro')}</p>
 
         <div className="mt-4">
           <CurrencyPanel

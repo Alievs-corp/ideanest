@@ -110,10 +110,10 @@ export function BankTransferFacts({
   const person = (id: string) => <EntityName id={id} names={names} kind="account" copy={copy.identity} />;
 
   return (
-    <div className="mt-2 flex flex-col gap-1 text-xs text-white/64">
+    <div className="mt-2 flex flex-col gap-1 text-xs text-fg-64">
       <p>
         {fillNodes(copy.bank.accountOnFile, {
-          hint: <span className="font-mono text-white">{transfer.ibanHint}</span>,
+          hint: <span className="font-mono text-fg">{transfer.ibanHint}</span>,
           ticket: <Identifier id={transfer.ticketId} />,
         })}
       </p>
@@ -127,7 +127,7 @@ export function BankTransferFacts({
         <p>
           {fillNodes(copy.bank.transferRecorded, {
             date: formatDay(transfer.transferredOn, locale),
-            reference: <span className="font-mono text-white">{transfer.bankReference}</span>,
+            reference: <span className="font-mono text-fg">{transfer.bankReference}</span>,
             by: person(transfer.transferRecordedBy),
           })}
         </p>
@@ -160,8 +160,8 @@ export function AwaitingTransfer({
   }
 
   return (
-    <div className="mt-3 flex flex-col gap-4 border-t border-white/8 pt-3">
-      <p className="max-w-[62ch] text-xs text-white/64">{copy.bank.awaitingTransfer}</p>
+    <div className="mt-3 flex flex-col gap-4 border-t border-fg/8 pt-3">
+      <p className="max-w-[62ch] text-xs text-fg-64">{copy.bank.awaitingTransfer}</p>
       <AccountReveal refundId={refund.id} copy={copy} />
       <RecordTransfer refund={refund} transfer={transfer} copy={copy} onSettled={onSettled} />
     </div>
@@ -211,35 +211,35 @@ function AccountReveal({ refundId, copy }: { readonly refundId: string; readonly
 
   return (
     <div className="flex flex-col gap-2">
-      <p id={auditedId} className="max-w-[62ch] text-xs text-white/48">
+      <p id={auditedId} className="max-w-[62ch] text-xs text-fg-48">
         {words.reveal.audited}
       </p>
 
       <div aria-live="polite">
         {reveal.kind === 'shown' && (
-          <dl className="flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-4 text-sm">
+          <dl className="flex flex-col gap-3 rounded-lg border border-fg/8 bg-surface-2 p-4 text-sm">
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-white/48">{words.amountLabel}</dt>
+              <dt className="text-xs text-fg-48">{words.amountLabel}</dt>
               <dd className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="text-2xl font-medium tabular-nums tracking-[-0.02em] text-white">
+                <span className="text-2xl font-medium tabular-nums tracking-[-0.02em] text-fg">
                   {formatMoney(reveal.details.amount)}
                 </span>
                 <CopyValue value={reveal.details.amount.amount} label={words.copy.amount} copy={words} />
               </dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-white/48">{words.ibanLabel}</dt>
+              <dt className="text-xs text-fg-48">{words.ibanLabel}</dt>
               <dd className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="select-all break-all font-mono text-base text-white">
+                <span className="select-all break-all font-mono text-base text-fg">
                   {grouped(reveal.details.iban)}
                 </span>
                 <CopyValue value={reveal.details.iban} label={words.copy.iban} copy={words} />
               </dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-white/48">{words.holderLabel}</dt>
+              <dt className="text-xs text-fg-48">{words.holderLabel}</dt>
               <dd className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="select-all text-white">{reveal.details.holderName}</span>
+                <span className="select-all text-fg">{reveal.details.holderName}</span>
                 <CopyValue value={reveal.details.holderName} label={words.copy.holder} copy={words} />
               </dd>
             </div>
@@ -311,11 +311,11 @@ function CopyValue({
         type="button"
         onClick={() => void put()}
         aria-label={label}
-        className="rounded text-xs text-white/64 underline decoration-dotted underline-offset-2 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded text-xs text-fg-64 underline decoration-dotted underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {copy.copy.copy}
       </button>
-      <span role="status" aria-live="polite" className="text-xs text-white/48">
+      <span role="status" aria-live="polite" className="text-xs text-fg-48">
         {copied ? copy.copy.copied : ''}
       </span>
     </span>
@@ -380,8 +380,8 @@ function RecordTransfer({
         if (ready) setConfirming(true);
       }}
     >
-      <h3 className="text-sm font-medium text-white">{words.recordTransfer}</h3>
-      <p className="max-w-[62ch] text-xs text-white/64">{words.recordIntro}</p>
+      <h3 className="text-sm font-medium text-fg">{words.recordTransfer}</h3>
+      <p className="max-w-[62ch] text-xs text-fg-64">{words.recordIntro}</p>
 
       <div className="flex flex-wrap items-end gap-3">
         <Field label={words.bankReference} hint={words.bankReferenceHint} required className="min-w-[240px] flex-1">
@@ -428,7 +428,7 @@ function RecordTransfer({
 
       {confirming ? (
         <div role="group" aria-label={words.recordTransfer} className="flex flex-col gap-2">
-          <p className="max-w-[62ch] text-sm text-white">
+          <p className="max-w-[62ch] text-sm text-fg">
             {fillPlaceholders(words.confirmRecord, {
               amount: formatMoney(refund.amount),
               hint: transfer.ibanHint,
@@ -437,7 +437,7 @@ function RecordTransfer({
             })}
           </p>
           {fee && (
-            <p className="max-w-[62ch] text-sm text-white">
+            <p className="max-w-[62ch] text-sm text-fg">
               {fillPlaceholders(words.confirmBankFee, {
                 amount: formatMoney({ amount: fee, currency: refund.amount.currency }),
               })}
@@ -527,7 +527,7 @@ export function RouteToBankTransfer({
       )}
       {confirming ? (
         <div role="group" aria-label={words.refundByBank} className="flex flex-col gap-2">
-          <p className="max-w-[62ch] text-sm text-white">{words.confirmRefundByBank}</p>
+          <p className="max-w-[62ch] text-sm text-fg">{words.confirmRefundByBank}</p>
           <div className="flex flex-wrap gap-2">
             <Pill size="sm" autoFocus aria-disabled={busy} onClick={() => void route()}>
               {busy ? words.routing : words.confirmRefundByBankAction}

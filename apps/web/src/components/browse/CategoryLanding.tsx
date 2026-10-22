@@ -94,10 +94,10 @@ export async function CategoryLanding({
         half would be one a person lands on with no way up. `aria-label` names it because a
         second `<nav>` on the page — the header's — is otherwise indistinguishable from it.
       */}
-      <nav aria-label={common('breadcrumb')} className="text-sm text-white/40">
+      <nav aria-label={common('breadcrumb')} className="text-sm text-fg-40">
         <ol className="flex list-none flex-wrap items-center gap-2">
           <li>
-            <Link href="/categories" className="hover:text-white">
+            <Link href="/categories" className="hover:text-fg">
               {trail('categories')}
             </Link>
           </li>
@@ -105,14 +105,14 @@ export async function CategoryLanding({
             <>
               <li aria-hidden="true">/</li>
               <li>
-                <Link href={`/categories/${encodeURIComponent(category.slug)}`} className="hover:text-white">
+                <Link href={`/categories/${encodeURIComponent(category.slug)}`} className="hover:text-fg">
                   {category.name}
                 </Link>
               </li>
             </>
           )}
           <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-white/64">
+          <li aria-current="page" className="text-fg-64">
             {title}
           </li>
         </ol>
@@ -121,11 +121,11 @@ export async function CategoryLanding({
       {/* The parent category's icon on its accent, on a subcategory page too (#335). */}
       <div className="mt-4 flex items-center gap-4">
         <CategoryBadge slug={category.slug} size="lg" />
-        <h1 className="text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+        <h1 className="text-3xl font-semibold tracking-[-0.035em] text-fg sm:text-4xl">
           {title}
         </h1>
       </div>
-      <p className="mt-2 max-w-[60ch] text-white/64">
+      <p className="mt-2 max-w-[60ch] text-fg-64">
         {subcategory === undefined
           ? t('standfirst', { category: category.name })
           : t('subStandfirst', { category: category.name, subcategory: subcategory.name })}
@@ -143,7 +143,7 @@ export async function CategoryLanding({
               <li key={child.id}>
                 <Link
                   href={subcategoryPath(category.slug, child.slug)}
-                  className="inline-flex h-9 items-center rounded-full border border-white/8 bg-surface-2 px-4 text-sm text-white/64 transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="inline-flex h-9 items-center rounded-full border border-fg/8 bg-surface-2 px-4 text-sm text-fg-64 transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   {child.name}
                 </Link>
@@ -153,7 +153,7 @@ export async function CategoryLanding({
         </nav>
       )}
 
-      <p className="mt-8 text-sm text-white/64 tabular-nums">
+      <p className="mt-8 text-sm text-fg-64 tabular-nums">
         {t(hasMore ? 'countMore' : 'count', { count: campaigns.length })}
       </p>
 
@@ -174,7 +174,7 @@ export async function CategoryLanding({
               action={
                 <Link
                   href="/discover"
-                  className="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                  className="inline-flex h-10 items-center rounded-full bg-inverse px-5 text-sm font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
                 >
                   {t('emptyAction')}
                 </Link>
@@ -196,7 +196,7 @@ export async function CategoryLanding({
             <div className="mt-10 flex justify-center">
               <Link
                 href={feedHref}
-                className="inline-flex h-11 items-center gap-2 rounded-full border border-white/16 px-6 text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
+                className="inline-flex h-11 items-center gap-2 rounded-full border border-fg/16 px-6 text-sm font-medium text-fg transition-colors duration-150 ease-in-out hover:bg-surface-3"
               >
                 {hasMore ? t('seeEvery', { title }) : t('filterAndSort', { title })}
                 <ArrowRight aria-hidden="true" className="size-4" />

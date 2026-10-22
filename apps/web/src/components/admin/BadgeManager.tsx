@@ -111,10 +111,10 @@ export function BadgeManager({ copy, note }: BadgeManagerProps) {
 
   return (
     <section aria-labelledby="badges-heading">
-      <h2 id="badges-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="badges-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
-          <span className="ml-2 text-xs font-normal text-white/40">{granting.length}</span>
+          <span className="ml-2 text-xs font-normal text-fg-40">{granting.length}</span>
         )}
       </h2>
 
@@ -136,7 +136,7 @@ export function BadgeManager({ copy, note }: BadgeManagerProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="35%" />
                 <Skeleton height="0.875rem" width="55%" className="mt-3" />
               </div>
@@ -154,7 +154,7 @@ export function BadgeManager({ copy, note }: BadgeManagerProps) {
           action={
             <Link
               href="/admin/curation"
-              className="rounded-lg text-sm text-white/64 underline underline-offset-2 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="rounded-lg text-sm text-fg-64 underline underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               {copy.toCollections}
             </Link>
@@ -189,14 +189,14 @@ export function BadgeManager({ copy, note }: BadgeManagerProps) {
 
       {status === 'ready' && collections.length > 0 && (
         <>
-          <h2 className="mt-10 text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+          <h2 className="mt-10 text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
             {copy.restHeading}
-            <span className="ml-2 text-xs font-normal text-white/40">{rest.length}</span>
+            <span className="ml-2 text-xs font-normal text-fg-40">{rest.length}</span>
           </h2>
-          <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.restIntro}</p>
+          <p className="mt-1 max-w-[62ch] text-sm text-fg-48">{copy.restIntro}</p>
 
           {rest.length === 0 ? (
-            <p className="mt-4 text-sm text-white/40">{copy.allGrant}</p>
+            <p className="mt-4 text-sm text-fg-40">{copy.allGrant}</p>
           ) : (
             <ul className="mt-4 flex list-none flex-col gap-2">
               {rest.map((collection) => (
@@ -262,16 +262,16 @@ function BadgeRow({
   const published = isPublished(collection);
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
             href={`/admin/curation/${encodeURIComponent(collection.slug)}`}
-            className="rounded-lg text-sm sm:text-[15px] font-medium text-white underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-lg text-sm sm:text-[15px] font-medium text-fg underline-offset-2 transition-colors duration-150 ease-in-out hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {collectionTitle(collection)}
           </Link>
-          <p className="mt-1 font-mono text-xs text-white/40">/collections/{collection.slug}</p>
+          <p className="mt-1 font-mono text-xs text-fg-40">/collections/{collection.slug}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Tag>{copy.curation.kind[collection.kind]}</Tag>

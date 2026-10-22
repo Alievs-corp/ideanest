@@ -131,16 +131,16 @@ export function SavedProjectsPanel({ copy }: SavedProjectsPanelProps) {
         {rows.map((campaign) => (
           <li
             key={campaign.projectId}
-            className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/8 bg-surface-2 px-5 py-4"
+            className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-fg/8 bg-surface-2 px-5 py-4"
           >
             <div className="min-w-0">
               <Link
                 href={campaignHref(campaign)}
-                className="rounded-sm text-[17px] font-medium tracking-[-0.01em] text-white hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="rounded-sm text-[17px] font-medium tracking-[-0.01em] text-fg hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {campaign.title}
               </Link>
-              <p className="mt-1 text-sm text-white/40">
+              <p className="mt-1 text-sm text-fg-40">
                 {fillPlaceholders(copy.meta, {
                   time: formatRelativeTime(campaign.savedAt, now, locale),
                   creator: campaign.creatorSlug,

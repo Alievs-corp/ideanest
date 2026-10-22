@@ -210,10 +210,10 @@ export function BackerReport({
 
   return (
     <section aria-labelledby="backers-heading">
-      <h1 id="backers-heading" className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
+      <h1 id="backers-heading" className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">
         {copy.heading}
       </h1>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.intro}</p>
 
       <form onSubmit={search} className="mt-6 flex flex-wrap items-end gap-3">
         <div className="min-w-[240px] flex-1">
@@ -223,7 +223,7 @@ export function BackerReport({
         </div>
         <button
           type="submit"
-          className="inline-flex items-center gap-2 rounded-full border border-white/16 px-4 py-2.5 text-sm font-medium text-white hover:bg-[--surface-3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+          className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-[--surface-3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
         >
           <Search className="size-4" aria-hidden />
           {copy.search}
@@ -232,7 +232,7 @@ export function BackerReport({
           type="button"
           onClick={onExport}
           disabled={busy}
-          className="inline-flex items-center gap-2 rounded-full border border-white/16 px-4 py-2.5 text-sm font-medium text-white hover:bg-[--surface-3] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+          className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-[--surface-3] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
         >
           <Download className="size-4" aria-hidden />
           {copy.export}
@@ -240,7 +240,7 @@ export function BackerReport({
       </form>
 
       <fieldset className="mt-6">
-        <legend className="text-sm font-medium text-white">{copy.stateLegend}</legend>
+        <legend className="text-sm font-medium text-fg">{copy.stateLegend}</legend>
         <div className="mt-3 flex flex-wrap gap-2">
           {REPORTED_STATES.map((state) => {
             const on = filter.states.includes(state);
@@ -255,7 +255,7 @@ export function BackerReport({
 
       {segments.length > 0 ? (
         <fieldset className="mt-6">
-          <legend className="text-sm font-medium text-white">{copy.segmentsLegend}</legend>
+          <legend className="text-sm font-medium text-fg">{copy.segmentsLegend}</legend>
           <div className="mt-3 flex flex-wrap gap-2">
             {segments.map((segment) => (
               <span key={segment.id} className="inline-flex items-center gap-1">
@@ -276,7 +276,7 @@ export function BackerReport({
                   onClick={() => onDelete(segment)}
                   disabled={busy}
                   aria-label={fillPlaceholders(copy.deleteSegment, { name: segment.name })}
-                  className="rounded-full p-1 text-white/64 hover:text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+                  className="rounded-full p-1 text-fg-64 hover:text-fg disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
                 >
                   <X className="size-4" aria-hidden />
                 </button>
@@ -311,7 +311,7 @@ export function BackerReport({
       {/* Both a save and an export report through here, so the two cannot argue about
           which owns the space under the controls. Polite rather than assertive: none of
           this is urgent enough to interrupt what a screen reader is saying. */}
-      <p aria-live="polite" className="mt-4 min-h-[1.25rem] text-sm text-white/64">
+      <p aria-live="polite" className="mt-4 min-h-[1.25rem] text-sm text-fg-64">
         {notice}
       </p>
 
@@ -326,7 +326,7 @@ export function BackerReport({
 
       {status === 'ready' && page !== null ? (
         <>
-          <p className="mt-6 text-sm text-white">
+          <p className="mt-6 text-sm text-fg">
             {/*
               The figure is its own node so it keeps `tabular-nums`, and the sentence is
               filled around it rather than split into two keys: where the number falls in
@@ -338,7 +338,7 @@ export function BackerReport({
           </p>
 
           {page.backers.length === 0 ? (
-            <p className="mt-4 max-w-[62ch] text-sm text-white/64">
+            <p className="mt-4 max-w-[62ch] text-sm text-fg-64">
               {isNarrowed(filter) || segmentId !== undefined ? copy.emptyFiltered : copy.emptyNone}
             </p>
           ) : (
@@ -350,7 +350,7 @@ export function BackerReport({
             // reads and exports rather than a feed they scroll, and #79's file is what
             // answers "I want all of them" — a browser holding forty thousand rows in
             // memory is the wrong tool for the same question.
-            <p className="mt-4 text-sm text-white/64">
+            <p className="mt-4 text-sm text-fg-64">
               {fillPlaceholders(copy.more, { count: String(page.backers.length) })}
             </p>
           ) : null}

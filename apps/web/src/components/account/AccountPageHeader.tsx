@@ -17,9 +17,9 @@ export interface AccountPageHeaderProps {
 export function AccountPageHeader({ title, children }: AccountPageHeaderProps) {
   return (
     <header>
-      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">{title}</h1>
+      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">{title}</h1>
       {children !== undefined && (
-        <p className="mt-2 max-w-[58ch] text-sm text-white/64">{children}</p>
+        <p className="mt-2 max-w-[58ch] text-sm text-fg-64">{children}</p>
       )}
     </header>
   );

@@ -149,8 +149,14 @@ opposite of the truth.
 **Never lime text on a light surface.** It measures 1.3:1 and is unreadable.
 Lime is a surface with near-black text on it, or it is nothing.
 
-**Context decides the token.** `text-white/64` is invisible on a lime card and
+**Context decides the token.** `text-fg-64` is invisible on a lime card and
 on a white panel. Use the `onLime` and `on-white` variants.
+
+**Two themes, one token set** (`apps/web`, `packages/ui`). The site has a dark default and a light theme
+(`docs/ui-kit.md` §11). Foreground is `text-fg`, `text-fg-64`, `border-fg/8` —
+never `text-white`, which is literal white and is only for text over a photo or
+a scrim. A primary pill is `bg-inverse text-on-inverse`. The admin console is
+dark in both.
 
 ### Motion
 

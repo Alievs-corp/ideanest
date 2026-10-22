@@ -138,7 +138,7 @@ export function ProfileAvatarField({
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-4">
-          <div className="size-20 shrink-0 overflow-hidden rounded-full border border-white/8 bg-surface-3">
+          <div className="size-20 shrink-0 overflow-hidden rounded-full border border-fg/8 bg-surface-3">
             {previewable ? (
               /*
                 NOT `next/image`. A preview has to show somebody the bytes they gave us, and
@@ -159,14 +159,14 @@ export function ProfileAvatarField({
               <span
                 role="img"
                 aria-label={fillPlaceholders(copy.noPicture, { name })}
-                className="grid size-full place-items-center text-xl font-medium text-white/64"
+                className="grid size-full place-items-center text-xl font-medium text-fg-64"
               >
                 {initialsOf(name)}
               </span>
             )}
           </div>
 
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-fg-40">
             {address !== '' && broken === address
               ? copy.broken
               : previewable
@@ -211,7 +211,7 @@ export function ProfileAvatarField({
           </InlineAlert>
         )}
 
-        <p id={addressHintId} className="text-[13px] text-white/64">
+        <p id={addressHintId} className="text-[13px] text-fg-64">
           {copy.addressHint}
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">

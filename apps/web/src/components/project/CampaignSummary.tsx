@@ -218,7 +218,7 @@ export async function CampaignSummary({
           {campaign.category !== null && (
             <Link
               href={`/discover?category=${encodeURIComponent(campaign.category.slug)}`}
-              className="rounded-sm text-xs text-white/64 underline-offset-4 hover:text-white hover:underline"
+              className="rounded-sm text-xs text-fg-64 underline-offset-4 hover:text-fg hover:underline"
             >
               {campaign.category.name}
             </Link>
@@ -226,7 +226,7 @@ export async function CampaignSummary({
         </div>
 
         <div className="flex flex-col gap-2">
-          <h1 className="font-display text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">
+          <h1 className="font-display text-3xl font-semibold tracking-[-0.03em] text-fg sm:text-4xl">
             {campaign.title}
           </h1>
           {campaign.blurb !== null && <p className="text-base text-reading">{campaign.blurb}</p>}
@@ -245,7 +245,7 @@ export async function CampaignSummary({
           reaching into another surface's namespace is a page that breaks when that surface is
           redesigned.
         */}
-        <p className="text-sm text-white/64">
+        <p className="text-sm text-fg-64">
           {/*
             `raw`, because the creator is a node and next-intl would try to format `{creator}`
             against values this side has none of — `packages/messages/src/placeholders.ts` sets out
@@ -255,7 +255,7 @@ export async function CampaignSummary({
             creator: (
               <Link
                 href={`/discover?q=${encodeURIComponent(campaign.creator.name)}`}
-                className="rounded-sm text-white underline-offset-4 hover:underline"
+                className="rounded-sm text-fg underline-offset-4 hover:underline"
               >
                 {campaign.creator.name}
               </Link>
@@ -288,7 +288,7 @@ export async function CampaignSummary({
               above it are the block's own words for the reason `campaign-copy.ts` gives — a
               `StatBlock` label stands beside its number rather than containing it.
             */}
-            <p className="text-sm text-white/64">
+            <p className="text-sm text-fg-64">
               {common('card.ofGoal', { amount: formatMoney(campaign.goal) })}
               {showDays && campaign.daysLeft !== null && ` · ${t('daysLeft', { days: campaign.daysLeft })}`}
             </p>
@@ -299,7 +299,7 @@ export async function CampaignSummary({
               under the last one, and the reader deciding whether to pledge is looking here.
               Plain text and no motion, like the figures above it.
             */}
-            <p className="text-sm text-white/64">{t('rule')}</p>
+            <p className="text-sm text-fg-64">{t('rule')}</p>
           </div>
         )}
 

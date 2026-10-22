@@ -165,7 +165,7 @@ export function LiveFunding({
           size="md"
           value={
             <span className="inline-flex items-center gap-2">
-              <Users aria-hidden="true" className="size-5 text-white/48" />
+              <Users aria-hidden="true" className="size-5 text-fg-48" />
               {backersCount}
             </span>
           }

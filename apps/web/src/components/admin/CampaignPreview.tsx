@@ -134,7 +134,7 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
   if (status === 'loading') {
     return (
       <SkeletonGroup label={copy.loadingPreview}>
-        <div className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
+        <div className="rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
           <Skeleton height="1.5rem" width="55%" />
           <Skeleton height="0.875rem" width="35%" className="mt-3" />
           <Skeleton height="0.875rem" width="70%" className="mt-2" />
@@ -191,19 +191,19 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
 
       <section
         aria-labelledby="campaign-preview-heading"
-        className="mt-6 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
+        className="mt-6 rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id="campaign-preview-heading"
-              className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+              className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
             >
               {campaign.title}
             </h2>
-            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm text-white/64">
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm text-fg-64">
               <span>{campaign.creator.name}</span>
-              <span className="font-mono text-white/32" title={campaign.id}>
+              <span className="font-mono text-fg-32" title={campaign.id}>
                 {campaign.id.slice(0, 8)}
               </span>
               <CopyIdentifier id={campaign.id} copy={copy.identity} />
@@ -214,13 +214,13 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
             directory gives: there are sixteen of them and no palette distinguishes sixteen
             things, so none tries to.
           */}
-          <span className="shrink-0 text-sm text-white/80">
+          <span className="shrink-0 text-sm text-fg-80">
             {copy.state[campaign.state] ?? campaign.state}
           </span>
         </div>
 
         {campaign.blurb !== null && (
-          <p className="mt-3 max-w-[62ch] text-sm text-white/64">{campaign.blurb}</p>
+          <p className="mt-3 max-w-[62ch] text-sm text-fg-64">{campaign.blurb}</p>
         )}
 
         <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
@@ -252,7 +252,7 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
         <p className="mt-4 text-sm">
           {isPublic ? (
             <a
-              className="rounded-lg text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="rounded-lg text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               href={localeHref(
                 `/projects/${encodeURIComponent(campaign.creatorSlug)}/${encodeURIComponent(campaign.slug)}`,
                 locale,
@@ -263,13 +263,13 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
               {copy.publicPage}
             </a>
           ) : (
-            <span className="text-white/40">{copy.notPublicYet}</span>
+            <span className="text-fg-40">{copy.notPublicYet}</span>
           )}
         </p>
       </section>
 
       {cover !== null && (
-        <div className="mt-6 overflow-hidden rounded-xl border border-white/8">
+        <div className="mt-6 overflow-hidden rounded-xl border border-fg/8">
           <Image
             src={cover.url}
             alt={fillPlaceholders(copy.coverAlt, { title: campaign.title })}
@@ -289,12 +289,12 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
       <section aria-labelledby="campaign-preview-story" className="mt-8">
         <h2
           id="campaign-preview-story"
-          className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+          className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
         >
           {copy.storyHeading}
         </h2>
         {campaign.story === null ? (
-          <p className="mt-2 max-w-[62ch] text-sm text-white/40">{copy.noStory}</p>
+          <p className="mt-2 max-w-[62ch] text-sm text-fg-40">{copy.noStory}</p>
         ) : (
           <div className="mt-4">
             <CampaignStory story={campaign.story} title={campaign.title} copy={copy.story} />
@@ -305,15 +305,15 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
       <section aria-labelledby="campaign-preview-risks" className="mt-8">
         <h2
           id="campaign-preview-risks"
-          className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+          className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
         >
           {copy.risksHeading}
         </h2>
         {/* §5.3 requires two hundred characters of it by submission; a draft may have none. */}
         {campaign.risks === null ? (
-          <p className="mt-2 max-w-[62ch] text-sm text-white/40">{copy.noRisks}</p>
+          <p className="mt-2 max-w-[62ch] text-sm text-fg-40">{copy.noRisks}</p>
         ) : (
-          <p className="mt-2 max-w-[68ch] wrap-anywhere whitespace-pre-line text-sm text-white/64">
+          <p className="mt-2 max-w-[68ch] wrap-anywhere whitespace-pre-line text-sm text-fg-64">
             {campaign.risks}
           </p>
         )}
@@ -329,8 +329,8 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
 function Fact({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
     <div className="flex gap-2">
-      <dt className="text-white/40">{label}</dt>
-      <dd className="text-white/80">{children}</dd>
+      <dt className="text-fg-40">{label}</dt>
+      <dd className="text-fg-80">{children}</dd>
     </div>
   );
 }
@@ -339,7 +339,7 @@ function BackToDirectory({ label }: { readonly label: string }) {
   return (
     <Link
       href="/admin/campaigns"
-      className="rounded-lg text-sm text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+      className="rounded-lg text-sm text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
     >
       {label}
     </Link>

@@ -88,7 +88,7 @@ import { useConsoleMembership } from './ConsoleMembership';
 const STATE_TONES: Readonly<Record<ModuleState, string>> = {
   built: 'bg-success/12 text-success',
   partial: 'bg-warning/12 text-warning',
-  blocked: 'bg-surface-3 text-white/64',
+  blocked: 'bg-surface-3 text-fg-64',
 };
 
 /** `Tag`'s shape, without the barrel. See the docblock on why this page cannot import it. */
@@ -116,21 +116,21 @@ function ModuleRow({
 }) {
   const words = copy.modules[module.code];
   const heading = (
-    <span className="text-sm sm:text-[15px] font-medium text-white">
-      <span className="mr-2 font-mono text-xs tracking-[0.04em] text-white/40">{module.code}</span>
+    <span className="text-sm sm:text-[15px] font-medium text-fg">
+      <span className="mr-2 font-mono text-xs tracking-[0.04em] text-fg-40">{module.code}</span>
       {words?.title}
     </span>
   );
 
   return (
-    <li className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
+    <li className="rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         {href === null ? (
           heading
         ) : (
           <Link
             href={href}
-            className="rounded-lg transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-lg transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {heading}
           </Link>
@@ -140,14 +140,14 @@ function ModuleRow({
         </span>
       </div>
 
-      <p className="mt-2 max-w-[68ch] text-sm text-white/64">{words?.summary}</p>
+      <p className="mt-2 max-w-[68ch] text-sm text-fg-64">{words?.summary}</p>
 
       {words?.waitingOn === undefined ? null : (
-        <p className="mt-2 max-w-[68ch] text-sm text-white/48">
+        <p className="mt-2 max-w-[68ch] text-sm text-fg-48">
           {words.waitingOn}{' '}
           <a
             href={issueHref(module.issue)}
-            className="text-white/64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="text-fg-64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {fillPlaceholders(copy.issue, { issue: String(module.issue) })}
           </a>
@@ -185,10 +185,10 @@ export function ConsoleIndex({ copy }: ConsoleIndexProps) {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">
+      <h1 className="text-xl font-semibold tracking-[-0.03em] text-fg sm:text-2xl lg:text-3xl">
         {copy.title}
       </h1>
-      <p className="mt-2 max-w-[68ch] text-sm text-white/64">
+      <p className="mt-2 max-w-[68ch] text-sm text-fg-64">
         {fillPlaceholders(copy.standfirst, {
           total: String(modules.length),
           complete: String(complete),
@@ -208,7 +208,7 @@ export function ConsoleIndex({ copy }: ConsoleIndexProps) {
       </ul>
 
       {hidden === 0 ? null : (
-        <p className="mt-8 max-w-[68ch] text-sm text-white/48">
+        <p className="mt-8 max-w-[68ch] text-sm text-fg-48">
           {fillPlaceholders(copy.notYours, { count: String(hidden) })}{' '}
           {/*
             The answer to the objection the old rail was built on. What each role holds is a
@@ -216,14 +216,14 @@ export function ConsoleIndex({ copy }: ConsoleIndexProps) {
           */}
           <Link
             href="/admin/staff"
-            className="text-white/64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="text-fg-64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.rolesLink}
           </Link>
         </p>
       )}
 
-      <p className="mt-8 max-w-[68ch] text-sm text-white/48">{copy.footnote}</p>
+      <p className="mt-8 max-w-[68ch] text-sm text-fg-48">{copy.footnote}</p>
     </div>
   );
 }

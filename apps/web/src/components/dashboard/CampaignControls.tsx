@@ -117,11 +117,11 @@ export function CampaignControls({
   }
 
   return (
-    <section aria-labelledby="campaign-controls-heading" className="mt-8 rounded-[16px] border border-white/8 p-5">
-      <h2 id="campaign-controls-heading" className="text-sm font-semibold text-white">
+    <section aria-labelledby="campaign-controls-heading" className="mt-8 rounded-[16px] border border-fg/8 p-5">
+      <h2 id="campaign-controls-heading" className="text-sm font-semibold text-fg">
         {copy.heading}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.rule}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.rule}</p>
 
       {notice !== null && (
         <div className="mt-4">
@@ -192,7 +192,7 @@ export function CampaignControls({
             </div>
           )}
 
-          {belowThreshold && <p className="text-sm text-white/64">{copy.belowThreshold}</p>}
+          {belowThreshold && <p className="text-sm text-fg-64">{copy.belowThreshold}</p>}
         </div>
       )}
     </section>
@@ -219,11 +219,11 @@ function Confirmation({
   readonly onCancel: () => void;
 }) {
   return (
-    <div role="group" aria-labelledby={`${id}-heading`} className="mt-5 rounded-2xl border border-white/8 bg-surface-2 p-5">
-      <h3 id={`${id}-heading`} className="text-[15px] font-medium text-white">
+    <div role="group" aria-labelledby={`${id}-heading`} className="mt-5 rounded-2xl border border-fg/8 bg-surface-2 p-5">
+      <h3 id={`${id}-heading`} className="text-[15px] font-medium text-fg">
         {title}
       </h3>
-      <p className="mt-2 text-[13px] text-white/64">{body}</p>
+      <p className="mt-2 text-[13px] text-fg-64">{body}</p>
       <div className="mt-4 flex flex-wrap gap-2">
         <Pill
           variant="accent"

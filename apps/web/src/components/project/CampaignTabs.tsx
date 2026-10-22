@@ -67,7 +67,7 @@ export async function CampaignTabs({ active, path }: CampaignTabsProps) {
   const t = await getTranslations('campaign.tabs');
 
   return (
-    <nav aria-label={t('label')} className="mt-10 border-b border-white/8">
+    <nav aria-label={t('label')} className="mt-10 border-b border-fg/8">
       {/*
         THE ROW SCROLLS RATHER THAN WRAPPING, AND #283 IS THE DAY THAT STARTED MATTERING.
 
@@ -115,10 +115,10 @@ export async function CampaignTabs({ active, path }: CampaignTabsProps) {
                 className={[
                   'inline-flex h-11 items-center whitespace-nowrap border-b-2 px-4 text-sm',
                   'transition-colors duration-150 ease-in-out',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
                   current
-                    ? 'border-white font-medium text-white'
-                    : 'border-transparent text-white/64 hover:border-white/16 hover:text-white',
+                    ? 'border-fg font-medium text-fg'
+                    : 'border-transparent text-fg-64 hover:border-fg/16 hover:text-fg',
                 ].join(' ')}
               >
                 {/*

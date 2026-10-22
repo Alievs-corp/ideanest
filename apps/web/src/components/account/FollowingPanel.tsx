@@ -116,7 +116,7 @@ export function FollowingPanel({ copy }: FollowingPanelProps) {
         {rows.map((creator) => (
           <li
             key={creator.creatorId}
-            className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/8 bg-surface-2 px-5 py-4"
+            className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-fg/8 bg-surface-2 px-5 py-4"
           >
             <div className="flex min-w-0 items-center gap-4">
               {/*
@@ -126,15 +126,15 @@ export function FollowingPanel({ copy }: FollowingPanelProps) {
               */}
               <Avatar name={creator.name} size="md" />
               <div className="min-w-0">
-                <p className="truncate text-[17px] font-medium tracking-[-0.01em] text-white">
+                <p className="truncate text-[17px] font-medium tracking-[-0.01em] text-fg">
                   <Link
                     href={profileHref(creator.slug)}
-                    className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                    className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
                     {creator.name}
                   </Link>
                 </p>
-                <p className="mt-1 text-sm text-white/40">
+                <p className="mt-1 text-sm text-fg-40">
                   {fillPlaceholders(copy.meta, {
                     creator: creator.slug,
                     time: formatRelativeTime(creator.followedAt, now, locale),

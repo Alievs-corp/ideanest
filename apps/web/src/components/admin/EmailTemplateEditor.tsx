@@ -291,7 +291,7 @@ function LanguageEditor({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <p className="max-w-[62ch] text-sm text-white/80">
+        <p className="max-w-[62ch] text-sm text-fg-80">
           {fillPlaceholders(copy.reach, { language })}
           {locale === PRIMARY && <> {copy.reachPrimary}</>}
         </p>
@@ -303,7 +303,7 @@ function LanguageEditor({
       </div>
 
       <section aria-labelledby="shipped-heading">
-        <h2 id="shipped-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="shipped-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.shippedHeading}
         </h2>
         <div className="mt-3 flex flex-col gap-3">
@@ -319,24 +319,24 @@ function LanguageEditor({
       </section>
 
       <section aria-labelledby="edit-heading">
-        <h2 id="edit-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="edit-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.yourHeading}
         </h2>
 
-        <div className="mt-3 rounded-lg border border-white/8 p-4">
-          <h3 className="text-sm font-medium text-white">{copy.placeholdersHeading}</h3>
-          <p className="mt-1 max-w-[62ch] text-xs text-white/64">{copy.placeholdersIntro}</p>
+        <div className="mt-3 rounded-lg border border-fg/8 p-4">
+          <h3 className="text-sm font-medium text-fg">{copy.placeholdersHeading}</h3>
+          <p className="mt-1 max-w-[62ch] text-xs text-fg-64">{copy.placeholdersIntro}</p>
           <ul className="mt-2 flex list-none flex-col gap-1">
             {available.map((index) => (
-              <li key={index} className="flex flex-wrap items-center gap-2 text-sm text-white/80">
-                <code className="font-mono text-white">{`{${index}}`}</code>
+              <li key={index} className="flex flex-wrap items-center gap-2 text-sm text-fg-80">
+                <code className="font-mono text-fg">{`{${index}}`}</code>
                 <span>— {copy.placeholder[index] ?? ''}</span>
                 {required.includes(index) && <Tag>{copy.mustKeep}</Tag>}
               </li>
             ))}
           </ul>
           {required.includes('1') && (
-            <p className="mt-2 max-w-[62ch] text-xs text-white/64">
+            <p className="mt-2 max-w-[62ch] text-xs text-fg-64">
               {fillPlaceholders(copy.campaignFallback, { placeholder: '{1}' })}
             </p>
           )}
@@ -462,25 +462,25 @@ function LanguageEditor({
 
       {preview !== null && (
         <section aria-labelledby="preview-heading">
-          <h2 id="preview-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+          <h2 id="preview-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
             {copy.previewHeading}
           </h2>
-          <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.previewIntro}</p>
-          {previewStale && <p className="mt-2 text-sm text-white/80">{copy.previewStale}</p>}
-          <p className="mt-3 text-sm text-white">{fillPlaceholders(copy.previewSubject, { subject: preview.email.subject })}</p>
+          <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.previewIntro}</p>
+          {previewStale && <p className="mt-2 text-sm text-fg-80">{copy.previewStale}</p>}
+          <p className="mt-3 text-sm text-fg">{fillPlaceholders(copy.previewSubject, { subject: preview.email.subject })}</p>
           {/* No permissions at all: the HTML is the service's, but a frame that could run script or
               read this origin would be a console page running markup out of a database row. */}
           <iframe
             title={copy.previewFrameTitle}
             sandbox=""
             srcDoc={preview.email.html}
-            className="mt-3 h-[520px] w-full rounded-lg border border-white/12"
+            className="mt-3 h-[520px] w-full rounded-lg border border-fg/12"
           />
         </section>
       )}
 
       <section aria-labelledby="history-heading">
-        <h2 id="history-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="history-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.versionsHeading}
         </h2>
 
@@ -495,14 +495,14 @@ function LanguageEditor({
           </div>
         )}
 
-        {history.data !== null && versions.length === 0 && <p className="mt-3 text-sm text-white/64">{copy.versionsEmpty}</p>}
+        {history.data !== null && versions.length === 0 && <p className="mt-3 text-sm text-fg-64">{copy.versionsEmpty}</p>}
 
         {versions.length > 0 && (
           <ul className="mt-3 flex list-none flex-col gap-2">
             {versions.map((version) => (
-              <li key={version.id} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <li key={version.id} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm text-white/80">
+                  <p className="text-sm text-fg-80">
                     {fillPlaceholders(copy.versionLine, {
                       version: String(version.version),
                       date: version.createdAt == null ? '' : bakuDateTime(version.createdAt, readerLocale),
@@ -510,17 +510,17 @@ function LanguageEditor({
                   </p>
                   {version.live && <Tag variant="success">{copy.live}</Tag>}
                 </div>
-                <p className="mt-1 flex flex-wrap items-baseline gap-2 text-xs text-white/64">
+                <p className="mt-1 flex flex-wrap items-baseline gap-2 text-xs text-fg-64">
                   <span>{copy.writtenBy}</span>
                   <EntityName id={version.createdBy} names={names} kind="account" copy={copy.identity} />
                 </p>
-                <p className="mt-2 text-sm text-white">{version.subject}</p>
-                {version.note != null && version.note !== '' && <p className="mt-1 text-xs text-white/64">{version.note}</p>}
+                <p className="mt-2 text-sm text-fg">{version.subject}</p>
+                {version.note != null && version.note !== '' && <p className="mt-1 text-xs text-fg-64">{version.note}</p>}
                 <details className="mt-2">
-                  <summary className="cursor-pointer rounded text-sm text-white/80 underline decoration-white/24 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]">
+                  <summary className="cursor-pointer rounded text-sm text-fg-80 underline decoration-fg/24 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]">
                     {copy.showText}
                   </summary>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-white/64">{version.body}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-fg-64">{version.body}</p>
                 </details>
                 {!version.live && (
                   <div className="mt-3">
@@ -561,10 +561,10 @@ function LanguageEditor({
 
 function ShippedBlock({ label, subject, body }: { readonly label: string | null; readonly subject: string; readonly body: string }) {
   return (
-    <div className="rounded-lg border border-white/8 bg-surface-1 p-4">
-      {label !== null && <p className="mb-2 text-xs text-white/64">{label}</p>}
-      <p className="text-sm text-white/80">{subject}</p>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-white/64">{body}</p>
+    <div className="rounded-lg border border-fg/8 bg-surface-1 p-4">
+      {label !== null && <p className="mb-2 text-xs text-fg-64">{label}</p>}
+      <p className="text-sm text-fg-80">{subject}</p>
+      <p className="mt-2 whitespace-pre-wrap text-sm text-fg-64">{body}</p>
     </div>
   );
 }

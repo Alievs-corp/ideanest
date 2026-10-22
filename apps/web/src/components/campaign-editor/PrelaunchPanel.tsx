@@ -280,7 +280,7 @@ export function PrelaunchPanel({
         {autosave.failure !== null && (
           <InlineAlert variant="danger" title={words.notSavedTitle}>
             <p>{autosave.failure.message}</p>
-            <p className="mt-2 text-white/64">{words.notSavedDetail}</p>
+            <p className="mt-2 text-fg-64">{words.notSavedDetail}</p>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
               {copy.tryAgain}
             </Pill>
@@ -294,15 +294,15 @@ export function PrelaunchPanel({
         {canOpen && (
           <section
             aria-labelledby="prelaunch-open-heading"
-            className="rounded-lg border border-white/8 bg-surface-2 p-5"
+            className="rounded-lg border border-fg/8 bg-surface-2 p-5"
           >
-            <h2 id="prelaunch-open-heading" className="text-base font-semibold text-white">
+            <h2 id="prelaunch-open-heading" className="text-base font-semibold text-fg">
               {words.notOpenHeading}
             </h2>
-            <p className="mt-2 text-[13px] text-white/64">
+            <p className="mt-2 text-[13px] text-fg-64">
               {words.notOpenBody}
             </p>
-            <p className="mt-2 text-[13px] text-white/64">
+            <p className="mt-2 text-[13px] text-fg-64">
               {words.notOpenIrreversible}
             </p>
             {openFailure !== null && (
@@ -319,19 +319,19 @@ export function PrelaunchPanel({
         {collecting && (
           <section
             aria-labelledby="prelaunch-live-heading"
-            className="rounded-lg border border-white/8 bg-surface-2 p-5"
+            className="rounded-lg border border-fg/8 bg-surface-2 p-5"
           >
-            <h2 id="prelaunch-live-heading" className="text-base font-semibold text-white">
+            <h2 id="prelaunch-live-heading" className="text-base font-semibold text-fg">
               {words.openHeading}
             </h2>
 
-            <div className="mt-4 flex items-center gap-2 text-sm text-white">
+            <div className="mt-4 flex items-center gap-2 text-sm text-fg">
               {/* An icon and a word. Colour alone never carries meaning
                   (docs/ui-kit.md §9.2), and a bare number beside a glyph is not a
                   sentence a screen reader can read out usefully. */}
-              <Users aria-hidden="true" className="size-4 text-white/64" />
+              <Users aria-hidden="true" className="size-4 text-fg-64" />
               {followerCount === null ? (
-                <span className="text-white/64">
+                <span className="text-fg-64">
                   {words.followersFailed}
                 </span>
               ) : (
@@ -391,8 +391,8 @@ export function PrelaunchPanel({
 
         <form className="flex flex-col gap-7" onSubmit={(event) => event.preventDefault()}>
           <div>
-            <h2 className="text-base font-semibold text-white">{words.saysHeading}</h2>
-            <p className="mt-1 text-[13px] text-white/64">
+            <h2 className="text-base font-semibold text-fg">{words.saysHeading}</h2>
+            <p className="mt-1 text-[13px] text-fg-64">
               {words.saysBody}
             </p>
           </div>
@@ -471,7 +471,7 @@ export function PrelaunchPanel({
           </div>
         }
       >
-        {/* `text-on-white`, not `text-white`: the modal is the one white surface
+        {/* `text-on-white`, not `text-fg`: the modal is the one white surface
             in the system (docs/ui-kit.md §7.14), and white text on it is
             invisible. */}
         <p className="text-sm text-on-white/64">{words.confirmDetail}</p>

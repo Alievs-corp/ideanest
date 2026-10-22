@@ -421,10 +421,10 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
           <InlineAlert variant="danger" title={words.failedTitle}>
             <p>{failure.message}</p>
             {failure.code === 'ITEM_IN_USE' && (
-              <p className="mt-2 text-white/64">{describeItemInUse(failure, rewards, words)}</p>
+              <p className="mt-2 text-fg-64">{describeItemInUse(failure, rewards, words)}</p>
             )}
             {failure.code === 'REWARD_HAS_BACKERS' && (
-              <p className="mt-2 text-white/64">{words.rewardHasBackers}</p>
+              <p className="mt-2 text-fg-64">{words.rewardHasBackers}</p>
             )}
           </InlineAlert>
         )}
@@ -457,9 +457,9 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
 
         <section aria-labelledby="rewards-heading" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="rewards-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 id="rewards-heading" className="text-lg font-medium tracking-[-0.02em] text-fg">
               {words.rewardsHeading}{' '}
-              <span className="text-xs font-normal text-white/40">
+              <span className="text-xs font-normal text-fg-40">
                 (
                 {fillPlaceholders(words.countOf, {
                   count: String(rewards.length),
@@ -675,13 +675,13 @@ function RewardCard({
   const blocked = showBlockedReason(reward, words.vocabulary);
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-2 p-5">
+    <li className="rounded-lg border border-fg/8 bg-surface-2 p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="text-[17px] font-medium tracking-[-0.02em] text-white">
+          <h3 className="text-[17px] font-medium tracking-[-0.02em] text-fg">
             {reward.title}
           </h3>
-          <p className="mt-1 text-sm text-white/64">
+          <p className="mt-1 text-sm text-fg-64">
             {/* Pre-formatted from the decimal string, never through a float.
                 `tabular-nums` so a column of prices lines up by place value. */}
             <span className="tabular-nums">{formatMoney(reward.price)}</span>
@@ -709,7 +709,7 @@ function RewardCard({
             )}
           </div>
 
-          <p className="mt-2 text-[13px] text-white/40">{describeRewardContents(reward, items, words)}</p>
+          <p className="mt-2 text-[13px] text-fg-40">{describeRewardContents(reward, items, words)}</p>
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
@@ -807,7 +807,7 @@ function RewardCard({
       </div>
 
       {backed && (
-        <p className="mt-3 text-[13px] text-white/64">
+        <p className="mt-3 text-[13px] text-fg-64">
           {pluralise(words.locale, words.chosenBy, reward.claimedQuantity)}
         </p>
       )}

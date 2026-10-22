@@ -110,8 +110,8 @@ function Notice({ title, children }: { readonly title: string; readonly children
       <Info aria-hidden="true" className="mt-px size-4 shrink-0 text-info" />
 
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-white">{title}</p>
-        <div className="mt-1 text-white/64">{children}</div>
+        <p className="font-medium text-fg">{title}</p>
+        <div className="mt-1 text-fg-64">{children}</div>
       </div>
     </div>
   );

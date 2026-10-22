@@ -122,14 +122,14 @@ export function AccountClosurePanel({ copy }: AccountClosurePanelProps) {
   }
 
   return (
-    <section className="rounded-2xl border-l-2 border-danger border-y border-r border-y-white/8 border-r-white/8 bg-surface-2 p-6 sm:p-8">
+    <section className="rounded-2xl border-l-2 border-danger border-y border-r border-y-fg/8 border-r-fg/8 bg-surface-2 p-6 sm:p-8">
       {/*
         §8.1's "payment failed" treatment, borrowed for the one other place on the platform
         where a destructive state has to be legible at a glance: `--surface-2` with a
         `--danger` left rule. Not a red panel — §9.2 forbids colour as the only carrier, and
         the heading and the button say what this is.
       */}
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{copy.heading}</h2>
 
       {error !== null && (
         <div className="mt-5">
@@ -157,7 +157,7 @@ export function AccountClosurePanel({ copy }: AccountClosurePanelProps) {
               */}
               {fillNodes(copy.scheduledBody, {
                 date: (
-                  <strong className="font-medium text-white">
+                  <strong className="font-medium text-fg">
                     {formatExactTime(scheduledFor, locale)}
                   </strong>
                 ),
@@ -173,7 +173,7 @@ export function AccountClosurePanel({ copy }: AccountClosurePanelProps) {
         </div>
       ) : (
         <form onSubmit={close} noValidate className="mt-4 flex max-w-[34rem] flex-col gap-5">
-          <div className="text-[15px] leading-relaxed text-white/64">
+          <div className="text-[15px] leading-relaxed text-fg-64">
             <p>{copy.notImmediate}</p>
             <p className="mt-3">{copy.recordsKept}</p>
           </div>

@@ -126,24 +126,24 @@ export async function CampaignTrustBlock({ campaign }: CampaignTrustBlockProps) 
   return (
     <section
       aria-labelledby="campaign-trust"
-      className="mt-8 flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
+      className="mt-8 flex flex-col gap-3 rounded-lg border border-fg/8 bg-surface-2 p-5 sm:p-6"
     >
-      <h2 id="campaign-trust" className="flex items-center gap-2 text-base font-medium text-white">
-        <ShieldCheck aria-hidden="true" className="size-5 text-white/64" />
+      <h2 id="campaign-trust" className="flex items-center gap-2 text-base font-medium text-fg">
+        <ShieldCheck aria-hidden="true" className="size-5 text-fg-64" />
         {t('heading')}
       </h2>
 
       <p className="max-w-[68ch] text-sm leading-relaxed text-reading">{t('body')}</p>
 
       {deadline !== null && (
-        <p className="max-w-[68ch] text-sm leading-relaxed text-white/64">
+        <p className="max-w-[68ch] text-sm leading-relaxed text-fg-64">
           {!open
             ? t.rich('closed', { deadline })
             : campaign.goal === null
               ? t.rich('openNoGoal', { deadline })
               : t.rich('open', {
                   deadline,
-                  b: (chunks) => <strong className="font-medium text-white">{chunks}</strong>,
+                  b: (chunks) => <strong className="font-medium text-fg">{chunks}</strong>,
                   threshold: formatMoney(successThresholdOf(campaign.goal)),
                   goal: formatMoney(campaign.goal),
                 })}
@@ -165,7 +165,7 @@ export async function CampaignTrustBlock({ campaign }: CampaignTrustBlockProps) 
 function deadlineTag(instant: string, serverText: string) {
   return function deadline() {
     return (
-      <strong className="font-medium text-white">
+      <strong className="font-medium text-fg">
         <ViewerInstant instant={instant} serverText={serverText} />
       </strong>
     );

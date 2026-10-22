@@ -157,25 +157,25 @@ function BankAccountReveal({
 
   return (
     <div className="flex flex-col gap-2">
-      <p id={auditedId} className="max-w-[62ch] text-xs text-white/48">
+      <p id={auditedId} className="max-w-[62ch] text-xs text-fg-48">
         {copy.audited}
       </p>
 
       <div aria-live="polite">
         {reveal.kind === 'shown' && (
-          <dl className="flex flex-col gap-1 rounded-lg border border-white/8 bg-surface-2 p-3 text-sm">
+          <dl className="flex flex-col gap-1 rounded-lg border border-fg/8 bg-surface-2 p-3 text-sm">
             <div className="flex flex-wrap gap-x-3 gap-y-1">
-              <dt className="text-white/40">{copy.ibanLabel}</dt>
-              <dd className="select-all break-all font-mono text-white">{grouped(reveal.account.iban)}</dd>
+              <dt className="text-fg-40">{copy.ibanLabel}</dt>
+              <dd className="select-all break-all font-mono text-fg">{grouped(reveal.account.iban)}</dd>
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
-              <dt className="text-white/40">{copy.holderLabel}</dt>
-              <dd className="text-white">{reveal.account.holderName}</dd>
+              <dt className="text-fg-40">{copy.holderLabel}</dt>
+              <dd className="text-fg">{reveal.account.holderName}</dd>
             </div>
           </dl>
         )}
-        {reveal.kind === 'not-found' && <p className="text-sm text-white/64">{copy.notFound}</p>}
-        {reveal.kind === 'forbidden' && <p className="text-sm text-white/64">{copy.forbidden}</p>}
+        {reveal.kind === 'not-found' && <p className="text-sm text-fg-64">{copy.notFound}</p>}
+        {reveal.kind === 'forbidden' && <p className="text-sm text-fg-64">{copy.forbidden}</p>}
         {reveal.kind === 'failed' && (
           <InlineAlert variant="danger" className="mt-1">
             {copy.failed}
@@ -262,9 +262,9 @@ function DestinationDecision({
 
   return (
     <div className="flex flex-col gap-3">
-      {nameMismatch && <p className="max-w-[62ch] text-sm text-white/64">{words.nameMismatch}</p>}
+      {nameMismatch && <p className="max-w-[62ch] text-sm text-fg-64">{words.nameMismatch}</p>}
       {/* The service verifies a rejected account, which reverses the rejection; said before anybody presses it. */}
-      {rejected && mayVerify && <p className="max-w-[62ch] text-sm text-white/64">{words.verifyRejected}</p>}
+      {rejected && mayVerify && <p className="max-w-[62ch] text-sm text-fg-64">{words.verifyRejected}</p>}
 
       {error !== null && (
         <InlineAlert variant="danger" title={words.failedTitle}>
@@ -289,7 +289,7 @@ function DestinationDecision({
 
       {mode === 'confirm-verify' && (
         <div role="group" aria-label={words.verify} className="flex flex-col gap-2">
-          <p className="max-w-[62ch] text-sm text-white">
+          <p className="max-w-[62ch] text-sm text-fg">
             {rejected ? words.confirmVerifyRejected : words.confirmVerify}
           </p>
           <div className="flex flex-wrap gap-2">

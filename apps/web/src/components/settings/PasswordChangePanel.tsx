@@ -136,8 +136,8 @@ export function PasswordChangePanel({ copy }: PasswordChangePanelProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{copy.heading}</h2>
 
       <form onSubmit={submit} noValidate className="mt-4 flex max-w-[30rem] flex-col gap-5">
         <FormErrorSummary failure={failure} />

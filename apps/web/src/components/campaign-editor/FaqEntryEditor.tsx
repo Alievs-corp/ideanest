@@ -151,7 +151,7 @@ export function FaqEntryEditor({
         {failure !== null && (
           <InlineAlert variant="danger" title={copy.notSavedTitle}>
             <p>{failure.message}</p>
-            <p className="mt-2 text-white/64">
+            <p className="mt-2 text-fg-64">
               {copy.notSavedDetail}
             </p>
           </InlineAlert>

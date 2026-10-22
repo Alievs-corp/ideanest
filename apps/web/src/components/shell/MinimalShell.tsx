@@ -73,7 +73,7 @@ export function MinimalShell({
       <header className="px-5 pt-7 sm:px-7">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-sm text-lg font-semibold tracking-[-0.03em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="inline-flex items-center gap-2 rounded-sm text-lg font-semibold tracking-[-0.03em] text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           <BrandMark />
           IdeyaNest
@@ -93,7 +93,7 @@ export function MinimalShell({
       </main>
 
       {footer !== undefined && (
-        <footer className="px-5 pb-8 text-center text-sm text-white/40 sm:px-7">{footer}</footer>
+        <footer className="px-5 pb-8 text-center text-sm text-fg-40 sm:px-7">{footer}</footer>
       )}
     </div>
   );

@@ -38,11 +38,11 @@ export function SkipLink({ label }: SkipLinkProps) {
       href={`#${MAIN_CONTENT_ID}`}
       className={[
         'absolute left-4 top-4 z-[100] -translate-y-[200%]',
-        'rounded-full bg-white px-5 py-2.5 text-sm font-medium text-on-white',
+        'rounded-full bg-inverse px-5 py-2.5 text-sm font-medium text-on-inverse',
         'focus:translate-y-0',
         // Focus is visible on every interactive element (ui-kit §9.3), including this one,
         // which is the only element on the page whose entire purpose is being focused.
-        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
       ].join(' ')}
     >
       {label}

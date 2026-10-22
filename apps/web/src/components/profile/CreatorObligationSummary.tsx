@@ -62,13 +62,13 @@ export async function CreatorObligationSummary({
   return (
     <section
       aria-labelledby="profile-obligations"
-      className="mt-6 flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
+      className="mt-6 flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-2 p-5 sm:p-6"
     >
       <h2
         id="profile-obligations"
-        className="flex items-center gap-2 text-base font-medium text-white"
+        className="flex items-center gap-2 text-base font-medium text-fg"
       >
-        <CalendarClock aria-hidden="true" className="size-5 text-white/64" />
+        <CalendarClock aria-hidden="true" className="size-5 text-fg-64" />
         {t('heading', { count: obligations.lapsedCount })}
       </h2>
 
@@ -82,7 +82,7 @@ export async function CreatorObligationSummary({
         second sentence is the one that keeps this a fact rather than an accusation: the
         platform mediates and does not adjudicate (§9.7).
       */}
-      <p className="max-w-[68ch] text-sm leading-relaxed text-white/64">{t('rule')}</p>
+      <p className="max-w-[68ch] text-sm leading-relaxed text-fg-64">{t('rule')}</p>
     </section>
   );
 }

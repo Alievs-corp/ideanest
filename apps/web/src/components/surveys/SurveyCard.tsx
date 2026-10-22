@@ -115,12 +115,12 @@ export function SurveyCard({ survey: initial, copy }: SurveyCardProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{survey.title}</h2>
+          <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{survey.title}</h2>
           {survey.message !== null && survey.message !== '' && (
-            <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
+            <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-fg-64">
               {survey.message}
             </p>
           )}
@@ -139,7 +139,7 @@ export function SurveyCard({ survey: initial, copy }: SurveyCardProps) {
         )}
       </header>
 
-      <p className="mt-3 text-sm text-white/40">
+      <p className="mt-3 text-sm text-fg-40">
         {survey.respondBy !== null && survey.respondBy !== ''
           ? fillPlaceholders(copy.respondBy, { time: formatExactTime(survey.respondBy, locale) })
           : copy.noDate}

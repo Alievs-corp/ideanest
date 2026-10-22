@@ -99,14 +99,14 @@ const FLOOR: CSSProperties = {
 
 const HALO: CSSProperties = {
   backgroundImage:
-    'radial-gradient(circle, color-mix(in srgb, var(--white-surface) 35%, transparent), color-mix(in srgb, var(--white-surface) 6%, transparent) 45%, transparent 70%)',
+    'radial-gradient(circle, color-mix(in srgb, var(--hero-orb) 35%, transparent), color-mix(in srgb, var(--hero-orb) 6%, transparent) 45%, transparent 70%)',
 };
 
 const CORE: CSSProperties = {
   backgroundImage:
-    'radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--white-surface) 95%, transparent), color-mix(in srgb, var(--white-surface) 55%, transparent) 35%, color-mix(in srgb, var(--white-surface) 12%, transparent) 70%)',
+    'radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--hero-orb) 95%, transparent), color-mix(in srgb, var(--hero-orb) 55%, transparent) 35%, color-mix(in srgb, var(--hero-orb) 12%, transparent) 70%)',
   boxShadow:
-    '0 0 50px 10px color-mix(in srgb, var(--white-surface) 18%, transparent), inset 0 -10px 24px color-mix(in srgb, var(--white-surface) 15%, transparent)',
+    '0 0 50px 10px color-mix(in srgb, var(--hero-orb) 18%, transparent), inset 0 -10px 24px color-mix(in srgb, var(--hero-orb) 15%, transparent)',
 };
 
 const SHADOW: CSSProperties = {
@@ -141,7 +141,7 @@ export function HeroSceneDrawing({ className }: { readonly className: string }) 
         </div>
       </div>
 
-      <div className="absolute top-[29%] left-1/2 -ml-px h-[33%] w-0.5 bg-linear-to-b from-white/50 to-transparent opacity-35" />
+      <div className="absolute top-[29%] left-1/2 -ml-px h-[33%] w-0.5 bg-linear-to-b from-fg/50 to-transparent opacity-35" />
 
       {LANES.map((lane, index) => (
         <span
@@ -156,10 +156,10 @@ export function HeroSceneDrawing({ className }: { readonly className: string }) 
           className="absolute -m-[130px] size-[260px] rounded-full opacity-70 motion-safe:animate-[hero-brighten_6.4s_linear_infinite]"
           style={HALO}
         />
-        <span className="absolute -m-12 size-24 rounded-full border-[3px] border-white opacity-0 motion-safe:animate-[hero-bloom_6.4s_ease-out_infinite]" />
-        <span className="absolute -m-12 size-24 rounded-full border-2 border-white/70 opacity-0 motion-safe:animate-[hero-pulse_0.8s_ease-out_infinite] [animation-delay:-0.2s]" />
+        <span className="absolute -m-12 size-24 rounded-full border-[3px] border-fg opacity-0 motion-safe:animate-[hero-bloom_6.4s_ease-out_infinite]" />
+        <span className="absolute -m-12 size-24 rounded-full border-2 border-fg/70 opacity-0 motion-safe:animate-[hero-pulse_0.8s_ease-out_infinite] [animation-delay:-0.2s]" />
         <span
-          className="absolute -m-12 size-24 rounded-full border border-white/35 motion-safe:animate-[hero-grow_6.4s_ease-out_infinite]"
+          className="absolute -m-12 size-24 rounded-full border border-fg/35 motion-safe:animate-[hero-grow_6.4s_ease-out_infinite]"
           style={CORE}
         />
       </div>

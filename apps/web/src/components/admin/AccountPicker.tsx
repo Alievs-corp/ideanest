@@ -132,11 +132,11 @@ export function AccountPicker({
   if (chosen !== null) {
     return (
       <div className={className}>
-        <p className="text-xs text-white/48">{copy.label}</p>
-        <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-white">
+        <p className="text-xs text-fg-48">{copy.label}</p>
+        <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-fg">
           {chosen.name}
-          <span className="text-xs text-white/48">{chosen.email}</span>
-          <span className="font-mono text-xs text-white/40" title={chosen.id}>
+          <span className="text-xs text-fg-48">{chosen.email}</span>
+          <span className="font-mono text-xs text-fg-40" title={chosen.id}>
             {shortId(chosen.id)}
           </span>
         </p>
@@ -193,7 +193,7 @@ export function AccountPicker({
           {searching ? copy.searching : copy.search}
         </Pill>
       </div>
-      <p id={hintId} className="mt-2 text-xs text-white/48">
+      <p id={hintId} className="mt-2 text-xs text-fg-48">
         {copy.hint}
       </p>
 
@@ -204,7 +204,7 @@ export function AccountPicker({
       )}
 
       {results !== null && results.length === 0 && (
-        <p className="mt-3 text-sm text-white/48">
+        <p className="mt-3 text-sm text-fg-48">
           {fillPlaceholders(copy.noneFound, { term: term.trim() })}
         </p>
       )}
@@ -217,17 +217,17 @@ export function AccountPicker({
                 type="button"
                 disabled={disabled}
                 onClick={() => onChoose(account)}
-                className="w-full rounded-lg border border-white/8 bg-surface-1 p-3 text-left transition-colors duration-150 ease-in-out hover:border-white/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="w-full rounded-lg border border-fg/8 bg-surface-1 p-3 text-left transition-colors duration-150 ease-in-out hover:border-fg/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
-                <span className="block text-sm text-white">{account.name}</span>
-                <span className="mt-0.5 block text-xs text-white/48">
+                <span className="block text-sm text-fg">{account.name}</span>
+                <span className="mt-0.5 block text-xs text-fg-48">
                   {account.email}
                   {/*
                     The identifier is on the row it belongs to rather than only inside the
                     request. Somebody who wanted it for a different screen can read it here
                     without picking anybody, which is the other half of #402.
                   */}
-                  <span className="ml-2 font-mono text-white/40" title={account.id}>
+                  <span className="ml-2 font-mono text-fg-40" title={account.id}>
                     {shortId(account.id)}
                   </span>
                 </span>

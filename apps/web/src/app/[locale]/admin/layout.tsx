@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AdminArea } from '../../../components/admin/AdminArea';
+import { ConsoleTheme } from '../../../components/admin/ConsoleTheme';
 
 /**
  * The administration console's route group — §4.11, issue #294.
@@ -30,5 +31,10 @@ import { AdminArea } from '../../../components/admin/AdminArea';
  * eventually forgotten on the surface that renders other people's email addresses.
  */
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return <AdminArea>{children}</AdminArea>;
+  return (
+    <div data-theme="dark" className="bg-surface-1 text-fg">
+      <ConsoleTheme />
+      <AdminArea>{children}</AdminArea>
+    </div>
+  );
 }

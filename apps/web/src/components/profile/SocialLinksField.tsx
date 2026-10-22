@@ -104,7 +104,7 @@ export function SocialLinksField({
     >
       <div className="flex flex-col gap-3">
         {links.length === 0 && (
-          <p className="text-sm text-white/40">{copy.none}</p>
+          <p className="text-sm text-fg-40">{copy.none}</p>
         )}
 
         {/*
@@ -190,7 +190,7 @@ export function SocialLinksField({
             reads before they meet it rather than a button that stops working. §7.13 makes the
             same argument about `CharacterCount`: the wording carries it, never the colour.
           */}
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-fg-40">
             {atCap
               ? fillPlaceholders(copy.atCap, { max: String(MAX_SOCIAL_LINKS) })
               : fillPlaceholders(copy.used, {

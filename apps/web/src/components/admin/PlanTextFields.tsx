@@ -74,10 +74,10 @@ export function PlanTextFields({ draft, onChange, language, onLanguage, copy }: 
               type="button"
               aria-pressed={language === option}
               onClick={() => onLanguage(option)}
-              className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-4 text-sm transition-colors duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] ${
+              className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-4 text-sm transition-colors duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] ${
                 language === option
-                  ? 'border-white bg-white text-black'
-                  : 'border-white/16 text-white/80 hover:border-white/40 hover:text-white'
+                  ? 'border-fg bg-white text-black'
+                  : 'border-fg/16 text-fg-80 hover:border-fg/40 hover:text-fg'
               }`}
             >
               {LOCALE_NAMES[option]}
@@ -91,7 +91,7 @@ export function PlanTextFields({ draft, onChange, language, onLanguage, copy }: 
           );
         })}
       </div>
-      <p className="max-w-[62ch] text-[13px] text-white/64">{copy.languageHint}</p>
+      <p className="max-w-[62ch] text-[13px] text-fg-64">{copy.languageHint}</p>
 
       <Field label={copy.nameLabel} error={nameless === language ? copy.translationNameMissing : undefined}>
         <TextInput lang={language} value={text.name} onChange={(event) => set('name', event.target.value)} maxLength={120} />

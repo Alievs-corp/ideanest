@@ -365,11 +365,11 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{copy.heading}</h2>
 
       {profile !== null && (
-        <div className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
+        <div className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-fg-64">
           {/*
             The address is a link rather than a string, so the sentence is filled with nodes:
             where it falls is exactly what a translation is entitled to move, and a "before"
@@ -380,7 +380,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
               address: (
                 <Link
                   href={profileHref(profile.slug)}
-                  className="rounded-sm text-white underline underline-offset-4"
+                  className="rounded-sm text-fg underline underline-offset-4"
                 >
                   /u/{profile.slug}
                 </Link>
@@ -393,7 +393,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
             sentence beside it reads as something broken rather than as something decided.
           */}
           <p className="mt-3">
-            <strong className="font-medium text-white">
+            <strong className="font-medium text-fg">
               {fillPlaceholders(copy.handleFixed, { slug: profile.slug })}
             </strong>{' '}
             {copy.handleWhy}
@@ -410,7 +410,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
       )}
 
       {profile === null && loadFailure === null && (
-        <p className="mt-6 text-sm text-white/40">{copy.loading}</p>
+        <p className="mt-6 text-sm text-fg-40">{copy.loading}</p>
       )}
 
       {profile !== null && draft !== null && (
@@ -515,7 +515,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
                 nothing in it. What the profile already says is still printed, because a
                 screen that showed an empty box would read as a location somebody had lost.
               */
-              <p className="text-sm text-white/40">
+              <p className="text-sm text-fg-40">
                 {profile.location === null
                   ? copy.locationsUnavailable
                   : fillPlaceholders(copy.locationsUnavailableWithValue, {
@@ -573,7 +573,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
                     address: (
                       <Link
                         href={profileHref(profile.slug)}
-                        className="text-white underline underline-offset-4"
+                        className="text-fg underline underline-offset-4"
                       >
                         /u/{profile.slug}
                       </Link>

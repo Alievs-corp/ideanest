@@ -49,8 +49,8 @@ export async function generateMetadata({
  * as a navigation entry pointing at a 404.
  */
 /** See `about/page.tsx` — the same two shapes, named for the same reason. */
-const INLINE_LINK = 'text-white underline underline-offset-4';
-const BOLD = (chunks: ReactNode) => <strong className="font-medium text-white">{chunks}</strong>;
+const INLINE_LINK = 'text-fg underline underline-offset-4';
+const BOLD = (chunks: ReactNode) => <strong className="font-medium text-fg">{chunks}</strong>;
 
 export default async function HowItWorksPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

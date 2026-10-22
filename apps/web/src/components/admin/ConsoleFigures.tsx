@@ -55,11 +55,11 @@ export function FigureTile({
 }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-white/48">{term}</dt>
-      <dd className="mt-1 break-words text-lg font-semibold tabular-nums text-white sm:text-2xl">
+      <dt className="text-xs text-fg-48">{term}</dt>
+      <dd className="mt-1 break-words text-lg font-semibold tabular-nums text-fg sm:text-2xl">
         {children}
         {note !== undefined && note !== null && note !== false && (
-          <span className="mt-1 block text-xs font-normal text-white/48">{note}</span>
+          <span className="mt-1 block text-xs font-normal text-fg-48">{note}</span>
         )}
       </dd>
     </div>
@@ -68,5 +68,5 @@ export function FigureTile({
 
 /** What a tile says in place of a value it does not have yet. */
 export function NoFigure({ children }: { readonly children: ReactNode }) {
-  return <span className="text-sm font-normal text-white/48 sm:text-base">{children}</span>;
+  return <span className="text-sm font-normal text-fg-48 sm:text-base">{children}</span>;
 }
