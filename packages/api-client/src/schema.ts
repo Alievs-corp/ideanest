@@ -6529,6 +6529,7 @@ export interface components {
             blurb?: string;
             /** Format: uuid */
             categoryId?: string;
+            countries?: string[];
             coverImage?: components["schemas"]["CoverImageBody"];
             /** Format: date-time */
             createdAt?: string;
@@ -6592,6 +6593,7 @@ export interface components {
             blurb?: string;
             /** Format: uuid */
             categoryId?: string;
+            countries?: string[];
             coverImage?: components["schemas"]["CoverImageBody"];
             /** Format: int32 */
             durationDays?: number;

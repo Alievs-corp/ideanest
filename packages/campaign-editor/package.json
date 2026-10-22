@@ -14,6 +14,7 @@
     "./checklist": "./src/checklist.ts",
     "./cover-image": "./src/cover-image.ts",
     "./video": "./src/video.ts",
+    "./countries": "./src/countries.ts",
     "./tabs": "./src/tabs.ts",
     "./autosave": "./src/autosave.ts",
     "./copy": "./src/copy.ts"

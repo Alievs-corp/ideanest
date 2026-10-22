@@ -5260,6 +5260,13 @@
       "durationHintLocked": "The deadline cannot change once the campaign has launched.",
       "scheduledLaunch": "Scheduled launch",
       "scheduledLaunchHint": "Optional. Leave it empty to launch by hand once the review is complete.",
+      "countries": "Countries",
+      "countriesHint": "Your campaign is for these countries. You can choose more than one.",
+      "countriesHintLaunched": "Your campaign has launched: you can add countries, but not remove one that is already saved.",
+      "countriesDelivery": "Keep in mind: you will have to deliver rewards to every country you choose. Do not choose a country you cannot deliver to.",
+      "countriesAdd": "Add a country",
+      "countriesRemove": "Remove {name}",
+      "countriesNotSaved": "The countries were not saved. Check the list and try again.",
       "validation": {
         "titleRequired": "A project needs a title.",
         "titleTooLong": "A title is {max} characters or fewer. Remove {over}.",
@@ -5270,6 +5277,7 @@
         "durationOutOfRange": "A campaign runs for {min} to {max} days.",
         "launchNotADate": "Enter a date and time.",
         "launchInPast": "Choose a date and time in the future.",
+        "countriesRequired": "Choose at least one country.",
         "amount": {
           "empty": "Enter the amount you need to raise.",
           "notANumber": "Enter the goal in digits, for example 5000.00.",

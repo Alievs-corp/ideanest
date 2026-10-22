@@ -5260,6 +5260,13 @@
       "durationHintLocked": "Kampanya başladıktan sonra son tarih değiştirilemez.",
       "scheduledLaunch": "Planlanmış lansman",
       "scheduledLaunchHint": "İsteğe bağlı. İnceleme bitince elle başlatmak için boş bırakın.",
+      "countries": "Ülkeler",
+      "countriesHint": "Kampanyanız bu ülkeler içindir. Birden fazla ülke seçebilirsiniz.",
+      "countriesHintLaunched": "Kampanya başladı: yeni ülke ekleyebilirsiniz, ancak kaydedilmiş bir ülkeyi kaldıramazsınız.",
+      "countriesDelivery": "Unutmayın: seçtiğiniz her ülkeye ödülleri teslim etmeniz gerekecek. Teslim edemeyeceğiniz bir ülkeyi seçmeyin.",
+      "countriesAdd": "Ülke ekleyin",
+      "countriesRemove": "{name} ülkesini kaldırın",
+      "countriesNotSaved": "Ülkeler kaydedilmedi. Listeyi kontrol edip yeniden deneyin.",
       "validation": {
         "titleRequired": "Bir projenin başlığı olmalı.",
         "titleTooLong": "Başlık en fazla {max} karakter olur. {over} karakter çıkarın.",
@@ -5270,6 +5277,7 @@
         "durationOutOfRange": "Bir kampanya {min} ile {max} gün arası sürer.",
         "launchNotADate": "Bir tarih ve saat girin.",
         "launchInPast": "Gelecekte bir tarih ve saat seçin.",
+        "countriesRequired": "En az bir ülke seçin.",
         "amount": {
           "empty": "Toplamanız gereken tutarı girin.",
           "notANumber": "Hedefi rakamla girin, örneğin 5000.00.",

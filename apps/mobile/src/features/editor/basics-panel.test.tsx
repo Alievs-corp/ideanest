@@ -249,6 +249,34 @@ describe('BasicsPanel', () => {
     expect(screen.getByTestId('basics-title').props.editable).toBe(true);
   });
 
+  it('starts with Azerbaijan, adds a country from the list and sends the whole list at once', async () => {
+    await show();
+    expect(screen.getByTestId('basics-country-AZ')).toBeTruthy();
+    expect(screen.getByText(en.campaignEditor.basics.countriesDelivery)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('basics-countries-add'));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Georgia' }));
+    await settle();
+    expect(patches()).toEqual([{ countries: ['AZ', 'GE'] }]);
+  });
+
+  it('removes a country, but never the last one', async () => {
+    mockProject = async () => project({ countries: ['AZ', 'GE'] });
+    await show();
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove Georgia' }));
+    await settle();
+    expect(patches()).toEqual([{ countries: ['AZ'] }]);
+    expect(screen.queryByRole('button', { name: 'Remove Azerbaijan' })).toBeNull();
+  });
+
+  it('keeps the countries a live campaign has saved, and still lets it add one', async () => {
+    mockProject = async () =>
+      project({ state: 'LIVE', launchedAt: '2026-10-05T10:00:00.000Z', countries: ['AZ', 'GE'] });
+    await show();
+    expect(screen.queryByRole('button', { name: 'Remove Georgia' })).toBeNull();
+    expect(hint(en.campaignEditor.basics.countriesHintLaunched)).toBeTruthy();
+    expect(screen.getByTestId('basics-countries-add').props.accessibilityState).toMatchObject({ disabled: false });
+  });
+
   it('keeps a refused change, says so with the server’s words on the field, and retries it', async () => {
     mockSend.mockRejectedValueOnce(
       new ApiError(422, { status: 422, detail: 'That title is taken.', errors: { title: 'Choose another title.' } }),

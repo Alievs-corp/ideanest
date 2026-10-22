@@ -16,6 +16,7 @@
     "./promo-film": "./src/promo-film.ts",
     "./hero-loop": "./src/hero-loop.ts",
     "./contact": "./src/contact.ts",
+    "./country": "./src/country.ts",
     "./az.json": "./src/az.json",
     "./en.json": "./src/en.json",
     "./ru.json": "./src/ru.json",

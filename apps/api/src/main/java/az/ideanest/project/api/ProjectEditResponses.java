@@ -55,6 +55,7 @@ public class ProjectEditResponses {
                 project.getRisks(),
                 CoverImageBody.of(project.getCoverImage()),
                 videoOf(project),
+                project.getCountries(),
                 // §5.3, read off the one table rather than recomputed here, and
                 // filtered to the fields this response's own PATCH body has: a
                 // reward's price is frozen by the same rule and is not on this

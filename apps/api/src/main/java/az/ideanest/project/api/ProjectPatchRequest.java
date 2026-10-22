@@ -5,6 +5,7 @@ import az.ideanest.shared.money.Money;
 import az.ideanest.shared.Patched;
 import tools.jackson.databind.JsonNode;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -29,6 +30,9 @@ import java.util.UUID;
  * @param videoMediaId a ready video upload of the caller's, or null to remove the campaign's
  *     video — issue #331. An identifier only: the location, the poster and the length are
  *     facts the server measured
+ * @param countries the whole list of countries the campaign is for, ISO 3166-1 alpha-2,
+ *     replacing the previous one. Never empty; once the campaign has launched it may grow but
+ *     not shrink, because backers in a removed country were promised a reward there
  */
 public record ProjectPatchRequest(
         Patched<String> title,
@@ -41,7 +45,8 @@ public record ProjectPatchRequest(
         Patched<JsonNode> story,
         Patched<String> risks,
         Patched<CoverImageBody> coverImage,
-        Patched<UUID> videoMediaId) {
+        Patched<UUID> videoMediaId,
+        Patched<List<String>> countries) {
 
     public ProjectPatchRequest {
         // Absence is the neutral value, so a null component becomes absent rather
@@ -58,6 +63,7 @@ public record ProjectPatchRequest(
         risks = Patched.orAbsent(risks);
         coverImage = Patched.orAbsent(coverImage);
         videoMediaId = Patched.orAbsent(videoMediaId);
+        countries = Patched.orAbsent(countries);
     }
 
     /**
@@ -86,6 +92,7 @@ public record ProjectPatchRequest(
                 story,
                 risks,
                 coverImage.map(CoverImageBody::toSelection),
-                videoMediaId);
+                videoMediaId,
+                countries);
     }
 }

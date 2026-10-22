@@ -40,6 +40,7 @@ import { useT } from '../../lib/i18n';
 import { INPUT_HEIGHT } from '../../components/ui/text-input';
 import { colors, radius, spacing } from '../../theme';
 import { useEditorCategories } from './api';
+import { CountriesField } from './countries-field';
 import { CoverImageField } from './cover-image-field';
 import { DateTimeField } from './date-time-field';
 import { useEditor } from './editor-context';
@@ -99,9 +100,12 @@ function Loading({ label }: { readonly label: string }) {
 }
 
 /** A 422's `errors`, on the basics fields; `goal.amount` is about the goal. Pre-launch edits three of them. */
-export function basicsServerErrors(failure: SaveFailure | null): BasicsErrors {
+export function basicsServerErrors(failure: SaveFailure | null, basics: BasicsPanelCopy): BasicsErrors {
   if (failure === null) return {};
   const mapped: BasicsErrors = {};
+  if (failure.code === 'PROJECT_FIELD_INVALID' && failure.meta?.['field'] === 'countries') {
+    mapped.countries = basics.countriesNotSaved;
+  }
   for (const [key, message] of Object.entries(failure.fieldErrors)) {
     const [field = ''] = key.split('.');
     if (isBasicsField(field)) mapped[field] = message;
@@ -120,6 +124,7 @@ const DRAFT_KEYS: Readonly<Record<BasicsField, readonly (keyof BasicsDraft)[]>> 
   scheduledLaunchAt: ['scheduledLaunchAt'],
   coverImage: ['coverImage', 'coverImageUrl'],
   videoMediaId: ['video'],
+  countries: ['countries'],
 };
 
 /**
@@ -179,7 +184,7 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
   }
 
   const failure = autosave.failure;
-  const errors: BasicsErrors = { ...validateBasics(draft, basics.validation), ...basicsServerErrors(failure) };
+  const errors: BasicsErrors = { ...validateBasics(draft, basics.validation), ...basicsServerErrors(failure, basics) };
   const selected = categories?.find((category) => category.id === draft.categoryId) ?? null;
   const subcategories = selected?.subcategories ?? [];
 
@@ -300,6 +305,15 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
             testID="basics-subcategory"
           />
         </Field>
+
+        <CountriesField
+          copy={basics}
+          project={project}
+          value={draft.countries}
+          error={errors.countries}
+          disabled={readOnly}
+          onChange={(countries) => change('countries', { ...draft, countries }, true)}
+        />
 
         <Field label={basics.goal} required hint={goalLocked ? basics.goalHintLocked : basics.goalHint} error={errors.goal}>
           <MoneyField

@@ -16630,6 +16630,12 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "countries" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "coverImage" : {
             "$ref" : "#/components/schemas/CoverImageBody"
           },
@@ -16792,6 +16798,12 @@
           "categoryId" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "countries" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           },
           "coverImage" : {
             "$ref" : "#/components/schemas/CoverImageBody"
