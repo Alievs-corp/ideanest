@@ -76,6 +76,16 @@
     "language": {
       "label": "Choose a language"
     },
+    "market": {
+      "label": "Choose a country",
+      "current": "Country: {name}",
+      "all": "All countries",
+      "filter": "Search countries",
+      "noMatch": "No country matches",
+      "emptyTitle": "No campaigns for {name} yet",
+      "emptyDetail": "You can look at the campaigns for other countries.",
+      "emptyAction": "See all countries"
+    },
     "footer": {
       "label": "Footer",
       "languageHeading": "Language",

@@ -19,14 +19,6 @@ import { PUBLIC_PAGE_CACHE_CONTROL, publicCacheControl } from './publicRoutes';
  */
 
 const PUBLIC = [
-  '',
-  '/discover',
-  '/search',
-  '/categories',
-  '/categories/games',
-  '/categories/games/tabletop',
-  '/collections',
-  '/collections/spring-2027',
   '/about',
   '/how-it-works',
   '/trust-safety',
@@ -39,6 +31,12 @@ const PUBLIC = [
 ];
 
 const PRIVATE = [
+  // #533: these list the campaigns for the reader's country, and proxy.ts answers them.
+  '',
+  '/discover',
+  '/search',
+  '/categories/games',
+  '/collections/spring-2027',
   '/account',
   '/account/saved',
   '/settings',

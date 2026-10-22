@@ -57,11 +57,11 @@ export const PUBLIC_PAGE_CACHE_CONTROL =
  * one of them is server-rendered from anonymous reads.
  */
 const PUBLIC_SECTIONS: ReadonlySet<string> = new Set([
-  '',
-  'discover',
-  'search',
-  'categories',
-  'collections',
+  /*
+   * The home page, discover, search, categories and collections are not here any more (#533).
+   * They list the campaigns for the reader's country, so they are not one document per
+   * language; `lib/market/market.ts` names them and `proxy.ts` answers them `private`.
+   */
   'about',
   'how-it-works',
   'trust-safety',

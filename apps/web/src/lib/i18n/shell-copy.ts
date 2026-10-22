@@ -54,6 +54,20 @@ export interface ShellCopy {
     readonly label: string;
   };
   /**
+   * The country control (#533): which country's campaigns the lists show. `current`,
+   * `emptyTitle` carry `{name}`.
+   */
+  readonly market: {
+    readonly label: string;
+    readonly current: string;
+    readonly all: string;
+    readonly filter: string;
+    readonly noMatch: string;
+    readonly emptyTitle: string;
+    readonly emptyDetail: string;
+    readonly emptyAction: string;
+  };
+  /**
    * The search box, which is in the bar and in the drawer and is the same control in both.
    *
    * One key rather than three, because the form's landmark name, the input's own label and
@@ -213,6 +227,16 @@ export function shellCopyFrom(t: ShellTemplateTranslator): ShellCopy {
       label: t('drawer.label'),
     },
     language: { label: t('language.label') },
+    market: {
+      label: t('market.label'),
+      current: String(t.raw('market.current')),
+      all: t('market.all'),
+      filter: t('market.filter'),
+      noMatch: t('market.noMatch'),
+      emptyTitle: String(t.raw('market.emptyTitle')),
+      emptyDetail: t('market.emptyDetail'),
+      emptyAction: t('market.emptyAction'),
+    },
     search: shellSearchCopyFrom(t),
     actions: {
       signIn: t('actions.signIn'),

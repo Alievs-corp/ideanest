@@ -157,6 +157,11 @@ export async function shellCopy(): Promise<ShellCopy> {
   return shellCopyFrom(await getTranslations('shell'));
 }
 
+/** The country control's words, for a list that draws `MarketEmptyNotice` (#533). */
+export async function marketCopy(): Promise<ShellCopy['market']> {
+  return (await shellCopy()).market;
+}
+
 export async function footerCopy(): Promise<FooterCopy> {
   return footerCopyFrom(await getTranslations('shell'));
 }

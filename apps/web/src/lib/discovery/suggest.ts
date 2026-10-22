@@ -1,4 +1,5 @@
 import { publicFetch } from '../api/client';
+import { withMarket } from '../market/cookie';
 import { errorFrom } from '../api/problem';
 
 /**
@@ -64,10 +65,12 @@ export async function getSuggestions(
   text: string,
   options: { limit?: number; signal?: AbortSignal } = {},
 ): Promise<readonly Suggestion[]> {
-  const params = new URLSearchParams({
-    q: text.trim(),
-    limit: String(options.limit ?? SUGGEST_LIMIT),
-  });
+  const params = withMarket(
+    new URLSearchParams({
+      q: text.trim(),
+      limit: String(options.limit ?? SUGGEST_LIMIT),
+    }),
+  );
 
   const response = await publicFetch(`/v1/search/suggest?${params.toString()}`, {
     signal: options.signal,

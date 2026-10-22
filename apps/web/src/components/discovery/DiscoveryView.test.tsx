@@ -12,6 +12,9 @@ import {
 import type { DiscoveryFilters } from '@ideanest/discovery/filters';
 import { expectNoViolations } from '../../test-axe';
 import { DiscoveryView } from './DiscoveryView';
+import { shellCopyFrom } from '../../lib/i18n/shell-copy';
+
+const MARKET_COPY = shellCopyFrom(translatorFor('shell')).market;
 import { projectCardCopyFrom } from '../../lib/i18n/card-copy';
 import { translatorFor } from '../../test-copy';
 import { feedCopyFrom } from '../../lib/i18n/feed-copy';
@@ -224,7 +227,7 @@ async function open(initialSearch = ''): Promise<UserEvent> {
   nav.reset(initialSearch);
 
   const user = userEvent.setup();
-  render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
+  render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} marketCopy={MARKET_COPY} />);
   await screen.findByRole('heading', { level: 1, name: 'Discover' });
   await waitFor(() => expect(feedMock).toHaveBeenCalled());
   // The rail is collapsed until the reader opens it.
@@ -267,7 +270,7 @@ afterEach(() => {
 describe('DiscoveryView', () => {
   it('announces that it is loading rather than showing an empty page', () => {
     feedMock.mockReturnValue(new Promise<DiscoveryFeed>(() => {}));
-    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} marketCopy={MARKET_COPY} />);
 
     const label = screen.getByText('Loading projects', { selector: 'span' });
     expect(label.closest('[aria-busy]')).toHaveAttribute('aria-busy', 'true');
@@ -439,7 +442,7 @@ describe('facet counts', () => {
     // controls — the filters still work, because the feed is its own request.
     facetsMock.mockRejectedValue(new Error('nope'));
     nav.reset('');
-    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} marketCopy={MARKET_COPY} />);
 
     await waitFor(() => expect(feedMock).toHaveBeenCalled());
     await userEvent.setup().click(screen.getByRole('button', { name: /^Filters/ }));
@@ -497,7 +500,7 @@ describe('the toolbar', () => {
     // #374: filters and sort both change what the grid shows, so they are one group on the
     // right; the count only reports and keeps the left.
     nav.reset('');
-    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} marketCopy={MARKET_COPY} />);
     await waitFor(() => expect(feedMock).toHaveBeenCalled());
 
     const filtersButton = screen.getByRole('button', { name: /^Filters/ });
@@ -765,7 +768,7 @@ describe('when the service refuses', () => {
     );
 
     nav.reset('');
-    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} marketCopy={MARKET_COPY} />);
 
     // The endpoint knows which of its rules refused the request and this page
     // does not, so its wording is what is shown.
@@ -778,7 +781,7 @@ describe('when the service refuses', () => {
     feedMock.mockRejectedValue(new TypeError('Failed to fetch'));
 
     nav.reset('');
-    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} marketCopy={MARKET_COPY} />);
 
     expect(
       await screen.findByText(/The service could not be reached/),
@@ -790,7 +793,7 @@ describe('when the service refuses', () => {
     nav.reset('');
 
     const user = userEvent.setup();
-    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} marketCopy={MARKET_COPY} />);
 
     await screen.findByRole('button', { name: 'Try again' });
     feedMock.mockResolvedValue(FIRST_PAGE);
@@ -849,7 +852,7 @@ describe('the rail as a structure', () => {
     nav.reset('');
     facetsMock.mockResolvedValue({ ...FACETS, tags: [] });
     const copy = { ...FEED_COPY, noTags: ru.discovery.feed.noTags, tagsHint: ru.discovery.feed.tagsHint };
-    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={copy} />);
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={copy} marketCopy={MARKET_COPY} />);
 
     expect(await screen.findByText(ru.discovery.feed.noTags)).toBeInTheDocument();
     expect(screen.queryByText(FEED_COPY.noTags)).not.toBeInTheDocument();

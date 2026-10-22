@@ -10,6 +10,8 @@ import type { Category, Subcategory } from '../../lib/categories/api';
 import { subcategoryPath } from '../../lib/categories/api';
 import { CampaignGrid } from './CampaignGrid';
 import { CategoryBadge } from './CategoryLook';
+import { MarketEmptyNotice } from '../shell/MarketEmptyNotice';
+import { marketCopy } from '../../lib/i18n/shell-copy.server';
 
 /**
  * The body of a category or subcategory landing page — §4.13 WS-05, issue #265.
@@ -157,26 +159,30 @@ export async function CategoryLanding({
 
       <div className="mt-6">
         {campaigns.length === 0 ? (
-          /*
-            `empty`, not `filtered`. `EmptyState` distinguishes the two because the recovery
-            differs, and nothing here is a filter the reader chose — they followed a link to a
-            category that happens to have nothing published in it. Telling them to clear a
-            filter would be telling them to undo something they did not do.
-          */
-          <EmptyState
-            variant="empty"
-            headingLevel={2}
-            title={t('emptyTitle', { title })}
-            description={t('emptyBody')}
-            action={
-              <Link
-                href="/discover"
-                className="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
-              >
-                {t('emptyAction')}
-              </Link>
-            }
-          />
+          <div className="flex flex-col gap-4">
+            {/*
+              `empty`, not `filtered`. `EmptyState` distinguishes the two because the recovery
+              differs, and nothing here is a filter the reader chose — they followed a link to a
+              category that happens to have nothing published in it. Telling them to clear a
+              filter would be telling them to undo something they did not do.
+            */}
+            <EmptyState
+              variant="empty"
+              headingLevel={2}
+              title={t('emptyTitle', { title })}
+              description={t('emptyBody')}
+              action={
+                <Link
+                  href="/discover"
+                  className="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                >
+                  {t('emptyAction')}
+                </Link>
+              }
+            />
+            {/* #533: the list was for one country, and every country is one press away. */}
+            <MarketEmptyNotice copy={await marketCopy()} />
+          </div>
         ) : (
           <>
             <CampaignGrid

@@ -30,6 +30,8 @@ import { SearchBox } from './SearchBox';
 import { SortControl } from './SortControl';
 import type { ProjectCardCopy } from '../../lib/i18n/card-copy';
 import type { FeedCopy } from '../../lib/i18n/feed-copy';
+import type { ShellCopy } from '../../lib/i18n/shell-copy';
+import { MarketEmptyNotice } from '../shell/MarketEmptyNotice';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import type { Locale } from '../../lib/i18n/locale';
@@ -118,9 +120,11 @@ export interface DiscoveryViewProps {
   readonly locale: Locale;
   /** Every word this surface draws — see `lib/i18n/feed-copy.ts`. */
   readonly copy: FeedCopy;
+  /** The country control's words, for an empty feed that was for one country (#533). */
+  readonly marketCopy: ShellCopy['market'];
 }
 
-export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewProps) {
+export function DiscoveryView({ seeded, cardCopy, locale, copy, marketCopy }: DiscoveryViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -459,6 +463,12 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
                   ) : undefined
                 }
               />
+            )}
+
+            {feed.status === 'ready' && feed.items.length === 0 && (
+              <div className="mt-4">
+                <MarketEmptyNotice copy={marketCopy} />
+              </div>
             )}
 
             {feed.items.length > 0 && (

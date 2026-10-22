@@ -1,5 +1,5 @@
 import createIntlMiddleware from 'next-intl/middleware';
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { publicCacheControl } from './lib/cache/publicRoutes';
 import { maintenanceHeaders, maintenancePageFor, platformStatus } from './lib/maintenance/gate';
 import { COUNTRY_HEADER, localeForCountry } from './lib/i18n/country';
@@ -7,6 +7,8 @@ import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale, isLocale } from './lib/i18n
 import { routing } from './i18n/routing';
 import { appPaymentReturn } from './lib/pledges/app-return';
 import { appCardReturn } from './lib/account/app-return';
+import { DETECTED_MARKET_COOKIE, MARKET_COOKIE, resolveMarket } from '@ideanest/messages/country';
+import { MARKET_HEADER, MARKET_PAGE_CACHE_CONTROL, isMarketPage } from './lib/market/market';
 
 /**
  * Where a request with no language in its path is sent — issue #123.
@@ -83,7 +85,30 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
     const closed = await maintenanceAnswer(request);
     if (closed !== null) return closed;
 
-    const response = intlMiddleware(request);
+    const marketPage = isMarketPage(pathname);
+    const market = resolveMarket(
+      request.cookies.get(MARKET_COOKIE)?.value,
+      request.headers.get(COUNTRY_HEADER),
+    );
+    /*
+     * #533. The market reaches the render as a request header, set here on the pages that list
+     * campaigns and REMOVED everywhere else, so a header a client sent itself never decides what
+     * a shared cache keeps.
+     */
+    const headers = new Headers(request.headers);
+    if (marketPage) headers.set(MARKET_HEADER, market);
+    else headers.delete(MARKET_HEADER);
+
+    const response = intlMiddleware(new NextRequest(request, { headers }));
+
+    if (marketPage) {
+      response.headers.set('cache-control', MARKET_PAGE_CACHE_CONTROL);
+      // So the header's country control shows what the page shows, before anybody has chosen.
+      if (request.cookies.get(MARKET_COOKIE) === undefined) {
+        response.cookies.set(DETECTED_MARKET_COOKIE, market, { path: '/', sameSite: 'lax' });
+      }
+      return response;
+    }
 
     const cacheControl = publicCacheControl(pathname);
     if (cacheControl !== null) response.headers.set('cache-control', cacheControl);

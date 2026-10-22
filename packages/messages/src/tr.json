@@ -76,6 +76,16 @@
     "language": {
       "label": "Bir dil seçin"
     },
+    "market": {
+      "label": "Ülke seçin",
+      "current": "Ülke: {name}",
+      "all": "Tüm ülkeler",
+      "filter": "Ülke arayın",
+      "noMatch": "Eşleşen ülke yok",
+      "emptyTitle": "{name} için henüz kampanya yok",
+      "emptyDetail": "Diğer ülkelerin kampanyalarına bakabilirsiniz.",
+      "emptyAction": "Tüm ülkelere bakın"
+    },
     "footer": {
       "label": "Alt bilgi",
       "languageHeading": "Dil",

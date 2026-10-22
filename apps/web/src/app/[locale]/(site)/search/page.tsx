@@ -10,7 +10,8 @@ import { SEARCH_QUERY_PARAM, readSearchQuery } from '../../../../lib/search/quer
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
-import { projectCardCopy, searchFieldCopy } from '../../../../lib/i18n/shell-copy.server';
+import { marketCopy, projectCardCopy, searchFieldCopy } from '../../../../lib/i18n/shell-copy.server';
+import { MarketEmptyNotice } from '../../../../components/shell/MarketEmptyNotice';
 
 /**
  * `/search` — §4.13 WS-06, issue #262.
@@ -128,20 +129,23 @@ export default async function SearchPage({
 
           <div className="mt-8">
             {results.length === 0 ? (
-              <EmptyState
-                variant="filtered"
-                headingLevel={2}
-                title={t('emptyTitle', { query })}
-                description={t('emptyBody')}
-                action={
-                  <Link
-                    href="/discover"
-                    className="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
-                  >
-                    {t('emptyAction')}
-                  </Link>
-                }
-              />
+              <div className="flex flex-col gap-4">
+                <EmptyState
+                  variant="filtered"
+                  headingLevel={2}
+                  title={t('emptyTitle', { query })}
+                  description={t('emptyBody')}
+                  action={
+                    <Link
+                      href="/discover"
+                      className="inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                    >
+                      {t('emptyAction')}
+                    </Link>
+                  }
+                />
+                <MarketEmptyNotice copy={await marketCopy()} />
+              </div>
             ) : (
               <>
                 <CampaignGrid

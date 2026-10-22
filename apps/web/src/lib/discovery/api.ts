@@ -1,4 +1,5 @@
 import { publicFetch } from '../api/client';
+import { withMarket } from '../market/cookie';
 import { errorFrom } from '../api/problem';
 import type { Money } from '../money';
 import { toSearchParams, type DiscoveryFilters } from '@ideanest/discovery/filters';
@@ -129,7 +130,8 @@ export async function getDiscoveryFeed(
   filters: DiscoveryFilters,
   options: { cursor?: string | null; limit?: number; signal?: AbortSignal } = {},
 ): Promise<DiscoveryFeed> {
-  const response = await publicFetch(`/v1/discover?${feedQuery(filters, options)}`, {
+  const query = withMarket(new URLSearchParams(feedQuery(filters, options))).toString();
+  const response = await publicFetch(`/v1/discover?${query}`, {
     signal: options.signal,
   });
   if (!response.ok) throw await errorFrom(response);
@@ -148,7 +150,7 @@ export async function getDiscoveryFacets(
   filters: DiscoveryFilters,
   options: { signal?: AbortSignal } = {},
 ): Promise<DiscoveryFacets> {
-  const query = toSearchParams(filters).toString();
+  const query = withMarket(toSearchParams(filters)).toString();
   const response = await publicFetch(`/v1/discover/facets${query === '' ? '' : `?${query}`}`, {
     signal: options.signal,
   });
