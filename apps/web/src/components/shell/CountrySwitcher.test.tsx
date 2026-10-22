@@ -49,6 +49,15 @@ describe('CountrySwitcher', () => {
     expect(trigger).toHaveTextContent('GE');
   });
 
+  it('opens the list from the drawer row’s words, not only from the badge', async () => {
+    const view = render(<CountrySwitcher copy={copy} rowLabel={copy.label} />);
+    await expectNoViolations(view.container);
+
+    await userEvent.click(await screen.findByText(copy.label));
+
+    expect(await screen.findByRole('button', { name: copy.all })).toBeInTheDocument();
+  });
+
   it('lists every country by name with every country on top, and filters by name', async () => {
     const view = render(<CountrySwitcher copy={copy} />);
     await userEvent.click(await screen.findByRole('button', { name: /Choose a country/ }));

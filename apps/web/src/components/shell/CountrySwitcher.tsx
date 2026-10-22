@@ -20,6 +20,11 @@ const CountryList = lazy(() => import('./CountryList').then((module) => ({ defau
 export interface CountrySwitcherProps {
   readonly copy: ShellCopy['market'];
   readonly phoneAlign?: 'end' | 'center' | 'start';
+  /**
+   * The drawer's row: the words beside the round button are part of the button, so a tap on
+   * "Choose a country" opens the list as a tap on the badge does.
+   */
+  readonly rowLabel?: string;
 }
 
 const PHONE_ALIGN = {
@@ -38,7 +43,7 @@ const PHONE_ALIGN = {
  * Choosing writes the cookie and reloads a page that lists campaigns, so every list on it is
  * read again for the new country; any other page keeps its place.
  */
-export function CountrySwitcher({ copy, phoneAlign = 'end' }: CountrySwitcherProps) {
+export function CountrySwitcher({ copy, phoneAlign = 'end', rowLabel }: CountrySwitcherProps) {
   const locale = useLocale();
   const [market, setMarket] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -72,6 +77,23 @@ export function CountrySwitcher({ copy, phoneAlign = 'end' }: CountrySwitcherPro
   const name = market === null ? null : market === ALL_MARKETS ? copy.all : nameOf(market, locale);
   const label = name === null ? copy.label : `${copy.label}. ${fillPlaceholders(copy.current, { name })}`;
 
+  const badge = (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'inline-grid size-10 shrink-0 place-items-center rounded-full bg-surface-3 text-fg',
+        'transition-colors duration-150 ease-in-out group-hover:bg-surface-4',
+        open && 'bg-surface-4',
+      )}
+    >
+      {market === null || market === ALL_MARKETS ? (
+        <MapPin className="size-[18px]" />
+      ) : (
+        <span className="text-xs font-semibold tracking-wide">{market}</span>
+      )}
+    </span>
+  );
+
   return (
     <div ref={container} className="relative">
       <button
@@ -83,19 +105,14 @@ export function CountrySwitcher({ copy, phoneAlign = 'end' }: CountrySwitcherPro
         title={label}
         onClick={() => setOpen((was) => !was)}
         className={cn(
-          'inline-grid size-10 place-items-center rounded-full bg-surface-3 text-fg',
-          'transition-colors duration-150 ease-in-out hover:bg-surface-4',
-          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
-          open && 'bg-surface-4',
+          'group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+          rowLabel === undefined
+            ? 'inline-grid rounded-full'
+            : 'flex w-full items-center justify-between gap-3 rounded-full text-left text-sm text-fg-64',
         )}
       >
-        {market === null || market === ALL_MARKETS ? (
-          <MapPin aria-hidden="true" className="size-[18px]" />
-        ) : (
-          <span aria-hidden="true" className="text-xs font-semibold tracking-wide">
-            {market}
-          </span>
-        )}
+        {rowLabel !== undefined && <span>{rowLabel}</span>}
+        {badge}
       </button>
 
       {open && (

@@ -144,14 +144,12 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
             </div>
 
             {/* #533: the header's country control, which a phone's bar has no room for. */}
-            <div className="flex items-center justify-between gap-3 px-5 pb-2">
-              <span aria-hidden="true" className="text-sm text-fg-64">{copy.market.label}</span>
-              <CountrySwitcher copy={copy.market} />
+            <div className="px-5 pb-2">
+              <CountrySwitcher copy={copy.market} rowLabel={copy.market.label} />
             </div>
 
-            <div className="flex items-center justify-between gap-3 px-5 pb-2">
-              <span aria-hidden="true" className="text-sm text-fg-64">{copy.theme.label}</span>
-              <ThemeToggle copy={copy.theme} />
+            <div className="px-5 pb-2">
+              <ThemeToggle copy={copy.theme} row />
             </div>
 
             <nav aria-label={copy.nav.label} className="flex-1 overflow-y-auto px-3 py-4">
