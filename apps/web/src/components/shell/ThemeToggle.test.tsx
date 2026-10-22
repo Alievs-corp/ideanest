@@ -47,6 +47,17 @@ describe('ThemeToggle', () => {
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
   });
 
+  it('switches from the drawer row’s word, which leads the row’s name', async () => {
+    const user = userEvent.setup();
+    const view = render(<ThemeToggle copy={copy} row />);
+
+    expect(screen.getByRole('button', { name: `${copy.label}: ${copy.toLight}` })).toBeInTheDocument();
+    await user.click(screen.getByText(copy.label));
+
+    expect(document.documentElement.dataset.theme).toBe('light');
+    await expectNoViolations(view.container);
+  });
+
   it('follows a change made in another tab', () => {
     render(<ThemeToggle copy={copy} />);
 

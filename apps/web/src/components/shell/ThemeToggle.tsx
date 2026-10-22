@@ -36,34 +36,50 @@ function subscribe(onChange: () => void): () => void {
  *
  * Both glyphs are rendered and CSS picks one from `<html data-theme>`, so the button shows the
  * right icon in the server's markup too, before hydration has read the attribute.
+ *
+ * With `row`, the drawer's "Theme" row is the button: a tap on the word switches the theme as a
+ * tap on the icon does.
  */
 export function ThemeToggle({
   copy,
+  row = false,
   className,
 }: {
   readonly copy: ShellCopy['theme'];
+  readonly row?: boolean;
   readonly className?: string;
 }) {
   const theme = useSyncExternalStore<Theme>(subscribe, currentTheme, () => 'dark');
   const next: Theme = theme === 'light' ? 'dark' : 'light';
-  const label = next === 'light' ? copy.toLight : copy.toDark;
+  const action = next === 'light' ? copy.toLight : copy.toDark;
+  // The visible word leads the accessible name, so a voice command that says it finds the row.
+  const label = row ? `${copy.label}: ${action}` : action;
 
   return (
     <button
       type="button"
       aria-label={label}
-      title={label}
+      title={action}
       onClick={() => {
         storeTheme(next);
         applyTheme(next);
       }}
       className={cn(
-        'inline-grid size-10 place-items-center rounded-full bg-surface-3 text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+        'group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+        row
+          ? 'flex w-full items-center justify-between gap-3 rounded-full text-left text-sm text-fg-64'
+          : 'inline-grid rounded-full',
         className,
       )}
     >
-      <Sun aria-hidden="true" className="size-[18px] in-data-[theme=light]:hidden" />
-      <Moon aria-hidden="true" className="hidden size-[18px] in-data-[theme=light]:block" />
+      {row && <span>{copy.label}</span>}
+      <span
+        aria-hidden="true"
+        className="inline-grid size-10 shrink-0 place-items-center rounded-full bg-surface-3 text-fg transition-colors duration-150 ease-in-out group-hover:bg-surface-4"
+      >
+        <Sun className="size-[18px] in-data-[theme=light]:hidden" />
+        <Moon className="hidden size-[18px] in-data-[theme=light]:block" />
+      </span>
     </button>
   );
 }
