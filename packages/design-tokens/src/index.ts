@@ -91,7 +91,8 @@ export type AccentName = keyof typeof accent;
 /**
  * The light theme (docs/ui-kit.md §11) — `[data-theme='light']` in `theme.css`, value for value.
  *
- * Only what differs from `colors`. The web alone reads it: the phone app is dark. Every ink is
+ * Only what differs from `colors`. The web reads it, and the phone app builds its light palette
+ * from it (`apps/mobile/src/theme`). Every ink is
  * solid rather than black at an opacity, and `packages/ui/src/contrast.test.ts` measures each
  * one against all four light surfaces.
  */

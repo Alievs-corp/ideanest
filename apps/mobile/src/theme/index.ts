@@ -1,7 +1,8 @@
 import {
   accent,
-  colors,
+  colors as darkTokens,
   duration,
+  lightColors,
   easing,
   radius,
   shadow,
@@ -9,6 +10,7 @@ import {
   staggerDelay,
   type AccentName,
 } from '@ideanest/design-tokens';
+import { readStoredTheme, type ThemeName } from '../lib/theme-preference';
 
 /**
  * The mobile styling layer — §14.3 and `docs/ui-kit.md` §2. **Same values, same names, no second
@@ -40,7 +42,77 @@ import {
  * screens import. `docs/architecture.md` §14.3 carries the same note.
  */
 
-export { accent, colors, duration, easing, radius, shadow, spacing, staggerDelay };
+export { accent, duration, easing, radius, shadow, spacing, staggerDelay };
+
+/**
+ * The colours of one theme — the token file's dark set, or the same names on the light set
+ * (`lightColors`, docs/ui-kit.md §11). Four names the web carries as tokens join them:
+ *
+ * - `inverse` / `inverseMuted` / `onInverse` — the primary pill on the canvas: white on dark,
+ *   near-black on light, where a white pill on a pale ground has no edge;
+ * - `limeInk` — lime as an icon or a marker on the canvas: lime itself on dark, a deep olive on
+ *   light, where lime measures 1.1:1;
+ * - `focusRing` — lime on dark, near-black on light.
+ *
+ * Everything else that is the same in both themes — lime as a surface, the accents, white
+ * sheets and the text on them, black scrims — keeps its dark value.
+ */
+export type Palette = { readonly [Name in keyof typeof darkTokens]: string } & {
+  readonly inverse: string;
+  readonly inverseMuted: string;
+  readonly onInverse: string;
+  readonly limeInk: string;
+  readonly focusRing: string;
+};
+
+export function paletteFor(theme: ThemeName): Palette {
+  const dark: Palette = {
+    ...darkTokens,
+    inverse: darkTokens.whiteSurface,
+    inverseMuted: darkTokens.whiteMuted,
+    onInverse: darkTokens.textOnWhite,
+    limeInk: darkTokens.lime500,
+    focusRing: darkTokens.lime500,
+  };
+  if (theme === 'dark') return dark;
+  return {
+    ...dark,
+    surface1: lightColors.surface1,
+    surface2: lightColors.surface2,
+    surface3: lightColors.surface3,
+    surface4: lightColors.surface4,
+    border: lightColors.border,
+    borderStrong: lightColors.borderStrong,
+    divider: lightColors.divider,
+    textPrimary: lightColors.textPrimary,
+    textSecondary: lightColors.textSecondary,
+    textTertiary: lightColors.textTertiary,
+    textDisabled: lightColors.textDisabled,
+    textReading: lightColors.textReading,
+    textOnDanger: lightColors.textOnDanger,
+    success: lightColors.success,
+    warning: lightColors.warning,
+    danger: lightColors.danger,
+    info: lightColors.info,
+    hot: lightColors.hot,
+    inverse: lightColors.inverse,
+    inverseMuted: lightColors.inverseMuted,
+    onInverse: lightColors.onInverse,
+    limeInk: lightColors.limeInk,
+    focusRing: lightColors.focusRing,
+  };
+}
+
+/** The theme this launch draws in. Changing it restarts the app (`lib/theme-preference.ts`). */
+export const activeTheme: ThemeName = readStoredTheme();
+
+export const colors: Palette = paletteFor(activeTheme);
+
+/**
+ * The dark set whatever the theme: for what is dark on purpose in both — a pill inverted on a
+ * white sheet, a dark card over a photograph. `colors` would turn it pale on the light theme.
+ */
+export const darkColors: Palette = paletteFor('dark');
 
 /** Card accent surfaces — `mobile-design` skill §4. A surface with its own text token, never text. */
 export type Accent = AccentName;

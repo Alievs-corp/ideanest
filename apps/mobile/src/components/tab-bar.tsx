@@ -9,7 +9,7 @@ import Animated, {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import type { Tabs } from 'expo-router';
 import { Glyphs, type IconGlyph } from '../icons';
-import { colors, motion, radius, size, spacing, spring } from '../theme';
+import { activeTheme, colors, darkColors, motion, radius, size, spacing, spring, tint } from '../theme';
 import { useFocusRing } from './ui/focus';
 import { haptics } from './ui/haptics';
 import { Icon } from './ui/icon';
@@ -218,7 +218,7 @@ function TabSlot({
     >
       <View style={styles.glyph}>
         <Animated.View style={[styles.layer, linearStyle]}>
-          <Icon icon={glyph} variant="linear" size={TAB_GLYPH} color={colors.textTertiary} />
+          <Icon icon={glyph} variant="linear" size={TAB_GLYPH} color={darkColors.textTertiary} />
         </Animated.View>
         <Animated.View style={[styles.layer, boldStyle]}>
           <Icon icon={glyph} variant="bold" size={TAB_GLYPH} color={colors.textOnWhite} />
@@ -273,10 +273,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing[2],
     borderRadius: radius.full,
-    backgroundColor: colors.surface2,
+    // Dark on both themes (docs/ui-kit.md §11): a floating capsule, and the white active pill and
+    // create button need the dark ground to read. On the light canvas its shadow is softened.
+    backgroundColor: darkColors.surface2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    boxShadow: [{ offsetX: 0, offsetY: 12, blurRadius: 32, spreadDistance: -8, color: colors.black }],
+    borderColor: darkColors.border,
+    boxShadow: [
+      {
+        offsetX: 0,
+        offsetY: 12,
+        blurRadius: 32,
+        spreadDistance: -8,
+        color: activeTheme === 'light' ? tint(colors.black, 0.32) : colors.black,
+      },
+    ],
   },
   capsule: {
     position: 'absolute',

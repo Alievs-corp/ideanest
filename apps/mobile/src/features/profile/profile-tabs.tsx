@@ -98,7 +98,7 @@ function TabPill({
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
   const press = usePressScale();
-  const fill = current ? colors.whiteSurface : press.pressed ? colors.surface3 : colors.surface2;
+  const fill = current ? colors.inverse : press.pressed ? colors.surface3 : colors.surface2;
   const name = count === undefined ? label : `${label}, ${count}`;
   return (
     <AnimatedPressable
@@ -114,21 +114,21 @@ function TabPill({
       hitSlop={{ top: REACH, bottom: REACH }}
       style={[
         styles.pill,
-        { backgroundColor: fill, borderColor: current ? colors.whiteSurface : colors.border },
+        { backgroundColor: fill, borderColor: current ? colors.inverse : colors.border },
         ring,
         press.style,
       ]}
       testID={testID}
     >
       <Text
-        style={[styles.label, current ? styles.labelCurrent : styles.labelOther, { color: current ? colors.textOnWhite : TONES.dark.secondary }]}
+        style={[styles.label, current ? styles.labelCurrent : styles.labelOther, { color: current ? colors.onInverse : TONES.dark.secondary }]}
         numberOfLines={1}
         accessibilityElementsHidden
         importantForAccessibility="no"
       >
         {label}
         {count === undefined ? null : (
-          <Text style={{ color: current ? tint(colors.textOnWhite, 0.64) : TONES.dark.tertiary }}>
+          <Text style={{ color: current ? tint(colors.onInverse, 0.64) : TONES.dark.tertiary }}>
             {` ${count}`}
           </Text>
         )}

@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -25,7 +26,8 @@ import { AccountSync } from '../lib/account-sync';
 import { PushSync } from '../lib/push-sync';
 import { UpdatePrompt } from '../components/update-prompt';
 import { AppIntlProvider } from '../lib/i18n';
-import { colors } from '../theme';
+import { activeTheme, colors } from '../theme';
+import { takeThemeReturn } from '../lib/theme-preference';
 
 /**
  * The root of the application — §14.3.
@@ -171,6 +173,18 @@ export default function RootLayout() {
   // The app lock's clock and its migration (`lib/app-lock.ts`, #319).
   useEffect(() => startAppLock(), []);
 
+  /*
+   * The theme (docs/ui-kit.md §11). The native root view is painted the dark canvas by the build, so
+   * the light theme repaints it — it shows behind the keyboard and between transitions. A theme
+   * switch restarts the app, and the screen it was made on opens again, behind the same gate a link
+   * waits at (`lib/theme-preference.ts`).
+   */
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colors.surface1).catch(() => undefined);
+    const back = takeThemeReturn();
+    if (back !== null) openWhenAllowed(() => router.push(back as never));
+  }, [router]);
+
   const go = useCallback(
     (destination: Destination) => {
       const push = () =>
@@ -220,9 +234,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.surface1 }}>
       <SafeAreaProvider>
         <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions()}>
-          {/* Light glyphs: every surface in this system is dark (docs/ui-kit.md §2.1). */}
+          {/* Light glyphs on the dark canvas, dark ones on the light theme's (docs/ui-kit.md §11). */}
           <AppIntlProvider>
-            <StatusBar style="light" />
+            <StatusBar style={activeTheme === 'light' ? 'dark' : 'light'} />
             <AccountSync />
             <PushSync siteHost={host} onOpen={go} onOpenWeb={openWeb} />
             <OfflineAnnouncer />

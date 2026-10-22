@@ -14,9 +14,9 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HERO_LOOP, HERO_LOOP_MS } from '@ideanest/messages/hero-loop';
+import { HERO_LOOP, HERO_LOOP_LIGHT, HERO_LOOP_MS } from '@ideanest/messages/hero-loop';
 import { useAppActive } from '../../lib/app-active';
-import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
+import { activeTheme, colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
 import { useTabBarInset } from '../tab-bar';
 import { EdgeFade } from '../ui/edge-fade';
 import { useMotionAllowed } from '../ui/motion-budget';
@@ -46,7 +46,7 @@ export function HeroLoopCard({ lines, label }: { readonly lines: HeroLines; read
   const appActive = useAppActive();
   const playing = moving && focused && appActive;
 
-  const player = useVideoPlayer(moving ? HERO_LOOP.phone.url : null, (created) => {
+  const player = useVideoPlayer(moving ? LOOP.url : null, (created) => {
     created.loop = true;
     created.muted = true;
   });
@@ -74,7 +74,7 @@ export function HeroLoopCard({ lines, label }: { readonly lines: HeroLines; read
       testID="hero-loop"
     >
       <Image
-        source={{ uri: HERO_LOOP.phone.posterUrl }}
+        source={{ uri: LOOP.posterUrl }}
         contentFit="cover"
         transition={0}
         style={StyleSheet.absoluteFill}
@@ -104,6 +104,9 @@ export function HeroLoopCard({ lines, label }: { readonly lines: HeroLines; read
 }
 
 /** Two loops of the scene for the four lines. */
+/** The scene rendered on this theme's card: the light cut on the light theme (docs/ui-kit.md §11). */
+const LOOP = activeTheme === 'light' ? HERO_LOOP_LIGHT.phone : HERO_LOOP.phone;
+
 const CYCLE_MS = HERO_LOOP_MS * 2;
 const BEATS = 4;
 /** The fade under the lines, as a share of the card's side. */

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, font, fontSize, radius, tint, tracking } from '../../theme';
+import { colors, darkColors, font, fontSize, radius, tint, tracking } from '../../theme';
 import { Icon, type IconComponent } from './icon';
 import { TONES, useSurface, type Surface } from './surface';
 
@@ -74,6 +74,7 @@ const SKIN: Record<TagVariant, { background: string; text: string }> = {
 /** The neutral variant that is legible on each surface. */
 const NEUTRAL: Record<Surface, TagVariant> = {
   dark: 'default',
+  night: 'default',
   lime: 'onLime',
   white: 'onWhite',
   accent: 'onWhite',
@@ -90,12 +91,17 @@ export function Tag({ label, variant = 'default', icon, testID }: TagProps) {
     resolved !== 'urgent';
   // On lime or white a status colour is illegible as text; the surface's own ink is not.
   const onAccent = surface === 'accent' && resolved !== 'urgent';
+  // The tag on an accent is near-black in both themes, so what is on it takes the dark set.
   const words = onAccent
-    ? colors.textPrimary
+    ? darkColors.textPrimary
     : status && surface !== 'dark'
       ? TONES[surface].primary
       : skin.text;
-  const glyph = onAccent && !status ? colors.textPrimary : skin.text;
+  const glyph = onAccent
+    ? status
+      ? darkColors[resolved as 'success' | 'warning' | 'danger' | 'info' | 'hot']
+      : darkColors.textPrimary
+    : skin.text;
   const background = onAccent ? TONES.accent.primary : skin.background;
 
   return (

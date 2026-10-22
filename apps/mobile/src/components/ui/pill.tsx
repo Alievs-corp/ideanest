@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, type View, type ViewSty
 import Animated from 'react-native-reanimated';
 import {
   colors,
+  darkColors,
   font,
   fontSize,
   radius,
@@ -81,9 +82,9 @@ type Skin = { rest: ViewStyle; pressed: ViewStyle; text: string };
 
 const SKIN: Record<PillVariant, Skin> = {
   primary: {
-    rest: { backgroundColor: colors.whiteSurface },
-    pressed: { backgroundColor: colors.whiteMuted },
-    text: colors.textOnWhite,
+    rest: { backgroundColor: colors.inverse },
+    pressed: { backgroundColor: colors.inverseMuted },
+    text: colors.onInverse,
   },
   accent: {
     rest: { backgroundColor: colors.lime500 },
@@ -128,9 +129,9 @@ const ON_WHITE: Partial<Record<PillVariant, Skin>> = {
     text: colors.textOnWhite,
   },
   primary: {
-    rest: { backgroundColor: colors.surface1 },
-    pressed: { backgroundColor: colors.surface3 },
-    text: colors.textPrimary,
+    rest: { backgroundColor: darkColors.surface1 },
+    pressed: { backgroundColor: darkColors.surface3 },
+    text: darkColors.textPrimary,
   },
   outline: {
     rest: {

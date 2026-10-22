@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { colors, lineHeight, radius } from '../../theme';
+import { colors, darkColors, lineHeight, radius } from '../../theme';
 import { RowText, rowStyles } from './checkbox';
 import { useFocusRing } from './focus';
 import { usePressScale } from './press-scale';
@@ -66,7 +66,7 @@ const SKIN: Record<'dark' | 'light', SwitchSkin> = {
   },
   light: {
     offTrack: TONES.white.tertiary,
-    onTrack: colors.surface1,
+    onTrack: darkColors.surface1,
     offKnob: colors.whiteSurface,
     onKnob: colors.whiteSurface,
   },

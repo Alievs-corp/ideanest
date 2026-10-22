@@ -11,7 +11,7 @@ import tr from '@ideanest/messages/tr.json';
 import { Glyphs } from '../icons';
 import { reportBoundaryError } from '../lib/crash/reporting';
 import { currentLocale } from '../lib/locale';
-import { colors, radius, size, spacing } from '../theme';
+import { activeTheme, colors, radius, size, spacing } from '../theme';
 import { Body, Heading } from './text';
 import { Icon } from './ui/icon';
 import { Pill } from './ui/pill';
@@ -65,7 +65,7 @@ export function RootFailure({ error, retry }: ErrorBoundaryProps) {
     // Scrolls, so the words and the pill stay reachable at a large font scale.
     <ScrollView style={styles.fill} contentContainerStyle={[styles.screen, padding]}>
       {/* The tree that set light glyphs is gone; the surface under them is still dark. */}
-      <StatusBar style="light" />
+      <StatusBar style={activeTheme === 'light' ? 'dark' : 'light'} />
       <View style={styles.disc}>
         <Icon icon={Glyphs.Danger} variant="bulk" size={32} color={colors.textPrimary} />
       </View>

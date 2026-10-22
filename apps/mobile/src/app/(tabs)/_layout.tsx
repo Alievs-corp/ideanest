@@ -74,11 +74,11 @@ const styles = StyleSheet.create({
     height: 18,
     paddingHorizontal: 4,
     borderRadius: radius.full,
-    backgroundColor: colors.whiteSurface,
+    backgroundColor: colors.inverse,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { ...font.semibold, color: colors.textOnWhite, fontSize: fontSize.xxs, lineHeight: 14 },
+  badgeText: { ...font.semibold, color: colors.onInverse, fontSize: fontSize.xxs, lineHeight: 14 },
 });
 
 /**

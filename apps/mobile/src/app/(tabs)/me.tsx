@@ -26,8 +26,9 @@ import { signOut } from '../../lib/auth';
 import { useT, type MessageKey } from '../../lib/i18n';
 import { currentLocale } from '../../lib/locale';
 import { forgetPersistedCache } from '../../lib/offline';
+import { chooseTheme } from '../../lib/theme-preference';
 import { useSession } from '../../lib/use-session';
-import { colors, fontSize, radius, size, spacing } from '../../theme';
+import { activeTheme, colors, fontSize, radius, size, spacing } from '../../theme';
 import { withScreenRoot } from '../../components/screen-root';
 
 /**
@@ -163,6 +164,25 @@ function HubRow({ row, onPress }: { readonly row: Row; readonly onPress?: () => 
           void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}${row.web}`);
         }
       }}
+    />
+  );
+}
+
+/**
+ * Dark or light — the web header's theme control (docs/ui-kit.md §11). A phone's choice, so it sits
+ * with the app lock for a signed-in reader and with the language for anybody else. Choosing
+ * restarts the app on the new theme and comes back here (`lib/theme-preference.ts`).
+ */
+function ThemeRow() {
+  const t = useT();
+  const next = activeTheme === 'light' ? 'dark' : 'light';
+  return (
+    <NavRow
+      label={t('shell.theme.label')}
+      detail={next === 'light' ? t('shell.theme.toLight') : t('shell.theme.toDark')}
+      icon={activeTheme === 'light' ? Glyphs.Sun1 : Glyphs.Moon}
+      testID="theme-row"
+      onPress={() => chooseTheme(next, '/me')}
     />
   );
 }
@@ -452,11 +472,15 @@ function MeScreen() {
           )}
 
           {holdsSession ? (
-            <Group titleKey="mobile.me.thisPhone" rows={THIS_PHONE} index={next()} />
+            <Group titleKey="mobile.me.thisPhone" rows={THIS_PHONE} index={next()}>
+              <ThemeRow />
+            </Group>
           ) : null}
 
           {state === 'signed-out' ? (
-            <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} index={next()} />
+            <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} index={next()}>
+              <ThemeRow />
+            </Group>
           ) : null}
 
           <Group titleKey="shell.footer.groups.about" rows={ABOUT} index={next()}>

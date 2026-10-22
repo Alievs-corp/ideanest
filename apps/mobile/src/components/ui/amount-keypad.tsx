@@ -7,7 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, motion, radius, size, spacing, spring, tracking } from '../../theme';
+import { colors, darkColors, font, fontSize, lineHeight, motion, radius, size, spacing, spring, tracking } from '../../theme';
 import { AnimatedAmount, type AnimatedAmountMode } from './animated-amount';
 import { announce } from './announce';
 import { errorTextColor, useFieldControl } from './field';
@@ -467,8 +467,8 @@ const CHIP_HEIGHT = 32;
 
 /** The selected operator and the result chip: the surface's own ink as a fill, as `primary` inverts. */
 const INVERTED = {
-  white: { fill: colors.surface1, text: colors.textPrimary },
-  dark: { fill: colors.whiteSurface, text: colors.textOnWhite },
+  white: { fill: darkColors.surface1, text: darkColors.textPrimary },
+  dark: { fill: colors.inverse, text: colors.onInverse },
 } as const;
 
 const styles = StyleSheet.create({

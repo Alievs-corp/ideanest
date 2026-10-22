@@ -117,8 +117,8 @@ function TabPill({
           style={[
             styles.pill,
             {
-              backgroundColor: current ? colors.whiteSurface : pressed ? colors.surface3 : colors.surface2,
-              borderColor: current ? colors.whiteSurface : colors.border,
+              backgroundColor: current ? colors.inverse : pressed ? colors.surface3 : colors.surface2,
+              borderColor: current ? colors.inverse : colors.border,
             },
             ring,
           ]}
@@ -127,7 +127,7 @@ function TabPill({
             style={[
               styles.label,
               current ? styles.labelCurrent : styles.labelOther,
-              { color: current ? colors.textOnWhite : TONES.dark.secondary },
+              { color: current ? colors.onInverse : TONES.dark.secondary },
             ]}
             accessibilityElementsHidden
             importantForAccessibility="no"

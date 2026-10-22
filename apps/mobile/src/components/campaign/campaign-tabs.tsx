@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CAMPAIGN_TABS, type CampaignTabId } from '@ideanest/campaign/tabs';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, radius, size, spacing } from '../../theme';
+import { colors, darkColors, font, fontSize, radius, size, spacing } from '../../theme';
 import { useFocusRing } from '../ui';
 import { AnimatedPressable, usePressScale } from '../ui/press-scale';
 import { BLOCK, TONES, blockSurface, useSurface } from '../ui/surface';
@@ -78,8 +78,8 @@ function TabButton({
   // The chosen pill is the surface's primary one: white on the canvas, inverted on white.
   const chosen =
     block === 'white'
-      ? { fill: colors.surface1, ink: colors.textPrimary }
-      : { fill: colors.whiteSurface, ink: colors.textOnWhite };
+      ? { fill: darkColors.surface1, ink: darkColors.textPrimary }
+      : { fill: colors.inverse, ink: colors.onInverse };
   const fill = current ? chosen.fill : press.pressed ? BLOCK[block].pressed : BLOCK[block].rest;
   return (
     <AnimatedPressable
