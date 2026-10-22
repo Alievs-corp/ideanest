@@ -3,6 +3,7 @@ import { StyleSheet, View, type TextInputProps as RNTextInputProps } from 'react
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
+import { COUNTRY_CODES } from '@ideanest/messages/country';
 import {
   Body,
   ContentSheet,
@@ -32,7 +33,6 @@ import { formMeasure, size, spacing } from '../../theme';
 import { countryName } from '../checkout/format';
 import { readPledge } from '../pledges/api';
 import { EMPTY_ADDRESS, readShippingAddress, saveShippingAddress, type PostalAddress } from './api';
-import { COUNTRY_CODES } from './countries';
 
 type FormKey =
   | 'recipient'

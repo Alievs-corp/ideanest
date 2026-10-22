@@ -123,6 +123,11 @@ export interface ProjectEdit {
   /** At most one, of at most sixty seconds. Absent or null for a campaign without one. */
   video?: CampaignVideo | null;
   /**
+   * The countries the campaign is for, ISO 3166-1 alpha-2, never empty — `["AZ"]` until the
+   * creator chooses. The creator delivers rewards to every one of them.
+   */
+  countries?: readonly string[];
+  /**
    * Field names the server will refuse to change, by name — `"goal"`, `"durationDays"`.
    *
    * Empty until the campaign launches; from `LIVE` onwards it lists `goal`, `durationDays`,
@@ -168,6 +173,11 @@ export interface ProjectPatch {
    * deleted once the edit commits, so a replaced clip does not go on costing storage.
    */
   videoMediaId?: string | null;
+  /**
+   * The whole list, replacing the previous one. Never empty; after launch it may grow and may
+   * not shrink, and anything else is answered `400 PROJECT_FIELD_INVALID` naming this key.
+   */
+  countries?: readonly string[];
 }
 
 /* -------------------------------------------------------------------------

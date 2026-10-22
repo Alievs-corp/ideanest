@@ -344,6 +344,7 @@ export interface BasicsValidationCopy {
   readonly durationOutOfRange: string;
   readonly launchNotADate: string;
   readonly launchInPast: string;
+  readonly countriesRequired: string;
   /** One per `AmountRejection`, so a new rejection fails to compile. */
   readonly amount: {
     readonly empty: string;
@@ -387,6 +388,16 @@ export interface BasicsPanelCopy {
   readonly durationHintLocked: string;
   readonly scheduledLaunch: string;
   readonly scheduledLaunchHint: string;
+  readonly countries: string;
+  readonly countriesHint: string;
+  /** Shown while the campaign is live: countries may be added and not removed. */
+  readonly countriesHintLaunched: string;
+  /** The reminder that every chosen country is one the creator delivers rewards to. */
+  readonly countriesDelivery: string;
+  readonly countriesAdd: string;
+  /** Carries `{name}`. The accessible name of a chosen country's remove control. */
+  readonly countriesRemove: string;
+  readonly countriesNotSaved: string;
   readonly validation: BasicsValidationCopy;
   readonly cover: CoverImageCopy;
   readonly video: CampaignVideoCopy;
@@ -403,6 +414,7 @@ export function basicsValidationCopyFrom(t: CampaignEditorTranslator): BasicsVal
     durationOutOfRange: template(t, 'basics.validation.durationOutOfRange'),
     launchNotADate: t('basics.validation.launchNotADate'),
     launchInPast: t('basics.validation.launchInPast'),
+    countriesRequired: t('basics.validation.countriesRequired'),
     amount: {
       empty: t('basics.validation.amount.empty'),
       notANumber: t('basics.validation.amount.notANumber'),
@@ -443,6 +455,13 @@ export function basicsPanelCopyFrom(t: CampaignEditorTranslator): BasicsPanelCop
     durationHintLocked: t('basics.durationHintLocked'),
     scheduledLaunch: t('basics.scheduledLaunch'),
     scheduledLaunchHint: t('basics.scheduledLaunchHint'),
+    countries: t('basics.countries'),
+    countriesHint: t('basics.countriesHint'),
+    countriesHintLaunched: t('basics.countriesHintLaunched'),
+    countriesDelivery: t('basics.countriesDelivery'),
+    countriesAdd: t('basics.countriesAdd'),
+    countriesRemove: template(t, 'basics.countriesRemove'),
+    countriesNotSaved: t('basics.countriesNotSaved'),
     validation: basicsValidationCopyFrom(t),
     cover: coverImageCopyFrom(t),
     video: campaignVideoCopyFrom(t),

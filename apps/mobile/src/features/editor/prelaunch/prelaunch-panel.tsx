@@ -256,7 +256,7 @@ function PrelaunchForm({
 
   const errors: BasicsErrors = {
     ...validateBasics(draft, basics.validation),
-    ...basicsServerErrors(failure),
+    ...basicsServerErrors(failure, basics),
   };
   /*
    * A field the phone refused (an empty or too-long title, a summary over 135, a cover it would

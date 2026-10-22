@@ -39,6 +39,7 @@ import {
   type BasicsField,
 } from '@ideanest/campaign-editor/basics';
 import { CoverImageField } from './CoverImageField';
+import { CountriesField } from './CountriesField';
 import type {
   BasicsPanelCopy,
   EditorChromeCopy,
@@ -104,12 +105,15 @@ const CampaignVideoField = lazy(() =>
  * `meta.field: "videoMediaId"`, and its `detail` is English written for a log. The
  * banner above the form still carries that sentence; the field gets the translated one.
  */
-function serverErrors(failure: SaveFailure | null, notAttached: string): BasicsErrors {
+function serverErrors(failure: SaveFailure | null, basics: BasicsPanelCopy): BasicsErrors {
   if (failure === null) return {};
 
   const mapped: BasicsErrors = {};
   if (failure.code === 'PROJECT_FIELD_INVALID' && failure.meta?.['field'] === 'videoMediaId') {
-    mapped.videoMediaId = notAttached;
+    mapped.videoMediaId = basics.video.notAttached;
+  }
+  if (failure.code === 'PROJECT_FIELD_INVALID' && failure.meta?.['field'] === 'countries') {
+    mapped.countries = basics.countriesNotSaved;
   }
   for (const [key, message] of Object.entries(failure.fieldErrors)) {
     // `goal.amount` is about the goal field. Anything unrecognised is dropped
@@ -248,7 +252,7 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
 
   const errors: BasicsErrors = {
     ...validateBasics(draft, basics.validation),
-    ...serverErrors(failure, basics.video.notAttached),
+    ...serverErrors(failure, basics),
   };
   const selected = categories?.find((category) => category.id === draft.categoryId) ?? null;
   const subcategories = selected?.subcategories ?? [];
@@ -386,6 +390,15 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
             </Select>
           </Field>
         </div>
+
+        <CountriesField
+          copy={basics}
+          locale={copy.locale}
+          project={project}
+          value={draft.countries}
+          error={errors.countries}
+          onChange={(countries) => change('countries', { ...draft, countries })}
+        />
 
         <div className="grid gap-6 sm:grid-cols-[2fr_1fr]">
           <Field

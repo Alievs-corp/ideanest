@@ -257,6 +257,65 @@ describe('BasicsPanel', () => {
     expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('category-technology');
   });
 
+  describe('countries', () => {
+    const addCountry = (): HTMLElement => screen.getByRole('combobox', { name: 'Countries' });
+
+    it('starts with Azerbaijan and says rewards go to every country chosen', async () => {
+      await openBasics();
+
+      expect(screen.getByRole('list', { name: 'Countries' })).toHaveTextContent('Azerbaijan');
+      expect(screen.getByText(BASICS_COPY.countriesDelivery)).toBeInTheDocument();
+      // The only country cannot be removed.
+      expect(screen.queryByRole('button', { name: 'Remove Azerbaijan' })).not.toBeInTheDocument();
+    });
+
+    it('adds a country from the list and sends the whole list', async () => {
+      const user = await openBasics();
+
+      await user.selectOptions(addCountry(), 'GE');
+      await tick(DEBOUNCE);
+
+      expect(lastPatch()).toEqual({ countries: ['AZ', 'GE'] });
+      expect(screen.getByRole('button', { name: 'Remove Georgia' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Türkiye' })).toBeInTheDocument();
+      expect(screen.queryByRole('option', { name: 'Georgia' })).not.toBeInTheDocument();
+    });
+
+    it('removes a country', async () => {
+      const user = await openBasics({ countries: ['AZ', 'GE'] });
+
+      await user.click(screen.getByRole('button', { name: 'Remove Azerbaijan' }));
+      await tick(DEBOUNCE);
+
+      expect(lastPatch()).toEqual({ countries: ['GE'] });
+    });
+
+    it('keeps the countries a live campaign has saved', async () => {
+      await openBasics({ state: 'LIVE', launchedAt: '2026-10-05T10:00:00.000Z', countries: ['AZ', 'GE'] });
+
+      expect(screen.queryByRole('button', { name: /^Remove / })).not.toBeInTheDocument();
+      expect(screen.getByText(BASICS_COPY.countriesHintLaunched)).toBeInTheDocument();
+      expect(addCountry()).toBeEnabled();
+    });
+
+    it('puts a refused list beside the field', async () => {
+      const user = await openBasics();
+      patchProjectMock.mockRejectedValue(
+        new ApiError(400, {
+          status: 400,
+          code: 'PROJECT_FIELD_INVALID',
+          detail: 'That is not a country code.',
+          meta: { field: 'countries' },
+        }),
+      );
+
+      await user.selectOptions(addCountry(), 'GE');
+      await tick(DEBOUNCE);
+
+      expect(screen.getByText(BASICS_COPY.countriesNotSaved)).toBeInTheDocument();
+    });
+  });
+
   describe('autosave', () => {
     it('saves what was typed, with no save button anywhere on the page', async () => {
       const user = await openBasics();

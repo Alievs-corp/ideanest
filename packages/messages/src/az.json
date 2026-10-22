@@ -5260,6 +5260,13 @@
       "durationHintLocked": "Kampaniya başladıqdan sonra son tarixi dəyişmək olmaz.",
       "scheduledLaunch": "Planlaşdırılmış başlanğıc",
       "scheduledLaunchHint": "İstəyə bağlı. Baxış bitəndən sonra əl ilə başlatmaq üçün boş buraxın.",
+      "countries": "Ölkələr",
+      "countriesHint": "Kampaniyanız bu ölkələr üçündür. Bir neçə ölkə seçə bilərsiniz.",
+      "countriesHintLaunched": "Kampaniya başlayıb: yeni ölkə əlavə edə bilərsiniz, amma yadda saxlanmış ölkəni silə bilməzsiniz.",
+      "countriesDelivery": "Nəzərə alın: seçdiyiniz hər ölkəyə mükafatları çatdırmalı olacaqsınız. Çatdıra bilmədiyiniz ölkəni seçməyin.",
+      "countriesAdd": "Ölkə əlavə edin",
+      "countriesRemove": "{name} ölkəsini silin",
+      "countriesNotSaved": "Ölkələr yadda saxlanmadı. Siyahını yoxlayıb yenidən cəhd edin.",
       "validation": {
         "titleRequired": "Layihənin başlığı olmalıdır.",
         "titleTooLong": "Başlıq ən çox {max} simvol olur. {over} simvol azaldın.",
@@ -5270,6 +5277,7 @@
         "durationOutOfRange": "Kampaniya {min} ilə {max} gün arasında davam edir.",
         "launchNotADate": "Tarix və saat yazın.",
         "launchInPast": "Gələcəkdə bir tarix və saat seçin.",
+        "countriesRequired": "Ən azı bir ölkə seçin.",
         "amount": {
           "empty": "Yığmaq istədiyiniz məbləği yazın.",
           "notANumber": "Hədəfi rəqəmlərlə yazın, məsələn 5000.00.",

@@ -3251,7 +3251,7 @@ is what that table was separated for.
 (denormalised), `launched_at`, `deadline`, `duration_days`, `story` (jsonb),
 `risks` (required), `main_image_id`, `video_id`, `is_featured`,
 `late_pledge_enabled`, `late_pledge_ends_at`, `pledge_manager_state`,
-`search_vector` (tsvector), `geo_point` (geography).
+`search_vector` (tsvector), `geo_point` (geography), `countries` (text[]).
 
 Indexes: `(state, deadline)`, `(category_id, state)`, `(creator_id)`, unique
 `(creator_id, slug)`, GIN on `search_vector`, `(location_id)` partial,
@@ -3282,6 +3282,19 @@ every campaign's vector when an account is renamed — which §17.4's anonymisat
 is, so without it the index would go on serving the name of somebody who asked to
 be forgotten.
 
+> **`countries` is the list of countries a campaign is for (V115)**: ISO 3166-1
+> alpha-2 codes, never empty, `{AZ}` until the creator chooses, and the countries
+> the creator delivers rewards to. The editor says so beside the control. `PATCH
+> /v1/projects/{id}` replaces the whole list under `EDIT_BASICS`, upper-cased and
+> each code once, from `Locale.getISOCountries()`, the same 249 codes as
+> `COUNTRY_CODES` in `@ideanest/messages/country`. **After launch it may grow and
+> may not shrink**: a backer in a removed country was promised a reward there, so
+> removing a saved country is `400 PROJECT_FIELD_INVALID` with `meta.field:
+> countries`. Nothing filters on it yet. Visitors choosing a country the way they
+> choose a language, and seeing the campaigns for it, is the next change, with
+> `countries @> ARRAY[:country]` and its GIN index. Shipping rules are not
+> narrowed by it: a creator still prices destinations per reward.
+>
 > **Not all of these columns exist yet.** `is_featured` and
 > `pledge_manager_state` arrive with curation and with the pledge manager — each
 > with the feature that owns it, rather than as a column nothing writes to.

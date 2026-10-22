@@ -36,6 +36,7 @@ function draft(overrides: Partial<BasicsDraft> = {}): BasicsDraft {
     coverImageUrl: 'https://cdn.example.test/cover.jpg',
     coverImage: { url: 'https://cdn.example.test/cover.jpg', width: 1600, height: 900 },
     video: null,
+    countries: ['AZ'],
     ...overrides,
   };
 }
@@ -269,6 +270,16 @@ describe('patchForField', () => {
     expect(patchForField('videoMediaId', draft({ video: null }))).toEqual({ videoMediaId: null });
   });
 
+  it('sends the whole list of countries, and never an empty one', () => {
+    expect(patchForField('countries', draft({ countries: ['AZ', 'TR'] }))).toEqual({
+      countries: ['AZ', 'TR'],
+    });
+    expect(patchForField('countries', draft({ countries: [] }))).toBeNull();
+    expect(validateBasics(draft({ countries: [] }), BASICS_COPY.validation, { now: NOW }).countries).toBe(
+      BASICS_COPY.validation.countriesRequired,
+    );
+  });
+
   it('trims what it sends, so a stray space is not saved as content', () => {
     expect(patchForField('blurb', draft({ blurb: '  Quiet enough for a forest.  ' }))).toEqual({
       blurb: 'Quiet enough for a forest.',
@@ -316,6 +327,12 @@ describe('draftFromProject', () => {
       coverImage: null,
       video: null,
     });
+  });
+
+  it('starts a campaign with no countries yet as one for Azerbaijan', () => {
+    expect(draftFromProject(project).countries).toEqual(['AZ']);
+    expect(draftFromProject({ ...project, countries: [] }).countries).toEqual(['AZ']);
+    expect(draftFromProject({ ...project, countries: ['TR', 'GE'] }).countries).toEqual(['TR', 'GE']);
   });
 
   it('carries the video the server holds into the draft', () => {

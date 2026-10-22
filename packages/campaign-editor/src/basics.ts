@@ -39,6 +39,8 @@ export const DURATION_MIN_DAYS = 30;
 export const DURATION_MAX_DAYS = 60;
 /** §5.3: "30 recommended". Shown as guidance, never enforced. */
 export const DURATION_RECOMMENDED_DAYS = 30;
+/** What a campaign is for until its creator chooses, and what the service starts it with. */
+export const DEFAULT_COUNTRY = 'AZ';
 
 /**
  * Characters, counted the way the database counts them.
@@ -94,6 +96,8 @@ export interface BasicsDraft {
    * until the server has said the clip plays.
    */
   video: CampaignVideo | null;
+  /** ISO 3166-1 alpha-2, in the order the creator added them. Never empty once loaded. */
+  countries: readonly string[];
 }
 
 /**
@@ -110,7 +114,8 @@ export type BasicsField =
   | 'durationDays'
   | 'scheduledLaunchAt'
   | 'coverImage'
-  | 'videoMediaId';
+  | 'videoMediaId'
+  | 'countries';
 
 export type BasicsErrors = Partial<Record<BasicsField, string>>;
 
@@ -132,6 +137,7 @@ export const BASICS_FIELDS: readonly BasicsField[] = [
   'scheduledLaunchAt',
   'coverImage',
   'videoMediaId',
+  'countries',
 ];
 
 export function isBasicsField(value: string): value is BasicsField {
@@ -151,6 +157,7 @@ export function draftFromProject(project: ProjectEdit): BasicsDraft {
     coverImageUrl: project.coverImage?.url ?? '',
     coverImage: project.coverImage ?? null,
     video: project.video ?? null,
+    countries: project.countries?.length ? [...project.countries] : [DEFAULT_COUNTRY],
   };
 }
 
@@ -298,6 +305,8 @@ export function validateBasics(
     }
   }
 
+  if (draft.countries.length === 0) errors.countries = copy.countriesRequired;
+
   /*
    * THE COVER SIZE IS NOT VALIDATED HERE ANY MORE, and its absence is the change rather
    * than an omission. A small cover used to be a form error, which meant the basics tab
@@ -397,5 +406,8 @@ export function patchForField(field: BasicsField, draft: BasicsDraft): ProjectPa
       // The identifier alone: everything else about the clip is the server's measurement.
       // An explicit `null` is what takes a video down under merge-patch.
       return { videoMediaId: draft.video?.mediaId ?? null };
+
+    case 'countries':
+      return draft.countries.length === 0 ? null : { countries: [...draft.countries] };
   }
 }
