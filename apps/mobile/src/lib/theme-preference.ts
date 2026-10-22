@@ -1,5 +1,4 @@
 import { DevSettings } from 'react-native';
-import * as Updates from 'expo-updates';
 import { deviceStore, type KeyValueStore } from './storage';
 
 /**
@@ -40,8 +39,14 @@ export function takeThemeReturn(store: KeyValueStore = deviceStore): string | nu
   return path;
 }
 
+/*
+ * `expo-updates` is loaded here rather than at the top: `src/theme` reads this module on every
+ * screen, and a native module required at import would come with it into every test and every
+ * screen's first import.
+ */
 async function restart(): Promise<void> {
   try {
+    const Updates = await import('expo-updates');
     await Updates.reloadAsync();
   } catch {
     // A development build has no updates runtime to reload through.
