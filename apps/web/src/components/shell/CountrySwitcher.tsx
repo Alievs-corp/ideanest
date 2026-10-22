@@ -5,7 +5,6 @@ import { MapPin } from 'lucide-react';
 import { ALL_MARKETS } from '@ideanest/messages/country';
 import { cn, useDismiss } from '@ideanest/ui';
 import { useLocale } from '../../i18n/navigation';
-import { regionNames } from '../../lib/i18n/formats';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ShellCopy } from '../../lib/i18n/shell-copy';
@@ -119,9 +118,14 @@ export function CountrySwitcher({ copy, phoneAlign = 'end' }: CountrySwitcherPro
   );
 }
 
+/**
+ * The country's name for the button's accessible name. `Intl` directly rather than
+ * `regionNames`, whose module carries the Azerbaijani formatters into every page's first load
+ * for one word; the panel, which loads on demand, uses `regionNames`.
+ */
 function nameOf(code: string, locale: Locale): string {
   try {
-    return regionNames(locale)?.of(code) ?? code;
+    return new Intl.DisplayNames([locale], { type: 'region' }).of(code) ?? code;
   } catch {
     return code;
   }
