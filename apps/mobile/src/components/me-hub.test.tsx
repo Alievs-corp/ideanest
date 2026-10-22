@@ -13,6 +13,7 @@ import { signOut } from '../lib/auth';
 import { currentLocale } from '../lib/locale';
 import { forgetPersistedCache } from '../lib/offline';
 import { colors } from '../theme';
+import { chooseTheme } from '../lib/theme-preference';
 
 /**
  * The Me tab's three layouts — issue #150.
@@ -30,6 +31,12 @@ jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 
 let mockSession = { signedIn: true, locked: false, unlocked: false };
 jest.mock('../lib/use-session', () => ({ useSession: () => mockSession }));
+
+/* The restart is `lib/theme-preference.ts`'s and tested there; here, that the row asks for it. */
+jest.mock('../lib/theme-preference', () => ({
+  ...jest.requireActual('../lib/theme-preference'),
+  chooseTheme: jest.fn(),
+}));
 
 /* Signing out is `lib/auth.ts`'s and tested there; here it is only whether and when it is asked. */
 jest.mock('../lib/auth', () => ({
@@ -113,7 +120,8 @@ const ABOUT = [
 ];
 
 /** The way to the app lock, which lives in `settings/security` (#161). */
-const THIS_PHONE = ['This phone', 'App lock'];
+const THEME = 'Theme, Switch to light theme';
+const THIS_PHONE = ['This phone', 'App lock', THEME];
 
 /** What a session the service has not answered for still offers: the lock, and the way out. */
 const CREATORS = ['Creators', 'Start a campaign', 'Pricing'];
@@ -168,7 +176,7 @@ describe('the Me tab', () => {
     given('signed-out', null);
     await renderMe();
 
-    expect(readingOrder()).toEqual(['Register', 'Sign in', ...CREATORS, 'Settings', 'Language', ...ABOUT]);
+    expect(readingOrder()).toEqual(['Register', 'Sign in', ...CREATORS, 'Settings', 'Language', THEME, ...ABOUT]);
   });
 
   it('unknown: this phone, About and sign out — no account rows and, above all, no "Sign in"', async () => {
@@ -219,6 +227,16 @@ describe('the Me tab', () => {
     // What the Me tab owes this reader is the way to it, with no account answer needed.
     await fireEvent.press(screen.getByRole('button', { name: 'App lock' }));
     expect(mockRouter.push).toHaveBeenCalledWith('/settings/security');
+  });
+
+  it('switches to the light theme from the theme row and comes back to the Me tab', async () => {
+    mockSession = { signedIn: false, locked: false, unlocked: false };
+    given('signed-out', null);
+    await renderMe();
+
+    await fireEvent.press(screen.getByRole('button', { name: THEME }));
+
+    expect(jest.mocked(chooseTheme)).toHaveBeenCalledWith('light', '/me');
   });
 
   it.each([

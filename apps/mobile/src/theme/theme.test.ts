@@ -84,8 +84,10 @@ describe('colour discipline: use a token from @ideanest/design-tokens, never a l
 
   it('re-exports the token objects themselves rather than a copy', () => {
     // Identity, not equality. A copy would compare equal on the day it was made
-    // and diverge silently on the day a token changed.
-    expect(theme.colors).toBe(colors);
+    // and diverge silently on the day a token changed. `colors` is the exception: it is built
+    // per theme (docs/ui-kit.md §11), and on the dark theme it carries every token unchanged.
+    expect(theme.activeTheme).toBe('dark');
+    expect(theme.colors).toMatchObject(colors);
     expect(theme.radius).toBe(radius);
     expect(theme.spacing).toBe(spacing);
     expect(theme.shadow).toBe(shadow);
@@ -238,6 +240,8 @@ const SURFACES: Record<Surface, readonly (readonly [string, string])[]> = {
     ['surface-3', colors.surface3],
     ['surface-4', colors.surface4],
   ],
+  // The black plan card: dark on both themes.
+  night: [['black', colors.black]],
   lime: [
     ['lime-300', colors.lime300],
     ['lime-400', colors.lime400],

@@ -12,7 +12,7 @@ import {
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Glyphs } from '../../icons';
-import { colors, font, fontSize, radius, size as measure, spacing, tint } from '../../theme';
+import { colors, darkColors, font, fontSize, radius, size as measure, spacing, tint } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon, type IconComponent } from './icon';
 import { PressableScale, usePressScale } from './press-scale';
@@ -77,11 +77,11 @@ const SKIN: Record<'dark' | 'light', ChipSkin> = {
     restText: colors.textSecondary,
     restTextPressed: colors.textPrimary,
     restCount: colors.textTertiary,
-    selected: colors.whiteSurface,
-    selectedPressed: colors.whiteMuted,
-    selectedText: colors.textOnWhite,
-    selectedCount: tint(colors.textOnWhite, 0.5),
-    removeIcon: tint(colors.textOnWhite, 0.56),
+    selected: colors.inverse,
+    selectedPressed: colors.inverseMuted,
+    selectedText: colors.onInverse,
+    selectedCount: tint(colors.onInverse, 0.5),
+    removeIcon: tint(colors.onInverse, 0.56),
   },
   light: {
     rest: colors.whiteMuted,
@@ -90,11 +90,11 @@ const SKIN: Record<'dark' | 'light', ChipSkin> = {
     restText: tint(colors.textOnWhite, 0.64),
     restTextPressed: colors.textOnWhite,
     restCount: tint(colors.textOnWhite, 0.5),
-    selected: colors.surface1,
-    selectedPressed: colors.surface3,
-    selectedText: colors.textPrimary,
-    selectedCount: colors.textTertiary,
-    removeIcon: colors.textSecondary,
+    selected: darkColors.surface1,
+    selectedPressed: darkColors.surface3,
+    selectedText: darkColors.textPrimary,
+    selectedCount: darkColors.textTertiary,
+    removeIcon: darkColors.textSecondary,
   },
 };
 

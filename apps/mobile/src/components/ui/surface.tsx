@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { accent, colors, tint } from '../../theme';
+import { accent, colors, darkColors, tint } from '../../theme';
 
 /**
  * Which surface a piece of text or an icon is sitting on — the native `data-on-lime`.
@@ -16,7 +16,12 @@ import { accent, colors, tint } from '../../theme';
  * <p>Without it, the choice is made at every call site, which is where it goes wrong: the
  * sentence written for a dark card gets moved into a lime one and nobody reads the colour again.
  */
-export type Surface = 'dark' | 'lime' | 'white' | 'accent';
+/**
+ * `dark` is the canvas, and follows the theme: on the light theme its tones are dark ink. `night` is
+ * a surface that is dark in both themes — the black plan card — and keeps the dark set's tones
+ * (docs/ui-kit.md §11). On the dark theme the two are the same.
+ */
+export type Surface = 'dark' | 'night' | 'lime' | 'white' | 'accent';
 
 /**
  * Every mobile accent names the same near-black text token (`theme.test.ts` holds them to it), so
@@ -50,6 +55,11 @@ export const TONES: Record<Surface, Record<RelativeTone, string>> = {
     primary: colors.textPrimary,
     secondary: colors.textSecondary,
     tertiary: colors.textTertiary,
+  },
+  night: {
+    primary: darkColors.textPrimary,
+    secondary: darkColors.textSecondary,
+    tertiary: darkColors.textTertiary,
   },
   lime: {
     primary: colors.textOnLime,
@@ -119,6 +129,25 @@ export const BLOCK: Record<
  * white — the same switch `theme.css` makes under `[data-on-lime]` and `[data-on-white]`, because
  * `packages/ui`'s contrast test measures lime on white below 3:1.
  */
+/**
+ * The block skin for `outer`, keeping a lime or accent card's blocks dark on the light theme too:
+ * the card looks the same in both themes (docs/ui-kit.md §11), so a progress track on it stays the
+ * dark track it was drawn with. On the dark theme this is `BLOCK[blockSurface(outer)]`.
+ */
+export function blockFor(outer: Surface): (typeof BLOCK)[BlockSurface] {
+  if (outer === 'lime' || outer === 'accent' || outer === 'night') return ISLAND;
+  return BLOCK[blockSurface(outer)];
+}
+
+const ISLAND: (typeof BLOCK)[BlockSurface] = {
+  rest: darkColors.surface2,
+  pressed: darkColors.surface3,
+  placeholder: darkColors.surface3,
+  shimmer: darkColors.surface4,
+  track: darkColors.surface3,
+  badge: darkColors.surface3,
+};
+
 export function focusRingColor(surface: Surface): string {
-  return surface === 'dark' ? colors.lime500 : TONES[surface].primary;
+  return surface === 'dark' ? colors.focusRing : TONES[surface].primary;
 }

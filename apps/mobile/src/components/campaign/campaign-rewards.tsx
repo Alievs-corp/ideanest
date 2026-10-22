@@ -11,7 +11,7 @@ import { formatDeliveryMonth, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { clockDuration } from '../../lib/media/duration';
 import { useHoldPreview } from '../../lib/media/hold-preview';
-import { colors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../../theme';
+import { colors, darkColors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../../theme';
 import { HoldPreviewVideo } from '../hold-preview-video';
 import { toneColor } from '../text';
 import {
@@ -286,7 +286,7 @@ function TierMedia({
         <HoldPreviewVideo url={video.url} playing={preview.playing} testID={`reward-preview-${id}`} />
         {/* Decorative: the button's name says it is a video. */}
         <View style={styles.badge} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <Icon icon={Glyphs.Play} variant="bold" size={14} color={colors.textPrimary} />
+          <Icon icon={Glyphs.Play} variant="bold" size={14} color={darkColors.textPrimary} />
           {video.durationMs > 0 ? <Text style={styles.length}>{clockDuration(video.durationMs)}</Text> : null}
         </View>
       </MediaFrame>
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     ...font.medium,
     fontSize: fontSize.caption,
     lineHeight: lineHeight.small,
-    color: colors.textPrimary,
+    color: darkColors.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },

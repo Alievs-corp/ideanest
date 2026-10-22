@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Glyphs } from '../../icons';
-import { colors, font, fontSize, lineHeight, radius, size as measure, spacing } from '../../theme';
+import { colors, darkColors, font, fontSize, lineHeight, radius, size as measure, spacing } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon } from './icon';
 import { usePressScale } from './press-scale';
@@ -79,7 +79,7 @@ const SKIN: Record<'dark' | 'light', MarkSkin> = {
   light: {
     empty: colors.whiteSurface,
     edge: TONES.white.tertiary,
-    marked: colors.surface1,
+    marked: darkColors.surface1,
     mark: colors.whiteSurface,
   },
 };

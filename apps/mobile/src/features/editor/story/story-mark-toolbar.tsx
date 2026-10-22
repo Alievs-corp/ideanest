@@ -118,7 +118,7 @@ function MarkButton({
         icon={glyph}
         variant={active ? 'bold' : 'linear'}
         size={20}
-        color={active ? colors.textOnWhite : colors.textSecondary}
+        color={active ? colors.onInverse : colors.textSecondary}
       />
     </AnimatedPressable>
   );
@@ -134,6 +134,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   idle: { backgroundColor: colors.surface3 },
-  active: { backgroundColor: colors.whiteSurface },
+  active: { backgroundColor: colors.inverse },
   disabled: { opacity: 0.4 },
 });

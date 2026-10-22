@@ -98,6 +98,24 @@ Accent tokens live in `@ideanest/design-tokens` as `accent` (the web draws them 
 - Glow under an accent card = the accent at the alpha the token defines, never a new
   colour.
 
+### 4.1 Light theme
+
+The reader can switch the app to a light theme (Me → Theme, `docs/ui-kit.md` §11). Dark is
+the default. `colors` from `src/theme` is the active theme's palette, chosen once at launch
+from the stored choice; switching restarts the JavaScript and reopens the screen
+(`src/lib/theme-preference.ts`). So:
+
+- **Canvas tokens follow the theme** (`surface*`, `text*`, `border*`, status hues). Write them
+  as before and both themes are right.
+- **The primary pill / selected chip or tab on the canvas** is `inverse` + `onInverse`
+  (white on dark, near-black on light) — never `whiteSurface`, which is the white *sheet*.
+- **What is dark on purpose in both themes** — a pill inverted on a white sheet, text on a
+  scrim over a photo, the black plan card — takes `darkColors`, or `SurfaceProvider
+  surface="night"` for a whole dark card.
+- **Lime, accents, white sheets and what is on them** do not change. Lime as an icon or marker
+  on the canvas is `limeInk`; the focus ring is `focusRing`.
+- The tab bar stays a dark capsule on both themes.
+
 ## 5. Icons — Iconsax
 
 - Every mobile icon comes from **Iconsax**, through the kit's `Icon` component

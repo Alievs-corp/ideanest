@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, font, fontSize, motion, radius, size as measure, spacing, spring } from '../../theme';
+import { colors, darkColors, font, fontSize, motion, radius, size as measure, spacing, spring } from '../../theme';
 import { useFocusRing } from './focus';
 import { haptics } from './haptics';
 import { useMotionAllowed } from './motion-budget';
@@ -127,7 +127,7 @@ function Segment({
   const restStyle = useAnimatedStyle(() => ({ opacity: 1 - on.value }));
 
   const rest = onWhite ? TONES.white.secondary : TONES.dark.secondary;
-  const chosen = onWhite ? colors.textPrimary : colors.textOnWhite;
+  const chosen = onWhite ? darkColors.textPrimary : colors.onInverse;
 
   return (
     <Pressable
@@ -174,8 +174,8 @@ const styles = StyleSheet.create({
     left: 0,
     borderRadius: radius.full,
   },
-  thumbOnDark: { backgroundColor: colors.whiteSurface },
-  thumbOnWhite: { backgroundColor: colors.surface1 },
+  thumbOnDark: { backgroundColor: colors.inverse },
+  thumbOnWhite: { backgroundColor: darkColors.surface1 },
   segment: {
     flex: 1,
     minHeight: measure.touchTarget - INSET * 2,

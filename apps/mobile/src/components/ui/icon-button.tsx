@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 import { StyleSheet, type View, type ViewStyle } from 'react-native';
-import { colors, radius, size as measure, tint } from '../../theme';
+import { colors, darkColors, radius, size as measure, tint } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon, type IconComponent } from './icon';
 import { AnimatedPressable, usePressScale } from './press-scale';
@@ -104,15 +104,15 @@ function skinFor(
     case 'light':
       if (surface === 'white') {
         return {
-          rest: { backgroundColor: colors.surface1 },
-          pressed: { backgroundColor: colors.surface3 },
-          glyph: colors.textPrimary,
+          rest: { backgroundColor: darkColors.surface1 },
+          pressed: { backgroundColor: darkColors.surface3 },
+          glyph: darkColors.textPrimary,
         };
       }
       return {
-        rest: { backgroundColor: colors.whiteSurface },
-        pressed: { backgroundColor: colors.whiteMuted },
-        glyph: colors.textOnWhite,
+        rest: { backgroundColor: colors.inverse },
+        pressed: { backgroundColor: colors.inverseMuted },
+        glyph: colors.onInverse,
       };
     case 'accent':
       return {
@@ -129,8 +129,8 @@ function skinFor(
     case 'translucent':
       return surface === 'dark'
         ? {
-            rest: { backgroundColor: tint(colors.whiteSurface, 0.12) },
-            pressed: { backgroundColor: tint(colors.whiteSurface, 0.2) },
+            rest: { backgroundColor: tint(colors.textPrimary, 0.12) },
+            pressed: { backgroundColor: tint(colors.textPrimary, 0.2) },
             glyph: TONES.dark.primary,
           }
         : {

@@ -11,7 +11,7 @@ import {
 } from '@ideanest/plans/catalogue';
 import { Glyphs } from '../../icons';
 import { formatDay, useT, type Translate } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../../theme';
+import { activeTheme, colors, darkColors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../../theme';
 import {
   Body,
   Card,
@@ -208,12 +208,16 @@ export function PlanCards({
  * it inverts to white with a near-black label — the lime card included, so the three read as one
  * control rather than one of them carrying lime text.
  */
-const PLAN_TONES = ['white', 'dark', 'lime'] as const;
+const PLAN_TONES = ['white', 'night', 'lime'] as const;
 type PlanTone = (typeof PLAN_TONES)[number];
 
 const PLAN_SKIN: Record<PlanTone, { card: string; button: string; label: string; border?: string }> = {
-  white: { card: colors.whiteMuted, button: colors.textOnWhite, label: colors.whiteSurface },
-  dark: { card: colors.black, button: colors.whiteSurface, label: colors.textOnWhite, border: tint(colors.textPrimary, 0.08) },
+  // On the light canvas `whiteMuted` is the page's own colour, so the card turns white with an edge.
+  white:
+    activeTheme === 'light'
+      ? { card: colors.whiteSurface, button: colors.textOnWhite, label: colors.whiteSurface, border: tint(colors.black, 0.08) }
+      : { card: colors.whiteMuted, button: colors.textOnWhite, label: colors.whiteSurface },
+  night: { card: colors.black, button: colors.whiteSurface, label: colors.textOnWhite, border: tint(darkColors.textPrimary, 0.08) },
   lime: { card: colors.lime500, button: colors.textOnLime, label: colors.whiteSurface },
 };
 

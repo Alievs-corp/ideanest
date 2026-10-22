@@ -152,11 +152,12 @@ Lime is a surface with near-black text on it, or it is nothing.
 **Context decides the token.** `text-fg-64` is invisible on a lime card and
 on a white panel. Use the `onLime` and `on-white` variants.
 
-**Two themes, one token set** (`apps/web`, `packages/ui`). The site has a dark default and a light theme
+**Two themes, one token set.** The site and the app have a dark default and a light theme
 (`docs/ui-kit.md` §11). Foreground is `text-fg`, `text-fg-64`, `border-fg/8` —
 never `text-white`, which is literal white and is only for text over a photo or
 a scrim. A primary pill is `bg-inverse text-on-inverse`. The admin console is
-dark in both.
+dark in both. In `apps/mobile` the same rules are `colors.inverse`, `darkColors`
+and `limeInk` — the `mobile-design` skill §4.1.
 
 ### Motion
 

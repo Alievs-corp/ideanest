@@ -9,10 +9,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useT } from '../../lib/i18n';
-import { colors, motion, radius, spacing, spring } from '../../theme';
+import { colors, darkColors, motion, radius, spacing, spring } from '../../theme';
 import { Meta } from '../text';
 import { useMotionAllowed } from './motion-budget';
-import { BLOCK, blockSurface, useSurface } from './surface';
+import { blockFor, blockSurface, useSurface } from './surface';
 
 /**
  * A campaign's funding progress — the native `ProgressBar` (`docs/ui-kit.md` §7.11), moved into
@@ -148,7 +148,8 @@ export function ProgressBar({
   const fraction = fillFraction(completionPercent);
   const reached = goalReached(completionPercent);
   const readable = readablePercent(completionPercent);
-  const block = blockSurface(useSurface());
+  const surface = useSurface();
+  const block = blockSurface(surface);
 
   return (
     <View
@@ -177,7 +178,7 @@ export function ProgressBar({
       <View
         style={[
           styles.track,
-          { height: HEIGHT[size], backgroundColor: BLOCK[block].track },
+          { height: HEIGHT[size], backgroundColor: blockFor(surface).track },
           reached && glow && { boxShadow: FUNDED_GLOW },
         ]}
       >
@@ -192,7 +193,7 @@ export function ProgressBar({
             key={String(fraction)}
             fraction={fraction}
             rise={rise}
-            colour={reached ? colors.success : block === 'white' ? colors.surface1 : colors.lime500}
+            colour={reached ? colors.success : block === 'white' ? darkColors.surface1 : colors.lime500}
           />
         </View>
       </View>
