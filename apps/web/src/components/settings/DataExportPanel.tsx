@@ -72,9 +72,9 @@ export function DataExportPanel({ copy }: DataExportPanelProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
-      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">{copy.intro}</p>
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{copy.heading}</h2>
+      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-fg-64">{copy.intro}</p>
 
       {error !== null && (
         <div className="mt-5">

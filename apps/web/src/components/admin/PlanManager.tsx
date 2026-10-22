@@ -213,10 +213,10 @@ export function PlanManager({ copy }: PlanManagerProps) {
       {/* ---- the catalogue ------------------------------------------------ */}
 
       <section aria-labelledby="plan-catalogue-heading">
-        <h2 id="plan-catalogue-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="plan-catalogue-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.catalogueHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.catalogueIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.catalogueIntro}</p>
 
         {catalogue.status === 'loading' && (
           <SkeletonGroup label={copy.loadingCatalogue} className="mt-4">
@@ -263,7 +263,7 @@ export function PlanManager({ copy }: PlanManagerProps) {
       {/* ---- adding one --------------------------------------------------- */}
 
       <section aria-labelledby="plan-add-heading">
-        <h2 id="plan-add-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="plan-add-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.addHeading}
         </h2>
 
@@ -330,10 +330,10 @@ export function PlanManager({ copy }: PlanManagerProps) {
       {/* ---- the payment queue -------------------------------------------- */}
 
       <section aria-labelledby="plan-queue-heading">
-        <h2 id="plan-queue-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="plan-queue-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.queueHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.queueIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.queueIntro}</p>
 
         <Pill
           variant="ghost"
@@ -449,14 +449,14 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
   }
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-2 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-2 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-2 text-sm sm:text-[15px] text-white">
+          <p className="flex flex-wrap items-center gap-2 text-sm sm:text-[15px] text-fg">
             {plan.name}
-            <code className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-xs text-white/64">{plan.code}</code>
+            <code className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-xs text-fg-64">{plan.code}</code>
           </p>
-          <p className="mt-1 text-[13px] text-white/64">
+          <p className="mt-1 text-[13px] text-fg-64">
             {fillPlaceholders(copy.planSummary, {
               price: money(plan.price),
               period: copy.period[plan.billingPeriod],

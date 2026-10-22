@@ -37,7 +37,7 @@ export const States: Story = {
         <div key={v}>
           <div className="mb-2 flex items-baseline justify-between">
             <span className="text-sm font-medium tabular-nums">{v.toLocaleString('en-US')}%</span>
-            <span className="text-xs text-white/40">
+            <span className="text-xs text-fg-40">
               {v >= 100 ? 'Goal reached' : 'In progress'}
             </span>
           </div>

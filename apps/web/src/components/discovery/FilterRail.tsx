@@ -80,7 +80,7 @@ function FacetCheckbox({ label, none, count, checked, onToggle }: FacetCheckboxP
   return (
     <li className="flex items-center justify-between gap-3">
       <Checkbox checked={checked} disabled={unavailable} onChange={onToggle} label={label} />
-      <span className="shrink-0 text-xs text-white/40 tabular-nums">
+      <span className="shrink-0 text-xs text-fg-40 tabular-nums">
         {count === null ? '' : count === 0 ? none : count}
       </span>
     </li>
@@ -94,8 +94,8 @@ interface GroupProps {
 
 function Group({ legend, children }: GroupProps) {
   return (
-    <fieldset className="border-t border-white/8 pt-5">
-      <legend className="mb-3 text-sm font-medium text-white">{legend}</legend>
+    <fieldset className="border-t border-fg/8 pt-5">
+      <legend className="mb-3 text-sm font-medium text-fg">{legend}</legend>
       {children}
     </fieldset>
   );
@@ -157,7 +157,7 @@ function RangeFields({ dimension, legend, copy, locale, min, max, onApply }: Ran
 
   return (
     <div className="mt-4 flex flex-col gap-3">
-      <p className="text-[13px] text-white/64">{copy.customRange}</p>
+      <p className="text-[13px] text-fg-64">{copy.customRange}</p>
 
       {/*
         The labels name their dimension. Two fields called "Lowest" on one page
@@ -297,7 +297,7 @@ export function FilterRail({ filters, facets, onChange, copy, locale }: FilterRa
                     onChange={() => onChange(toggleCategory(filters, category.slug))}
                     label={category.name}
                   />
-                  <span className="shrink-0 text-xs text-white/40 tabular-nums">
+                  <span className="shrink-0 text-xs text-fg-40 tabular-nums">
                     {category.count === 0 ? copy.none : category.count}
                   </span>
                 </div>
@@ -307,7 +307,7 @@ export function FilterRail({ filters, facets, onChange, copy, locale }: FilterRa
                     aria-label={fillPlaceholders(copy.subcategoriesOf, {
                       category: category.name,
                     })}
-                    className="ml-8 flex flex-col gap-2.5 border-l border-white/8 pl-4"
+                    className="ml-8 flex flex-col gap-2.5 border-l border-fg/8 pl-4"
                   >
                     {category.subcategories.map((subcategory) => (
                       <FacetCheckbox
@@ -400,10 +400,10 @@ export function FilterRail({ filters, facets, onChange, copy, locale }: FilterRa
           behaves differently from every other control beside it has to.
         */}
         {(facets?.tags ?? []).length === 0 ? (
-          <p className="text-[13px] text-white/40">{copy.noTags}</p>
+          <p className="text-[13px] text-fg-40">{copy.noTags}</p>
         ) : (
           <>
-            <p className="mb-3 text-[13px] text-white/64">{copy.tagsHint}</p>
+            <p className="mb-3 text-[13px] text-fg-64">{copy.tagsHint}</p>
             <ul className="flex flex-col gap-2.5">
               {(facets?.tags ?? []).map((tag) => (
                 <FacetCheckbox

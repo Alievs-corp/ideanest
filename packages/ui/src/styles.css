@@ -32,6 +32,25 @@
   --color-accent-mint: var(--accent-mint);
   --color-accent-sky: var(--accent-sky);
 
+  /* The foreground scale and the inverse pill follow the theme
+     (docs/ui-kit.md §11). `white` keeps Tailwind's literal and is
+     for text over photography and scrims, which is white in both. */
+  --color-fg: var(--fg);
+  --color-fg-80: var(--fg-80);
+  --color-fg-72: var(--fg-72);
+  --color-fg-64: var(--fg-64);
+  --color-fg-56: var(--fg-56);
+  --color-fg-48: var(--fg-48);
+  --color-fg-40: var(--fg-40);
+  --color-fg-32: var(--fg-32);
+  --color-fg-24: var(--fg-24);
+
+  --color-inverse: var(--inverse);
+  --color-inverse-muted: var(--inverse-muted);
+  --color-on-inverse: var(--on-inverse);
+
+  --color-lime-ink: var(--lime-ink);
+
   --color-on-lime: var(--text-on-lime);
   --color-on-accent: var(--text-on-accent);
   --color-on-white: var(--text-on-white);
@@ -77,7 +96,7 @@
     font-family: var(--font-display);
   }
 
-  /* Thin scrollbars suit a dark surface. */
+  /* Thin scrollbars suit either surface. */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--surface-4) transparent;

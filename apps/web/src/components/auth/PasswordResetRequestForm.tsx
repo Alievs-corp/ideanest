@@ -87,12 +87,12 @@ export function PasswordResetRequestForm({ copy }: PasswordResetRequestFormProps
             screen is entitled to write. See the component comment.
           */}
           {fillNodes(copy.sentIntro, {
-            address: <span className="text-white">{askedFor}</span>,
+            address: <span className="text-fg">{askedFor}</span>,
           })}
         </AuthPageHeader>
 
-        <div className="flex items-start gap-3 rounded-lg border border-white/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-white/64">
-          <MailQuestion aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-white/40" />
+        <div className="flex items-start gap-3 rounded-lg border border-fg/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-fg-64">
+          <MailQuestion aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-fg-40" />
           <div>
             <p>{fillPlaceholders(copy.sentLifetime, { lifetime: copy.lifetime })}</p>
             <p className="mt-3">
@@ -101,7 +101,7 @@ export function PasswordResetRequestForm({ copy }: PasswordResetRequestFormProps
                   <button
                     type="button"
                     onClick={() => setAskedFor(null)}
-                    className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                    className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
                     {copy.tryAnother}
                   </button>
@@ -111,10 +111,10 @@ export function PasswordResetRequestForm({ copy }: PasswordResetRequestFormProps
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-white/64">
+        <p className="mt-8 text-center text-sm text-fg-64">
           <Link
             href="/sign-in"
-            className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.backToSignIn}
           </Link>
@@ -157,11 +157,11 @@ export function PasswordResetRequestForm({ copy }: PasswordResetRequestFormProps
           {submitting ? copy.submitting : copy.submit}
         </Pill>
 
-        <p className="text-center text-sm text-white/64">
+        <p className="text-center text-sm text-fg-64">
           {copy.remembered}{' '}
           <Link
             href="/sign-in"
-            className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.signIn}
           </Link>

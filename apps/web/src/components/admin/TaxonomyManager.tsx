@@ -101,10 +101,10 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
       </InlineAlert>
 
       <section aria-labelledby="tree-heading">
-        <h2 id="tree-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="tree-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.categories}
           {tree.data !== null && (
-            <span className="ml-2 text-xs font-normal text-white/40">{branches.length}</span>
+            <span className="ml-2 text-xs font-normal text-fg-40">{branches.length}</span>
           )}
         </h2>
 
@@ -112,7 +112,7 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <div className="space-y-3">
               {[0, 1, 2].map((row) => (
-                <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <Skeleton height="1rem" width="35%" />
                 </div>
               ))}
@@ -167,10 +167,10 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
       />
 
       <section aria-labelledby="tags-heading">
-        <h2 id="tags-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="tags-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.tagsHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.tagsIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.tagsIntro}</p>
 
         {tags.status === 'loading' && (
           <SkeletonGroup label={copy.loadingList} className="mt-4">
@@ -186,13 +186,13 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
           <>
             <ul className="mt-4 flex list-none flex-wrap gap-2">
               {allTags.slice(0, TAG_LIMIT).map((tag) => (
-                <li key={tag.id} className="rounded-md border border-white/8 px-2.5 py-1.5 text-xs text-white/64">
-                  {tag.label} <span className="text-white/40">{tag.usageCount}</span>
+                <li key={tag.id} className="rounded-md border border-fg/8 px-2.5 py-1.5 text-xs text-fg-64">
+                  {tag.label} <span className="text-fg-40">{tag.usageCount}</span>
                 </li>
               ))}
             </ul>
             {allTags.length > TAG_LIMIT && (
-              <p className="mt-2 text-xs text-white/40">
+              <p className="mt-2 text-xs text-fg-40">
                 {fillPlaceholders(copy.tagsShown, {
                   shown: String(TAG_LIMIT),
                   total: String(allTags.length),
@@ -202,7 +202,7 @@ export function TaxonomyManager({ copy }: TaxonomyManagerProps) {
           </>
         )}
         {tags.status === 'ready' && allTags.length === 0 && (
-          <p className="mt-4 text-sm text-white/48">{copy.noTags}</p>
+          <p className="mt-4 text-sm text-fg-48">{copy.noTags}</p>
         )}
       </section>
     </div>
@@ -246,14 +246,14 @@ function Branch({
   const panelId = `category-${branch.category.id}`;
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm sm:text-[15px] text-white">
+          <p className="text-sm sm:text-[15px] text-fg">
             {nameIn(branch.category, locale)}
-            <span className="ml-2 font-mono text-xs text-white/40">{branch.category.slug}</span>
+            <span className="ml-2 font-mono text-xs text-fg-40">{branch.category.slug}</span>
           </p>
-          <p className="mt-1 text-xs text-white/48">
+          <p className="mt-1 text-xs text-fg-48">
             {branch.subcategories.length > 0
               ? pluralise(locale, copy.subcategories, branch.subcategories.length)
               : copy.noSubcategories}
@@ -271,13 +271,13 @@ function Branch({
       </div>
 
       {open && (
-        <div id={panelId} className="mt-4 border-t border-white/8 pt-4">
+        <div id={panelId} className="mt-4 border-t border-fg/8 pt-4">
           <EntryEditor entry={branch.category} kind="categories" busy={busy} copy={copy} onAct={onAct} />
 
           {branch.subcategories.length > 0 && (
             <>
-              <h3 className="mt-6 text-sm font-medium text-white">{copy.subcategoriesHeading}</h3>
-              <ul className="mt-3 flex list-none flex-col gap-2 border-l border-white/8 pl-4">
+              <h3 className="mt-6 text-sm font-medium text-fg">{copy.subcategoriesHeading}</h3>
+              <ul className="mt-3 flex list-none flex-col gap-2 border-l border-fg/8 pl-4">
                 {branch.subcategories.map((subcategory) => (
                   <li key={subcategory.id}>
                     <EntryEditor
@@ -294,7 +294,7 @@ function Branch({
             </>
           )}
 
-          <div className="mt-6 border-t border-white/8 pt-4">
+          <div className="mt-6 border-t border-fg/8 pt-4">
             <NewEntry
               heading={copy.newSubcategoryLabel}
               hint={copy.newSubcategoryHint}
@@ -376,10 +376,10 @@ function EntryEditor({
   }
 
   return (
-    <form onSubmit={(event) => void save(event)} className="rounded-md border border-white/8 p-3">
-      <p className="text-sm text-white">
+    <form onSubmit={(event) => void save(event)} className="rounded-md border border-fg/8 p-3">
+      <p className="text-sm text-fg">
         {heading !== undefined && <span className="mr-2">{heading}</span>}
-        <span className="font-mono text-xs text-white/40">{entry.slug}</span>
+        <span className="font-mono text-xs text-fg-40">{entry.slug}</span>
       </p>
 
       <div className="mt-3 grid items-start gap-3 sm:grid-cols-2">
@@ -473,8 +473,8 @@ function NewEntry({
       <Heading
         className={
           compact
-            ? 'text-sm font-medium text-white'
-            : 'text-lg font-medium tracking-[-0.02em] text-white'
+            ? 'text-sm font-medium text-fg'
+            : 'text-lg font-medium tracking-[-0.02em] text-fg'
         }
       >
         {heading}

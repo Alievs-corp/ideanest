@@ -247,7 +247,7 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
           <MediaFrame
             ratio={intrinsicSize(page.coverImage) ?? '16/9'}
             radius="lg"
-            className="mb-8 border border-white/8"
+            className="mb-8 border border-fg/8"
           >
             <Image
               src={page.coverImage.url}
@@ -261,12 +261,12 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
           </MediaFrame>
         )}
 
-        <p className="text-xs font-medium tracking-[0.06em] text-white/40 uppercase">
+        <p className="text-xs font-medium tracking-[0.06em] text-fg-40 uppercase">
           {copy.comingSoon}
         </p>
         <h1
           id={headingId}
-          className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl"
+          className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-fg sm:text-4xl"
         >
           {page.title}
         </h1>
@@ -275,19 +275,19 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
           <p className="mt-4 text-lg text-reading">{page.blurb}</p>
         )}
 
-        <p className="mt-6 flex items-center gap-2 text-sm text-white/64">
+        <p className="mt-6 flex items-center gap-2 text-sm text-fg-64">
           <Users aria-hidden="true" className="size-4" />
           <span>
             {fillNodes(pluralForm(locale, copy.waiting, page.followerCount), {
               count: (
-                <strong className="font-semibold text-white">{page.followerCount}</strong>
+                <strong className="font-semibold text-fg">{page.followerCount}</strong>
               ),
             })}
           </span>
         </p>
         </FadeUp>
 
-        <section className="mt-10 rounded-lg border border-white/8 bg-surface-2 p-6">
+        <section className="mt-10 rounded-lg border border-fg/8 bg-surface-2 p-6">
           {following ? (
             /*
              * The already-signed-up state. It says what will happen and when,
@@ -298,8 +298,8 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
             <div className="flex items-start gap-3">
               <CircleCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-success" />
               <div>
-                <h2 className="text-base font-semibold text-white">{copy.onListTitle}</h2>
-                <p className="mt-1 text-sm text-white/64">
+                <h2 className="text-base font-semibold text-fg">{copy.onListTitle}</h2>
+                <p className="mt-1 text-sm text-fg-64">
                   {signedIn ? copy.onListSignedIn : copy.onListGuest}
                 </p>
               </div>
@@ -334,8 +334,8 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
               }}
             >
               <div>
-                <h2 className="text-base font-semibold text-white">{copy.formTitle}</h2>
-                <p className="mt-1 text-sm text-white/64">{copy.formIntro}</p>
+                <h2 className="text-base font-semibold text-fg">{copy.formTitle}</h2>
+                <p className="mt-1 text-sm text-fg-64">{copy.formIntro}</p>
               </div>
 
               {failure !== null && (
@@ -353,7 +353,7 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
               )}
 
               {signedIn ? (
-                <p className="text-sm text-white/64">{copy.accountAddress}</p>
+                <p className="text-sm text-fg-64">{copy.accountAddress}</p>
               ) : (
                 <Field label={copy.emailLabel} required error={fieldError ?? undefined}>
                   <TextInput

@@ -125,7 +125,7 @@ export function DashboardNav({ projectId, copy }: DashboardNavProps) {
   }, [pathname]);
 
   return (
-    <nav aria-label={copy.label} className="border-b border-white/8">
+    <nav aria-label={copy.label} className="border-b border-fg/8">
       {/* `-m-1 p-1`: room for the focus ring inside the scroll container, given back. */}
       <ul
         ref={rowRef}
@@ -144,10 +144,10 @@ export function DashboardNav({ projectId, copy }: DashboardNavProps) {
                   // makes it a build error, and a keyboard user on a nav with no visible
                   // focus has no way to know where they are.
                   'inline-block whitespace-nowrap rounded-t-[10px] px-4 py-3 text-sm font-medium',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
                   current
-                    ? 'border-b-2 border-white text-white'
-                    : 'border-b-2 border-transparent text-white/64 hover:text-white',
+                    ? 'border-b-2 border-fg text-fg'
+                    : 'border-b-2 border-transparent text-fg-64 hover:text-fg',
                 )}
               >
                 {panel.label}

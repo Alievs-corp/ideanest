@@ -18,7 +18,7 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  * familiar context, and near-black on white gives both. It is the SUMMARY that
  * takes it rather than the whole page, for a reason the system itself decides —
  * every form primitive in `@ideanest/ui` is built for the dark ground (a `Radio`
- * label is `text-white`, an input is `--surface-3`), so putting the controls on
+ * label is `text-fg`, an input is `--surface-3`), so putting the controls on
  * white would mean reimplementing them, which CLAUDE.md §2 rules out and §7.13
  * gives no white variants for. §8.3 already sends "financial summary" to the
  * floating panel, so this is the shape the system had in mind.
@@ -154,7 +154,7 @@ export function PledgeSummary({
               and `aria-label` is what says the same thing to a screen reader, which would
               otherwise announce the glyph as nothing at all.
 
-              `text-on-white/64` and not `text-white/64`: this panel is the white surface, and
+              `text-on-white/64` and not `text-fg-64`: this panel is the white surface, and
               CLAUDE.md §2 names that exact confusion — the same token is invisible on one of
               the two.
             */}

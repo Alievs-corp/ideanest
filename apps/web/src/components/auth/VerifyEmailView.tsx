@@ -132,7 +132,7 @@ export function VerifyEmailView({ copy }: VerifyEmailViewProps) {
 
           <Link
             href="/sign-in"
-            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-inverse px-6 text-base font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
           >
             {copy.signIn}
           </Link>
@@ -147,13 +147,13 @@ export function VerifyEmailView({ copy }: VerifyEmailViewProps) {
             <p>{failure.detail}</p>
           </InlineAlert>
 
-          <div className="rounded-lg border border-white/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-white/64">
+          <div className="rounded-lg border border-fg/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-fg-64">
             <p>{copy.failedExplain}</p>
           </div>
 
           <Link
             href="/sign-in"
-            className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+            className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-inverse px-6 text-base font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
           >
             {copy.signIn}
           </Link>
@@ -167,17 +167,17 @@ export function VerifyEmailView({ copy }: VerifyEmailViewProps) {
 
 function AuthFooterLinks({ copy }: { readonly copy: VerifyEmailCopy }) {
   return (
-    <p className="mt-8 text-center text-sm text-white/64">
+    <p className="mt-8 text-center text-sm text-fg-64">
       <Link
         href="/register"
-        className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {copy.createAccount}
       </Link>
       {' · '}
       <Link
         href="/"
-        className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {copy.home}
       </Link>

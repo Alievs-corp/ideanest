@@ -245,7 +245,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
           id="admin-users-heading"
           ref={headingRef}
           tabIndex={-1}
-          className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+          className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
         >
           {copy.heading}
           {status === 'ready' && (
@@ -285,7 +285,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
             {copy.search}
           </Pill>
         </div>
-        <p id="admin-users-search-hint" className="mt-2 text-xs text-white/48">
+        <p id="admin-users-search-hint" className="mt-2 text-xs text-fg-48">
           {copy.searchHint}
         </p>
       </form>
@@ -314,7 +314,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-2 p-4 sm:p-5">
                 <Skeleton height="1.125rem" width="30%" />
                 <Skeleton height="0.875rem" width="45%" className="mt-3" />
               </div>
@@ -342,7 +342,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
             return (
               <li
                 key={user.id}
-                className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5"
+                className="rounded-lg border border-fg/8 bg-surface-2 p-4 sm:p-5"
                 aria-busy={busyIds.has(user.id)}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -353,14 +353,14 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
                     */}
                     <Link
                       href={`/admin/users/${encodeURIComponent(user.id)}`}
-                      className="block truncate rounded-lg text-sm font-medium text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                      className="block truncate rounded-lg text-sm font-medium text-fg underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                     >
                       {user.name}
                     </Link>
                     {/* The address is why this screen exists and why every read of it
                         is audited. Nothing else on the platform shows one. */}
-                    <p className="truncate text-sm text-white/64">{user.email}</p>
-                    <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs text-white/40">
+                    <p className="truncate text-sm text-fg-64">{user.email}</p>
+                    <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs text-fg-40">
                       <span className="truncate">
                         /{user.slug} ·{' '}
                         {fillPlaceholders(copy.joined, {
@@ -371,7 +371,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
                         #402: the identifier `/admin/staff` once asked for by hand. The
                         fragment is here, the whole value is on the control.
                       */}
-                      <span className="font-mono text-white/32" title={user.id}>
+                      <span className="font-mono text-fg-32" title={user.id}>
                         {user.id.slice(0, 8)}
                       </span>
                       <CopyIdentifier id={user.id} copy={copy.identity} />
@@ -392,7 +392,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
                 </div>
 
                 {user.suspended && (
-                  <p className="mt-3 text-sm text-white/64">
+                  <p className="mt-3 text-sm text-fg-64">
                     {fillPlaceholders(copy.suspendedOn, {
                       date: day(user.suspendedAt, locale) ?? copy.unknownDate,
                     })}
@@ -451,7 +451,7 @@ export function UserDirectory({ copy }: UserDirectoryProps) {
 
       <div role="status" aria-live="polite" className="empty:hidden">
         {status === 'ready' && reachedEnd && cursor === null && loaded.length > 0 && (
-          <p className="mt-3 text-sm text-white/64">{copy.noMore}</p>
+          <p className="mt-3 text-sm text-fg-64">{copy.noMore}</p>
         )}
       </div>
 

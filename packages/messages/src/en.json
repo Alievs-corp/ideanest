@@ -86,6 +86,11 @@
       "emptyDetail": "You can look at the campaigns for other countries.",
       "emptyAction": "See all countries"
     },
+    "theme": {
+      "label": "Theme",
+      "toLight": "Switch to light theme",
+      "toDark": "Switch to dark theme"
+    },
     "footer": {
       "label": "Footer",
       "languageHeading": "Language",

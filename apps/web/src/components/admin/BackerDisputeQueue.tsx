@@ -95,10 +95,10 @@ export function BackerDisputeQueue({ copy }: BackerDisputeQueueProps) {
 
   return (
     <section aria-labelledby="backer-dispute-queue-heading">
-      <h2 id="backer-dispute-queue-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="backer-dispute-queue-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.heading}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.intro}</p>
 
       <div aria-live="polite">
         {outcome !== null && (
@@ -205,7 +205,7 @@ function DisputeCase({
             link: (
               <Link
                 href="/admin/refunds"
-                className="rounded underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="rounded underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {copy.refundsLink}
               </Link>
@@ -224,9 +224,9 @@ function DisputeCase({
   }
 
   return (
-    <div className="rounded-lg border border-white/8 bg-surface-1 p-4">
-      <p className="whitespace-pre-line text-sm text-white">{dispute.reason}</p>
-      <p className="mt-2 text-xs text-white/64">
+    <div className="rounded-lg border border-fg/8 bg-surface-1 p-4">
+      <p className="whitespace-pre-line text-sm text-fg">{dispute.reason}</p>
+      <p className="mt-2 text-xs text-fg-64">
         {fillNodes(copy.pledgeLine, {
           backer:
             dispute.backerId == null ? (
@@ -240,7 +240,7 @@ function DisputeCase({
         })}
       </p>
       {dispute.refundable != null && (
-        <p className="mt-2 text-sm text-white">
+        <p className="mt-2 text-sm text-fg">
           {fillPlaceholders(copy.refundableLine, { amount: formatMoney(dispute.refundable) })}
         </p>
       )}
@@ -259,7 +259,7 @@ function DisputeCase({
 
       {confirming ? (
         <div role="group" aria-label={copy.uphold} className="mt-4 flex flex-col gap-2">
-          <p className="max-w-[62ch] text-sm text-white">{fillPlaceholders(copy.confirmUphold, { amount })}</p>
+          <p className="max-w-[62ch] text-sm text-fg">{fillPlaceholders(copy.confirmUphold, { amount })}</p>
           <div className="flex flex-wrap items-center gap-2">
             <Pill variant="accent" size="sm" autoFocus aria-disabled={busy} onClick={() => void decide('UPHOLD')}>
               {busy ? copy.deciding : copy.confirmNow}
@@ -282,7 +282,7 @@ function DisputeCase({
             </Pill>
           </div>
           {!canRefund && copy.refusals.needsCapabilityToAct !== undefined && (
-            <p className="max-w-[62ch] text-xs text-white/64">
+            <p className="max-w-[62ch] text-xs text-fg-64">
               {fillPlaceholders(copy.refusals.needsCapabilityToAct, {
                 capability: capabilityLabel('ISSUE_REFUND', copy.refusals),
               })}

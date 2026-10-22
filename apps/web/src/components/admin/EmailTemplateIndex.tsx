@@ -46,7 +46,7 @@ export function EmailTemplateIndex({ copy }: EmailTemplateIndexProps) {
       <SkeletonGroup label={copy.loadingList}>
         <div className="space-y-3">
           {[0, 1, 2].map((row) => (
-            <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+            <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
               <Skeleton height="1rem" width="40%" />
             </div>
           ))}
@@ -80,10 +80,10 @@ export function EmailTemplateIndex({ copy }: EmailTemplateIndexProps) {
           <li key={template.type}>
             <Link
               href={`/admin/email-templates/${encodeURIComponent(template.type)}`}
-              className="block rounded-lg border border-white/8 bg-surface-1 p-4 transition-colors duration-150 ease-in-out hover:border-white/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="block rounded-lg border border-fg/8 bg-surface-1 p-4 transition-colors duration-150 ease-in-out hover:border-fg/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-medium text-white">{copy.type[template.type] ?? template.type}</p>
+                <p className="text-sm font-medium text-fg">{copy.type[template.type] ?? template.type}</p>
                 <span className="flex flex-wrap items-center gap-2">
                   {/* The wire value stands in for a category the catalogue has not been
                       taught, which is readable and is the honest failure of the two. */}
@@ -93,7 +93,7 @@ export function EmailTemplateIndex({ copy }: EmailTemplateIndexProps) {
               </div>
               <p className="mt-2 flex flex-wrap gap-2">
                 {overrides.length === 0 ? (
-                  <span className="text-xs text-white/48">{copy.shippedOnly}</span>
+                  <span className="text-xs text-fg-48">{copy.shippedOnly}</span>
                 ) : (
                   overrides.map((override) => (
                     <Tag key={override.locale} variant="warning">

@@ -134,7 +134,7 @@ export function DashboardOverview({
     <section aria-labelledby="dashboard-heading">
       <h1
         id="dashboard-heading"
-        className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl"
+        className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl"
       >
         {dashboard.title}
       </h1>
@@ -168,14 +168,14 @@ export function DashboardOverview({
       {percent === undefined || percent === null ? (
         // Not a bar at zero. A campaign with no goal has not raised none of it — it has
         // not asked for anything, and a bar at the far left says the opposite.
-        <p className="mt-6 text-sm text-white/64">{copy.noGoal}</p>
+        <p className="mt-6 text-sm text-fg-64">{copy.noGoal}</p>
       ) : (
         <div className="mt-6">
           <ProgressBar
             value={percent}
             label={fillPlaceholders(copy.progressLabel, { percent: String(percent) })}
           />
-          <p className="mt-2 flex items-center gap-2 text-sm text-white">
+          <p className="mt-2 flex items-center gap-2 text-sm text-fg">
             {/* Printed as text as well as drawn, because a bar that only changes colour
                 has said nothing to a screen reader. ui-kit §9.2. */}
             <span className="tabular-nums">
@@ -204,9 +204,9 @@ export function DashboardOverview({
       )}
 
       {dashboard.outcome ? (
-        <div className="mt-8 rounded-[16px] border border-white/8 p-5">
-          <h2 className="text-sm font-semibold text-white">{copy.outcomeHeading}</h2>
-          <p className="mt-2 max-w-[62ch] text-sm text-white/64">
+        <div className="mt-8 rounded-[16px] border border-fg/8 p-5">
+          <h2 className="text-sm font-semibold text-fg">{copy.outcomeHeading}</h2>
+          <p className="mt-2 max-w-[62ch] text-sm text-fg-64">
             {fillPlaceholders(copy.outcome, {
               pledged: formatMoney(dashboard.outcome.pledged),
               // The count declines with the sentence rather than being dropped into it as a

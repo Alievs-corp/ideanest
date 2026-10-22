@@ -84,14 +84,14 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
       return block.level === 2 ? (
         <h2
           id={block.id}
-          className="mt-10 mb-4 scroll-mt-24 text-2xl font-semibold tracking-[-0.02em] text-white first:mt-0"
+          className="mt-10 mb-4 scroll-mt-24 text-2xl font-semibold tracking-[-0.02em] text-fg first:mt-0"
         >
           {block.text}
         </h2>
       ) : (
         <h3
           id={block.id}
-          className="mt-8 mb-3 scroll-mt-24 text-xl font-medium tracking-[-0.02em] text-white first:mt-0"
+          className="mt-8 mb-3 scroll-mt-24 text-xl font-medium tracking-[-0.02em] text-fg first:mt-0"
         >
           {block.text}
         </h3>
@@ -136,7 +136,7 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
       );
 
     case 'rule':
-      return <hr className="my-10 border-white/8" />;
+      return <hr className="my-10 border-fg/8" />;
 
     case 'image':
       return (
@@ -168,7 +168,7 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
           aria-labelledby={titleId}
           className="mt-10 scroll-mt-24 first:mt-0"
         >
-          <h2 id={titleId} className="mb-4 text-2xl font-semibold tracking-[-0.02em] text-white">
+          <h2 id={titleId} className="mb-4 text-2xl font-semibold tracking-[-0.02em] text-fg">
             {block.title}
           </h2>
           {block.image !== null && (
@@ -201,11 +201,11 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
             href={block.url}
             rel="noopener noreferrer nofollow"
             target="_blank"
-            className={`rounded-sm text-white underline underline-offset-4 hover:text-lime-400 ${BODY}`}
+            className={`rounded-sm text-fg underline underline-offset-4 hover:text-lime-ink ${BODY}`}
           >
             {block.title}
             {/* Outside the span, so the link's accessible name keeps the space (#155). */}{' '}
-            <span className="text-white/64">
+            <span className="text-fg-64">
               {fillPlaceholders(watchOn, {
                 // The service's names, which are brands and are not translated.
                 provider: block.provider === 'youtube' ? 'YouTube' : 'Vimeo',
@@ -249,7 +249,7 @@ function Spans({ spans }: { spans: StorySpans }): ReactNode {
   return spans.map((span, index) => {
     let node: ReactNode = span.text;
     if (span.marks.includes('em')) node = <em>{node}</em>;
-    if (span.marks.includes('strong')) node = <strong className="font-semibold text-white">{node}</strong>;
+    if (span.marks.includes('strong')) node = <strong className="font-semibold text-fg">{node}</strong>;
     return <span key={index}>{node}</span>;
   });
 }

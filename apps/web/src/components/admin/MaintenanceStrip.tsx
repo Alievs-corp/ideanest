@@ -25,7 +25,7 @@ export async function MaintenanceStrip({ label }: { readonly label: string }) {
     <p
       {...{ [MAINTENANCE_STRIP]: '' }}
       role="status"
-      className="border-b border-white/8 bg-warning/12 px-5 py-2 text-center text-sm text-warning sm:px-6"
+      className="border-b border-fg/8 bg-warning/12 px-5 py-2 text-center text-sm text-warning sm:px-6"
     >
       {label}
     </p>

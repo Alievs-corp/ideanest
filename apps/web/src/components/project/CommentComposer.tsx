@@ -130,8 +130,8 @@ export function CommentComposer({
 
   if (status === 'signed-out') {
     return (
-      <div className="flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-5">
-        <p className="text-sm text-white/64">
+      <div className="flex flex-col gap-3 rounded-lg border border-fg/8 bg-surface-2 p-5">
+        <p className="text-sm text-fg-64">
           {copy.signedOut}
         </p>
         <div>
@@ -214,7 +214,7 @@ export function CommentComposer({
           interruption; it is always in the document so that a screen reader announces it when
           it fills, which a region inserted at that moment usually is not.
         */}
-        <span id={noticeId} aria-live="polite" className="text-xs text-white/64">
+        <span id={noticeId} aria-live="polite" className="text-xs text-fg-64">
           {posted ? copy.posted : ''}
         </span>
       </div>

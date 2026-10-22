@@ -69,7 +69,7 @@ export function BackerDisputeForm({ pledgeId, copy, locale }: BackerDisputeFormP
   }
 
   if (disputeWindow.status === 'NOT_YET') {
-    return <p className="max-w-[62ch] text-sm text-white/64">{copy.notYet}</p>;
+    return <p className="max-w-[62ch] text-sm text-fg-64">{copy.notYet}</p>;
   }
 
   const until = disputeWindow.status === 'OPEN' && disputeWindow.until !== null ? disputeWindow.until : null;
@@ -89,7 +89,7 @@ export function BackerDisputeForm({ pledgeId, copy, locale }: BackerDisputeFormP
           {copy.heading}
         </Pill>
         {until !== null && (
-          <p className="text-sm text-white/64">
+          <p className="text-sm text-fg-64">
             {fillPlaceholders(copy.until, { date: formatExactTime(until, locale) })}
           </p>
         )}
@@ -98,11 +98,11 @@ export function BackerDisputeForm({ pledgeId, copy, locale }: BackerDisputeFormP
   }
 
   return (
-    <section aria-labelledby="backer-dispute-heading" className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 id="backer-dispute-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+    <section aria-labelledby="backer-dispute-heading" className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 id="backer-dispute-heading" className="text-lg font-medium tracking-[-0.02em] text-fg">
         {copy.heading}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.intro}</p>
 
       <form onSubmit={submit} noValidate className="mt-5 flex max-w-[36rem] flex-col gap-4">
         <Field label={copy.reasonLabel} hint={copy.reasonHint} required>

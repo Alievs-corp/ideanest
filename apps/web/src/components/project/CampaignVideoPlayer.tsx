@@ -130,7 +130,7 @@ export function CampaignVideoPlayer({
             onClick={press}
           >
             {playLabel}
-            <span aria-hidden="true" className="tabular-nums text-on-white/64">
+            <span aria-hidden="true" className="tabular-nums text-on-inverse/64">
               {duration}
             </span>
           </Pill>

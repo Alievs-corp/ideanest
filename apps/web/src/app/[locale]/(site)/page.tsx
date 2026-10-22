@@ -119,7 +119,7 @@ const LAUNCHED_RAIL = 'home-launched-rail';
  * The hairline between two bands, from `lg` — Kickstarter separates its sections with a rule
  * across the column rather than with space alone. Not on a phone, which stays as it was.
  */
-const DIVIDED = 'lg:border-t lg:border-white/6 lg:pt-14';
+const DIVIDED = 'lg:border-t lg:border-fg/6 lg:pt-14';
 
 export default async function HomePage() {
   const t = await getTranslations('home');
@@ -204,14 +204,14 @@ export default async function HomePage() {
         */}
         <section className="grid items-center gap-8 pt-10 pb-14 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,600px)] lg:gap-6">
           <FadeUpSection>
-            <h1 className="max-w-[16ch] text-3xl font-semibold leading-[1.05] tracking-[-0.04em] text-white sm:text-6xl">
+            <h1 className="max-w-[16ch] text-3xl font-semibold leading-[1.05] tracking-[-0.04em] text-fg sm:text-6xl">
               {t('hero.title')}
             </h1>
             {/*
               On a phone the standfirst is read, not shown: its facts play one at a time over
               the square scene below it instead (#490), which is decoration for a screen reader.
             */}
-            <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-white/64 max-sm:sr-only">
+            <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-fg-64 max-sm:sr-only">
               {t('hero.standfirst')}
             </p>
 
@@ -229,14 +229,14 @@ export default async function HomePage() {
             <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-9 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
               <Link
                 href="/discover"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-2 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-inverse px-2 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
               >
                 {t('hero.browse')}
                 <ArrowRight aria-hidden="true" className="size-4 shrink-0 max-sm:hidden" />
               </Link>
               <Link
                 href="/projects/new"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-white/16 px-2 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-fg/16 px-2 text-center text-sm leading-tight font-medium sm:px-6 sm:text-base text-fg transition-colors duration-150 ease-in-out hover:bg-surface-3"
               >
                 {t('hero.start')}
               </Link>
@@ -395,20 +395,20 @@ export default async function HomePage() {
             className="grid list-none grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10"
           >
             {creatorPages.map((page) => (
-              <li key={page.href} className="border-l-2 border-white/16 pl-6">
-                <h3 className="text-xl font-semibold tracking-[-0.02em] text-white">
+              <li key={page.href} className="border-l-2 border-fg/16 pl-6">
+                <h3 className="text-xl font-semibold tracking-[-0.02em] text-fg">
                   <Link
                     href={page.href}
-                    className="group inline-flex items-center gap-2 rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                    className="group inline-flex items-center gap-2 rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
                     {page.title}
                     <ArrowRight
                       aria-hidden="true"
-                      className="size-4 shrink-0 text-white/64 transition-transform duration-150 ease-in-out motion-safe:group-hover:translate-x-1"
+                      className="size-4 shrink-0 text-fg-64 transition-transform duration-150 ease-in-out motion-safe:group-hover:translate-x-1"
                     />
                   </Link>
                 </h3>
-                <p className="mt-3 max-w-[44ch] leading-relaxed text-white/64">{page.body}</p>
+                <p className="mt-3 max-w-[44ch] leading-relaxed text-fg-64">{page.body}</p>
               </li>
             ))}
           </ul>
@@ -471,14 +471,14 @@ export default async function HomePage() {
           <section className="flex flex-col gap-4 pb-20">
             {/* #533: the lists were for one country, and every country is one press away. */}
             <MarketEmptyNotice copy={await marketCopy()} />
-            <div className="rounded-lg border border-white/8 bg-surface-2 px-6 py-12 text-center">
-              <h2 className="text-xl font-medium text-white">{t('empty.heading')}</h2>
-              <p className="mx-auto mt-2 max-w-[52ch] text-white/64">
+            <div className="rounded-lg border border-fg/8 bg-surface-2 px-6 py-12 text-center">
+              <h2 className="text-xl font-medium text-fg">{t('empty.heading')}</h2>
+              <p className="mx-auto mt-2 max-w-[52ch] text-fg-64">
                 {t('empty.body')}
               </p>
               <Link
                 href="/discover"
-                className="mt-6 inline-flex h-10 items-center rounded-full bg-white px-5 text-sm font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+                className="mt-6 inline-flex h-10 items-center rounded-full bg-inverse px-5 text-sm font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
               >
                 {t('empty.action')}
               </Link>
@@ -534,7 +534,7 @@ function HomeSection({
             <Link
               href={href}
               aria-label={linkLabel}
-              className="inline-flex shrink-0 items-center gap-2 rounded-sm text-sm font-medium text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="inline-flex shrink-0 items-center gap-2 rounded-sm text-sm font-medium text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               {seeAll}
               <ArrowRight aria-hidden="true" className="size-4" />
@@ -555,7 +555,7 @@ function HomeSection({
       <Link
         href={href}
         aria-label={linkLabel}
-        className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/16 px-5 text-center text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] sm:hidden"
+        className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-fg/16 px-5 text-center text-sm font-medium text-fg transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] sm:hidden"
       >
         {seeAll}
         <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
@@ -574,8 +574,8 @@ function SectionHeading({
 }) {
   return (
     <div>
-      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">{heading}</h2>
-      <p className="mt-2 max-w-[60ch] text-white/64">{standfirst}</p>
+      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">{heading}</h2>
+      <p className="mt-2 max-w-[60ch] text-fg-64">{standfirst}</p>
     </div>
   );
 }

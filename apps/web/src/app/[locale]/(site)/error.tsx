@@ -53,9 +53,9 @@ export default function SiteError({
         <>
           <p>{copy.description}</p>
           {error.digest !== undefined && (
-            <p className="mt-4 text-sm text-white/40">
+            <p className="mt-4 text-sm text-fg-40">
               {copy.referenceLabel}{' '}
-              <span className="font-mono tabular-nums text-white/64">{error.digest}</span>
+              <span className="font-mono tabular-nums text-fg-64">{error.digest}</span>
               {`. ${copy.referenceHint}`}
             </p>
           )}
@@ -65,7 +65,7 @@ export default function SiteError({
         <button
           type="button"
           onClick={reset}
-          className="inline-flex h-12 items-center rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+          className="inline-flex h-12 items-center rounded-full bg-inverse px-6 text-base font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
         >
           {copy.retry}
         </button>

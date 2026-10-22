@@ -164,7 +164,7 @@ export function CommentControls({
             type="button"
             onClick={() => setReplying((open) => !open)}
             aria-expanded={replying}
-            className="inline-flex items-center gap-1.5 rounded-sm text-xs text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="inline-flex items-center gap-1.5 rounded-sm text-xs text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             <Reply aria-hidden="true" className="size-3.5" />
             {copy.reply}
@@ -175,7 +175,7 @@ export function CommentControls({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="inline-flex items-center gap-1.5 rounded-sm text-xs text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="inline-flex items-center gap-1.5 rounded-sm text-xs text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             <Trash2 aria-hidden="true" className="size-3.5" />
             {copy.withdraw}
@@ -202,7 +202,7 @@ export function CommentControls({
           <button
             type="button"
             onClick={() => setConfirmingBlock(true)}
-            className="inline-flex items-center gap-1.5 rounded-sm text-xs text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="inline-flex items-center gap-1.5 rounded-sm text-xs text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             <Ban aria-hidden="true" className="size-3.5" />
             {blockCopy.trigger}
@@ -216,21 +216,21 @@ export function CommentControls({
           removes nothing from anybody else's page and is undone from privacy settings — it is
           a decision about what this reader sees, not a destructive act.
         */
-        <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-3 p-3">
+        <div className="flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-3 p-3">
           <p className="text-xs text-reading">{blockCopy.warning}</p>
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               disabled={busy}
               onClick={() => void block()}
-              className="rounded-sm text-xs font-medium text-white underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] disabled:opacity-40"
+              className="rounded-sm text-xs font-medium text-fg underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-40"
             >
               {busy ? blockCopy.blocking : blockCopy.confirm}
             </button>
             <button
               type="button"
               onClick={() => setConfirmingBlock(false)}
-              className="rounded-sm text-xs text-white/64 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="rounded-sm text-xs text-fg-64 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               {blockCopy.cancel}
             </button>
@@ -246,7 +246,7 @@ export function CommentControls({
           machinery than the decision deserves, and the sentence below is what somebody
           actually needs to read before pressing.
         */
-        <div className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-3 p-3">
+        <div className="flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-3 p-3">
           <p className="text-xs text-reading">
             {copy.withdrawWarning}
           </p>
@@ -255,14 +255,14 @@ export function CommentControls({
               type="button"
               disabled={busy}
               onClick={() => void withdraw()}
-              className="rounded-sm text-xs font-medium text-danger underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] disabled:opacity-40"
+              className="rounded-sm text-xs font-medium text-danger underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-40"
             >
               {busy ? copy.withdrawing : copy.withdrawConfirm}
             </button>
             <button
               type="button"
               onClick={() => setConfirming(false)}
-              className="rounded-sm text-xs text-white/64 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="rounded-sm text-xs text-fg-64 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               {copy.keep}
             </button>

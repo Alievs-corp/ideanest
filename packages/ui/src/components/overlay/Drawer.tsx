@@ -23,7 +23,7 @@ import { useFocusTrap } from './useFocusTrap';
  * it (docs/motion-system.md §4.11, CLAUDE.md §2).
  */
 const drawerPanel = cva(
-  ['fixed bg-surface-2 text-white', 'flex flex-col overflow-hidden', 'border-white/8'],
+  ['fixed bg-surface-2 text-fg', 'flex flex-col overflow-hidden', 'border-fg/8'],
   {
     variants: {
       side: {
@@ -107,7 +107,7 @@ export function Drawer({
               {title}
             </h2>
             {description && (
-              <p id={descriptionId} className="mt-1 text-sm text-white/64">
+              <p id={descriptionId} className="mt-1 text-sm text-fg-64">
                 {description}
               </p>
             )}
@@ -122,10 +122,10 @@ export function Drawer({
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-5 text-sm text-white/64">{children}</div>
+        <div className="flex-1 overflow-y-auto px-5 pb-5 text-sm text-fg-64">{children}</div>
 
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-white/8 px-5 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-fg/8 px-5 py-4">
             {footer}
           </div>
         )}

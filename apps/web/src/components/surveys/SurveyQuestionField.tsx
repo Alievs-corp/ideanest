@@ -60,13 +60,13 @@ export function SurveyQuestionField({
 
   if (question.type === 'ADDRESS') {
     return (
-      <div className="rounded-xl border border-white/8 bg-surface-1 p-5">
-        <p className="text-[15px] font-medium text-white">{question.prompt}</p>
-        {hint !== undefined && <p className="mt-1 text-sm text-white/64">{hint}</p>}
-        <p className="mt-3 text-sm text-white/40">{copy.addressNote}</p>
+      <div className="rounded-xl border border-fg/8 bg-surface-1 p-5">
+        <p className="text-[15px] font-medium text-fg">{question.prompt}</p>
+        {hint !== undefined && <p className="mt-1 text-sm text-fg-64">{hint}</p>}
+        <p className="mt-3 text-sm text-fg-40">{copy.addressNote}</p>
         <Link
           href={addressHref}
-          className="mt-3 inline-block rounded-sm text-[15px] text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="mt-3 inline-block rounded-sm text-[15px] text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {copy.addressLink}
         </Link>

@@ -73,7 +73,7 @@ export function ProfileHeader({ profile, avatarAlt, actions }: ProfileHeaderProp
           <span
             role="img"
             aria-label={profile.name}
-            className="grid size-full place-items-center bg-surface-3 text-lg font-medium text-white/64"
+            className="grid size-full place-items-center bg-surface-3 text-lg font-medium text-fg-64"
           >
             {initialsOf(profile.name)}
           </span>
@@ -94,12 +94,12 @@ export function ProfileHeader({ profile, avatarAlt, actions }: ProfileHeaderProp
       </div>
 
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
+        <h1 className="truncate text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">
           {profile.name}
         </h1>
         {/* The handle is the address of this page, which is worth showing: it is what
             somebody copies when they want to point at this person. */}
-        <p className="mt-1 truncate text-sm text-white/40">@{profile.slug}</p>
+        <p className="mt-1 truncate text-sm text-fg-40">@{profile.slug}</p>
       </div>
 
       {actions !== undefined && <div className="shrink-0">{actions}</div>}

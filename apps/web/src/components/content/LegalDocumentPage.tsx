@@ -77,7 +77,7 @@ export async function LegalDocumentPage({
       <StaticPage title={t(`documents.${slug}.title`)} summary={t('notPublished.summary')}>
         <p>{t('notPublished.body')}</p>
         <p>
-          <Link href="/legal" className="text-white underline underline-offset-4">
+          <Link href="/legal" className="text-fg underline underline-offset-4">
             {t('backToIndex')}
           </Link>
         </p>
@@ -100,9 +100,9 @@ export async function LegalDocumentPage({
       )}
 
       {archivedVersion !== undefined && (
-        <p className="text-white/64">
+        <p className="text-fg-64">
           {t('archive.notice')}{' '}
-          <Link href={legalPath(slug)} className="text-white underline underline-offset-4">
+          <Link href={legalPath(slug)} className="text-fg underline underline-offset-4">
             {t('archive.readCurrent')}
           </Link>
         </p>

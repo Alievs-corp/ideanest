@@ -83,9 +83,9 @@ export function CountrySwitcher({ copy, phoneAlign = 'end' }: CountrySwitcherPro
         title={label}
         onClick={() => setOpen((was) => !was)}
         className={cn(
-          'inline-grid size-10 place-items-center rounded-full bg-surface-3 text-white',
+          'inline-grid size-10 place-items-center rounded-full bg-surface-3 text-fg',
           'transition-colors duration-150 ease-in-out hover:bg-surface-4',
-          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
           open && 'bg-surface-4',
         )}
       >
@@ -104,7 +104,7 @@ export function CountrySwitcher({ copy, phoneAlign = 'end' }: CountrySwitcherPro
           role="group"
           aria-labelledby={triggerId}
           className={cn(
-            'absolute top-[calc(100%+8px)] z-50 w-[260px] rounded-md border border-white/8 bg-surface-2 p-2',
+            'absolute top-[calc(100%+8px)] z-50 w-[260px] rounded-md border border-fg/8 bg-surface-2 p-2',
             'shadow-[var(--shadow-panel)]',
             PHONE_ALIGN[phoneAlign],
           )}

@@ -21,6 +21,7 @@ other answers *how it moves*.
 8. [Applying the system to product screens](#8-applying-the-system-to-product-screens)
 9. [Accessibility rules](#9-accessibility-rules)
 10. [Implementation](#10-implementation)
+11. [Light theme](#11-light-theme)
 
 ---
 
@@ -1400,8 +1401,8 @@ holding fails the build rather than quietly ageing in this table.
 - Status colours pair with an icon, for colour-vision deficiency
 - Icon-only controls carry an accessible name
 - Reduced motion is honoured — see [`motion-system.md`](./motion-system.md) §9.2
-- `color-scheme: dark` is declared so browser chrome, scrollbars, and form
-  controls follow
+- `color-scheme` is declared for each theme (`dark`, and `light` under §11) so
+  browser chrome, scrollbars, and form controls follow
 
 ---
 
@@ -1424,11 +1425,11 @@ file. The bridge introduces no values of its own.
 
 ```tsx
 <article
-  className="rounded-lg border border-white/8 bg-surface-2 p-5
+  className="rounded-lg border border-fg/8 bg-surface-2 p-5
              transition-colors duration-300 hover:bg-surface-3"
 >
-  <h3 className="text-lg font-medium tracking-tight text-white">{project.title}</h3>
-  <p className="mt-1 text-sm text-white/64">{project.creator.name}</p>
+  <h3 className="text-lg font-medium tracking-tight text-fg">{project.title}</h3>
+  <p className="mt-1 text-sm text-fg-64">{project.creator.name}</p>
   <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-3">
     <div
       className="h-full rounded-full bg-lime-500 transition-[width] duration-800"
@@ -1468,6 +1469,77 @@ that quietly loses `bg-lime-500` fails the build the same way a colour literal
 does. Because every visual property here is carried by a class name, the markup
 is the reliable signal; a change confined to `styles.css` or the token file
 still needs a human in Storybook. See `packages/ui/README.md`.
+
+---
+
+## 11. Light theme
+
+Dark is the product's default and nothing in §2–§10 changes. A reader can
+switch the site to a light theme from the header (beside the language globe;
+on a phone, a row in the drawer). The choice is kept on the device in
+`localStorage` (`ideanest-theme`) and applied as `data-theme="light"` on
+`<html>` by an inline script before the first paint — the root layout is
+static, so the server cannot know it. `apps/web/src/lib/theme/theme.ts` has the
+mechanics.
+
+### 11.1 What changes
+
+Only colour. Radius, type, spacing and motion are the same product in both.
+
+| Token | Dark | Light |
+|---|---|---|
+| `--surface-1` page | `#0D0D0D` | `#F4F4F1` |
+| `--surface-2` card | `#161616` | `#FFFFFF` |
+| `--surface-3` nested, input | `#1F1F1F` | `#ECECE7` |
+| `--surface-4` hover | `#2A2A2A` | `#E2E2DC` |
+| `--fg` | `#FFFFFF` | `#0A0A0A` |
+| `--fg-64` secondary | white at 64% | `#454542` |
+| `--fg-40` tertiary | white at 40% | `#686863` |
+| `--inverse` primary pill | `#FFFFFF` | `#0A0A0A` |
+| `--lime-ink` | `--lime-500` | `#4E6B00` |
+| `--focus-ring` | `--lime-500` | `#0A0A0A` |
+| `--success` `--warning` `--danger` `--info` `--hot` | as §2.4 | darkened to read as text |
+| `--text-on-danger` | `#0A0A0A` | `#FFFFFF` |
+
+**The light inks are solid, not black at an opacity.** The dark theme's steps
+do not mirror: black at 40% on the light page measures 2.9:1, where white at 40%
+on the dark page measures 3.8:1. Each `--fg-*` step is a colour chosen to keep
+its dark role, and `packages/ui/src/contrast.test.ts` holds every one against
+all four light surfaces.
+
+### 11.2 Which class to write
+
+| Meaning | Class | Not |
+|---|---|---|
+| Foreground text | `text-fg`, `text-fg-80` … `text-fg-24` | `text-white`, `text-white/64` |
+| Hairline, tint | `border-fg/8`, `bg-fg/6`, `divide-fg/6` | `border-white/8` |
+| Primary pill, selected chip or tab | `bg-inverse text-on-inverse hover:bg-inverse-muted` | `bg-white text-on-white` |
+| Lime as a label or marker | `text-lime-ink`, `border-[var(--lime-ink)]` | `text-lime-500` |
+| Focus ring | `outline-[var(--focus-ring)]` | `outline-[var(--lime-500)]` |
+| Text over a photo or a `bg-black/*` scrim | `text-white` | `text-fg` |
+
+`white` and `black` stay Tailwind's literals for exactly the last row.
+
+### 11.3 Surfaces that do not change
+
+A white panel (`data-on-white`: modal, floating panel), a lime surface
+(`data-on-lime`) and an accent card (`data-on-accent`) look the same in both
+themes. Under the light theme they keep the dark token set for their subtree,
+so the `in-data-on-white:` variants and the dark progress track on a campaign
+card hold. `[data-theme='dark']` on any element does the same on purpose — the
+black plan card.
+
+**The home hero scene has a light cut.** It is a pre-rendered video, so the
+light theme plays a second set rendered from the same drawing on the light
+ground (`apps/web/scripts/hero-loop/render.mjs … light`, `HERO_LOOP_LIGHT`),
+with the orb in lime because white is invisible there and near-black reads as
+a hole. Both videos are in the markup and the theme hides one; the hidden one
+is never downloaded.
+
+**The admin console is dark in both themes.** The inline script skips
+`/{locale}/admin`, the console's layout carries `data-theme="dark"`, and
+`ConsoleTheme` holds `<html>` dark while the console is mounted so portalled
+overlays are dark too.
 
 ---
 

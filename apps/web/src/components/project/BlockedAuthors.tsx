@@ -105,7 +105,7 @@ export function BlockedAuthorsProvider({ children }: { readonly children: ReactN
 export function BlockNotice() {
   const notice = useBlockedAuthors()?.notice ?? null;
   return (
-    <p aria-live="polite" className={notice === null ? 'sr-only' : 'text-sm text-white/64'}>
+    <p aria-live="polite" className={notice === null ? 'sr-only' : 'text-sm text-fg-64'}>
       {notice}
     </p>
   );

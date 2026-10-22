@@ -145,7 +145,7 @@ export function EmailChangeConfirmView({ copy }: EmailChangeConfirmViewProps) {
 
           <Link
             href="/settings/email"
-            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-inverse px-6 text-base font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
           >
             {copy.goToAccount}
           </Link>
@@ -160,7 +160,7 @@ export function EmailChangeConfirmView({ copy }: EmailChangeConfirmViewProps) {
             <p>{detail ?? copy.takenFallback}</p>
           </InlineAlert>
 
-          <div className="rounded-lg border border-white/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-white/64">
+          <div className="rounded-lg border border-fg/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-fg-64">
             <p>{copy.takenExplain}</p>
             <p className="mt-3">
               {/*
@@ -190,7 +190,7 @@ export function EmailChangeConfirmView({ copy }: EmailChangeConfirmViewProps) {
             <p>{failure?.detail ?? detail ?? copy.refusedFallback}</p>
           </InlineAlert>
 
-          <div className="rounded-lg border border-white/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-white/64">
+          <div className="rounded-lg border border-fg/8 bg-surface-2 p-5 text-[15px] leading-relaxed text-fg-64">
             <p>{copy.refusedExplain}</p>
           </div>
 
@@ -203,17 +203,17 @@ export function EmailChangeConfirmView({ copy }: EmailChangeConfirmViewProps) {
 
 function FooterLinks({ copy }: { readonly copy: EmailChangeCopy }) {
   return (
-    <p className="mt-8 text-center text-sm text-white/64">
+    <p className="mt-8 text-center text-sm text-fg-64">
       <Link
         href="/settings/email"
-        className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {copy.emailSettings}
       </Link>
       {' · '}
       <Link
         href="/sign-in"
-        className="rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {copy.signIn}
       </Link>

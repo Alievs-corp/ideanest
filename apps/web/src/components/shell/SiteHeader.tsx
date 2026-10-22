@@ -8,6 +8,7 @@ import { useSession } from '../session/SessionProvider';
 import { AccountMenu } from './AccountMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { CountrySwitcher } from './CountrySwitcher';
+import { ThemeToggle } from './ThemeToggle';
 // Hidden for now at the owner's request; restore together with the field below.
 // import { SearchField } from '../search/SearchField';
 import { MobileNavDrawer } from './MobileNavDrawer';
@@ -60,16 +61,16 @@ import { BrandMark } from '../brand/BrandMark';
 /**
  * The bar's own link treatment — §8.6's navigation row.
  *
- * Colour is INHERITED rather than set. `TopBar` puts `text-white` on the pill at rest and
+ * Colour is INHERITED rather than set. `TopBar` puts `text-fg` on the pill at rest and
  * `text-on-white` on it once collapsed, so a link that named its own colour would be
- * invisible in one of the two states — which is exactly the `text-white/64` failure
+ * invisible in one of the two states — which is exactly the `text-fg-64` failure
  * CLAUDE.md §2 warns about. Opacity carries the resting state instead, and hover restores
  * it, at 150ms: chrome that moves is chrome being noticed.
  */
 const NAV_LINK = [
   'text-sm font-medium tracking-[-0.01em] whitespace-nowrap',
   'transition-opacity duration-150 ease-in-out hover:opacity-100',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] rounded-sm',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] rounded-sm',
 ].join(' ');
 
 export interface SiteHeaderProps {
@@ -91,7 +92,7 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
       logo={
         <Link
           href="/"
-          className="inline-flex shrink-0 items-center gap-2 rounded-sm text-lg font-semibold tracking-[-0.03em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="inline-flex shrink-0 items-center gap-2 rounded-sm text-lg font-semibold tracking-[-0.03em] text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           <BrandMark />
           IdeyaNest
@@ -149,6 +150,8 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
             on a phone comes from the register pill below and from `TopBar`'s phone gutter.
           */}
           <LanguageSwitcher label={copy.language.label} phoneAlign="center" />
+          {/* Dark or light (docs/ui-kit.md §11). On a phone it is a row of the drawer, as the country is. */}
+          <ThemeToggle copy={copy.theme} className="hidden sm:inline-grid" />
           {/*
             #533: which country's campaigns the lists show, chosen the way the language is. Not
             on a phone: a fourth round button pushed the register pill off a 390-pixel screen,
@@ -164,7 +167,7 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
                 href="/notifications"
                 aria-label={copy.actions.notifications}
                 title={copy.actions.notifications}
-                className="inline-grid size-10 place-items-center rounded-full bg-surface-3 text-white transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="inline-grid size-10 place-items-center rounded-full bg-surface-3 text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 <Bell aria-hidden="true" className="size-[18px]" />
               </Link>
@@ -176,7 +179,7 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
             <>
               <Link
                 href="/sign-in"
-                className="hidden h-10 items-center rounded-full px-4 text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] sm:inline-flex"
+                className="hidden h-10 items-center rounded-full px-4 text-sm font-medium text-fg transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] sm:inline-flex"
               >
                 {copy.actions.signIn}
               </Link>

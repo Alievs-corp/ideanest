@@ -62,7 +62,7 @@ export function CountriesField({ copy, locale, project, value, error, onChange }
                 {nameOf(code)}
               </RemovableChip>
             ) : (
-              <span className="inline-flex h-[34px] items-center rounded-full bg-white px-4 text-[13px] font-medium text-on-white">
+              <span className="inline-flex h-[34px] items-center rounded-full bg-inverse px-4 text-[13px] font-medium text-on-inverse">
                 {nameOf(code)}
               </span>
             )}

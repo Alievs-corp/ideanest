@@ -86,7 +86,7 @@ export function CampaignClock({ deadline, skewMs, nowImpl, copy }: CampaignClock
   }, [deadline, skewMs]);
 
   if (remaining === null) {
-    return <p className="text-sm text-white/64">{copy.none}</p>;
+    return <p className="text-sm text-fg-64">{copy.none}</p>;
   }
 
   const parts = splitRemaining(remaining);
@@ -98,7 +98,7 @@ export function CampaignClock({ deadline, skewMs, nowImpl, copy }: CampaignClock
       className={
         urgent
           ? 'inline-flex items-center gap-2 rounded-[10px] bg-[--lime-500] px-3 py-2 text-[--text-on-lime]'
-          : 'inline-flex items-center gap-2 text-white'
+          : 'inline-flex items-center gap-2 text-fg'
       }
     >
       <Clock className="size-4" aria-hidden />

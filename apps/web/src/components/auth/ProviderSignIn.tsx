@@ -307,9 +307,9 @@ export function ProviderSignIn({ onOutcome, intent = 'sign-in', copy }: Provider
         announced rather than drawn.
       */}
       <div className="flex items-center gap-4" role="separator" aria-label={copy.separatorLabel}>
-        <span aria-hidden="true" className="h-px flex-1 bg-white/6" />
-        <span className="text-xs tracking-[0.08em] text-white/40 uppercase">{copy.or}</span>
-        <span aria-hidden="true" className="h-px flex-1 bg-white/6" />
+        <span aria-hidden="true" className="h-px flex-1 bg-fg/6" />
+        <span className="text-xs tracking-[0.08em] text-fg-40 uppercase">{copy.or}</span>
+        <span aria-hidden="true" className="h-px flex-1 bg-fg/6" />
       </div>
 
       {failure !== null && (

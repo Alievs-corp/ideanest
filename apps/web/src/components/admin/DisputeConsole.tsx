@@ -137,7 +137,7 @@ export function DisputeConsole({ copy }: DisputeConsoleProps) {
       </InlineAlert>
 
       <section aria-labelledby="dispute-queue-heading">
-        <h2 id="dispute-queue-heading" className="flex items-baseline text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="dispute-queue-heading" className="flex items-baseline text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.heading}
           {queue.data !== null && (
             <ConsoleCount
@@ -161,7 +161,7 @@ export function DisputeConsole({ copy }: DisputeConsoleProps) {
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <div className="space-y-3">
               {[0, 1].map((row) => (
-                <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <Skeleton height="1rem" width="45%" />
                   <Skeleton height="0.875rem" width="70%" className="mt-3" />
                 </div>
@@ -198,7 +198,7 @@ export function DisputeConsole({ copy }: DisputeConsoleProps) {
                   type="button"
                   onClick={() => setOpenCase(openCase === dispute.id ? null : dispute.id)}
                   aria-expanded={openCase === dispute.id}
-                  className="w-full rounded-lg border border-white/8 bg-surface-1 p-4 text-left hover:border-white/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="w-full rounded-lg border border-fg/8 bg-surface-1 p-4 text-left hover:border-fg/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   <CaseSummary dispute={dispute} names={names} copy={copy} />
                 </button>
@@ -266,19 +266,19 @@ function CaseSummary({
   return (
     <>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-white">
+        <p className="text-sm text-fg">
           {formatMoney(dispute.amount)}
-          <span className="ml-2 text-white/64" title={dispute.reasonCode}>
+          <span className="ml-2 text-fg-64" title={dispute.reasonCode}>
             {providerAndReason(dispute, copy)}
           </span>
         </p>
         {resolvedOn == null ? (
           <Deadline dispute={dispute} copy={copy} />
         ) : (
-          <span className="text-xs text-white/64">{fillPlaceholders(copy.resolvedOn, { date: resolvedOn })}</span>
+          <span className="text-xs text-fg-64">{fillPlaceholders(copy.resolvedOn, { date: resolvedOn })}</span>
         )}
       </div>
-      <p className="mt-2 flex flex-wrap items-baseline gap-2 text-xs text-white/64">
+      <p className="mt-2 flex flex-wrap items-baseline gap-2 text-xs text-fg-64">
         <span>
           {fillNodes(copy.pledgeLine, {
             backer:
@@ -315,13 +315,13 @@ function Deadline({
   const hours = hoursUntilDue(dispute);
 
   if (hours === null) {
-    return <span className="text-xs text-white/48">{copy.noDeadline}</span>;
+    return <span className="text-xs text-fg-48">{copy.noDeadline}</span>;
   }
   if (hours < 0) {
     return <Tag>{copy.deadlinePassed}</Tag>;
   }
   return (
-    <span className="text-xs text-white/64">
+    <span className="text-xs text-fg-64">
       {hours < 48
         ? fillPlaceholders(copy.hoursLeft, { count: String(Math.floor(hours)) })
         : fillPlaceholders(copy.daysLeft, { count: String(Math.floor(hours / 24)) })}
@@ -393,7 +393,7 @@ function CaseDetail({
 
   if (detail.data === null && detail.status === 'loading') {
     return (
-      <SkeletonGroup label={copy.loadingCase} className="mt-2 rounded-lg border border-white/8 p-4">
+      <SkeletonGroup label={copy.loadingCase} className="mt-2 rounded-lg border border-fg/8 p-4">
         <Skeleton height="0.875rem" width="60%" />
       </SkeletonGroup>
     );
@@ -412,18 +412,18 @@ function CaseDetail({
   const closed = dispute.state === 'WON' || dispute.state === 'LOST' || dispute.state === 'CONCEDED';
 
   return (
-    <div className="mt-2 rounded-lg border border-white/8 bg-surface-1 p-4">
-      <h3 className="text-sm font-medium text-white">{copy.evidenceHeading}</h3>
+    <div className="mt-2 rounded-lg border border-fg/8 bg-surface-1 p-4">
+      <h3 className="text-sm font-medium text-fg">{copy.evidenceHeading}</h3>
 
       {dispute.evidence.length === 0 ? (
-        <p className="mt-2 text-xs text-white/64">{copy.noEvidence}</p>
+        <p className="mt-2 text-xs text-fg-64">{copy.noEvidence}</p>
       ) : (
         <ul className="mt-2 flex list-none flex-col gap-2">
           {dispute.evidence.map((piece) => (
-            <li key={piece.id} className="rounded-md border border-white/8 p-3">
-              <p className="text-xs text-white/80">{copy.evidenceKind[piece.kind]}</p>
-              <p className="mt-1 text-xs text-white/64">{piece.description}</p>
-              <p className="mt-1 text-xs text-white/48">
+            <li key={piece.id} className="rounded-md border border-fg/8 p-3">
+              <p className="text-xs text-fg-80">{copy.evidenceKind[piece.kind]}</p>
+              <p className="mt-1 text-xs text-fg-64">{piece.description}</p>
+              <p className="mt-1 text-xs text-fg-48">
                 {piece.submittedAt == null ? copy.notSent : copy.sent}
               </p>
             </li>
@@ -474,7 +474,7 @@ function CaseDetail({
             </Pill>
           </div>
 
-          <div className="mt-4 flex flex-col gap-3 border-t border-white/8 pt-4">
+          <div className="mt-4 flex flex-col gap-3 border-t border-fg/8 pt-4">
             <div className="flex flex-wrap items-center gap-2">
               <Pill
                 variant="outline"
@@ -492,7 +492,7 @@ function CaseDetail({
                 {copy.markAnswered}
               </Pill>
               {!unsent && (
-                <span id={`${dispute.id}-nothing-unsent`} className="text-xs text-white/64">
+                <span id={`${dispute.id}-nothing-unsent`} className="text-xs text-fg-64">
                   {copy.nothingUnsent}
                 </span>
               )}
@@ -539,7 +539,7 @@ function CaseDetail({
             )}
           </div>
 
-          <p className="mt-3 text-xs text-white/64">{copy.outcomeNote}</p>
+          <p className="mt-3 text-xs text-fg-64">{copy.outcomeNote}</p>
         </>
       )}
 
@@ -581,7 +581,7 @@ function ConfirmOutcome({
 
   return (
     <div role="group" aria-label={copy.confirmHeading} className="flex flex-col gap-2">
-      <p className="max-w-[62ch] text-sm text-white">
+      <p className="max-w-[62ch] text-sm text-fg">
         {loss
           ? fillPlaceholders(copy.confirmLoss, {
               outcome: label,
@@ -590,8 +590,8 @@ function ConfirmOutcome({
             })
           : fillPlaceholders(copy.confirmWon, { outcome: label })}
       </p>
-      {loss && <p className="max-w-[62ch] text-sm text-white">{fillPlaceholders(copy.confirmDebt, { total })}</p>}
-      <p className="max-w-[62ch] text-sm text-white">{copy.confirmFinal}</p>
+      {loss && <p className="max-w-[62ch] text-sm text-fg">{fillPlaceholders(copy.confirmDebt, { total })}</p>}
+      <p className="max-w-[62ch] text-sm text-fg">{copy.confirmFinal}</p>
       <div className="flex flex-wrap gap-2">
         <Pill size="sm" autoFocus aria-disabled={busy} onClick={onConfirm}>
           {busy ? copy.resolving : copy.confirmAction}
@@ -632,13 +632,13 @@ function ResolvedCases({ copy, round }: { readonly copy: DisputeConsoleCopy; rea
 
   return (
     <section aria-labelledby="dispute-closed-heading">
-      <h2 id="dispute-closed-heading" className="flex items-baseline text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="dispute-closed-heading" className="flex items-baseline text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.resolvedHeading}
         {closed.status === 'ready' && closed.data !== null && (
           <ConsoleCount loaded={disputes.length} more={closed.data.hasMore} copy={copy.count} className="ml-2" />
         )}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.resolvedIntro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.resolvedIntro}</p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {CLOSED_STATES.map((option) => (
@@ -685,7 +685,7 @@ function ResolvedCases({ copy, round }: { readonly copy: DisputeConsoleCopy; rea
       {closed.status === 'ready' && disputes.length > 0 && (
         <ul className="mt-4 flex list-none flex-col gap-2">
           {disputes.map((dispute) => (
-            <li key={dispute.id} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+            <li key={dispute.id} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
               <CaseSummary
                 dispute={dispute}
                 names={names}

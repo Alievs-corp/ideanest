@@ -91,10 +91,10 @@ export function AdminNavDrawer({ copy }: AdminNavDrawerProps) {
             aria-modal="true"
             aria-label={copy.navLabel}
             tabIndex={-1}
-            className="absolute inset-y-0 left-0 flex w-[min(20rem,88vw)] flex-col border-r border-white/8 bg-surface-1 focus:outline-none"
+            className="absolute inset-y-0 left-0 flex w-[min(20rem,88vw)] flex-col border-r border-fg/8 bg-surface-1 focus:outline-none"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
-              <span className="text-sm font-semibold tracking-[-0.01em] text-white">
+            <div className="flex items-center justify-between gap-3 border-b border-fg/8 px-4 py-3">
+              <span className="text-sm font-semibold tracking-[-0.01em] text-fg">
                 {copy.console}
               </span>
               <button type="button" aria-label={copy.closeMenu} onClick={close} className={ROUND_BUTTON}>
@@ -109,10 +109,10 @@ export function AdminNavDrawer({ copy }: AdminNavDrawerProps) {
               <AdminNav copy={copy} layout="drawer" />
             </div>
 
-            <div className="border-t border-white/8 px-3 py-3">
+            <div className="border-t border-fg/8 px-3 py-3">
               <Link
                 href="/"
-                className="block rounded-lg px-3 py-2 text-sm text-white/64 transition-colors duration-150 ease-in-out hover:bg-surface-2 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="block rounded-lg px-3 py-2 text-sm text-fg-64 transition-colors duration-150 ease-in-out hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {copy.backToSite}
               </Link>
@@ -125,4 +125,4 @@ export function AdminNavDrawer({ copy }: AdminNavDrawerProps) {
 }
 
 const ROUND_BUTTON =
-  'inline-grid size-10 shrink-0 place-items-center rounded-full bg-surface-3 text-white transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+  'inline-grid size-10 shrink-0 place-items-center rounded-full bg-surface-3 text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]';

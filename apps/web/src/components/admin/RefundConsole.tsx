@@ -200,7 +200,7 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
       {canIssue && <IssueRefund copy={copy} onIssued={refunds.reload} />}
 
       <section aria-labelledby="refund-log-heading">
-        <h2 id="refund-log-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="refund-log-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.logHeading}
         </h2>
 
@@ -232,7 +232,7 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
           <SkeletonGroup label={copy.loadingList} className="mt-4">
             <div className="space-y-3">
               {[0, 1, 2].map((row) => (
-                <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <Skeleton height="1rem" width="40%" />
                   <Skeleton height="0.875rem" width="65%" className="mt-3" />
                 </div>
@@ -487,10 +487,10 @@ function IssueRefund({ copy, onIssued }: { readonly copy: RefundConsoleCopy; rea
 
   return (
     <section aria-labelledby="issue-refund-heading">
-      <h2 id="issue-refund-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="issue-refund-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.issueHeading}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.issueIntro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.issueIntro}</p>
 
       <form onSubmit={(event) => void check(event)} noValidate className="mt-4 flex flex-col gap-3">
         {/* `items-start`: a hint under one control must not push the others' labels down. */}
@@ -565,9 +565,9 @@ function IssueRefund({ copy, onIssued }: { readonly copy: RefundConsoleCopy; rea
       </form>
 
       {confirming !== null && (
-        <div role="group" aria-label={copy.confirmHeading} className="mt-4 flex flex-col gap-2 rounded-lg border border-white/16 bg-surface-1 p-4">
-          <h3 className="text-sm font-medium text-white">{copy.confirmHeading}</h3>
-          <p className="max-w-[62ch] text-sm text-white">
+        <div role="group" aria-label={copy.confirmHeading} className="mt-4 flex flex-col gap-2 rounded-lg border border-fg/16 bg-surface-1 p-4">
+          <h3 className="text-sm font-medium text-fg">{copy.confirmHeading}</h3>
+          <p className="max-w-[62ch] text-sm text-fg">
             {fillNodes(copy.confirmIssue, {
               amount:
                 confirming.amount === null
@@ -580,7 +580,7 @@ function IssueRefund({ copy, onIssued }: { readonly copy: RefundConsoleCopy; rea
             })}
           </p>
           {new Decimal(confirming.refundable.withheldFee.amount).gt(0) && (
-            <p className="max-w-[62ch] text-sm text-white">
+            <p className="max-w-[62ch] text-sm text-fg">
               {fillPlaceholders(copy.confirmWithheld, { fee: formatMoney(confirming.refundable.withheldFee) })}
             </p>
           )}
@@ -692,14 +692,14 @@ function RefundRow({
   const routed = refund.routedTo ?? null;
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-white">
+        <p className="text-sm text-fg">
           {refund.state === 'SUCCEEDED'
             ? fillPlaceholders(copy.amountSent, { amount: formatMoney(refund.amount) })
             : formatMoney(refund.amount)}
           {refund.withheldFee != null && (
-            <span className="text-white/64">
+            <span className="text-fg-64">
               {' · '}
               {fillPlaceholders(copy.withheldNote, { fee: formatMoney(refund.withheldFee) })}
             </span>
@@ -711,7 +711,7 @@ function RefundRow({
         </span>
       </div>
 
-      <p className="mt-2 text-xs text-white/64">
+      <p className="mt-2 text-xs text-fg-64">
         {fillNodes(copy.pledgeLine, {
           backer: nameOrDash(refund.backerId, 'account', names, copy),
           campaign: <EntityName id={refund.projectId} names={names} kind="project" copy={copy.identity} />,
@@ -719,14 +719,14 @@ function RefundRow({
         })}
       </p>
 
-      <p className="mt-2 text-xs text-white/64">
+      <p className="mt-2 text-xs text-fg-64">
         {fillNodes(copy.reasonAndDetail, {
           reason: copy.reason[refund.reason],
           detail: rowDetail(refund, copy),
         })}
       </p>
 
-      <p className="mt-2 text-xs text-white/48">
+      <p className="mt-2 text-xs text-fg-48">
         {fillNodes(copy.requestedBy, {
           /* IDN-EXT-01 (#40): a campaign refund has no staff author; the platform issued it. */
           by:
@@ -745,7 +745,7 @@ function RefundRow({
       </p>
 
       {refund.failureCode && (
-        <p className="mt-2 text-xs text-white/64">
+        <p className="mt-2 text-xs text-fg-64">
           {failureSentence(refund.failureCode, copy)}
           {refund.failureMessage && !(refund.failureCode in copy.failure)
             ? ` ${fillPlaceholders(copy.providerSaid, { message: refund.failureMessage })}`
@@ -754,7 +754,7 @@ function RefundRow({
       )}
 
       {routed !== null && (
-        <p className="mt-2 text-xs text-white/64">
+        <p className="mt-2 text-xs text-fg-64">
           {fillPlaceholders(copy.bank.routedTo, { state: copy.state[routed.state] })}
         </p>
       )}
@@ -764,7 +764,7 @@ function RefundRow({
 
         {refund.state === 'AWAITING_BANK_DETAILS' && (
           <>
-            <p className="mt-2 max-w-[62ch] text-xs text-white/64">{copy.bank.awaitingBankDetails}</p>
+            <p className="mt-2 max-w-[62ch] text-xs text-fg-64">{copy.bank.awaitingBankDetails}</p>
             <BackerTicketForm
               pledgeId={refund.pledgeId}
               copy={copy.backerTicket}

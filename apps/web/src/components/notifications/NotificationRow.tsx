@@ -68,11 +68,11 @@ export function NotificationRow({
       */}
       <span
         aria-hidden="true"
-        className={`mt-2 size-2 shrink-0 rounded-full ${unread ? 'bg-white' : 'bg-white/16'}`}
+        className={`mt-2 size-2 shrink-0 rounded-full ${unread ? 'bg-fg' : 'bg-fg/16'}`}
       />
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm text-white">
+        <p className="text-sm text-fg">
           {view.href === null ? (
             view.headline
           ) : (
@@ -86,12 +86,12 @@ export function NotificationRow({
           )}
         </p>
 
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/56">
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-fg-56">
           <Tag>{categoryLabel(notification.category, copy)}</Tag>
           <time dateTime={notification.occurredAt} title={formatExactTime(notification.occurredAt, locale)}>
             {formatRelativeTime(notification.occurredAt, now, locale)}
           </time>
-          {unread && <span className="text-white/72">{copy.unreadWord}</span>}
+          {unread && <span className="text-fg-72">{copy.unreadWord}</span>}
         </p>
       </div>
 

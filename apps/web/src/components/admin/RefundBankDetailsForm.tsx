@@ -154,7 +154,7 @@ export function RefundBankDetailsForm({
 
   if (!open) {
     return (
-      <div className="mt-4 border-t border-white/8 pt-4">
+      <div className="mt-4 border-t border-fg/8 pt-4">
         <Pill variant="ghost" size="sm" onClick={() => setOpen(true)}>
           {copy.open}
         </Pill>
@@ -163,11 +163,11 @@ export function RefundBankDetailsForm({
   }
 
   return (
-    <section aria-labelledby={`refund-bank-${pledgeId}`} className="mt-4 flex flex-col gap-3 border-t border-white/8 pt-4">
-      <h4 id={`refund-bank-${pledgeId}`} className="text-sm font-medium text-white">
+    <section aria-labelledby={`refund-bank-${pledgeId}`} className="mt-4 flex flex-col gap-3 border-t border-fg/8 pt-4">
+      <h4 id={`refund-bank-${pledgeId}`} className="text-sm font-medium text-fg">
         {copy.heading}
       </h4>
-      <p className="max-w-[62ch] text-xs text-white/64">{copy.intro}</p>
+      <p className="max-w-[62ch] text-xs text-fg-64">{copy.intro}</p>
 
       <form ref={form} onSubmit={(event) => void save(event)} noValidate className="flex max-w-[34rem] flex-col gap-3">
         <Field label={copy.ibanLabel} hint={copy.ibanHint} error={ibanError} required>

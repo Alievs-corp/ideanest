@@ -7,7 +7,7 @@ import { cn } from '../../lib/cn';
  * The only place shadow is used, because this is the only thing genuinely
  * elevated — a dark shadow under a dark card renders as nothing (§3).
  *
- * Text inside is near-black, so `text-white/64` does NOT work here.
+ * Text inside is near-black, so `text-fg-64` does NOT work here.
  * Use `text-on-white/64`.
  */
 export interface FloatingPanelProps extends Omit<ComponentPropsWithoutRef<'div'>, 'title'> {

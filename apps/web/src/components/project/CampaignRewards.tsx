@@ -137,7 +137,7 @@ export async function CampaignRewards({
 
   return (
     <section aria-labelledby="campaign-rewards" className="flex flex-col gap-4">
-      <h2 id="campaign-rewards" className="text-xl font-medium tracking-[-0.02em] text-white">
+      <h2 id="campaign-rewards" className="text-xl font-medium tracking-[-0.02em] text-fg">
         {t('heading')}
       </h2>
 
@@ -154,7 +154,7 @@ export async function CampaignRewards({
           return (
             <li
               key={tier.id}
-              className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5"
+              className="flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-2 p-5"
             >
               {still !== null && (
                 <MediaFrame
@@ -185,10 +185,10 @@ export async function CampaignRewards({
                   )}
                 </MediaFrame>
               )}
-              <p className="text-2xl font-semibold tracking-[-0.03em] text-white tabular-nums">
+              <p className="text-2xl font-semibold tracking-[-0.03em] text-fg tabular-nums">
                 {formatMoney(tier.price)}
               </p>
-              <h3 className="text-base font-medium text-white">{tier.title}</h3>
+              <h3 className="text-base font-medium text-fg">{tier.title}</h3>
               {(details.earlyBird || details.featured) && (
                 /* Words, in the checkout's `default` skin: neither is a verdict or an urgency. */
                 <p className="flex flex-wrap gap-2">
@@ -201,13 +201,13 @@ export async function CampaignRewards({
               )}
 
               {month !== null && (
-                <p className="flex items-center gap-2 text-sm text-white/64">
+                <p className="flex items-center gap-2 text-sm text-fg-64">
                   <CalendarClock aria-hidden="true" className="size-4 shrink-0" />
                   {checkout('estimatedDelivery', { month })}
                 </p>
               )}
               {shipping !== null && (
-                <p className="flex items-center gap-2 text-sm text-white/64">
+                <p className="flex items-center gap-2 text-sm text-fg-64">
                   <Truck aria-hidden="true" className="size-4 shrink-0" />
                   {shipping}
                 </p>
@@ -219,7 +219,7 @@ export async function CampaignRewards({
                  * fact a reader needs; a greyed-out card would tell somebody with a
                  * colour-vision deficiency nothing at all.
                  */
-                <p className="text-sm text-white/64">
+                <p className="text-sm text-fg-64">
                   {soldOut ? t('soldOut') : t('remaining', { count: tier.remainingQuantity })}
                 </p>
               )}
@@ -236,7 +236,7 @@ export async function CampaignRewards({
                    * reach the control by the words printed on it (WCAG 2.5.3).
                    */
                   aria-label={t('selectNamed', { title: tier.title })}
-                  className="mt-1 inline-flex h-10 w-fit items-center rounded-full border border-white/16 px-5 text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
+                  className="mt-1 inline-flex h-10 w-fit items-center rounded-full border border-fg/16 px-5 text-sm font-medium text-fg transition-colors duration-150 ease-in-out hover:bg-surface-3"
                 >
                   {t('select')}
                 </Link>

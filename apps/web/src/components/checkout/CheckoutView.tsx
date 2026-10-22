@@ -307,7 +307,7 @@ export function CheckoutView({
 
   return (
     <div className="mx-auto w-full max-w-[1100px] px-5 py-10 sm:px-6">
-      <p className="text-xs font-medium tracking-[0.06em] text-white/40 uppercase">{copy.title}</p>
+      <p className="text-xs font-medium tracking-[0.06em] text-fg-40 uppercase">{copy.title}</p>
       {/*
         NO `outline-none` HERE. The global `:focus-visible` rule (docs/ui-kit.md
         §9.3) is the only focus ring in the system and suppressing it on the one
@@ -318,7 +318,7 @@ export function CheckoutView({
       <h1
         ref={heading}
         tabIndex={-1}
-        className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl"
+        className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl"
       >
         {stepName[step]}
       </h1>
@@ -326,13 +326,13 @@ export function CheckoutView({
       {/* The step indicator is words as well as marks. A row of dots is colour
           and shape carrying meaning by itself, which §9.4 forbids outright. */}
       <nav aria-label={copy.progress} className="mt-4">
-        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-white/40">
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-fg-40">
           {([1, 2, 3] as const).map((index) => (
             <li key={index} className="flex items-center gap-2">
               {index > 1 && <span aria-hidden="true">·</span>}
               <span
                 aria-current={index === step ? 'step' : undefined}
-                className={index === step ? 'text-white' : undefined}
+                className={index === step ? 'text-fg' : undefined}
               >
                 {index}. {stepName[index]}
               </span>
@@ -490,12 +490,12 @@ export function CheckoutView({
                   </div>
                 </InlineAlert>
               ) : (
-                <p className="text-sm text-white/64">
+                <p className="text-sm text-fg-64">
                   {/* No transition on this number. docs/motion-system.md §6:
                       the countdown must not animate, it simply changes. */}
                   {copy.heldFor.split('{time}').map((part, index) => (
                     <Fragment key={index}>
-                      {index > 0 && <strong className="tabular-nums text-white">{clock.label}</strong>}
+                      {index > 0 && <strong className="tabular-nums text-fg">{clock.label}</strong>}
                       {part}
                     </Fragment>
                   ))}
@@ -503,20 +503,20 @@ export function CheckoutView({
               )}
 
               <section aria-labelledby="checkout-selection" className="flex flex-col gap-2">
-                <h2 id="checkout-selection" className="text-sm font-medium text-white">
+                <h2 id="checkout-selection" className="text-sm font-medium text-fg">
                   {copy.review.heading}
                 </h2>
-                <dl className="flex flex-col gap-1 text-sm text-white/64">
+                <dl className="flex flex-col gap-1 text-sm text-fg-64">
                   <div className="flex gap-2">
                     <dt>{copy.review.reward}</dt>
-                    <dd className="text-white">{rewardTitle ?? copy.review.noReward}</dd>
+                    <dd className="text-fg">{rewardTitle ?? copy.review.noReward}</dd>
                   </div>
                   {checkout.pledge.addons.map((addon) => {
                     const named = catalogue?.addons.find((entry) => entry.id === addon.rewardTierId);
                     return (
                       <div key={addon.rewardTierId} className="flex gap-2">
                         <dt>{copy.review.addon}</dt>
-                        <dd className="text-white">
+                        <dd className="text-fg">
                           {addon.quantity} × {named?.title ?? copy.review.addon}
                         </dd>
                       </div>
@@ -525,14 +525,14 @@ export function CheckoutView({
                   {checkout.pledge.shippingCountry != null && (
                     <div className="flex gap-2">
                       <dt>{copy.review.deliveredTo}</dt>
-                      <dd className="text-white">
+                      <dd className="text-fg">
                         {countryName(checkout.pledge.shippingCountry, regionNames)}
                       </dd>
                     </div>
                   )}
                   <div className="flex gap-2">
                     <dt>{copy.review.listedAs}</dt>
-                    <dd className="text-white">
+                    <dd className="text-fg">
                       {checkout.pledge.isAnonymous ? copy.anonymous.shown : copy.anonymous.yourName}
                     </dd>
                   </div>
@@ -550,7 +550,7 @@ export function CheckoutView({
               sentence, not an animation (docs/motion-system.md §5: checkout is near zero), and
               no claim that anything has been paid, because nothing has been yet.
             */
-            <p className="text-sm text-white/64">{copy.review.confirming}</p>
+            <p className="text-sm text-fg-64">{copy.review.confirming}</p>
           )}
         </div>
 
@@ -611,8 +611,8 @@ export function CheckoutView({
                   is no transition, no entry animation and nothing that moves when this
                   appears — it is part of the step, not an interruption of it.
 
-                  `text-on-white`, not `text-white`: this panel is `--white-surface`, and
-                  `text-white/64` measures nothing on it. docs/ui-kit.md's context rule.
+                  `text-on-white`, not `text-fg`: this panel is `--white-surface`, and
+                  `text-fg-64` measures nothing on it. docs/ui-kit.md's context rule.
 
                   Drawn only when a version is in force. Until #439 seeds the words there is
                   nothing published, the service asks for no acknowledgement, and a statement

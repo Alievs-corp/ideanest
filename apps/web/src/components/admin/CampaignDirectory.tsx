@@ -174,7 +174,7 @@ export function CampaignDirectory({ copy }: CampaignDirectoryProps) {
 
   return (
     <section aria-labelledby="campaign-directory-heading">
-      <h2 id="campaign-directory-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="campaign-directory-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
           <ConsoleCount loaded={campaigns.length} more={cursor !== null} copy={copy.count} />
@@ -247,7 +247,7 @@ export function CampaignDirectory({ copy }: CampaignDirectoryProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-4">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-2 p-4 sm:p-5">
                 <Skeleton height="1.125rem" width="40%" />
                 <Skeleton height="0.875rem" width="60%" className="mt-3" />
                 <Skeleton height="0.875rem" width="30%" className="mt-2" />
@@ -329,15 +329,15 @@ function CampaignRow({ campaign, locale, copy }: CampaignRowProps) {
   const closes = day(campaign.deadline, locale);
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-2 p-4 sm:p-5">
+    <li className="rounded-lg border border-fg/8 bg-surface-2 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-base font-medium text-white">
+          <h3 className="text-base font-medium text-fg">
             <a className="underline-offset-4 hover:underline" href={href}>
               {campaign.title}
             </a>
           </h3>
-          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm text-white/64">
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm text-fg-64">
             {/*
               The creator's account, so the person behind a campaign — their standing, their
               other campaigns, their VÖEN and business card — is one click from the row. An
@@ -359,7 +359,7 @@ function CampaignRow({ campaign, locale, copy }: CampaignRowProps) {
               and this is the one screen that lists campaigns in every state. Copying it
               from here is what makes those four reachable without a psql session.
             */}
-            <span className="font-mono text-white/32" title={campaign.projectId}>
+            <span className="font-mono text-fg-32" title={campaign.projectId}>
               {shortId(campaign.projectId)}
             </span>
             <CopyIdentifier id={campaign.projectId} copy={copy.identity} />
@@ -370,32 +370,32 @@ function CampaignRow({ campaign, locale, copy }: CampaignRowProps) {
           carries meaning, and there are sixteen states here — no palette distinguishes
           them, so none tries to.
         */}
-        <span className="shrink-0 text-sm text-white/80">
+        <span className="shrink-0 text-sm text-fg-80">
           {copy.state[campaign.state] ?? campaign.state}
         </span>
       </div>
 
       <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
         <div className="flex gap-2">
-          <dt className="text-white/40">{copy.goalLabel}</dt>
-          <dd className="text-white/80">
+          <dt className="text-fg-40">{copy.goalLabel}</dt>
+          <dd className="text-fg-80">
             {campaign.goal == null ? copy.noGoal : formatMoney(campaign.goal)}
           </dd>
         </div>
         <div className="flex gap-2">
-          <dt className="text-white/40">{copy.raisedLabel}</dt>
-          <dd className="text-white/80">
+          <dt className="text-fg-40">{copy.raisedLabel}</dt>
+          <dd className="text-fg-80">
             {formatMoney(campaign.pledged)}
           </dd>
         </div>
         <div className="flex gap-2">
-          <dt className="text-white/40">{copy.backersLabel}</dt>
-          <dd className="text-white/80">{campaign.backersCount}</dd>
+          <dt className="text-fg-40">{copy.backersLabel}</dt>
+          <dd className="text-fg-80">{campaign.backersCount}</dd>
         </div>
         {started !== null && (
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.startedLabel}</dt>
-            <dd className="text-white/80">
+            <dt className="text-fg-40">{copy.startedLabel}</dt>
+            <dd className="text-fg-80">
               <time dateTime={campaign.createdAt}>{started}</time>
             </dd>
           </div>
@@ -407,16 +407,16 @@ function CampaignRow({ campaign, locale, copy }: CampaignRowProps) {
         */}
         {launched !== null && (
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.launchedLabel}</dt>
-            <dd className="text-white/80">
+            <dt className="text-fg-40">{copy.launchedLabel}</dt>
+            <dd className="text-fg-80">
               <time dateTime={campaign.launchedAt ?? undefined}>{launched}</time>
             </dd>
           </div>
         )}
         {closes !== null && (
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.deadlineLabel}</dt>
-            <dd className="text-white/80">
+            <dt className="text-fg-40">{copy.deadlineLabel}</dt>
+            <dd className="text-fg-80">
               <time dateTime={campaign.deadline ?? undefined}>{closes}</time>
             </dd>
           </div>

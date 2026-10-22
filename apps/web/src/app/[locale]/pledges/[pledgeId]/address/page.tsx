@@ -46,10 +46,10 @@ export default async function ShippingAddressPage({
         <ShippingAddressForm pledgeId={pledgeId} copy={copy} />
       </div>
 
-      <p className="mt-8 text-sm text-white/40">
+      <p className="mt-8 text-sm text-fg-40">
         <Link
           href="/account/deliveries"
-          className="rounded-sm text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="rounded-sm text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {t('back')}
         </Link>

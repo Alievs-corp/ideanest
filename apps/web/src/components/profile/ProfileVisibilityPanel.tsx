@@ -120,9 +120,9 @@ export function ProfileVisibilityPanel({ copy }: ProfileVisibilityPanelProps) {
   const known = visibility === 'PUBLIC' || visibility === 'PRIVATE';
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
-      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">{copy.intro}</p>
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{copy.heading}</h2>
+      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-fg-64">{copy.intro}</p>
 
       <div className="mt-6">
         <Switch
@@ -137,7 +137,7 @@ export function ProfileVisibilityPanel({ copy }: ProfileVisibilityPanelProps) {
                 only — and it is a word rather than a colour, because colour alone never
                 carries meaning (docs/ui-kit.md §9.2).
               */}
-              <span aria-hidden="true" className="ml-2 text-white/40">
+              <span aria-hidden="true" className="ml-2 text-fg-40">
                 {visibility === 'PUBLIC' ? copy.public : visibility === 'PRIVATE' ? copy.hidden : '—'}
               </span>
             </span>
@@ -146,7 +146,7 @@ export function ProfileVisibilityPanel({ copy }: ProfileVisibilityPanelProps) {
       </div>
 
       {visibility === 'loading' && (
-        <p className="mt-4 text-sm text-white/40">{copy.checking}</p>
+        <p className="mt-4 text-sm text-fg-40">{copy.checking}</p>
       )}
 
       {visibility === 'unknown' && (
@@ -166,10 +166,10 @@ export function ProfileVisibilityPanel({ copy }: ProfileVisibilityPanelProps) {
       )}
 
       {visibility === 'PUBLIC' && (
-        <p className="mt-5 text-sm text-white/40">
+        <p className="mt-5 text-sm text-fg-40">
           <Link
             href={profileHref(slug)}
-            className="rounded-sm text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-sm text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.seeAsVisitor}
           </Link>

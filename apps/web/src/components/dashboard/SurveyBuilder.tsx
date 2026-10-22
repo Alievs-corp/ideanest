@@ -270,28 +270,28 @@ export function SurveyBuilder({
 
   return (
     <section aria-labelledby="surveys-heading">
-      <h1 id="surveys-heading" className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
+      <h1 id="surveys-heading" className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">
         {copy.heading}
       </h1>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.intro}</p>
 
       {surveys.length > 0 ? (
         <ul className="mt-6 flex flex-col gap-2">
           {surveys.map((survey) => (
             <li
               key={survey.id}
-              className="flex flex-wrap items-center gap-3 rounded-[12px] border border-white/8 px-4 py-3"
+              className="flex flex-wrap items-center gap-3 rounded-[12px] border border-fg/8 px-4 py-3"
             >
               <button
                 type="button"
                 onClick={() => startEditing(survey)}
                 aria-current={editing?.id === survey.id ? 'true' : undefined}
-                className="text-left text-sm font-medium text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+                className="text-left text-sm font-medium text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
               >
                 {survey.title}
               </button>
               {/* ui-kit §9.2: colour alone never carries meaning, so the state is a word. */}
-              <span className="text-xs text-white/64">
+              <span className="text-xs text-fg-64">
                 {survey.sent
                   ? fillPlaceholders(copy.sentSummary, {
                       count: String(survey.sentTo ?? 0),
@@ -305,7 +305,7 @@ export function SurveyBuilder({
                   onClick={() => onDelete(survey)}
                   disabled={busy}
                   aria-label={fillPlaceholders(copy.deleteDraft, { title: survey.title })}
-                  className="ml-auto rounded-full p-1 text-white/64 hover:text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+                  className="ml-auto rounded-full p-1 text-fg-64 hover:text-fg disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
                 >
                   <Trash2 className="size-4" aria-hidden />
                 </button>
@@ -316,7 +316,7 @@ export function SurveyBuilder({
       ) : null}
 
       <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-5">
-        <h2 className="text-lg font-semibold text-white">
+        <h2 className="text-lg font-semibold text-fg">
           {editing ? (locked ? copy.sentHeading : copy.editHeading) : copy.newHeading}
         </h2>
 
@@ -331,12 +331,12 @@ export function SurveyBuilder({
         <fieldset disabled={locked} className="flex flex-col gap-5">
           {/* One legend or the other, never a sentence built by concatenation: where the
               clause falls is what a translation is entitled to change. */}
-          <legend className="text-sm font-medium text-white">
+          <legend className="text-sm font-medium text-fg">
             {locked ? copy.questionsLegendLocked : copy.questionsLegend}
           </legend>
 
           {questions.map((question, index) => (
-            <div key={question.id ?? `new-${index}`} className="flex flex-col gap-3 rounded-[12px] border border-white/8 p-4">
+            <div key={question.id ?? `new-${index}`} className="flex flex-col gap-3 rounded-[12px] border border-fg/8 p-4">
               <Field label={fillPlaceholders(copy.question, { number: String(index + 1) })}>
                 <TextInput
                   value={question.prompt}
@@ -379,7 +379,7 @@ export function SurveyBuilder({
                   label={copy.required}
                 />
               ) : (
-                <p className="text-xs text-white/64">{copy.addressNote}</p>
+                <p className="text-xs text-fg-64">{copy.addressNote}</p>
               )}
 
               {rewardTiers.length > 0 ? (
@@ -402,7 +402,7 @@ export function SurveyBuilder({
                 <button
                   type="button"
                   onClick={() => setQuestions(questions.filter((_, at) => at !== index))}
-                  className="self-start text-sm text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+                  className="self-start text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
                 >
                   {copy.removeQuestion}
                 </button>
@@ -413,7 +413,7 @@ export function SurveyBuilder({
           <button
             type="button"
             onClick={() => setQuestions([...questions, emptyQuestion()])}
-            className="inline-flex items-center gap-2 self-start rounded-full border border-white/16 px-4 py-2.5 text-sm font-medium text-white hover:bg-[--surface-3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+            className="inline-flex items-center gap-2 self-start rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-[--surface-3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
           >
             <Plus className="size-4" aria-hidden />
             {copy.addQuestion}
@@ -424,7 +424,7 @@ export function SurveyBuilder({
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-full bg-[--lime-500] px-5 py-2.5 text-sm font-semibold text-[--text-on-lime] hover:bg-[--lime-400] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="inline-flex items-center gap-2 rounded-full bg-[--lime-500] px-5 py-2.5 text-sm font-semibold text-[--text-on-lime] hover:bg-[--lime-400] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
           >
             {editing ? copy.save : copy.createDraft}
           </button>
@@ -434,7 +434,7 @@ export function SurveyBuilder({
               type="button"
               onClick={onSend}
               disabled={busy}
-              className="inline-flex items-center gap-2 rounded-full border border-white/16 px-4 py-2.5 text-sm font-medium text-white hover:bg-[--surface-3] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+              className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-[--surface-3] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
             >
               <Send className="size-4" aria-hidden />
               {confirmingSend ? copy.confirmSend : copy.send}
@@ -445,7 +445,7 @@ export function SurveyBuilder({
             <button
               type="button"
               onClick={startNew}
-              className="text-sm text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+              className="text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
             >
               {copy.startNew}
             </button>
@@ -456,7 +456,7 @@ export function SurveyBuilder({
           // Polite rather than assertive: a save confirmation is not an interruption, and
           // ui-kit §9 asks that a status message reach a screen reader without stealing
           // focus from the control that produced it.
-          <p role="status" className="text-sm text-white/64">
+          <p role="status" className="text-sm text-fg-64">
             {notice}
           </p>
         ) : null}

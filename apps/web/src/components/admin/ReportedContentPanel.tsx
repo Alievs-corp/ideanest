@@ -69,11 +69,11 @@ export function ReportedContentPanel({
     <section aria-labelledby="report-evidence-heading" className="mt-8">
       <h2
         id="report-evidence-heading"
-        className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+        className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
       >
         {copy.heading}
       </h2>
-      <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.intro}</p>
+      <p className="mt-1 max-w-[62ch] text-sm text-fg-48">{copy.intro}</p>
 
       {/*
         A failure here costs a paragraph, not the page — the same rule the decision history
@@ -103,8 +103,8 @@ export function ReportedContentPanel({
       )}
 
       {content !== null && content.state === 'ADDRESSED_DIRECTLY' && (
-        <div className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
-          <p className="max-w-[62ch] text-sm text-white/64">{copy.addressedBody}</p>
+        <div className="mt-4 rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
+          <p className="max-w-[62ch] text-sm text-fg-64">{copy.addressedBody}</p>
           {content.project != null && (
             <p className="mt-3">
               <CampaignLink id={content.project.id} title={content.project.title} label={copy.openCampaign} />
@@ -114,7 +114,7 @@ export function ReportedContentPanel({
       )}
 
       {content !== null && (content.state === 'PRESENT' || content.state === 'REMOVED') && (
-        <div className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
+        <div className="mt-4 rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
           {content.state === 'REMOVED' && (
             /*
               Amber and a word, never a colour alone — docs/ui-kit.md §9.2. This is the one
@@ -133,41 +133,41 @@ export function ReportedContentPanel({
                 </Tag>
               )}
               {content.title != null && (
-                <span className="text-sm sm:text-[15px] font-medium text-white">{content.title}</span>
+                <span className="text-sm sm:text-[15px] font-medium text-fg">{content.title}</span>
               )}
             </p>
           )}
 
           {/* Untrusted: what one person wrote about another, rendered only ever as text. */}
           {content.body != null && content.body !== '' ? (
-            <blockquote className="mt-3 rounded-md border-l-2 border-white/16 bg-surface-3 py-3 pl-4 pr-3 text-sm whitespace-pre-line text-white/80">
+            <blockquote className="mt-3 rounded-md border-l-2 border-fg/16 bg-surface-3 py-3 pl-4 pr-3 text-sm whitespace-pre-line text-fg-80">
               {content.body}
             </blockquote>
           ) : (
-            <p className="mt-3 text-sm text-white/40">{copy.noText}</p>
+            <p className="mt-3 text-sm text-fg-40">{copy.noText}</p>
           )}
 
           <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
             {content.authorId != null && (
               <div className="flex gap-2">
-                <dt className="text-white/40">{copy.authorLabel}</dt>
-                <dd className="text-white/64">
+                <dt className="text-fg-40">{copy.authorLabel}</dt>
+                <dd className="text-fg-64">
                   <EntityName id={content.authorId} names={names} kind="account" copy={identity} copyable />
                 </dd>
               </div>
             )}
             {content.project != null && (
               <div className="flex gap-2">
-                <dt className="text-white/40">{copy.campaignLabel}</dt>
-                <dd className="text-white/64">
+                <dt className="text-fg-40">{copy.campaignLabel}</dt>
+                <dd className="text-fg-64">
                   <CampaignLink id={content.project.id} title={content.project.title} label={copy.openCampaign} />
                 </dd>
               </div>
             )}
             {content.createdAt != null && (
               <div className="flex gap-2">
-                <dt className="text-white/40">{copy.writtenLabel}</dt>
-                <dd className="text-white/64">
+                <dt className="text-fg-40">{copy.writtenLabel}</dt>
+                <dd className="text-fg-64">
                   <time dateTime={content.createdAt}>{formatExactTime(content.createdAt, locale)}</time>
                 </dd>
               </div>
@@ -205,7 +205,7 @@ function CampaignLink({
       target="_blank"
       rel="noreferrer"
       aria-label={`${label}: ${title}`}
-      className="rounded-lg underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+      className="rounded-lg underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
     >
       {title}
     </Link>

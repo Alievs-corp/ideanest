@@ -179,7 +179,7 @@ export function ItemEditor({
         {failure !== null && (
           <InlineAlert variant="danger" title={copy.notSavedTitle}>
             <p>{failure.message}</p>
-            <p className="mt-2 text-white/64">{copy.notSavedDetail}</p>
+            <p className="mt-2 text-fg-64">{copy.notSavedDetail}</p>
           </InlineAlert>
         )}
 
@@ -238,7 +238,7 @@ export function ItemEditor({
             */}
             {draft.imageUrl.trim().startsWith('https://') && (
               <div className="flex items-center gap-4">
-                <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-white/8 bg-surface-3">
+                <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-fg/8 bg-surface-3">
                   <Media src={draft.imageUrl.trim()} ratio="1/1" decorative />
                 </div>
                 <Pill
@@ -306,7 +306,7 @@ export function ItemEditor({
           </div>
         </Field>
 
-        <div className="rounded-lg border border-white/8 bg-surface-2 p-5">
+        <div className="rounded-lg border border-fg/8 bg-surface-2 p-5">
           {/*
             A switch rather than a checkbox: it takes effect on the item now
             rather than being collected for later, and `role="switch"` is what
@@ -330,7 +330,7 @@ export function ItemEditor({
               })
             }
           />
-          <p id={digitalHintId} className="mt-2 text-[13px] text-white/64">
+          <p id={digitalHintId} className="mt-2 text-[13px] text-fg-64">
             {copy.isDigitalHint}
           </p>
         </div>

@@ -25,6 +25,26 @@ export const colors = {
   textTertiary: 'rgba(255,255,255,0.40)',
   textDisabled: 'rgba(255,255,255,0.24)',
   textReading: 'rgba(255,255,255,0.92)',
+
+  /** The foreground scale behind `text-fg`, `text-fg-64` and `border-fg/8` (docs/ui-kit.md §11). */
+  fg: '#FFFFFF',
+  fg80: 'rgba(255,255,255,0.80)',
+  fg72: 'rgba(255,255,255,0.72)',
+  fg64: 'rgba(255,255,255,0.64)',
+  fg56: 'rgba(255,255,255,0.56)',
+  fg48: 'rgba(255,255,255,0.48)',
+  fg40: 'rgba(255,255,255,0.40)',
+  fg32: 'rgba(255,255,255,0.32)',
+  fg24: 'rgba(255,255,255,0.24)',
+
+  /** The primary pill: white on the dark theme, near-black on the light one. */
+  inverse: '#FFFFFF',
+  inverseMuted: '#F4F4F4',
+  onInverse: '#0A0A0A',
+
+  /** Lime as ink — an active marker, the brand mark. Lime itself on dark. */
+  limeInk: '#C6F432',
+  focusRing: '#C6F432',
   textOnLime: '#0A0A0A',
   textOnWhite: '#0A0A0A',
   textOnAccent: '#0A0A0A',
@@ -67,6 +87,61 @@ export const accent = {
 } as const;
 
 export type AccentName = keyof typeof accent;
+
+/**
+ * The light theme (docs/ui-kit.md §11) — `[data-theme='light']` in `theme.css`, value for value.
+ *
+ * Only what differs from `colors`. The web alone reads it: the phone app is dark. Every ink is
+ * solid rather than black at an opacity, and `packages/ui/src/contrast.test.ts` measures each
+ * one against all four light surfaces.
+ */
+export const lightColors = {
+  surface1: '#F4F4F1',
+  surface2: '#FFFFFF',
+  surface3: '#ECECE7',
+  surface4: '#E2E2DC',
+
+  border: 'rgba(10,10,10,0.10)',
+  borderStrong: 'rgba(10,10,10,0.20)',
+  divider: 'rgba(10,10,10,0.07)',
+
+  fg: '#0A0A0A',
+  fg80: '#262624',
+  fg72: '#323230',
+  fg64: '#454542',
+  fg56: '#51514E',
+  fg48: '#5C5C58',
+  fg40: '#686863',
+  fg32: '#8A8A85',
+  fg24: '#A9A9A4',
+
+  textPrimary: '#0A0A0A',
+  textSecondary: '#454542',
+  textTertiary: '#686863',
+  textDisabled: '#A9A9A4',
+  textReading: '#1A1A18',
+  /** White on the light theme's deeper `danger`; near-black there measures under 4.5:1. */
+  textOnDanger: '#FFFFFF',
+
+  inverse: '#0A0A0A',
+  inverseMuted: '#2A2A2A',
+  onInverse: '#FFFFFF',
+
+  limeInk: '#4E6B00',
+  focusRing: '#0A0A0A',
+
+  success: '#12712F',
+  warning: '#9A5800',
+  danger: '#C9281E',
+  info: '#1E66C8',
+  hot: '#BF3F0C',
+} as const;
+
+/** The light theme's shadows: the same shapes, lighter, because the ground is light. */
+export const lightShadow = {
+  panel: '0 8px 32px -8px rgba(10,10,10,0.14)',
+  float: '0 24px 64px -12px rgba(10,10,10,0.22)',
+} as const;
 
 export const radius = {
   sm: 10,

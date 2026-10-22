@@ -244,7 +244,7 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
   if (status === 'loading') {
     return (
       <SkeletonGroup label={copy.loadingList}>
-        <div className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
+        <div className="rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
           <Skeleton height="1.25rem" width="40%" />
           <Skeleton height="0.875rem" width="60%" className="mt-3" />
           <Skeleton height="0.875rem" width="80%" className="mt-2" />
@@ -262,7 +262,7 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
         action={
           <Link
             href="/admin/moderation"
-            className="rounded-lg text-sm text-white/64 underline underline-offset-2 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-lg text-sm text-fg-64 underline underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.backToQueue}
           </Link>
@@ -300,17 +300,17 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
 
       <section
         aria-labelledby="report-heading"
-        className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
+        className="rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2
               id="report-heading"
-              className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+              className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
             >
               {copy.moderation.reason[report.reason]}
             </h2>
-            <p className="mt-1 text-sm text-white/64">
+            <p className="mt-1 text-sm text-fg-64">
               {fillNodes(copy.reportedAbout, {
                 kind,
                 id:
@@ -337,28 +337,28 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
 
         <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.reported}</dt>
-            <dd className="text-white/64">
+            <dt className="text-fg-40">{copy.reported}</dt>
+            <dd className="text-fg-64">
               <time dateTime={report.createdAt} title={formatExactTime(report.createdAt, locale)}>
                 {formatRelativeTime(report.createdAt, now, locale)}
               </time>
             </dd>
           </div>
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.signal}</dt>
-            <dd className="text-white/64">
+            <dt className="text-fg-40">{copy.signal}</dt>
+            <dd className="text-fg-64">
               {openReportsLabel(report, copy.moderation, locale)}
             </dd>
           </div>
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.reporter}</dt>
+            <dt className="text-fg-40">{copy.reporter}</dt>
             {/*
               Named since #402, with the identifier still beside it. A report is an
               accusation and "this account has reported forty campaigns this week" is the
               question that catches abuse of the feature — which is asked by identifier and
               answered by a person, so the row needs both.
             */}
-            <dd className="text-white/64">
+            <dd className="text-fg-64">
               <EntityName
                 id={report.reporterId}
                 names={names}
@@ -372,15 +372,15 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
 
         {/* Untrusted: what one person wrote about another, rendered only ever as text. */}
         {report.detail != null && report.detail !== '' && (
-          <blockquote className="mt-4 rounded-md border-l-2 border-white/16 bg-surface-3 py-3 pl-4 pr-3 text-sm text-white/64">
+          <blockquote className="mt-4 rounded-md border-l-2 border-fg/16 bg-surface-3 py-3 pl-4 pr-3 text-sm text-fg-64">
             {report.detail}
           </blockquote>
         )}
 
         {report.resolution != null && (
           <div className="mt-4 rounded-md bg-surface-3 p-4">
-            <h3 className="text-sm font-medium text-white">{copy.moderation.decisionHeading}</h3>
-            <p className="mt-1 text-sm text-white/64">
+            <h3 className="text-sm font-medium text-fg">{copy.moderation.decisionHeading}</h3>
+            <p className="mt-1 text-sm text-fg-64">
               {fillNodes(copy.moderation.decidedBy[report.state], {
                 moderator: (
                   <EntityName
@@ -398,9 +398,9 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
               })}
             </p>
             {report.resolution.note != null && report.resolution.note !== '' ? (
-              <p className="mt-2 text-sm text-white/64">{report.resolution.note}</p>
+              <p className="mt-2 text-sm text-fg-64">{report.resolution.note}</p>
             ) : (
-              <p className="mt-2 text-sm text-white/40">{copy.moderation.noNote}</p>
+              <p className="mt-2 text-sm text-fg-40">{copy.moderation.noNote}</p>
             )}
           </div>
         )}
@@ -427,11 +427,11 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
 
       {open && (
         <section
-          className="mt-8 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
+          className="mt-8 rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5"
           role="group"
           aria-label={copy.decideGroup}
         >
-          <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+          <p className="text-xs font-medium uppercase tracking-wide text-fg-40">
             {copy.decideHeading}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -450,18 +450,18 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
               </Pill>
             ))}
           </div>
-          <p className="mt-3 max-w-[62ch] text-sm text-white/40">{copy.decideFootnote}</p>
+          <p className="mt-3 max-w-[62ch] text-sm text-fg-40">{copy.decideFootnote}</p>
         </section>
       )}
 
       <section aria-labelledby="report-history-heading" className="mt-8">
         <h2
           id="report-history-heading"
-          className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+          className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
         >
           {copy.historyHeading}
         </h2>
-        <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.historyIntro}</p>
+        <p className="mt-1 max-w-[62ch] text-sm text-fg-48">{copy.historyIntro}</p>
 
         {historyError !== null && (
           <InlineAlert variant="info" title={copy.historyFailedTitle} className="mt-4">
@@ -477,15 +477,15 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
         )}
 
         {history !== null && history.length === 0 && (
-          <p className="mt-4 text-sm text-white/40">{copy.historyEmpty}</p>
+          <p className="mt-4 text-sm text-fg-40">{copy.historyEmpty}</p>
         )}
 
         {history !== null && history.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-2">
             {history.map((entry) => (
-              <li key={entry.id} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <li key={entry.id} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <p className="text-sm text-white">
+                  <p className="text-sm text-fg">
                     {entry.actorId == null
                       ? actionLabel(entry.action, copy.auditAction)
                       : /*
@@ -510,7 +510,7 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
                     {entry.outcome === 'REFUSED' && <Tag variant="warning">{copy.refused}</Tag>}
                     <time
                       dateTime={entry.occurredAt}
-                      className="text-xs text-white/40"
+                      className="text-xs text-fg-40"
                       title={entry.occurredAt}
                     >
                       {formatExactTime(entry.occurredAt, locale)}
@@ -518,7 +518,7 @@ export function ReportDetail({ reportId, copy }: ReportDetailProps) {
                   </div>
                 </div>
                 {entry.detail != null && entry.detail !== '' && (
-                  <p className="mt-2 text-sm text-white/48">{entry.detail}</p>
+                  <p className="mt-2 text-sm text-fg-48">{entry.detail}</p>
                 )}
               </li>
             ))}

@@ -121,7 +121,7 @@ export function PayoutDestinationQueue({ copy }: PayoutDestinationQueueProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-2">
             {[0, 1].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="40%" />
                 <Skeleton height="0.875rem" width="30%" className="mt-2" />
               </div>
@@ -165,17 +165,17 @@ export function PayoutDestinationQueue({ copy }: PayoutDestinationQueueProps) {
             const updated = row.updatedAt == null ? null : formatDate(row.updatedAt, locale);
 
             return (
-              <li key={row.creatorId} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <li key={row.creatorId} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <EntityName id={row.creatorId} names={names} kind="account" copy={copy.identity} copyable />
-                    <p className="mt-1 text-sm text-white/64">
-                      {row.displayHint != null && <span className="font-mono text-white/80">{row.displayHint}</span>}
+                    <p className="mt-1 text-sm text-fg-64">
+                      {row.displayHint != null && <span className="font-mono text-fg-80">{row.displayHint}</span>}
                       {row.holderName != null &&
                         ` · ${fillPlaceholders(destination.holder, { name: row.holderName })}`}
                     </p>
                     {(updated !== null || row.rejectionReason != null) && (
-                      <p className="mt-1 text-xs text-white/40">
+                      <p className="mt-1 text-xs text-fg-40">
                         {updated !== null && fillPlaceholders(destination.updated, { date: updated })}
                         {updated !== null && row.rejectionReason != null && ' · '}
                         {row.rejectionReason != null &&
@@ -209,7 +209,7 @@ export function PayoutDestinationQueue({ copy }: PayoutDestinationQueueProps) {
                   <Link
                     href={`/admin/users/${encodeURIComponent(row.creatorId)}`}
                     aria-label={fillPlaceholders(copy.openAccountLabel, { name })}
-                    className="mt-4 inline-block rounded-lg text-sm text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                    className="mt-4 inline-block rounded-lg text-sm text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
                     {copy.openAccount}
                   </Link>

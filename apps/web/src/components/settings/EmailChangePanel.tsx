@@ -110,8 +110,8 @@ export function EmailChangePanel({ copy }: EmailChangePanelProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">{copy.heading}</h2>
 
       {/*
         THE ADDRESS ON THE ACCOUNT IS SHOWN THROUGHOUT, including on the confirmation below,
@@ -119,7 +119,7 @@ export function EmailChangePanel({ copy }: EmailChangePanelProps) {
         the person reading it is the person it belongs to.
       */}
       {session !== null && (
-        <p className="mt-2 text-sm text-white/64">
+        <p className="mt-2 text-sm text-fg-64">
           {/*
             TWO SENTENCES RATHER THAN ONE WITH A CLAUSE APPENDED. The unverified case used to be
             built by concatenating ", which is not verified yet." onto the end, which assumes the
@@ -127,19 +127,19 @@ export function EmailChangePanel({ copy }: EmailChangePanelProps) {
             where the verb is.
           */}
           {fillNodes(session.emailVerified ? copy.signInWith : copy.signInWithUnverified, {
-            address: <span className="font-medium text-white">{session.email}</span>,
+            address: <span className="font-medium text-fg">{session.email}</span>,
           })}
         </p>
       )}
 
       {requestedFor !== null ? (
         <div className="mt-6 flex flex-col gap-6">
-          <div className="flex items-start gap-3 rounded-xl border border-white/8 bg-surface-1 p-5 text-[15px] leading-relaxed text-white/64">
-            <MailCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-white/40" />
+          <div className="flex items-start gap-3 rounded-xl border border-fg/8 bg-surface-1 p-5 text-[15px] leading-relaxed text-fg-64">
+            <MailCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-fg-40" />
             <div>
               <p>
                 {fillNodes(copy.sentIntro, {
-                  address: <span className="font-medium text-white">{requestedFor}</span>,
+                  address: <span className="font-medium text-fg">{requestedFor}</span>,
                 })}
               </p>
               <p className="mt-3">
@@ -148,7 +148,7 @@ export function EmailChangePanel({ copy }: EmailChangePanelProps) {
                   see a success message, assume the account has moved, and stop being able to
                   find it when the link goes unopened.
                 */}
-                <strong className="font-medium text-white">{copy.nothingChanged}</strong>{' '}
+                <strong className="font-medium text-fg">{copy.nothingChanged}</strong>{' '}
                 {session === null
                   ? copy.stillSignInUnknown
                   : fillPlaceholders(copy.stillSignIn, { address: session.email })}

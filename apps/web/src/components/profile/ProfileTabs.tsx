@@ -167,8 +167,8 @@ export function ProfileTabs({ tabs, label }: ProfileTabsProps) {
               className={cn(
                 TAB_CLASSES,
                 current
-                  ? 'border-transparent bg-white text-on-white'
-                  : 'border-white/8 bg-surface-2 text-white/64 hover:bg-surface-3 hover:text-white',
+                  ? 'border-transparent bg-inverse text-on-inverse'
+                  : 'border-fg/8 bg-surface-2 text-fg-64 hover:bg-surface-3 hover:text-fg',
               )}
             >
               {tab.label}
@@ -182,7 +182,7 @@ export function ProfileTabs({ tabs, label }: ProfileTabsProps) {
                 <span
                   className={cn(
                     'tabular-nums',
-                    current ? 'text-on-white/64' : 'text-white/40',
+                    current ? 'text-on-inverse/64' : 'text-fg-40',
                   )}
                 >
                   {tab.count}
@@ -203,7 +203,7 @@ export function ProfileTabs({ tabs, label }: ProfileTabsProps) {
              its first link, and so a panel with nothing focusable in it is still reachable. */
           tabIndex={0}
           hidden={index !== selected}
-          className="mt-8 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="mt-8 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {tab.panel}
         </div>

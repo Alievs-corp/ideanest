@@ -236,7 +236,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
     <h2
       ref={headingRef}
       tabIndex={-1}
-      className="text-lg font-medium tracking-[-0.02em] text-white focus:outline-none"
+      className="text-lg font-medium tracking-[-0.02em] text-fg focus:outline-none"
     >
       {step.kind === 'scan'
         ? copy.scanHeading
@@ -251,7 +251,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
   );
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
       {heading}
 
       {notice !== null && step.kind !== 'codes' && (
@@ -272,7 +272,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
 
       {step.kind === 'idle' && (
         <div className="mt-4 flex flex-col gap-6">
-          <p className="max-w-[62ch] text-[15px] leading-relaxed text-white/64">
+          <p className="max-w-[62ch] text-[15px] leading-relaxed text-fg-64">
             {/*
               The emphasised phrase is its own key and the sentence is filled around it. A
               "before" key and an "after" key would buy the same `<strong>` at the cost of
@@ -280,7 +280,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
             */}
             {fillNodes(copy.intro, {
               emphasis: (
-                <strong className="font-medium text-white">{copy.introEmphasis}</strong>
+                <strong className="font-medium text-fg">{copy.introEmphasis}</strong>
               ),
             })}
           </p>
@@ -300,7 +300,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
 
       {step.kind === 'password' && (
         <form onSubmit={begin} noValidate className="mt-4 flex max-w-[26rem] flex-col gap-5">
-          <p className="text-[15px] leading-relaxed text-white/64">{copy.passwordIntro}</p>
+          <p className="text-[15px] leading-relaxed text-fg-64">{copy.passwordIntro}</p>
           <Field label={copy.currentPassword} required>
             <TextInput
               type="password"
@@ -323,34 +323,34 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
 
       {step.kind === 'scan' && (
         <form onSubmit={confirm} noValidate className="mt-4 flex flex-col gap-6">
-          <p className="max-w-[62ch] text-[15px] leading-relaxed text-white/64">
+          <p className="max-w-[62ch] text-[15px] leading-relaxed text-fg-64">
             {fillNodes(copy.scanIntro, {
               emphasis: (
-                <strong className="font-medium text-white">{copy.scanIntroEmphasis}</strong>
+                <strong className="font-medium text-fg">{copy.scanIntroEmphasis}</strong>
               ),
             })}
           </p>
 
-          <div className="flex flex-col gap-4 rounded-xl border border-white/8 bg-surface-1 p-5">
+          <div className="flex flex-col gap-4 rounded-xl border border-fg/8 bg-surface-1 p-5">
             <div>
-              <p className="text-sm text-white/64">{copy.onThisDevice}</p>
+              <p className="text-sm text-fg-64">{copy.onThisDevice}</p>
               <a
                 href={step.enrolment.otpauthUri}
-                className="mt-1 inline-block rounded-sm text-[15px] text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="mt-1 inline-block rounded-sm text-[15px] text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {copy.openApp}
               </a>
             </div>
             <div>
-              <p className="text-sm text-white/64">{copy.byHand}</p>
+              <p className="text-sm text-fg-64">{copy.byHand}</p>
               {/*
                 `break-all` on a monospace run: a base32 secret has no spaces to wrap at, and
                 without it the card widens until the layout scrolls sideways.
               */}
-              <code className="mt-1 block font-mono text-[15px] break-all text-white select-all">
+              <code className="mt-1 block font-mono text-[15px] break-all text-fg select-all">
                 {step.enrolment.secret}
               </code>
-              <p className="mt-2 text-sm text-white/40">
+              <p className="mt-2 text-sm text-fg-40">
                 {fillPlaceholders(copy.parameters, {
                   digits: String(step.enrolment.digits),
                   seconds: String(step.enrolment.periodSeconds),
@@ -389,7 +389,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
             <p>{copy.codesWarningBody}</p>
           </InlineAlert>
 
-          <ul className="grid list-none grid-cols-2 gap-2 rounded-xl border border-white/8 bg-surface-1 p-5 font-mono text-[15px] text-white select-all sm:grid-cols-3">
+          <ul className="grid list-none grid-cols-2 gap-2 rounded-xl border border-fg/8 bg-surface-1 p-5 font-mono text-[15px] text-fg select-all sm:grid-cols-3">
             {step.codes.map((recovery) => (
               <li key={recovery}>{recovery}</li>
             ))}
@@ -423,7 +423,7 @@ export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
 
       {step.kind === 'disable' && (
         <form onSubmit={turnOff} noValidate className="mt-4 flex max-w-[26rem] flex-col gap-5">
-          <p className="text-[15px] leading-relaxed text-white/64">
+          <p className="text-[15px] leading-relaxed text-fg-64">
             {fillNodes(copy.disableIntro, {
               emphasis: <em>{copy.disableIntroEmphasis}</em>,
             })}

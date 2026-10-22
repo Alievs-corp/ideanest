@@ -446,7 +446,7 @@ export default async function CampaignPage({
         `@ideanest/ui/motion`, for the reason the header comment above gives: 116 kB of
         animation runtime is not spent on the page #119 exists to keep fast.
       */}
-      <div className="mt-16 border-t border-white/6 pt-6">
+      <div className="mt-16 border-t border-fg/6 pt-6">
         <ReportControl
           target={{ kind: 'campaign', id: campaign.id }}
           name={campaign.title}

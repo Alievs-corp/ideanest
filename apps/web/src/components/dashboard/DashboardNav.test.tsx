@@ -101,7 +101,7 @@ describe('DashboardNav', () => {
     for (const link of screen.getAllByRole('link')) {
       expect(link).toHaveClass('focus-visible:outline-2');
       expect(link).toHaveClass('focus-visible:outline-offset-2');
-      expect(link).toHaveClass('focus-visible:outline-[var(--lime-500)]');
+      expect(link).toHaveClass('focus-visible:outline-[var(--focus-ring)]');
     }
   });
 

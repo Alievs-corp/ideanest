@@ -142,25 +142,25 @@ export function PledgeList({ copy }: PledgeListProps) {
           return (
             <li
               key={pledge.pledgeId}
-              className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 rounded-xl border border-white/8 bg-surface-2 px-5 py-4"
+              className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 rounded-xl border border-fg/8 bg-surface-2 px-5 py-4"
             >
               <div className="min-w-0">
-                <h3 className="text-[17px] font-medium tracking-[-0.01em] text-white">
+                <h3 className="text-[17px] font-medium tracking-[-0.01em] text-fg">
                   <Link
                     href={pledgeHref(pledge.pledgeId)}
-                    className="rounded-sm hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                    className="rounded-sm hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
                     {pledge.project.title}
                   </Link>
                 </h3>
 
-                <p className="mt-1 text-sm text-white/64">
+                <p className="mt-1 text-sm text-fg-64">
                   {/* PL-02: a pledge with no reward is a first-class choice and is named as
                       one, rather than left as a blank where a title would be. */}
                   {pledge.rewardTitle ?? copy.noReward}
                 </p>
 
-                <p className="mt-1 text-sm text-white/40">
+                <p className="mt-1 text-sm text-fg-40">
                   {fillPlaceholders(copy.byCreator, { creator: pledge.project.creatorSlug })}
                   {moment !== null && (
                     <>
@@ -182,7 +182,7 @@ export function PledgeList({ copy }: PledgeListProps) {
               </div>
 
               <div className="text-right">
-                <p className="text-lg font-medium tabular-nums text-white">
+                <p className="text-lg font-medium tabular-nums text-fg">
                   {formatMoney(pledge.amounts.total)}
                 </p>
                 {/*
@@ -191,7 +191,7 @@ export function PledgeList({ copy }: PledgeListProps) {
                   campaign closes" under every pledge that was not COLLECTED, including the
                   refunded ones, long after IDN-EXT-01 moved the charge to confirmation.
                 */}
-                {note !== null && <p className="mt-1 text-xs text-white/40">{note}</p>}
+                {note !== null && <p className="mt-1 text-xs text-fg-40">{note}</p>}
               </div>
             </li>
           );

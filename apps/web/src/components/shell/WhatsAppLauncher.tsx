@@ -159,7 +159,7 @@ export function WhatsAppLauncher({ copy }: WhatsAppLauncherProps) {
         <span
           aria-hidden="true"
           className={cn(
-            'absolute inset-0 rounded-full bg-white/24',
+            'absolute inset-0 rounded-full bg-fg/24',
             movementIsBudgeted(pathname) &&
               'motion-safe:animate-[whatsapp-halo_2.4s_ease-out_infinite]',
             /*
@@ -185,8 +185,8 @@ export function WhatsAppLauncher({ copy }: WhatsAppLauncherProps) {
               control is available rather than urgent.
             */
             'bg-white text-on-white shadow-float',
-            'transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+            'transition-colors duration-150 ease-in-out hover:bg-inverse-muted',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
           )}
         >
           <WhatsAppGlyph
@@ -223,11 +223,11 @@ export function WhatsAppLauncher({ copy }: WhatsAppLauncherProps) {
             tabIndex={-1}
             className={cn(
               'relative flex w-full max-w-[32rem] flex-col gap-5',
-              'max-h-[85vh] overflow-y-auto rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8',
+              'max-h-[85vh] overflow-y-auto rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8',
               'motion-safe:animate-[dialog-panel_200ms_ease-out]',
             )}
           >
-            <h2 className="flex items-center gap-2.5 text-lg font-medium tracking-[-0.02em] text-white">
+            <h2 className="flex items-center gap-2.5 text-lg font-medium tracking-[-0.02em] text-fg">
               <WhatsAppGlyph className="size-5 shrink-0" />
               {copy.title}
             </h2>
@@ -240,7 +240,7 @@ export function WhatsAppLauncher({ copy }: WhatsAppLauncherProps) {
                   invisible to a screen reader that is not focused on the control, while
                   `Field` puts the sentence beside the field and wires it up.
                 */}
-                <p className="text-[15px] leading-relaxed text-white/64">{copy.intro}</p>
+                <p className="text-[15px] leading-relaxed text-fg-64">{copy.intro}</p>
 
                 <Field label={copy.fields.firstName} required error={errorFor('firstName')}>
                   <TextInput
@@ -310,9 +310,9 @@ export function WhatsAppLauncher({ copy }: WhatsAppLauncherProps) {
                     rel="noopener noreferrer"
                     className={cn(
                       'inline-flex h-10 items-center justify-center gap-2 rounded-full px-[18px]',
-                      'bg-white text-sm font-medium tracking-[-0.01em] text-on-white',
-                      'transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]',
-                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+                      'bg-inverse text-sm font-medium tracking-[-0.01em] text-on-inverse',
+                      'transition-colors duration-150 ease-in-out hover:bg-inverse-muted',
+                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
                     )}
                   >
                     <WhatsAppGlyph className="size-4 shrink-0" />

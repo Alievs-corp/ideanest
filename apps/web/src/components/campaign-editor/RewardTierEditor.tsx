@@ -395,9 +395,9 @@ export function RewardTierEditor({
           >
             <p>{failure.message}</p>
             {ratesUnsaved ? (
-              <p className="mt-2 text-white/64">{copy.ratesNotSavedDetail}</p>
+              <p className="mt-2 text-fg-64">{copy.ratesNotSavedDetail}</p>
             ) : (
-              <p className="mt-2 text-white/64">{copy.notSavedDetail}</p>
+              <p className="mt-2 text-fg-64">{copy.notSavedDetail}</p>
             )}
           </InlineAlert>
         )}
@@ -441,7 +441,7 @@ export function RewardTierEditor({
                   The campaign page's box for it, 3:2, so the creator sees the crop a backer
                   will. Decorative here: the tier's title says what it is.
                 */}
-                <div className="w-32 shrink-0 overflow-hidden rounded-lg border border-white/8 bg-surface-3">
+                <div className="w-32 shrink-0 overflow-hidden rounded-lg border border-fg/8 bg-surface-3">
                   <Media
                     src={draft.image.url}
                     ratio="3/2"
@@ -647,8 +647,8 @@ export function RewardTierEditor({
           </Field>
         </div>
 
-        <fieldset className="flex flex-col gap-5 rounded-lg border border-white/8 bg-surface-2 p-5">
-          <legend className="px-1 text-sm font-medium text-white">{copy.offering}</legend>
+        <fieldset className="flex flex-col gap-5 rounded-lg border border-fg/8 bg-surface-2 p-5">
+          <legend className="px-1 text-sm font-medium text-fg">{copy.offering}</legend>
 
           <div>
             <Switch
@@ -657,7 +657,7 @@ export function RewardTierEditor({
               aria-describedby={earlyBirdHintId}
               onCheckedChange={(checked) => setDraft({ ...draft, isEarlyBird: checked })}
             />
-            <p id={earlyBirdHintId} className="mt-2 text-[13px] text-white/64">
+            <p id={earlyBirdHintId} className="mt-2 text-[13px] text-fg-64">
               {copy.earlyBirdHint}
             </p>
             {visible.isEarlyBird !== undefined && (
@@ -674,7 +674,7 @@ export function RewardTierEditor({
               aria-describedby={featuredHintId}
               onCheckedChange={(checked) => setDraft({ ...draft, isFeatured: checked })}
             />
-            <p id={featuredHintId} className="mt-2 text-[13px] text-white/64">
+            <p id={featuredHintId} className="mt-2 text-[13px] text-fg-64">
               {copy.featuredHint}
             </p>
             {visible.isFeatured !== undefined && (
@@ -691,7 +691,7 @@ export function RewardTierEditor({
               aria-describedby={secretHintId}
               onCheckedChange={(checked) => setDraft({ ...draft, isSecret: checked })}
             />
-            <p id={secretHintId} className="mt-2 text-[13px] text-white/64">
+            <p id={secretHintId} className="mt-2 text-[13px] text-fg-64">
               {copy.secretHint}
             </p>
             {target?.isSecret === true && target.secretToken != null && (
@@ -701,8 +701,8 @@ export function RewardTierEditor({
                 been saved as secret and it changes if the tier is ever made
                 public again.
               */
-              <p className="mt-2 rounded-md bg-surface-3 p-3 font-mono text-[13px] break-all text-white/64">
-                <span className="mr-2 font-sans text-white/40">{copy.token}</span>
+              <p className="mt-2 rounded-md bg-surface-3 p-3 font-mono text-[13px] break-all text-fg-64">
+                <span className="mr-2 font-sans text-fg-40">{copy.token}</span>
                 {target.secretToken}
               </p>
             )}
@@ -715,7 +715,7 @@ export function RewardTierEditor({
               aria-describedby={addonHintId}
               onCheckedChange={(checked) => setDraft({ ...draft, isAddon: checked })}
             />
-            <p id={addonHintId} className="mt-2 text-[13px] text-white/64">
+            <p id={addonHintId} className="mt-2 text-[13px] text-fg-64">
               {copy.addOnHint}
             </p>
           </div>
@@ -783,11 +783,11 @@ function Composition({
             return (
               <li
                 key={entry.itemId}
-                className="flex items-center gap-3 rounded-md border border-white/8 bg-surface-3 p-3"
+                className="flex items-center gap-3 rounded-md border border-fg/8 bg-surface-3 p-3"
               >
-                <span className="min-w-0 flex-1 truncate text-sm text-white">{name}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-fg">{name}</span>
 
-                <span className="flex items-center gap-2 text-[13px] text-white/64">
+                <span className="flex items-center gap-2 text-[13px] text-fg-64">
                   {/*
                     The multiplication sign is decoration; the control's name is
                     the whole sentence, because "Quantity" repeated four times
@@ -834,7 +834,7 @@ function Composition({
           ))}
         </Select>
       ) : (
-        <p className="text-[13px] text-white/40">
+        <p className="text-[13px] text-fg-40">
           {lines.length === 0
             ? copy.noItemsYet
             : copy.everyItemAdded}
@@ -885,7 +885,7 @@ function ShippingRates({
       error={error}
     >
       {rules.length === 0 ? (
-        <p className="text-[13px] text-white/40">
+        <p className="text-[13px] text-fg-40">
           {copy.noDestinations}
         </p>
       ) : (
@@ -909,7 +909,7 @@ function ShippingRates({
               */
               <li
                 key={index}
-                className="grid grid-cols-[4.5rem_1fr_1fr_auto] items-center gap-2 rounded-md border border-white/8 bg-surface-3 p-3"
+                className="grid grid-cols-[4.5rem_1fr_1fr_auto] items-center gap-2 rounded-md border border-fg/8 bg-surface-3 p-3"
               >
                 <TextInput
                   size="sm"

@@ -142,13 +142,13 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
       {data !== null && (
         <>
           <section aria-labelledby="totals-heading">
-            <h2 id="totals-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+            <h2 id="totals-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
               {fillPlaceholders(copy.range, {
                 from: calendarDate(data.from, locale),
                 to: calendarDate(data.to, locale),
               })}
             </h2>
-            <p className="mt-1 max-w-[68ch] text-sm text-white/64">{copy.populationNote}</p>
+            <p className="mt-1 max-w-[68ch] text-sm text-fg-64">{copy.populationNote}</p>
 
             <FigureGrid className="mt-4 lg:grid-cols-4">
               <FigureTile term={copy.volume}>{formatMoney(data.totals.volume)}</FigureTile>
@@ -171,7 +171,7 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
           {/* A count of this moment, not of the window, so it is not drawn among the window's
               figures: the window buttons do not move it. */}
           <section aria-labelledby="now-heading">
-            <h2 id="now-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+            <h2 id="now-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
               {copy.nowHeading}
             </h2>
             <FigureGrid className="mt-4 lg:grid-cols-4">
@@ -180,12 +180,12 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
           </section>
 
           <section aria-labelledby="outcomes-heading">
-            <h2 id="outcomes-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+            <h2 id="outcomes-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
               {copy.outcomesHeading}
             </h2>
 
             {data.outcomes.successRate == null ? (
-              <p className="mt-2 text-sm text-white/48">{copy.noneClosed}</p>
+              <p className="mt-2 text-sm text-fg-48">{copy.noneClosed}</p>
             ) : (
               <FigureGrid className="mt-4 lg:grid-cols-4">
                 <FigureTile term={copy.succeeded}>{formatCount(data.outcomes.succeeded, locale)}</FigureTile>
@@ -196,14 +196,14 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
           </section>
 
           <section aria-labelledby="daily-heading">
-            <h2 id="daily-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+            <h2 id="daily-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
               {copy.dailyHeading}
             </h2>
 
             {/* The service now sends every day of the window, zeros included, so "nothing" is a
                 count of nought rather than an empty series. */}
             {data.totals.pledgeCount === 0 ? (
-              <p className="mt-2 text-sm text-white/48">{copy.nothingPledged}</p>
+              <p className="mt-2 text-sm text-fg-48">{copy.nothingPledged}</p>
             ) : (
               <DailyVolume
                 points={data.daily}
@@ -217,12 +217,12 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
 
           {data.notBuilt.length > 0 && (
             <section aria-labelledby="not-built-heading">
-              <h2 id="not-built-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+              <h2 id="not-built-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
                 {copy.notBuiltHeading}
               </h2>
               <ul className="mt-2 flex list-none flex-col gap-2">
                 {data.notBuilt.map((reason) => (
-                  <li key={reason} className="text-sm text-white/64">
+                  <li key={reason} className="text-sm text-fg-64">
                     {/* #403: the service sends a code and the sentence is the catalogue's.
                         A code with no sentence is drawn as itself rather than dropped. */}
                     {copy.notBuilt[reason] ?? reason}
@@ -232,7 +232,7 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
             </section>
           )}
 
-          <p className="max-w-[68ch] text-xs text-white/48">
+          <p className="max-w-[68ch] text-xs text-fg-48">
             {fillPlaceholders(copy.computedAt, { time: bakuDateTime(data.computedAt, locale) })}
           </p>
         </>

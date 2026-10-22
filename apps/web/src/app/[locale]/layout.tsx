@@ -11,6 +11,7 @@ import { DEFAULT_LOCALE, localeOrDefault } from '../../lib/i18n/locale';
 import { followMaintenanceSource } from '../../lib/maintenance/script';
 import { rootMetadata } from '../../lib/seo/metadata';
 import { MAINTENANCE_PROBLEM_TYPE } from '@ideanest/api-client/maintenance';
+import { themeScriptSource } from '../../lib/theme/theme';
 import '../globals.css';
 
 /**
@@ -112,9 +113,13 @@ export function generateStaticParams(): Array<{ locale: string }> {
 }
 
 /**
- * `color-scheme: dark` is declared on `:root` by the token file
- * (docs/ui-kit.md §9.4), so browser chrome, scrollbars, and native controls
- * follow the system without anything further here.
+ * `color-scheme` is declared by the token file for each theme (docs/ui-kit.md §9.4, §11), so
+ * browser chrome, scrollbars, and native controls follow without anything further here.
+ *
+ * THE THEME SCRIPT IS THE FIRST THING IN `<body>`. A reader who chose the light theme has it
+ * applied before anything paints; `lib/theme/theme.ts` explains why it cannot come from the
+ * server. It writes `data-theme` on `<html>`, which React did not render, so `<html>` carries
+ * `suppressHydrationWarning` — that silences this one element's attributes and nothing below.
  *
  * `lang` IS THE ROUTE'S OWN SEGMENT (#123). It used to be a module constant, which was
  * honest while the site was English and would now be a lie on three quarters of its pages:
@@ -174,8 +179,9 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} className={`${inter.variable} ${geologica.variable}`}>
+    <html lang={locale} className={`${inter.variable} ${geologica.variable}`} suppressHydrationWarning>
       <body className="min-h-dvh bg-surface-1">
+        <script dangerouslySetInnerHTML={{ __html: themeScriptSource() }} />
         {/*
           A call to the service that meets the maintenance problem sends the reader to the
           maintenance page — #214. An inline script that wraps `fetch`, first in the body so it

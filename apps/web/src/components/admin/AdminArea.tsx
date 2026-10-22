@@ -120,7 +120,7 @@ export async function AdminArea({ children }: AdminAreaProps) {
           `TopBar` from the kit — see the docblock on what importing the barrel costs a route
           that draws no navigation.
         */}
-        <div className="border-b border-white/8 bg-surface-1">
+        <div className="border-b border-fg/8 bg-surface-1">
           <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:py-4">
             <div className="flex min-w-0 items-center gap-3">
               {/* The rail, below the breakpoint. Nothing at all above it. */}
@@ -128,11 +128,11 @@ export async function AdminArea({ children }: AdminAreaProps) {
 
               <Link
               href="/admin"
-                className="truncate rounded-lg text-sm font-semibold tracking-[-0.01em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="truncate rounded-lg text-sm font-semibold tracking-[-0.01em] text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 <BrandMark className="mr-2 inline-block h-5 w-auto align-[-0.2em] text-[var(--lime-500)]" />
                 IdeyaNest{' '}
-                <span className="font-normal text-white/48">{copy.console}</span>
+                <span className="font-normal text-fg-48">{copy.console}</span>
               </Link>
             </div>
 
@@ -152,7 +152,7 @@ export async function AdminArea({ children }: AdminAreaProps) {
               */}
               <Link
                 href="/"
-                className="rounded-lg text-sm text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="rounded-lg text-sm text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {copy.backToSite}
               </Link>

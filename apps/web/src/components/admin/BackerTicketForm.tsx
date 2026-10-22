@@ -131,8 +131,8 @@ export function BackerTicketForm({
   }
 
   return (
-    <section aria-labelledby={headingId} className="mt-3 flex flex-col gap-3 border-t border-white/8 pt-3">
-      <h3 id={headingId} className="text-sm font-medium text-white">
+    <section aria-labelledby={headingId} className="mt-3 flex flex-col gap-3 border-t border-fg/8 pt-3">
+      <h3 id={headingId} className="text-sm font-medium text-fg">
         {copy.heading}
       </h3>
 
@@ -147,7 +147,7 @@ export function BackerTicketForm({
 
       {raised === null ? (
         <>
-          <p className="max-w-[62ch] text-xs text-white/64">{copy.intro}</p>
+          <p className="max-w-[62ch] text-xs text-fg-64">{copy.intro}</p>
 
           <form onSubmit={(event) => void raise(event)} noValidate className="flex max-w-[34rem] flex-col gap-3">
             {pledgeId === undefined && (

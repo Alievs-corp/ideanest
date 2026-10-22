@@ -200,7 +200,7 @@ export function ConsoleColumnChart({
 
   return (
     <figure className="mt-4">
-      <div className="flex items-baseline justify-between gap-4 text-xs text-white/48">
+      <div className="flex items-baseline justify-between gap-4 text-xs text-fg-48">
         <span>{currency}</span>
         <span>{copy.granularity[granularity]}</span>
       </div>
@@ -211,7 +211,7 @@ export function ConsoleColumnChart({
           {scale.ticks.map((value) => (
             <span
               key={value}
-              className="absolute right-0 translate-y-1/2 text-[11px] leading-none tabular-nums text-white/48"
+              className="absolute right-0 translate-y-1/2 text-[11px] leading-none tabular-nums text-fg-48"
               style={{ bottom: `${(value / scale.max) * 100}%` }}
             >
               {tick(value)}
@@ -229,7 +229,7 @@ export function ConsoleColumnChart({
             onKeyDown={onKeyDown}
             onBlur={() => setActive(null)}
             onMouseLeave={() => setActive(null)}
-            className="relative rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--lime-500)]"
+            className="relative rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--focus-ring)]"
             style={{ height }}
           >
             <span id={hintId} className="sr-only">
@@ -262,11 +262,11 @@ export function ConsoleColumnChart({
                   >
                     {share > 0 ? (
                       <span
-                        className={`block w-full rounded-t-[4px] ${isActive ? 'bg-white' : 'bg-white/56'}`}
+                        className={`block w-full rounded-t-[4px] ${isActive ? 'bg-white' : 'bg-fg/56'}`}
                         style={{ height: `max(2px, ${share * 100}%)` }}
                       />
                     ) : (
-                      <span className="block h-[2px] w-full bg-white/16" />
+                      <span className="block h-[2px] w-full bg-fg/16" />
                     )}
                   </div>
                 );
@@ -276,7 +276,7 @@ export function ConsoleColumnChart({
             {showPeakLabel && (
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute whitespace-nowrap pb-1 text-[11px] font-medium leading-none tabular-nums text-white"
+                className="pointer-events-none absolute whitespace-nowrap pb-1 text-[11px] font-medium leading-none tabular-nums text-fg"
                 style={{ ...anchor(highestIndex), bottom: `${ratio(highest) * 100}%` }}
               >
                 {money(highest.amount)}
@@ -289,9 +289,9 @@ export function ConsoleColumnChart({
                 className="pointer-events-none absolute top-0 z-10 w-max max-w-[220px] rounded-[var(--radius-sm)] border border-[var(--border-strong)] bg-[var(--surface-4)] px-3 py-2 shadow-[var(--shadow-panel)]"
                 style={beside(active)}
               >
-                <p className="text-xs text-white/64">{period(shown)}</p>
-                <p className="mt-0.5 text-sm font-medium tabular-nums text-white">{money(shown.amount)}</p>
-                <p className="mt-0.5 text-xs tabular-nums text-white/64">
+                <p className="text-xs text-fg-64">{period(shown)}</p>
+                <p className="mt-0.5 text-sm font-medium tabular-nums text-fg">{money(shown.amount)}</p>
+                <p className="mt-0.5 text-xs tabular-nums text-fg-64">
                   {fillPlaceholders(copy.count, { count: String(shown.count) })}
                 </p>
               </div>
@@ -310,7 +310,7 @@ export function ConsoleColumnChart({
               return (
                 <span
                   key={bucket.from}
-                  className="absolute top-0 whitespace-nowrap text-[11px] leading-none text-white/48"
+                  className="absolute top-0 whitespace-nowrap text-[11px] leading-none text-fg-48"
                   style={anchor(index)}
                 >
                   {axisLabel(bucket, index)}
@@ -322,11 +322,11 @@ export function ConsoleColumnChart({
       </div>
 
       <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
-        <span className="text-white/64">
+        <span className="text-fg-64">
           {fillPlaceholders(copy.total, { amount: money(totalAmount(buckets)) })}
         </span>
         {highest !== undefined && toMinorUnits(highest.amount) > 0n && (
-          <span className="text-white">
+          <span className="text-fg">
             {fillPlaceholders(copy.highest, { period: period(highest), amount: money(highest.amount) })}
           </span>
         )}
@@ -335,7 +335,7 @@ export function ConsoleColumnChart({
       <details className="mt-3">
         <summary
           aria-controls={tableId}
-          className="cursor-pointer rounded-[4px] text-sm text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="cursor-pointer rounded-[4px] text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {copy.tableToggle}
         </summary>
@@ -344,12 +344,12 @@ export function ConsoleColumnChart({
           role="region"
           aria-label={copy.tableToggle}
           tabIndex={0}
-          className="mt-3 max-h-80 overflow-auto rounded-[var(--radius-md)] border border-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="mt-3 max-h-80 overflow-auto rounded-[var(--radius-md)] border border-fg/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           <table className="w-full border-collapse text-xs sm:text-sm">
             <caption className="sr-only">{summary}</caption>
             <thead>
-              <tr className="border-b border-white/8 text-left text-white/64">
+              <tr className="border-b border-fg/8 text-left text-fg-64">
                 <th scope="col" className="px-3 py-2 sm:px-4 sm:py-3 font-medium">
                   {copy.periodColumn}
                 </th>
@@ -363,12 +363,12 @@ export function ConsoleColumnChart({
             </thead>
             <tbody>
               {buckets.map((bucket) => (
-                <tr key={bucket.from} className="border-b border-white/6 last:border-0">
-                  <th scope="row" className="px-3 py-2 sm:px-4 sm:py-2.5 text-left font-normal text-white">
+                <tr key={bucket.from} className="border-b border-fg/6 last:border-0">
+                  <th scope="row" className="px-3 py-2 sm:px-4 sm:py-2.5 text-left font-normal text-fg">
                     {period(bucket)}
                   </th>
-                  <td className="px-3 py-2 sm:px-4 sm:py-2.5 text-right tabular-nums text-white/64">{bucket.count}</td>
-                  <td className="px-3 py-2 sm:px-4 sm:py-2.5 text-right tabular-nums text-white">{money(bucket.amount)}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-2.5 text-right tabular-nums text-fg-64">{bucket.count}</td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-2.5 text-right tabular-nums text-fg">{money(bucket.amount)}</td>
                 </tr>
               ))}
             </tbody>

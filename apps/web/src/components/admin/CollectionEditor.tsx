@@ -171,7 +171,7 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
   const back = (
     <Link
       href="/admin/curation"
-      className="inline-flex items-center gap-1.5 rounded-lg text-sm text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+      className="inline-flex items-center gap-1.5 rounded-lg text-sm text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
     >
       <ArrowLeft aria-hidden="true" className="size-4" />
       {copy.backToCollections}
@@ -185,7 +185,7 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
   if (status === 'loading') {
     return (
       <SkeletonGroup label={copy.loadingList}>
-        <div className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
+        <div className="rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
           <Skeleton height="1.25rem" width="40%" />
           <Skeleton height="0.875rem" width="60%" className="mt-3" />
         </div>
@@ -285,17 +285,17 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
 
       <section
         aria-labelledby="collection-heading"
-        className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
+        className="mt-4 rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id="collection-heading"
-              className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+              className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
             >
               {collectionTitle(collection)}
             </h2>
-            <p className="mt-1 font-mono text-xs text-white/40">
+            <p className="mt-1 font-mono text-xs text-fg-40">
               /collections/{collection.slug}
             </p>
           </div>
@@ -320,7 +320,7 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
             {published ? copy.takeDown : copy.publish}
           </Pill>
           {!published && members.length === 0 && (
-            <p className="text-sm text-white/48">{copy.emptyBeforePublish}</p>
+            <p className="text-sm text-fg-48">{copy.emptyBeforePublish}</p>
           )}
         </div>
       </section>
@@ -340,12 +340,12 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
       )}
 
       <section aria-labelledby="members-heading" className="mt-8">
-        <h2 id="members-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="members-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.campaigns}
-          <span className="ml-2 text-xs font-normal text-white/40">{members.length}</span>
+          <span className="ml-2 text-xs font-normal text-fg-40">{members.length}</span>
         </h2>
         {hidden > 0 && (
-          <p className="mt-1 max-w-[62ch] text-sm text-white/48">
+          <p className="mt-1 max-w-[62ch] text-sm text-fg-48">
             {pluralise(locale, copy.hidden, hidden)}
           </p>
         )}
@@ -371,11 +371,11 @@ export function CollectionEditor({ slug, copy, note }: CollectionEditorProps) {
             {members.map((member, index) => (
               <li
                 key={member.projectId}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 p-4"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-fg/8 bg-surface-1 p-4"
               >
                 <div className="min-w-0">
-                  <p className="text-sm sm:text-[15px] text-white">{member.title}</p>
-                  <p className="mt-1 font-mono text-xs text-white/40">{member.slug}</p>
+                  <p className="text-sm sm:text-[15px] text-fg">{member.title}</p>
+                  <p className="mt-1 font-mono text-xs text-fg-40">{member.slug}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {!member.publiclyVisible && (
@@ -551,15 +551,15 @@ function CollectionDetails({
 
   return (
     <section aria-labelledby="details-heading" className="mt-10">
-      <h2 id="details-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="details-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.detailsHeading}
       </h2>
-      <p className="mt-1 max-w-[62ch] text-sm text-white/48">{copy.detailsIntro}</p>
+      <p className="mt-1 max-w-[62ch] text-sm text-fg-48">{copy.detailsIntro}</p>
 
       <form
         noValidate
         onSubmit={(event) => void save(event)}
-        className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5"
+        className="mt-4 rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5"
       >
         <Field label={copy.kindLabel} className="max-w-[280px]">
           <Select value={kind} onChange={(event) => setKind(event.target.value as CollectionKind)}>
@@ -573,9 +573,9 @@ function CollectionDetails({
 
         <div className="mt-5 flex flex-col gap-5">
           {SUPPORTED_LOCALES.map((code) => (
-            <fieldset key={code} className="border-t border-white/8 pt-4">
+            <fieldset key={code} className="border-t border-fg/8 pt-4">
               <legend className="sr-only">{LOCALE_NAMES[code]}</legend>
-              <p aria-hidden="true" className="text-xs font-medium tracking-[0.04em] text-white/48 uppercase">
+              <p aria-hidden="true" className="text-xs font-medium tracking-[0.04em] text-fg-48 uppercase">
                 {LOCALE_NAMES[code]}
               </p>
               <div className="mt-3 grid items-start gap-3 sm:grid-cols-[2fr_3fr]">
@@ -668,7 +668,7 @@ function CampaignPicker({
   const inCollection = new Set(members.map((member) => member.projectId));
 
   return (
-    <div className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
+    <div className="mt-4 rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
       <form onSubmit={(event) => void search(event)} role="search">
         <Field label={copy.addLabel} hint={copy.addHint}>
           <div className="flex gap-2">
@@ -698,7 +698,7 @@ function CampaignPicker({
       )}
 
       {results !== null && results.length === 0 && (
-        <p className="mt-4 text-sm text-white/48">{copy.noResults}</p>
+        <p className="mt-4 text-sm text-fg-48">{copy.noResults}</p>
       )}
 
       {results !== null && results.length > 0 && (
@@ -708,11 +708,11 @@ function CampaignPicker({
             return (
               <li
                 key={campaign.projectId}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/8 p-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-fg/8 p-3"
               >
                 <div className="min-w-0">
-                  <p className="text-sm text-white">{campaign.title}</p>
-                  <p className="mt-0.5 text-xs text-white/48">
+                  <p className="text-sm text-fg">{campaign.title}</p>
+                  <p className="mt-0.5 text-xs text-fg-48">
                     <span className="font-mono">{campaign.slug}</span>
                     {' · '}
                     {stateLabel(copy, campaign.state)}

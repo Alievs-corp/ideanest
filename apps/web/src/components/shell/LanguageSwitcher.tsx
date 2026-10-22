@@ -122,8 +122,8 @@ const PHONE_ALIGN = {
 
 const ROW = [
   'flex items-center justify-between gap-3 rounded-sm px-3 py-2.5 text-sm',
-  'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-white',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+  'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-fg',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
 ].join(' ');
 
 export function LanguageSwitcher({
@@ -177,11 +177,11 @@ export function LanguageSwitcher({
         className={cn(
           'inline-grid place-items-center rounded-full',
           'transition-colors duration-150 ease-in-out',
-          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
           appearance === 'bar'
-            ? 'size-10 bg-surface-3 text-white hover:bg-surface-4'
-            : 'size-8 text-white/64 hover:bg-surface-2 hover:text-white',
-          open && (appearance === 'bar' ? 'bg-surface-4' : 'bg-surface-2 text-white'),
+            ? 'size-10 bg-surface-3 text-fg hover:bg-surface-4'
+            : 'size-8 text-fg-64 hover:bg-surface-2 hover:text-fg',
+          open && (appearance === 'bar' ? 'bg-surface-4' : 'bg-surface-2 text-fg'),
         )}
       >
         <Globe aria-hidden="true" className={appearance === 'bar' ? 'size-[18px]' : 'size-4'} />
@@ -197,7 +197,7 @@ export function LanguageSwitcher({
           id={panelId}
           aria-labelledby={triggerId}
           className={cn(
-            'absolute z-50 w-[200px] rounded-md border border-white/8 bg-surface-2 p-2',
+            'absolute z-50 w-[200px] rounded-md border border-fg/8 bg-surface-2 p-2',
             PHONE_ALIGN[phoneAlign],
             'shadow-[var(--shadow-panel)]',
             placement === 'up' ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]',
@@ -235,13 +235,13 @@ function LanguageLinks({ current, path }: { readonly current: Locale; readonly p
                */
               aria-current={active ? 'page' : undefined}
               onClick={() => writeLocaleCookie(locale)}
-              className={cn(ROW, active ? 'text-white' : 'text-white/64')}
+              className={cn(ROW, active ? 'text-fg' : 'text-fg-64')}
             >
               {LOCALE_NAMES[locale]}
               {/*
                 The tick is the second carrier of a state `aria-current` already announces,
-                because §9.2 forbids colour from being the only one — and between `text-white`
-                and `text-white/64` colour is exactly what the rest of the row has.
+                because §9.2 forbids colour from being the only one — and between `text-fg`
+                and `text-fg-64` colour is exactly what the rest of the row has.
               */}
               {active && <Check aria-hidden="true" className="size-4 shrink-0" />}
             </a>

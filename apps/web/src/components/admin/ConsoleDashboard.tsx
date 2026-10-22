@@ -91,7 +91,7 @@ const SECTION_LINKS: Readonly<Record<string, readonly { readonly href: string; r
 };
 
 const LINK_CLASS =
-  'rounded-lg text-sm text-white/64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+  'rounded-lg text-sm text-fg-64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]';
 
 export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
   const [preset, setPreset] = useState<PeriodPreset>('month30');
@@ -127,8 +127,8 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">{copy.title}</h1>
-      <p className="mt-2 max-w-[68ch] text-sm text-white/64">{copy.standfirst}</p>
+      <h1 className="text-xl font-semibold tracking-[-0.03em] text-fg sm:text-2xl lg:text-3xl">{copy.title}</h1>
+      <p className="mt-2 max-w-[68ch] text-sm text-fg-64">{copy.standfirst}</p>
 
       <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
         <div role="group" aria-label={copy.periodLegend} className="flex flex-wrap gap-2">
@@ -138,10 +138,10 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
               type="button"
               aria-pressed={preset === option}
               onClick={() => setPreset(option)}
-              className={`inline-flex h-9 items-center rounded-full border px-4 text-sm transition-colors duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] ${
+              className={`inline-flex h-9 items-center rounded-full border px-4 text-sm transition-colors duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] ${
                 preset === option
-                  ? 'border-white bg-white text-black'
-                  : 'border-white/16 text-white/80 hover:border-white/40 hover:text-white'
+                  ? 'border-fg bg-white text-black'
+                  : 'border-fg/16 text-fg-80 hover:border-fg/40 hover:text-fg'
               }`}
             >
               {copy.period[option]}
@@ -154,7 +154,7 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
       </div>
 
       {page !== null && (
-        <p className="mt-3 text-xs text-white/48">
+        <p className="mt-3 text-xs text-fg-48">
           {fillPlaceholders(copy.windowNote, {
             from: calendarDate(page.from, locale),
             to: calendarDate(page.to, locale),
@@ -174,20 +174,20 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
           session ended. This was the failure alert with the service's sentence in it, which for
           these two is empty. No retry: trying again changes neither. */}
       {refusal !== null && (
-        <div role="alert" className="mt-8 rounded-lg border border-white/16 bg-surface-2 p-4">
-          <p className="text-sm font-medium text-white">{refusal.title}</p>
-          <p className="mt-1 max-w-[68ch] text-sm text-white/64">{refusal.body}</p>
+        <div role="alert" className="mt-8 rounded-lg border border-fg/16 bg-surface-2 p-4">
+          <p className="text-sm font-medium text-fg">{refusal.title}</p>
+          <p className="mt-1 max-w-[68ch] text-sm text-fg-64">{refusal.body}</p>
         </div>
       )}
 
       {resource.status === 'failed' && (
-        <div role="alert" className="mt-8 rounded-lg border border-white/16 bg-surface-2 p-4">
-          <p className="text-sm font-medium text-white">{copy.errorTitle}</p>
-          <p className="mt-1 text-sm text-white/64">{resource.error}</p>
+        <div role="alert" className="mt-8 rounded-lg border border-fg/16 bg-surface-2 p-4">
+          <p className="text-sm font-medium text-fg">{copy.errorTitle}</p>
+          <p className="mt-1 text-sm text-fg-64">{resource.error}</p>
           <button
             type="button"
             onClick={resource.reload}
-            className="mt-3 rounded-full border border-white/16 px-4 py-1.5 text-sm text-white/80 hover:border-white/40 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="mt-3 rounded-full border border-fg/16 px-4 py-1.5 text-sm text-fg-80 hover:border-fg/40 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.tryAgain}
           </button>
@@ -197,9 +197,9 @@ export function ConsoleDashboard({ copy }: ConsoleDashboardProps) {
       {/* Only once the membership is known: before it is, a partner — who is about to be sent to
           their statistics — would see "nothing here for your roles" for a moment first. */}
       {page !== null && page.sections.length === 0 && capabilities !== null && !isPartner && (
-        <div className="mt-8 rounded-lg border border-white/8 bg-surface-1 p-4 sm:p-5">
-          <p className="text-sm font-medium text-white">{copy.emptyTitle}</p>
-          <p className="mt-1 max-w-[62ch] text-sm text-white/64">{copy.emptyBody}</p>
+        <div className="mt-8 rounded-lg border border-fg/8 bg-surface-1 p-4 sm:p-5">
+          <p className="text-sm font-medium text-fg">{copy.emptyTitle}</p>
+          <p className="mt-1 max-w-[62ch] text-sm text-fg-64">{copy.emptyBody}</p>
         </div>
       )}
 
@@ -247,18 +247,18 @@ function SectionCard({
   return (
     <section
       aria-labelledby={headingId}
-      className={`rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5 ${
+      className={`rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5 ${
         section.key === 'figures' ? 'lg:col-span-2' : ''
       }`}
     >
-      <h2 id={headingId} className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id={headingId} className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.section[section.key] ?? section.key}
       </h2>
 
       {section.status === 'UNAVAILABLE' ? (
         <div role="status" className="mt-3">
-          <p className="text-sm font-medium text-white">{copy.unavailableTitle}</p>
-          <p className="mt-1 text-sm text-white/64">{copy.unavailableBody}</p>
+          <p className="text-sm font-medium text-fg">{copy.unavailableTitle}</p>
+          <p className="mt-1 text-sm text-fg-64">{copy.unavailableBody}</p>
         </div>
       ) : (
         <>
@@ -281,7 +281,7 @@ function SectionCard({
 
           {(now.length > 0 || hasAnyState(states)) && (
             <div className={inPeriod.length > 0 ? 'mt-6' : 'mt-3'}>
-              <h3 className="text-sm font-medium text-white">{copy.nowHeading}</h3>
+              <h3 className="text-sm font-medium text-fg">{copy.nowHeading}</h3>
               {now.length > 0 && (
                 <FigureGrid className="mt-2">
                   {now.map((figure) => (
@@ -379,7 +379,7 @@ function Trend({
 
   return (
     <div className="mt-6">
-      <h3 className="text-sm font-medium text-white">{copy.trendHeading}</h3>
+      <h3 className="text-sm font-medium text-fg">{copy.trendHeading}</h3>
       <ConsoleColumnChart
         points={points}
         from={page.from}
@@ -416,12 +416,12 @@ function ByState({
 
   return (
     <div className="mt-5">
-      <h4 className="text-sm text-white/64">{copy.byStateHeading}</h4>
+      <h4 className="text-sm text-fg-64">{copy.byStateHeading}</h4>
       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 min-[420px]:grid-cols-2 sm:grid-cols-3">
         {present.map((state) => (
-          <div key={state} className="flex items-baseline justify-between gap-2 border-b border-white/6 pb-1">
-            <dt className="text-sm text-white/64">{copy.state[state]}</dt>
-            <dd className="text-sm tabular-nums text-white">{formatCount(counts.get(state) ?? '0', locale)}</dd>
+          <div key={state} className="flex items-baseline justify-between gap-2 border-b border-fg/6 pb-1">
+            <dt className="text-sm text-fg-64">{copy.state[state]}</dt>
+            <dd className="text-sm tabular-nums text-fg">{formatCount(counts.get(state) ?? '0', locale)}</dd>
           </div>
         ))}
       </dl>

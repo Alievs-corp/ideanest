@@ -83,9 +83,9 @@ export function Checkbox({
         {...(marked ? { 'data-on-lime': '' } : {})}
         className={cn(
           'peer col-start-1 row-start-1 size-5 cursor-pointer appearance-none rounded-[6px]',
-          'border border-white/16 bg-surface-3',
+          'border border-fg/16 bg-surface-3',
           'transition-[background-color,border-color] duration-150 ease-in-out',
-          'hover:border-white/40',
+          'hover:border-fg/40',
           'checked:border-transparent checked:bg-lime-500',
           'indeterminate:border-transparent indeterminate:bg-lime-500',
           'disabled:pointer-events-none disabled:opacity-40',
@@ -113,8 +113,8 @@ export function Checkbox({
     <label className="flex cursor-pointer items-start gap-3 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-40">
       {control}
       <span className="flex flex-col gap-0.5">
-        <span className="text-sm text-white">{label}</span>
-        {description && <span className="text-[13px] text-white/64">{description}</span>}
+        <span className="text-sm text-fg">{label}</span>
+        {description && <span className="text-[13px] text-fg-64">{description}</span>}
       </span>
     </label>
   );

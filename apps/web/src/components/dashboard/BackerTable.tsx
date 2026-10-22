@@ -50,12 +50,12 @@ export function BackerTable({ backers, label, copy }: BackerTableProps) {
       role="region"
       aria-label={label}
       tabIndex={0}
-      className="mt-6 overflow-x-auto rounded-[14px] border border-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+      className="mt-6 overflow-x-auto rounded-[14px] border border-fg/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
     >
       <table className="w-full min-w-[720px] border-collapse text-sm">
         <caption className="sr-only">{label}</caption>
         <thead>
-          <tr className="border-b border-white/8 text-left text-white/64">
+          <tr className="border-b border-fg/8 text-left text-fg-64">
             <th scope="col" className="px-4 py-3 font-medium">
               {copy.backer}
             </th>
@@ -78,27 +78,27 @@ export function BackerTable({ backers, label, copy }: BackerTableProps) {
         </thead>
         <tbody>
           {backers.map((backer) => (
-            <tr key={backer.pledgeId} className="border-b border-white/6 last:border-0 hover:bg-[--surface-3]">
+            <tr key={backer.pledgeId} className="border-b border-fg/6 last:border-0 hover:bg-[--surface-3]">
               <th scope="row" className="px-4 py-3 text-left font-normal">
-                <span className="block text-white">{backer.name}</span>
-                <span className="block text-white/64">{backer.email}</span>
+                <span className="block text-fg">{backer.name}</span>
+                <span className="block text-fg-64">{backer.email}</span>
                 {backer.anonymous ? (
-                  <span className="mt-1 inline-flex items-center gap-1 text-white/64">
+                  <span className="mt-1 inline-flex items-center gap-1 text-fg-64">
                     <EyeOff className="size-3.5" aria-hidden />
                     {copy.anonymous}
                   </span>
                 ) : null}
               </th>
-              <td className="px-4 py-3 text-white/64">
+              <td className="px-4 py-3 text-fg-64">
                 {/* A pledge that took no reward is §4.5's PL-02 — support, which is a
                     thing a backer chose and not a blank cell. */}
                 {backer.rewardTitle ??
                   (backer.rewardTierId === undefined ? copy.noReward : copy.removedTier)}
               </td>
-              <td className="px-4 py-3 text-right tabular-nums text-white">{formatMoney(backer.amount)}</td>
-              <td className="px-4 py-3 text-white/64">{copy.states[backer.state]}</td>
-              <td className="px-4 py-3 text-white/64">{backer.country ?? '—'}</td>
-              <td className="px-4 py-3 text-white/64">
+              <td className="px-4 py-3 text-right tabular-nums text-fg">{formatMoney(backer.amount)}</td>
+              <td className="px-4 py-3 text-fg-64">{copy.states[backer.state]}</td>
+              <td className="px-4 py-3 text-fg-64">{backer.country ?? '—'}</td>
+              <td className="px-4 py-3 text-fg-64">
                 <time dateTime={backer.backedAt}>{formatExactTime(backer.backedAt, locale)}</time>
               </td>
             </tr>

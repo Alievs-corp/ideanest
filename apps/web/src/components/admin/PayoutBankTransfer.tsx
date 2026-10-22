@@ -185,35 +185,35 @@ export function PayoutBankTransfer({
     reference.trim() !== '' && transferredOn !== '' && recordNote.trim() !== '' && fee !== undefined;
 
   return (
-    <section aria-labelledby={headingId} className="mt-4 border-t border-white/8 pt-4">
-      <h4 id={headingId} className="text-sm font-medium text-white">
+    <section aria-labelledby={headingId} className="mt-4 border-t border-fg/8 pt-4">
+      <h4 id={headingId} className="text-sm font-medium text-fg">
         {words.heading}
       </h4>
-      <p className="mt-1 max-w-[62ch] text-xs text-white/48">{words.intro}</p>
+      <p className="mt-1 max-w-[62ch] text-xs text-fg-48">{words.intro}</p>
 
       {payout.state === 'PAID' && payout.bankTransferredOn != null ? (
-        <p className="mt-3 text-sm text-white">
+        <p className="mt-3 text-sm text-fg">
           {fillPlaceholders(words.paidOn, { date: calendarDate(payout.bankTransferredOn, locale) })}
         </p>
       ) : payout.state === 'PAID' ? (
         // Paid, but not by a recorded transfer: through the provider before the creator filed an IBAN.
-        <p className="mt-3 text-sm text-white">
+        <p className="mt-3 text-sm text-fg">
           {payout.sentAt == null
             ? words.paidUndated
             : fillPlaceholders(words.paidOtherwise, { date: bakuDate(payout.sentAt, locale) })}
         </p>
       ) : payout.state !== 'APPROVED' ? (
-        <p className="mt-3 text-xs text-white/48">
+        <p className="mt-3 text-xs text-fg-48">
           {stillNeeded > 0
             ? `${words.notApproved} ${fillPlaceholders(copy.needsMore, { count: String(stillNeeded) })}.`
             : words.notApproved}
         </p>
       ) : !canPay ? (
-        <p className="mt-3 text-xs text-white/48">{words.needsApprovePayout}</p>
+        <p className="mt-3 text-xs text-fg-48">{words.needsApprovePayout}</p>
       ) : (
         <div className="mt-3 flex flex-col gap-4">
           {started && payout.bankTransferStartedBy != null && (
-            <p className="text-sm text-white/80">
+            <p className="text-sm text-fg-80">
               {fillNodes(words.transferStarted, {
                 who: (
                   <EntityName
@@ -233,12 +233,12 @@ export function PayoutBankTransfer({
             <Instruction instruction={instruction} copy={copy} onHide={() => setInstruction(null)} />
           ) : (
             <div className="flex flex-col gap-2">
-              <p id={auditedId} className="max-w-[62ch] text-xs text-white/48">
+              <p id={auditedId} className="max-w-[62ch] text-xs text-fg-48">
                 {words.audited}
               </p>
-              {!canReveal && <p className="text-xs text-white/48">{words.needsReadBankDetails}</p>}
+              {!canReveal && <p className="text-xs text-fg-48">{words.needsReadBankDetails}</p>}
               {!started && stillNeeded > 0 && (
-                <p className="text-xs text-white/48">
+                <p className="text-xs text-fg-48">
                   {fillPlaceholders(copy.needsMore, { count: String(stillNeeded) })}
                 </p>
               )}
@@ -323,40 +323,40 @@ function Instruction({
 
   return (
     <div aria-live="polite" className="flex flex-col gap-3">
-      <dl className="flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-4">
+      <dl className="flex flex-col gap-3 rounded-lg border border-fg/8 bg-surface-2 p-4">
         <div className="flex flex-col gap-1">
-          <dt className="text-xs text-white/48">{words.amountLabel}</dt>
+          <dt className="text-xs text-fg-48">{words.amountLabel}</dt>
           <dd className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             {/*
               The currency is part of the figure and as large as it, because a transfer typed in
               the wrong currency is a different amount of money.
             */}
-            <span className="text-2xl font-semibold tracking-[-0.02em] text-white">
+            <span className="text-2xl font-semibold tracking-[-0.02em] text-fg">
               {formatMoney(instruction.amount)}
             </span>
             <CopyValue value={instruction.amount.amount} field={words.amountLabel} copy={copy} />
           </dd>
         </div>
         <div className="flex flex-col gap-1">
-          <dt className="text-xs text-white/48">{words.ibanLabel}</dt>
+          <dt className="text-xs text-fg-48">{words.ibanLabel}</dt>
           <dd className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="select-all break-all font-mono text-base text-white">
+            <span className="select-all break-all font-mono text-base text-fg">
               {groupedIban(instruction.iban)}
             </span>
             <CopyValue value={instruction.iban.replace(/\s+/g, '')} field={words.ibanLabel} copy={copy} />
           </dd>
         </div>
         <div className="flex flex-col gap-1">
-          <dt className="text-xs text-white/48">{words.holderLabel}</dt>
+          <dt className="text-xs text-fg-48">{words.holderLabel}</dt>
           <dd className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-sm text-white">{instruction.holderName}</span>
+            <span className="text-sm text-fg">{instruction.holderName}</span>
             <CopyValue value={instruction.holderName} field={words.holderLabel} copy={copy} />
           </dd>
         </div>
         <div className="flex flex-col gap-1">
-          <dt className="text-xs text-white/48">{words.descriptionLabel}</dt>
+          <dt className="text-xs text-fg-48">{words.descriptionLabel}</dt>
           <dd className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="break-all font-mono text-sm text-white">{instruction.description}</span>
+            <span className="break-all font-mono text-sm text-fg">{instruction.description}</span>
             <CopyValue value={instruction.description} field={words.descriptionLabel} copy={copy} />
           </dd>
         </div>
@@ -414,11 +414,11 @@ function CopyValue({
         type="button"
         onClick={() => void put()}
         aria-label={fillPlaceholders(words.copyField, { field })}
-        className="rounded text-xs text-white/48 underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded text-xs text-fg-48 underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {words.copy}
       </button>
-      <span role="status" aria-live="polite" className="text-xs text-white/48">
+      <span role="status" aria-live="polite" className="text-xs text-fg-48">
         {copied ? words.copied : ''}
       </span>
     </span>
@@ -479,14 +479,14 @@ function RecordAndAbandon({
     return (
       <form
         aria-label={words.abandonTransfer}
-        className="flex flex-col gap-3 border-t border-white/8 pt-4"
+        className="flex flex-col gap-3 border-t border-fg/8 pt-4"
         onSubmit={(event) => {
           event.preventDefault();
           if (abandonNote.trim() === '') return;
           onAbandon();
         }}
       >
-        <p className="max-w-[62ch] text-sm text-white">{words.abandonIntro}</p>
+        <p className="max-w-[62ch] text-sm text-fg">{words.abandonIntro}</p>
         <Field label={words.abandonNoteLabel} required className="max-w-[520px]">
           <Textarea rows={3} value={abandonNote} onChange={(event) => setAbandonNote(event.target.value)} />
         </Field>
@@ -503,15 +503,15 @@ function RecordAndAbandon({
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t border-white/8 pt-4">
-      <h5 id={recordHeadingId} className="text-sm font-medium text-white">
+    <div className="flex flex-col gap-3 border-t border-fg/8 pt-4">
+      <h5 id={recordHeadingId} className="text-sm font-medium text-fg">
         {words.recordHeading}
       </h5>
-      <p className="max-w-[62ch] text-xs text-white/48">{words.recordIntro}</p>
+      <p className="max-w-[62ch] text-xs text-fg-48">{words.recordIntro}</p>
 
       {mode === 'confirm-record' ? (
         <div role="group" aria-labelledby={recordHeadingId} className="flex flex-col gap-2">
-          <p className="max-w-[62ch] text-sm text-white">
+          <p className="max-w-[62ch] text-sm text-fg">
             {fillPlaceholders(words.confirmRecord, {
               amount: formatMoney(amount),
               reference: reference.trim(),
@@ -519,7 +519,7 @@ function RecordAndAbandon({
             })}
           </p>
           {fee && (
-            <p className="max-w-[62ch] text-sm text-white">
+            <p className="max-w-[62ch] text-sm text-fg">
               {fillPlaceholders(words.confirmBankFee, {
                 amount: formatMoney({ amount: fee, currency: amount.currency }),
               })}

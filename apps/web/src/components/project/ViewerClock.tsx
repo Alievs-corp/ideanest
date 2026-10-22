@@ -132,7 +132,7 @@ export function CampaignCountdown({ copy, deadline, initialLabel }: CampaignCoun
       role="timer"
       aria-live="off"
       aria-label={fillPlaceholders(copy.label, { time: label })}
-      className="inline-flex items-center gap-1.5 text-sm text-white/64 tabular-nums"
+      className="inline-flex items-center gap-1.5 text-sm text-fg-64 tabular-nums"
     >
       <Clock aria-hidden="true" className="size-3.5" />
       <span aria-hidden="true">{fillPlaceholders(copy.left, { time: label })}</span>

@@ -156,6 +156,33 @@
  * and the one ring pulses on a 0.8 s loop delayed to land on the same instants.
  */
 
+/*
+ * The orb is light: white on the dark ground. On the light theme's ground white is invisible and
+ * near-black reads as a hole rather than a light, so the light cut (`render.mjs … light`) draws
+ * it in the brand's lime, the one colour that glows against a pale page (docs/ui-kit.md §11).
+ */
+:root,
+[data-theme='dark'] {
+  --hero-orb: var(--white-surface);
+}
+
+[data-theme='light'] {
+  --hero-orb: var(--lime-500);
+}
+
+/*
+ * The light cut's edges, faded into the page. H.264's colour conversion lands the rendered ground
+ * one step off the page's (243 against 244 on `--surface-1`), invisible on the dark ground and a
+ * faint rectangle on the light one. The scene sits in the middle, so the outer 8% is only ground.
+ * A static mask, painted once.
+ */
+.hero-loop-edge {
+  mask-image:
+    linear-gradient(90deg, transparent, black 8%, black 92%, transparent),
+    linear-gradient(180deg, transparent, black 8%, black 92%, transparent);
+  mask-composite: intersect;
+}
+
 @keyframes hero-walk {
   0% {
     transform: translateX(250px);

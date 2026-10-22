@@ -90,7 +90,7 @@ export function HealthDashboard({ copy }: HealthDashboardProps) {
       <SkeletonGroup label={copy.loadingList}>
         <div className="space-y-3">
           {[0, 1, 2].map((row) => (
-            <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+            <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
               <Skeleton height="1rem" width="35%" />
               <Skeleton height="0.875rem" width="60%" className="mt-3" />
             </div>
@@ -127,16 +127,16 @@ export function HealthDashboard({ copy }: HealthDashboardProps) {
       )}
 
       <section aria-labelledby="overall-heading">
-        <h2 id="overall-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="overall-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.overall} <StatusTag status={snapshot.status} copy={copy} />
         </h2>
-        <p className="mt-2 text-xs text-white/64">
+        <p className="mt-2 text-xs text-fg-64">
           {fillPlaceholders(copy.measuredAt, { time: bakuDateTime(snapshot.at, locale) })}{' '}
           <button
             type="button"
             onClick={health.reload}
             disabled={health.status === 'loading'}
-            className="rounded text-white/64 underline transition-colors duration-150 ease-in-out hover:text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded text-fg-64 underline transition-colors duration-150 ease-in-out hover:text-fg disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.measureAgain}
           </button>
@@ -144,34 +144,34 @@ export function HealthDashboard({ copy }: HealthDashboardProps) {
       </section>
 
       <section aria-labelledby="queues-heading">
-        <h2 id="queues-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="queues-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.queues}
         </h2>
         <ul className="mt-4 flex list-none flex-col gap-2">
           {snapshot.queues.map((queue) => (
-            <li key={queue.name} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+            <li key={queue.name} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 {/* The identifier is the fallback, so a new queue renders as itself. */}
-                <p className="text-sm text-white" title={queue.name}>
+                <p className="text-sm text-fg" title={queue.name}>
                   {copy.queue[queue.name] ?? queue.name}
                 </p>
                 <StatusTag status={queue.status} copy={copy} />
               </div>
-              <p className="mt-2 text-xs text-white/64">
+              <p className="mt-2 text-xs text-fg-64">
                 {fillPlaceholders(copy.waiting, { count: count(queue.waiting) })}
                 {queue.dead > 0 ? ` · ${fillPlaceholders(copy.givenUp, { count: count(queue.dead) })}` : ''}
               </p>
-              {queue.dead > 0 && <p className="mt-2 text-xs text-white/80">{copy.givenUpHint}</p>}
+              {queue.dead > 0 && <p className="mt-2 text-xs text-fg-80">{copy.givenUpHint}</p>}
             </li>
           ))}
         </ul>
       </section>
 
       <section aria-labelledby="jobs-heading">
-        <h2 id="jobs-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="jobs-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.jobs}
         </h2>
-        <p className="mt-2 text-xs text-white/64">
+        <p className="mt-2 text-xs text-fg-64">
           {needingAttention > 0
             ? fillPlaceholders(copy.jobsAttention, { count: count(needingAttention) })
             : copy.jobsAllWell}
@@ -184,25 +184,25 @@ export function HealthDashboard({ copy }: HealthDashboardProps) {
       </section>
 
       <section aria-labelledby="providers-heading">
-        <h2 id="providers-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="providers-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.providers}
         </h2>
         {byKind(snapshot.providers).map(([kind, providers]) => (
           <div key={kind} className="mt-4">
-            <h3 className="text-sm font-medium text-white/80" title={kind}>
+            <h3 className="text-sm font-medium text-fg-80" title={kind}>
               {copy.kind[kind] ?? kind}
             </h3>
             <ul className="mt-2 flex list-none flex-col gap-2">
               {providers.map((provider) => (
-                <li key={`${provider.kind}:${provider.provider}`} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <li key={`${provider.kind}:${provider.provider}`} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-sm text-white" title={provider.provider}>
+                    <p className="text-sm text-fg" title={provider.provider}>
                       {copy.providerName[provider.provider] ?? provider.provider}
                     </p>
                     {provider.configured ? <StatusTag status={provider.status} copy={copy} /> : <Tag>{copy.notConfigured}</Tag>}
                   </div>
                   {provider.reason != null && (
-                    <p className="mt-2 text-xs text-white/64">{copy.reason[provider.reason] ?? provider.reason}</p>
+                    <p className="mt-2 text-xs text-fg-64">{copy.reason[provider.reason] ?? provider.reason}</p>
                   )}
                 </li>
               ))}
@@ -244,24 +244,24 @@ function JobRow({ job, copy, locale }: { readonly job: JobHealth; readonly copy:
   }
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         {/* The identifier is on the `title`, one hover from whoever is about to grep for it. */}
-        <p className="text-sm text-white" title={job.name}>
+        <p className="text-sm text-fg" title={job.name}>
           {copy.jobName[job.name] ?? job.name}
         </p>
         <StatusTag status={job.status} copy={copy} />
       </div>
-      <p className="mt-2 text-xs text-white/64" title={job.state}>
+      <p className="mt-2 text-xs text-fg-64" title={job.state}>
         {detail.join(' · ')}
       </p>
       {lastError !== null && (
-        <details className="mt-2 text-xs text-white/64">
-          <summary className="cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]">
+        <details className="mt-2 text-xs text-fg-64">
+          <summary className="cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]">
             {copy.lastErrorLabel}
           </summary>
           {/* The service's own words, in English: marked as such, so a screen reader reads them as English. */}
-          <p lang="en" className="mt-1 break-words font-mono text-white/64">
+          <p lang="en" className="mt-1 break-words font-mono text-fg-64">
             {lastError}
           </p>
         </details>

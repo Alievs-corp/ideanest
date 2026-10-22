@@ -56,7 +56,7 @@ export default async function EmailTemplatePage({
         />
         <Link
           href="/admin/email-templates"
-          className="mt-4 inline-block rounded text-sm text-white underline decoration-white/24 underline-offset-2 hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="mt-4 inline-block rounded text-sm text-fg underline decoration-fg/24 underline-offset-2 hover:decoration-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           {t('screens.emailTemplates.backToList')}
         </Link>
@@ -66,8 +66,8 @@ export default async function EmailTemplatePage({
 
   return (
     <div className="max-w-[880px]">
-      <h1 className="text-xl font-semibold tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">{name}</h1>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{t('pages.emailTemplatesType.intro')}</p>
+      <h1 className="text-xl font-semibold tracking-[-0.03em] text-fg sm:text-2xl lg:text-3xl">{name}</h1>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{t('pages.emailTemplatesType.intro')}</p>
 
       <div className="mt-8">
         <EmailTemplateEditor type={type} copy={await emailTemplateEditorCopy()} />

@@ -114,7 +114,7 @@ export function AdminNav({ copy, layout = 'rail' }: AdminNavProps) {
         <ul className="flex list-none flex-col gap-6">
           {groups.map((group) => (
             <li key={group.heading}>
-              <h2 className="px-3 text-[11px] font-medium tracking-[0.08em] text-white/40 uppercase">
+              <h2 className="px-3 text-[11px] font-medium tracking-[0.08em] text-fg-40 uppercase">
                 {copy.groups[group.heading]}
               </h2>
               <ul className="mt-1.5 flex list-none flex-col gap-0.5">
@@ -162,7 +162,7 @@ export function AdminNav({ copy, layout = 'rail' }: AdminNavProps) {
       <ul className="flex list-none flex-col gap-8 pb-1" onFocus={revealFocusedItem}>
         {groups.map((group) => (
           <li key={group.heading}>
-            <h2 className="px-3 text-xs font-medium tracking-[0.08em] text-white/40 uppercase">
+            <h2 className="px-3 text-xs font-medium tracking-[0.08em] text-fg-40 uppercase">
               {copy.groups[group.heading]}
             </h2>
             <ul className="mt-2 flex list-none flex-col gap-1">
@@ -195,10 +195,10 @@ function NavLink({
       aria-current={current ? 'page' : undefined}
       className={[
         'block rounded-lg border-l-2 px-3 py-2 text-sm transition-colors duration-150 ease-in-out lg:text-[15px]',
-        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
         current
-          ? 'border-[var(--lime-500)] bg-surface-2 text-white'
-          : 'border-transparent text-white/64 hover:bg-surface-2 hover:text-white',
+          ? 'border-[var(--lime-500)] bg-surface-2 text-fg'
+          : 'border-transparent text-fg-64 hover:bg-surface-2 hover:text-fg',
       ].join(' ')}
     >
       {label}

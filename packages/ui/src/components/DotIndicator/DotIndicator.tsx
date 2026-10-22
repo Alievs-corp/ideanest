@@ -16,7 +16,7 @@ function toneFor(percent: number): { filled: number; className: string } {
   if (percent >= 50) return { filled: 3, className: 'bg-lime-500' };
   if (percent >= 25) return { filled: 2, className: 'bg-warning' };
   if (percent > 0) return { filled: 1, className: 'bg-warning' };
-  return { filled: 0, className: 'bg-white/24' };
+  return { filled: 0, className: 'bg-fg/24' };
 }
 
 export interface DotIndicatorProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
@@ -38,7 +38,7 @@ export function DotIndicator({ percent, onLime = false, className, ...props }: D
         // Status hues fail on lime: success (#34D058) over lime (#C6F432)
         // measures roughly 1.2:1, so the dots vanish. Near-black instead.
         const filledClass = onLime ? 'bg-on-lime' : tone;
-        const emptyClass = onLime ? 'bg-on-lime/20' : 'bg-white/16';
+        const emptyClass = onLime ? 'bg-on-lime/20' : 'bg-fg/16';
         return (
           <span
             key={i}

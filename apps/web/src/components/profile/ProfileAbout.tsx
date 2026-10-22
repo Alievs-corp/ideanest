@@ -88,7 +88,7 @@ function joinedMonth(iso: string | null, locale: Locale): string | null {
 const USER_LINK_REL = 'nofollow ugc noopener noreferrer';
 
 const LINK_CLASS =
-  'rounded-sm text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+  'rounded-sm text-fg underline underline-offset-4 hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]';
 
 export interface ProfileAboutProps {
   readonly profile: PublicProfile;
@@ -118,33 +118,33 @@ export function ProfileAbout({ profile, locale, copy }: ProfileAboutProps) {
   const hasFacts = profile.location !== null || profile.websiteUrl !== null || joined !== null;
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-fg">
         {fillPlaceholders(copy.heading, { name: profile.name })}
       </h2>
 
       {bio === '' ? (
-        <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
+        <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-fg-64">
           {fillPlaceholders(copy.empty, { name: profile.name })}
         </p>
       ) : (
-        <p className="mt-3 max-w-[62ch] whitespace-pre-line text-[15px] leading-relaxed text-white/64">
+        <p className="mt-3 max-w-[62ch] whitespace-pre-line text-[15px] leading-relaxed text-fg-64">
           {bio}
         </p>
       )}
 
       {hasFacts && (
-        <dl className="mt-6 flex flex-col gap-3 border-t border-white/6 pt-6 text-sm">
+        <dl className="mt-6 flex flex-col gap-3 border-t border-fg/6 pt-6 text-sm">
           {profile.location !== null && (
             <div className="flex flex-wrap gap-x-3">
-              <dt className="text-white/40">{copy.basedIn}</dt>
-              <dd className="text-white/64">{profile.location.name}</dd>
+              <dt className="text-fg-40">{copy.basedIn}</dt>
+              <dd className="text-fg-64">{profile.location.name}</dd>
             </div>
           )}
 
           {profile.websiteUrl !== null && (
             <div className="flex min-w-0 flex-wrap gap-x-3">
-              <dt className="text-white/40">{copy.website}</dt>
+              <dt className="text-fg-40">{copy.website}</dt>
               <dd className="min-w-0 break-all">
                 <a
                   href={profile.websiteUrl}
@@ -160,16 +160,16 @@ export function ProfileAbout({ profile, locale, copy }: ProfileAboutProps) {
 
           {joined !== null && (
             <div className="flex flex-wrap gap-x-3">
-              <dt className="text-white/40">{copy.since}</dt>
-              <dd className="text-white/64">{joined}</dd>
+              <dt className="text-fg-40">{copy.since}</dt>
+              <dd className="text-fg-64">{joined}</dd>
             </div>
           )}
         </dl>
       )}
 
       {socialLinks.length > 0 && (
-        <div className="mt-6 border-t border-white/6 pt-6">
-          <h3 className="text-sm font-medium text-white/64">{copy.elsewhere}</h3>
+        <div className="mt-6 border-t border-fg/6 pt-6">
+          <h3 className="text-sm font-medium text-fg-64">{copy.elsewhere}</h3>
           <ul className="mt-3 flex flex-col gap-2 text-sm">
             {socialLinks.map((link) => (
               /*
@@ -193,7 +193,7 @@ export function ProfileAbout({ profile, locale, copy }: ProfileAboutProps) {
                     announces for the link rather than text beside it that a reader moving
                     link to link never hears.
                   */}
-                  <span className="ml-2 font-normal text-white/40 no-underline">{link.url}</span>
+                  <span className="ml-2 font-normal text-fg-40 no-underline">{link.url}</span>
                 </a>
               </li>
             ))}

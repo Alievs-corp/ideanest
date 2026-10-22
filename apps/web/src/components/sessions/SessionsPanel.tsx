@@ -211,11 +211,11 @@ export function SessionsPanel({ copy }: SessionsPanelProps) {
           // Focus target for a row that removes its own button. Not in the tab
           // order — `-1` makes it reachable by script only.
           tabIndex={-1}
-          className="text-lg font-medium tracking-[-0.02em] text-white"
+          className="text-lg font-medium tracking-[-0.02em] text-fg"
         >
           {copy.heading}
           {status === 'ready' && (
-            <span className="ml-2 text-xs font-normal text-white/40">{sessions.length}</span>
+            <span className="ml-2 text-xs font-normal text-fg-40">{sessions.length}</span>
           )}
         </h2>
 
@@ -248,7 +248,7 @@ export function SessionsPanel({ copy }: SessionsPanelProps) {
 
       {status === 'loading' && (
         <SkeletonGroup label={copy.loading} className="mt-4">
-          <div className="divide-y divide-white/6 overflow-hidden rounded-lg border border-white/8 bg-surface-2">
+          <div className="divide-y divide-fg/6 overflow-hidden rounded-lg border border-fg/8 bg-surface-2">
             {[0, 1, 2].map((row) => (
               <div key={row} className="flex items-start gap-4 px-5 py-4">
                 <Skeleton height="2.25rem" width="2.25rem" className="rounded-md" />
@@ -271,7 +271,7 @@ export function SessionsPanel({ copy }: SessionsPanelProps) {
       )}
 
       {status === 'ready' && sessions.length > 0 && (
-        <ul className="mt-4 divide-y divide-white/6 overflow-hidden rounded-lg border border-white/8 bg-surface-2">
+        <ul className="mt-4 divide-y divide-fg/6 overflow-hidden rounded-lg border border-fg/8 bg-surface-2">
           {sessions.map((session) => (
             <SessionRow
               key={session.id}

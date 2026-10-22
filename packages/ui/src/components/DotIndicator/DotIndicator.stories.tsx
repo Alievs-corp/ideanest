@@ -28,7 +28,7 @@ export const Scale: Story = {
       {[0, 15, 40, 64, 88, 100, 143].map((p) => (
         <div key={p} className="flex items-center gap-4">
           <DotIndicator percent={p} />
-          <span className="text-sm tabular-nums text-white/64">{p}%</span>
+          <span className="text-sm tabular-nums text-fg-64">{p}%</span>
         </div>
       ))}
     </div>

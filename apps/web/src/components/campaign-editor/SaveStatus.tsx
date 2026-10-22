@@ -38,7 +38,7 @@ export function SaveStatus({ state, copy, className }: SaveStatusProps) {
   return (
     <p className={cn('flex items-center gap-1.5 text-[13px]', className)}>
       {state === 'saving' && (
-        <span aria-hidden="true" className="flex items-center gap-1.5 text-white/40">
+        <span aria-hidden="true" className="flex items-center gap-1.5 text-fg-40">
           <LoaderCircle className="size-3.5 motion-safe:animate-spin" />
           {copy.saving}
         </span>

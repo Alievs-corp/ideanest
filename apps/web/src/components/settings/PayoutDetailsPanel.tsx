@@ -248,11 +248,11 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-labelledby="payout-subject-heading" className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-        <h2 id="payout-subject-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <section aria-labelledby="payout-subject-heading" className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+        <h2 id="payout-subject-heading" className="text-lg font-medium tracking-[-0.02em] text-fg">
           {copy.subjectHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.subjectIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.subjectIntro}</p>
 
         <form onSubmit={saveSubject} noValidate className="mt-6 flex max-w-[30rem] flex-col gap-5">
           <div role="group" aria-label={copy.kind} className="flex flex-wrap gap-2">
@@ -295,7 +295,7 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
 
           {subjectError !== null && <InlineAlert variant="danger">{subjectError}</InlineAlert>}
           {saved && (
-            <p role="status" className="text-sm text-white/64">
+            <p role="status" className="text-sm text-fg-64">
               {copy.saved}
             </p>
           )}
@@ -308,11 +308,11 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
         </form>
       </section>
 
-      <section aria-labelledby="payout-bank-heading" className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-        <h2 id="payout-bank-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+      <section aria-labelledby="payout-bank-heading" className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+        <h2 id="payout-bank-heading" className="text-lg font-medium tracking-[-0.02em] text-fg">
           {copy.bankHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.bankIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.bankIntro}</p>
 
         {waiting && (
           <div className="mt-4">
@@ -330,19 +330,19 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
         )}
 
         <div className="mt-5 flex items-start gap-3 text-sm">
-          <OnFileIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-white/40" />
+          <OnFileIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-fg-40" />
           {destination.recorded ? (
             <div>
-              <p className="text-white">
+              <p className="text-fg">
                 {fillPlaceholders(cardOnFile ? copy.cardOnFile : copy.accountOnFile, {
                   hint: destination.displayHint ?? '',
                   holder: destination.holderName ?? '',
                 })}
               </p>
-              <p className="mt-1 text-white/64">{standingWord(destination.standing, copy)}</p>
+              <p className="mt-1 text-fg-64">{standingWord(destination.standing, copy)}</p>
             </div>
           ) : (
-            <p className="text-white/64">{copy.accountNone}</p>
+            <p className="text-fg-64">{copy.accountNone}</p>
           )}
         </div>
 
@@ -381,7 +381,7 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
 
           {bankError !== null && <InlineAlert variant="danger">{bankError}</InlineAlert>}
           {bankSaved && (
-            <p role="status" className="text-sm text-white/64">
+            <p role="status" className="text-sm text-fg-64">
               {copy.bankSaved}
             </p>
           )}
@@ -400,11 +400,11 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
       </section>
 
       {destination.cardRegistrationAvailable === true && (
-        <section aria-labelledby="payout-card-heading" className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-          <h2 id="payout-card-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+        <section aria-labelledby="payout-card-heading" className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+          <h2 id="payout-card-heading" className="text-lg font-medium tracking-[-0.02em] text-fg">
             {copy.cardHeading}
           </h2>
-          <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.cardIntro}</p>
+          <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.cardIntro}</p>
 
           {cardError !== null && (
             <div className="mt-4">

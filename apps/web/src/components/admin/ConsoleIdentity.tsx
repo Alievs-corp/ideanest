@@ -133,20 +133,20 @@ export function EntityName({
   return (
     <span className={cx('inline-flex flex-wrap items-baseline gap-x-2 gap-y-1', className)}>
       {name === null ? (
-        <Identifier id={id} className="text-white/80" />
+        <Identifier id={id} className="text-fg-80" />
       ) : (
         <>
           {href === null ? (
-            <span className="text-white">{name}</span>
+            <span className="text-fg">{name}</span>
           ) : (
             <Link
               href={href}
-              className="rounded text-white underline decoration-white/24 underline-offset-2 transition-colors duration-150 ease-in-out hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+              className="rounded text-fg underline decoration-fg/24 underline-offset-2 transition-colors duration-150 ease-in-out hover:decoration-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               {name}
             </Link>
           )}
-          <Identifier id={id} className="text-xs text-white/40" />
+          <Identifier id={id} className="text-xs text-fg-40" />
         </>
       )}
       {copyable && <CopyIdentifier id={id} copy={copy} />}
@@ -205,7 +205,7 @@ export function CopyIdentifier({ id, copy, className }: CopyIdentifierProps) {
         onClick={() => void put()}
         title={id}
         aria-label={fillPlaceholders(copy.copyLabel, { id: shortId(id) })}
-        className="rounded text-xs text-white/48 underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        className="rounded text-xs text-fg-48 underline decoration-dotted underline-offset-2 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       >
         {copy.copy}
       </button>
@@ -214,7 +214,7 @@ export function CopyIdentifier({ id, copy, className }: CopyIdentifierProps) {
         that decides who may move money, and "did that work" should not be a question
         answered by looking closely at a colour.
       */}
-      <span role="status" aria-live="polite" className="text-xs text-white/48">
+      <span role="status" aria-live="polite" className="text-xs text-fg-48">
         {copied ? copy.copied : ''}
       </span>
     </span>

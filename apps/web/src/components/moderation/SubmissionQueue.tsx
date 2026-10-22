@@ -227,11 +227,11 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
     <section aria-labelledby="submission-queue-heading">
       <h2
         id="submission-queue-heading"
-        className="text-lg font-medium tracking-[-0.02em] text-white"
+        className="text-lg font-medium tracking-[-0.02em] text-fg"
       >
         {copy.heading[state]}
         {status === 'ready' && (
-          <span className="ml-2 text-xs font-normal text-white/40">{loaded.length}</span>
+          <span className="ml-2 text-xs font-normal text-fg-40">{loaded.length}</span>
         )}
       </h2>
 
@@ -261,7 +261,7 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-4">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-2 p-5">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-2 p-5">
                 <Skeleton height="1.125rem" width="40%" />
                 <Skeleton height="0.875rem" width="60%" className="mt-3" />
                 <Skeleton height="0.875rem" width="30%" className="mt-2" />
@@ -389,10 +389,10 @@ function SubmissionRow({
   const href = localeHref(`/admin/campaigns/${encodeURIComponent(submission.projectId)}`, locale);
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-2 p-5">
+    <li className="rounded-lg border border-fg/8 bg-surface-2 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-base font-medium text-white">
+          <h3 className="text-base font-medium text-fg">
             <a
               className="underline-offset-4 hover:underline"
               href={href}
@@ -402,7 +402,7 @@ function SubmissionRow({
               {submission.title}
             </a>
           </h3>
-          <p className="mt-1 text-sm text-white/64">
+          <p className="mt-1 text-sm text-fg-64">
             {/*
               A campaign whose creator has been anonymised keeps its row and loses its
               name — §17.4 removes the person, not the campaign, and a placeholder here
@@ -423,11 +423,11 @@ function SubmissionRow({
                 {submission.creatorName}
               </a>
             )}
-            <span className="text-white/32"> · {shortId(submission.projectId)}</span>
+            <span className="text-fg-32"> · {shortId(submission.projectId)}</span>
           </p>
         </div>
         {submission.state !== 'REJECTED' && (
-          <span className="shrink-0 text-sm text-white/64">
+          <span className="shrink-0 text-sm text-fg-64">
             {pluralise(locale, copy.waiting, days)}
           </span>
         )}
@@ -435,14 +435,14 @@ function SubmissionRow({
 
       <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
         <div className="flex gap-2">
-          <dt className="text-white/40">{copy.goalLabel}</dt>
-          <dd className="text-white/80">
+          <dt className="text-fg-40">{copy.goalLabel}</dt>
+          <dd className="text-fg-80">
             {submission.goal == null ? copy.noGoal : formatMoney(submission.goal)}
           </dd>
         </div>
         <div className="flex gap-2">
-          <dt className="text-white/40">{copy.stateLabel}</dt>
-          <dd className="text-white/80">
+          <dt className="text-fg-40">{copy.stateLabel}</dt>
+          <dd className="text-fg-80">
             {copy.state[submission.state as SubmissionState] ??
               campaignStateWord(submission.state, copy.moderation, locale)}
           </dd>
@@ -450,14 +450,14 @@ function SubmissionRow({
       </dl>
 
       {submission.note && (
-        <blockquote className="mt-4 border-l-2 border-white/16 pl-3 text-sm text-white/64">
+        <blockquote className="mt-4 border-l-2 border-fg/16 pl-3 text-sm text-fg-64">
           {submission.note}
         </blockquote>
       )}
 
       {decidable && (
         <div className="mt-4" role="group" aria-label={fillPlaceholders(copy.decideGroup, { title: submission.title })}>
-          <p className="text-sm text-white/40">{copy.decideHeading}</p>
+          <p className="text-sm text-fg-40">{copy.decideHeading}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {OUTCOMES.map((outcome) => (
               <Pill

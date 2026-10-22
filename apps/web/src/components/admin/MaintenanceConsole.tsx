@@ -175,7 +175,7 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
     const confirmingHere = confirming?.id === entry.id ? confirming.verb : null;
 
     return (
-      <li key={entry.id} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+      <li key={entry.id} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <Tag variant={entry.state === 'ACTIVE' ? 'warning' : 'default'}>
             {copy.state[entry.state] ?? entry.state}
@@ -183,39 +183,39 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
         </div>
 
         <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-          <dt className="text-white/48">{copy.startsLabel}</dt>
-          <dd className="text-white">{time(entry.startsAt)}</dd>
+          <dt className="text-fg-48">{copy.startsLabel}</dt>
+          <dd className="text-fg">{time(entry.startsAt)}</dd>
 
-          <dt className="text-white/48">{copy.endsLabel}</dt>
-          <dd className="text-white">
+          <dt className="text-fg-48">{copy.endsLabel}</dt>
+          <dd className="text-fg">
             {entry.endsAt === null ? copy.untilFurtherNotice : time(entry.endsAt)}
           </dd>
 
           {(entry.state === 'SCHEDULED' || entry.state === 'ANNOUNCED') && (
             <>
-              <dt className="text-white/48">{copy.announceLabel}</dt>
-              <dd className="text-white">{time(entry.announceFrom)}</dd>
+              <dt className="text-fg-48">{copy.announceLabel}</dt>
+              <dd className="text-fg">{time(entry.announceFrom)}</dd>
             </>
           )}
 
           {entry.endedAt !== null && (
             <>
-              <dt className="text-white/48">{copy.endedLabel}</dt>
-              <dd className="text-white">{time(entry.endedAt)}</dd>
+              <dt className="text-fg-48">{copy.endedLabel}</dt>
+              <dd className="text-fg">{time(entry.endedAt)}</dd>
             </>
           )}
 
           {entry.cancelledAt !== null && (
             <>
-              <dt className="text-white/48">{copy.cancelledLabel}</dt>
-              <dd className="text-white">{time(entry.cancelledAt)}</dd>
+              <dt className="text-fg-48">{copy.cancelledLabel}</dt>
+              <dd className="text-fg">{time(entry.cancelledAt)}</dd>
             </>
           )}
 
           {entry.note !== null && (
             <>
-              <dt className="text-white/48">{copy.noteLabel}</dt>
-              <dd className="whitespace-pre-line text-white/80">{entry.note}</dd>
+              <dt className="text-fg-48">{copy.noteLabel}</dt>
+              <dd className="whitespace-pre-line text-fg-80">{entry.note}</dd>
             </>
           )}
         </dl>
@@ -320,7 +320,7 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
         <SkeletonGroup label={copy.loadingList}>
           <div className="space-y-3">
             {[0, 1].map((line) => (
-              <div key={line} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={line} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="30%" />
                 <Skeleton height="0.875rem" width="60%" className="mt-3" />
               </div>
@@ -340,27 +340,27 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
         </div>
       )}
 
-      {zone !== '' && <p className="-mb-6 text-xs text-white/64">{fillPlaceholders(copy.zoneNote, { zone })}</p>}
+      {zone !== '' && <p className="-mb-6 text-xs text-fg-64">{fillPlaceholders(copy.zoneNote, { zone })}</p>}
 
       {data !== null && (
         <>
           <section aria-labelledby="maintenance-current-heading">
-            <h2 id="maintenance-current-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+            <h2 id="maintenance-current-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
               {copy.currentHeading}
             </h2>
             {data.current === null ? (
-              <p className="mt-2 text-sm text-white/64">{copy.currentEmpty}</p>
+              <p className="mt-2 text-sm text-fg-64">{copy.currentEmpty}</p>
             ) : (
               <ul className="mt-4 flex list-none flex-col gap-2">{row(data.current)}</ul>
             )}
           </section>
 
           <section aria-labelledby="maintenance-upcoming-heading">
-            <h2 id="maintenance-upcoming-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+            <h2 id="maintenance-upcoming-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
               {copy.upcomingHeading}
             </h2>
             {data.upcoming.length === 0 ? (
-              <p className="mt-2 text-sm text-white/64">{copy.upcomingEmpty}</p>
+              <p className="mt-2 text-sm text-fg-64">{copy.upcomingEmpty}</p>
             ) : (
               <ul className="mt-4 flex list-none flex-col gap-2">{data.upcoming.map(row)}</ul>
             )}
@@ -377,11 +377,11 @@ export function MaintenanceConsole({ copy }: MaintenanceConsoleProps) {
 
       {data !== null && (
         <section aria-labelledby="maintenance-recent-heading">
-          <h2 id="maintenance-recent-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+          <h2 id="maintenance-recent-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
             {copy.recentHeading}
           </h2>
           {recent.length === 0 ? (
-            <p className="mt-2 text-sm text-white/64">{copy.recentEmpty}</p>
+            <p className="mt-2 text-sm text-fg-64">{copy.recentEmpty}</p>
           ) : (
             <ul className="mt-4 flex list-none flex-col gap-2">{recent.map(row)}</ul>
           )}
@@ -517,11 +517,11 @@ function ScheduleForm({ copy, busy, error, onSchedule }: ScheduleFormProps) {
 
   return (
     <section aria-labelledby="maintenance-schedule-heading">
-      <h2 id="maintenance-schedule-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="maintenance-schedule-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.scheduleHeading}
       </h2>
       {zone !== '' && (
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{fillPlaceholders(copy.scheduleIntro, { zone })}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{fillPlaceholders(copy.scheduleIntro, { zone })}</p>
       )}
 
       <form onSubmit={submit} className="mt-4 grid max-w-[640px] gap-4 sm:grid-cols-2">

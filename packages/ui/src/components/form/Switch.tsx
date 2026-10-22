@@ -65,7 +65,7 @@ export function Switch({
           props.onClick?.(event);
         }}
         className={cn(
-          'inline-flex items-center gap-3 rounded-full text-sm text-white',
+          'inline-flex items-center gap-3 rounded-full text-sm text-fg',
           'disabled:pointer-events-none disabled:opacity-40',
           className,
         )}

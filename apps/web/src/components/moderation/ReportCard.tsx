@@ -100,11 +100,11 @@ export function ReportCard({
           <div>
             <h3
               id={headingId}
-              className="text-lg font-medium tracking-[-0.02em] text-white"
+              className="text-lg font-medium tracking-[-0.02em] text-fg"
             >
               {copy.moderation.reason[report.reason]}
             </h3>
-            <p className="mt-1 text-sm text-white/64">
+            <p className="mt-1 text-sm text-fg-64">
               {/*
                 `fillNodes` rather than two half-sentences: the identifier is styled, and
                 splitting the sentence around it would fix the word order in English —
@@ -126,7 +126,7 @@ export function ReportCard({
                       copy={copy.identity}
                     />
                   ) : (
-                    <span className="font-mono text-white/64">{shortId(report.target.id)}</span>
+                    <span className="font-mono text-fg-64">{shortId(report.target.id)}</span>
                   ),
               })}
             </p>
@@ -139,7 +139,7 @@ export function ReportCard({
               <Link
                 href={detailHref}
                 aria-label={fillPlaceholders(copy.fullHistoryLabel, { target })}
-                className="mt-2 inline-block rounded-lg text-sm text-white/64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="mt-2 inline-block rounded-lg text-sm text-fg-64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {copy.fullHistory}
               </Link>
@@ -173,28 +173,28 @@ export function ReportCard({
 
         <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.reported}</dt>
-            <dd className="text-white/64">
+            <dt className="text-fg-40">{copy.reported}</dt>
+            <dd className="text-fg-64">
               <time dateTime={report.createdAt} title={formatExactTime(report.createdAt, locale)}>
                 {formatRelativeTime(report.createdAt, now, locale)}
               </time>
             </dd>
           </div>
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.signal}</dt>
-            <dd className="text-white/64">
+            <dt className="text-fg-40">{copy.signal}</dt>
+            <dd className="text-fg-64">
               {openReportsLabel(report, copy.moderation, locale)}
             </dd>
           </div>
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.reporter}</dt>
+            <dt className="text-fg-40">{copy.reporter}</dt>
             {/*
               Named since #402, with the identifier still beside it. A report is an
               accusation, and "this account has reported forty campaigns this week" is the
               question that catches abuse of the feature — asked by identifier, answered by
               a person, so the row needs both.
             */}
-            <dd className="text-white/64">
+            <dd className="text-fg-64">
               <EntityName
                 id={report.reporterId}
                 names={names}
@@ -204,13 +204,13 @@ export function ReportCard({
             </dd>
           </div>
           <div className="flex gap-2">
-            <dt className="text-white/40">{copy.targetTerm}</dt>
-            <dd className="font-mono text-white/64">{report.target.id}</dd>
+            <dt className="text-fg-40">{copy.targetTerm}</dt>
+            <dd className="font-mono text-fg-64">{report.target.id}</dd>
           </div>
         </dl>
 
         {report.detail != null && report.detail !== '' && (
-          <blockquote className="mt-4 rounded-md border-l-2 border-white/16 bg-surface-3 py-3 pl-4 pr-3 text-sm text-white/64">
+          <blockquote className="mt-4 rounded-md border-l-2 border-fg/16 bg-surface-3 py-3 pl-4 pr-3 text-sm text-fg-64">
             {report.detail}
           </blockquote>
         )}
@@ -223,8 +223,8 @@ export function ReportCard({
         */}
         {report.resolution != null && (
           <div className="mt-4 rounded-md bg-surface-3 p-4">
-            <h4 className="text-sm font-medium text-white">{copy.moderation.decisionHeading}</h4>
-            <p className="mt-1 text-sm text-white/64">
+            <h4 className="text-sm font-medium text-fg">{copy.moderation.decisionHeading}</h4>
+            <p className="mt-1 text-sm text-fg-64">
               {fillNodes(copy.moderation.decidedBy[report.state], {
                 moderator: (
                   <EntityName
@@ -242,9 +242,9 @@ export function ReportCard({
               })}
             </p>
             {report.resolution.note != null && report.resolution.note !== '' ? (
-              <p className="mt-2 text-sm text-white/64">{report.resolution.note}</p>
+              <p className="mt-2 text-sm text-fg-64">{report.resolution.note}</p>
             ) : (
-              <p className="mt-2 text-sm text-white/40">{copy.moderation.noNote}</p>
+              <p className="mt-2 text-sm text-fg-40">{copy.moderation.noNote}</p>
             )}
           </div>
         )}
@@ -252,7 +252,7 @@ export function ReportCard({
         {open && (
           <div className="mt-5">
             <div role="group" aria-label={fillPlaceholders(copy.decideGroup, { target })}>
-              <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+              <p className="text-xs font-medium uppercase tracking-wide text-fg-40">
                 {copy.decideHeading}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">

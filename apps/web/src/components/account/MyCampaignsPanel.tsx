@@ -88,9 +88,9 @@ function RowTitle({ campaign, copy }: RowProps) {
         unbroken string, and a creator looking for the draft they left needs to
         read the whole of it rather than its first thirty characters.
       */}
-      <span className="wrap-anywhere text-[15px] font-medium text-white">{campaign.title}</span>
+      <span className="wrap-anywhere text-[15px] font-medium text-fg">{campaign.title}</span>
       {!isPubliclyVisible(campaign) && (
-        <span className="text-xs text-white/40">{copy.draftHint}</span>
+        <span className="text-xs text-fg-40">{copy.draftHint}</span>
       )}
     </span>
   );
@@ -98,7 +98,7 @@ function RowTitle({ campaign, copy }: RowProps) {
 
 function StateChip({ campaign, copy }: RowProps) {
   return (
-    <span className="shrink-0 rounded-full border border-white/8 px-3 py-1 text-xs text-white/64">
+    <span className="shrink-0 rounded-full border border-fg/8 px-3 py-1 text-xs text-fg-64">
       {copy.states[campaign.state] ?? campaign.state}
     </span>
   );
@@ -114,7 +114,7 @@ function StateChip({ campaign, copy }: RowProps) {
  */
 function LaunchedRow({ campaign, copy }: RowProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <div className="flex flex-col gap-3 rounded-lg border border-fg/8 bg-surface-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <RowTitle campaign={campaign} copy={copy} />
       <div className="flex flex-wrap items-center gap-2">
         <StateChip campaign={campaign} copy={copy} />
@@ -190,7 +190,7 @@ export function MyCampaignsPanel({ copy }: MyCampaignsPanelProps) {
             ) : (
               <Link
                 href={myCampaignHref(campaign)}
-                className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-4 transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                className="flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-2 p-4 transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] sm:flex-row sm:items-center sm:justify-between sm:gap-4"
               >
                 <RowTitle campaign={campaign} copy={copy} />
                 <StateChip campaign={campaign} copy={copy} />

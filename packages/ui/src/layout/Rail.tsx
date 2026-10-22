@@ -63,8 +63,8 @@ export function RailItem({
           'transition-[background-color,color] duration-200 ease-in-out',
           '[&_svg]:size-5',
           active
-            ? 'bg-surface-4 text-lime-500'
-            : 'text-white/40 hover:bg-surface-3 hover:text-white',
+            ? 'bg-surface-4 text-lime-ink'
+            : 'text-fg-40 hover:bg-surface-3 hover:text-fg',
           className,
         )}
         {...props}

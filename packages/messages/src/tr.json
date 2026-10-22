@@ -86,6 +86,11 @@
       "emptyDetail": "Diğer ülkelerin kampanyalarına bakabilirsiniz.",
       "emptyAction": "Tüm ülkelere bakın"
     },
+    "theme": {
+      "label": "Tema",
+      "toLight": "Açık temaya geç",
+      "toDark": "Koyu temaya geç"
+    },
     "footer": {
       "label": "Alt bilgi",
       "languageHeading": "Dil",

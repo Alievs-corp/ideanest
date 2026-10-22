@@ -99,15 +99,15 @@ export function CollectionHeader({ collection, locale, copy }: CollectionHeaderP
 
   return (
     <header>
-      <nav aria-label={copy.breadcrumb} className="text-sm text-white/40">
+      <nav aria-label={copy.breadcrumb} className="text-sm text-fg-40">
         <ol className="flex list-none flex-wrap items-center gap-2">
           <li>
-            <Link href={COLLECTIONS_PATH} className="hover:text-white">
+            <Link href={COLLECTIONS_PATH} className="hover:text-fg">
               {copy.collections}
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-white/64">
+          <li aria-current="page" className="text-fg-64">
             {collection.title}
           </li>
         </ol>
@@ -128,30 +128,30 @@ export function CollectionHeader({ collection, locale, copy }: CollectionHeaderP
             </div>
           )}
 
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-fg sm:text-4xl">
             {collection.title}
           </h1>
 
           {collection.description !== null && collection.description !== '' && (
-            <p className="mt-3 max-w-[60ch] text-white/64">{collection.description}</p>
+            <p className="mt-3 max-w-[60ch] text-fg-64">{collection.description}</p>
           )}
 
           {sentence !== null && (
-            <p className="mt-2 max-w-[60ch] text-sm text-white/40">{sentence}</p>
+            <p className="mt-2 max-w-[60ch] text-sm text-fg-40">{sentence}</p>
           )}
 
           <dl className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
             <div className="flex items-baseline gap-1.5">
-              <dt className="text-white/40">{copy.inCollection}</dt>
-              <dd className="text-white/80 tabular-nums">
+              <dt className="text-fg-40">{copy.inCollection}</dt>
+              <dd className="text-fg-80 tabular-nums">
                 {pluralise(locale, copy.count, collection.projectCount)}
               </dd>
             </div>
 
             {facts.map((fact) => (
               <div key={fact.term} className="flex items-baseline gap-1.5">
-                <dt className="text-white/40">{fact.term}</dt>
-                <dd className="text-white/80">
+                <dt className="text-fg-40">{fact.term}</dt>
+                <dd className="text-fg-80">
                   <time dateTime={fact.iso}>{fact.date}</time>
                 </dd>
               </div>
@@ -159,8 +159,8 @@ export function CollectionHeader({ collection, locale, copy }: CollectionHeaderP
           </dl>
 
           {collection.grantsBadge && (
-            <p className="mt-4 flex max-w-[60ch] items-start gap-2 text-sm text-white/64">
-              <BadgeCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-white/40" />
+            <p className="mt-4 flex max-w-[60ch] items-start gap-2 text-sm text-fg-64">
+              <BadgeCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-fg-40" />
               <span>
                 {copy.badge}{' '}
                 {isOpenCall(collection) ? copy.badgeOpenCall : copy.badgeCurated}

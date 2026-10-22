@@ -31,7 +31,7 @@ function ProjectCard({ p }: { p: SampleProject }) {
       <CardSubtitle onLime={active}>{p.creator}</CardSubtitle>
 
       <div className="mt-4 flex items-center justify-between">
-        <span className={active ? 'text-xs text-on-lime/50' : 'text-xs text-white/40'}>
+        <span className={active ? 'text-xs text-on-lime/50' : 'text-xs text-fg-40'}>
           Funding
         </span>
         <DotIndicator percent={p.percent} onLime={active} />
@@ -47,7 +47,7 @@ function ProjectCard({ p }: { p: SampleProject }) {
 
       <div className="mt-2 flex items-baseline justify-between">
         <span className="text-sm font-semibold tabular-nums">{p.percent}%</span>
-        <span className={active ? 'text-xs font-medium text-on-lime/70' : 'text-xs text-white/40'}>
+        <span className={active ? 'text-xs font-medium text-on-lime/70' : 'text-xs text-fg-40'}>
           {p.daysLeft === 0 ? 'Closes today' : `${p.daysLeft} days left`}
         </span>
       </div>

@@ -26,7 +26,7 @@ type Story = StoryObj<typeof meta>;
 export const FadeUpOnScroll: Story = {
   render: () => (
     <div className="flex flex-col gap-6">
-      <p className="text-sm text-white/64">
+      <p className="text-sm text-fg-64">
         Scroll down. Each card enters once and stays put on scroll-back.
       </p>
       <div className="h-[420px]" />
@@ -70,7 +70,7 @@ export const Flip: Story = {
         <FlipButton label="Learn more" variant="outline" />
         <FlipButton label="Save" variant="ghost" size="sm" />
       </div>
-      <p className="max-w-md text-sm text-white/64">
+      <p className="max-w-md text-sm text-fg-64">
         The duplicate label is <code>aria-hidden</code>. Without it every screen reader announces
         the button twice.
       </p>
@@ -86,19 +86,19 @@ export const Counters: Story = {
         <span className="font-display text-[clamp(2.5rem,2rem+2.2vw,4rem)] leading-none font-semibold tracking-[-0.04em]">
           <CountUp to={1111561} />
         </span>
-        <span className="text-sm text-white/64">pledged</span>
+        <span className="text-sm text-fg-64">pledged</span>
       </div>
       <div className="flex flex-col gap-1">
         <span className="font-display text-3xl leading-none font-semibold tracking-[-0.04em]">
           <CountUp to={1697} />
         </span>
-        <span className="text-sm text-white/64">backers</span>
+        <span className="text-sm text-fg-64">backers</span>
       </div>
       <div className="flex flex-col gap-1">
         <span className="font-display text-3xl leading-none font-semibold tracking-[-0.04em]">
           <CountUp to={1111} suffix="%" />
         </span>
-        <span className="text-sm text-white/64">funded</span>
+        <span className="text-sm text-fg-64">funded</span>
       </div>
     </StatRow>
   ),

@@ -31,14 +31,14 @@ const pill = cva(
     variants: {
       variant: {
         primary: [
-          'bg-white text-on-white hover:bg-[var(--white-muted)]',
-          'in-data-on-white:bg-surface-1 in-data-on-white:text-white',
+          'bg-inverse text-on-inverse hover:bg-inverse-muted',
+          'in-data-on-white:bg-surface-1 in-data-on-white:text-fg',
           'in-data-on-white:hover:bg-surface-3',
         ],
         accent: 'bg-lime-500 text-on-lime hover:bg-lime-400 active:bg-lime-600',
-        ghost: 'bg-surface-3 text-white hover:bg-surface-4',
+        ghost: 'bg-surface-3 text-fg hover:bg-surface-4',
         outline: [
-          'border border-white/16 bg-transparent text-white hover:bg-surface-3',
+          'border border-fg/16 bg-transparent text-fg hover:bg-surface-3',
           'in-data-on-white:border-black/16 in-data-on-white:text-on-white',
           'in-data-on-white:hover:bg-black/6',
         ],

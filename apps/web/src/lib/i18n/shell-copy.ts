@@ -67,6 +67,12 @@ export interface ShellCopy {
     readonly emptyDetail: string;
     readonly emptyAction: string;
   };
+  /** The theme control: dark or light, remembered on this device (docs/ui-kit.md §11). */
+  readonly theme: {
+    readonly label: string;
+    readonly toLight: string;
+    readonly toDark: string;
+  };
   /**
    * The search box, which is in the bar and in the drawer and is the same control in both.
    *
@@ -236,6 +242,11 @@ export function shellCopyFrom(t: ShellTemplateTranslator): ShellCopy {
       emptyTitle: String(t.raw('market.emptyTitle')),
       emptyDetail: t('market.emptyDetail'),
       emptyAction: t('market.emptyAction'),
+    },
+    theme: {
+      label: t('theme.label'),
+      toLight: t('theme.toLight'),
+      toDark: t('theme.toDark'),
     },
     search: shellSearchCopyFrom(t),
     actions: {

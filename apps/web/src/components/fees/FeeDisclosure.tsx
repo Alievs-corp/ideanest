@@ -96,9 +96,9 @@ export async function FeeDisclosure({ disclosure, audience, locale }: FeeDisclos
   const statement = (body: ReactNode) => (
     <section
       aria-labelledby="fee-disclosure"
-      className="mt-6 flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
+      className="mt-6 flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-2 p-5 sm:p-6"
     >
-      <h2 id="fee-disclosure" className="text-base font-medium text-white">
+      <h2 id="fee-disclosure" className="text-base font-medium text-fg">
         {heading}
       </h2>
       <p className="max-w-[68ch] text-sm leading-relaxed text-reading">{body}</p>
@@ -133,7 +133,7 @@ export async function FeeDisclosure({ disclosure, audience, locale }: FeeDisclos
     return statement(
       t.rich('unavailable', {
         pricing: (chunks) => (
-          <Link href="/pricing" className="text-white underline underline-offset-4">
+          <Link href="/pricing" className="text-fg underline underline-offset-4">
             {chunks}
           </Link>
         ),
@@ -160,9 +160,9 @@ export async function FeeDisclosure({ disclosure, audience, locale }: FeeDisclos
   return (
     <section
       aria-labelledby="fee-disclosure"
-      className="mt-6 flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
+      className="mt-6 flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-2 p-5 sm:p-6"
     >
-      <h2 id="fee-disclosure" className="text-base font-medium text-white">
+      <h2 id="fee-disclosure" className="text-base font-medium text-fg">
         {heading}
       </h2>
 
@@ -183,7 +183,7 @@ export async function FeeDisclosure({ disclosure, audience, locale }: FeeDisclos
         creator who sees a platform rate of 5% and receives 92.1% has an unanswered question, and
         #439 asks for the answer to already be on the page rather than in a support ticket.
       */}
-      <p className="max-w-[68ch] text-sm leading-relaxed text-white/64">{t('twoFees')}</p>
+      <p className="max-w-[68ch] text-sm leading-relaxed text-fg-64">{t('twoFees')}</p>
     </section>
   );
 }

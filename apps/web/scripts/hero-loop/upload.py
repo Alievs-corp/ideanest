@@ -6,6 +6,12 @@ printed. The folder is versioned, so the files are immutable and cached for a ye
 upload, set HERO_LOOP_VERSION in packages/messages/src/hero-loop.ts to the same number.
 
     PROMO_S3_CREDENTIALS=<file> python scripts/hero-loop/upload.py 2 <folder render.mjs wrote>
+
+The light theme's cuts (`render.mjs ... light`) are uploaded the same way with `light` last. They
+have names of their own, so they can join an existing version folder without touching the files
+already in it:
+
+    PROMO_S3_CREDENTIALS=<file> python scripts/hero-loop/upload.py 1 <folder> light
 """
 
 import os
@@ -40,10 +46,11 @@ def client():
 
 
 def main() -> None:
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4) or (len(sys.argv) == 4 and sys.argv[3] != "light"):
         sys.exit(__doc__)
     version, folder = sys.argv[1], Path(sys.argv[2])
-    files = [folder / f"hero-scene-{cut}{suffix}" for cut in CUTS for suffix in KINDS]
+    theme = "-light" if len(sys.argv) == 4 else ""
+    files = [folder / f"hero-scene-{cut}{theme}{suffix}" for cut in CUTS for suffix in KINDS]
     missing = [path.name for path in files if not path.exists()]
     if missing:
         sys.exit(f"missing in {folder}: {', '.join(missing)}; run render.mjs first")
@@ -55,7 +62,8 @@ def main() -> None:
             ExtraArgs={"ContentType": KINDS[path.suffix], "CacheControl": "public, max-age=31536000, immutable"},
         )
         print("uploaded", key)
-    print(f"now set HERO_LOOP_VERSION = {version} in packages/messages/src/hero-loop.ts")
+    if not theme:
+        print(f"now set HERO_LOOP_VERSION = {version} in packages/messages/src/hero-loop.ts")
 
 
 if __name__ == "__main__":

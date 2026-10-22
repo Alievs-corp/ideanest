@@ -229,7 +229,7 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
 
   return (
     <section aria-labelledby="ledger-heading">
-      <h2 id="ledger-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="ledger-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {copy.heading}
         {status === 'ready' && (
           <ConsoleCount loaded={postings.length} more={cursor !== null} copy={copy.count} />
@@ -303,7 +303,7 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
               )}
             </div>
           </div>
-          <p id={hintId} className="mt-1.5 text-[13px] text-white/64">
+          <p id={hintId} className="mt-1.5 text-[13px] text-fg-64">
             {copy.campaignHint}
           </p>
           {idError !== null && (
@@ -324,7 +324,7 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="35%" />
                 <Skeleton height="0.875rem" width="70%" className="mt-3" />
                 <Skeleton height="0.875rem" width="70%" className="mt-2" />
@@ -339,7 +339,7 @@ export function LedgerExplorer({ copy }: LedgerExplorerProps) {
         read to the end. The service no longer produces one, and the screen does not trust that.
       */}
       {status === 'ready' && postings.length === 0 && cursor !== null && (
-        <p className="mt-4 text-sm text-white/64">{copy.emptyPageMore}</p>
+        <p className="mt-4 text-sm text-fg-64">{copy.emptyPageMore}</p>
       )}
 
       {status === 'ready' && postings.length === 0 && cursor === null && (
@@ -412,21 +412,21 @@ function BalancePanel({
   readonly copy: LedgerExplorerCopy;
 }) {
   return (
-    <div className="mt-4 rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
-      <h3 className="text-sm font-medium text-white">
+    <div className="mt-4 rounded-xl border border-fg/8 bg-surface-1 p-4 sm:p-5">
+      <h3 className="text-sm font-medium text-fg">
         {scoped ? copy.balancesScoped : copy.balancesPlatform}
       </h3>
       <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
         {balances.map((balance) => (
           <div key={`${balance.account}-${balance.net.currency}`} className="flex justify-between gap-4">
-            <dt className="text-white/48" title={balance.account}>
+            <dt className="text-fg-48" title={balance.account}>
               {accountLabel(balance.account, copy.money, names)}
             </dt>
-            <dd className="font-mono tabular-nums text-white">{formatMoney(balance.net)}</dd>
+            <dd className="font-mono tabular-nums text-fg">{formatMoney(balance.net)}</dd>
           </div>
         ))}
       </dl>
-      <p className="mt-3 text-xs text-white/32">{copy.balancesNote}</p>
+      <p className="mt-3 text-xs text-fg-32">{copy.balancesNote}</p>
     </div>
   );
 }
@@ -450,12 +450,12 @@ function PostingCard({
   readonly copy: LedgerExplorerCopy;
 }) {
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-sm text-white/64">
+        <p className="text-sm text-fg-64">
           {fillNodes(copy.postingLine, {
             transaction: (
-              <span className="font-mono text-white" title={posting.transactionId}>
+              <span className="font-mono text-fg" title={posting.transactionId}>
                 {shortId(posting.transactionId)}
               </span>
             ),
@@ -473,7 +473,7 @@ function PostingCard({
           {!posting.balanced && <Tag variant="danger">{copy.doesNotBalance}</Tag>}
           <time
             dateTime={posting.createdAt}
-            className="text-xs text-white/40"
+            className="text-xs text-fg-40"
             title={posting.createdAt}
           >
             {formatExactTime(posting.createdAt, locale)}
@@ -496,14 +496,14 @@ function PostingCard({
               render as "Creator 07afbabf" — the one account on the ledger that belongs to
               a person, and the only one that could not be read as a person.
             */}
-            <span className="text-white/64" title={line.account}>
+            <span className="text-fg-64" title={line.account}>
               {accountLabel(line.account, copy.money, names)}
             </span>
             <span className="flex items-baseline gap-3">
-              <span className="text-xs uppercase tracking-wide text-white/40">
+              <span className="text-xs uppercase tracking-wide text-fg-40">
                 {line.direction === 'DEBIT' ? copy.debit : copy.credit}
               </span>
-              <span className="font-mono tabular-nums text-white">{formatMoney(line.amount)}</span>
+              <span className="font-mono tabular-nums text-fg">{formatMoney(line.amount)}</span>
             </span>
           </li>
         ))}

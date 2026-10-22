@@ -36,7 +36,7 @@ export default async function VerifyEmailPage() {
   const t = await getTranslations('auth');
 
   return (
-    <Suspense fallback={<p className="text-white/40">{t('checkingLink')}</p>}>
+    <Suspense fallback={<p className="text-fg-40">{t('checkingLink')}</p>}>
       <VerifyEmailView copy={await verifyEmailCopy()} />
     </Suspense>
   );

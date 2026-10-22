@@ -141,7 +141,7 @@ export function RoleCapabilityEditor({ matrix, copy }: RoleCapabilityEditorProps
         ))}
       </ChipRow>
 
-      <div className="mt-4 rounded-lg border border-white/8 bg-surface-1 p-4 sm:p-5">
+      <div className="mt-4 rounded-lg border border-fg/8 bg-surface-1 p-4 sm:p-5">
         <fieldset className="flex flex-col gap-4 border-0 p-0">
           <legend className="sr-only">{copy.role[current.role]}</legend>
           {current.adjustable.map((capability) => {
@@ -162,8 +162,8 @@ export function RoleCapabilityEditor({ matrix, copy }: RoleCapabilityEditorProps
                         : words.noPages}
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
-                      <code className="font-mono text-[11px] text-white/40">{capability}</code>
-                      {changed && <span className="text-xs text-white/64">· {words.changed}</span>}
+                      <code className="font-mono text-[11px] text-fg-40">{capability}</code>
+                      {changed && <span className="text-xs text-fg-64">· {words.changed}</span>}
                     </span>
                   </>
                 }
@@ -172,7 +172,7 @@ export function RoleCapabilityEditor({ matrix, copy }: RoleCapabilityEditorProps
           })}
         </fieldset>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-white/8 pt-4">
+        <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-fg/8 pt-4">
           <Pill variant="outline" size="sm" disabled={busy || !dirty} onClick={() => void save()}>
             {busy ? words.saving : words.save}
           </Pill>
@@ -187,7 +187,7 @@ export function RoleCapabilityEditor({ matrix, copy }: RoleCapabilityEditorProps
           >
             {words.reset}
           </Pill>
-          {dirty && <span className="text-xs text-white/64">{words.unsaved}</span>}
+          {dirty && <span className="text-xs text-fg-64">{words.unsaved}</span>}
         </div>
       </div>
 

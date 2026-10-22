@@ -92,7 +92,7 @@ export function SectionFields({
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         {/* Visible words; the control's name carries the block's, as every field here does. */}
-        <p aria-hidden="true" className="text-[13px] font-medium text-white/64">
+        <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
           {words.title}
         </p>
         <TextInput
@@ -111,15 +111,15 @@ export function SectionFields({
       </div>
 
       <div className="flex flex-col gap-2">
-        <p aria-hidden="true" className="text-[13px] font-medium text-white/64">
+        <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
           {words.image}
         </p>
-        <p id={imageHintId} className="text-[13px] text-white/40">
+        <p id={imageHintId} className="text-[13px] text-fg-40">
           {words.imageHint}
         </p>
 
         {image !== null && (
-          <figure className="overflow-hidden rounded-lg border border-white/8 bg-surface-3">
+          <figure className="overflow-hidden rounded-lg border border-fg/8 bg-surface-3">
             {/* The image block's preview, for its reasons: the picture's own shape, its alt as written. */}
             <div
               className="mx-auto w-full"
@@ -137,7 +137,7 @@ export function SectionFields({
                 placeholder={placeholder ?? undefined}
               />
             </div>
-            <figcaption className="px-4 py-2 text-[13px] text-white/64">
+            <figcaption className="px-4 py-2 text-[13px] text-fg-64">
               {fillPlaceholders(copy.pixels, { size: describeSize(image) })}
             </figcaption>
           </figure>
@@ -160,7 +160,7 @@ export function SectionFields({
 
         {image !== null && (
           <>
-            <p aria-hidden="true" className="text-[13px] font-medium text-white/64">
+            <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
               {words.imageAlt}
             </p>
             <TextInput
@@ -172,7 +172,7 @@ export function SectionFields({
               onChange={(event) => onChange({ ...block, image: { ...image, alt: event.target.value } })}
               onBlur={onFlush}
             />
-            <p className="text-[13px] text-white/40">{copy.altHint}</p>
+            <p className="text-[13px] text-fg-40">{copy.altHint}</p>
             <Pill
               variant="ghost"
               size="sm"
@@ -205,7 +205,7 @@ export function SectionFields({
         )}
       </div>
 
-      <p aria-hidden="true" className="text-[13px] font-medium text-white/64">
+      <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
         {words.text}
       </p>
       <StoryTextField

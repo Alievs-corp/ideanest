@@ -106,8 +106,8 @@ export function CurrencyPanel({ copy, currencies, baseCurrency }: CurrencyPanelP
    */
   if (currencies.length < 2) {
     return (
-      <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-        <p className="max-w-[58ch] text-sm text-white/64">{copy.unavailable}</p>
+      <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
+        <p className="max-w-[58ch] text-sm text-fg-64">{copy.unavailable}</p>
       </section>
     );
   }
@@ -146,7 +146,7 @@ export function CurrencyPanel({ copy, currencies, baseCurrency }: CurrencyPanelP
   }
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
       <form onSubmit={save} noValidate className="flex max-w-[30rem] flex-col gap-5">
         <Field label={copy.fieldLabel} hint={copy.fieldHint}>
           <Select

@@ -124,10 +124,10 @@ export function PlanPaymentReturns({ copy, canIssue, canOpenAccount }: PlanPayme
 
   return (
     <section aria-labelledby="plan-payments-heading">
-      <h2 id="plan-payments-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+      <h2 id="plan-payments-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
         {words.heading}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{words.intro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{words.intro}</p>
 
       {notice !== null && (
         <InlineAlert variant={notice.variant} title={notice.title} className="mt-4">
@@ -139,7 +139,7 @@ export function PlanPaymentReturns({ copy, canIssue, canOpenAccount }: PlanPayme
         <SkeletonGroup label={words.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="30%" />
                 <Skeleton height="0.875rem" width="60%" className="mt-3" />
               </div>
@@ -273,25 +273,25 @@ function PlanPaymentRow({
   }
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-white">
+        <p className="text-sm text-fg">
           <span className="tabular-nums">{amount}</span>
-          <span className="ml-2 text-white/64">
+          <span className="ml-2 text-fg-64">
             {fillPlaceholders(words.paidOn, { date: bakuDate(payment.paidAt, locale) })}
           </span>
         </p>
         <CardWindow payment={payment} closedByRefusal={refusedAsClosed !== null} copy={copy} locale={locale} />
       </div>
 
-      <p className="mt-2 text-xs text-white/64">
+      <p className="mt-2 text-xs text-fg-64">
         {fillNodes(words.providerOrder, {
           provider,
-          order: <span className="select-all font-mono text-white">{payment.providerTransactionId}</span>,
+          order: <span className="select-all font-mono text-fg">{payment.providerTransactionId}</span>,
         })}
       </p>
 
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-white/64">
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-fg-64">
         <p>
           {fillNodes(words.paidBy, {
             account: <EntityName id={payment.accountId} names={names} kind="account" copy={copy.identity} />,
@@ -301,7 +301,7 @@ function PlanPaymentRow({
           <Link
             href={`/admin/users/${encodeURIComponent(payment.accountId)}`}
             aria-label={fillPlaceholders(words.openAccountLabel, { id: shortId(payment.accountId) })}
-            className="rounded text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {words.openAccount}
           </Link>
@@ -309,7 +309,7 @@ function PlanPaymentRow({
       </div>
 
       {canIssue && (
-        <div className="mt-3 flex flex-col gap-3 border-t border-white/8 pt-3">
+        <div className="mt-3 flex flex-col gap-3 border-t border-fg/8 pt-3">
           {error !== null && (
             <InlineAlert variant="danger" title={copy.failedTitle}>
               {error}
@@ -324,7 +324,7 @@ function PlanPaymentRow({
 
           {mode === 'confirm-card' ? (
             <div role="group" aria-label={words.refundToCard} className="flex flex-col gap-2">
-              <p className="max-w-[62ch] text-sm text-white">
+              <p className="max-w-[62ch] text-sm text-fg">
                 {fillPlaceholders(words.confirmRefund, { amount, provider })}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -383,7 +383,7 @@ function PlanPaymentRow({
                 )}
               </div>
               {!windowOpen && (
-                <p id={reasonId} className="max-w-[62ch] text-xs text-white/64">
+                <p id={reasonId} className="max-w-[62ch] text-xs text-fg-64">
                   {words.cardClosedReason}
                 </p>
               )}
@@ -426,7 +426,7 @@ function CardWindow({
     text = fillPlaceholders(words.cardClosed, { date: bakuDate(until, locale) });
   }
 
-  return <p className="text-xs text-white/64">{text}</p>;
+  return <p className="text-xs text-fg-64">{text}</p>;
 }
 
 /** The bank transfer that returned the money: the reference and a note, asked before it is recorded. */
@@ -499,8 +499,8 @@ function RecordReturn({
         if (ready) setConfirming(true);
       }}
     >
-      <h3 className="text-sm font-medium text-white">{words.recordBankTransfer}</h3>
-      <p className="max-w-[62ch] text-xs text-white/64">{words.bankIntro}</p>
+      <h3 className="text-sm font-medium text-fg">{words.recordBankTransfer}</h3>
+      <p className="max-w-[62ch] text-xs text-fg-64">{words.bankIntro}</p>
 
       <Field label={words.bankReference} hint={words.bankReferenceHint} required className="max-w-[420px]">
         <TextInput
@@ -530,7 +530,7 @@ function RecordReturn({
 
       {confirming ? (
         <div role="group" aria-label={words.recordBankTransfer} className="flex flex-col gap-2">
-          <p className="max-w-[62ch] text-sm text-white">
+          <p className="max-w-[62ch] text-sm text-fg">
             {fillPlaceholders(words.confirmRecord, {
               amount: formatMoney(planPaymentAmount(payment)),
               reference: reference.trim(),

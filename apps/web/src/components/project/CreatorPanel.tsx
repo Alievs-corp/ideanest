@@ -143,7 +143,7 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
   return (
     <section aria-labelledby="campaign-creator" className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
-        <h2 id="campaign-creator" className="text-xl font-medium tracking-[-0.02em] text-white">
+        <h2 id="campaign-creator" className="text-xl font-medium tracking-[-0.02em] text-fg">
           {t('heading')}
         </h2>
 
@@ -171,11 +171,11 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
 
           <div className="flex flex-col gap-1">
             {profile === null ? (
-              <p className="text-base font-medium text-white">{name}</p>
+              <p className="text-base font-medium text-fg">{name}</p>
             ) : (
               <Link
                 href={profileHref(profile.slug)}
-                className="inline-flex items-center gap-1 rounded-sm text-base font-medium text-white underline-offset-4 hover:underline"
+                className="inline-flex items-center gap-1 rounded-sm text-base font-medium text-fg underline-offset-4 hover:underline"
               >
                 {name}
                 <ArrowUpRight aria-hidden="true" className="size-4" />
@@ -183,7 +183,7 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
             )}
 
             {joinedAt !== null && joinedServerText !== null && (
-              <p className="text-sm text-white/64">
+              <p className="text-sm text-fg-64">
                 {/*
                   A tag rather than `{date}`: the date is an element, and where it sits in the
                   sentence is the language's decision — Azerbaijani and Turkish put it first.
@@ -220,7 +220,7 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
 
       {projects.length > 0 && (
         <div className="flex flex-col gap-4">
-          <h3 className="text-base font-medium text-white">{t('others')}</h3>
+          <h3 className="text-base font-medium text-fg">{t('others')}</h3>
 
           <ul className="flex flex-col gap-2">
             {projects.map((project) => {
@@ -229,18 +229,18 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
                 <li key={project.id}>
                   <Link
                     href={`/projects/${encodeURIComponent(project.creatorSlug)}/${encodeURIComponent(project.slug)}`}
-                    className="flex flex-col gap-1 rounded-lg border border-white/8 bg-surface-2 p-4 transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                    className="flex flex-col gap-1 rounded-lg border border-fg/8 bg-surface-2 p-4 transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
-                    <span className="text-sm font-medium text-white">{project.title}</span>
+                    <span className="text-sm font-medium text-fg">{project.title}</span>
                     {project.blurb !== null && (
-                      <span className="line-clamp-2 text-sm text-white/64">{project.blurb}</span>
+                      <span className="line-clamp-2 text-sm text-fg-64">{project.blurb}</span>
                     )}
                     {/*
                       The state as a word, never as a colour. §9.2: colour alone carries no
                       meaning, and "Did not fund" is exactly the fact a reader must not have to
                       infer from a hue.
                     */}
-                    {word !== undefined && <span className="text-xs text-white/40">{word}</span>}
+                    {word !== undefined && <span className="text-xs text-fg-40">{word}</span>}
                   </Link>
                 </li>
               );
@@ -248,10 +248,10 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
           </ul>
 
           {profile !== null && (
-            <p className="text-sm text-white/64">
+            <p className="text-sm text-fg-64">
               <Link
                 href={profileHref(profile.slug)}
-                className="rounded-sm text-white underline-offset-4 hover:underline"
+                className="rounded-sm text-fg underline-offset-4 hover:underline"
               >
                 {t('seeAll', { name })}
               </Link>
@@ -272,7 +272,7 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
         name={name}
         returnTo={returnTo}
         copy={await reportControlCopy()}
-        className="border-t border-white/6 pt-6"
+        className="border-t border-fg/6 pt-6"
       />
     </section>
   );

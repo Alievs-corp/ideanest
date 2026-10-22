@@ -33,11 +33,11 @@ export default async function NotificationsPage() {
       page inside it draws its own measure.
     */
     <div className="mx-auto w-full max-w-[720px] px-5 py-10 sm:px-6 sm:py-14">
-      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">{t('title')}</h1>
-      <p className="mt-2 max-w-[52ch] text-sm text-white/64">
+      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">{t('title')}</h1>
+      <p className="mt-2 max-w-[52ch] text-sm text-fg-64">
         {t.rich('intro', {
           settings: (chunks) => (
-            <Link href="/settings/notifications" className="text-white underline underline-offset-4">
+            <Link href="/settings/notifications" className="text-fg underline underline-offset-4">
               {chunks}
             </Link>
           ),

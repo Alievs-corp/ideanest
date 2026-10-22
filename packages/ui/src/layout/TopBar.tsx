@@ -200,7 +200,7 @@ export function TopBar({
           <div
             className={cn(
               'relative isolate flex h-10 items-center justify-around gap-10 rounded-full border border-transparent px-8',
-              scrolled ? 'mx-auto max-w-[445px] text-on-white' : 'max-w-full text-white',
+              scrolled ? 'mx-auto max-w-[445px] text-on-white' : 'max-w-full text-fg',
               navClassName,
             )}
           >
@@ -214,7 +214,7 @@ export function TopBar({
               aria-hidden="true"
               data-top-bar-surface=""
               className={cn(
-                'pointer-events-none absolute -inset-px -z-10 rounded-full border border-white/8 bg-white',
+                'pointer-events-none absolute -inset-px -z-10 rounded-full border border-fg/8 bg-white',
                 'transition-opacity duration-300 ease-in-out motion-reduce:transition-none',
                 scrolled ? 'opacity-100' : 'opacity-0',
               )}

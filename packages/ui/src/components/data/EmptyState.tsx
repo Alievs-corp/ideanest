@@ -57,21 +57,21 @@ export function EmptyState({
       data-variant={variant}
       className={cn(
         'flex flex-col items-center justify-center gap-3 rounded-lg px-6 py-12 text-center',
-        'border border-white/8 bg-surface-2',
+        'border border-fg/8 bg-surface-2',
         className,
       )}
       {...props}
     >
       <span
         aria-hidden="true"
-        className="flex size-11 items-center justify-center rounded-full bg-surface-3 text-white/40"
+        className="flex size-11 items-center justify-center rounded-full bg-surface-3 text-fg-40"
       >
         {icon ?? <Icon className="size-5" />}
       </span>
 
-      <Heading className="text-base font-medium tracking-[-0.02em] text-white">{title}</Heading>
+      <Heading className="text-base font-medium tracking-[-0.02em] text-fg">{title}</Heading>
 
-      {description && <p className="max-w-[42ch] text-sm text-white/64">{description}</p>}
+      {description && <p className="max-w-[42ch] text-sm text-fg-64">{description}</p>}
 
       {action && <div className="mt-1 flex items-center gap-2">{action}</div>}
     </div>

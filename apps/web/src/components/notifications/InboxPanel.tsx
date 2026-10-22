@@ -189,11 +189,11 @@ export function InboxPanel({ copy }: InboxPanelProps) {
           // somebody's cursor. Not in the tab order.
           tabIndex={-1}
           ref={headingRef}
-          className="text-lg font-medium tracking-[-0.02em] text-white"
+          className="text-lg font-medium tracking-[-0.02em] text-fg"
         >
           {copy.heading}
           {status === 'ready' && unreadCount > 0 && (
-            <span className="ml-2 text-xs font-normal text-white/56">
+            <span className="ml-2 text-xs font-normal text-fg-56">
               {fillPlaceholders(copy.unread, { count: String(unreadCount) })}
             </span>
           )}
@@ -237,7 +237,7 @@ export function InboxPanel({ copy }: InboxPanelProps) {
 
       {status === 'loading' && (
         <SkeletonGroup label={copy.loadingList} className="mt-4">
-          <div className="divide-y divide-white/6 overflow-hidden rounded-lg border border-white/8 bg-surface-2">
+          <div className="divide-y divide-fg/6 overflow-hidden rounded-lg border border-fg/8 bg-surface-2">
             {[0, 1, 2, 3].map((row) => (
               <div key={row} className="flex items-start gap-3 px-5 py-4">
                 <Skeleton height="0.5rem" width="0.5rem" className="mt-2 rounded-full" />
@@ -269,11 +269,11 @@ export function InboxPanel({ copy }: InboxPanelProps) {
             <section key={key} aria-labelledby={`day-${key}`}>
               <h3
                 id={`day-${key}`}
-                className="mb-2 text-xs font-medium tracking-[0.04em] text-white/56 uppercase"
+                className="mb-2 text-xs font-medium tracking-[0.04em] text-fg-56 uppercase"
               >
                 {dayLabelOf(rows[0]?.occurredAt ?? '', now, locale)}
               </h3>
-              <ul className="divide-y divide-white/6 overflow-hidden rounded-lg border border-white/8 bg-surface-2">
+              <ul className="divide-y divide-fg/6 overflow-hidden rounded-lg border border-fg/8 bg-surface-2">
                 {rows.map((row) => (
                   <NotificationRow
                     key={row.id}

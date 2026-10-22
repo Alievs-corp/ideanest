@@ -225,12 +225,12 @@ export function PartnerManager({ copy }: PartnerManagerProps) {
       {/* ---- who is a partner ---------------------------------------------- */}
 
       <section aria-labelledby="partner-roster-heading">
-        <h2 id="partner-roster-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="partner-roster-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.rosterHeading}
         </h2>
 
         {showList && roster.data && (
-          <p className="mt-2 text-sm text-white/64">
+          <p className="mt-2 text-sm text-fg-64">
             {fillPlaceholders(copy.allocation, {
               allocated: formatShare(roster.data.allocated, locale),
               remaining: formatShare(roster.data.remaining, locale),
@@ -305,10 +305,10 @@ export function PartnerManager({ copy }: PartnerManagerProps) {
       {/* ---- adding one ---------------------------------------------------- */}
 
       <section aria-labelledby="partner-add-heading">
-        <h2 id="partner-add-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="partner-add-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.addHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.addIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.addIntro}</p>
 
         <form onSubmit={(event) => void add(event)} className="mt-4 flex flex-col gap-4">
           <AccountPicker chosen={account} onChoose={setAccount} copy={copy.picker} disabled={busy} />
@@ -341,7 +341,7 @@ export function PartnerManager({ copy }: PartnerManagerProps) {
             >
               {busy ? copy.working : copy.addPartner}
             </Pill>
-            {account === null && <p className="text-xs text-white/48">{copy.chooseAccountFirst}</p>}
+            {account === null && <p className="text-xs text-fg-48">{copy.chooseAccountFirst}</p>}
           </div>
         </form>
 
@@ -405,10 +405,10 @@ function PartnerRow({ partner, names, copy, locale, busy, invalidShare, onSave, 
     sections.every((section) => partner.sections.includes(section));
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-2 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-2 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-white">
+          <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-fg">
             <EntityName
               id={partner.accountId}
               names={names}
@@ -418,7 +418,7 @@ function PartnerRow({ partner, names, copy, locale, busy, invalidShare, onSave, 
             />
             <Tag>{formatShare(partner.percentage, locale)}</Tag>
           </p>
-          <p className="mt-1 text-xs text-white/48">
+          <p className="mt-1 text-xs text-fg-48">
             {partner.sections.length === 0
               ? copy.sectionsNone
               : fillPlaceholders(copy.sectionsOpen, {
@@ -498,7 +498,7 @@ interface SectionPickerProps {
 function SectionPicker({ copy, value, onChange, disabled }: SectionPickerProps) {
   return (
     <fieldset className="flex flex-col gap-3 border-0 p-0">
-      <legend className="mb-1 text-sm text-white">{copy.sectionsLegend}</legend>
+      <legend className="mb-1 text-sm text-fg">{copy.sectionsLegend}</legend>
       {PARTNER_SECTIONS.map((section) => (
         <Checkbox
           key={section}
@@ -515,7 +515,7 @@ function SectionPicker({ copy, value, onChange, disabled }: SectionPickerProps) 
           }
         />
       ))}
-      <p className="text-xs text-white/48">{copy.sectionsNote}</p>
+      <p className="text-xs text-fg-48">{copy.sectionsNote}</p>
     </fieldset>
   );
 }

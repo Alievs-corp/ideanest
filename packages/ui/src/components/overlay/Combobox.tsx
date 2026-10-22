@@ -311,7 +311,7 @@ export function Combobox({
       }}
     >
       {leading && (
-        <span className="pointer-events-none absolute inset-y-0 left-3 z-10 grid place-items-center text-white/40 [&_svg]:size-4">
+        <span className="pointer-events-none absolute inset-y-0 left-3 z-10 grid place-items-center text-fg-40 [&_svg]:size-4">
           {leading}
         </span>
       )}
@@ -346,11 +346,11 @@ export function Combobox({
             'absolute top-[calc(100%+4px)] right-0 left-0 z-20 overflow-hidden',
             // §7.14: a popover is dark and one layer up from what it sits over,
             // and it takes a border rather than a shadow (§3).
-            'rounded-md border border-white/8 bg-surface-3',
+            'rounded-md border border-fg/8 bg-surface-3',
           )}
         >
           {message != null && (
-            <p className="px-3 py-2.5 text-[13px] text-white/64">{message}</p>
+            <p className="px-3 py-2.5 text-[13px] text-fg-64">{message}</p>
           )}
 
           <ul
@@ -377,12 +377,12 @@ export function Combobox({
                   className={cn(
                     'flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-sm',
                     'transition-colors duration-150 ease-in-out',
-                    isActive ? 'bg-surface-4 text-white' : 'text-white/64',
+                    isActive ? 'bg-surface-4 text-fg' : 'text-fg-64',
                   )}
                 >
                   <span className="truncate">{option.label}</span>
                   {option.kind !== undefined && (
-                    <span className="shrink-0 text-xs text-white/40">{option.kind}</span>
+                    <span className="shrink-0 text-xs text-fg-40">{option.kind}</span>
                   )}
                 </li>
               );

@@ -290,7 +290,7 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
     <section aria-labelledby="audit-trail-heading">
       <h2
         id="audit-trail-heading"
-        className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg"
+        className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
       >
         {copy.heading}
         {status === 'ready' && (
@@ -326,7 +326,7 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
         "clear dates" up with the hint instead of with the boxes.
       */}
       <fieldset className="mt-4">
-        <legend className="text-sm text-white/64">{copy.narrowLabel}</legend>
+        <legend className="text-sm text-fg-64">{copy.narrowLabel}</legend>
 
         {/* The person and the days are two rows, each with its own hint directly under it: side
             by side, the picker's hint pushed the date boxes down and the dates' hint landed
@@ -383,7 +383,7 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
             </div>
           )}
         </div>
-        <p id={datesHintId} className="mt-1.5 text-[13px] text-white/64">
+        <p id={datesHintId} className="mt-1.5 text-[13px] text-fg-64">
           {copy.datesHint}
         </p>
 
@@ -393,9 +393,9 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
             onCheckedChange={setHideReads}
             label={copy.hideReads}
             aria-describedby={hideReadsHintId}
-            className="self-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="self-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           />
-          <p id={hideReadsHintId} className="text-[13px] text-white/64">
+          <p id={hideReadsHintId} className="text-[13px] text-fg-64">
             {copy.hideReadsHint}
           </p>
         </div>
@@ -403,7 +403,7 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
 
       {/* The person the trail is narrowed to, when the picker is not the thing saying so. */}
       {actor !== null && actor.account === null && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-white/16 px-3 py-2 text-sm text-white/80">
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-fg/16 px-3 py-2 text-sm text-fg-80">
           <span>{copy.actorApplied}</span>
           <EntityName id={actor.id} names={names} kind="account" copy={copy.identity} />
           <Pill variant="ghost" size="sm" onClick={() => setActor(null)}>
@@ -422,7 +422,7 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-3">
             {[0, 1, 2, 3].map((row) => (
-              <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+              <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                 <Skeleton height="1rem" width="30%" />
                 <Skeleton height="0.875rem" width="60%" className="mt-3" />
               </div>
@@ -476,7 +476,7 @@ export function AuditTrailView({ copy }: AuditTrailViewProps) {
         </Pill>
       )}
 
-      <p className="mt-8 max-w-[68ch] text-sm text-white/48">{copy.footnote}</p>
+      <p className="mt-8 max-w-[68ch] text-sm text-fg-48">{copy.footnote}</p>
     </section>
   );
 }
@@ -523,11 +523,11 @@ function AuditRow({
     entry.actorId == null ? null : (names.accounts.get(entry.actorId)?.name ?? shortId(entry.actorId));
 
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <p className="text-sm sm:text-[15px] font-medium text-white">{actionLabel(entry.action, copy.action)}</p>
-          <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm text-white/64">
+          <p className="text-sm sm:text-[15px] font-medium text-fg">{actionLabel(entry.action, copy.action)}</p>
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm text-fg-64">
             {!aboutItsActor && (
               <>
                 <span>{copy.entityOne[entry.entityType] ?? entry.entityType}</span>
@@ -560,7 +560,7 @@ function AuditRow({
             {entry.actorId != null && entry.actorId !== narrowedTo && actorName !== null && (
               <button
                 type="button"
-                className="rounded text-xs text-white/64 underline decoration-white/24 underline-offset-2 hover:text-white hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                className="rounded text-xs text-fg-64 underline decoration-fg/24 underline-offset-2 hover:text-fg hover:decoration-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 aria-label={fillPlaceholders(copy.byThisPersonLabel, { name: actorName })}
                 onClick={() => onNarrowTo(entry.actorId as string)}
               >
@@ -574,7 +574,7 @@ function AuditRow({
           {entry.outcome === 'REFUSED' && <Tag variant="warning">{copy.refused}</Tag>}
           <time
             dateTime={entry.occurredAt}
-            className="text-xs text-white/48"
+            className="text-xs text-fg-48"
             title={entry.occurredAt}
           >
             {formatExactTime(entry.occurredAt, locale)}
@@ -590,14 +590,14 @@ function AuditRow({
       */}
       {(hasText(entry.detail) || hasText(entry.requestId)) && (
         <details className="mt-2 text-sm">
-          <summary className="cursor-pointer rounded text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]">
+          <summary className="cursor-pointer rounded text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]">
             {copy.technicalNote}
           </summary>
           {hasText(entry.detail) && (
-            <p className="mt-1 whitespace-pre-wrap break-words font-mono text-xs text-white/64">{entry.detail}</p>
+            <p className="mt-1 whitespace-pre-wrap break-words font-mono text-xs text-fg-64">{entry.detail}</p>
           )}
           {hasText(entry.requestId) && (
-            <p className="mt-1 break-all font-mono text-xs text-white/48">
+            <p className="mt-1 break-all font-mono text-xs text-fg-48">
               {fillPlaceholders(copy.requestId, { id: entry.requestId })}
             </p>
           )}

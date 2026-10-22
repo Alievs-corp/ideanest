@@ -99,7 +99,7 @@ export function CollectionCard({
   const facts = windowFacts(collection, locale, copy.window);
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-white/8 bg-surface-2 transition-colors duration-300 ease-in-out hover:bg-surface-3">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-fg/8 bg-surface-2 transition-colors duration-300 ease-in-out hover:bg-surface-3">
       <MediaFrame ratio="16/9">
         {collection.image !== null && (
           <Image
@@ -134,7 +134,7 @@ export function CollectionCard({
           </div>
         )}
 
-        <h3 className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h3 className="text-lg font-medium tracking-[-0.02em] text-fg">
           {/*
             The whole card is reachable through this one link rather than through three — a
             stretched anchor keeps the pointer target the size of the card while leaving
@@ -142,26 +142,26 @@ export function CollectionCard({
           */}
           <Link
             href={collectionPath(collection.slug)}
-            className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="rounded-sm after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {collection.title}
           </Link>
         </h3>
 
         {collection.description !== null && collection.description !== '' && (
-          <p className="text-sm text-white/64">{collection.description}</p>
+          <p className="text-sm text-fg-64">{collection.description}</p>
         )}
 
         <dl className="mt-auto flex flex-wrap items-baseline gap-x-4 gap-y-1 pt-2 text-sm">
           <div className="flex items-baseline gap-1.5">
-            <dt className="text-white/40">{copy.campaigns}</dt>
-            <dd className="text-white/80 tabular-nums">{collection.projectCount}</dd>
+            <dt className="text-fg-40">{copy.campaigns}</dt>
+            <dd className="text-fg-80 tabular-nums">{collection.projectCount}</dd>
           </div>
 
           {facts.map((fact) => (
             <div key={fact.term} className="flex items-baseline gap-1.5">
-              <dt className="text-white/40">{fact.term}</dt>
-              <dd className="text-white/80">
+              <dt className="text-fg-40">{fact.term}</dt>
+              <dd className="text-fg-80">
                 {/*
                   A machine-readable instant beside the human one. The date is written out in
                   full rather than left as a countdown: this response may be a minute old

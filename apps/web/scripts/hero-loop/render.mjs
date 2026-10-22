@@ -1,7 +1,7 @@
 /**
  * Renders the home hero's scene loops from `HeroSceneDrawing` — issues #490 and #491.
  *
- *   node scripts/hero-loop/render.mjs [web origin] [out folder]
+ *   node scripts/hero-loop/render.mjs [web origin] [out folder] [dark|light]
  *
  * from `apps/web`, with the web app running (`next dev` or `next start`) at the origin, which
  * defaults to http://localhost:3000. The running app is only the stylesheet: its compiled CSS
@@ -15,6 +15,10 @@
  * Needs Chrome (`CHROME`, or the default install) and ffmpeg (`FFMPEG`, PATH, or
  * `pip install imageio-ffmpeg`). Writes the three cuts and their posters to the out folder, by
  * default the system temp folder; `upload.py` publishes them.
+ *
+ * `light` renders the light theme's cut (docs/ui-kit.md §11): the stage carries
+ * `data-theme="light"`, so the drawing's tokens resolve to the light set, and the files are named
+ * `hero-scene-<cut>-light`. The site plays them when the reader chose the light theme.
  */
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -26,6 +30,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const app = join(here, '..', '..');
 const origin = process.argv[2] ?? 'http://localhost:3000';
 const out = process.argv[3] ?? join(tmpdir(), 'hero-loop');
+const theme = process.argv[4] === 'light' ? 'light' : 'dark';
+const suffix = theme === 'light' ? '-light' : '';
 
 const FPS = 30;
 const FRAMES = 192;
@@ -58,7 +64,7 @@ try {
   chrome.close();
 }
 for (const cut of CUTS) encode(cut);
-console.log(`\nWrote ${CUTS.map((cut) => `hero-scene-${cut.name}`).join(', ')} to ${out}`);
+console.log(`\nWrote ${CUTS.map((cut) => `hero-scene-${cut.name}${suffix}`).join(', ')} to ${out}`);
 console.log('Publish: PROMO_S3_CREDENTIALS=<file> python scripts/hero-loop/upload.py <version> ' + out);
 
 function drawingMarkup() {
@@ -80,13 +86,14 @@ async function captureFrames(page, { name, width, height, scale, top, surface })
       document.getElementById('hero-loop-stage')?.remove();
       const stage = document.createElement('div');
       stage.id = 'hero-loop-stage';
+      stage.dataset.theme = '${theme}';
       stage.style.cssText = 'position:fixed;inset:0;z-index:2147483647;overflow:hidden;background:var(${surface})';
       stage.innerHTML = '<div style="position:absolute;left:50%;top:${top}px;width:600px;height:540px;' +
         'transform:translateX(-50%) scale(${scale});transform-origin:top center">' + ${JSON.stringify(markup)} + '</div>';
       document.documentElement.append(stage);
     })()`,
   );
-  const folder = join(out, `frames-${name}`);
+  const folder = join(out, `frames-${name}${suffix}`);
   rmSync(folder, { recursive: true, force: true });
   mkdirSync(folder);
   for (let frame = 0; frame < FRAMES; frame += 1) {
@@ -109,9 +116,10 @@ async function captureFrames(page, { name, width, height, scale, top, surface })
 
 function encode({ name, from, size }) {
   const ffmpeg = findFfmpeg();
-  const input = ['-framerate', String(FPS), '-i', join(out, `frames-${from}`, 'f%03d.png')];
+  const frames = join(out, `frames-${from}${suffix}`);
+  const input = ['-framerate', String(FPS), '-i', join(frames, 'f%03d.png')];
   const colour = ['-color_range', 'tv', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709'];
-  const target = join(out, `hero-scene-${name}`);
+  const target = join(out, `hero-scene-${name}${suffix}`);
   execFileSync(ffmpeg, [
     '-v', 'error', '-y', ...input,
     '-vf', `scale=${size}:flags=lanczos,format=yuv420p`,
@@ -119,10 +127,10 @@ function encode({ name, from, size }) {
     ...colour, '-movflags', '+faststart', '-an', `${target}.mp4`,
   ]);
   execFileSync(ffmpeg, [
-    '-v', 'error', '-y', '-i', join(out, `frames-${from}`, 'f000.png'),
+    '-v', 'error', '-y', '-i', join(frames, 'f000.png'),
     '-vf', `scale=${size}:flags=lanczos`, '-c:v', 'libwebp', '-quality', '80', `${target}.webp`,
   ]);
-  console.log(`encoded hero-scene-${name}`);
+  console.log(`encoded hero-scene-${name}${suffix}`);
 }
 
 function findFfmpeg() {

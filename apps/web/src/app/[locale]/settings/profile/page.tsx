@@ -13,7 +13,7 @@ import { profileEditorCopy } from '../../../../lib/i18n/shell-copy.server';
  * tag is a function and a class typed twice in two of them is a difference nobody sees until
  * one of the links is underlined and the other is not.
  */
-const INLINE_LINK = 'text-white underline underline-offset-4';
+const INLINE_LINK = 'text-fg underline underline-offset-4';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('settings.pages.profile');

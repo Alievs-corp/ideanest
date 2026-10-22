@@ -100,7 +100,7 @@ export function Pagination({
         item.type === 'ellipsis' ? (
           // Decoration, not a page: it has no target, so it must not appear in
           // the accessibility tree as though it were skippable content.
-          <span key={item.key} aria-hidden="true" className="px-1.5 text-white/40">
+          <span key={item.key} aria-hidden="true" className="px-1.5 text-fg-40">
             &hellip;
           </span>
         ) : (
@@ -114,8 +114,8 @@ export function Pagination({
               'inline-flex h-9 min-w-9 items-center justify-center rounded-full px-2.5',
               'text-[13px] font-medium tabular-nums transition-colors duration-150 ease-in-out',
               item.page === current
-                ? 'bg-white text-on-white'
-                : 'text-white/64 hover:bg-surface-3 hover:text-white',
+                ? 'bg-inverse text-on-inverse'
+                : 'text-fg-64 hover:bg-surface-3 hover:text-fg',
             )}
           >
             {item.page}
@@ -151,11 +151,11 @@ function PageStep({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'inline-flex size-9 items-center justify-center rounded-full text-white/64',
-        'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-white',
+        'inline-flex size-9 items-center justify-center rounded-full text-fg-64',
+        'transition-colors duration-150 ease-in-out hover:bg-surface-3 hover:text-fg',
         // Kept in the tab order at the boundary would be a dead stop; disabled
         // states the boundary instead of hiding that it exists.
-        'disabled:pointer-events-none disabled:text-white/24',
+        'disabled:pointer-events-none disabled:text-fg-24',
       )}
     >
       {icon}

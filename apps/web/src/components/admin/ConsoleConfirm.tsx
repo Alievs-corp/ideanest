@@ -27,8 +27,8 @@ export function Confirm({
   readonly onBack: () => void;
 }) {
   return (
-    <div role="group" aria-label={label} className="flex w-full flex-col gap-2 rounded-lg border border-white/16 p-3">
-      <p className="max-w-[62ch] text-sm text-white">{text}</p>
+    <div role="group" aria-label={label} className="flex w-full flex-col gap-2 rounded-lg border border-fg/16 p-3">
+      <p className="max-w-[62ch] text-sm text-fg">{text}</p>
       <div className="flex flex-wrap gap-2">
         <Pill size="sm" autoFocus aria-disabled={busy} onClick={() => (busy ? undefined : onConfirm())}>
           {busy ? working : action}

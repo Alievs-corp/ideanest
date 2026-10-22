@@ -178,7 +178,7 @@ function ToastItem({ toast, duration, onDismiss }: ToastItemProps) {
       onBlur={() => setPaused(false)}
       className={cn(
         'pointer-events-auto flex w-full items-start gap-3 sm:w-[380px]',
-        'rounded-md border border-white/8 bg-surface-3 p-4 text-white',
+        'rounded-md border border-fg/8 bg-surface-3 p-4 text-fg',
       )}
       {...entry}
     >
@@ -188,7 +188,7 @@ function ToastItem({ toast, duration, onDismiss }: ToastItemProps) {
 
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">{toast.title}</p>
-        {toast.description && <p className="mt-1 text-sm text-white/64">{toast.description}</p>}
+        {toast.description && <p className="mt-1 text-sm text-fg-64">{toast.description}</p>}
         {toast.action && (
           <Pill
             variant="ghost"

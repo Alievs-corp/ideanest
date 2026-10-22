@@ -38,7 +38,7 @@ export async function PromoFilm({ locale }: { readonly locale: Locale }) {
           <source src={film.url} type="video/mp4" />
         </video>
       </MediaFrame>
-      <figcaption className="mt-3 text-center text-sm text-white/64">
+      <figcaption className="mt-3 text-center text-sm text-fg-64">
         {t('title')} · <span className="tabular-nums">{t('duration')}</span>
       </figcaption>
     </figure>

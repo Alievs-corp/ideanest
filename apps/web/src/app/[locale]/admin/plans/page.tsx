@@ -31,8 +31,8 @@ export default async function PlansPage() {
 
   return (
     <div className="max-w-[920px]">
-      <h1 className="text-xl font-semibold tracking-[-0.03em] text-white sm:text-2xl lg:text-3xl">{t('title')}</h1>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{t('intro')}</p>
+      <h1 className="text-xl font-semibold tracking-[-0.03em] text-fg sm:text-2xl lg:text-3xl">{t('title')}</h1>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{t('intro')}</p>
 
       <div className="mt-8">
         <PlanManager copy={await planManagerCopy()} />

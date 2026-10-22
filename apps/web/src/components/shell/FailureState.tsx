@@ -58,10 +58,10 @@ export function FailureState({
 }: FailureStateProps) {
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center px-5 py-24 text-center sm:px-6 sm:py-32">
-      <h1 className="max-w-[20ch] text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+      <h1 className="max-w-[20ch] text-3xl font-semibold tracking-[-0.035em] text-fg sm:text-4xl">
         {title}
       </h1>
-      <div className="mt-4 max-w-[56ch] text-white/64">{description}</div>
+      <div className="mt-4 max-w-[56ch] text-fg-64">{description}</div>
 
       <div className="mt-9">{action}</div>
 
@@ -76,7 +76,7 @@ export function FailureState({
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="rounded-sm text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  className="rounded-sm text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   {link.label}
                 </Link>
@@ -94,7 +94,7 @@ export function FailureAction({ href, children }: { readonly href: string; reado
   return (
     <Link
       href={href}
-      className="inline-flex h-12 items-center rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
+      className="inline-flex h-12 items-center rounded-full bg-inverse px-6 text-base font-medium text-on-inverse transition-colors duration-150 ease-in-out hover:bg-inverse-muted"
     >
       {children}
     </Link>

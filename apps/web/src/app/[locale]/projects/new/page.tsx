@@ -28,10 +28,10 @@ export default async function NewProjectPage() {
       target. The column width and the padding stay here: the shell sets neither.
     */
     <div className="mx-auto w-full max-w-[560px] px-5 py-10 sm:px-6 sm:py-14">
-      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
+      <h1 className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">
         {copy.heading}
       </h1>
-      <p className="mt-2 text-sm text-white/64">
+      <p className="mt-2 text-sm text-fg-64">
         {copy.intro}
       </p>
 

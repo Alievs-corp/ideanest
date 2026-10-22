@@ -194,7 +194,7 @@ export function LanguagePanel({ copy, serverLocale }: LanguagePanelProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
+    <section className="rounded-2xl border border-fg/8 bg-surface-2 p-6 sm:p-8">
       <form onSubmit={save} noValidate className="flex max-w-[30rem] flex-col gap-5">
         <Field label={copy.fieldLabel} hint={copy.fieldHint}>
           <Select

@@ -76,7 +76,7 @@ export async function CampaignFaqs({ faqs }: CampaignFaqsProps) {
 
   return (
     <section aria-labelledby="campaign-faq" className="flex flex-col gap-6">
-      <h2 id="campaign-faq" className="text-xl font-medium tracking-[-0.02em] text-white">
+      <h2 id="campaign-faq" className="text-xl font-medium tracking-[-0.02em] text-fg">
         {t('heading')}
       </h2>
 
@@ -89,11 +89,11 @@ export async function CampaignFaqs({ faqs }: CampaignFaqsProps) {
          * campaign on the platform before this endpoint existed. Having finally earned the
          * right to say it, this component must only say it when it is true.
          */
-        <p className="text-sm text-white/64">
+        <p className="text-sm text-fg-64">
           {t('failed')}
         </p>
       ) : faqs.length === 0 ? (
-        <p className="text-sm text-white/64">
+        <p className="text-sm text-fg-64">
           {t('empty')}
         </p>
       ) : (
@@ -113,14 +113,14 @@ function FaqEntry({ faq }: { readonly faq: CampaignFaq }) {
   return (
     <article
       aria-labelledby={`faq-${faq.id}`}
-      className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
+      className="flex flex-col gap-2 rounded-lg border border-fg/8 bg-surface-2 p-5 sm:p-6"
     >
       {/*
         A heading rather than a bold paragraph, so the questions are a list a screen-reader
         user can jump between (docs/ui-kit.md §9.1). Level 3 puts them under the tab's own
         `<h2>`, which is under the campaign title — the same ladder `CampaignUpdates` uses.
       */}
-      <h3 id={`faq-${faq.id}`} className="text-base font-medium text-white">
+      <h3 id={`faq-${faq.id}`} className="text-base font-medium text-fg">
         {faq.question}
       </h3>
 

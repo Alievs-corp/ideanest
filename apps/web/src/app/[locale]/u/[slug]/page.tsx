@@ -263,7 +263,7 @@ export default async function ProfilePage({
         name={profile.name}
         returnTo={pathOf(slug)}
         copy={reportCopy}
-        className="mt-16 border-t border-white/6 pt-6"
+        className="mt-16 border-t border-fg/6 pt-6"
       />
 
       {/*

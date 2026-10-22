@@ -25,7 +25,7 @@ export async function CampaignRisks({ risks }: CampaignRisksProps) {
 
   return (
     <section aria-labelledby="campaign-risks" className="flex flex-col gap-3">
-      <h2 id="campaign-risks" className="text-xl font-medium tracking-[-0.02em] text-white">
+      <h2 id="campaign-risks" className="text-xl font-medium tracking-[-0.02em] text-fg">
         {t('heading')}
       </h2>
       <p className="max-w-[68ch] wrap-anywhere text-[1.0625rem] leading-[1.75] whitespace-pre-line text-reading">

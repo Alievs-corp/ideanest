@@ -14,7 +14,7 @@ const tag = cva(
   {
     variants: {
       variant: {
-        default: 'bg-surface-3 text-white/64',
+        default: 'bg-surface-3 text-fg-64',
         onLime: 'bg-on-lime/10 text-on-lime/72',
         onAccent: 'bg-on-accent text-white',
         onWhite: 'bg-black/6 text-on-white/64',

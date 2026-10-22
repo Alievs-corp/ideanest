@@ -12,13 +12,13 @@ function Swatch({ name, varName, note }: { name: string; varName: string; note?:
   return (
     <div className="flex items-center gap-3">
       <div
-        className="size-14 shrink-0 rounded-md border border-white/8"
+        className="size-14 shrink-0 rounded-md border border-fg/8"
         style={{ background: `var(${varName})` }}
       />
       <div className="min-w-0">
         <div className="text-sm font-medium">{name}</div>
-        <code className="text-xs text-white/40">{varName}</code>
-        {note && <div className="mt-0.5 text-xs text-white/64">{note}</div>}
+        <code className="text-xs text-fg-40">{varName}</code>
+        {note && <div className="mt-0.5 text-xs text-fg-64">{note}</div>}
       </div>
     </div>
   );
@@ -29,7 +29,7 @@ export const Colors: Story = {
     <div className="flex max-w-4xl flex-col gap-10">
       <section>
         <h2 className="mb-1 text-2xl font-semibold tracking-tight">Surfaces</h2>
-        <p className="mb-5 text-sm text-white/64">
+        <p className="mb-5 text-sm text-fg-64">
           Depth comes from surface colour, not shadow.
         </p>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -43,7 +43,7 @@ export const Colors: Story = {
 
       <section>
         <h2 className="mb-1 text-2xl font-semibold tracking-tight">Lime — brand accent</h2>
-        <p className="mb-5 text-sm text-white/64">
+        <p className="mb-5 text-sm text-fg-64">
           Lime means <strong className="text-lime-500">urgency</strong>, not success. Success has
           its own token: <code className="text-success">--success</code>.
         </p>
@@ -71,7 +71,7 @@ export const Colors: Story = {
 
       <section>
         <h2 className="mb-1 text-2xl font-semibold tracking-tight">Status</h2>
-        <p className="mb-5 text-sm text-white/64">
+        <p className="mb-5 text-sm text-fg-64">
           Colour alone must never carry meaning — pair it with an icon and a label.
         </p>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -85,13 +85,13 @@ export const Colors: Story = {
 
       <section>
         <h2 className="mb-1 text-2xl font-semibold tracking-tight">Text</h2>
-        <p className="mb-5 text-sm text-white/64">
+        <p className="mb-5 text-sm text-fg-64">
           Contrast ratios measured against surface-1.
         </p>
         <div className="flex flex-col gap-2 rounded-lg bg-surface-2 p-5">
-          <p className="text-white">text-primary — 20.4:1 · AAA</p>
-          <p className="text-white/64">text-secondary — 9.2:1 · AAA</p>
-          <p className="text-white/40">text-tertiary — 4.9:1 · AA at 16px and above</p>
+          <p className="text-fg">text-primary — 20.4:1 · AAA</p>
+          <p className="text-fg-64">text-secondary — 9.2:1 · AAA</p>
+          <p className="text-fg-40">text-tertiary — 4.9:1 · AA at 16px and above</p>
           <p className="text-reading leading-[1.75]">
             text-reading — long-form campaign copy. Under pure white, so halation is reduced.
           </p>
@@ -114,10 +114,10 @@ export const Radius: Story = {
         ] as const
       ).map(([label, cls, note]) => (
         <div key={label} className="flex flex-col items-center gap-2">
-          <div className={`size-24 border border-white/8 bg-surface-3 ${cls}`} />
+          <div className={`size-24 border border-fg/8 bg-surface-3 ${cls}`} />
           <div className="text-center">
             <div className="text-sm font-medium">{label}</div>
-            <div className="text-xs text-white/40">{note}</div>
+            <div className="text-xs text-fg-40">{note}</div>
           </div>
         </div>
       ))}
@@ -128,7 +128,7 @@ export const Radius: Story = {
 export const Typography: Story = {
   render: () => (
     <div className="flex max-w-3xl flex-col gap-6">
-      <p className="text-sm text-white/64">
+      <p className="text-sm text-fg-64">
         Letter-spacing tightens as size grows. Skipping this is what makes large headings look
         cheap.
       </p>
@@ -138,11 +138,11 @@ export const Typography: Story = {
       <div className="font-display text-5xl font-semibold tracking-[-0.035em]">Display / H1</div>
       <div className="font-display text-3xl font-semibold tracking-[-0.03em]">Heading H2</div>
       <div className="text-lg font-medium tracking-[-0.02em]">Card title — 18px / 500</div>
-      <div className="text-base text-white/64">
+      <div className="text-base text-fg-64">
         Body copy — 16px / 400. Latin extended check: ə ğ ı ö ş ü ç İ Ə Ğ Ö Ş Ü Ç
       </div>
-      <div className="text-sm text-white/64">Subtitle — 14px</div>
-      <div className="text-xs text-white/40">Meta / tag — 12px</div>
+      <div className="text-sm text-fg-64">Subtitle — 14px</div>
+      <div className="text-xs text-fg-40">Meta / tag — 12px</div>
     </div>
   ),
 };

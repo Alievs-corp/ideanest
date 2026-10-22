@@ -256,7 +256,7 @@ export function FeeEditor({ copy }: FeeEditorProps) {
       </InlineAlert>
 
       <section aria-labelledby="in-force-heading">
-        <h2 id="in-force-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="in-force-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.inForceHeading}
         </h2>
 
@@ -310,7 +310,7 @@ export function FeeEditor({ copy }: FeeEditorProps) {
       </section>
 
       <section aria-labelledby="replace-heading">
-        <h2 id="replace-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="replace-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.replaceHeading}
         </h2>
 
@@ -375,7 +375,7 @@ export function FeeEditor({ copy }: FeeEditorProps) {
           </div>
 
           {start !== null && (scope === 'PLATFORM' || refValid) && (
-            <p className="max-w-[62ch] text-xs text-white/48">
+            <p className="max-w-[62ch] text-xs text-fg-48">
               {start.own ? copy.prefilledFromSchedule : copy.prefilledFromDefault}
             </p>
           )}
@@ -446,15 +446,15 @@ export function FeeEditor({ copy }: FeeEditorProps) {
           <div
             role="group"
             aria-label={copy.confirm.heading}
-            className="mt-4 flex flex-col gap-3 rounded-lg border border-white/16 p-4"
+            className="mt-4 flex flex-col gap-3 rounded-lg border border-fg/16 p-4"
           >
-            <h3 className="text-sm font-medium text-white">{copy.confirm.heading}</h3>
-            <p className="max-w-[62ch] text-sm text-white/80">
+            <h3 className="text-sm font-medium text-fg">{copy.confirm.heading}</h3>
+            <p className="max-w-[62ch] text-sm text-fg-80">
               {fillPlaceholders(copy.confirm.intro, { scope: scopeName(scope, ref || null) })}
             </p>
             <table className="w-full max-w-[560px] text-left text-xs sm:text-sm">
               <thead>
-                <tr className="text-xs text-white/48">
+                <tr className="text-xs text-fg-48">
                   <th scope="col" className="py-1 pr-3 sm:pr-4 font-normal">
                     <span className="sr-only">{copy.scopeLabel}</span>
                   </th>
@@ -515,10 +515,10 @@ export function FeeEditor({ copy }: FeeEditorProps) {
 
       {history.status === 'ready' && closed.length > 0 && (
         <section aria-labelledby="past-terms-heading">
-          <h2 id="past-terms-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+          <h2 id="past-terms-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
             {copy.pastHeading}
           </h2>
-          <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.pastIntro}</p>
+          <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.pastIntro}</p>
 
           <ul className="mt-4 flex list-none flex-col gap-2">
             {closed.map((schedule) => (
@@ -552,12 +552,12 @@ function ChangeRow({
   readonly unchanged: string;
 }) {
   return (
-    <tr className="border-t border-white/8">
-      <th scope="row" className="py-1.5 pr-3 sm:pr-4 font-normal text-white/64">
+    <tr className="border-t border-fg/8">
+      <th scope="row" className="py-1.5 pr-3 sm:pr-4 font-normal text-fg-64">
         {label}
       </th>
-      <td className="py-1.5 pr-3 sm:pr-4 font-mono tabular-nums text-white/64">{was}</td>
-      <td className={same ? 'py-1.5 font-mono tabular-nums text-white/48' : 'py-1.5 font-mono font-medium tabular-nums text-white'}>
+      <td className="py-1.5 pr-3 sm:pr-4 font-mono tabular-nums text-fg-64">{was}</td>
+      <td className={same ? 'py-1.5 font-mono tabular-nums text-fg-48' : 'py-1.5 font-mono font-medium tabular-nums text-fg'}>
         {becomes}
         {same && <span className="ml-2 font-sans text-xs">({unchanged})</span>}
       </td>
@@ -578,10 +578,10 @@ function ScheduleRow({
   readonly copy: FeeEditorCopy;
 }) {
   return (
-    <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
-      <p className="text-sm text-white">{name}</p>
+    <li className="rounded-lg border border-fg/8 bg-surface-1 p-4">
+      <p className="text-sm text-fg">{name}</p>
 
-      <p className="mt-2 text-sm text-white/80">
+      <p className="mt-2 text-sm text-fg-80">
         {fillPlaceholders(copy.rates, {
           platform: asPercentage(schedule.platformRate, locale),
           processing: asPercentage(schedule.processingRate, locale),
@@ -591,7 +591,7 @@ function ScheduleRow({
         })}
       </p>
 
-      <p className="mt-2 text-xs text-white/40">
+      <p className="mt-2 text-xs text-fg-40">
         {fillPlaceholders(copy.window, {
           from: bakuDate(schedule.effectiveFrom, locale),
           to: schedule.effectiveTo == null ? copy.now : bakuDate(schedule.effectiveTo, locale),

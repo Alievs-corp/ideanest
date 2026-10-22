@@ -202,7 +202,7 @@ export function StoryBlockEditor({
 
   return (
     <section aria-labelledby="story-blocks-heading" className="flex flex-col gap-4">
-      <h2 id="story-blocks-heading" className="text-lg font-semibold text-white">
+      <h2 id="story-blocks-heading" className="text-lg font-semibold text-fg">
         {copy.heading}
       </h2>
 
@@ -212,7 +212,7 @@ export function StoryBlockEditor({
         information every move control depends on.
       */}
       {total === 0 ? (
-        <p className="rounded-lg border border-white/8 bg-surface-2 p-5 text-[15px] text-white/64">
+        <p className="rounded-lg border border-fg/8 bg-surface-2 p-5 text-[15px] text-fg-64">
           {copy.empty}
         </p>
       ) : (
@@ -243,8 +243,8 @@ export function StoryBlockEditor({
         </ol>
       )}
 
-      <div className="rounded-lg border border-white/8 bg-surface-2 p-4">
-        <h3 className="text-[13px] font-medium tracking-[0.06em] text-white/40 uppercase">
+      <div className="rounded-lg border border-fg/8 bg-surface-2 p-4">
+        <h3 className="text-[13px] font-medium tracking-[0.06em] text-fg-40 uppercase">
           {copy.add}
         </h3>
         {/*
@@ -330,7 +330,7 @@ function BlockRow({
     <li
       className={cn(
         'rounded-lg border bg-surface-2 p-4',
-        problem === null ? 'border-white/8' : 'border-danger',
+        problem === null ? 'border-fg/8' : 'border-danger',
       )}
     >
       {/*
@@ -340,9 +340,9 @@ function BlockRow({
       */}
       <div role="group" aria-label={name} className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[13px] font-medium text-white/64">
+          <p className="text-[13px] font-medium text-fg-64">
             {vocabulary.blockLabel[block.type]}
-            <span className="text-white/40">
+            <span className="text-fg-40">
               {' · '}
               {fillPlaceholders(vocabulary.describe.position, {
                 index: String(index + 1),
@@ -434,10 +434,10 @@ function MoveButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'inline-grid size-8 place-items-center rounded-md border border-white/8 bg-surface-3',
+        'inline-grid size-8 place-items-center rounded-md border border-fg/8 bg-surface-3',
         'transition-[background-color,color] duration-150 ease-in-out',
         'disabled:pointer-events-none disabled:opacity-40',
-        danger ? 'text-danger hover:bg-surface-4' : 'text-white/64 hover:bg-surface-4 hover:text-white',
+        danger ? 'text-danger hover:bg-surface-4' : 'text-fg-64 hover:bg-surface-4 hover:text-fg',
       )}
     >
       {icon}
@@ -538,8 +538,8 @@ function BlockFields({
         <>
           {/* Decorative in the story, so it is decorative here: the block's own
               group label already says a divider is present. */}
-          <hr aria-hidden="true" className="border-white/8" />
-          <p className="text-[13px] text-white/40">
+          <hr aria-hidden="true" className="border-fg/8" />
+          <p className="text-[13px] text-fg-40">
             {copy.ruleHint}
           </p>
         </>
@@ -606,7 +606,7 @@ function BlockFields({
             onChange={(event) => onChange({ ...block, title: event.target.value })}
             onBlur={onFlush}
           />
-          <p className="text-[13px] text-white/40">{copy.embedHint}</p>
+          <p className="text-[13px] text-fg-40">{copy.embedHint}</p>
         </div>
       );
 
@@ -846,7 +846,7 @@ function ImageFields({
         }}
       />
 
-      <p className="text-[13px] text-white/40">{copy.imageAddressHint}</p>
+      <p className="text-[13px] text-fg-40">{copy.imageAddressHint}</p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <TextInput
           type="url"
@@ -866,7 +866,7 @@ function ImageFields({
       </div>
 
       {block.width > 0 && (
-        <figure className="overflow-hidden rounded-lg border border-white/8 bg-surface-3">
+        <figure className="overflow-hidden rounded-lg border border-fg/8 bg-surface-3">
           {/*
             THE PREVIEW RESERVES THE IMAGE'S OWN SHAPE, which is the whole
             reason the editor measures at all — the public story does the same
@@ -904,7 +904,7 @@ function ImageFields({
               placeholder={placeholder ?? undefined}
             />
           </div>
-          <figcaption className="px-4 py-2 text-[13px] text-white/64">
+          <figcaption className="px-4 py-2 text-[13px] text-fg-64">
             {fillPlaceholders(copy.pixels, { size: describeSize(block) })}
           </figcaption>
         </figure>
@@ -919,7 +919,7 @@ function ImageFields({
         onChange={(event) => onChange({ ...block, alt: event.target.value })}
         onBlur={onFlush}
       />
-      <p className="text-[13px] text-white/40">{copy.altHint}</p>
+      <p className="text-[13px] text-fg-40">{copy.altHint}</p>
 
       {/*
         Two regions, for the reason `CoverImageField` gives: `InlineAlert` already

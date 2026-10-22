@@ -129,12 +129,12 @@ export function FundingCharts({
 
   return (
     <section aria-labelledby="charts-heading">
-      <h1 id="charts-heading" className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
+      <h1 id="charts-heading" className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">
         {copy.heading}
       </h1>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
+      <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.intro}</p>
 
-      <h2 className="mt-8 text-lg font-semibold text-white">{copy.trendHeading}</h2>
+      <h2 className="mt-8 text-lg font-semibold text-fg">{copy.trendHeading}</h2>
       {trendStatus === 'loading' ? (
         <SkeletonGroup label={copy.trendLoading}>
           <Skeleton className="h-[220px] w-full" />
@@ -143,7 +143,7 @@ export function FundingCharts({
       {trendStatus === 'failed' ? <InlineAlert variant="danger">{trendFailure}</InlineAlert> : null}
       {trendStatus === 'ready' && trend !== null ? (
         trend.days.length === 0 ? (
-          <p className="mt-4 max-w-[62ch] text-sm text-white/64">
+          <p className="mt-4 max-w-[62ch] text-sm text-fg-64">
             {fillPlaceholders(copy.trendEmpty, { from: trend.from, to: trend.to })}
           </p>
         ) : (
@@ -165,7 +165,7 @@ export function FundingCharts({
               totals on the overview needs to know why the two can differ.
             */}
             {trend.computedAt !== undefined ? (
-              <p className="mt-2 text-sm text-white/64">
+              <p className="mt-2 text-sm text-fg-64">
                 {fillPlaceholders(copy.aggregated, {
                   when: formatRelativeTime(
                     trend.computedAt,
@@ -179,7 +179,7 @@ export function FundingCharts({
         )
       ) : null}
 
-      <h2 className="mt-10 text-lg font-semibold text-white">{copy.splitHeading}</h2>
+      <h2 className="mt-10 text-lg font-semibold text-fg">{copy.splitHeading}</h2>
       {splitStatus === 'loading' ? (
         <SkeletonGroup label={copy.splitLoading}>
           <Skeleton className="h-24 w-full" />
@@ -188,7 +188,7 @@ export function FundingCharts({
       {splitStatus === 'failed' ? <InlineAlert variant="danger">{splitFailure}</InlineAlert> : null}
       {splitStatus === 'ready' && breakdown !== null ? (
         breakdown.backerCount === 0 ? (
-          <p className="mt-4 max-w-[62ch] text-sm text-white/64">{copy.splitEmpty}</p>
+          <p className="mt-4 max-w-[62ch] text-sm text-fg-64">{copy.splitEmpty}</p>
         ) : (
           <>
             <StatRow className="mt-4">
@@ -199,9 +199,9 @@ export function FundingCharts({
               />
             </StatRow>
 
-            <h3 className="mt-8 text-sm font-semibold text-white">{copy.rewardHeading}</h3>
+            <h3 className="mt-8 text-sm font-semibold text-fg">{copy.rewardHeading}</h3>
             {breakdown.rewards.length === 0 ? (
-              <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.rewardEmpty}</p>
+              <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.rewardEmpty}</p>
             ) : (
               <>
                 <ShareBars
@@ -215,18 +215,18 @@ export function FundingCharts({
                   campaign's total, and the difference is support that took no reward —
                   a creator who added them up and found a shortfall would be right.
                 */}
-                <p className="mt-3 max-w-[62ch] text-sm text-white/64">{copy.rewardNote}</p>
+                <p className="mt-3 max-w-[62ch] text-sm text-fg-64">{copy.rewardNote}</p>
               </>
             )}
 
-            <h3 className="mt-8 text-sm font-semibold text-white">{copy.destinationHeading}</h3>
+            <h3 className="mt-8 text-sm font-semibold text-fg">{copy.destinationHeading}</h3>
             <ShareBars
               label={copy.destinationLabel}
               rows={breakdown.countries.map((slice) => countryRow(slice, copy.noDestination))}
               backers={copy.shareBackers}
               locale={locale}
             />
-            <p className="mt-3 max-w-[62ch] text-sm text-white/64">{copy.destinationNote}</p>
+            <p className="mt-3 max-w-[62ch] text-sm text-fg-64">{copy.destinationNote}</p>
           </>
         )
       ) : null}

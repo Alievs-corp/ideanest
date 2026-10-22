@@ -235,10 +235,10 @@ export function StaffRoles({ copy }: StaffRolesProps) {
   return (
     <div className="flex flex-col gap-10">
       <section aria-labelledby="my-standing-heading">
-        <h2 id="my-standing-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="my-standing-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {administers ? copy.editor.heading : copy.myHeading}
         </h2>
-        {administers && <p className="mt-2 max-w-[68ch] text-sm text-white/64">{copy.editor.intro}</p>}
+        {administers && <p className="mt-2 max-w-[68ch] text-sm text-fg-64">{copy.editor.intro}</p>}
 
         {me.status === 'loading' && (
           <SkeletonGroup label={copy.loadingMe} className="mt-4">
@@ -254,8 +254,8 @@ export function StaffRoles({ copy }: StaffRolesProps) {
         )}
 
         {me.status === 'ready' && me.data !== null && me.data.staff && (
-          <div className="mt-4 rounded-lg border border-white/8 bg-surface-1 p-4">
-            <p className="text-sm text-white/64">
+          <div className="mt-4 rounded-lg border border-fg/8 bg-surface-1 p-4">
+            <p className="text-sm text-fg-64">
               {/*
                 One sentence with two holes rather than three fragments: the identifier and the
                 role tags are both styled, and Azerbaijani and Turkish put the verb after them.
@@ -295,7 +295,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
       </section>
 
       <section aria-labelledby="roster-heading">
-        <h2 id="roster-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+        <h2 id="roster-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
           {copy.rosterHeading}
         </h2>
 
@@ -311,7 +311,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
           <SkeletonGroup label={copy.loadingRoster} className="mt-4">
             <div className="space-y-3">
               {[0, 1].map((row) => (
-                <div key={row} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                <div key={row} className="rounded-lg border border-fg/8 bg-surface-1 p-4">
                   <Skeleton height="1rem" width="45%" />
                 </div>
               ))}
@@ -352,9 +352,9 @@ export function StaffRoles({ copy }: StaffRolesProps) {
             {holders.map((holder) => (
               <li
                 key={holder.accountId}
-                className="rounded-lg border border-white/8 bg-surface-1 p-4"
+                className="rounded-lg border border-fg/8 bg-surface-1 p-4"
               >
-                <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-white">
+                <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-fg">
                   <EntityName
                     id={holder.accountId}
                     names={names}
@@ -369,11 +369,11 @@ export function StaffRoles({ copy }: StaffRolesProps) {
                   {holder.grants.map((grant) => (
                     <li
                       key={grant.role}
-                      className="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-2"
+                      className="flex flex-wrap items-center justify-between gap-3 border-t border-fg/8 pt-2"
                     >
                       <div className="min-w-0">
                         <Tag>{copy.role[grant.role]}</Tag>
-                        <p className="mt-1 text-xs text-white/48">
+                        <p className="mt-1 text-xs text-fg-48">
                           {fillNodes(copy.grantedBy, {
                             by: (
                               <EntityName
@@ -398,7 +398,7 @@ export function StaffRoles({ copy }: StaffRolesProps) {
                       {grant.role === 'PARTNER' ? (
                         <Link
                           href="/admin/partners"
-                          className="rounded text-xs text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                          className="rounded text-xs text-fg-64 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                         >
                           {copy.partnerManaged}
                         </Link>
@@ -426,10 +426,10 @@ export function StaffRoles({ copy }: StaffRolesProps) {
 
       {roster.status !== 'forbidden' && (
         <section aria-labelledby="grant-heading">
-          <h2 id="grant-heading" className="text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
+          <h2 id="grant-heading" className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg">
             {copy.grantHeading}
           </h2>
-          <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.grantIntro}</p>
+          <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.grantIntro}</p>
 
           <form onSubmit={(event) => void submit(event)} className="mt-4 flex flex-col gap-4">
             <AccountPicker
@@ -476,14 +476,14 @@ export function StaffRoles({ copy }: StaffRolesProps) {
                 {busy ? copy.working : copy.grant}
               </Pill>
             </div>
-            <p id="staff-grant-note-hint" className="-mt-2 text-xs text-white/48">
+            <p id="staff-grant-note-hint" className="-mt-2 text-xs text-fg-48">
               {copy.noteHint}
               {account === null && <span className="ml-1">{copy.chooseAccountFirst}</span>}
             </p>
           </form>
 
-          <div className="mt-4 rounded-lg border border-white/8 p-4">
-            <p className="text-sm text-white/64">
+          <div className="mt-4 rounded-lg border border-fg/8 p-4">
+            <p className="text-sm text-fg-64">
               {fillPlaceholders(copy.confers, { role: copy.role[role] })}
             </p>
             {/* What the role confers now, as a super admin last left it, where it is known. */}
@@ -543,9 +543,9 @@ function CapabilityList({
   return (
     <ul className={`grid list-none gap-x-6 gap-y-2 sm:grid-cols-2 ${className ?? ''}`}>
       {capabilities.map((capability) => (
-        <li key={capability} className="min-w-0 text-sm text-white/80">
+        <li key={capability} className="min-w-0 text-sm text-fg-80">
           {copy.capability[capability] ?? capability}
-          <code className="block truncate font-mono text-[11px] text-white/40">{capability}</code>
+          <code className="block truncate font-mono text-[11px] text-fg-40">{capability}</code>
         </li>
       ))}
     </ul>

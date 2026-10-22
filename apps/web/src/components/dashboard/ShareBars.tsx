@@ -72,10 +72,10 @@ export function ShareBars({ rows, label, backers, locale }: ShareBarsProps) {
       {rows.map((row, index) => (
         <li key={row.label}>
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
-            <span className="text-white">{row.label}</span>
-            <span className="tabular-nums text-white/64">
+            <span className="text-fg">{row.label}</span>
+            <span className="tabular-nums text-fg-64">
               {pluralise(locale, backers, row.backerCount)} ·{' '}
-              <span className="text-white">{formatMoney(row.amount)}</span>
+              <span className="text-fg">{formatMoney(row.amount)}</span>
             </span>
           </div>
           {/*
@@ -85,7 +85,7 @@ export function ShareBars({ rows, label, backers, locale }: ShareBarsProps) {
           */}
           <div aria-hidden className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[--surface-3]">
             <div
-              className="h-full rounded-full bg-white"
+              className="h-full rounded-full bg-fg"
               style={{ width: `${widths[index] ?? 0}%` }}
             />
           </div>

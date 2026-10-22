@@ -37,10 +37,10 @@ export function StaticPage({ title, summary, children }: StaticPageProps) {
   return (
     <article className="mx-auto w-full max-w-[46rem] px-5 py-14 sm:px-6 sm:py-20">
       <header>
-        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">
+        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-fg sm:text-4xl">
           {title}
         </h1>
-        <p className="mt-4 max-w-[56ch] text-lg leading-relaxed text-white/64">{summary}</p>
+        <p className="mt-4 max-w-[56ch] text-lg leading-relaxed text-fg-64">{summary}</p>
       </header>
 
       {/*
@@ -48,7 +48,7 @@ export function StaticPage({ title, summary, children }: StaticPageProps) {
         headings and paragraphs, and putting the rhythm here means the page bodies below stay
         content rather than becoming layout.
       */}
-      <div className="mt-12 text-[17px] leading-[1.7] text-reading [&>*+*]:mt-5 [&>h2+p]:mt-3 [&>h2]:mt-12 [&>h2]:text-xl [&>h2]:font-medium [&>h2]:tracking-[-0.02em] [&>h2]:text-white [&>ul]:flex [&>ul]:list-none [&>ul]:flex-col [&>ul]:gap-3 [&>ul]:border-l [&>ul]:border-white/8 [&>ul]:pl-5">
+      <div className="mt-12 text-[17px] leading-[1.7] text-reading [&>*+*]:mt-5 [&>h2+p]:mt-3 [&>h2]:mt-12 [&>h2]:text-xl [&>h2]:font-medium [&>h2]:tracking-[-0.02em] [&>h2]:text-fg [&>ul]:flex [&>ul]:list-none [&>ul]:flex-col [&>ul]:gap-3 [&>ul]:border-l [&>ul]:border-fg/8 [&>ul]:pl-5">
         {children}
       </div>
     </article>

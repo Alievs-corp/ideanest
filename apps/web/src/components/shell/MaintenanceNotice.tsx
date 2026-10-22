@@ -50,10 +50,10 @@ export async function MaintenanceNotice() {
         data-maintenance-notice={key}
         suppressHydrationWarning
         role="status"
-        className="border-b border-white/8 bg-surface-2"
+        className="border-b border-fg/8 bg-surface-2"
       >
         <div className="mx-auto flex w-full max-w-[1280px] items-start justify-between gap-4 px-5 py-3 sm:px-6">
-          <p className="text-sm text-white/80">{sentence(upcoming, t, months)}</p>
+          <p className="text-sm text-fg-80">{sentence(upcoming, t, months)}</p>
           {/*
             Hidden until the script is there to act on it: a close control that does nothing
             is worse than none, and without JavaScript the notice stays, which is the safe side.
@@ -64,7 +64,7 @@ export async function MaintenanceNotice() {
             suppressHydrationWarning
             data-maintenance-dismiss=""
             aria-label={t('dismiss')}
-            className="-m-1 shrink-0 rounded-lg p-1 text-white/64 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+            className="-m-1 shrink-0 rounded-lg p-1 text-fg-64 transition-colors duration-150 ease-in-out hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             <X aria-hidden="true" className="h-4 w-4" />
           </button>

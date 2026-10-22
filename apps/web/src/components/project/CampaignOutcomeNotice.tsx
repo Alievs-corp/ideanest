@@ -60,13 +60,13 @@ export async function CampaignOutcomeNotice({ campaign }: CampaignOutcomeNoticeP
   return (
     <section
       aria-labelledby="campaign-outcome"
-      className="flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
+      className="flex flex-col gap-3 rounded-lg border border-fg/8 bg-surface-2 p-5 sm:p-6"
     >
-      <h2 id="campaign-outcome" className="flex items-center gap-2 text-base font-medium text-white">
+      <h2 id="campaign-outcome" className="flex items-center gap-2 text-base font-medium text-fg">
         {funded ? (
           <CircleCheck aria-hidden="true" className="size-5 text-success" />
         ) : (
-          <CircleSlash aria-hidden="true" className="size-5 text-white/64" />
+          <CircleSlash aria-hidden="true" className="size-5 text-fg-64" />
         )}
         {funded ? t('funded') : t('notFunded')}
       </h2>
@@ -80,7 +80,7 @@ export async function CampaignOutcomeNotice({ campaign }: CampaignOutcomeNoticeP
           )
         ) : (
           t.rich(closedLabel === null ? 'summaryUndated' : 'summary', {
-            b: (chunks) => <strong className="font-medium text-white">{chunks}</strong>,
+            b: (chunks) => <strong className="font-medium text-fg">{chunks}</strong>,
             pledged: formatMoney(outcome.pledged),
             goal: formatMoney(outcome.goal),
             // ICU declines it: one backer, two бэкеров, five бэкеров, twenty-one бэкера.
@@ -90,7 +90,7 @@ export async function CampaignOutcomeNotice({ campaign }: CampaignOutcomeNoticeP
         )}
       </p>
 
-      <p className="text-sm text-white/64">
+      <p className="text-sm text-fg-64">
         {funded
           ? /*
              * §5.1's successful branch, stated plainly because it is the sentence a backer

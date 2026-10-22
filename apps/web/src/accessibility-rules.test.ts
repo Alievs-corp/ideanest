@@ -146,13 +146,13 @@ describe('the static half of the accessibility rules', () => {
    */
   it('never puts an interactive control in the tertiary text colour', () => {
     const offenders = scan('Link|a|button|Pill', (attributes) =>
-      /\btext-white\/40\b/u.test(attributes),
+      /\btext-fg-40\b/u.test(attributes),
     ).map((found) => `${found.file}: <${found.tag}>`);
 
     expect(
       offenders,
-      'text-white/40 is --text-tertiary, which measures 3.8:1 — below WCAG 1.4.3 for text ' +
-        'of any size inside a control. Use text-white/64. See docs/ui-kit.md §9.1.',
+      'text-fg-40 is --text-tertiary, which measures 3.8:1 — below WCAG 1.4.3 for text ' +
+        'of any size inside a control. Use text-fg-64. See docs/ui-kit.md §9.1.',
     ).toEqual([]);
   });
 
@@ -162,12 +162,12 @@ describe('the static half of the accessibility rules', () => {
    */
   it('never uses the disabled colour for text a reader has to read', () => {
     const offenders = scan('Link|a|button|Pill|p|span|li', (attributes) =>
-      /\btext-white\/24\b/u.test(attributes),
+      /\btext-fg-24\b/u.test(attributes),
     ).map((found) => `${found.file}: <${found.tag}>`);
 
     expect(
       offenders,
-      'text-white/24 is --text-disabled and is not a readable colour. See docs/ui-kit.md §9.2.',
+      'text-fg-24 is --text-disabled and is not a readable colour. See docs/ui-kit.md §9.2.',
     ).toEqual([]);
   });
 });

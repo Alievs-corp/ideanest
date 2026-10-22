@@ -1,4 +1,4 @@
-import { HERO_LOOP } from '@ideanest/messages/hero-loop';
+import { HERO_LOOP, HERO_LOOP_LIGHT } from '@ideanest/messages/hero-loop';
 import { HeroLoop } from './HeroLoop';
 
 /**
@@ -25,6 +25,22 @@ const WIDE_SOURCES = [
 ] as const;
 const PHONE_SOURCES = [{ src: HERO_LOOP.phone.url }] as const;
 
+const WIDE_SOURCES_LIGHT = [
+  { media: '(min-width: 1280px)', src: HERO_LOOP_LIGHT.desktop.url },
+  { src: HERO_LOOP_LIGHT.tablet.url },
+] as const;
+const PHONE_SOURCES_LIGHT = [{ src: HERO_LOOP_LIGHT.phone.url }] as const;
+
+/*
+ * ONE LOOP PER THEME, AND CSS PICKS (docs/ui-kit.md §11). The light cut is the same drawing
+ * rendered on the light ground. Both are in the markup and the theme hides one, so the server's
+ * HTML already shows the right poster — choosing in script would flash the dark scene first on
+ * every light page load. The hidden one costs nothing: `HeroLoop` loads its source only once the
+ * element intersects the viewport, and a `display: none` element never does.
+ */
+const DARK_ONLY = 'in-data-[theme=light]:hidden';
+const LIGHT_ONLY = 'hidden in-data-[theme=light]:block';
+
 /** One informational line on the phone card every 3.2 s; `hero-line` is written for four. */
 const BEAT = 3.2;
 
@@ -41,11 +57,16 @@ export function HeroScene({ caption }: { readonly caption: string }) {
         <HeroLoop
           sources={WIDE_SOURCES}
           poster={HERO_LOOP.desktop.posterUrl}
-          className="absolute top-0 left-1/2 aspect-[10/9] h-full w-auto max-w-none -translate-x-1/2 object-cover"
+          className={`absolute top-0 left-1/2 aspect-[10/9] h-full w-auto max-w-none -translate-x-1/2 object-cover ${DARK_ONLY}`}
+        />
+        <HeroLoop
+          sources={WIDE_SOURCES_LIGHT}
+          poster={HERO_LOOP_LIGHT.desktop.posterUrl}
+          className={`hero-loop-edge absolute top-0 left-1/2 aspect-[10/9] h-full w-auto max-w-none -translate-x-1/2 object-cover ${LIGHT_ONLY}`}
         />
       </div>
 
-      <figcaption className="mt-2 max-w-[40ch] text-center text-[15px] text-white/64">{caption}</figcaption>
+      <figcaption className="mt-2 max-w-[40ch] text-center text-[15px] text-fg-64">{caption}</figcaption>
     </figure>
   );
 }
@@ -61,15 +82,20 @@ export function HeroPhoneScene({ lines }: { readonly lines: PhoneLines }) {
   return (
     <div
       aria-hidden="true"
-      className="@container relative mx-auto aspect-square w-[clamp(304px,calc((100svh-420px)*1.38),100%)] max-w-[420px] overflow-hidden rounded-xl border border-white/8 bg-surface-2"
+      className="@container relative mx-auto aspect-square w-[clamp(304px,calc((100svh-420px)*1.38),100%)] max-w-[420px] overflow-hidden rounded-xl border border-fg/8 bg-surface-2"
       data-testid="hero-phone-scene"
     >
-      <HeroLoop sources={PHONE_SOURCES} poster={HERO_LOOP.phone.posterUrl} className="absolute inset-0 size-full object-cover" />
+      <HeroLoop sources={PHONE_SOURCES} poster={HERO_LOOP.phone.posterUrl} className={`absolute inset-0 size-full object-cover ${DARK_ONLY}`} />
+      <HeroLoop
+        sources={PHONE_SOURCES_LIGHT}
+        poster={HERO_LOOP_LIGHT.phone.posterUrl}
+        className={`absolute inset-0 size-full object-cover ${LIGHT_ONLY}`}
+      />
       <div className="absolute inset-x-0 bottom-0 h-[38%] bg-linear-to-t from-surface-2 from-35% to-transparent" />
       {lines.map((line, index) => (
         <p
           key={line}
-          className={`absolute inset-x-4 bottom-4 m-0 text-center text-base leading-snug @[320px]:inset-x-5 @[320px]:bottom-5 @[320px]:text-lg font-semibold tracking-[-0.01em] text-white opacity-0 motion-safe:animate-[hero-line_12.8s_ease-in-out_infinite] ${index === lines.length - 1 ? 'motion-reduce:opacity-100' : ''}`}
+          className={`absolute inset-x-4 bottom-4 m-0 text-center text-base leading-snug @[320px]:inset-x-5 @[320px]:bottom-5 @[320px]:text-lg font-semibold tracking-[-0.01em] text-fg opacity-0 motion-safe:animate-[hero-line_12.8s_ease-in-out_infinite] ${index === lines.length - 1 ? 'motion-reduce:opacity-100' : ''}`}
           style={{ animationDelay: `${index * BEAT}s` }}
         >
           {line}
