@@ -18,6 +18,7 @@ import {
   SkeletonGroup,
 } from '../ui';
 import { CollectionHeader, CollectionHeaderSkeleton } from './collection-header';
+import { MarketEmptyNotice } from './market-empty-notice';
 
 /**
  * One collection — the web's `/collections/{slug}` (`CollectionHeader` over
@@ -147,13 +148,16 @@ export function CollectionPage({ slug }: { readonly slug: string }) {
   );
 
   const empty = (
-    <EmptyState
-      variant="empty"
-      title={t('campaignsEmptyTitle')}
-      description={t('campaignsEmptyBody', { title })}
-      action={<Pill label={t('emptyAction')} onPress={() => router.push('/discover')} />}
-      testID="collection-empty"
-    />
+    <View>
+      <EmptyState
+        variant="empty"
+        title={t('campaignsEmptyTitle')}
+        description={t('campaignsEmptyBody', { title })}
+        action={<Pill label={t('emptyAction')} onPress={() => router.push('/discover')} />}
+        testID="collection-empty"
+      />
+      <MarketEmptyNotice />
+    </View>
   );
 
   const footer =

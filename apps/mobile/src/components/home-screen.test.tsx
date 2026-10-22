@@ -128,10 +128,11 @@ describe('the Home tab', () => {
   it('asks for one campaign per section, all at once', async () => {
     await renderHome();
     const discover = requests.filter((url) => url.pathname.endsWith('/v1/discover'));
+    // #533: the market is part of every list's request; this phone has no region, so Azerbaijan.
     expect(discover.map((url) => url.search).sort()).toEqual([
-      '?status=live&limit=1',
-      '?status=live&sort=ending_soon&limit=1',
-      '?status=live&sort=popularity&limit=1',
+      '?status=live&market=AZ&limit=1',
+      '?status=live&sort=ending_soon&market=AZ&limit=1',
+      '?status=live&sort=popularity&market=AZ&limit=1',
     ]);
     expect(requests.some((url) => url.pathname.endsWith('/v1/categories'))).toBe(true);
   });

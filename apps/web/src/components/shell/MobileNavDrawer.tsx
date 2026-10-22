@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { Menu, X } from 'lucide-react';
+import { CountrySwitcher } from './CountrySwitcher';
 import { cn, useDismiss, useFocusTrap, useScrollLock } from '@ideanest/ui';
 import { useSession } from '../session/SessionProvider';
 import { SearchField } from '../search/SearchField';
@@ -139,6 +140,12 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
                 screen.
               */}
               <SearchField copy={copy.search} fullWidth onNavigate={close} />
+            </div>
+
+            {/* #533: the header's country control, which a phone's bar has no room for. */}
+            <div className="flex items-center justify-between gap-3 px-5 pb-2">
+              <span aria-hidden="true" className="text-sm text-white/64">{copy.market.label}</span>
+              <CountrySwitcher copy={copy.market} />
             </div>
 
             <nav aria-label={copy.nav.label} className="flex-1 overflow-y-auto px-3 py-4">

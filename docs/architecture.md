@@ -562,6 +562,22 @@ and each entry needs a translation per supported locale.
 > different order: *saved* (no saved-projects table exists) and *recommended*
 > (D-07; see below). Nothing in the sort column above is refused any more.
 >
+> **`market` is who a campaign is for; `country` is where it is (#533).**
+> `/v1/discover`, its facets, `/v1/search`, `/v1/search/suggest` and the
+> collections take `market`, an ISO 3166-1 alpha-2 code, and return only
+> campaigns whose `countries` contain it. Absent is every country, and anything
+> that is not a country is `400` rather than read as every country. It narrows
+> the facets' base set instead of being a dimension, and it is part of the
+> cursor fingerprint. A visitor's market is chosen the way their language is:
+> on the web the proxy resolves the `ideanest_country` cookie, then Cloudflare's
+> `CF-IPCountry`, then `AZ`, and hands it to the render in `x-ideanest-market`,
+> which it sets only on the pages that list campaigns (home, discover, search,
+> categories, collections) and strips from every other. **Those pages left the
+> shared cache** (`private, no-cache`), because they now differ by reader; a
+> campaign page, a profile and the documents did not, so a link to a campaign
+> works whatever country is chosen. The app keeps the choice on the device and
+> starts from the phone's region.
+>
 > **Location is one dimension with three controls (#47).** `country` is ISO
 > 3166-1 alpha-2; `city` is a `locations.slug`, folded by §11.3 so `Bakı`,
 > `BAKI` and `baki` are one filter — and the localised exonym deliberately is
@@ -3290,10 +3306,9 @@ be forgotten.
 > `COUNTRY_CODES` in `@ideanest/messages/country`. **After launch it may grow and
 > may not shrink**: a backer in a removed country was promised a reward there, so
 > removing a saved country is `400 PROJECT_FIELD_INVALID` with `meta.field:
-> countries`. Nothing filters on it yet. Visitors choosing a country the way they
-> choose a language, and seeing the campaigns for it, is the next change, with
-> `countries @> ARRAY[:country]` and its GIN index. Shipping rules are not
-> narrowed by it: a creator still prices destinations per reward.
+> countries`. Every public campaign list filters on it through `market` (#533,
+> below), with V116's partial GIN index. Shipping rules are not narrowed by it: a
+> creator still prices destinations per reward.
 >
 > **Not all of these columns exist yet.** `is_featured` and
 > `pledge_manager_state` arrive with curation and with the pledge manager — each

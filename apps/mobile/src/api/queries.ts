@@ -11,6 +11,7 @@ import { filterKey, toSearchParams, type DiscoveryFilters } from '@ideanest/disc
 import { readUpdateObligation, type UpdateObligation } from '@ideanest/campaign/obligation';
 import { taxonomyFrom } from '@ideanest/discovery/taxonomy';
 import { api } from './client';
+import { marketQuery, useMarket } from '../lib/market';
 
 /**
  * Every read this application makes, as a hook — and every query key, in one
@@ -260,12 +261,14 @@ export function discoveryParams(filters: DiscoveryFilters): DiscoveryParams {
  */
 export function useDiscoveryFeed(filters: DiscoveryFilters, options: { limit?: number } = {}) {
   const limit = options.limit ?? FEED_PAGE_SIZE;
+  // #533: every list is for the reader's market, and a new market is a new list.
+  const market = useMarket();
   return useInfiniteQuery({
-    queryKey: [...queryKeys.discover(filterKey(filters)), limit] as const,
+    queryKey: [...queryKeys.discover(filterKey(filters)), limit, market] as const,
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam, signal }) =>
       api().get('/v1/discover', {
-        query: { ...discoveryParams(filters), limit, cursor: pageParam },
+        query: { ...discoveryParams(filters), ...marketQuery(market), limit, cursor: pageParam },
         signal,
       }),
     getNextPageParam: (page: Feed) => page.nextCursor ?? undefined,
@@ -284,13 +287,14 @@ export function useDiscoveryFeed(filters: DiscoveryFilters, options: { limit?: n
  * `blameFor` and the sheet read it without a guard on every field.
  */
 export function useDiscoveryFacets(filters: DiscoveryFilters) {
+  const market = useMarket();
   return useQuery({
-    queryKey: queryKeys.discoverFacets(filterKey(filters)),
+    queryKey: [...queryKeys.discoverFacets(filterKey(filters)), market] as const,
     retry: false,
     placeholderData: keepPreviousData,
     queryFn: async ({ signal }): Promise<DiscoveryFacets> => {
       const facets = await api().get('/v1/discover/facets', {
-        query: discoveryParams(filters),
+        query: { ...discoveryParams(filters), ...marketQuery(market) },
         signal,
       });
       return {
@@ -326,12 +330,13 @@ function namedCount(entry: { slug?: string; name?: string; count?: number }) {
  */
 export function useSearchResults(query: string) {
   const text = query.trim();
+  const market = useMarket();
   return useQuery({
-    queryKey: queryKeys.search(text),
+    queryKey: [...queryKeys.search(text), market] as const,
     enabled: text !== '',
     retry: false,
     queryFn: ({ signal }) =>
-      api().get('/v1/search', { query: { q: text, limit: FEED_PAGE_SIZE }, signal }),
+      api().get('/v1/search', { query: { q: text, limit: FEED_PAGE_SIZE, ...marketQuery(market) }, signal }),
   });
 }
 
@@ -359,10 +364,11 @@ export function useCategories() {
  * Not persisted, like the taxonomy.
  */
 export function useCollections() {
+  const market = useMarket();
   return useQuery({
-    queryKey: queryKeys.collections(),
+    queryKey: [...queryKeys.collections(), market] as const,
     retry: false,
-    queryFn: ({ signal }) => api().get('/v1/collections', { signal }),
+    queryFn: ({ signal }) => api().get('/v1/collections', { query: marketQuery(market), signal }),
     select: (index): readonly Collection[] => collectionsFrom(index.items ?? []),
   });
 }
@@ -380,15 +386,16 @@ export function useCollections() {
  * times will not change it.
  */
 export function useCollection(slug: string) {
+  const market = useMarket();
   return useInfiniteQuery({
-    queryKey: queryKeys.collection(slug),
+    queryKey: [...queryKeys.collection(slug), market] as const,
     enabled: slug !== '',
     retry: false,
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam, signal }) =>
       api().get('/v1/collections/{slug}', {
         path: { slug },
-        query: collectionQueryParams({ cursor: pageParam }, FEED_PAGE_SIZE),
+        query: { ...collectionQueryParams({ cursor: pageParam }, FEED_PAGE_SIZE), ...marketQuery(market) },
         signal,
       }),
     getNextPageParam: (page: CollectionPage) =>
@@ -408,8 +415,9 @@ export function collectionOf(page: CollectionPage | undefined): Collection | nul
  * finished typing is worse than none, and a failed one costs nothing.
  */
 export function useSuggestions(term: string) {
+  const market = useMarket();
   return useQuery({
-    queryKey: queryKeys.suggestions(term),
+    queryKey: [...queryKeys.suggestions(term), market] as const,
     enabled: term.trim().length >= 2,
     retry: false,
     queryFn: ({ signal }) =>
@@ -418,7 +426,7 @@ export function useSuggestions(term: string) {
        * integer, so it is sent as one. Passing a number here would be a
        * type error rather than a 400 nobody notices in a suggestion box.
        */
-      api().get('/v1/search/suggest', { query: { q: term.trim(), limit: '10' }, signal }),
+      api().get('/v1/search/suggest', { query: { q: term.trim(), limit: '10', ...marketQuery(market) }, signal }),
   });
 }
 

@@ -42,6 +42,7 @@ import { pluralCategory, useT } from '../lib/i18n';
 import { useLocale } from '../lib/locale';
 import { colors, font, fontSize, lineHeight, spacing } from '../theme';
 import { withScreenRoot } from '../components/screen-root';
+import { MarketEmptyNotice } from '../components/browse/market-empty-notice';
 
 /**
  * Discover — the web's `/discover` (`components/discovery/DiscoveryView.tsx`), issue #153.
@@ -402,13 +403,16 @@ function FeedEmpty({
     ) : undefined;
 
   return (
-    <EmptyState
-      variant={active.length > 0 || searching ? 'filtered' : 'empty'}
-      title={title}
-      description={description}
-      action={actions}
-      testID="feed-empty"
-    />
+    <View>
+      <EmptyState
+        variant={active.length > 0 || searching ? 'filtered' : 'empty'}
+        title={title}
+        description={description}
+        action={actions}
+        testID="feed-empty"
+      />
+      <MarketEmptyNotice />
+    </View>
   );
 }
 
