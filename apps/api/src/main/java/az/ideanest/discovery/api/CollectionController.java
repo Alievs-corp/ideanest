@@ -73,10 +73,11 @@ public class CollectionController {
     public ResponseEntity<CollectionResponses.CollectionIndex> index(
             WebRequest request,
             HttpServletResponse response,
-            @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage) {
+            @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage,
+            @RequestParam(required = false) String market) {
 
         String locale = Taxonomy.localeFor(acceptLanguage);
-        List<CuratedCollection> visible = collections.index(locale);
+        List<CuratedCollection> visible = collections.index(locale, DiscoveryQueryBinder.market(market));
         CollectionResponses.CollectionIndex body = CollectionResponses.index(visible);
 
         // On the raw response, because the 304 below is written by checkNotModified
@@ -110,11 +111,13 @@ public class CollectionController {
             @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage,
             @PathVariable String slug,
             @RequestParam(required = false) String cursor,
-            @RequestParam(required = false) String limit) {
+            @RequestParam(required = false) String limit,
+            @RequestParam(required = false) String market) {
 
         String locale = Taxonomy.localeFor(acceptLanguage);
+        String country = DiscoveryQueryBinder.market(market);
         CuratedCollection collection =
-                collections.find(slug, locale).orElseThrow(() -> new CollectionNotFoundException(slug));
+                collections.find(slug, locale, country).orElseThrow(() -> new CollectionNotFoundException(slug));
 
         CollectionResponses.CollectionPage body = CollectionResponses.page(
                 collection,
@@ -124,7 +127,8 @@ public class CollectionController {
                         // Decoded here so a malformed cursor fails before a query runs.
                         // Whether it belongs to *this* collection is checked by the
                         // service, which is the only thing that knows the fingerprint.
-                        cursor == null || cursor.isBlank() ? null : DiscoveryCursor.decode(cursor)));
+                        cursor == null || cursor.isBlank() ? null : DiscoveryCursor.decode(cursor),
+                        country));
 
         response.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_LANGUAGE);
         String etag = PublicReads.etagOf(locale, PublicReads.canonical(body));

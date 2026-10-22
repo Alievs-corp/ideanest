@@ -5396,6 +5396,13 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -5439,6 +5446,13 @@
         }, {
           "in" : "query",
           "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "market",
           "required" : false,
           "schema" : {
             "type" : "string"
@@ -10389,6 +10403,13 @@
         }, {
           "in" : "query",
           "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "market",
           "required" : false,
           "schema" : {
             "type" : "string"

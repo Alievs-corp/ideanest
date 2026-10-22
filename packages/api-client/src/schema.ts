@@ -12226,7 +12226,9 @@ export interface operations {
     };
     collectionIndex: {
         parameters: {
-            query?: never;
+            query?: {
+                market?: string;
+            };
             header?: {
                 "Accept-Language"?: string;
             };
@@ -12251,6 +12253,7 @@ export interface operations {
             query?: {
                 cursor?: string;
                 limit?: string;
+                market?: string;
             };
             header?: {
                 "Accept-Language"?: string;
@@ -15691,6 +15694,7 @@ export interface operations {
             query?: {
                 q?: string;
                 limit?: string;
+                market?: string;
             };
             header?: {
                 "Accept-Language"?: string;

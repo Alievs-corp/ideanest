@@ -44,8 +44,10 @@ public interface CuratedCollections {
      *
      * @param locale the negotiated language; titles are resolved through the
      *     taxonomy's chain — requested locale, then {@code az}, then the slug
+     * @param market the reader's country (#533), or null; each collection's count is of
+     *     the campaigns for it
      */
-    List<CuratedCollection> index(String locale);
+    List<CuratedCollection> index(String locale, String market);
 
     /**
      * One collection, by the slug in its URL.
@@ -54,7 +56,7 @@ public interface CuratedCollections {
      *     when it is outside its display window. The three are deliberately
      *     indistinguishable to a caller
      */
-    Optional<CuratedCollection> find(String slug, String locale);
+    Optional<CuratedCollection> find(String slug, String locale, String market);
 
     /**
      * One page of a collection's campaigns, in the curator's order.
@@ -67,10 +69,12 @@ public interface CuratedCollections {
      * @param collection from {@link #find}, so that a page can only ever be produced
      *     for a collection the caller was already allowed to see
      * @param cursor null for the first page
+     * @param market the reader's country (#533), or null: only the campaigns for it.
+     *     Part of the cursor's fingerprint, since it decides which rows a page holds
      * @throws az.ideanest.discovery.domain.InvalidCursorException when the cursor was
-     *     issued for a different collection
+     *     issued for a different collection or country
      */
-    DiscoveryPage projects(CuratedCollection collection, int limit, DiscoveryCursor cursor);
+    DiscoveryPage projects(CuratedCollection collection, int limit, DiscoveryCursor cursor, String market);
 
     /**
      * The slug and translated title of every publicly visible collection of one kind,

@@ -148,12 +148,14 @@ public class SearchController {
             HttpServletResponse response,
             @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage,
             @RequestParam(value = "q", required = false) String text,
-            @RequestParam(value = "limit", required = false) String limit) {
+            @RequestParam(value = "limit", required = false) String limit,
+            @RequestParam(value = "market", required = false) String market) {
 
         limits.countSuggestion(httpRequest);
 
         String locale = Taxonomy.localeFor(acceptLanguage);
-        SuggestQuery query = new SuggestQuery(text, suggestLimit(limit), locale);
+        SuggestQuery query =
+                new SuggestQuery(text, suggestLimit(limit), locale, DiscoveryQueryBinder.market(market));
 
         List<Suggestion> suggestions = search.suggest(query);
         DiscoveryResponses.Suggestions body = DiscoveryResponses.suggestions(suggestions);

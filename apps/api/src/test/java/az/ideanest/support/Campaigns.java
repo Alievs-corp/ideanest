@@ -274,6 +274,7 @@ public final class Campaigns {
         private Instant extendedUntil;
         private boolean withCover = true;
         private final List<String> tags = new ArrayList<>();
+        private List<String> countries = List.of("AZ");
 
         private Seed(DataSource dataSource, UUID creatorId, String slug) {
             this.jdbc = new JdbcTemplate(dataSource);
@@ -288,6 +289,12 @@ public final class Campaigns {
         }
 
         /** §4.3's "summary", and weight B of the search vector. */
+        /** The countries the campaign is for (V115). Azerbaijan when a test does not say. */
+        public Seed countries(String... value) {
+            this.countries = List.of(value);
+            return this;
+        }
+
         public Seed blurb(String value) {
             this.blurb = value;
             return this;
@@ -437,6 +444,10 @@ public final class Campaigns {
                     withCover ? Integer.valueOf(1600) : null,
                     withCover ? Integer.valueOf(900) : null);
 
+            jdbc.update(
+                    "UPDATE projects SET countries = ?::text[] WHERE id = ?",
+                    "{" + String.join(",", countries) + "}",
+                    id);
             for (String tag : tags) {
                 // ON CONFLICT because tags are a free vocabulary shared between
                 // campaigns; a fixture asking for a tag another fixture already made

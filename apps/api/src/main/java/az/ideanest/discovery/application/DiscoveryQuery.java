@@ -86,6 +86,10 @@ import java.util.TreeSet;
  *     and city are one dimension for faceting, as category and subcategory are; the
  *     origin is quantised on the way in and is part of {@link #fingerprint()}, which
  *     is what pins it to the cursor. See {@link LocationFilter}
+ * @param market the country the reader browses for (#533): only campaigns whose
+ *     {@code countries} contain it, as an upper-case ISO 3166-1 alpha-2 code, or null for
+ *     every country. Not {@code location}, which is where a campaign is; this is who it is
+ *     for. Part of the fingerprint, because it decides which rows a page holds
  * @param showOnly saved, recommended, featured. <strong>Featured is served (#48);
  *     saved and recommended are still refused</strong>
  * @param sort one of §4.3's seven plus {@link DiscoverySort#BEST_MATCH}. When
@@ -111,6 +115,7 @@ public record DiscoveryQuery(
         AmountRange raised,
         Set<CompletionBand> completion,
         LocationFilter location,
+        String market,
         Set<ShowOnly> showOnly,
         DiscoverySort sort,
         int limit,
@@ -153,6 +158,7 @@ public record DiscoveryQuery(
         goal = goal == null ? AmountRange.ANY : goal;
         raised = raised == null ? AmountRange.ANY : raised;
         location = location == null ? LocationFilter.ANYWHERE : location;
+        market = market == null || market.isBlank() ? null : market.strip().toUpperCase(Locale.ROOT);
         // An unstated sort means something different when there is a query to rank
         // by. See DiscoverySort.DEFAULT_WITH_TEXT: ordering search results by launch
         // date puts the campaign that mentions the word once in its ninth paragraph
@@ -180,7 +186,7 @@ public record DiscoveryQuery(
     public DiscoveryQuery withCursor(DiscoveryCursor next) {
         return new DiscoveryQuery(
                 text, statuses, categorySlugs, subcategorySlugs, tagSlugs, programmeSlugs, goal, raised,
-                completion, location, showOnly, sort, limit, next, locale);
+                completion, location, market, showOnly, sort, limit, next, locale);
     }
 
     /**
@@ -256,6 +262,7 @@ public record DiscoveryQuery(
         parts.add(location.proximity() == null ? "" : location.proximity().canonical());
         parts.add(sorted(showOnly.stream().map(ShowOnly::wireValue).toList()));
         parts.add(sort.wireValue());
+        parts.add(market == null ? "" : market);
 
         // A separator that cannot occur in a slug, a wire value, or a decimal, so
         // that ["ab", "c"] and ["a", "bc"] cannot digest to the same value.
@@ -327,6 +334,7 @@ public record DiscoveryQuery(
         private AmountRange raised = AmountRange.ANY;
         private Set<CompletionBand> completion = Set.of();
         private LocationFilter location = LocationFilter.ANYWHERE;
+        private String market;
         private Set<ShowOnly> showOnly = Set.of();
         // Null rather than DEFAULT, and it matters: the record resolves an unstated
         // sort against whether there is text to rank by, and a builder that filled
@@ -390,6 +398,11 @@ public record DiscoveryQuery(
             return this;
         }
 
+        public Builder market(String value) {
+            this.market = value;
+            return this;
+        }
+
         public Builder showOnly(Set<ShowOnly> value) {
             this.showOnly = value;
             return this;
@@ -418,7 +431,7 @@ public record DiscoveryQuery(
         public DiscoveryQuery build() {
             return new DiscoveryQuery(
                     text, statuses, categorySlugs, subcategorySlugs, tagSlugs, programmeSlugs, goal, raised,
-                    completion, location, showOnly, sort, limit, cursor, locale);
+                    completion, location, market, showOnly, sort, limit, cursor, locale);
         }
     }
 }

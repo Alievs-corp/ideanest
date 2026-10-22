@@ -125,7 +125,7 @@ class SearchRateLimitTests {
 
     private void suggest() {
         MockHttpServletRequest request = bindARequest();
-        searches.suggest(new ServletWebRequest(request, response), request, response, "az", "rob", null);
+        searches.suggest(new ServletWebRequest(request, response), request, response, "az", "rob", null, null);
     }
 
     private void discover() {
