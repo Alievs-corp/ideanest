@@ -140,6 +140,8 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
 
   const blockingHeading = useRef<HTMLHeadingElement>(null);
   const refusalBox = useRef<HTMLDivElement>(null);
+  const statusBox = useRef<HTMLDivElement>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   // The refusal is drawn at the top and the control that caused it is at the bottom: take the
   // reader to it. Instant, not smooth -- the editor's motion budget is none.
@@ -148,6 +150,13 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
     refusalBox.current?.scrollIntoView({ block: 'start' });
     refusalBox.current?.focus({ preventScroll: true });
   }, [refusal]);
+
+  useEffect(() => {
+    if (!submitted || checklist === null || !isReviewNotedState(checklist.state)) return;
+    setSubmitted(false);
+    statusBox.current?.scrollIntoView({ block: 'start' });
+    statusBox.current?.focus({ preventScroll: true });
+  }, [submitted, checklist]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -200,6 +209,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
         setAgreed(false);
       }
       apply(await submitProject(projectId, undefined, locale));
+      setSubmitted(true);
       // The checklist is re-read rather than assumed: the state has changed, and
       // with it the moderation outcome's `current` flag.
       setAttempt((n) => n + 1);
@@ -351,9 +361,11 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
           that says there is nothing to do.
         */}
         {isReviewNotedState(checklist.state) && (
-          <InlineAlert variant="info" title={copy.states[checklist.state]}>
-            {words.stateNote[checklist.state]}
-          </InlineAlert>
+          <div ref={statusBox} tabIndex={-1} className="scroll-mt-28" style={{ outline: 'none' }}>
+            <InlineAlert variant="info" title={copy.states[checklist.state]}>
+              {words.stateNote[checklist.state]}
+            </InlineAlert>
+          </div>
         )}
 
         {refusal !== null && (

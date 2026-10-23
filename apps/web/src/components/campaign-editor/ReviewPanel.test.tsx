@@ -344,6 +344,25 @@ describe('ReviewPanel', () => {
       expect(screen.getByRole('checkbox', { name: REVIEW_COPY.agreementAccept })).not.toBeChecked();
     });
 
+    it('takes the reader up to the review notice once the campaign is submitted', async () => {
+      const user = userEvent.setup();
+      const scrolled = vi.spyOn(Element.prototype, 'scrollIntoView');
+      getProjectChecklistMock.mockResolvedValueOnce(completeChecklist());
+      submitProjectMock.mockResolvedValue({ ...PROJECT, state: 'SUBMITTED' });
+      getProjectChecklistMock.mockResolvedValueOnce(
+        completeChecklist({ state: 'SUBMITTED', submittable: true }),
+      );
+
+      await renderPanel();
+      await user.click(screen.getByRole('button', { name: 'Submit for review' }));
+
+      const note = await screen.findByText(/with our moderators/);
+      const box = note.closest('[tabindex="-1"]') as HTMLElement;
+      await waitFor(() => expect(box).toHaveFocus());
+      expect(scrolled.mock.contexts).toContain(box);
+      scrolled.mockRestore();
+    });
+
     it('takes the reader up to a refusal, which is drawn far above the control that caused it', async () => {
       const user = userEvent.setup();
       const scrolled = vi.spyOn(Element.prototype, 'scrollIntoView');
