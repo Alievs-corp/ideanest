@@ -11,20 +11,14 @@ import java.util.List;
  * reason as a refused transition: the request is well formed and the state of the
  * campaign is what refuses it.
  *
- * <p><strong>Unreachable through the API, and kept.</strong> §5.1 resolves a
- * campaign by comparing its total against its goal at its deadline, so a live
- * campaign without a goal or a duration cannot be resolved at all —
- * {@code projects_public_states_are_fully_specified} refuses the row outright.
- * {@code ProjectChecklistService} now refuses to submit such a campaign, so it
- * cannot reach {@code APPROVED} to be launched from, and nothing a client can send
- * raises this.
- *
- * <p>It stays because the alternative is trusting that every future path to
- * {@code LIVE} went through a submission. The scheduled launch of §8.4 does not:
- * it moves {@code SCHEDULED → LIVE} on a timer, from a row somebody may have
- * edited in between. Without this check that launch reaches the database and comes
- * back as a 500, which tells the creator nothing and pages somebody. A guard whose
- * value is that it never fires is not one to delete the moment it stops firing.
+ * <p><strong>Reachable through approval since #552.</strong> §5.1 resolves a campaign by
+ * comparing its total against its goal at its deadline, so a live campaign without a goal or
+ * a duration cannot be resolved at all — {@code projects_public_states_are_fully_specified}
+ * refuses the row outright. {@code ProjectChecklistService} refuses to submit such a campaign,
+ * but both fields stay editable while it is in review, and approving now launches it. So the
+ * approval asks this first and refuses with it, which tells the moderator why and leaves the
+ * campaign in {@code SUBMITTED} rather than approved and unable to open. The creator's launch
+ * and the scheduled launch of §8.4 keep the same guard for rows edited by other means.
  */
 public class ProjectNotLaunchableException extends RuntimeException {
 

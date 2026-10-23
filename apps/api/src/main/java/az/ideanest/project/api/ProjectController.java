@@ -162,7 +162,10 @@ public class ProjectController {
         return responses.of(transitions.submit(id, callerOf(accessToken)));
     }
 
-    /** Takes an approved campaign live, now. */
+    /**
+     * Takes an approved campaign live, now. Since #552 an approval publishes the campaign on its
+     * own; this stays for campaigns approved before that, and for clients built before it.
+     */
     @PostMapping("/{id}/launch")
     public ProjectEdit launch(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
         return responses.of(transitions.launch(id, callerOf(accessToken)));

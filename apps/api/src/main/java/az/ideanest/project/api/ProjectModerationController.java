@@ -49,7 +49,10 @@ public class ProjectModerationController {
         this.responses = responses;
     }
 
-    /** Clears a campaign for launch. A note is optional commentary. */
+    /**
+     * Approves a campaign, which publishes it (#552): live now, or at the launch time its
+     * creator set. A note is optional commentary.
+     */
     @PostMapping("/{id}/approve")
     public ProjectEdit approve(
             @AuthenticationPrincipal Jwt accessToken,

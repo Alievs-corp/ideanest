@@ -229,6 +229,10 @@ public class ProjectTransitionService {
      * Takes an approved campaign live: {@code APPROVED} or {@code SCHEDULED} →
      * {@code LIVE}.
      *
+     * <p>Since #552 {@link #approve} publishes a campaign itself, so this is the creator's
+     * way out of {@code APPROVED} only for a campaign approved before that, or one whose
+     * launch time was cleared after it was approved. Clients built before #552 still call it.
+     *
      * <p>This is the transition money depends on, so it is the one with a
      * precondition beyond the edge: §5.1 resolves a campaign by comparing its
      * total against its goal at its deadline, and neither exists on a campaign
@@ -266,9 +270,7 @@ public class ProjectTransitionService {
         requireEdge(project.getState(), ProjectState.LIVE);
         requireLaunchable(project);
 
-        Project launched = apply(project, ProjectState.LIVE, access.roleOf(project, accountId), accountId, null);
-        announceLaunch(launched);
-        return launched;
+        return open(project, access.roleOf(project, accountId), accountId, null);
     }
 
     /**
@@ -321,10 +323,19 @@ public class ProjectTransitionService {
             return Optional.empty();
         }
 
-        Project launched = apply(project, ProjectState.LIVE, ActorRole.SYSTEM, null, null);
-        announceLaunch(launched);
+        Project launched = open(project, ActorRole.SYSTEM, null, null);
         log.info("Campaign {} opened at its scheduled time of {}.", projectId, at);
         return Optional.of(launched);
+    }
+
+    /**
+     * The edge into {@code LIVE} and its announcement — the one implementation of a launch,
+     * whoever takes it: the creator, the clock, or an approval (#552).
+     */
+    private Project open(Project project, ActorRole role, UUID actorId, String note) {
+        Project launched = apply(project, ProjectState.LIVE, role, actorId, note);
+        announceLaunch(launched);
+        return launched;
     }
 
     /**
@@ -720,11 +731,61 @@ public class ProjectTransitionService {
                         project.getBackersCount());
     }
 
-    /** Moderation clears a campaign: {@code SUBMITTED} → {@code APPROVED}. */
+    /**
+     * Moderation clears a campaign, and clearing it publishes it — #552: {@code SUBMITTED} →
+     * {@code APPROVED}, then {@code APPROVED} → {@code LIVE} in the same transaction unless the
+     * creator set a launch time that is still to come.
+     *
+     * <p><strong>The launch is {@link #open}, the same one the creator's button takes.</strong>
+     * Deadline, edit locks, both announcements: nothing about a campaign published by its
+     * approval differs from one its creator launched. The transition row is
+     * {@link ActorRole#SYSTEM}'s, as the scheduled launch's is — the moderator's decision is the
+     * row directly above it, and a second {@code MODERATOR} row would make "the last moderation
+     * decision" ({@link ModerationOutcome}) the launch rather than the approval. Who published it
+     * is recorded where staff actions are, as {@link AuditAction#PROJECT_LAUNCHED} under the
+     * moderator.
+     *
+     * <p><strong>A launch time still to come leaves it {@code APPROVED}</strong>, which is the
+     * scheduled path {@link CampaignLauncherJob} already opens at that time with nobody signed in.
+     * One already past launches now: the creator wanted it open by then.
+     *
+     * <p><strong>Refused rather than approved and stuck.</strong> What a launch needs beyond the
+     * edge is the goal and the duration, and both stay editable while a campaign is in review. An
+     * approval that would publish a campaign without them answers {@code PROJECT_NOT_LAUNCHABLE}
+     * and changes nothing, so the moderator can ask for changes instead; checked before anything
+     * is written, for that reason. A scheduled campaign is held to the same rule because the
+     * sweep would otherwise skip it silently at its time.
+     *
+     * <p>Only {@code project.approved} tells the creator: it is the one message about this
+     * decision, and {@code project.launched} goes to their followers and never to them.
+     */
     @Transactional
     public Project approve(UUID projectId, UUID moderatorId, String note) {
         Project project = access.requireModeratable(projectId, moderatorId);
-        return moderate(project, ProjectState.APPROVED, AuditAction.PROJECT_APPROVED, moderatorId, note);
+        requireEdge(project.getState(), ProjectState.APPROVED);
+        requireLaunchable(project);
+
+        Project approved = moderate(project, ProjectState.APPROVED, AuditAction.PROJECT_APPROVED, moderatorId, note);
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        outbox.record(
+                ProjectApprovedEvent.AGGREGATE_TYPE,
+                approved.getId(),
+                ProjectApprovedEvent.EVENT_TYPE,
+                ProjectApprovedEvent.of(approved, now));
+
+        Instant at = approved.getScheduledLaunchAt();
+        if (at != null && at.isAfter(now)) {
+            log.info("Campaign {} approved; it opens at its launch time of {}.", projectId, at);
+            return approved;
+        }
+        Project launched = open(approved, ActorRole.SYSTEM, null, "Published on approval");
+        audit.record(
+                AuditAction.PROJECT_LAUNCHED,
+                launched.getId(),
+                AuditActor.moderator(moderatorId),
+                AuditOutcome.SUCCEEDED,
+                ProjectState.APPROVED + " -> " + ProjectState.LIVE);
+        return launched;
     }
 
     /**

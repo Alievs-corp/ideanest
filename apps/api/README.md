@@ -562,8 +562,10 @@ Money arriving (`pledge.confirmed`, `pledge.collected`), the team speaking
 (`project.update_published`), the audience speaking (`comment.posted`), and the
 campaign's own state changing.
 
-`project.approved` is deliberately absent — approval is not publication, and a
-page that does not exist yet has no cache entry to drop. So are `pledge.edited`
+`project.approved` is deliberately absent — an approval that publishes the
+campaign (#552) also records `project.launched`, which is in the list, and one
+waiting for a launch time leaves a page that does not exist yet and has no cache
+entry to drop. So are `pledge.edited`
 and the payment failures, which arrive in bursts and would each evict a campaign
 page for a change of a few manat in a figure rounded to the nearest whole one on
 screen.

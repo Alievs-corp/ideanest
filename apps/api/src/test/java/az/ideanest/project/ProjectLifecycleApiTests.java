@@ -1,7 +1,9 @@
 package az.ideanest.project;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
+import az.ideanest.project.application.CampaignLauncherJob;
 import az.ideanest.project.domain.ActorRole;
 import az.ideanest.project.domain.ProjectState;
 import az.ideanest.project.domain.ProjectStateTransition;
@@ -9,11 +11,14 @@ import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.project.infrastructure.ProjectStateTransitionRepository;
 import az.ideanest.project.infrastructure.SubcategoryRepository;
 import az.ideanest.shared.EmailAddress;
+import az.ideanest.shared.outbox.OutboxRelay;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,11 +77,21 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private CampaignLauncherJob launcher;
+
+    @Autowired
+    private OutboxRelay relay;
+
     @AfterEach
     void clearProjects() {
         // Campaigns reference users and deliberately do not cascade from them, so a
         // suite that left rows here would break the identity tests' own cleanup.
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        // The approval's and the launch's events, which another suite's relay would
+        // otherwise deliver about campaigns this deletes.
+        jdbc.update("DELETE FROM outbox_events");
+        jdbc.update("DELETE FROM notifications");
         jdbc.update("DELETE FROM project_state_transitions");
         jdbc.update("DELETE FROM projects");
     }
@@ -231,13 +246,12 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
      * row: the launch is what stamps {@code launched_at} and computes the deadline,
      * and a fixture that set the state by hand would let a test pass against a
      * campaign that could never exist. Moderation is part of the path, which is why
-     * this takes the moderator as well.
+     * this takes the moderator as well; since #552 the approval is the launch.
      */
     private UUID liveCampaign(Creator creator, Creator moderator, String title) {
         UUID id = idOf(submittableDraft(creator, title));
         post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
         post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null);
-        post("/v1/projects/" + id + "/launch", creator.accessToken(), null);
         return id;
     }
 
@@ -246,8 +260,31 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
         return (List<String>) project.get("lockedFields");
     }
 
+    /**
+     * In order, with the identifier breaking ties: the rows one transaction writes share the
+     * database's {@code now()}, and an approval that publishes writes two.
+     */
     private List<ProjectStateTransition> historyOf(UUID projectId) {
-        return transitions.findByProjectIdOrderByCreatedAtAsc(projectId);
+        return transitions.findByProjectIdOrderByCreatedAtAsc(projectId).stream()
+                .sorted(Comparator.comparing(ProjectStateTransition::getCreatedAt)
+                        .thenComparing(ProjectStateTransition::getId))
+                .toList();
+    }
+
+    private List<Map<String, Object>> auditOf(UUID projectId) {
+        return new JdbcTemplate(dataSource)
+                .queryForList(
+                        "SELECT action, actor_type, actor_id, detail FROM audit_logs"
+                                + " WHERE entity_type = 'project' AND entity_id = ? ORDER BY occurred_at, id",
+                        projectId);
+    }
+
+    private List<String> eventsOf(UUID projectId) {
+        return new JdbcTemplate(dataSource)
+                .queryForList(
+                        "SELECT event_type FROM outbox_events WHERE aggregate_id = ? ORDER BY id",
+                        String.class,
+                        projectId);
     }
 
     // ------------------------------------------------------------------
@@ -645,7 +682,7 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("a campaign goes draft, submitted, approved, live")
+    @DisplayName("a campaign goes draft, submitted, approved and live in one decision")
     void theHappyPath() {
         Creator creator = creator();
         Creator moderator = moderator();
@@ -655,11 +692,8 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
                         .getBody())
                 .containsEntry("state", "SUBMITTED");
 
-        assertThat(post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null)
-                        .getBody())
-                .containsEntry("state", "APPROVED");
-
-        Map<String, Object> live = post("/v1/projects/" + id + "/launch", creator.accessToken(), null)
+        // #552: approving publishes it. There is no launch left for the creator to press.
+        Map<String, Object> live = post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null)
                 .getBody();
         assertThat(live).containsEntry("state", "LIVE");
 
@@ -769,7 +803,6 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
         UUID id = idOf(submittableDraft(creator, "A campaign"));
         post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
         post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null);
-        post("/v1/projects/" + id + "/launch", creator.accessToken(), null);
 
         // A reason is required: cancelling abandons commitments people made with
         // their card details on file.
@@ -861,6 +894,134 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
         assertThat(get("/v1/projects/" + id + "/edit", creator.accessToken()).getBody())
                 .containsEntry("state", "DRAFT");
         assertThat(historyOf(id)).hasSize(1);
+    }
+
+    // ------------------------------------------------------------------
+    // Approval publishes (#552)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("approval publishes a campaign with no launch time, audited and announced once")
+    void approvalPublishes() {
+        Creator creator = creator();
+        Creator moderator = moderator();
+        UUID id = idOf(submittableDraft(creator, "A campaign"));
+        post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
+
+        Map<String, Object> live = post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null)
+                .getBody();
+
+        assertThat(live).containsEntry("state", "LIVE");
+        assertThat(live.get("launchedAt")).isNotNull();
+        assertThat(live.get("deadline")).isNotNull();
+
+        // Both privileged acts under the moderator who took them: the approval, and the
+        // publication it caused.
+        assertThat(auditOf(id))
+                .extracting(row -> row.get("action"), row -> row.get("actor_type"), row -> row.get("actor_id"))
+                .containsExactly(
+                        tuple("project.approved", "MODERATOR", moderator.id()),
+                        tuple("project.launched", "MODERATOR", moderator.id()));
+        assertThat(auditOf(id).getLast()).containsEntry("detail", "APPROVED -> LIVE");
+
+        // One message to the creator, one announcement to the followers. Nothing tells the
+        // creator to launch what is already live.
+        assertThat(eventsOf(id)).containsExactly("project.approved", "project.launched");
+        relay.run();
+        assertThat(new JdbcTemplate(dataSource)
+                        .queryForList(
+                                "SELECT DISTINCT type FROM notifications WHERE recipient_id = ?",
+                                String.class,
+                                creator.id()))
+                .containsExactly("PROJECT_APPROVED");
+
+        // And the creator's launch now has nothing to do.
+        assertThat(post("/v1/projects/" + id + "/launch", creator.accessToken(), null).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    @DisplayName("approval of a campaign with a launch time to come waits for it, and the clock opens it")
+    void approvalSchedules() {
+        Creator creator = creator();
+        Creator moderator = moderator();
+        UUID id = idOf(submittableDraft(creator, "A campaign"));
+        Instant at = Instant.now().plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
+        patch("/v1/projects/" + id, creator.accessToken(), Map.of("scheduledLaunchAt", at.toString()));
+        post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
+
+        Map<String, Object> approved = post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null)
+                .getBody();
+
+        assertThat(approved).containsEntry("state", "APPROVED");
+        assertThat(approved.get("launchedAt")).isNull();
+        assertThat(eventsOf(id)).containsExactly("project.approved");
+        assertThat(auditOf(id)).extracting(row -> row.get("action")).containsExactly("project.approved");
+
+        // Nobody signed in at the time it was given, and it opens.
+        assertThat(launcher.launchDueCampaigns(at.minus(1, ChronoUnit.MINUTES))).isZero();
+        assertThat(launcher.launchDueCampaigns(at.plus(1, ChronoUnit.MINUTES))).isEqualTo(1);
+        assertThat(get("/v1/projects/" + id + "/edit", creator.accessToken()).getBody())
+                .containsEntry("state", "LIVE");
+        assertThat(eventsOf(id)).containsExactly("project.approved", "project.launched");
+    }
+
+    @Test
+    @DisplayName("approval of a campaign whose launch time has already passed publishes it now")
+    void approvalAfterTheLaunchTimePublishes() {
+        Creator creator = creator();
+        Creator moderator = moderator();
+        UUID id = idOf(submittableDraft(creator, "A campaign"));
+        patch("/v1/projects/" + id, creator.accessToken(), Map.of("scheduledLaunchAt", "2026-01-01T09:00:00Z"));
+        post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
+
+        assertThat(post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null)
+                        .getBody())
+                .containsEntry("state", "LIVE");
+    }
+
+    @Test
+    @DisplayName("approval is refused, and nothing changes, for a campaign that has lost what a launch needs")
+    void approvalOfAnUnlaunchableCampaignIsRefused() {
+        Creator creator = creator();
+        Creator moderator = moderator();
+        UUID id = idOf(submittableDraft(creator, "A campaign"));
+        post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
+        // Nothing is locked in review, so the goal can still be emptied after submitting.
+        assertThat(patchJson("/v1/projects/" + id, creator.accessToken(), "{\"goal\": null}").getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<Map<String, Object>> refused =
+                post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null);
+
+        // Refused rather than approved into a campaign that cannot open: the moderator is
+        // told why, and the campaign is still waiting for a decision.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "PROJECT_NOT_LAUNCHABLE");
+        assertThat(get("/v1/projects/" + id + "/edit", creator.accessToken()).getBody())
+                .containsEntry("state", "SUBMITTED");
+        assertThat(historyOf(id))
+                .extracting(ProjectStateTransition::getToState)
+                .containsExactly(ProjectState.DRAFT, ProjectState.SUBMITTED);
+        assertThat(auditOf(id)).isEmpty();
+        assertThat(eventsOf(id)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a campaign approved before #552 is still launched by its creator")
+    void aCampaignApprovedBeforehandStillLaunches() {
+        Creator creator = creator();
+        UUID id = idOf(submittableDraft(creator, "A campaign"));
+        post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
+        // What production holds: approved, no launch time, waiting for its creator.
+        new JdbcTemplate(dataSource).update("UPDATE projects SET state = 'APPROVED' WHERE id = ?", id);
+
+        Map<String, Object> live = post("/v1/projects/" + id + "/launch", creator.accessToken(), null)
+                .getBody();
+
+        assertThat(live).containsEntry("state", "LIVE");
+        assertThat(historyOf(id).getLast().getActorRole()).isEqualTo(ActorRole.CREATOR);
+        assertThat(eventsOf(id)).containsExactly("project.launched");
     }
 
     // ------------------------------------------------------------------
@@ -1014,14 +1175,10 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
         assertThat(lockedFieldsOf(post("/v1/projects/" + id + "/submit", creator.accessToken(), null)
                         .getBody()))
                 .isEmpty();
-        assertThat(lockedFieldsOf(
-                        post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null)
-                                .getBody()))
-                .isEmpty();
 
-        // The response to the launch itself already says what has just frozen, which
-        // is the moment a client most needs to be told.
-        Map<String, Object> live = post("/v1/projects/" + id + "/launch", creator.accessToken(), null)
+        // The response to the approval, which is the launch since #552, already says what
+        // has just frozen, which is the moment a client most needs to be told.
+        Map<String, Object> live = post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null)
                 .getBody();
         // The names are the keys of the PATCH body, so the editor matches them against
         // its own inputs rather than translating them. A reward's price is frozen by
@@ -1061,7 +1218,6 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
 
         post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
         post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null);
-        post("/v1/projects/" + id + "/launch", creator.accessToken(), null);
 
         List<ProjectStateTransition> history = historyOf(id);
 
@@ -1088,8 +1244,12 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
         assertThat(history.get(2).getActorRole()).isEqualTo(ActorRole.MODERATOR);
         assertThat(history.get(2).getActorId()).isEqualTo(moderator.id());
 
+        // The launch the approval took (#552), as the platform's: the authority is the
+        // moderator's row above, and audit_logs names them as the one who published it.
+        assertThat(history.get(3).getFromState()).isEqualTo(ProjectState.APPROVED);
         assertThat(history.get(3).getToState()).isEqualTo(ProjectState.LIVE);
-        assertThat(history.get(3).getActorRole()).isEqualTo(ActorRole.CREATOR);
+        assertThat(history.get(3).getActorRole()).isEqualTo(ActorRole.SYSTEM);
+        assertThat(history.get(3).getActorId()).isNull();
 
         assertThat(history).allSatisfy(row -> assertThat(row.getCreatedAt()).isNotNull());
     }
