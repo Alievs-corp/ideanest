@@ -1216,6 +1216,17 @@ in the navigation like one, its id unique among the headings' anchors), a
 **mandatory risks and challenges** field, FAQ editor, autosave and version
 history.
 
+> **A section takes a video instead of its image (#551).** The optional `video`
+> key is `{mediaId, url, posterUrl, width, height, durationMs}` or null, and a
+> section with both is refused; a document stored before it has no key, which
+> reads as null. The clip is §13.2's upload and transcode, so at most sixty
+> seconds. **Only `mediaId` is believed:** on every save the editing service
+> replaces the other fields with the media module's measurements, a new upload
+> must be the caller's own `READY` video (`400 STORY_DOCUMENT_INVALID` at
+> `blocks[n].video` otherwise), and one the stored story already holds keeps what
+> was stored for it, so a collaborator's save keeps the creator's clip. Both pages
+> show its poster in a 16:9 box and play it only when pressed.
+
 **People** — creator profile, collaborator invitations with granular grants,
 team display.
 
@@ -6515,8 +6526,9 @@ neither tires the server nor fills the bucket.
 | HDR | iPhones record 10-bit HLG by default. PQ and HLG input is tone-mapped to BT.709 (zscale + Hable) and every output is tagged BT.709; left alone it plays washed out |
 | Small or oversized | A clip whose shorter edge would be under 320px after fitting is refused (`TOO_SMALL`) before encoding. An object over 250MB is refused from its `HEAD` before it is downloaded — the presigned `PUT` does not bind the declared size |
 | Poster | A frame at ~1 s, through the §13.1 libvips path — same EXIF strip, same 320px floor, same blur placeholder |
-| Storage | The raw upload is deleted when the MP4 is written and on every refusal. Replacing or removing a campaign's video deletes the previous one after the edit commits, unless another campaign or a reward tier still shows it |
+| Storage | The raw upload is deleted when the MP4 is written and on every refusal. Replacing or removing a campaign's video deletes the previous one after the edit commits, unless another campaign, a reward tier, or a story section — current or in a restorable version — still shows it. A clip taken out of a story is not deleted: the version history can bring it back |
 | Rewards | A reward tier's clip is the same upload and the same transcode. Its five-second limit (`reward-max-duration`) is the reward's, checked against the measured duration when the clip is attached, not by the sweep |
+| Story | A story section's clip (#551) is the same upload and transcode, with the campaign video's sixty seconds. §4.6 has what the story stores |
 | Cards | The discovery, collection and profile cards carry `video {url, posterUrl, width, height}` while the campaign's video is `READY`, joined in the card query. `image` stays the uploaded cover; a client shows the poster instead and plays the clip on hover (web) or while pressed (mobile) |
 | Captions | Not built |
 | Analytics | Not built |
