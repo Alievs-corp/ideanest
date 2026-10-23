@@ -357,7 +357,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
         )}
 
         {refusal !== null && (
-          <div ref={refusalBox} tabIndex={-1} className="scroll-mt-28 outline-none">
+          <div ref={refusalBox} tabIndex={-1} className="scroll-mt-28" style={{ outline: 'none' }}>
             <InlineAlert variant="danger" title={words.notSubmittedTitle}>
               <p>{refusal.message}</p>
               {refusal.unmet.length > 0 && (
