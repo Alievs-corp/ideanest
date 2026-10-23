@@ -14,6 +14,7 @@ import {
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { intrinsicSize } from '../../lib/images/source';
 import { useImageUpload } from '../../lib/media/useImageUpload';
+import { CampaignVideoField } from './CampaignVideoField';
 import { StoryTextField } from './StoryTextField';
 
 /* -------------------------------------------------------------------------
@@ -27,6 +28,12 @@ import { StoryTextField } from './StoryTextField';
  * Upload only, with no address field: the contract holds the picture to the image block's
  * rules (a measured size, and a description that may be empty), and an upload meets the
  * first by construction.
+ *
+ * A clip instead of the picture (#551), through the campaign video's field and pipeline: one
+ * of up to `VIDEO_MAX_SECONDS`, the campaign video's limit. A section shows one or the other,
+ * so each field is offered only while the other is empty, and neither while the other is
+ * uploading. Only the clip's `mediaId` is believed by the service, which stores its own
+ * measurements in place of the rest.
  */
 export function SectionFields({
   copy,
@@ -67,6 +74,10 @@ export function SectionFields({
   const current = useRef(block);
   current.current = block;
   const image = block.image;
+  const video = block.video;
+  const [videoBusy, setVideoBusy] = useState(false);
+  const imageBusy = stage !== null;
+  const videoCopy = { ...words.video, previewLabel: fillPlaceholders(words.video.previewLabel, { name }) };
 
   async function upload(file: File): Promise<void> {
     setNote(null);
@@ -113,101 +124,127 @@ export function SectionFields({
         />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
-          {words.image}
-        </p>
-        <p id={imageHintId} className="text-[13px] text-fg-40">
-          {words.imageHint}
-        </p>
+      {video === null && (
+        <div className="flex flex-col gap-2">
+          <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
+            {words.image}
+          </p>
+          <p id={imageHintId} className="text-[13px] text-fg-40">
+            {words.imageHint}
+          </p>
 
-        {image !== null && (
-          <figure className="overflow-hidden rounded-lg border border-fg/8 bg-surface-3">
-            {/* The image block's preview, for its reasons: the picture's own shape, its alt as written. */}
-            <div
-              className="mx-auto w-full"
-              style={
-                intrinsicSize(image) === null
-                  ? undefined
-                  : { maxWidth: `calc(16rem * ${image.width} / ${image.height})` }
-              }
-            >
-              <Media
-                src={image.url}
-                alt={image.alt}
-                ratio={intrinsicSize(image) ?? '16/9'}
-                fit="contain"
-                placeholder={placeholder ?? undefined}
+          {image !== null && (
+            <figure className="overflow-hidden rounded-lg border border-fg/8 bg-surface-3">
+              {/* The image block's preview, for its reasons: the picture's own shape, its alt as written. */}
+              <div
+                className="mx-auto w-full"
+                style={
+                  intrinsicSize(image) === null
+                    ? undefined
+                    : { maxWidth: `calc(16rem * ${image.width} / ${image.height})` }
+                }
+              >
+                <Media
+                  src={image.url}
+                  alt={image.alt}
+                  ratio={intrinsicSize(image) ?? '16/9'}
+                  fit="contain"
+                  placeholder={placeholder ?? undefined}
+                />
+              </div>
+              <figcaption className="px-4 py-2 text-[13px] text-fg-64">
+                {fillPlaceholders(copy.pixels, { size: describeSize(image) })}
+              </figcaption>
+            </figure>
+          )}
+
+          <FileDropZone
+            accept="image/*"
+            disabled={disabled || imageBusy || videoBusy}
+            aria-label={fillPlaceholders(image === null ? words.addImageTo : words.replaceImageOf, { name })}
+            aria-describedby={imageHintId}
+            prompt={copy.imagePrompt}
+            dragPrompt={copy.imageDragPrompt}
+            buttonLabel={image === null ? words.addImage : words.replaceImage}
+            hint={copy.imageDropHint}
+            onFiles={(files) => {
+              const [first] = files;
+              if (first) void upload(first);
+            }}
+          />
+
+          {image !== null && (
+            <>
+              <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
+                {words.imageAlt}
+              </p>
+              <TextInput
+                value={image.alt}
+                disabled={disabled}
+                invalid={invalid}
+                aria-label={fillPlaceholders(copy.descriptionOf, { name })}
+                aria-describedby={altDescribedBy}
+                placeholder={copy.imageAltPlaceholder}
+                onChange={(event) => onChange({ ...block, image: { ...image, alt: event.target.value } })}
+                onBlur={onFlush}
               />
-            </div>
-            <figcaption className="px-4 py-2 text-[13px] text-fg-64">
-              {fillPlaceholders(copy.pixels, { size: describeSize(image) })}
-            </figcaption>
-          </figure>
-        )}
+              <p className="text-[13px] text-fg-40">{copy.altHint}</p>
+              <Pill
+                variant="ghost"
+                size="sm"
+                disabled={disabled || stage !== null}
+                aria-label={fillPlaceholders(words.removeImageFrom, { name })}
+                iconLeft={<Trash2 aria-hidden="true" className="size-4" />}
+                className="self-start"
+                onClick={() => {
+                  setNote(null);
+                  setPlaceholder(null);
+                  onChange({ ...block, image: null });
+                }}
+              >
+                {words.removeImage}
+              </Pill>
+            </>
+          )}
 
-        <FileDropZone
-          accept="image/*"
-          disabled={disabled || stage !== null}
-          aria-label={fillPlaceholders(image === null ? words.addImageTo : words.replaceImageOf, { name })}
-          aria-describedby={imageHintId}
-          prompt={copy.imagePrompt}
-          dragPrompt={copy.imageDragPrompt}
-          buttonLabel={image === null ? words.addImage : words.replaceImage}
-          hint={copy.imageDropHint}
-          onFiles={(files) => {
-            const [first] = files;
-            if (first) void upload(first);
-          }}
-        />
-
-        {image !== null && (
-          <>
-            <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
-              {words.imageAlt}
-            </p>
-            <TextInput
-              value={image.alt}
-              disabled={disabled}
-              invalid={invalid}
-              aria-label={fillPlaceholders(copy.descriptionOf, { name })}
-              aria-describedby={altDescribedBy}
-              placeholder={copy.imageAltPlaceholder}
-              onChange={(event) => onChange({ ...block, image: { ...image, alt: event.target.value } })}
-              onBlur={onFlush}
-            />
-            <p className="text-[13px] text-fg-40">{copy.altHint}</p>
-            <Pill
-              variant="ghost"
-              size="sm"
-              disabled={disabled || stage !== null}
-              aria-label={fillPlaceholders(words.removeImageFrom, { name })}
-              iconLeft={<Trash2 aria-hidden="true" className="size-4" />}
-              className="self-start"
-              onClick={() => {
-                setNote(null);
-                setPlaceholder(null);
-                onChange({ ...block, image: null });
-              }}
-            >
-              {words.removeImage}
-            </Pill>
-          </>
-        )}
-
-        {/* Two regions, for the reason `ImageFields` gives. */}
-        <div role="status" aria-live="polite" className="empty:hidden">
-          {stage !== null && <InlineAlert variant="info">{copy.upload.stage[stage]}</InlineAlert>}
-          {stage === null && note !== null && note.tone === 'success' && (
-            <InlineAlert variant="success">{note.text}</InlineAlert>
+          {/* Two regions, for the reason `ImageFields` gives. */}
+          <div role="status" aria-live="polite" className="empty:hidden">
+            {stage !== null && <InlineAlert variant="info">{copy.upload.stage[stage]}</InlineAlert>}
+            {stage === null && note !== null && note.tone === 'success' && (
+              <InlineAlert variant="success">{note.text}</InlineAlert>
+            )}
+          </div>
+          {note !== null && note.tone === 'danger' && (
+            <InlineAlert variant="danger" title={note.title}>
+              {note.text}
+            </InlineAlert>
           )}
         </div>
-        {note !== null && note.tone === 'danger' && (
-          <InlineAlert variant="danger" title={note.title}>
-            {note.text}
-          </InlineAlert>
-        )}
-      </div>
+      )}
+
+      {image === null && (
+        <CampaignVideoField
+          copy={videoCopy}
+          video={video}
+          disabled={disabled || imageBusy}
+          onBusyChange={setVideoBusy}
+          onAccept={(ready) =>
+            onChange({
+              ...current.current,
+              image: null,
+              video: {
+                mediaId: ready.mediaId,
+                url: ready.url,
+                posterUrl: ready.posterUrl,
+                width: ready.width,
+                height: ready.height,
+                durationMs: ready.durationMs,
+              },
+            })
+          }
+          onRemove={() => onChange({ ...current.current, video: null })}
+        />
+      )}
 
       <p aria-hidden="true" className="text-[13px] font-medium text-fg-64">
         {words.text}
