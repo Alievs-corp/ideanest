@@ -396,7 +396,7 @@ describe('StoryPanel — adding, moving and removing blocks', () => {
     );
   });
 
-  it('an image is measured from an address, shown as W×H pixels, and saved once it has a description', async () => {
+  it('an image is measured from an address, shown as W×H pixels, and saved with or without a description', async () => {
     jest.spyOn(Image, 'getSize').mockImplementation((_url, success) => success(1600, 900));
     mockProject = async () => project({ story: doc([]) });
     await show();
@@ -407,8 +407,18 @@ describe('StoryPanel — adding, moving and removing blocks', () => {
     await fireEvent.press(screen.getByTestId('story-block-0-source-address-use'));
     await settle();
     expect(screen.getByTestId('story-block-0-size')).toHaveTextContent('1600×900 pixels');
-    expect(within(screen.getByTestId('story-block-0')).getByText(STORY.vocabulary.problems.imageNeedsAlt)).toBeTruthy();
-    expect(storyPatches()).toEqual([]);
+    // #543: warned about on the block and with the description field, never held.
+    expect(screen.getByTestId('story-block-0-warning')).toHaveTextContent(STORY.vocabulary.warnings.imageNeedsAlt);
+    expect(screen.getByTestId('story-block-0-alt').props.accessibilityHint).toContain(
+      STORY.vocabulary.warnings.imageNeedsAlt,
+    );
+    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+      type: 'image',
+      url: 'https://images.example.com/a.jpg',
+      width: 1600,
+      height: 900,
+      alt: '',
+    });
 
     await fireEvent.changeText(screen.getByTestId('story-block-0-alt'), 'The lamp on a stall');
     await blur('story-block-0-alt');
@@ -419,6 +429,7 @@ describe('StoryPanel — adding, moving and removing blocks', () => {
       height: 900,
       alt: 'The lamp on a stall',
     });
+    expect(screen.queryByTestId('story-block-0-warning')).toBeNull();
   });
 });
 
@@ -988,7 +999,7 @@ describe('StoryPanel — sections', () => {
     expect(storyPatches().at(-1)?.blocks[3]).toMatchObject({ type: 'section', id: 'the-plan-2', title: 'The plan' });
   });
 
-  it('takes a picture from the library, needs its description, and can let it go again', async () => {
+  it('takes a picture from the library, warns until it is described, and can let it go again', async () => {
     mockProject = async () =>
       project({ story: doc([{ type: 'section', id: 'our-workshop', title: 'Our workshop', image: null, spans: [] }]) });
     picker.__setNextResult({ canceled: false, assets: [{ uri: 'file:///bench.heic', mimeType: 'image/jpeg' }] });
@@ -998,8 +1009,11 @@ describe('StoryPanel — sections', () => {
     await fireEvent.press(screen.getByTestId('story-block-0-image-source-library'));
     await settle();
     expect(screen.getByTestId('story-block-0-image-size')).toHaveTextContent('1440×960 pixels');
-    expect(within(screen.getByTestId('story-block-0')).getByText(STORY.vocabulary.problems.imageNeedsAlt)).toBeTruthy();
-    expect(storyPatches()).toEqual([]);
+    expect(screen.getByTestId('story-block-0-warning')).toHaveTextContent(STORY.vocabulary.warnings.imageNeedsAlt);
+    expect(storyPatches().at(-1)?.blocks[0]).toMatchObject({
+      type: 'section',
+      image: { url: 'https://cdn.example.com/m1.jpg', width: 1440, height: 960, alt: '' },
+    });
 
     await fireEvent.changeText(screen.getByTestId('story-block-0-image-alt'), 'Two benches and a kiln');
     await blur('story-block-0-image-alt');
@@ -1010,6 +1024,7 @@ describe('StoryPanel — sections', () => {
       image: { url: 'https://cdn.example.com/m1.jpg', width: 1440, height: 960, alt: 'Two benches and a kiln' },
       spans: [],
     });
+    expect(screen.queryByTestId('story-block-0-warning')).toBeNull();
 
     const remove = screen.getByTestId('story-block-0-image-remove');
     expect(remove.props.accessibilityLabel).toBe(

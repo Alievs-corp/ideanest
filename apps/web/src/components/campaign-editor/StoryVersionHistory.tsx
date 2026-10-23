@@ -389,7 +389,7 @@ function StoryPreview({
         {document.blocks.map((block, index) => (
           <li key={index} className="text-fg-64">
             <span className="text-fg-40">{vocabulary.blockLabel[block.type]}: </span>
-            {blockText(block)}
+            {blockText(block, vocabulary)}
           </li>
         ))}
       </ol>
@@ -398,7 +398,7 @@ function StoryPreview({
 }
 
 
-function blockText(block: StoryDocument['blocks'][number]): string {
+function blockText(block: StoryDocument['blocks'][number], vocabulary: StoryVocabularyCopy): string {
   switch (block.type) {
     case 'heading':
       return block.text;
@@ -410,7 +410,7 @@ function blockText(block: StoryDocument['blocks'][number]): string {
     case 'rule':
       return '—';
     case 'image':
-      return block.alt;
+      return block.alt.trim() === '' ? vocabulary.describe.imageNoAlt : block.alt;
     case 'embed':
       return block.title;
     case 'section': {

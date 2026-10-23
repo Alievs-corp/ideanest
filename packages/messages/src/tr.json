@@ -5629,11 +5629,13 @@
           "imageNeedsUrl": "Bir görselin adresi olmalı.",
           "urlScheme": "Bir adres http:// ya da https:// ile başlamalı.",
           "imageNotMeasured": "Bu görsel henüz ölçülmedi. Boyutunun kaydedilmesi için «Ölç ve ekle» düğmesini kullanın.",
-          "imageNeedsAlt": "Açıklama zorunludur. Ekran okuyucu kullanan bir destekçi resim yerine onu alır.",
           "embedNeedsUrl": "Gömülü içeriğin adresi olmalı.",
           "embedNeedsTitle": "Gömülü içeriğin başlığı olmalı. Ekran okuyucu «çerçeve» yerine onu seslendirir.",
           "sectionNeedsTitle": "Bir bölümün başlığı olmalı.",
           "sectionTitleTooLong": "Bölüm başlığı en fazla {max} karakter olabilir. Gerisini bölümün metnine taşıyın."
+        },
+        "warnings": {
+          "imageNeedsAlt": "Görselin açıklaması yok. Ekran okuyucular için kısa bir açıklama yazın."
         }
       },
       "panel": {
@@ -5716,7 +5718,7 @@
         },
         "empty": "Burada henüz bir şey yok. Bir paragrafla başlayın — kampanyaların çoğu ürünün ne olduğu ve kimin için olduğuyla açılır.",
         "embedHint": "Başlık, ekran okuyucunun «çerçeve» yerine okuduğu metindir. Yalnızca YouTube ve Vimeo videoları gömülebilir.",
-        "altHint": "Zorunlu. Ekran okuyucu kullanan bir destekçi görsel yerine bunu duyar; bu yüzden dosyanın adını değil, görselde ne olduğunu anlatın.",
+        "altHint": "Önerilir. Ekran okuyucu kullanan bir destekçi görsel yerine bunu duyar; bu yüzden dosyanın adını değil, görselde ne olduğunu anlatın. Açıklama yoksa görsel atlanır.",
         "pixels": "{size} piksel",
         "imageAddressHint": "Ya da zaten yayımlanmış bir görselin adresini yapıştırın. Boyutu tarayıcınızda okunur.",
         "imagePrompt": "Hikâyeye eklemek için buraya bir görsel bırakın",

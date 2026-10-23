@@ -5629,11 +5629,13 @@
           "imageNeedsUrl": "An image needs an address.",
           "urlScheme": "An address has to begin with http:// or https://.",
           "imageNotMeasured": "This image has not been measured yet. Use “Measure and add” so its size is recorded.",
-          "imageNeedsAlt": "A description is required. It is what a backer using a screen reader receives instead of the picture.",
           "embedNeedsUrl": "An embed needs an address.",
           "embedNeedsTitle": "An embed needs a title. It is what a screen reader announces instead of “frame”.",
           "sectionNeedsTitle": "A section needs a title.",
           "sectionTitleTooLong": "A section title is at most {max} characters. Move the rest into the section’s text."
+        },
+        "warnings": {
+          "imageNeedsAlt": "This image has no description. Write a short one for screen readers."
         }
       },
       "panel": {
@@ -5716,7 +5718,7 @@
         },
         "empty": "Nothing here yet. Add a paragraph to begin — most campaigns open with what the product is and who it is for.",
         "embedHint": "The title is what a screen reader announces instead of “frame”. Only YouTube and Vimeo can be embedded.",
-        "altHint": "Required. It is what a backer using a screen reader receives instead of the picture, so describe what it shows rather than naming the file.",
+        "altHint": "Recommended. It is what a backer using a screen reader receives instead of the picture, so describe what it shows rather than naming the file. Without one the picture is skipped.",
         "pixels": "{size} pixels",
         "imageAddressHint": "Or paste the address of an image that is already published. Its size is read in your browser.",
         "imagePrompt": "Drop an image here to add it to the story",

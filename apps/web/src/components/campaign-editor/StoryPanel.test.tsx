@@ -200,7 +200,7 @@ describe('StoryPanel', () => {
     expect(screen.getByText('Paragraph removed. 2 blocks left.')).toBeInTheDocument();
   });
 
-  it('holds an image with no description instead of sending a document the server refuses', async () => {
+  it('sends an image with no description, and warns about it on the block without holding the save', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderPanel();
     await screen.findByRole('group', { name: /^Heading 1 of 2/ });
@@ -217,13 +217,21 @@ describe('StoryPanel', () => {
     await settle(user);
 
     /*
-     * Nothing sent, and the reason said out loud. Sending it would earn a
-     * STORY_DOCUMENT_INVALID, and because autosave retries the same body that one
-     * refusal would block every later save until the page was reloaded.
+     * Sent, with the description empty (#543): holding it once cost a creator every
+     * image in the story. The block says what is missing, and the description field
+     * is described by it, but nothing waits for it.
      */
-    expect(sent()).toHaveLength(0);
-    expect(screen.getByText(STORY_COPY.vocabulary.problems.imageNeedsAlt)).toBeInTheDocument();
-    expect(screen.getByText(/story is not being saved yet/i)).toBeInTheDocument();
+    expect(sent().at(-1)?.story?.blocks.at(-1)).toMatchObject({
+      type: 'image',
+      url: 'https://images.example.com/prototype.jpg',
+      alt: '',
+    });
+    const warning = screen.getByText(STORY_COPY.vocabulary.warnings.imageNeedsAlt);
+    expect(screen.getByRole('textbox', { name: /Description of Image 3 of 3/ })).toHaveAttribute(
+      'aria-describedby',
+      warning.id,
+    );
+    expect(screen.queryByText(/story is not being saved yet/i)).not.toBeInTheDocument();
 
     await user.type(
       screen.getByRole('textbox', { name: /Description of Image 3 of 3/ }),
@@ -231,17 +239,12 @@ describe('StoryPanel', () => {
     );
     await settle(user);
 
-    // Valid again, so the WHOLE document goes -- including the address typed
-    // before the description, which was never lost.
-    const patches = sent();
-    expect(patches.length).toBeGreaterThan(0);
-    const story = patches.at(-1)?.story;
-    expect(story?.blocks.at(-1)).toMatchObject({
+    expect(sent().at(-1)?.story?.blocks.at(-1)).toMatchObject({
       type: 'image',
       url: 'https://images.example.com/prototype.jpg',
       alt: 'The prototype on a desk',
     });
-    expect(screen.queryByText(/story is not being saved yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(STORY_COPY.vocabulary.warnings.imageNeedsAlt)).not.toBeInTheDocument();
   });
 
   it('previews a measured image in the shape it really is, with the alt as typed', async () => {
@@ -371,8 +374,8 @@ describe('StoryPanel', () => {
 
     chooseFileFor(/^Add an image to Section 3 of 3/);
     expect(await screen.findByText('Added a 1440×1080 pixel image.')).toBeInTheDocument();
-    // Held until the picture is described, for the reason an image block is.
-    expect(screen.getByText(STORY_COPY.vocabulary.problems.imageNeedsAlt)).toBeInTheDocument();
+    // Warned about until the picture is described, as an image block is — never held.
+    expect(screen.getByText(STORY_COPY.vocabulary.warnings.imageNeedsAlt)).toBeInTheDocument();
 
     await user.type(screen.getByRole('textbox', { name: /Description of Section 3 of 3/ }), 'The bench');
     await user.type(screen.getByRole('textbox', { name: /Text of Section 3 of 3/ }), 'Where it is made.');

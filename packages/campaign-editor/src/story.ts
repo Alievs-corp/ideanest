@@ -543,7 +543,7 @@ export function newBlock(type: StoryBlockType, existingIds: Iterable<string> = [
     case 'image':
       // Zero dimensions are invalid on purpose: the block is not saveable until the
       // image has been measured, which is what stops a URL being stored without the
-      // size the checklist needs. See `IMAGE_ALT_REQUIRED` and `blockProblem`.
+      // size the checklist needs. See `blockProblem`.
       return { type: 'image', url: '', width: 0, height: 0, alt: '' };
     case 'embed':
       return { type: 'embed', provider: 'youtube', url: '', title: '' };
@@ -614,13 +614,14 @@ export function moveBlock(
  * The client's copy of the server's rules, for immediate feedback.
  *
  * NOT the authority. `StoryDocuments` is, and this exists so a creator learns
- * about a missing image description while they are looking at the image rather
+ * about an image without its size while they are looking at the image rather
  * than from a failed autosave a second later. Where the two could disagree this
  * one is deliberately the same list of rules in the same order.
  *
  * ONLY WHAT IS WRONG, NOT WHAT IS MISSING — the distinction `basics.ts` draws.
- * An empty paragraph is not an error; a creator has just added it. An image with
- * no description is an error, because it is a picture that has been chosen.
+ * An empty paragraph is not an error; a creator has just added it. Nor is an image
+ * with no description (#543): holding the save for it held the whole story, and a
+ * creator lost every image that way. That is {@link blockWarning}'s.
  */
 export function blockProblem(block: StoryBlock, copy: StoryVocabularyCopy): string | null {
   switch (block.type) {
@@ -637,7 +638,6 @@ export function blockProblem(block: StoryBlock, copy: StoryVocabularyCopy): stri
       if (block.width <= 0 || block.height <= 0) {
         return copy.problems.imageNotMeasured;
       }
-      if (block.alt.trim() === '') return copy.problems.imageNeedsAlt;
       return null;
     }
     case 'embed': {
@@ -664,12 +664,35 @@ export function blockProblem(block: StoryBlock, copy: StoryVocabularyCopy): stri
       if (image.url.trim() === '') return copy.problems.imageNeedsUrl;
       if (!isWebUrl(image.url)) return copy.problems.urlScheme;
       if (image.width <= 0 || image.height <= 0) return copy.problems.imageNotMeasured;
-      if (image.alt.trim() === '') return copy.problems.imageNeedsAlt;
       return null;
     }
     default:
       return null;
   }
+}
+
+/**
+ * What a block could do better without being wrong: an image, or a section's, with no
+ * description. Shown on the block and never holding the save — the page renders such an
+ * image as decorative, and a screen-reader user gets nothing of it, which is worth saying.
+ */
+export function blockWarning(block: StoryBlock, copy: StoryVocabularyCopy): string | null {
+  const image = block.type === 'image' ? block : block.type === 'section' ? block.image : null;
+  if (image === null || image.url.trim() === '') return null;
+  return image.alt.trim() === '' ? copy.warnings.imageNeedsAlt : null;
+}
+
+/** Every warning in the document, by block. None of them stops a save. */
+export function storyWarnings(
+  document: StoryDocument,
+  copy: StoryVocabularyCopy,
+): ReadonlyMap<number, string> {
+  const warnings = new Map<number, string>();
+  document.blocks.forEach((block, index) => {
+    const warning = blockWarning(block, copy);
+    if (warning !== null) warnings.set(index, warning);
+  });
+  return warnings;
 }
 
 /**

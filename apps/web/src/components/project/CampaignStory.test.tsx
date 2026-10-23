@@ -118,6 +118,25 @@ describe('the campaign story', () => {
     expect(container.querySelectorAll('section section')).toHaveLength(2);
   });
 
+  it('renders a picture with an empty description as decorative (#543)', () => {
+    const picture = { url: 'https://cdn.test/workshop.jpg', width: 1440, height: 960, alt: '' };
+    const { container } = render(
+      <CampaignStory
+        title="A coffee table book"
+        copy={COPY}
+        story={story([
+          { type: 'image', ...picture },
+          { type: 'section', id: 'our-workshop', title: 'Our workshop', image: { ...picture, alt: '  ' }, spans: [] },
+        ])}
+      />,
+    );
+
+    const images = container.querySelectorAll('img');
+    expect(images).toHaveLength(2);
+    images.forEach((image) => expect(image).toHaveAttribute('alt', ''));
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
   it('renders a mark as the element that means it', () => {
     const { container } = render(
       <CampaignStory

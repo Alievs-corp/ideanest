@@ -8,6 +8,7 @@ import {
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
 import {
   EMBED_PROVIDERS,
+  blockWarning,
   describeBlock,
   isEmbedProvider,
   parseSpans,
@@ -40,7 +41,9 @@ import { StoryTextField } from './story-text-field';
  * not removed, at the ends, so the count of controls per card never changes under a finger.
  *
  * <p>A block with a problem gets a danger border AND the sentence under it with a warning icon —
- * never the colour alone.
+ * never the colour alone. A block with only a warning (`blockWarning`: an image with no
+ * description) keeps its calm border and gets the sentence with the warning glyph; it never holds
+ * the save (#543).
  */
 
 export type MoveDirection = 'up' | 'down';
@@ -106,6 +109,7 @@ export const StoryBlockCard = memo(function StoryBlockCard({
   const onFlush = handlers.flush;
   const { blocks, vocabulary } = copy.story;
   const name = describeBlock(block, index, total, vocabulary);
+  const warning = problem === null ? blockWarning(block, vocabulary) : null;
   const position = fillPlaceholders(vocabulary.describe.position, {
     index: String(index + 1),
     total: String(total),
@@ -186,6 +190,7 @@ export const StoryBlockCard = memo(function StoryBlockCard({
         disabled={disabled}
         invalid={problem !== null}
         problem={problem}
+        warning={warning}
         takenAnchors={takenAnchors}
         autoFocus={autoFocus}
         onChange={onChange}
@@ -197,6 +202,13 @@ export const StoryBlockCard = memo(function StoryBlockCard({
         <View style={styles.problem} testID={`${testID}-problem`}>
           <Icon icon={Glyphs.Warning2} size={16} color={colors.danger} />
           <Caption style={styles.problemText}>{problem}</Caption>
+        </View>
+      )}
+
+      {warning === null ? null : (
+        <View style={styles.problem} testID={`${testID}-warning`}>
+          <Icon icon={Glyphs.Danger} size={16} color={colors.warning} />
+          <Caption style={styles.warningText}>{warning}</Caption>
         </View>
       )}
     </View>
@@ -214,6 +226,7 @@ interface FieldsProps {
   readonly disabled: boolean;
   readonly invalid: boolean;
   readonly problem: string | null;
+  readonly warning: string | null;
   readonly takenAnchors: () => readonly string[];
   readonly autoFocus: boolean;
   readonly onChange: (block: StoryBlock, sendNow?: boolean) => void;
@@ -222,7 +235,7 @@ interface FieldsProps {
 }
 
 function BlockFields(props: FieldsProps) {
-  const { copy, block, name, disabled, invalid, problem, autoFocus, onChange, onFlush, testID } = props;
+  const { copy, block, name, disabled, invalid, problem, warning, autoFocus, onChange, onFlush, testID } = props;
   const blocks = copy.story.blocks;
   switch (block.type) {
     case 'paragraph':
@@ -261,7 +274,7 @@ function BlockFields(props: FieldsProps) {
           value={block}
           name={name}
           disabled={disabled}
-          invalid={invalid}
+          warning={warning}
           onChange={onChange}
           onFlush={onFlush}
           testID={testID}
@@ -506,6 +519,7 @@ function SectionFields({
   disabled,
   invalid,
   problem,
+  warning,
   takenAnchors,
   autoFocus,
   onChange,
@@ -548,7 +562,7 @@ function SectionFields({
           value={image ?? NO_PICTURE}
           name={name}
           disabled={disabled}
-          invalid={invalid}
+          warning={warning}
           hideAltUntilMeasured={image === null}
           onChange={(next, sendNow) =>
             onChange(
@@ -620,4 +634,5 @@ const styles = StyleSheet.create({
   start: { alignSelf: 'flex-start' },
   problem: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
   problemText: { flex: 1, color: colors.danger },
+  warningText: { flex: 1 },
 });

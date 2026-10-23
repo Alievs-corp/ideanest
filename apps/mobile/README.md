@@ -1200,7 +1200,8 @@ the focused field scrolled into view. The app draws edge to edge, so Android doe
 window for the keyboard: the Story tab and the new-project screen measure what the keyboard
 covers (`keyboard-overlap.ts`) and pad by it on both platforms. The story is saved as ONE document through the shared
 autosave, and only while every block passes `storyProblems`; an incomplete block pauses saving
-and says so. The held document is kept in the editor's store (`held-story.ts`, erased at
+and says so. An image without a description is not incomplete (#543): `blockWarning` says so on
+the card and the story is saved. The held document is kept in the editor's store (`held-story.ts`, erased at
 sign-out with the unsent changes), so leaving the tab or the OS killing the app does not lose it;
 if the service's story changed meanwhile, the tab asks which copy to keep. Bold and Italic sit above each text field (and above the keyboard on iOS, in an
 `InputAccessoryView`) and apply the shared `toggleMark` to the selection, so the markdown is the

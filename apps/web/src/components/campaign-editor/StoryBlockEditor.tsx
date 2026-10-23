@@ -20,6 +20,7 @@ import {
   Quote,
   Text,
   Trash2,
+  TriangleAlert,
   Video,
 } from 'lucide-react';
 import { FileDropZone, InlineAlert, Media, Pill, Select, TextInput, cn } from '@ideanest/ui';
@@ -29,6 +30,7 @@ import { useImageUpload } from '../../lib/media/useImageUpload';
 import {
   EMBED_PROVIDERS,
   blockProblem,
+  blockWarning,
   describeBlock,
   insertBlock,
   isEmbedProvider,
@@ -324,7 +326,10 @@ function BlockRow({
 }: BlockRowProps) {
   const name = describeBlock(block, index, total, vocabulary);
   const problem = serverProblem ?? blockProblem(block, vocabulary);
+  // Never holding the save, and only once nothing is actually wrong (#543).
+  const warning = problem === null ? blockWarning(block, vocabulary) : null;
   const problemId = useId();
+  const warningId = useId();
 
   return (
     <li
@@ -393,6 +398,7 @@ function BlockRow({
           disabled={disabled}
           invalid={problem !== null}
           describedBy={problem === null ? undefined : problemId}
+          altDescribedBy={warning === null ? undefined : warningId}
           onChange={onChange}
           onFlush={onFlush}
           headingIdsInUse={headingIdsInUse}
@@ -407,6 +413,13 @@ function BlockRow({
           <p id={problemId} className="flex items-start gap-1.5 text-[13px] text-danger">
             <CircleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
             {problem}
+          </p>
+        )}
+
+        {warning !== null && (
+          <p id={warningId} className="flex items-start gap-1.5 text-[13px] text-warning">
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+            {warning}
           </p>
         )}
       </div>
@@ -457,6 +470,8 @@ interface BlockFieldsProps {
   disabled: boolean;
   invalid: boolean;
   describedBy: string | undefined;
+  /** The block's warning, which is about its image description alone. */
+  altDescribedBy: string | undefined;
   onChange: (block: StoryBlock) => void;
   onFlush?: () => void;
   headingIdsInUse: readonly string[];
@@ -470,6 +485,7 @@ function BlockFields({
   disabled,
   invalid,
   describedBy,
+  altDescribedBy,
   onChange,
   onFlush,
   headingIdsInUse,
@@ -554,6 +570,7 @@ function BlockFields({
           disabled={disabled}
           invalid={invalid}
           describedBy={describedBy}
+          altDescribedBy={altDescribedBy}
           onChange={onChange}
           onFlush={onFlush}
         />
@@ -621,6 +638,7 @@ function BlockFields({
             disabled={disabled}
             invalid={invalid}
             describedBy={describedBy}
+            altDescribedBy={altDescribedBy}
             onChange={onChange}
             onFlush={onFlush}
             anchorsInUse={headingIdsInUse}
@@ -723,6 +741,7 @@ function ImageFields({
   disabled,
   invalid,
   describedBy,
+  altDescribedBy,
   onChange,
   onFlush,
 }: {
@@ -732,6 +751,7 @@ function ImageFields({
   disabled: boolean;
   invalid: boolean;
   describedBy: string | undefined;
+  altDescribedBy: string | undefined;
   onChange: (block: StoryBlock) => void;
   onFlush?: () => void;
 }) {
@@ -880,9 +900,8 @@ function ImageFields({
             editor while leaving the reservation exact.
 
             THE ALT TEXT AS IT STANDS, so the creator sees what a reader would
-            get — including nothing at all, when they have not written it yet.
-            That is why this is `alt` rather than `decorative`: an empty string
-            here is a fact about the document, not a decision about the preview.
+            get — including nothing at all, which the public page renders as
+            decorative (#543) and this preview therefore does too.
 
             NOT `next/image`, for the reason `CoverImageField` gives: a preview
             has to show the bytes the creator gave us, and `measureImage` or the
@@ -915,6 +934,7 @@ function ImageFields({
         disabled={disabled}
         invalid={invalid}
         aria-label={fillPlaceholders(copy.descriptionOf, { name })}
+        aria-describedby={altDescribedBy}
         placeholder={copy.imageAltPlaceholder}
         onChange={(event) => onChange({ ...block, alt: event.target.value })}
         onBlur={onFlush}

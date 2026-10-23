@@ -35,7 +35,8 @@ import { Icon, MediaFrame, PressableScale, TONES, useFocusRing, useSurface } fro
  *
  * Headings (level 2 at 24 semibold, level 3 at 20 medium, both `header` to a screen reader),
  * paragraphs with `em` and `strong` spans, ordered and unordered lists, quotes on a lime-700 rule,
- * dividers, images at their own aspect ratio with the creator's `alt` as their name, embeds, and
+ * dividers, images at their own aspect ratio with the creator's `alt` as their name (hidden from a
+ * screen reader when it is empty, as `alt=""` is on the web — #543), embeds, and
  * sections — a level-2 title, its picture under it, then its text. Never HTML and never a
  * WebView: the creator's words are data.
  *
@@ -197,9 +198,7 @@ function Block({
               contentFit="cover"
               transition={0}
               style={styles.fill}
-              accessible
-              accessibilityRole="image"
-              accessibilityLabel={block.alt}
+              {...pictureA11y(block.alt)}
               testID="story-image"
             />
           </MediaFrame>
@@ -229,9 +228,7 @@ function Block({
                   contentFit="cover"
                   transition={0}
                   style={styles.fill}
-                  accessible
-                  accessibilityRole="image"
-                  accessibilityLabel={block.image.alt}
+                  {...pictureA11y(block.image.alt)}
                   testID="story-section-image"
                 />
               </MediaFrame>
@@ -245,6 +242,18 @@ function Block({
         </View>
       );
   }
+}
+
+/** A story picture named by its `alt`, or decorative when the creator left it empty — the kit's `Media` rule. */
+function pictureA11y(alt: string) {
+  const named = alt.trim() !== '';
+  return {
+    accessible: named,
+    accessibilityRole: named ? ('image' as const) : undefined,
+    accessibilityLabel: named ? alt : undefined,
+    accessibilityElementsHidden: !named,
+    importantForAccessibility: named ? ('yes' as const) : ('no-hide-descendants' as const),
+  };
 }
 
 /** The services' own names: brands, not words, and the same in every language. */

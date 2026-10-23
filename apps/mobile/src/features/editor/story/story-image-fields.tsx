@@ -17,7 +17,8 @@ import { useStoryScroll } from './story-scroll';
  * the block offers the editor's shared image source: "Choose from library" and "Take a photo"
  * upload through the presigned flow (JPEG on the phone), and "Use an image address" measures a
  * typed address with "Measure and add". Either way the block stores what the contract's
- * `ImageBlock` holds — `url`, `width`, `height` — and the description, which is required.
+ * `ImageBlock` holds — `url`, `width`, `height` — and the description, which may be empty: the
+ * block then says so (`blockWarning`) without holding the save (#543).
  *
  * <p>The preview keeps the image's own shape, capped at 256pt tall, with "W×H pixels" under it.
  *
@@ -42,7 +43,7 @@ export function StoryImageFields<T extends StoryPicture>({
   value,
   name,
   disabled,
-  invalid,
+  warning,
   hideAltUntilMeasured = false,
   onChange,
   onFlush,
@@ -53,7 +54,8 @@ export function StoryImageFields<T extends StoryPicture>({
   /** The block's description, for every control's name. */
   readonly name: string;
   readonly disabled: boolean;
-  readonly invalid: boolean;
+  /** The block's warning — no description yet — heard with the description field. */
+  readonly warning: string | null;
   readonly hideAltUntilMeasured?: boolean;
   /** `sendNow` when there is no blur to wait for — a picture that just arrived. */
   readonly onChange: (value: T, sendNow?: boolean) => void;
@@ -123,9 +125,8 @@ export function StoryImageFields<T extends StoryPicture>({
           <TextInput
             value={value.alt}
             disabled={disabled}
-            invalid={invalid && measured && value.alt.trim() === ''}
             accessibilityLabel={fillPlaceholders(blocks.descriptionOf, { name })}
-            accessibilityHint={blocks.altHint}
+            accessibilityHint={warning === null ? blocks.altHint : `${warning} ${blocks.altHint}`}
             placeholder={blocks.imageAltPlaceholder}
             onChangeText={(alt) => onChange({ ...value, alt })}
             onFocus={() => reveal(altField.current)}
