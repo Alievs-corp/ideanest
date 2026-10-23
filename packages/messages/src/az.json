@@ -3212,7 +3212,7 @@
         "notStaff": "Kampaniyalara platforma işçiləri baxır.",
         "transitionNotAllowed": "Kampaniya artıq bu qərarın verilə biləcəyi vəziyyətdə deyil. Növbəni yeniləyin.",
         "transitionNotAllowedFrom": "Bu kampaniya barədə artıq qərar verilib — indi {state} vəziyyətindədir.",
-        "notLaunchable": "Təsdiq bu kampaniyanı yayımlayardı, amma onun artıq maliyyə hədəfi və ya müddəti yoxdur. Yaradıcı onları təyin etsin deyə dəyişiklik istəyin.",
+        "notLaunchable": "Təsdiq bu kampaniyanı yayımlayardı, amma onun artıq maliyyə hədəfi və ya müddəti yoxdur. Müəllif onları təyin etsin deyə dəyişiklik istəyin.",
         "refused": "Xidmət bunu qəbul etmədi.",
         "unreachable": "Xidmətə çata bilmədik. Yenidən cəhd edin.",
         "heading": {
@@ -3738,7 +3738,7 @@
         },
         "approve": {
           "title": "Bu kampaniya təsdiqlənib yayımlansın?",
-          "description": "{name} təsdiqləndiyi an və ya yaradıcının təyin etdiyi başlanğıc vaxtında yayımlanır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı baxışa qaytarmaq olmaz.",
+          "description": "{name} təsdiqləndiyi an və ya müəllifin təyin etdiyi başlanğıc vaxtında yayımlanır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı baxışa qaytarmaq olmaz.",
           "confirmLabel": "Təsdiqlə və yayımla",
           "busyLabel": "Təsdiqlənir",
           "noteLabel": "Qeyd",
