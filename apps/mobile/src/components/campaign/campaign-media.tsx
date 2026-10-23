@@ -243,14 +243,34 @@ function VideoAndCover({
 /** A dot is drawn small and pressed at the platform's minimum. */
 const DOT_SLOP = (size.touchTarget - spacing[6]) / 2;
 
-/** The play button over the picture, and the player once it has been pressed. */
-function VideoLayer({ video, active }: { readonly video: CampaignPageVideo; readonly active: boolean }) {
+/**
+ * The play button over the picture, and the player once it has been pressed. A story section's
+ * clip (#551) draws the same layer with names of its own: `playName` and `playerLabel` replace
+ * the campaign video's.
+ */
+export function VideoLayer({
+  video,
+  active,
+  playName,
+  playerLabel,
+}: {
+  readonly video: Pick<CampaignPageVideo, 'url' | 'durationMs'>;
+  readonly active: boolean;
+  readonly playName?: string;
+  readonly playerLabel?: string;
+}) {
   const t = useT('mobile.campaign.video');
   const [playing, setPlaying] = useState(false);
 
   if (playing) {
     return (
-      <CampaignVideoPlayer url={video.url} label={t('player')} active={active} focusOnMount style={styles.fill} />
+      <CampaignVideoPlayer
+        url={video.url}
+        label={playerLabel ?? t('player')}
+        active={active}
+        focusOnMount
+        style={styles.fill}
+      />
     );
   }
   return (
@@ -258,7 +278,7 @@ function VideoLayer({ video, active }: { readonly video: CampaignPageVideo; read
       style={styles.fill}
       contentStyle={styles.press}
       accessibilityRole="button"
-      accessibilityLabel={t('play', { seconds: wholeSeconds(video.durationMs) })}
+      accessibilityLabel={playName ?? t('play', { seconds: wholeSeconds(video.durationMs) })}
       onPress={() => setPlaying(true)}
       testID="campaign-video-play"
     >

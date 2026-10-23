@@ -5076,7 +5076,10 @@
     },
     "story": {
       "about": "{title} hakkında",
-      "watchOn": "— {provider} platformunda izleyin"
+      "watchOn": "— {provider} platformunda izleyin",
+      "play": "İzle",
+      "playName": "İzle: {title} — video",
+      "videoLabel": "Video: {title}"
     },
     "creator": {
       "heading": "Yaratıcı hakkında",
@@ -5627,6 +5630,7 @@
           "embedNoTitle": "henüz başlık yok",
           "section": "Bölüm {position}: {title}",
           "sectionWithImage": "Görselli bölüm {position}: {title}",
+          "sectionWithVideo": "Videolu bölüm {position}: {title}",
           "sectionEmpty": "henüz başlık yok",
           "numbered": "Numaralı",
           "bulleted": "Madde işaretli"
@@ -5748,7 +5752,15 @@
           "textPlaceholder": "Hikâyenin bu bölümü ne anlatıyor. Metni seçip «Kalın» ya da «İtalik» kullanın.",
           "addImageTo": "Görsel ekle: {name}",
           "replaceImageOf": "Görseli değiştir: {name}",
-          "removeImageFrom": "Görseli kaldır: {name}"
+          "removeImageFrom": "Görseli kaldır: {name}",
+          "video": {
+            "label": "Video",
+            "hint": "İsteğe bağlı, görselin yerine: bir bölümde ya görsel ya da video olur. En fazla {seconds} saniyelik tek bir klip, yalnızca biri «İzle» düğmesine bastığında oynar.",
+            "prompt": "Bu bölümün videosunu buraya bırakın",
+            "set": "Video hazır. Hikâyede biri «İzle» düğmesine bastığında oynar.",
+            "previewLabel": "Videonun önizlemesi: {name}",
+            "notAttached": "Bu video bölüme eklenemedi. Yeniden yükleyin."
+          }
         }
       },
       "history": {

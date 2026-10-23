@@ -87,9 +87,10 @@ describe('the campaign story', () => {
             id: 'our-workshop',
             title: 'Our workshop',
             image: { url: 'https://cdn.test/workshop.jpg', width: 1440, height: 960, alt: 'The bench' },
+            video: null,
             spans: spans('Where it is made.', ['strong']),
           },
-          { type: 'section', id: 'the-team', title: 'The team', image: null, spans: [] },
+          { type: 'section', id: 'the-team', title: 'The team', image: null, video: null, spans: [] },
         ])}
       />,
     );
@@ -126,7 +127,14 @@ describe('the campaign story', () => {
         copy={COPY}
         story={story([
           { type: 'image', ...picture },
-          { type: 'section', id: 'our-workshop', title: 'Our workshop', image: { ...picture, alt: '  ' }, spans: [] },
+          {
+            type: 'section',
+            id: 'our-workshop',
+            title: 'Our workshop',
+            image: { ...picture, alt: '  ' },
+            video: null,
+            spans: [],
+          },
         ])}
       />,
     );
@@ -135,6 +143,52 @@ describe('the campaign story', () => {
     expect(images).toHaveLength(2);
     images.forEach((image) => expect(image).toHaveAttribute('alt', ''));
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  /**
+   * #551: the header's player, poster first. Nothing is fetched until the press, and the box
+   * is reserved before the poster decodes, so the text under it does not move.
+   */
+  it('renders a section video as its poster and a named play button, with no source until pressed', () => {
+    render(
+      <CampaignStory
+        title="A coffee table book"
+        copy={COPY}
+        story={story([
+          {
+            type: 'section',
+            id: 'our-workshop',
+            title: 'Our workshop',
+            image: null,
+            video: {
+              mediaId: '0b6c2f4e-5f63-4c8e-9a51-2f7e4d1b9c10',
+              url: 'https://cdn.test/media/v.mp4',
+              posterUrl: 'https://cdn.test/media/v-poster.jpg',
+              width: 720,
+              height: 1280,
+              durationMs: 42_000,
+            },
+            spans: spans('Where it is made.'),
+          },
+        ])}
+      />,
+    );
+
+    const region = screen.getByRole('region', { name: 'Our workshop' });
+    const play = screen.getByRole('button', { name: 'Watch the video: Our workshop' });
+    expect(region).toContainElement(play);
+    expect(play).toHaveTextContent('0:42');
+
+    const video = region.querySelector('video');
+    expect(video).not.toBeNull();
+    expect(video).not.toHaveAttribute('src');
+    expect(video).not.toHaveAttribute('autoplay');
+    expect(video).toHaveAttribute('aria-label', 'Video: Our workshop');
+
+    // The poster is decorative; the button says what it plays.
+    const poster = region.querySelector('img');
+    expect(poster).toHaveAttribute('alt', '');
+    expect(poster?.closest<HTMLElement>('[data-media-frame]')?.style.aspectRatio).toBe('16 / 9');
   });
 
   it('renders a mark as the element that means it', () => {
@@ -230,7 +284,7 @@ describe('the campaign story', () => {
     render(
       <CampaignStory
         title="Kitab"
-        copy={{ about: az.campaign.story.about, watchOn: az.campaign.story.watchOn }}
+        copy={{ ...COPY, about: az.campaign.story.about, watchOn: az.campaign.story.watchOn }}
         story={story([
           { type: 'embed', provider: 'vimeo', url: 'https://vimeo.com/1', title: 'Cildləmə' },
         ])}

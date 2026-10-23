@@ -128,6 +128,12 @@ export interface CampaignStoryCopy {
   readonly about: string;
   /** After an embed's title, naming where it plays. Carries `{provider}`. */
   readonly watchOn: string;
+  /** The word on a section video's play button (#551). */
+  readonly play: string;
+  /** That button's accessible name; begins with {@link play}. Carries `{title}`, the section's. */
+  readonly playName: string;
+  /** The player's accessible name once it is shown. Carries `{title}`. */
+  readonly videoLabel: string;
 }
 
 /**
@@ -275,7 +281,13 @@ export function commentCopyFrom(t: FundingTranslator): CommentCopy {
 
 /** From `campaign.story`. */
 export function campaignStoryCopyFrom(t: FundingTranslator): CampaignStoryCopy {
-  return { about: String(t.raw('about')), watchOn: String(t.raw('watchOn')) };
+  return {
+    about: String(t.raw('about')),
+    watchOn: String(t.raw('watchOn')),
+    play: String(t.raw('play')),
+    playName: String(t.raw('playName')),
+    videoLabel: String(t.raw('videoLabel')),
+  };
 }
 
 export function liveFundingCopyFrom(t: FundingTranslator): LiveFundingCopy {

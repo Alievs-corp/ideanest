@@ -1,10 +1,18 @@
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { MediaFrame } from '@ideanest/ui/server';
+import { formatVideoDuration } from '@ideanest/campaign-editor/video';
 import { canOptimise } from '../../lib/images/source';
 import type { CampaignStoryCopy } from '../../lib/i18n/campaign-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
-import type { SectionImage, StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
+import type {
+  SectionImage,
+  SectionVideo,
+  StoryBlock,
+  StoryDocument,
+  StorySpans,
+} from '@ideanest/campaign/story';
+import { CampaignVideoPlayer } from './CampaignVideoPlayer';
 
 /**
  * The creator's story, rendered — docs/ui-kit.md §8.4, the long-form exception.
@@ -36,6 +44,13 @@ import type { SectionImage, StoryBlock, StoryDocument, StorySpans } from '@idean
  *
  * None. §8 of docs/motion-system.md forbids animation in long content outright, and a
  * paragraph that fades in as it is scrolled past is a paragraph somebody is trying to read.
+ *
+ * <h2>A section's video plays on the press, and only then</h2>
+ *
+ * The header's player (`CampaignVideoPlayer`), reused (#551): its poster is served in the HTML
+ * in a 16:9 box reserved before anything decodes, the clip is letterboxed inside it, and the MP4
+ * is fetched only when somebody presses "Watch". No autoplay, so nothing moves on its own and
+ * reduced motion changes nothing; the island is already on the campaign page for the header.
  */
 
 /** ui-kit §8.4's measure limit. Longer lines are where a reader loses the next one. */
@@ -65,14 +80,14 @@ export function CampaignStory({ story, title, copy }: CampaignStoryProps) {
       </h2>
       <div className={MEASURE}>
         {story.blocks.map((block, index) => (
-          <Block key={index} block={block} watchOn={copy.watchOn} />
+          <Block key={index} block={block} copy={copy} />
         ))}
       </div>
     </section>
   );
 }
 
-function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): ReactNode {
+function Block({ block, copy }: { block: StoryBlock; copy: CampaignStoryCopy }): ReactNode {
   switch (block.type) {
     case 'heading':
       /*
@@ -176,6 +191,11 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
               <StoryImage image={block.image} />
             </div>
           )}
+          {block.video !== null && (
+            <div className="mb-6">
+              <StoryVideo video={block.video} title={block.title} copy={copy} />
+            </div>
+          )}
           {block.spans.length > 0 && (
             <p className={`mb-6 ${BODY}`}>
               <Spans spans={block.spans} />
@@ -206,7 +226,7 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
             {block.title}
             {/* Outside the span, so the link's accessible name keeps the space (#155). */}{' '}
             <span className="text-fg-64">
-              {fillPlaceholders(watchOn, {
+              {fillPlaceholders(copy.watchOn, {
                 // The service's names, which are brands and are not translated.
                 provider: block.provider === 'youtube' ? 'YouTube' : 'Vimeo',
               })}
@@ -233,6 +253,43 @@ function StoryImage({ image }: { image: SectionImage }): ReactNode {
          */
         unoptimized={!canOptimise(image.url)}
         className="object-cover"
+      />
+    </MediaFrame>
+  );
+}
+
+/**
+ * A section's clip: its poster in a reserved 16:9 box, and the header's press-to-play island.
+ *
+ * The poster is decorative, `alt=""`, because the button over it is named by the section's
+ * title and says what it plays.
+ */
+function StoryVideo({
+  video,
+  title,
+  copy,
+}: {
+  video: SectionVideo;
+  title: string;
+  copy: CampaignStoryCopy;
+}): ReactNode {
+  return (
+    <MediaFrame ratio="16/9" radius="md">
+      <Image
+        src={video.posterUrl}
+        alt=""
+        fill
+        sizes="(min-width: 768px) 68ch, 100vw"
+        unoptimized={!canOptimise(video.posterUrl)}
+        className="object-contain"
+      />
+      <CampaignVideoPlayer
+        src={video.url}
+        poster={video.posterUrl}
+        playLabel={copy.play}
+        playName={fillPlaceholders(copy.playName, { title })}
+        duration={formatVideoDuration(video.durationMs)}
+        videoLabel={fillPlaceholders(copy.videoLabel, { title })}
       />
     </MediaFrame>
   );

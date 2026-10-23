@@ -39,16 +39,34 @@ describe('readStoryDocument', () => {
         ],
       })?.blocks,
     ).toEqual([
-      { type: 'section', id: 'our-workshop', title: 'Our workshop', image, spans },
-      { type: 'section', id: 'the-team', title: 'The team', image: null, spans: [] },
+      { type: 'section', id: 'our-workshop', title: 'Our workshop', image, video: null, spans },
+      { type: 'section', id: 'the-team', title: 'The team', image: null, video: null, spans: [] },
     ]);
+  });
+
+  it('reads a section with a video', () => {
+    const video = {
+      mediaId: '0b6c2f4e-5f63-4c8e-9a51-2f7e4d1b9c10',
+      url: 'https://media.example/v.mp4',
+      posterUrl: 'https://media.example/v.jpg',
+      width: 1280,
+      height: 720,
+      durationMs: 42_000,
+    };
+
+    expect(
+      readStoryDocument({
+        version: 1,
+        blocks: [{ type: 'section', id: 'a', title: 'A', image: null, video, spans: [] }],
+      })?.blocks,
+    ).toEqual([{ type: 'section', id: 'a', title: 'A', image: null, video, spans: [] }]);
   });
 
   it('reads a section whose null picture the service left out', () => {
     // `non_null` serialisation turns `image: null` into an absent key.
     expect(
       readStoryDocument({ version: 1, blocks: [{ type: 'section', id: 'a', title: 'A', spans: [] }] })?.blocks,
-    ).toEqual([{ type: 'section', id: 'a', title: 'A', image: null, spans: [] }]);
+    ).toEqual([{ type: 'section', id: 'a', title: 'A', image: null, video: null, spans: [] }]);
   });
 
   it('refuses a malformed section', () => {
@@ -60,6 +78,16 @@ describe('readStoryDocument', () => {
       readStoryDocument({ version: 1, blocks: [{ ...section, image: { url: 'u', width: 1.5, height: 2, alt: 'a' } }] }),
     ).toBeNull();
     expect(readStoryDocument({ version: 1, blocks: [{ ...section, image: 'https://a/b.jpg' }] })).toBeNull();
+    const video = { mediaId: 'm', url: 'https://a/v.mp4', posterUrl: 'https://a/v.jpg', width: 1280, height: 720, durationMs: 1000 };
+    expect(readStoryDocument({ version: 1, blocks: [{ ...section, video: { ...video, durationMs: 0 } }] })).toBeNull();
+    expect(readStoryDocument({ version: 1, blocks: [{ ...section, video: { ...video, url: 5 } }] })).toBeNull();
+    // An image or a video, as the service refuses both.
+    expect(
+      readStoryDocument({
+        version: 1,
+        blocks: [{ ...section, image: { url: 'https://a/b.jpg', width: 2, height: 2, alt: '' }, video }],
+      }),
+    ).toBeNull();
   });
 
   it('refuses a document it does not fully recognise', () => {
@@ -128,7 +156,7 @@ describe('storyAnchors', () => {
           { type: 'heading', level: 2, id: 'the-plan', text: 'The plan' },
           { type: 'paragraph', spans: [] },
           { type: 'heading', level: 3, id: 'stage-one', text: 'Stage one' },
-          { type: 'section', id: 'our-workshop', title: 'Our workshop', image: null, spans: [] },
+          { type: 'section', id: 'our-workshop', title: 'Our workshop', image: null, video: null, spans: [] },
         ],
       }),
     ).toEqual([

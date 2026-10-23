@@ -9,6 +9,8 @@ import az.ideanest.project.domain.StoryDocuments;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -595,6 +597,58 @@ class StoryDocumentsTests {
         @DisplayName("the refusal of an unknown kind lists the section")
         void theKindsIncludeTheSection() {
             assertThat(refusal(withBlock("{\"type\": \"video\"}")).getMessage()).contains("section");
+        }
+
+        private static final String VIDEO = "{\"mediaId\": \"0b6c2f4e-5f63-4c8e-9a51-2f7e4d1b9c10\","
+                + " \"url\": \"https://cdn.example/v.mp4\", \"posterUrl\": \"https://cdn.example/v.jpg\","
+                + " \"width\": 1280, \"height\": 720, \"durationMs\": 42000}";
+
+        private static String sectionWithVideo(String image, String video) {
+            return "{\"type\": \"section\", \"id\": \"a\", \"title\": \"A\", \"image\": " + image
+                    + ", \"video\": " + video + ", \"spans\": []}";
+        }
+
+        @Test
+        @DisplayName("a section may have a video, or say it has none, or not mention one (#551)")
+        void aSectionMayHaveAVideo() {
+            accepted(sectionWithVideo("null", VIDEO));
+            accepted(sectionWithVideo("null", "null"));
+            accepted(section("a", "A", "null"));
+        }
+
+        @Test
+        @DisplayName("a section shows an image or a video, not both")
+        void anImageOrAVideo() {
+            StoryDocumentInvalidException refused = refusal(withBlock(sectionWithVideo(IMAGE, VIDEO)));
+            assertThat(refused.path()).isEqualTo("blocks[0].video");
+            assertThat(refused.getMessage()).contains("not both");
+        }
+
+        @Test
+        @DisplayName("a section's video has exactly the measured shape")
+        void theVideoHasItsShape() {
+            assertThat(refusal(withBlock(sectionWithVideo("null", "\"https://cdn.example/v.mp4\""))).path())
+                    .isEqualTo("blocks[0].video");
+            assertThat(refusal(withBlock(sectionWithVideo("null", VIDEO.replace("0b6c2f4e-5f63-4c8e-9a51-2f7e4d1b9c10", "v1"))))
+                            .path())
+                    .isEqualTo("blocks[0].video.mediaId");
+            assertThat(refusal(withBlock(sectionWithVideo("null", VIDEO.replace("https://cdn.example/v.mp4", "javascript:alert(1)"))))
+                            .path())
+                    .isEqualTo("blocks[0].video.url");
+            assertThat(refusal(withBlock(sectionWithVideo("null", VIDEO.replace("42000", "0")))).path())
+                    .isEqualTo("blocks[0].video.durationMs");
+            assertThat(refusal(withBlock(sectionWithVideo("null", VIDEO.replace("}", ", \"autoplay\": true}"))))
+                            .path())
+                    .isEqualTo("blocks[0].video.autoplay");
+        }
+
+        @Test
+        @DisplayName("a section with a video counts as media, and names its upload")
+        void aVideoCountsAsMedia() {
+            JsonNode story = withBlock(sectionWithVideo("null", VIDEO));
+            assertThat(StoryDocuments.mediaCount(story)).isEqualTo(1);
+            assertThat(StoryDocuments.sectionVideos(story))
+                    .containsExactly(Map.entry(0, UUID.fromString("0b6c2f4e-5f63-4c8e-9a51-2f7e4d1b9c10")));
         }
     }
 

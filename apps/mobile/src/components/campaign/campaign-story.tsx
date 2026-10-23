@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Glyphs } from '../../icons';
-import type { StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
+import type { SectionVideo, StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
 import { useT } from '../../lib/i18n';
 import {
   colors,
@@ -18,6 +18,7 @@ import {
 } from '../../theme';
 import { toneColor } from '../text';
 import { Icon, MediaFrame, PressableScale, TONES, useFocusRing, useSurface } from '../ui';
+import { VideoLayer } from './campaign-media';
 
 /**
  * The story — the web's `CampaignStory` (#155, #140), as native text.
@@ -37,8 +38,13 @@ import { Icon, MediaFrame, PressableScale, TONES, useFocusRing, useSurface } fro
  * paragraphs with `em` and `strong` spans, ordered and unordered lists, quotes on a lime-700 rule,
  * dividers, images at their own aspect ratio with the creator's `alt` as their name (hidden from a
  * screen reader when it is empty, as `alt=""` is on the web — #543), embeds, and
- * sections — a level-2 title, its picture under it, then its text. Never HTML and never a
- * WebView: the creator's words are data.
+ * sections — a level-2 title, its picture or its video under it, then its text. Never HTML and
+ * never a WebView: the creator's words are data.
+ *
+ * <p>A section's video (#551) is the campaign header's: its poster in a 16:9 box reserved before
+ * it loads, a play button named by the section's title, and the player mounted only on the press,
+ * so nothing streams or moves for a reader who scrolls past. `active` false pauses it, as the
+ * header's does.
  *
  * <p>Reading text is 17 on 1.75 with a 68-character measure. On the dark canvas it sits on a
  * surface-2 card; inside the page's white content sheet the sheet is the card, and every tone is
@@ -56,9 +62,11 @@ export interface CampaignStoryProps {
   readonly story: StoryDocument;
   /** The campaign's title, for the heading a screen reader navigates to ("About {title}"). */
   readonly title: string;
+  /** Whether the page is the one in front, with the app in the foreground: a section video pauses when not. */
+  readonly active?: boolean;
 }
 
-export function CampaignStory({ story, title }: CampaignStoryProps) {
+export function CampaignStory({ story, title, active = true }: CampaignStoryProps) {
   const t = useT('campaign.story');
   const surface = useSurface();
   const ink = inkOf(surface === 'white' ? 'white' : 'dark');
@@ -79,6 +87,7 @@ export function CampaignStory({ story, title }: CampaignStoryProps) {
             ink={ink}
             first={index === 0}
             last={index === story.blocks.length - 1}
+            active={active}
           />
         ))}
       </View>
@@ -119,12 +128,14 @@ function Block({
   ink,
   first,
   last,
+  active,
 }: {
   readonly block: StoryBlock;
   readonly ink: Ink;
   readonly first: boolean;
   /** The last block keeps no space under it; the card's padding is the space. */
   readonly last: boolean;
+  readonly active: boolean;
 }): ReactNode {
   const end = last ? styles.last : null;
   switch (block.type) {
@@ -234,6 +245,11 @@ function Block({
               </MediaFrame>
             </View>
           )}
+          {block.video === null ? null : (
+            <View style={[styles.figure, last && block.spans.length === 0 && styles.last]}>
+              <StoryVideo video={block.video} title={block.title} active={active} />
+            </View>
+          )}
           {block.spans.length === 0 ? null : (
             <Text style={[styles.paragraph, { color: ink.reading }, last && styles.last]}>
               <Spans spans={block.spans} ink={ink} />
@@ -242,6 +258,38 @@ function Block({
         </View>
       );
   }
+}
+
+/** A section's clip: the poster, decorative, under the header's press-to-play layer. */
+function StoryVideo({
+  video,
+  title,
+  active,
+}: {
+  readonly video: SectionVideo;
+  readonly title: string;
+  readonly active: boolean;
+}) {
+  const t = useT('campaign.story');
+  return (
+    <MediaFrame ratio="16/9" radius="md">
+      <Image
+        source={{ uri: video.posterUrl }}
+        contentFit="contain"
+        transition={0}
+        style={styles.fill}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        testID="story-section-poster"
+      />
+      <VideoLayer
+        video={video}
+        active={active}
+        playName={t('playName', { title })}
+        playerLabel={t('videoLabel', { title })}
+      />
+    </MediaFrame>
+  );
 }
 
 /** A story picture named by its `alt`, or decorative when the creator left it empty — the kit's `Media` rule. */

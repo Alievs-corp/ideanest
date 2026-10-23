@@ -5076,7 +5076,10 @@
     },
     "story": {
       "about": "{title} haqqında",
-      "watchOn": "— {provider} platformasında baxın"
+      "watchOn": "— {provider} platformasında baxın",
+      "play": "İzlə",
+      "playName": "İzlə: {title} — video",
+      "videoLabel": "Video: {title}"
     },
     "creator": {
       "heading": "Müəllif haqqında",
@@ -5627,6 +5630,7 @@
           "embedNoTitle": "hələ başlıq yoxdur",
           "section": "Bölmə {position}: {title}",
           "sectionWithImage": "Şəkilli bölmə {position}: {title}",
+          "sectionWithVideo": "Videolu bölmə {position}: {title}",
           "sectionEmpty": "hələ başlıq yoxdur",
           "numbered": "Nömrələnmiş",
           "bulleted": "İşarəli"
@@ -5748,7 +5752,15 @@
           "textPlaceholder": "Hekayənin bu hissəsi nədən bəhs edir. Mətni seçib «Qalın» və ya «Kursiv» işlədin.",
           "addImageTo": "Şəkil əlavə et: {name}",
           "replaceImageOf": "Şəkli dəyiş: {name}",
-          "removeImageFrom": "Şəkli sil: {name}"
+          "removeImageFrom": "Şəkli sil: {name}",
+          "video": {
+            "label": "Video",
+            "hint": "İstəyə bağlıdır, şəklin əvəzinə: bölmədə ya şəkil, ya da video olur. Ən çox {seconds} saniyəlik bir klip, yalnız kimsə «İzlə» düyməsini basanda oynadılır.",
+            "prompt": "Bu bölmənin videosunu bura atın",
+            "set": "Video hazırdır. Hekayədə kimsə «İzlə» düyməsini basanda oynadılacaq.",
+            "previewLabel": "Videonun önizləməsi: {name}",
+            "notAttached": "Bu videonu bölməyə əlavə etmək alınmadı. Onu yenidən yükləyin."
+          }
         }
       },
       "history": {

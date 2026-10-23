@@ -5076,7 +5076,10 @@
     },
     "story": {
       "about": "About {title}",
-      "watchOn": "— watch on {provider}"
+      "watchOn": "— watch on {provider}",
+      "play": "Watch",
+      "playName": "Watch the video: {title}",
+      "videoLabel": "Video: {title}"
     },
     "creator": {
       "heading": "About the creator",
@@ -5627,6 +5630,7 @@
           "embedNoTitle": "no title yet",
           "section": "Section {position}: {title}",
           "sectionWithImage": "Section {position}, with an image: {title}",
+          "sectionWithVideo": "Section {position}, with a video: {title}",
           "sectionEmpty": "no title yet",
           "numbered": "Numbered",
           "bulleted": "Bulleted"
@@ -5748,7 +5752,15 @@
           "textPlaceholder": "What this part of the story is about. Select text and use Bold or Italic.",
           "addImageTo": "Add an image to {name}",
           "replaceImageOf": "Replace the image of {name}",
-          "removeImageFrom": "Remove the image from {name}"
+          "removeImageFrom": "Remove the image from {name}",
+          "video": {
+            "label": "Video",
+            "hint": "Optional, instead of an image: a section shows one or the other. One clip of up to {seconds} seconds, played only when somebody presses “Watch”.",
+            "prompt": "Drop a video for this section here",
+            "set": "Video ready. In the story it plays when somebody presses “Watch”.",
+            "previewLabel": "Preview of the video of {name}",
+            "notAttached": "That video could not be added to the section. Upload it again."
+          }
         }
       },
       "history": {

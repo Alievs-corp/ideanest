@@ -7,6 +7,7 @@ import az.ideanest.project.domain.LockedField;
 import az.ideanest.project.domain.Project;
 import az.ideanest.project.domain.ProjectEditLocks;
 import az.ideanest.project.domain.ProjectState;
+import az.ideanest.project.domain.StoryDocumentInvalidException;
 import az.ideanest.project.domain.StoryDocuments;
 import az.ideanest.project.domain.SubmissionChecklist;
 import az.ideanest.project.infrastructure.CategoryRepository;
@@ -15,12 +16,17 @@ import az.ideanest.project.infrastructure.SubcategoryRepository;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.Patched;
 import az.ideanest.shared.Slugs;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -87,6 +93,9 @@ public class ProjectEditingService {
      * rather than being silently ignored.
      */
     private static final String SUPPORTED_CURRENCY = "AZN";
+
+    /** Trees only: reading the stored story and building a section's video. */
+    private static final ObjectMapper JSON_TREES = new ObjectMapper();
 
     private final ProjectRepository projects;
     private final CategoryRepository categories;
@@ -253,7 +262,8 @@ public class ProjectEditingService {
 
         if (previous != null
                 && !projects.existsByVideoMediaIdAndIdNot(previous, project.getId())
-                && !projects.isVideoShownByAReward(previous)) {
+                && !projects.isVideoShownByAReward(previous)
+                && !projects.isVideoInAStory(previous)) {
             media.discardAfterCommit(previous);
         }
     }
@@ -316,11 +326,76 @@ public class ProjectEditingService {
      */
     private void applyStory(Project project, UUID accountId, JsonNode story) {
         StoryDocuments.validate(story);
-        storyVersions.recordIfDue(project, story, accountId);
-        // Text into a jsonb column, exactly as it arrived. Serialising the tree
-        // rather than the raw request body means what is stored is what was
-        // validated, with nothing between the two.
-        project.setStory(story == null ? null : story.toString());
+        JsonNode measured = withMeasuredVideos(project, accountId, story);
+        storyVersions.recordIfDue(project, measured, accountId);
+        // Text into a jsonb column. Serialising the tree rather than the raw request
+        // body means what is stored is what was validated, with nothing between the two
+        // but the section videos' measurements.
+        project.setStory(measured == null ? null : measured.toString());
+    }
+
+    /**
+     * The story with every section video's fields replaced by the service's own — #551.
+     *
+     * <p>A client names a section's video by {@code mediaId} and nothing else is believed: the
+     * address, the poster, the size and the length come from the media module, so a story
+     * cannot be pointed at an arbitrary URL dressed as a video. An upload the story did not
+     * already hold must be the caller's, a video, and ready, under {@link #replaceVideo}'s rule;
+     * one it did hold keeps what was stored for it, so a collaborator saving the story keeps the
+     * creator's clip, and a clip whose upload has since gone does not make the story unsaveable.
+     *
+     * <p>A refusal names the block ({@code blocks[3].video}), as a malformed document does, so the
+     * editor shows it on the section rather than in a banner alone.
+     */
+    private JsonNode withMeasuredVideos(Project project, UUID accountId, JsonNode story) {
+        Map<Integer, UUID> named = StoryDocuments.sectionVideos(story);
+        if (named.isEmpty()) {
+            return story;
+        }
+        Map<UUID, JsonNode> stored = storedVideos(project);
+        JsonNode measured = story.deepCopy();
+        for (Map.Entry<Integer, UUID> entry : named.entrySet()) {
+            JsonNode video = stored.get(entry.getValue());
+            if (video == null) {
+                video = claimSectionVideo(accountId, entry.getValue(), "blocks[" + entry.getKey() + "].video");
+            }
+            ((ObjectNode) measured.get("blocks").get(entry.getKey())).set("video", video.deepCopy());
+        }
+        return measured;
+    }
+
+    /** The section videos the stored story holds, by upload. */
+    private static Map<UUID, JsonNode> storedVideos(Project project) {
+        Map<UUID, JsonNode> videos = new HashMap<>();
+        if (project.getStory() == null) {
+            return videos;
+        }
+        JsonNode stored;
+        try {
+            stored = JSON_TREES.readTree(project.getStory());
+        } catch (JacksonException e) {
+            return videos;
+        }
+        StoryDocuments.sectionVideos(stored)
+                .forEach((index, mediaId) -> videos.put(mediaId, stored.get("blocks").get(index).get("video")));
+        return videos;
+    }
+
+    private JsonNode claimSectionVideo(UUID accountId, UUID mediaId, String path) {
+        MediaLibrary.VideoView view = media.claimVideoForOwner(accountId, mediaId)
+                ? media.videoViewOf(mediaId).orElse(null)
+                : null;
+        if (view == null) {
+            throw new StoryDocumentInvalidException(path, "That video is not available. It may still be processing.");
+        }
+        ObjectNode video = JSON_TREES.createObjectNode();
+        video.put("mediaId", view.id().toString());
+        video.put("url", view.url());
+        video.put("posterUrl", view.posterUrl());
+        video.put("width", view.width());
+        video.put("height", view.height());
+        video.put("durationMs", view.durationMs());
+        return video;
     }
 
     /**

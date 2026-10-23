@@ -277,6 +277,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
   const contextFor = (id: CampaignTabId): CampaignTabContext => ({
     campaign,
     active: tab === id,
+    screenActive: active,
     offline,
     params,
     setParam,

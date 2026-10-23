@@ -59,6 +59,7 @@ export {
   type RuleBlock,
   type SectionBlock,
   type SectionImage,
+  type SectionVideo,
   type StoryAnchor,
   type StoryBlock,
   type StoryBlockType,
@@ -227,16 +228,16 @@ export function storyCharacterCount(document: StoryDocument): number {
 }
 
 /**
- * How many pictures and embeds the story holds — the checklist's `STORY_MEDIA`.
+ * How many pictures, clips and embeds the story holds — the checklist's `STORY_MEDIA`.
  *
  * `StoryDocuments.mediaCount` counts the same: each image and embed block, and each section
- * that has a picture.
+ * that has a picture or a video.
  */
 export function storyMediaCount(document: StoryDocument): number {
   let total = 0;
   for (const block of document.blocks) {
     if (block.type === 'image' || block.type === 'embed') total++;
-    else if (block.type === 'section' && block.image !== null) total++;
+    else if (block.type === 'section' && (block.image !== null || block.video !== null)) total++;
   }
   return total;
 }
@@ -548,12 +549,13 @@ export function newBlock(type: StoryBlockType, existingIds: Iterable<string> = [
     case 'embed':
       return { type: 'embed', provider: 'youtube', url: '', title: '' };
     case 'section':
-      // An anchor now, for the reason a heading gets one; no picture until one is chosen.
+      // An anchor now, for the reason a heading gets one; no picture or clip until one is chosen.
       return {
         type: 'section',
         id: uniqueHeadingId('Section', existingIds),
         title: '',
         image: null,
+        video: null,
         spans: [],
       };
   }
@@ -865,7 +867,11 @@ export function describeBlock(
       });
     case 'section':
       return fillPlaceholders(
-        block.image === null ? copy.describe.section : copy.describe.sectionWithImage,
+        block.video !== null
+          ? copy.describe.sectionWithVideo
+          : block.image === null
+            ? copy.describe.section
+            : copy.describe.sectionWithImage,
         { position, title: block.title.trim() === '' ? copy.describe.sectionEmpty : block.title },
       );
   }

@@ -50,6 +50,8 @@ export interface CampaignTabContext {
   readonly campaign: CampaignPage;
   /** This tab is the one on screen. Read nothing while it is false. */
   readonly active: boolean;
+  /** The page is the one in front and the app is in the foreground: a player in a row pauses when not. */
+  readonly screenActive: boolean;
   /** The device has no connection: cached rows may be shown, writes are disabled. */
   readonly offline: boolean;
   /**

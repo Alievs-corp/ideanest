@@ -20,12 +20,12 @@ import { INACTIVE_TAB, type CampaignTabBody, type CampaignTabContext, type Campa
  * others, and React fails the screen the first time the tab is switched.
  */
 export function useCampaignTab(context: CampaignTabContext): CampaignTabBody {
-  const { campaign } = context;
-  const body = useMemo(() => campaignTabBody(campaign), [campaign]);
+  const { campaign, screenActive } = context;
+  const body = useMemo(() => campaignTabBody(campaign, screenActive), [campaign, screenActive]);
   return context.active ? body : INACTIVE_TAB;
 }
 
-function campaignTabBody(campaign: CampaignTabContext['campaign']): CampaignTabBody {
+function campaignTabBody(campaign: CampaignTabContext['campaign'], screenActive: boolean): CampaignTabBody {
   const rows: CampaignTabRow[] = [];
   if (campaign.outcome !== null) {
     rows.push({ key: 'outcome', render: () => spaced(<CampaignOutcomeNotice campaign={campaign} />) });
@@ -34,7 +34,7 @@ function campaignTabBody(campaign: CampaignTabContext['campaign']): CampaignTabB
     const story = campaign.story;
     rows.push({
       key: 'story',
-      render: () => spaced(<CampaignStory story={story} title={campaign.title} />),
+      render: () => spaced(<CampaignStory story={story} title={campaign.title} active={screenActive} />),
     });
   }
   if (campaign.risks !== null) {

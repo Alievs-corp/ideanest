@@ -402,7 +402,7 @@ describe('blockWarning', () => {
     );
     expect(
       blockWarning(
-        { type: 'section', id: 'a', title: 'A', image: { url: IMAGE.url, width: 4, height: 3, alt: '' }, spans: [] },
+        { type: 'section', id: 'a', title: 'A', image: { url: IMAGE.url, width: 4, height: 3, alt: '' }, video: null, spans: [] },
         STORY_COPY.vocabulary,
       ),
     ).toBe(STORY_COPY.vocabulary.warnings.imageNeedsAlt);
@@ -410,7 +410,7 @@ describe('blockWarning', () => {
 
   it('says nothing about a described image, a section without one, or an image not chosen yet', () => {
     expect(blockWarning({ ...IMAGE, alt: 'A' }, STORY_COPY.vocabulary)).toBeNull();
-    expect(blockWarning({ type: 'section', id: 'a', title: 'A', image: null, spans: [] }, STORY_COPY.vocabulary)).toBeNull();
+    expect(blockWarning({ type: 'section', id: 'a', title: 'A', image: null, video: null, spans: [] }, STORY_COPY.vocabulary)).toBeNull();
     expect(blockWarning(newBlock('image'), STORY_COPY.vocabulary)).toBeNull();
   });
 
@@ -507,17 +507,26 @@ describe('renameHeading', () => {
 
 describe('a section block', () => {
   const IMAGE = { url: 'https://a.example/w.jpg', width: 1440, height: 960, alt: 'The bench' };
+  const VIDEO = {
+    mediaId: '0b6c2f4e-5f63-4c8e-9a51-2f7e4d1b9c10',
+    url: 'https://media.example/v.mp4',
+    posterUrl: 'https://media.example/v.jpg',
+    width: 1280,
+    height: 720,
+    durationMs: 42_000,
+  };
   const section = (overrides: Partial<Extract<StoryBlock, { type: 'section' }>> = {}): StoryBlock => ({
     type: 'section',
     id: 'our-workshop',
     title: 'Our workshop',
     image: null,
+    video: null,
     spans: [],
     ...overrides,
   });
 
   it('is added with an anchor nothing else is using, and no picture', () => {
-    expect(newBlock('section', [])).toEqual({ type: 'section', id: 'section', title: '', image: null, spans: [] });
+    expect(newBlock('section', [])).toEqual({ type: 'section', id: 'section', title: '', image: null, video: null, spans: [] });
     expect(newBlock('section', ['section'])).toMatchObject({ id: 'section-2' });
   });
 
@@ -572,8 +581,9 @@ describe('a section block', () => {
     ).toBe(7);
   });
 
-  it('counts as media only when it has a picture', () => {
+  it('counts as media only when it has a picture or a video', () => {
     expect(storyMediaCount(document([section(), { type: 'paragraph', spans: [] }]))).toBe(0);
+    expect(storyMediaCount(document([section({ video: VIDEO })]))).toBe(1);
     expect(
       storyMediaCount(
         document([
@@ -594,6 +604,9 @@ describe('a section block', () => {
     expect(describeBlock(section({ image: IMAGE }), 1, 3, STORY_COPY.vocabulary)).toBe(
       'Section 2 of 3, with an image: Our workshop',
     );
+    expect(describeBlock(section({ video: VIDEO }), 1, 3, STORY_COPY.vocabulary)).toBe(
+      'Section 2 of 3, with a video: Our workshop',
+    );
     expect(describeBlock(section({ title: '' }), 0, 1, STORY_COPY.vocabulary)).toBe('Section 1 of 1: no title yet');
   });
 
@@ -603,7 +616,7 @@ describe('a section block', () => {
     expect(renameSection(fresh, 'Our workshop', [])).toMatchObject({ title: 'Our workshop', id: 'our-workshop' });
     expect(renameSection(fresh, 'Our workshop', ['our-workshop'])).toMatchObject({ id: 'our-workshop-2' });
 
-    const handSet = { type: 'section', id: 'workshop', title: 'Our workshop', image: null, spans: [] } as const;
+    const handSet = { type: 'section', id: 'workshop', title: 'Our workshop', image: null, video: null, spans: [] } as const;
     expect(renameSection(handSet, 'The workshop', [])).toMatchObject({ id: 'workshop', title: 'The workshop' });
   });
 });

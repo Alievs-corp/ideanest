@@ -386,6 +386,7 @@ describe('StoryPanel', () => {
       id: 'our-workshop',
       title: 'Our workshop',
       image: { url: UPLOADED.url, width: 1440, height: 1080, alt: 'The bench' },
+      video: null,
       spans: [{ text: 'Where it is made.', marks: [] }],
     });
 
