@@ -8,6 +8,7 @@ import {
   isChecklistSection,
   isReviewNotedState,
   offersLaunch,
+  opensOnItsOwn,
   offersSubmit,
   progressOf,
   sectionHref,
@@ -158,7 +159,28 @@ describe('what the review tab offers', () => {
   });
 
   it('offers Launch only to a cleared campaign', () => {
-    expect(STATES.filter(offersLaunch)).toEqual(['APPROVED', 'SCHEDULED']);
+    expect(STATES.filter((state) => offersLaunch(state))).toEqual(['APPROVED', 'SCHEDULED']);
+  });
+
+  describe('a launch time still to come (#552)', () => {
+    const now = new Date('2026-10-23T09:00:00Z');
+
+    it('opens the campaign on its own, so Launch is not offered', () => {
+      expect(opensOnItsOwn('APPROVED', '2026-10-24T09:00:00Z', now)).toBe(true);
+      expect(opensOnItsOwn('SCHEDULED', '2026-10-24T09:00:00Z', now)).toBe(true);
+      expect(offersLaunch('APPROVED', '2026-10-24T09:00:00Z', now)).toBe(false);
+    });
+
+    it('still offers Launch with no time, or one already past', () => {
+      expect(offersLaunch('APPROVED', null, now)).toBe(true);
+      expect(offersLaunch('APPROVED', '2026-10-22T09:00:00Z', now)).toBe(true);
+      expect(opensOnItsOwn('APPROVED', 'not a date', now)).toBe(false);
+    });
+
+    it('means nothing outside the two approved states', () => {
+      expect(opensOnItsOwn('SUBMITTED', '2026-10-24T09:00:00Z', now)).toBe(false);
+      expect(opensOnItsOwn('LIVE', '2026-10-24T09:00:00Z', now)).toBe(false);
+    });
   });
 
   it('has a sentence for the five states a creator waits in, and none for the rest', () => {

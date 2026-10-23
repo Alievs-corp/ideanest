@@ -366,6 +366,8 @@ export interface SubmissionQueueCopy extends ConsoleChromeCopy {
   readonly transitionNotAllowed: string;
   /** Carries `{state}`. */
   readonly transitionNotAllowedFrom: string;
+  /** Approving publishes the campaign (#552), and this one has lost what a launch needs. */
+  readonly notLaunchable: string;
   readonly refused: string;
   readonly unreachable: string;
   /** A whole heading per state, not a word put in front of "campaigns". */
@@ -566,6 +568,7 @@ export function submissionQueueCopyFrom(
     notStaff: t(at('notStaff')),
     transitionNotAllowed: t(at('transitionNotAllowed')),
     transitionNotAllowedFrom: String(t.raw(at('transitionNotAllowedFrom'))),
+    notLaunchable: t(at('notLaunchable')),
     refused: t(at('refused')),
     unreachable: t(at('unreachable')),
     heading: table<Record<SubmissionState, string>>('heading'),

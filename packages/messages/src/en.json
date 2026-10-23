@@ -556,7 +556,7 @@
         "GOAL_REACHED": "{campaign} reached its goal of {amount}",
         "CAMPAIGN_SUCCEEDED": "{campaign} was funded at {amount}",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} closed without reaching its goal",
-        "PROJECT_APPROVED": "{campaign} has been approved and can be launched",
+        "PROJECT_APPROVED": "{campaign} has been approved and published",
         "PAYMENT_COLLECTED": "A payment of {amount} for {campaign} was collected",
         "FINAL_PAYMENT_WARNING": "Final notice: a payment of {amount} for {campaign}",
         "PAYOUT_SENT": "A payout of {amount} for {campaign} was paid {when}",
@@ -589,7 +589,7 @@
         "GOAL_REACHED": "A campaign reached its goal of {amount}",
         "CAMPAIGN_SUCCEEDED": "A campaign was funded at {amount}",
         "CAMPAIGN_UNSUCCESSFUL": "A campaign closed without reaching its goal",
-        "PROJECT_APPROVED": "A campaign has been approved and can be launched",
+        "PROJECT_APPROVED": "A campaign has been approved and published",
         "PAYMENT_COLLECTED": "A payment of {amount} for a campaign was collected",
         "FINAL_PAYMENT_WARNING": "Final notice: a payment of {amount} for a campaign",
         "PAYOUT_SENT": "A payout of {amount} for a campaign was paid {when}",
@@ -1253,6 +1253,7 @@
             "changes_requested": "Changes requested",
             "comment_removed": "Comment removed",
             "fulfilments_imported": "Fulfilments imported",
+            "launched": "Campaign published on approval",
             "rejected": "Campaign rejected",
             "segment_messaged": "Backer segment messaged",
             "survey_sent": "Survey sent",
@@ -3211,12 +3212,13 @@
         "notStaff": "Reviewing campaigns is done by platform staff.",
         "transitionNotAllowed": "The campaign is no longer in a state this decision can be taken from. Reload the queue.",
         "transitionNotAllowedFrom": "Somebody has already decided this one — it is now {state}.",
+        "notLaunchable": "Approving would publish this campaign, and it no longer has a funding goal or a duration. Request changes so its creator can set them.",
         "refused": "The service refused that.",
         "unreachable": "We could not reach the service. Try again.",
         "heading": {
           "SUBMITTED": "Waiting for a decision",
           "CHANGES_REQUESTED": "Sent back to their creators",
-          "APPROVED": "Cleared for launch",
+          "APPROVED": "Approved, not live yet",
           "REJECTED": "Refused"
         },
         "state": {
@@ -3689,7 +3691,7 @@
         "dismiss": "Dismiss"
       },
       "campaignOutcome": {
-        "approve": "Approve",
+        "approve": "Approve and publish",
         "request-changes": "Request changes",
         "reject": "Reject"
       },
@@ -3735,9 +3737,9 @@
           "noteHint": "Optional. Written for the next moderator, not for the person who reported this — nothing shows it to them."
         },
         "approve": {
-          "title": "Approve this campaign?",
-          "description": "{name} is cleared for launch.",
-          "confirmLabel": "Approve campaign",
+          "title": "Approve and publish this campaign?",
+          "description": "{name} goes live as soon as you approve it, or at the launch time its creator set. Its goal and deadline are fixed from then, and a live campaign cannot be taken back to review.",
+          "confirmLabel": "Approve and publish",
           "busyLabel": "Approving",
           "noteLabel": "Note",
           "noteHint": "Optional commentary on the decision."
@@ -5956,12 +5958,13 @@
       "planDoesNotCover": "Your plan does not cover this campaign.",
       "serviceRefused": "The service refused the request.",
       "stateNote": {
-        "SUBMITTED": "This campaign is with our moderators. There is nothing for you to do while it is in review, and you will be told the outcome. You can keep editing in the meantime.",
-        "APPROVED": "Moderation has cleared this campaign. It goes live when you launch it, or at the launch time you set.",
-        "SCHEDULED": "Cleared and waiting for its launch time.",
+        "SUBMITTED": "This campaign is with our moderators. There is nothing for you to do while it is in review. If it is approved it is published straight away, or at the launch time you set, and you will be told. You can keep editing in the meantime.",
+        "APPROVED": "Moderation has approved this campaign. It goes live when you launch it.",
+        "SCHEDULED": "Approved and waiting for its launch time. It opens on its own.",
         "REJECTED": "This campaign was refused and cannot be submitted again.",
         "LIVE": "This campaign is live and taking pledges."
       },
+      "opensAt": "Moderation has approved this campaign. It opens on its own on {date}, with nothing left for you to press.",
       "notFound": "That campaign could not be found.",
       "noAccess": "You do not have access to this campaign.",
       "unreachable": "The service could not be reached. Check your connection and try again.",
@@ -5972,7 +5975,7 @@
         "many": "{count} required items are not done yet.",
         "other": "{count} required items are not done yet."
       },
-      "moderatorNote": "A moderator reads the campaign and either clears it, asks for changes, or refuses it. You can keep editing while it is in review.",
+      "moderatorNote": "A moderator reads the campaign and either approves it, asks for changes, or refuses it. Approval publishes it straight away, or at the launch time you set, and its goal and deadline are fixed from then. You can keep editing while it is in review.",
       "done": "Done",
       "launchExplanation": "The campaign appears everywhere on the platform and starts taking pledges the moment it launches. Its goal and its deadline freeze from that point, and a live campaign cannot be taken back to a draft.",
       "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft."

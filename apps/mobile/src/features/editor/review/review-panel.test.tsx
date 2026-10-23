@@ -420,6 +420,14 @@ describe('ReviewPanel', () => {
     expect(screen.getByTestId('review-launch')).toBeTruthy();
   });
 
+  it('draws no Launch for a campaign that opens on its own at its launch time (#552)', async () => {
+    mockProject = async () => project({ state: 'APPROVED', scheduledLaunchAt: '2099-01-01T09:00:00Z' });
+    mockChecklist = async () => ({ ...READY, state: 'APPROVED' });
+    await show();
+    expect(screen.queryByTestId('review-launch')).toBeNull();
+    expect(screen.getByTestId('review-state-note')).toHaveTextContent(/opens on its own on .*2099/);
+  });
+
   it('offers neither action on a live campaign', async () => {
     mockProject = async () => project({ state: 'LIVE' });
     mockChecklist = async () => ({ ...READY, state: 'LIVE' });

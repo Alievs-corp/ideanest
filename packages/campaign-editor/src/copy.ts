@@ -1870,6 +1870,11 @@ export interface ReviewPanelCopy {
   readonly noAccess: string;
   readonly unreachable: string;
   readonly stateNote: Readonly<Record<ReviewNotedState, string>>;
+  /**
+   * In place of `stateNote.APPROVED` while the campaign has a launch time still to come, and so
+   * opens on its own (#552). Carries `{date}`.
+   */
+  readonly opensAt: string;
   /** The language whose plural rule picks the outstanding-items form. */
   readonly locale: Locale;
 }
@@ -1935,6 +1940,7 @@ export function reviewPanelCopyFrom(
     noAccess: at('noAccess'),
     unreachable: at('unreachable'),
     stateNote: record(REVIEW_NOTED_STATES, (state) => at(`stateNote.${state}`)),
+    opensAt: tpl('opensAt'),
     locale,
   };
 }
