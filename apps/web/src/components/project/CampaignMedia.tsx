@@ -5,6 +5,7 @@ import { PRELAUNCH_COVER_SIZES } from '../../lib/images/sizes';
 import { canOptimise } from '../../lib/images/source';
 import type { CampaignPage } from '../../lib/projects/publicPage';
 import { getTranslations } from 'next-intl/server';
+import { CampaignMediaSlides } from './CampaignMediaSlides';
 import { CampaignVideoPlayer } from './CampaignVideoPlayer';
 
 /**
@@ -34,6 +35,13 @@ import { CampaignVideoPlayer } from './CampaignVideoPlayer';
  * that owns the press and mounts the `<video>` element. Nothing else in this header became a
  * client component because of it.
  *
+ * <h2>The cover is the second slide</h2>
+ *
+ * Covering a campaign with its video's still left the cover its creator uploaded nowhere on the
+ * page (#545). A campaign with both now gets two slides in the same box — the video first, as
+ * above, then the cover — moved between by `CampaignMediaSlides`, a small island over CSS
+ * scroll snap. A campaign with only one of the two renders exactly as it did, with no controls.
+ *
  * <h2>The box is reserved before anything decodes</h2>
  *
  * `MediaFrame` sets the 16:9 crop up front, so the page's largest element does not change
@@ -60,11 +68,11 @@ export interface CampaignMediaProps {
 export async function CampaignMedia({ campaign }: CampaignMediaProps) {
   const t = await getTranslations('campaign.media');
 
-  const { video } = campaign;
-  const poster = video?.posterUrl ?? campaign.coverImage?.url ?? null;
+  const { video, coverImage } = campaign;
+  const poster = video?.posterUrl ?? coverImage?.url ?? null;
 
-  return (
-    <MediaFrame ratio="16/9" radius="lg">
+  const first = (
+    <>
       {poster !== null && (
         <Image
           src={poster}
@@ -101,6 +109,45 @@ export async function CampaignMedia({ campaign }: CampaignMediaProps) {
           videoLabel={t('videoLabel')}
         />
       )}
-    </MediaFrame>
+    </>
+  );
+
+  if (video === null || coverImage === null) {
+    return (
+      <MediaFrame ratio="16/9" radius="lg">
+        {first}
+      </MediaFrame>
+    );
+  }
+
+  /*
+   * #545: the video and the cover, as two slides in the same box. The cover is not `priority`
+   * — it starts out of sight, and the video's still is the page's largest element — but it is
+   * in the server's HTML like the still, so the island only moves between them.
+   */
+  const position = { count: 2 };
+  return (
+    <CampaignMediaSlides
+      slides={[
+        first,
+        <Image
+          key="cover"
+          src={coverImage.url}
+          alt=""
+          fill
+          sizes={PRELAUNCH_COVER_SIZES}
+          unoptimized={!canOptimise(coverImage.url)}
+          className="object-cover"
+        />,
+      ]}
+      label={t('slides')}
+      slideNames={[
+        t('slideVideo', { ...position, index: 1 }),
+        t('slideCover', { ...position, index: 2 }),
+      ]}
+      dotNames={[t('showVideo'), t('showCover')]}
+      previous={t('previous')}
+      next={t('next')}
+    />
   );
 }

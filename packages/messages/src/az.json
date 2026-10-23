@@ -5065,7 +5065,14 @@
     "media": {
       "play": "İzlə",
       "playName": "Kampaniya videosunu izlə, {seconds, plural, other {# saniyə}}",
-      "videoLabel": "Kampaniya videosu"
+      "videoLabel": "Kampaniya videosu",
+      "slides": "Kampaniya mediası",
+      "slideVideo": "Video, {index}/{count}",
+      "slideCover": "Örtük şəkli, {index}/{count}",
+      "showVideo": "Videonu göstər",
+      "showCover": "Örtük şəklini göstər",
+      "previous": "Əvvəlki slayd",
+      "next": "Növbəti slayd"
     },
     "story": {
       "about": "{title} haqqında",
@@ -6917,7 +6924,9 @@
       "shareFailed": "Paylaşmaq mümkün olmadı. Yenidən cəhd edin.",
       "video": {
         "play": "Kampaniya videosunu oynat, uzunluğu {seconds, plural, other {# saniyə}}",
-        "player": "Kampaniya videosu"
+        "player": "Kampaniya videosu",
+        "showVideo": "Videonu göstər",
+        "showCover": "Örtük şəklini göstər"
       },
       "faq": {
         "failed": "Suallar və cavablar hal-hazırda yüklənə bilmədi.",

@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { AccessibilityInfo } from 'react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, ScrollView } from 'react-native';
 import * as ExpoVideo from 'expo-video';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
@@ -152,5 +152,89 @@ describe('CampaignMedia', () => {
     const view = await show(COVER, VIDEO);
     await view.rerender(tree(COVER, VIDEO, false));
     expect(players).toHaveLength(0);
+  });
+});
+
+describe('CampaignMedia with a video and a cover (#545)', () => {
+  const page = (name: 'video' | 'cover') =>
+    screen.getByTestId(`campaign-media-page-${name}`, { includeHiddenElements: true });
+
+  /** The pager as the platform reports it: measured, then settled after a swipe. */
+  async function measure(width = 360) {
+    await fireEvent(screen.getByTestId('campaign-media-pager'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width, height: (width * 9) / 16 } },
+    });
+  }
+  async function settle(x: number) {
+    await fireEvent(screen.getByTestId('campaign-media-pager'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x, y: 0 } },
+    });
+  }
+
+  it('pages sideways between the video and the cover, with the cover out of sight at first', async () => {
+    await show(COVER, VIDEO);
+    expect(screen.getByTestId('campaign-media-pager').props).toMatchObject({ horizontal: true, pagingEnabled: true });
+    expect(screen.getByTestId('campaign-cover', { includeHiddenElements: true }).props.source).toEqual({
+      uri: VIDEO.posterUrl,
+    });
+    expect(screen.getByTestId('campaign-cover-image', { includeHiddenElements: true }).props.source).toEqual({
+      uri: COVER.url,
+    });
+    // One page in front: the other is hidden from a screen reader.
+    expect(page('video').props.importantForAccessibility).toBe('auto');
+    expect(page('cover').props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(screen.getByRole('button', { name: en.mobile.campaign.video.showVideo }).props.accessibilityState).toEqual({
+      selected: true,
+    });
+    expect(screen.getByRole('button', { name: en.mobile.campaign.video.showCover }).props.accessibilityState).toEqual({
+      selected: false,
+    });
+  });
+
+  it('follows a swipe to the cover, and pauses the video it left without starting it again', async () => {
+    await show(COVER, VIDEO);
+    await measure();
+    await fireEvent.press(screen.getByTestId('campaign-video-play'));
+    const player = players[0];
+
+    await settle(360);
+    expect(player?.pause).toHaveBeenCalledTimes(1);
+    expect(page('cover').props.importantForAccessibility).toBe('auto');
+    expect(page('video').props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(screen.getByRole('button', { name: en.mobile.campaign.video.showCover }).props.accessibilityState).toEqual({
+      selected: true,
+    });
+
+    await settle(0);
+    expect(player?.play).toHaveBeenCalledTimes(1);
+    expect(page('video').props.importantForAccessibility).toBe('auto');
+  });
+
+  it.each([
+    ['scrolls to it', false],
+    ['with Reduce Motion on, moves there without the scroll', true],
+  ])('jumps to a page from its dot: %s', async (_, reduced) => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(reduced);
+    const scrollTo = jest.spyOn(ScrollView.prototype as { scrollTo: (to: unknown) => void }, 'scrollTo');
+    try {
+      await show(COVER, VIDEO);
+      await waitFor(() => expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalled());
+      await measure();
+
+      await fireEvent.press(screen.getByRole('button', { name: en.mobile.campaign.video.showCover }));
+      expect(scrollTo).toHaveBeenCalledWith({ x: 360, animated: !reduced });
+      expect(page('cover').props.importantForAccessibility).toBe('auto');
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
+  it.each([
+    ['a cover', COVER, null],
+    ['a video', null, VIDEO],
+  ] as const)('has no pager and no dots for a campaign with only %s', async (_, cover, video) => {
+    await show(cover, video);
+    expect(screen.queryByTestId('campaign-media-pager')).toBeNull();
+    expect(screen.queryByRole('button', { name: en.mobile.campaign.video.showCover })).toBeNull();
   });
 });
