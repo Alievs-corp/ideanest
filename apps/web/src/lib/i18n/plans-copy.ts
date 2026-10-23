@@ -54,12 +54,14 @@ export interface HeldCopy {
   /** Carries `{plan}`. */
   readonly pendingTitle: string;
   readonly pendingBody: string;
+  readonly pendingChange: string;
   /** Carries `{plan}` and `{date}`. */
   readonly endingOn: string;
   /** Carries `{plan}` and `{date}`. */
   readonly lapsed: string;
   readonly cancel: string;
   readonly cancelling: string;
+  readonly withdraw: string;
   readonly currentTag: string;
 }
 
@@ -170,10 +172,12 @@ export function pricingCopyFrom(t: PricingTranslator): PricingCopy {
       activeUntil: String(t.raw('held.activeUntil')),
       pendingTitle: String(t.raw('held.pendingTitle')),
       pendingBody: t('held.pendingBody'),
+      pendingChange: t('held.pendingChange'),
       endingOn: String(t.raw('held.endingOn')),
       lapsed: String(t.raw('held.lapsed')),
       cancel: t('held.cancel'),
       cancelling: t('held.cancelling'),
+      withdraw: t('held.withdraw'),
       currentTag: t('held.currentTag'),
     },
     payment: {

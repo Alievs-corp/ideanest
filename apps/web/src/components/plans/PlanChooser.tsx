@@ -5,6 +5,7 @@ import { MoveRight, Plus } from 'lucide-react';
 import { InlineAlert, Pill } from '@ideanest/ui';
 import { newIdempotencyKey } from '@ideanest/checkout/idempotency';
 import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
+import { canChoose } from '@ideanest/plans/catalogue';
 import { planPaymentRefusalOf, planPaymentReturnOf } from '@ideanest/plans/payment';
 import { ApiError } from '../../lib/api/problem';
 import {
@@ -63,6 +64,12 @@ import { Link, useRouter } from '../../i18n/navigation';
  * word is a hint: the callback is what opens the period, and it can arrive after the browser, so
  * the subscription is re-read every few seconds for a minute (the pledge page's bound) and the
  * notice says paid, still waiting, or not paid from what the subscription now says.
+ *
+ * <h2>An unpaid choice can be changed</h2>
+ *
+ * While a plan waits for payment the other cards stay open: choosing one replaces the unpaid choice
+ * in one request, and "Withdraw this choice" cancels it. Both are held back while a card payment the
+ * creator has just made is being confirmed, because that money is for the plan on screen.
  *
  * MOTION: none. `docs/motion-system.md` §5 gives money surfaces no entry animation, and this
  * is the page where somebody decides to spend some.
@@ -351,6 +358,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
           // invite a second payment the notice above says they do not need to make.
           canPay={outcome !== 'waiting'}
           onPay={() => void pay()}
+          canChange={outcome !== 'waiting'}
         />
       )}
 
@@ -369,7 +377,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
               // alert above; disabling it would leave them looking at a price with no way to
               // find out what to do about it.
               busy={busyPlan === plan.id}
-              disabled={busyPlan !== null || (held !== null && held.state !== 'CANCELED')}
+              disabled={busyPlan !== null || outcome === 'waiting' || !canChoose(held, plan.id)}
               onChoose={() => void choose(plan.id)}
               tone={planTone(index)}
             />
@@ -393,9 +401,10 @@ interface HeldPanelProps {
   paying: boolean;
   canPay: boolean;
   onPay: () => void;
+  canChange: boolean;
 }
 
-function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, onPay }: HeldPanelProps) {
+function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, onPay, canChange }: HeldPanelProps) {
   const pending = held.state === 'PENDING_PAYMENT';
   const due = held.paymentDue ?? null;
   const renewing = due === 'RENEWAL' && held.entitled;
@@ -426,6 +435,7 @@ function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, o
         {pending && due === 'FIRST_PERIOD' && <p>{copy.payment.cardBody}</p>}
         {/* Bank transfer stays as the alternative (epic #448), so it is said beside the card. */}
         {pending && <p className={due === 'FIRST_PERIOD' ? 'mt-2' : undefined}>{copy.held.pendingBody}</p>}
+        {pending && canChange && <p className="mt-2">{copy.held.pendingChange}</p>}
         {renewing && <p>{copy.payment.renewalBody}</p>}
         {renewing && held.cancelAtPeriodEnd && <p className="mt-2">{copy.payment.renewalCancelled}</p>}
         {opensAt !== '' && <p>{fillPlaceholders(copy.payment.renewsFrom, { date: opensAt })}</p>}
@@ -457,6 +467,21 @@ function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, o
       {held.entitled && !held.cancelAtPeriodEnd && (
         <Pill variant="ghost" size="sm" className="mt-4" aria-disabled={cancelling} onClick={onCancel}>
           {cancelling ? copy.held.cancelling : copy.held.cancel}
+        </Pill>
+      )}
+
+      {pending && canChange && (
+        <Pill
+          variant="ghost"
+          size="sm"
+          className={due === null ? 'mt-4' : 'mt-4 ml-2'}
+          aria-disabled={cancelling}
+          onClick={() => {
+            if (cancelling) return;
+            onCancel();
+          }}
+        >
+          {cancelling ? copy.held.cancelling : copy.held.withdraw}
         </Pill>
       )}
     </section>

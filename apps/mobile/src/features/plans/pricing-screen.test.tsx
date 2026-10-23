@@ -537,6 +537,22 @@ describe('choosing in the app (with the flag on)', () => {
     expect(screen.getByTestId('pricing-choose-GROWTH')).toBeDisabled();
   });
 
+  it('lets an unpaid choice be changed or withdrawn, but not chosen again', async () => {
+    mine = () => json({ subscription: held({ state: 'PENDING_PAYMENT', entitled: false }) });
+    write = () => json({ subscription: held({ state: 'CANCELED', entitled: false }) });
+    await show();
+    expect(screen.getByTestId('pricing-held-standing')).toHaveTextContent(P.held.pendingChange, { exact: false });
+    expect(screen.getByTestId('pricing-choose-GROWTH')).toBeDisabled();
+    expect(screen.getByTestId('pricing-choose-STARTER')).not.toBeDisabled();
+
+    const withdraw = screen.getByTestId('pricing-cancel');
+    expect(withdraw).toHaveTextContent(P.held.withdraw, { exact: false });
+    await act(async () => fireEvent.press(withdraw));
+    await settle();
+    expect(writes()).toEqual([{ method: 'DELETE', path: '/v1/me/subscription', body: undefined }]);
+    expect(screen.getByTestId('pricing-choose-GROWTH')).not.toBeDisabled();
+  });
+
   it.each([
     ['ALREADY_SUBSCRIBED', problem(409, 'ALREADY_SUBSCRIBED'), P.errors.alreadySubscribed],
     ['PLAN_NOT_ON_SALE', problem(409, 'PLAN_NOT_ON_SALE'), P.errors.notOnSale],

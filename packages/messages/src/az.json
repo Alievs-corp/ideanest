@@ -4905,10 +4905,12 @@
       "activeUntil": "{date} tarixinə qədər {plan} planındasınız",
       "pendingTitle": "{plan} planını seçdiniz, ödənişinizi gözləyirik",
       "pendingBody": "Bank köçürməsi ilə ödəsəniz, plan köçürməniz görünüb qeydə alınandan sonra başlayır. Bu baş verən kimi dərc edə biləcəksiniz.",
+      "pendingChange": "Fikrinizi dəyişdiniz? Aşağıdan başqa plan seçin, bu seçim onunla əvəz olunacaq.",
       "endingOn": "{plan} planınız {date} tarixinə qədər işləyir və yenilənməyəcək",
       "lapsed": "{plan} planınız {date} tarixində bitdi",
       "cancel": "Bu dövrün sonunda ləğv et",
       "cancelling": "Ləğv edilir",
+      "withdraw": "Seçimi ləğv et",
       "currentTag": "Sizin planınız"
     },
     "payment": {

@@ -121,6 +121,8 @@ beforeEach(() => {
   readMock.mockReset();
   payMock.mockReset();
   leaveMock.mockReset();
+  subscribeMock.mockClear();
+  cancelMock.mockClear();
   window.history.replaceState({}, '', '/en/pricing');
 });
 
@@ -281,6 +283,38 @@ describe('the plan chooser', () => {
     draw();
 
     expect(await screen.findByRole('button', { name: COPY.held.cancel })).toBeInTheDocument();
+  });
+
+  it('lets a creator change a plan they chose and have not paid for', async () => {
+    readMock.mockResolvedValue({ subscription: PENDING });
+    subscribeMock.mockResolvedValue({ subscription: { ...PENDING, plan: PRO } });
+
+    draw();
+
+    expect(await screen.findByText(COPY.held.pendingChange)).toBeInTheDocument();
+    // The unpaid plan itself is the one card still closed: choosing it again changes nothing.
+    expect(screen.getByRole('button', { name: /Choose this plan: Starter/ })).toHaveAttribute('aria-disabled', 'true');
+    const pro = screen.getByRole('button', { name: /Choose this plan: Pro/ });
+    expect(pro).toHaveAttribute('aria-disabled', 'false');
+
+    await userEvent.click(pro);
+
+    await waitFor(() => expect(subscribeMock).toHaveBeenCalledWith(PRO.id));
+    expect(cancelMock).not.toHaveBeenCalled();
+  });
+
+  it('lets a creator withdraw an unpaid choice and choose again', async () => {
+    readMock.mockResolvedValue({ subscription: PENDING });
+    cancelMock.mockResolvedValue({ subscription: { ...PENDING, state: 'CANCELED', paymentDue: null } });
+
+    draw();
+
+    await userEvent.click(await screen.findByRole('button', { name: COPY.held.withdraw }));
+
+    await waitFor(() => expect(cancelMock).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Choose this plan: Starter/ })).toHaveAttribute('aria-disabled', 'false'),
+    );
   });
 
   it('does not offer to cancel a subscription that is already ending', async () => {

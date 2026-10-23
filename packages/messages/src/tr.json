@@ -4905,10 +4905,12 @@
       "activeUntil": "{date} tarihine kadar {plan} planındasınız",
       "pendingTitle": "{plan} planını seçtiniz, ödemenizi bekliyoruz",
       "pendingBody": "Havale ile öderseniz plan, havaleniz görülüp kaydedildiğinde başlar. Bu gerçekleşir gerçekleşmez yayımlayabilirsiniz.",
+      "pendingChange": "Fikrinizi mi değiştirdiniz? Aşağıdan başka bir plan seçin, bu seçimin yerini alır.",
       "endingOn": "{plan} planınız {date} tarihine kadar geçerli ve yenilenmeyecek",
       "lapsed": "{plan} planınız {date} tarihinde sona erdi",
       "cancel": "Bu dönemin sonunda iptal et",
       "cancelling": "İptal ediliyor",
+      "withdraw": "Seçimi iptal et",
       "currentTag": "Sizin planınız"
     },
     "payment": {

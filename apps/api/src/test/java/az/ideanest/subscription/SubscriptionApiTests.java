@@ -344,13 +344,46 @@ class SubscriptionApiTests extends AbstractIntegrationTest {
         Account creator = account();
         post("/v1/me/subscription", creator.accessToken(), Map.of("planId", idOf("GROWTH")));
 
-        ResponseEntity<Map<String, Object>> again =
+        ResponseEntity<Map<String, Object>> same =
+                post("/v1/me/subscription", creator.accessToken(), Map.of("planId", idOf("GROWTH")));
+
+        assertThat(same.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(same.getBody().get("code")).isEqualTo("ALREADY_SUBSCRIBED");
+        // The two cases send a creator to different places, so they are distinguishable.
+        assertThat(same.getBody().get("awaitingPayment")).isEqualTo(true);
+
+        String subscriptionId = (String) subscriptionIn(get("/v1/me/subscription", creator.accessToken()).getBody())
+                .get("id");
+        post("/v1/admin/subscriptions/" + subscriptionId + "/activate", admin().accessToken(), Map.of());
+
+        ResponseEntity<Map<String, Object>> other =
                 post("/v1/me/subscription", creator.accessToken(), Map.of("planId", idOf("PRO")));
 
-        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(again.getBody().get("code")).isEqualTo("ALREADY_SUBSCRIBED");
-        // The two cases send a creator to different places, so they are distinguishable.
-        assertThat(again.getBody().get("awaitingPayment")).isEqualTo(true);
+        assertThat(other.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(other.getBody().get("awaitingPayment")).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("a plan chosen and not paid for is replaced by a different choice")
+    void anUnpaidChoiceCanBeChanged() {
+        Account creator = account();
+        post("/v1/me/subscription", creator.accessToken(), Map.of("planId", idOf("GROWTH")));
+        String first = (String) subscriptionIn(get("/v1/me/subscription", creator.accessToken()).getBody())
+                .get("id");
+
+        ResponseEntity<Map<String, Object>> changed =
+                post("/v1/me/subscription", creator.accessToken(), Map.of("planId", idOf("PRO")));
+
+        assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        Map<String, Object> held = subscriptionIn(changed.getBody());
+        assertThat(held.get("state")).isEqualTo("PENDING_PAYMENT");
+        assertThat(held.get("id")).isNotEqualTo(first);
+        assertThat(((Map<?, ?>) held.get("plan")).get("code")).isEqualTo("PRO");
+        // The first choice stays in the history as cancelled, not deleted: a transfer that
+        // arrives for it later still has a row to be matched against.
+        assertThat(new JdbcTemplate(dataSource)
+                        .queryForObject("SELECT state FROM subscriptions WHERE id = ?::uuid", String.class, first))
+                .isEqualTo("CANCELED");
     }
 
     @Test

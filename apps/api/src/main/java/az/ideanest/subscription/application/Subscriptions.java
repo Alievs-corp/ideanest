@@ -122,9 +122,15 @@ public class Subscriptions {
      *
      * @param planId which plan. Must be on sale; a subscription against an unlisted plan
      *     would be a purchase from a catalogue that no longer offers it
-     * @throws AlreadySubscribedException when the account holds one that has not ended.
-     *     Changing plan is cancel-then-subscribe, because upgrading mid-period needs a
-     *     provider that can refund a part-month
+     * <p>A plan chosen and not yet paid for is replaced by a different one in the same
+     * transaction. Nothing was paid, so there is nothing to prorate, and a creator who picked
+     * the wrong plan should not have to find a cancel control first or be left with nothing
+     * between two requests.
+     *
+     * @throws AlreadySubscribedException when the account holds one that has not ended, or
+     *     is waiting for payment on this same plan. Changing a paid plan is
+     *     cancel-then-subscribe, because upgrading mid-period needs a provider that can refund
+     *     a part-month
      */
     @Transactional
     public Subscription subscribe(UUID accountId, UUID planId) {
@@ -138,12 +144,16 @@ public class Subscriptions {
         Optional<Subscription> open = subscriptions.openFor(accountId);
         if (open.isPresent()) {
             Subscription existing = open.get();
-            if (!existing.hasLapsedBy(now)) {
-                throw new AlreadySubscribedException(existing.getState() == SubscriptionState.PENDING_PAYMENT);
+            boolean pending = existing.getState() == SubscriptionState.PENDING_PAYMENT;
+            if (pending && !existing.getPlanId().equals(planId)) {
+                existing.cancelNow(null, now);
+            } else if (existing.hasLapsedBy(now)) {
+                // Its period ran out and the index does not know. Retired here rather than by
+                // a job, by the person it was in the way of, at the moment it was in the way.
+                existing.expire(now);
+            } else {
+                throw new AlreadySubscribedException(pending);
             }
-            // Its period ran out and the index does not know. Retired here rather than by
-            // a job, by the person it was in the way of, at the moment it was in the way.
-            existing.expire(now);
             subscriptions.saveAndFlush(existing);
         }
 

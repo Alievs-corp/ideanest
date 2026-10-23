@@ -4905,10 +4905,12 @@
       "activeUntil": "You are on {plan} until {date}",
       "pendingTitle": "You chose {plan} and we are waiting for your payment",
       "pendingBody": "If you pay by bank transfer, the plan starts once we have seen your transfer and recorded it. You can publish as soon as that happens.",
+      "pendingChange": "Changed your mind? Choose another plan below and it replaces this choice.",
       "endingOn": "Your {plan} plan runs until {date} and will not renew",
       "lapsed": "Your {plan} plan ended on {date}",
       "cancel": "Cancel at the end of this period",
       "cancelling": "Cancelling",
+      "withdraw": "Withdraw this choice",
       "currentTag": "Your plan"
     },
     "payment": {

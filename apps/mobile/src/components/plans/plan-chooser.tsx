@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import type { Locale } from '@ideanest/messages/locale';
 import {
-  blocksChoice,
+  canChoose,
   isFreePrice,
   isHeldPlan,
   standingOf,
@@ -124,6 +124,8 @@ export function HeldPanel({
 }) {
   const t = useT();
   const standing = standingOf(held);
+  const changeable = onCancel !== undefined && standing === 'pending';
+  const detail = heldDetail(held, t, locale);
   return (
     <Card testID="pricing-held">
       <View style={styles.stack}>
@@ -132,7 +134,7 @@ export function HeldPanel({
           // A renewal that is due is something to do, like a pending plan: never a green tick.
           variant={isRenewing(held) ? 'warning' : STANDING_VARIANT[standing]}
           title={describeHeld(held, t, locale)}
-          description={heldDetail(held, t, locale)}
+          description={changeable ? [detail, t('pricing.held.pendingChange')].filter(Boolean).join(' ') : detail}
           action={
             onOpenWeb !== undefined && isPaymentDue(held) ? (
               <Pill
@@ -148,10 +150,16 @@ export function HeldPanel({
           politeness="off"
           testID="pricing-held-standing"
         />
-        {onCancel !== undefined && standing === 'active' ? (
+        {onCancel !== undefined && (standing === 'active' || changeable) ? (
           <View style={styles.start}>
             <Pill
-              label={cancelling ? t('pricing.held.cancelling') : t('pricing.held.cancel')}
+              label={
+                cancelling
+                  ? t('pricing.held.cancelling')
+                  : changeable
+                    ? t('pricing.held.withdraw')
+                    : t('pricing.held.cancel')
+              }
               variant="ghost"
               size="sm"
               busy={cancelling}
@@ -183,7 +191,6 @@ export function PlanCards({
 }) {
   const t = useT();
   if (plans.length === 0) return <Body testID="pricing-empty">{t('pricing.empty')}</Body>;
-  const blocked = blocksChoice(held);
   return (
     <View style={styles.cards} testID="pricing-plans">
       {plans.map((plan, index) => (
@@ -194,7 +201,7 @@ export function PlanCards({
           current={isHeldPlan(held, plan.id)}
           onChoose={onChoose === undefined ? undefined : () => onChoose(plan)}
           busy={busyPlan === plan.id}
-          disabled={chooseDisabled || busyPlan !== null || blocked}
+          disabled={chooseDisabled || busyPlan !== null || !canChoose(held, plan.id)}
         />
       ))}
     </View>
