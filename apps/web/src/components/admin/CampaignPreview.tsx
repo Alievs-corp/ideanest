@@ -197,7 +197,7 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
           <div className="min-w-0">
             <h2
               id="campaign-preview-heading"
-              className="text-base font-medium tracking-[-0.02em] text-fg sm:text-lg"
+              className="text-base font-medium tracking-[-0.02em] wrap-anywhere text-fg sm:text-lg"
             >
               {campaign.title}
             </h2>
@@ -220,7 +220,7 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
         </div>
 
         {campaign.blurb !== null && (
-          <p className="mt-3 max-w-[62ch] text-sm text-fg-64">{campaign.blurb}</p>
+          <p className="mt-3 max-w-[62ch] text-sm wrap-anywhere text-fg-64">{campaign.blurb}</p>
         )}
 
         <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">

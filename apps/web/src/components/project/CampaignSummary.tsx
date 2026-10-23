@@ -226,10 +226,10 @@ export async function CampaignSummary({
         </div>
 
         <div className="flex flex-col gap-2">
-          <h1 className="font-display text-3xl font-semibold tracking-[-0.03em] text-fg sm:text-4xl">
+          <h1 className="font-display text-3xl font-semibold wrap-anywhere tracking-[-0.03em] text-fg sm:text-4xl">
             {campaign.title}
           </h1>
-          {campaign.blurb !== null && <p className="text-base text-reading">{campaign.blurb}</p>}
+          {campaign.blurb !== null && <p className="text-base wrap-anywhere text-reading">{campaign.blurb}</p>}
         </div>
 
         {/*
