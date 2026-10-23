@@ -763,6 +763,14 @@ and each entry needs a translation per supported locale.
 > and nothing below the header moves when it plays. A campaign without a video,
 > or whose video is missing a measured field, gets no button.
 >
+> **A campaign with a video and a cover has two slides (#545).** Being covered by
+> its video's still left the uploaded cover nowhere on the page. The header now
+> pages between the video, first, and the cover, in the same reserved 16:9 box:
+> `CampaignMediaSlides`, a small island over CSS scroll snap, with arrows, dots,
+> a swipe and the arrow keys under it, both pictures in the server's HTML, and the
+> video paused when its slide is left. The app pages the same box natively. A
+> campaign with only one of the two has no controls and renders as before.
+>
 > **The Creator tab has a biography and previous campaigns, and no contact row.**
 > §4.4 asks for history and contact; `users` has `bio` and nothing else, and
 > §4.9's C-12 has no reply half. The tab omits the rows rather than inventing

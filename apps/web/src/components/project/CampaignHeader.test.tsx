@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createTranslator } from 'next-intl';
 import RU from '@ideanest/messages/ru.json';
@@ -333,6 +333,150 @@ describe('the media player', () => {
     const src = document.querySelector('img')?.getAttribute('src') ?? '';
     expect(src).toContain(encodeURIComponent(VIDEO.posterUrl));
     expect(src).not.toContain(encodeURIComponent('https://cdn.test/cover.jpg'));
+  });
+
+  describe('with a video and a cover (#545)', () => {
+    const BOTH = {
+      coverImage: { url: 'https://cdn.test/cover.jpg', width: 1600, height: 900 },
+      video: VIDEO,
+    } as Partial<ProjectPageResponse>;
+
+    /* Leaving the video's slide pauses it, which jsdom does not implement. */
+    let pause: ReturnType<typeof vi.spyOn>;
+    beforeEach(() => {
+      pause = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+    });
+
+    async function showBoth() {
+      return render(await resolveServerTree(<CampaignMedia campaign={campaign(BOTH)} />));
+    }
+
+    function slides(): HTMLElement[] {
+      return screen.getAllByRole('group', { hidden: true });
+    }
+
+    it('serves both pictures as two named slides in one 16:9 box, the video first', async () => {
+      const { container } = await showBoth();
+
+      const carousel = screen.getByRole('region', { name: 'Campaign media' });
+      expect(carousel).toHaveAttribute('aria-roledescription', 'carousel');
+      expect(container.querySelectorAll('[data-media-frame]')).toHaveLength(1);
+      expect(container.querySelector<HTMLElement>('[data-media-frame]')?.style.aspectRatio).toBe('16 / 9');
+
+      const [video, cover] = slides();
+      expect(video).toHaveAttribute('aria-roledescription', 'slide');
+      expect(video).toHaveAccessibleName('Video, 1 of 2');
+      expect(cover).toHaveAccessibleName('Cover image, 2 of 2');
+
+      // Both are in the server's markup; only the still is the priority image.
+      const [still, picture] = [...container.querySelectorAll('img')];
+      expect(video?.contains(still ?? null)).toBe(true);
+      expect(still?.getAttribute('src')).toContain(encodeURIComponent(VIDEO.posterUrl));
+      expect(cover?.contains(picture ?? null)).toBe(true);
+      expect(picture?.getAttribute('src')).toContain(encodeURIComponent('https://cdn.test/cover.jpg'));
+      expect(picture).toHaveAttribute('alt', '');
+      expect(picture).toHaveAttribute('loading', 'lazy');
+
+      // The slide out of sight is out of reach, and the dot says which one is showing.
+      expect(video).not.toHaveAttribute('inert');
+      expect(cover).toHaveAttribute('inert');
+      expect(screen.getByRole('button', { name: 'Show the video' })).toHaveAttribute('aria-current', 'true');
+      expect(screen.getByRole('button', { name: 'Show the cover image' })).not.toHaveAttribute('aria-current');
+    });
+
+    it('moves by the arrows and the dots, says so politely, and pauses the video it leaves', async () => {
+      const user = userEvent.setup();
+      await showBoth();
+      const [video, cover] = slides();
+      const status = document.querySelector('[aria-live="polite"]');
+      expect(status).toHaveTextContent('');
+
+      await user.click(screen.getByRole('button', { name: 'Watch the campaign video, 42 seconds' }));
+      pause.mockClear();
+      await user.click(screen.getByRole('button', { name: 'Next slide' }));
+
+      expect(pause).toHaveBeenCalledTimes(1);
+      expect(video).toHaveAttribute('inert');
+      expect(cover).not.toHaveAttribute('inert');
+      expect(screen.getByRole('button', { name: 'Show the cover image' })).toHaveAttribute('aria-current', 'true');
+      expect(status).toHaveTextContent('Cover image, 2 of 2');
+
+      // Two slides: either arrow reaches the other one.
+      await user.click(screen.getByRole('button', { name: 'Next slide' }));
+      expect(cover).toHaveAttribute('inert');
+      await user.click(screen.getByRole('button', { name: 'Previous slide' }));
+      expect(cover).not.toHaveAttribute('inert');
+      await user.click(screen.getByRole('button', { name: 'Show the video' }));
+      expect(video).not.toHaveAttribute('inert');
+      expect(status).toHaveTextContent('Video, 1 of 2');
+    });
+
+    it('moves on the arrow keys, except on the video, whose own controls seek with them', async () => {
+      const user = userEvent.setup();
+      await showBoth();
+      const [, cover] = slides();
+
+      await user.click(screen.getByRole('button', { name: /watch/iu }));
+      expect(document.querySelector('video')).toHaveFocus();
+      await user.keyboard('{ArrowRight}');
+      expect(cover).toHaveAttribute('inert');
+
+      screen.getByRole('button', { name: 'Next slide' }).focus();
+      await user.keyboard('{ArrowRight}');
+      expect(cover).not.toHaveAttribute('inert');
+      await user.keyboard('{ArrowLeft}');
+      expect(cover).toHaveAttribute('inert');
+    });
+
+    it('follows a swipe, reading the slide that came into view', async () => {
+      let report: ((entries: Partial<IntersectionObserverEntry>[]) => void) | null = null;
+      vi.stubGlobal(
+        'IntersectionObserver',
+        class {
+          constructor(callback: (entries: Partial<IntersectionObserverEntry>[]) => void) {
+            report = callback;
+          }
+          observe() {}
+          disconnect() {}
+        },
+      );
+      try {
+        await showBoth();
+        const [video, cover] = slides();
+
+        act(() => report?.([{ target: cover, intersectionRatio: 1 }, { target: video, intersectionRatio: 0 }]));
+        expect(cover).not.toHaveAttribute('inert');
+        expect(screen.getByRole('button', { name: 'Show the cover image' })).toHaveAttribute('aria-current', 'true');
+
+        // Half way across is neither: nothing changes until a slide is mostly in view.
+        act(() => report?.([{ target: video, intersectionRatio: 0.5 }]));
+        expect(cover).not.toHaveAttribute('inert');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('leaves no automatically detectable violation on either slide', async () => {
+      const user = userEvent.setup();
+      const { container } = await showBoth();
+      await expectNoViolations(container);
+
+      await user.click(screen.getByRole('button', { name: 'Next slide' }));
+      await expectNoViolations(container);
+    });
+  });
+
+  it('offers no slide controls to a campaign with only a video or only a cover', async () => {
+    for (const only of [
+      { video: VIDEO },
+      { coverImage: { url: 'https://cdn.test/cover.jpg', width: 1600, height: 900 } },
+    ] as Partial<ProjectPageResponse>[]) {
+      const { unmount } = render(await resolveServerTree(<CampaignMedia campaign={campaign(only)} />));
+      expect(screen.queryByRole('region')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /slide|show the/iu })).not.toBeInTheDocument();
+      expect(document.querySelectorAll('img')).toHaveLength(1);
+      unmount();
+    }
   });
 
   it('leaves no automatically detectable violation with a video, before or after the press', async () => {

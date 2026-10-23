@@ -526,6 +526,18 @@ decisions.
 > play/pause button for touch and keyboard — a press is the reader asking, so it
 > plays under reduced motion too.
 
+> **The campaign header's two slides are scroll snap, not a carousel library
+> (#545).** A campaign with a video and a cover pages between them in the one
+> 16:9 box. The swipe and the trackpad scroll are the browser's own
+> (`scroll-snap-type: x mandatory`); the arrows and dots under the box set
+> `scrollLeft`, which `scroll-behavior: smooth` animates only under
+> `motion-safe:`, so with reduced motion the slide changes at once. The dots
+> change size and opacity over 150ms, and nothing else transitions. §2 names
+> `embla-carousel-react` for carousels; one two-slide header did not justify
+> adding it to the project page's first-load JavaScript; the island that does
+> the job, with its two chevrons, is about 2.5 KiB uncompressed. Nothing rotates
+> on its own.
+
 ### 5.1 What "minimal" buys Discovery, exactly
 
 `/discover` is the surface that tests the budget, because it is both the most

@@ -5065,7 +5065,14 @@
     "media": {
       "play": "İzle",
       "playName": "Kampanya videosunu izle, {seconds, plural, other {# saniye}}",
-      "videoLabel": "Kampanya videosu"
+      "videoLabel": "Kampanya videosu",
+      "slides": "Kampanya medyası",
+      "slideVideo": "Video, {index}/{count}",
+      "slideCover": "Kapak görseli, {index}/{count}",
+      "showVideo": "Videoyu göster",
+      "showCover": "Kapak görselini göster",
+      "previous": "Önceki slayt",
+      "next": "Sonraki slayt"
     },
     "story": {
       "about": "{title} hakkında",
@@ -6913,7 +6920,9 @@
       "shareFailed": "Paylaşılamadı. Tekrar deneyin.",
       "video": {
         "play": "Kampanya videosunu oynat, süresi {seconds, plural, other {# saniye}}",
-        "player": "Kampanya videosu"
+        "player": "Kampanya videosu",
+        "showVideo": "Videoyu göster",
+        "showCover": "Kapak görselini göster"
       },
       "faq": {
         "failed": "Sorular ve yanıtlar şu anda yüklenemedi.",

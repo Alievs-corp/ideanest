@@ -5065,7 +5065,14 @@
     "media": {
       "play": "Watch",
       "playName": "Watch the campaign video, {seconds, plural, one {# second} other {# seconds}}",
-      "videoLabel": "Campaign video"
+      "videoLabel": "Campaign video",
+      "slides": "Campaign media",
+      "slideVideo": "Video, {index} of {count}",
+      "slideCover": "Cover image, {index} of {count}",
+      "showVideo": "Show the video",
+      "showCover": "Show the cover image",
+      "previous": "Previous slide",
+      "next": "Next slide"
     },
     "story": {
       "about": "About {title}",
@@ -6913,7 +6920,9 @@
       "shareFailed": "That could not be shared. Try again.",
       "video": {
         "play": "Play the campaign video, {seconds, plural, one {# second} other {# seconds}} long",
-        "player": "Campaign video"
+        "player": "Campaign video",
+        "showVideo": "Show the video",
+        "showCover": "Show the cover image"
       },
       "faq": {
         "failed": "The questions and answers could not be loaded just now.",
