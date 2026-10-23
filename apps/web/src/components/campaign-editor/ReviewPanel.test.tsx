@@ -344,6 +344,22 @@ describe('ReviewPanel', () => {
       expect(screen.getByRole('checkbox', { name: REVIEW_COPY.agreementAccept })).not.toBeChecked();
     });
 
+    it('takes the reader up to a refusal, which is drawn far above the control that caused it', async () => {
+      const user = userEvent.setup();
+      const scrolled = vi.spyOn(Element.prototype, 'scrollIntoView');
+      getProjectChecklistMock.mockResolvedValue(completeChecklist());
+      submitProjectMock.mockRejectedValue(new ApiError(409, { code: 'PROJECT_TRANSITION_NOT_ALLOWED', detail: 'Moved.' }));
+
+      await renderPanel();
+      await user.click(screen.getByRole('button', { name: 'Submit for review' }));
+
+      const refusal = await screen.findByRole('alert');
+      const box = refusal.parentElement as HTMLElement;
+      await waitFor(() => expect(box).toHaveFocus());
+      expect(scrolled.mock.contexts).toContain(box);
+      scrolled.mockRestore();
+    });
+
     it('renders a refusal that names no requirements at all', async () => {
       const user = userEvent.setup();
       getProjectChecklistMock.mockResolvedValue(completeChecklist());

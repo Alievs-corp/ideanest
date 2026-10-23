@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AccessibilityInfo, Pressable, StyleSheet, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, type ViewStyle } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
@@ -278,6 +278,22 @@ describe('ReviewPanel', () => {
     expect(screen.getByTestId('review-refusal')).toHaveTextContent(words.agreementRequired, { exact: false });
     expect(screen.getByTestId('review-refusal')).not.toHaveTextContent(words.noAccess, { exact: false });
     expect(screen.getByTestId('review-agreement')).toBeTruthy();
+  });
+
+  it('scrolls up to a refusal once, because it is drawn far above Submit', async () => {
+    mockChecklist = async () => READY;
+    mockSend.mockRejectedValue(new ApiError(409, { status: 409, code: 'PROJECT_TRANSITION_NOT_ALLOWED', detail: 'Moved.' }));
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(() => {});
+    await show();
+    await fireEvent.press(screen.getByTestId('review-submit'));
+    await settle();
+
+    const layout = { nativeEvent: { layout: { x: 0, y: 420, width: 350, height: 120 } } };
+    await fireEvent(screen.getByTestId('review-refusal-box'), 'layout', layout);
+    await fireEvent(screen.getByTestId('review-refusal-box'), 'layout', layout);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ y: 420 }));
+    scrollTo.mockRestore();
   });
 
   it('sends a creator with no plan to pricing, saying where they came from', async () => {

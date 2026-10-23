@@ -31,6 +31,7 @@ import {
   Skeleton,
   SkeletonGroup,
   Subheading,
+  useReducedMotion,
 } from '../../../components/ui';
 import { FOCUS_DELAY_MS, focusOn } from '../../../components/ui/overlay';
 import { Glyphs } from '../../../icons';
@@ -179,6 +180,10 @@ function Review({
   const chrome = useEditorChromeCopy();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const reduced = useReducedMotion();
+  const scroll = useRef<ScrollView>(null);
+  /** Set by a refused submit: the refusal is drawn at the top, so the page goes to it once laid out. */
+  const showRefusal = useRef(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [refusal, setRefusal] = useState<SubmitRefusal | null>(null);
@@ -270,6 +275,7 @@ function Review({
         setAgreement({ version: asked.version, effectiveFrom: asked.effectiveFrom });
         setAgreed(false);
       }
+      showRefusal.current = true;
       setRefusal(submitRefusal(cause, words));
     } finally {
       setSubmitting(false);
@@ -305,6 +311,7 @@ function Review({
 
   return (
     <ScrollView
+      ref={scroll}
       style={styles.scroll}
       contentContainerStyle={[styles.page, { paddingBottom: insets.bottom + spacing[8] }]}
       testID="review-panel"
@@ -356,37 +363,46 @@ function Review({
         ) : null}
 
         {refusal === null ? null : (
-          <InlineAlert
-            variant="danger"
-            title={words.notSubmittedTitle}
-            description={refusal.message}
-            testID="review-refusal"
-            action={
-              <View style={styles.stack}>
-                {refusal.unmet.map((item) => (
-                  <Caption key={item.requirement}>{`${item.label}: ${item.detail}`}</Caption>
-                ))}
-                <View style={styles.actions}>
-                  {refusal.planLimit ? (
+          <View
+            onLayout={(event) => {
+              if (!showRefusal.current) return;
+              showRefusal.current = false;
+              scroll.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: !reduced });
+            }}
+            testID="review-refusal-box"
+          >
+            <InlineAlert
+              variant="danger"
+              title={words.notSubmittedTitle}
+              description={refusal.message}
+              testID="review-refusal"
+              action={
+                <View style={styles.stack}>
+                  {refusal.unmet.map((item) => (
+                    <Caption key={item.requirement}>{`${item.label}: ${item.detail}`}</Caption>
+                  ))}
+                  <View style={styles.actions}>
+                    {refusal.planLimit ? (
+                      <Pill
+                        label={words.seeOtherPlans}
+                        variant="outline"
+                        size="sm"
+                        onPress={() => router.push('/pricing')}
+                        testID="review-plans"
+                      />
+                    ) : null}
                     <Pill
-                      label={words.seeOtherPlans}
-                      variant="outline"
+                      label={words.checkAgain}
+                      variant="ghost"
                       size="sm"
-                      onPress={() => router.push('/pricing')}
-                      testID="review-plans"
+                      onPress={checkAgain}
+                      testID="review-check-again"
                     />
-                  ) : null}
-                  <Pill
-                    label={words.checkAgain}
-                    variant="ghost"
-                    size="sm"
-                    onPress={checkAgain}
-                    testID="review-check-again"
-                  />
+                  </View>
                 </View>
-              </View>
-            }
-          />
+              }
+            />
+          </View>
         )}
 
         <View style={styles.stack}>

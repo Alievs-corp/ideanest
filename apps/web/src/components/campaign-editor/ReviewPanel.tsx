@@ -139,6 +139,15 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
   const [agreed, setAgreed] = useState(false);
 
   const blockingHeading = useRef<HTMLHeadingElement>(null);
+  const refusalBox = useRef<HTMLDivElement>(null);
+
+  // The refusal is drawn at the top and the control that caused it is at the bottom: take the
+  // reader to it. Instant, not smooth -- the editor's motion budget is none.
+  useEffect(() => {
+    if (refusal === null) return;
+    refusalBox.current?.scrollIntoView({ block: 'start' });
+    refusalBox.current?.focus({ preventScroll: true });
+  }, [refusal]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -348,34 +357,36 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
         )}
 
         {refusal !== null && (
-          <InlineAlert variant="danger" title={words.notSubmittedTitle}>
-            <p>{refusal.message}</p>
-            {refusal.unmet.length > 0 && (
-              <ul className="mt-2 flex flex-col gap-1">
-                {refusal.unmet.map((item) => (
-                  <li key={item.requirement}>
-                    {item.label}: {item.detail}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {/*
-              A plan bound, with the way out beside it. The link is offered rather than
-              followed, because changing plan is one of three answers here and the other
-              two — withdraw a campaign, lower the goal — are on this creator's own
-              screens.
-            */}
-            {refusal.limit != null && (
-              <p className="mt-3">
-                <Link href="/pricing" className="text-fg underline underline-offset-4">
-                  {words.seeOtherPlans}
-                </Link>
-              </p>
-            )}
-            <Pill variant="ghost" size="sm" className="mt-3" onClick={reloadAll}>
-              {words.checkAgain}
-            </Pill>
-          </InlineAlert>
+          <div ref={refusalBox} tabIndex={-1} className="scroll-mt-28 outline-none">
+            <InlineAlert variant="danger" title={words.notSubmittedTitle}>
+              <p>{refusal.message}</p>
+              {refusal.unmet.length > 0 && (
+                <ul className="mt-2 flex flex-col gap-1">
+                  {refusal.unmet.map((item) => (
+                    <li key={item.requirement}>
+                      {item.label}: {item.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {/*
+                A plan bound, with the way out beside it. The link is offered rather than
+                followed, because changing plan is one of three answers here and the other
+                two — withdraw a campaign, lower the goal — are on this creator's own
+                screens.
+              */}
+              {refusal.limit != null && (
+                <p className="mt-3">
+                  <Link href="/pricing" className="text-fg underline underline-offset-4">
+                    {words.seeOtherPlans}
+                  </Link>
+                </p>
+              )}
+              <Pill variant="ghost" size="sm" className="mt-3" onClick={reloadAll}>
+                {words.checkAgain}
+              </Pill>
+            </InlineAlert>
+          </div>
         )}
 
         <section aria-labelledby="review-progress-heading">
