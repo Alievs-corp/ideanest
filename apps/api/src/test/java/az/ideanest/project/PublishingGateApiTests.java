@@ -46,6 +46,7 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
     private static final String PASSWORD = "a-long-enough-password";
     private static final String ADMIN_EMAIL = "moderator@ideanest.test";
+    private static final String ROLE_FIXTURE_NOTE = "publishing gate fixture";
 
     private Account admin;
 
@@ -75,6 +76,7 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
         jdbc.update("DELETE FROM projects");
         jdbc.update("DELETE FROM subscriptions");
         jdbc.update("DELETE FROM subscription_plans WHERE created_by IS NOT NULL");
+        jdbc.update("DELETE FROM staff_role_grants WHERE note = ?", ROLE_FIXTURE_NOTE);
     }
 
     @Test
@@ -261,11 +263,76 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
                 .isEqualTo("SUBSCRIPTION_REQUIRED");
     }
 
+    @Test
+    @DisplayName("the bootstrapped super admin submits with no plan")
+    void aBootstrappedSuperAdminNeedsNoPlan() {
+        UUID project = completeCampaign(admin());
+
+        ResponseEntity<Map<String, Object>> submitted =
+                post("/v1/projects/" + project + "/submit", admin().accessToken(), null);
+
+        assertThat(submitted.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(submitted.getBody().get("state")).isEqualTo("SUBMITTED");
+    }
+
+    @Test
+    @DisplayName("a granted super admin submits with no plan and no plan limits")
+    void aGrantedSuperAdminNeedsNoPlan() {
+        Account operator = account();
+        grantRole(operator, "SUPER_ADMIN");
+
+        for (int i = 0; i < 2; i++) {
+            UUID project = completeCampaign(operator);
+            assertThat(post("/v1/projects/" + project + "/submit", operator.accessToken(), null)
+                            .getStatusCode())
+                    .isEqualTo(HttpStatus.OK);
+        }
+    }
+
+    @Test
+    @DisplayName("any other staff role still needs a plan")
+    void aModeratorStillNeedsAPlan() {
+        Account moderator = account();
+        grantRole(moderator, "MODERATOR");
+        UUID project = completeCampaign(moderator);
+
+        assertThat(post("/v1/projects/" + project + "/submit", moderator.accessToken(), null)
+                        .getBody()
+                        .get("code"))
+                .isEqualTo("SUBSCRIPTION_REQUIRED");
+    }
+
+    @Test
+    @DisplayName("a super admin pressing the button does not publish a creator's campaign for free")
+    void aSuperAdminCollaboratorDoesNotPayForTheCreator() {
+        Account creator = account();
+        Account operator = account();
+        grantRole(operator, "SUPER_ADMIN");
+
+        UUID project = completeCampaign(creator);
+        grantSubmitCapability(project, creator, operator);
+
+        assertThat(post("/v1/projects/" + project + "/submit", operator.accessToken(), null)
+                        .getBody()
+                        .get("code"))
+                .isEqualTo("SUBSCRIPTION_REQUIRED");
+    }
+
     /* ------------------------------------------------------------------
      * Fixtures
      * --------------------------------------------------------------- */
 
     private record Account(EmailAddress email, String accessToken, UUID id) {
+    }
+
+    private void grantRole(Account account, String role) {
+        new JdbcTemplate(dataSource)
+                .update(
+                        "INSERT INTO staff_role_grants (account_id, role, granted_by, note) VALUES (?, ?, ?, ?)",
+                        account.id(),
+                        role,
+                        account.id(),
+                        ROLE_FIXTURE_NOTE);
     }
 
     private Account account() {

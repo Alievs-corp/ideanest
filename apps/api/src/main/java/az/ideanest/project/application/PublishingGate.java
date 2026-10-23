@@ -2,6 +2,7 @@ package az.ideanest.project.application;
 
 import az.ideanest.project.domain.Project;
 import az.ideanest.project.infrastructure.ProjectRepository;
+import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.PublishingAllowance;
 import az.ideanest.shared.access.PublishingEntitlement;
 import java.math.BigDecimal;
@@ -42,6 +43,12 @@ import org.springframework.transaction.annotation.Transactional;
  * "you have paid and this does not fit", where the answer may be to withdraw a campaign or
  * lower a goal — so it is rendered in place. Collapsing them into one refusal would send a
  * paying customer to a price list to solve a problem money need not solve.
+ *
+ * <h2>A super admin is not asked</h2>
+ *
+ * <p>The operator would be paying the platform for the platform's own campaigns, so a
+ * creator holding {@code SUPER_ADMIN} passes without a plan and without a plan's limits.
+ * Every other staff role still buys one: a moderator's campaign is a creator's campaign.
  */
 @Service
 public class PublishingGate {
@@ -50,10 +57,12 @@ public class PublishingGate {
 
     private final PublishingEntitlement entitlement;
     private final ProjectRepository projects;
+    private final PlatformStaff staff;
 
-    public PublishingGate(PublishingEntitlement entitlement, ProjectRepository projects) {
+    public PublishingGate(PublishingEntitlement entitlement, ProjectRepository projects, PlatformStaff staff) {
         this.entitlement = entitlement;
         this.projects = projects;
+        this.staff = staff;
     }
 
     /**
@@ -76,6 +85,10 @@ public class PublishingGate {
      */
     @Transactional(readOnly = true)
     public void requireEntitled(Project project) {
+        if (staff.isSuperAdmin(project.getCreatorId())) {
+            return;
+        }
+
         PublishingAllowance allowance = entitlement.allowanceOf(project.getCreatorId());
 
         if (!allowance.subscribed()) {

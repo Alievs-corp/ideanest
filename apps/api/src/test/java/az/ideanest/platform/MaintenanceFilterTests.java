@@ -250,5 +250,10 @@ class MaintenanceFilterTests {
         public void requireCapability(UUID accountId, StaffCapability capability) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public boolean isSuperAdmin(UUID accountId) {
+            return false;
+        }
     }
 }

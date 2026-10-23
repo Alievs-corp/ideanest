@@ -123,6 +123,11 @@ public class StaffDirectory implements PlatformStaff {
         }
     }
 
+    @Override
+    public boolean isSuperAdmin(UUID accountId) {
+        return membershipOf(accountId).roles().stream().anyMatch(StaffRole::isSuperAdmin);
+    }
+
     /**
      * Everything the platform knows about one account's standing here.
      *
