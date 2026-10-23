@@ -5,7 +5,7 @@ import { MoveRight, Plus } from 'lucide-react';
 import { InlineAlert, Pill } from '@ideanest/ui';
 import { newIdempotencyKey } from '@ideanest/checkout/idempotency';
 import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
-import { canChoose } from '@ideanest/plans/catalogue';
+import { canChoose } from '@ideanest/plans/choice';
 import { planPaymentRefusalOf, planPaymentReturnOf } from '@ideanest/plans/payment';
 import { ApiError } from '../../lib/api/problem';
 import {
