@@ -348,9 +348,10 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
             @Param("projectId") UUID projectId, @Param("excluding") UUID excluding, @Param("at") Instant at);
 
     /**
-     * Whether anything but this tier still shows the upload: another tier, or a campaign's
-     * cover or video. Asked before a released reward image or video is deleted, because one
-     * upload may be attached in more than one place by its owner.
+     * Whether anything but this tier still shows the upload: another tier, a campaign's cover
+     * or video, or a story section, current or in a version that can be restored (#551). Asked
+     * before a released reward image or video is deleted, because one upload may be attached in
+     * more than one place by its owner.
      *
      * <p>{@code projects} is read rather than asked about, as {@code pledges} reads this
      * module's tables: it is one existence check, and the project module has no question
@@ -366,6 +367,8 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
                         OR EXISTS (
                                SELECT 1 FROM projects
                                 WHERE cover_media_id = :mediaId OR video_media_id = :mediaId)
+                        OR EXISTS (SELECT 1 FROM projects WHERE story @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
+                        OR EXISTS (SELECT 1 FROM project_story_versions WHERE document @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
                     """,
             nativeQuery = true)
     boolean isMediaShownElsewhere(@Param("mediaId") UUID mediaId, @Param("excluding") UUID excluding);

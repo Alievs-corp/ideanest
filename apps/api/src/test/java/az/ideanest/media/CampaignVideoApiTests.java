@@ -16,6 +16,7 @@ import az.ideanest.support.ScriptedImageTranscoder;
 import az.ideanest.support.ScriptedVideoTranscoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -307,7 +308,84 @@ class CampaignVideoApiTests extends AbstractIntegrationTest {
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
     }
 
+    @Test
+    @DisplayName("a story section's video carries what the server measured, not what the client sent (#551)")
+    void aSectionVideoIsMeasuredByTheServer() {
+        String creator = signIn();
+        UUID projectId = draft(creator);
+        videos.willProduce(1280, 720, 42_000);
+        UUID mediaId = uploadVideo(creator);
+
+        ResponseEntity<Map<String, Object>> saved =
+                patch(projectId, creator, storyWithVideo(mediaId, "https://elsewhere.example/x.mp4"));
+
+        assertThat(saved.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> video = sectionVideo(saved.getBody());
+        assertThat(video)
+                .containsEntry("mediaId", mediaId.toString())
+                .containsEntry("width", 1280)
+                .containsEntry("height", 720)
+                .containsEntry("durationMs", 42_000);
+        assertThat(video.get("url")).asString().startsWith("https://cdn.test/media/").endsWith(mediaId + ".mp4");
+        assertThat(video.get("posterUrl")).asString().endsWith(mediaId + "-poster.jpg");
+
+        // Saving again keeps the stored measurements, whatever the client says this time.
+        Map<String, Object> again = sectionVideo(
+                patch(projectId, creator, storyWithVideo(mediaId, "https://elsewhere.example/y.mp4")).getBody());
+        assertThat(again).isEqualTo(video);
+    }
+
+    @Test
+    @DisplayName("a story section cannot show somebody else's video, or an image as a video")
+    void aSectionVideoMustBeTheCallersVideo() {
+        String owner = signIn();
+        UUID theirs = uploadVideo(owner);
+        String creator = signIn();
+        UUID projectId = draft(creator);
+        UUID image = uploadImage(creator);
+
+        for (UUID mediaId : new UUID[] {theirs, image, UUID.randomUUID()}) {
+            ResponseEntity<Map<String, Object>> refused =
+                    patch(projectId, creator, storyWithVideo(mediaId, "https://cdn.test/media/x.mp4"));
+
+            assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            assertThat(refused.getBody())
+                    .containsEntry("code", "STORY_DOCUMENT_INVALID")
+                    .containsEntry("meta", Map.of("path", "blocks[0].video"));
+        }
+    }
+
+    @Test
+    @DisplayName("a campaign video a story section also shows is not deleted when it is replaced")
+    void aVideoInTheStorySurvivesItsReplacement() {
+        String creator = signIn();
+        UUID projectId = draft(creator);
+        UUID mediaId = uploadVideo(creator);
+        patch(projectId, creator, Map.of("videoMediaId", mediaId.toString()));
+        patch(projectId, creator, storyWithVideo(mediaId, "https://cdn.test/media/x.mp4"));
+
+        patch(projectId, creator, Map.of("videoMediaId", uploadVideo(creator).toString()));
+
+        assertThat(store.has("media/" + mediaId + ".mp4")).isTrue();
+        assertThat(get("/v1/media/" + mediaId, creator).getBody()).containsEntry("status", "READY");
+    }
+
     // ------------------------------------------------------------------
+
+    /** As a JSON string: the test client drops null entries from a map, and `image` is null. */
+    private static String storyWithVideo(UUID mediaId, String url) {
+        return "{\"story\": {\"version\": 1, \"blocks\": [{\"type\": \"section\", \"id\": \"our-workshop\","
+                + " \"title\": \"Our workshop\", \"image\": null, \"video\": {\"mediaId\": \"" + mediaId + "\","
+                + " \"url\": \"" + url + "\", \"posterUrl\": \"" + url + "\", \"width\": 1, \"height\": 1,"
+                + " \"durationMs\": 1}, \"spans\": []}]}}";
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> sectionVideo(Map<String, Object> project) {
+        Map<String, Object> story = (Map<String, Object>) project.get("story");
+        Map<String, Object> section = ((List<Map<String, Object>>) story.get("blocks")).get(0);
+        return (Map<String, Object>) section.get("video");
+    }
 
     private UUID uploadVideo(String accessToken) {
         UUID mediaId = begin(accessToken, "video/mp4", BYTES.length);

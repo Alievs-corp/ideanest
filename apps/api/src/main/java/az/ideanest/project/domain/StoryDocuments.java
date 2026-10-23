@@ -3,9 +3,12 @@ package az.ideanest.project.domain;
 import az.ideanest.shared.Slugs;
 import tools.jackson.databind.JsonNode;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * The story document: what a valid one is, and how long its prose is.
@@ -32,7 +35,7 @@ import java.util.Set;
  *
  * <p>The block union is exactly the epic contract §5 and
  * {@code docs/architecture.md} §4.6: headings, paragraphs, lists, quotes, rules,
- * inline images, third-party embeds, and titled sections with an optional image.
+ * inline images, third-party embeds, and titled sections with an optional image or video.
  * No block is added here without the public project page being taught to render
  * it, because a document containing one would validate and then display as
  * nothing.
@@ -195,7 +198,7 @@ public final class StoryDocuments {
     }
 
     /**
-     * How many images and embeds the story holds.
+     * How many images, videos and embeds the story holds.
      *
      * <p>The one thing the checklist asks about a story besides its length, and it
      * is advice rather than a rule: §4.6 gives the story inline media and
@@ -225,7 +228,7 @@ public final class StoryDocuments {
             String type = textOrEmpty(block.get("type"));
             if ("image".equals(type) || "embed".equals(type)) {
                 total++;
-            } else if ("section".equals(type) && hasImage(block)) {
+            } else if ("section".equals(type) && (hasImage(block) || hasVideo(block))) {
                 total++;
             }
         }
@@ -301,15 +304,20 @@ public final class StoryDocuments {
     }
 
     /**
-     * A titled part of the story: an {@code h2} on the page, an optional image under the
-     * title, then text.
+     * A titled part of the story: an {@code h2} on the page, an optional image or video under
+     * the title, then text.
      *
      * <p>The title follows a heading's rules and the id shares the headings' set, because
      * the anchor navigation lists a section exactly as it lists an {@code h2}. The
      * {@code image} key is required and may be null, so every section has one shape.
+     *
+     * <p>{@code video} (#551) is optional, because every section stored before it has none,
+     * and may be null. Only its shape is checked here: which upload it names, and the numbers
+     * it carries, are the editing service's, which replaces them with the media module's
+     * measurements before the story is stored.
      */
     private static void validateSection(JsonNode block, String path, Set<String> headingIds) {
-        requireOnly(block, path, List.of("type", "id", "title", "image", "spans"));
+        requireOnly(block, path, List.of("type", "id", "title", "image", "video", "spans"));
 
         String title = requireNonBlankText(block.get("title"), path + ".title", "A section needs its title.");
         if (codePoints(title) > 200) {
@@ -329,7 +337,62 @@ public final class StoryDocuments {
             validateImageFields(image, path + ".image");
         }
 
+        JsonNode video = block.get("video");
+        if (video != null && !video.isNull()) {
+            if (!video.isObject()) {
+                throw invalid(path + ".video", "A section's video is an object, or null.");
+            }
+            if (!image.isNull()) {
+                throw invalid(path + ".video", "A section shows an image or a video, not both.");
+            }
+            validateSectionVideo(video, path + ".video");
+        }
+
         validateSpans(block.get("spans"), path + ".spans");
+    }
+
+    private static void validateSectionVideo(JsonNode video, String path) {
+        requireOnly(video, path, List.of("mediaId", "url", "posterUrl", "width", "height", "durationMs"));
+        JsonNode mediaId = video.get("mediaId");
+        if (mediaId == null || !mediaId.isString() || !isUuid(mediaId.stringValue())) {
+            throw invalid(path + ".mediaId", "A section's video names the upload it is.");
+        }
+        requireWebUrl(video.get("url"), path + ".url");
+        requireWebUrl(video.get("posterUrl"), path + ".posterUrl");
+        requirePositiveInt(video.get("width"), path + ".width");
+        requirePositiveInt(video.get("height"), path + ".height");
+        JsonNode duration = video.get("durationMs");
+        if (duration == null || !duration.isInt() || duration.intValue() <= 0) {
+            throw invalid(path + ".durationMs", "A video says how long it runs, in whole milliseconds above zero.");
+        }
+    }
+
+    /**
+     * The upload each section's video names, by the section's index in {@code blocks}.
+     *
+     * <p>For a document that has been through {@link #validate}: the editing service reads
+     * these to decide whether each is an upload the caller may attach.
+     */
+    public static Map<Integer, UUID> sectionVideos(JsonNode document) {
+        Map<Integer, UUID> videos = new LinkedHashMap<>();
+        if (document == null || !document.isObject()) {
+            return videos;
+        }
+        JsonNode blocks = document.get("blocks");
+        if (blocks == null || !blocks.isArray()) {
+            return videos;
+        }
+        for (int index = 0; index < blocks.size(); index++) {
+            JsonNode block = blocks.get(index);
+            if (!"section".equals(textOrEmpty(block.get("type"))) || !hasVideo(block)) {
+                continue;
+            }
+            String mediaId = textOrEmpty(block.get("video").get("mediaId"));
+            if (isUuid(mediaId)) {
+                videos.put(index, UUID.fromString(mediaId));
+            }
+        }
+        return videos;
     }
 
     /** A heading's or a section's anchor: a slug, unique across the document. */
@@ -549,6 +612,20 @@ public final class StoryDocuments {
     private static boolean hasImage(JsonNode block) {
         JsonNode image = block.get("image");
         return image != null && image.isObject();
+    }
+
+    /** Whether a section carries a video. Tolerant, as {@link #hasImage} is. */
+    private static boolean hasVideo(JsonNode block) {
+        JsonNode video = block.get("video");
+        return video != null && video.isObject();
+    }
+
+    private static boolean isUuid(String value) {
+        try {
+            return UUID.fromString(value).toString().equals(value.toLowerCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     private static int codePoints(String value) {

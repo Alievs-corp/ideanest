@@ -39,6 +39,25 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     boolean isVideoShownByAReward(@Param("mediaId") UUID mediaId);
 
     /**
+     * Whether a story section shows this video, or an earlier version of a story that can be
+     * restored did — #551. Asked beside the two questions above: one upload may be both a
+     * campaign's video and a section's, and a restored version must not come back pointing at
+     * a deleted file.
+     *
+     * <p>Containment ({@code @>}) rather than a JSON path, so the statement holds no question
+     * mark for a driver to read as a parameter. {@code blocks} is an array, so the probe matches
+     * a document with any block whose {@code video.mediaId} is this one.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT EXISTS (SELECT 1 FROM projects WHERE story @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
+                        OR EXISTS (SELECT 1 FROM project_story_versions WHERE document @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
+                    """,
+            nativeQuery = true)
+    boolean isVideoInAStory(@Param("mediaId") UUID mediaId);
+
+    /**
      * Whether this creator already has a campaign under this slug.
      *
      * <p>Scoped to the creator because the unique index is: the public URL is
