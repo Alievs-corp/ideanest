@@ -25,7 +25,8 @@ import { StoryTextField } from './StoryTextField';
  * its text, edited with the paragraph's field and mark toolbar.
  *
  * Upload only, with no address field: the contract holds the picture to the image block's
- * rules (a measured size and a description), and an upload meets the first by construction.
+ * rules (a measured size, and a description that may be empty), and an upload meets the
+ * first by construction.
  */
 export function SectionFields({
   copy,
@@ -35,6 +36,7 @@ export function SectionFields({
   disabled,
   invalid,
   describedBy,
+  altDescribedBy,
   onChange,
   onFlush,
   anchorsInUse,
@@ -46,6 +48,7 @@ export function SectionFields({
   disabled: boolean;
   invalid: boolean;
   describedBy: string | undefined;
+  altDescribedBy: string | undefined;
   onChange: (block: StoryBlock) => void;
   onFlush?: () => void;
   anchorsInUse: readonly string[];
@@ -168,6 +171,7 @@ export function SectionFields({
               disabled={disabled}
               invalid={invalid}
               aria-label={fillPlaceholders(copy.descriptionOf, { name })}
+              aria-describedby={altDescribedBy}
               placeholder={copy.imageAltPlaceholder}
               onChange={(event) => onChange({ ...block, image: { ...image, alt: event.target.value } })}
               onBlur={onFlush}

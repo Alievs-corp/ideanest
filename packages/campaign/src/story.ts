@@ -75,7 +75,7 @@ export interface ImageBlock {
   url: string;
   width: number;
   height: number;
-  /** Never optional and never empty. See `IMAGE_ALT_REQUIRED`. */
+  /** Never optional; empty when the creator has not written one, which renders as decorative (#543). */
   alt: string;
 }
 
@@ -96,7 +96,7 @@ export interface SectionImage {
   url: string;
   width: number;
   height: number;
-  /** Never empty, for the reason `ImageBlock.alt` gives. */
+  /** As `ImageBlock.alt`: always present, possibly empty. */
   alt: string;
 }
 

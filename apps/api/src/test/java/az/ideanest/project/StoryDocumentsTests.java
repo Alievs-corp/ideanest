@@ -245,26 +245,29 @@ class StoryDocumentsTests {
     class Images {
 
         @Test
-        @DisplayName("an image with no description is refused")
-        void altIsRequired() {
-            // The rule this validator exists for as much as any other: an image
-            // without a description is a paragraph of the story a screen-reader
-            // user simply does not receive.
+        @DisplayName("an image without its alt key is refused")
+        void altKeyIsRequired() {
+            // Every image has one shape. The key is required; what it holds may be empty.
             StoryDocumentInvalidException refused = refusal(
                     withBlock("{\"type\": \"image\", \"url\": \"https://a.example/b.jpg\", \"width\": 4, \"height\": 3}"));
 
             assertThat(refused.path()).isEqualTo("blocks[0].alt");
-            assertThat(refused.getMessage()).contains("screen reader");
+            assertThat(refusal(withBlock(
+                                    "{\"type\": \"image\", \"url\": \"https://a.example/b.jpg\", "
+                                            + "\"width\": 4, \"height\": 3, \"alt\": 7}"))
+                            .path())
+                    .isEqualTo("blocks[0].alt");
         }
 
         @Test
-        @DisplayName("a description of nothing but spaces is not a description")
-        void blankAltIsRefused() {
-            assertThat(refusal(withBlock(
-                                    "{\"type\": \"image\", \"url\": \"https://a.example/b.jpg\", "
-                                            + "\"width\": 4, \"height\": 3, \"alt\": \"   \"}"))
-                            .path())
-                    .isEqualTo("blocks[0].alt");
+        @DisplayName("an image with an empty or blank description is accepted")
+        void emptyAltIsAccepted() {
+            // #543: refusing it refused the whole story, and a creator lost every
+            // image in it. The page renders such an image as decorative.
+            accepted("{\"type\": \"image\", \"url\": \"https://a.example/b.jpg\", "
+                    + "\"width\": 4, \"height\": 3, \"alt\": \"\"}");
+            accepted("{\"type\": \"image\", \"url\": \"https://a.example/b.jpg\", "
+                    + "\"width\": 4, \"height\": 3, \"alt\": \"   \"}");
         }
 
         @Test
@@ -541,6 +544,7 @@ class StoryDocumentsTests {
                                     "a", "A", "{\"url\": \"https://a.example/b.jpg\", \"width\": 4, \"height\": 3}")))
                             .path())
                     .isEqualTo("blocks[0].image.alt");
+            accepted(section("a", "A", "{\"url\": \"https://a.example/b.jpg\", \"width\": 4, \"height\": 3, \"alt\": \"\"}"));
             assertThat(refusal(withBlock(section(
                                     "a",
                                     "A",

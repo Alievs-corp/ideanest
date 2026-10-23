@@ -183,6 +183,27 @@ describe('a section', () => {
     expect(screen.getAllByTestId('story-section-image')).toHaveLength(1);
     expect(team.children).toHaveLength(1);
   });
+
+  it('draws a picture with an empty description as decorative, not as an unnamed image (#543)', async () => {
+    const picture = { url: 'https://cdn.example/workshop.jpg', width: 1440, height: 960, alt: '' };
+    await show(
+      readStoryDocument({
+        version: 1,
+        blocks: [
+          { type: 'image', ...picture },
+          { type: 'section', id: 'our-workshop', title: 'Our workshop', image: { ...picture, alt: '  ' }, spans: [] },
+        ],
+      }) as StoryDocument,
+    );
+
+    expect(screen.queryAllByRole('image')).toHaveLength(0);
+    for (const id of ['story-image', 'story-section-image']) {
+      const image = screen.getByTestId(id, { includeHiddenElements: true });
+      expect(image.props.source).toEqual({ uri: picture.url });
+      expect(image.props.accessible).toBe(false);
+      expect(image.props.importantForAccessibility).toBe('no-hide-descendants');
+    }
+  });
 });
 
 describe('the story inside the white content sheet (#281)', () => {

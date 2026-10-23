@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { STORY_COPY } from './test-copy';
 import {
   blockProblem,
+  blockWarning,
   describeBlock,
   headingAnchors,
   isMarkActive,
@@ -20,6 +21,7 @@ import {
   spansToText,
   storyCharacterCount,
   storyProblems,
+  storyWarnings,
   toggleMark,
   uniqueHeadingId,
   type StoryBlock,
@@ -352,10 +354,11 @@ describe('editing the block list', () => {
 });
 
 describe('blockProblem', () => {
-  it('refuses an image with no description', () => {
+  it('does not refuse an image with no description', () => {
+    // #543: holding the save for it held the whole story. `blockWarning` says it instead.
     expect(
       blockProblem({ type: 'image', url: 'https://a.example/b.jpg', width: 4, height: 3, alt: '  ' }, STORY_COPY.vocabulary),
-    ).toBe(STORY_COPY.vocabulary.problems.imageNeedsAlt);
+    ).toBeNull();
   });
 
   it('refuses an unmeasured image', () => {
@@ -386,6 +389,37 @@ describe('blockProblem', () => {
 
   it('refuses a heading with no text', () => {
     expect(blockProblem({ type: 'heading', level: 2, id: 'a', text: ' ' }, STORY_COPY.vocabulary)).toContain('text');
+  });
+});
+
+describe('blockWarning', () => {
+  const IMAGE = { type: 'image', url: 'https://a.example/b.jpg', width: 4, height: 3, alt: '' } as const;
+
+  it('warns about an image, or a section picture, with no description', () => {
+    expect(blockWarning(IMAGE, STORY_COPY.vocabulary)).toBe(STORY_COPY.vocabulary.warnings.imageNeedsAlt);
+    expect(blockWarning({ ...IMAGE, alt: '   ' }, STORY_COPY.vocabulary)).toBe(
+      STORY_COPY.vocabulary.warnings.imageNeedsAlt,
+    );
+    expect(
+      blockWarning(
+        { type: 'section', id: 'a', title: 'A', image: { url: IMAGE.url, width: 4, height: 3, alt: '' }, spans: [] },
+        STORY_COPY.vocabulary,
+      ),
+    ).toBe(STORY_COPY.vocabulary.warnings.imageNeedsAlt);
+  });
+
+  it('says nothing about a described image, a section without one, or an image not chosen yet', () => {
+    expect(blockWarning({ ...IMAGE, alt: 'A' }, STORY_COPY.vocabulary)).toBeNull();
+    expect(blockWarning({ type: 'section', id: 'a', title: 'A', image: null, spans: [] }, STORY_COPY.vocabulary)).toBeNull();
+    expect(blockWarning(newBlock('image'), STORY_COPY.vocabulary)).toBeNull();
+  });
+
+  it('never makes a document unsaveable', () => {
+    const story = document([IMAGE, { type: 'paragraph', spans: [] }]);
+    expect(storyWarnings(story, STORY_COPY.vocabulary)).toEqual(
+      new Map([[0, STORY_COPY.vocabulary.warnings.imageNeedsAlt]]),
+    );
+    expect(isSaveable(story, STORY_COPY.vocabulary)).toBe(true);
   });
 });
 
@@ -508,9 +542,7 @@ describe('a section block', () => {
 
   it('holds its picture to the image block rules', () => {
     expect(blockProblem(section({ image: IMAGE }), STORY_COPY.vocabulary)).toBeNull();
-    expect(blockProblem(section({ image: { ...IMAGE, alt: ' ' } }), STORY_COPY.vocabulary)).toBe(
-      STORY_COPY.vocabulary.problems.imageNeedsAlt,
-    );
+    expect(blockProblem(section({ image: { ...IMAGE, alt: ' ' } }), STORY_COPY.vocabulary)).toBeNull();
     expect(blockProblem(section({ image: { ...IMAGE, width: 0 } }), STORY_COPY.vocabulary)).toBe(
       STORY_COPY.vocabulary.problems.imageNotMeasured,
     );

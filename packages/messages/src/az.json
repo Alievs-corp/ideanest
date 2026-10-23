@@ -5631,11 +5631,13 @@
           "imageNeedsUrl": "Şəklin ünvanı olmalıdır.",
           "urlScheme": "Ünvan http:// və ya https:// ilə başlamalıdır.",
           "imageNotMeasured": "Bu şəkil hələ ölçülməyib. Ölçüsünün yazılması üçün «Ölç və əlavə et» düyməsini işlədin.",
-          "imageNeedsAlt": "Təsvir mütləqdir. Ekran oxuyucusu işlədən dəstəkçi şəklin əvəzinə məhz onu alır.",
           "embedNeedsUrl": "Yerləşdirmənin ünvanı olmalıdır.",
           "embedNeedsTitle": "Yerləşdirmənin başlığı olmalıdır. Ekran oxuyucusu «freym» əvəzinə məhz onu deyir.",
           "sectionNeedsTitle": "Bölmənin başlığı olmalıdır.",
           "sectionTitleTooLong": "Bölmənin başlığı ən çox {max} simvol ola bilər. Qalanını bölmənin mətninə keçirin."
+        },
+        "warnings": {
+          "imageNeedsAlt": "Şəklin təsviri yoxdur. Ekran oxuyucuları üçün qısa təsvir yazın."
         }
       },
       "panel": {
@@ -5718,7 +5720,7 @@
         },
         "empty": "Hələ burada heç nə yoxdur. Bir abzasla başlayın — kampaniyaların çoxu məhsulun nə olduğu və kimin üçün olduğu ilə açılır.",
         "embedHint": "Başlıq ekran oxuyucusunun «çərçivə» sözü əvəzinə oxuduğu mətndir. Yalnız YouTube və Vimeo videoları yerləşdirilə bilər.",
-        "altHint": "Məcburidir. Ekran oxuyucusundan istifadə edən dəstəkçi şəkil əvəzinə bunu eşidir, ona görə faylın adını yox, şəkildə nə göründüyünü təsvir edin.",
+        "altHint": "Tövsiyə olunur. Ekran oxuyucusundan istifadə edən dəstəkçi şəkil əvəzinə bunu eşidir, ona görə faylın adını yox, şəkildə nə göründüyünü təsvir edin. Təsvir olmasa, şəkil oxunmadan keçilir.",
         "pixels": "{size} piksel",
         "imageAddressHint": "Və ya artıq dərc olunmuş şəklin ünvanını yapışdırın. Ölçüsü brauzerinizdə oxunur.",
         "imagePrompt": "Hekayəyə əlavə etmək üçün şəkli bura atın",

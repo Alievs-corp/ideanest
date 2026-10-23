@@ -147,8 +147,8 @@ function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): Reac
             the part that mattered. The frame still reserves the box, so the paragraph below
             does not jump when the picture decodes.
 
-            `alt` is the creator's own, never invented and never empty — `IMAGE_ALT_REQUIRED`
-            is why the editor refuses a story image without one.
+            `alt` is the creator's own and never invented. One left empty renders as
+            decorative, `alt=""` (#543): the editor warns about it but saves the story.
           */}
           <StoryImage image={block} />
         </div>
@@ -223,7 +223,7 @@ function StoryImage({ image }: { image: SectionImage }): ReactNode {
     <MediaFrame ratio={{ width: image.width, height: image.height }} radius="md">
       <Image
         src={image.url}
-        alt={image.alt}
+        alt={image.alt.trim() === '' ? '' : image.alt}
         fill
         sizes="(min-width: 768px) 68ch, 100vw"
         /*

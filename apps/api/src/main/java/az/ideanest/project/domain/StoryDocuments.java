@@ -383,16 +383,13 @@ public final class StoryDocuments {
         requirePositiveInt(block.get("width"), path + ".width");
         requirePositiveInt(block.get("height"), path + ".height");
 
-        // The rule this validator exists for as much as any other. An image
-        // without a description is a paragraph of the story that a screen-reader
-        // user simply does not receive, and by the time the campaign is live the
-        // creator has moved on. There is no default worth inventing here: only
-        // the person who chose the picture knows what it shows.
-        requireNonBlankText(
-                block.get("alt"),
-                path + ".alt",
-                "An image needs a description. It is what a backer using a screen reader receives "
-                        + "instead of the picture.");
+        // Present, and may be empty (#543). Refusing an empty description refused the
+        // whole story, and a creator lost every section image that way. An empty alt is
+        // rendered as decorative; the editor warns about it without holding the save.
+        JsonNode alt = block.get("alt");
+        if (alt == null || !alt.isString()) {
+            throw invalid(path + ".alt", "An image says what it shows as text, empty when it says nothing.");
+        }
     }
 
     private static void validateEmbed(JsonNode block, String path) {

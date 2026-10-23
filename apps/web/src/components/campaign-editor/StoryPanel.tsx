@@ -49,13 +49,17 @@ import { useProjectEdit } from './useProjectEdit';
  *
  * <h3>THE DOCUMENT IS ONLY SENT WHEN IT IS VALID</h3>
  *
- * A document with an image whose description has not been written yet is a document
- * the server refuses (`STORY_DOCUMENT_INVALID`), so sending it would put the editor
- * into a permanent failure state while the creator finishes typing — and, worse,
- * would stop every later save from going out, because autosave keeps one request in
- * flight and retries the same body. So an invalid document is held: the block says
- * what is wrong, the header says the story is not saved, and the moment it becomes
- * valid the whole document goes.
+ * A document with an image that has not been measured yet is a document the server
+ * refuses (`STORY_DOCUMENT_INVALID`), so sending it would put the editor into a
+ * permanent failure state while the creator finishes — and, worse, would stop every
+ * later save from going out, because autosave keeps one request in flight and
+ * retries the same body. So an invalid document is held: the block says what is
+ * wrong, the header says the story is not saved, and the moment it becomes valid the
+ * whole document goes.
+ *
+ * VALID IS ONLY WHAT THE SERVER REFUSES. An image without a description is not
+ * invalid (#543): holding the save for it once cost a creator every section image in
+ * the story. `blockWarning` says so on the block, and the document is sent.
  *
  * That is the same rule the basics tab applies to a field it cannot parse. It is
  * safe because nothing is discarded — the draft is in the component and the last
@@ -177,7 +181,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
       /*
        * Held rather than sent. See the note on the component: an invalid document is
        * refused, and autosave retries the same body — so one unfinished image
-       * description would stop every later save. Nothing is lost; the draft is here
+       * would stop every later save. Nothing is lost; the draft is here
        * and the server still holds the last document it accepted.
        */
       return;

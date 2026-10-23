@@ -1140,12 +1140,15 @@ export interface StoryVocabularyCopy {
     readonly imageNeedsUrl: string;
     readonly urlScheme: string;
     readonly imageNotMeasured: string;
-    readonly imageNeedsAlt: string;
     readonly embedNeedsUrl: string;
     readonly embedNeedsTitle: string;
     readonly sectionNeedsTitle: string;
     /** Carries `{max}`, filled by `blockProblem`. */
     readonly sectionTitleTooLong: string;
+  };
+  /** Shown on a block by `blockWarning`, and never holding the save. */
+  readonly warnings: {
+    readonly imageNeedsAlt: string;
   };
   /** The language whose plural rule picks the list form. */
   readonly locale: Locale;
@@ -1609,11 +1612,13 @@ export function storyPanelCopyFrom(
         imageNeedsUrl: at('vocabulary.problems.imageNeedsUrl'),
         urlScheme: at('vocabulary.problems.urlScheme'),
         imageNotMeasured: at('vocabulary.problems.imageNotMeasured'),
-        imageNeedsAlt: at('vocabulary.problems.imageNeedsAlt'),
         embedNeedsUrl: at('vocabulary.problems.embedNeedsUrl'),
         embedNeedsTitle: at('vocabulary.problems.embedNeedsTitle'),
         sectionNeedsTitle: at('vocabulary.problems.sectionNeedsTitle'),
         sectionTitleTooLong: tpl('vocabulary.problems.sectionTitleTooLong'),
+      },
+      warnings: {
+        imageNeedsAlt: at('vocabulary.warnings.imageNeedsAlt'),
       },
       locale,
     },

@@ -243,7 +243,7 @@ class StoryApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("an image with no description is refused, naming the block")
+    @DisplayName("an image without its alt key is refused, naming the block")
     void anImageWithoutAltIsRefused() {
         Creator creator = creator();
         UUID project = draft(creator);
@@ -257,6 +257,31 @@ class StoryApiTests extends AbstractIntegrationTest {
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(refused.getBody()).containsEntry("code", "STORY_DOCUMENT_INVALID");
         assertThat(refused.getBody().get("meta")).isEqualTo(Map.of("path", "blocks[0].alt"));
+    }
+
+    @Test
+    @DisplayName("an image and a section image with an empty description are stored")
+    void anImageWithAnEmptyAltIsStored() {
+        // #543: refusing these refused the whole story, and a creator lost every image in it.
+        Creator creator = creator();
+        UUID project = draft(creator);
+
+        ResponseEntity<String> saved = rest.exchange(
+                "/v1/projects/" + project,
+                HttpMethod.PATCH,
+                new HttpEntity<>(
+                        "{\"story\": {\"version\": 1, \"blocks\": ["
+                                + "{\"type\": \"image\", \"url\": \"https://cdn.example.com/a.jpg\", \"width\": 1600,"
+                                + " \"height\": 900, \"alt\": \"\"},"
+                                + "{\"type\": \"section\", \"id\": \"our-workshop\", \"title\": \"Our workshop\","
+                                + " \"image\": {\"url\": \"https://cdn.example.com/b.jpg\", \"width\": 1440,"
+                                + " \"height\": 960, \"alt\": \"\"}, \"spans\": []}]}}",
+                        bearer(creator.accessToken())),
+                String.class);
+
+        assertThat(saved.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(saved.getBody()).contains("\"url\":\"https://cdn.example.com/b.jpg\"");
+        assertThat(versions(project, creator)).hasSize(1);
     }
 
     @Test
