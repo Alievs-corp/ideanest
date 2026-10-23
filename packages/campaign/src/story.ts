@@ -101,11 +101,32 @@ export interface SectionImage {
 }
 
 /**
- * A titled part of the story: a title, an optional picture under it, and its text.
+ * A section's clip (#551): an upload the service transcoded, under the campaign video's rules.
+ *
+ * Every field but `mediaId` is the service's own measurement. It replaces them on every save
+ * (`ProjectEditingService`), so a client can name only an upload of its own and never point a
+ * story at somebody else's file or an arbitrary address.
+ */
+export interface SectionVideo {
+  mediaId: string;
+  /** An H.264 MP4 of at most 720p, playable by a plain `<video>` element. */
+  url: string;
+  /** The still shown before it is pressed. */
+  posterUrl: string;
+  width: number;
+  height: number;
+  durationMs: number;
+}
+
+/**
+ * A titled part of the story: a title, an optional picture or clip under it, and its text.
  *
  * Rendered as its own `<section>` with an `h2`, and listed in the anchor navigation like a
  * level-2 heading. `id` is an anchor in the same namespace as the headings' — one set, unique
  * across both, because both end up as the fragment of the same URL.
+ *
+ * An image or a video, never both. A document written before #551 has no `video` key, which
+ * reads as null.
  */
 export interface SectionBlock {
   type: 'section';
@@ -113,6 +134,7 @@ export interface SectionBlock {
   /** At most 200 code points, like a heading's text. */
   title: string;
   image: SectionImage | null;
+  video: SectionVideo | null;
   spans: StorySpans;
 }
 
@@ -225,9 +247,12 @@ function readBlock(raw: unknown): StoryBlock | null {
       // editor sent may come back as a missing key, and both mean "no picture".
       const image = raw.image == null ? null : readSectionImage(raw.image);
       if (raw.image != null && image === null) return null;
+      const video = raw.video == null ? null : readSectionVideo(raw.video);
+      if (raw.video != null && video === null) return null;
+      if (image !== null && video !== null) return null;
       const spans = readSpans(raw.spans);
       if (spans === null) return null;
-      return { type: 'section', id: raw.id, title: raw.title, image, spans };
+      return { type: 'section', id: raw.id, title: raw.title, image, video, spans };
     }
     default:
       return null;
@@ -245,6 +270,32 @@ function readSectionImage(raw: unknown): SectionImage | null {
     return null;
   }
   return { url: raw.url, width: raw.width as number, height: raw.height as number, alt: raw.alt };
+}
+
+function readSectionVideo(raw: unknown): SectionVideo | null {
+  if (!isRecord(raw)) return null;
+  if (
+    typeof raw.mediaId !== 'string' ||
+    typeof raw.url !== 'string' ||
+    typeof raw.posterUrl !== 'string' ||
+    !isPositiveInteger(raw.width) ||
+    !isPositiveInteger(raw.height) ||
+    !isPositiveInteger(raw.durationMs)
+  ) {
+    return null;
+  }
+  return {
+    mediaId: raw.mediaId,
+    url: raw.url,
+    posterUrl: raw.posterUrl,
+    width: raw.width,
+    height: raw.height,
+    durationMs: raw.durationMs,
+  };
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) > 0;
 }
 
 /* -------------------------------------------------------------------------

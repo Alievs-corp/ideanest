@@ -1129,6 +1129,8 @@ export interface StoryVocabularyCopy {
     readonly section: string;
     /** Carries `{position}` and `{title}`. A section with one. */
     readonly sectionWithImage: string;
+    /** Carries `{position}` and `{title}`. A section with a video. */
+    readonly sectionWithVideo: string;
     readonly sectionEmpty: string;
     readonly numbered: string;
     readonly bulleted: string;
@@ -1281,10 +1283,12 @@ export interface StoryBlocksCopy {
 }
 
 /**
- * A section block: a title, an optional picture and its text.
+ * A section block: a title, an optional picture or video, and its text.
  *
  * The picture uploads through the image block's pipeline, so its stages and refusals are
- * `StoryBlocksCopy.upload` and its drop zone is named by `imageUploadOf`.
+ * `StoryBlocksCopy.upload` and its drop zone is named by `imageUploadOf`. The video uploads
+ * through the campaign video's (#551), so `video` is that field's copy with the sentences about
+ * the campaign replaced.
  */
 export interface StorySectionCopy {
   readonly title: string;
@@ -1303,6 +1307,8 @@ export interface StorySectionCopy {
   readonly replaceImageOf: string;
   /** Carries `{name}`. */
   readonly removeImageFrom: string;
+  /** Its `hint` and `tooLong` carry `{seconds}`; its `previewLabel` carries `{name}`. */
+  readonly video: CampaignVideoCopy;
 }
 
 /** The story tab. */
@@ -1543,6 +1549,7 @@ export function storyPanelCopyFrom(
         addImageTo: tpl('blocks.sectionBlock.addImageTo'),
         replaceImageOf: tpl('blocks.sectionBlock.replaceImageOf'),
         removeImageFrom: tpl('blocks.sectionBlock.removeImageFrom'),
+        video: storySectionVideoCopyFrom(t),
       },
     },
     history: {
@@ -1601,6 +1608,7 @@ export function storyPanelCopyFrom(
         embedNoTitle: at('vocabulary.describe.embedNoTitle'),
         section: tpl('vocabulary.describe.section'),
         sectionWithImage: tpl('vocabulary.describe.sectionWithImage'),
+        sectionWithVideo: tpl('vocabulary.describe.sectionWithVideo'),
         sectionEmpty: at('vocabulary.describe.sectionEmpty'),
         numbered: at('vocabulary.describe.numbered'),
         bulleted: at('vocabulary.describe.bulleted'),
@@ -2223,6 +2231,22 @@ export function campaignVideoCopyFrom(t: CampaignEditorTranslator): CampaignVide
     failures: record(VIDEO_FAILURE_CODES, (code) =>
       code === 'TOO_LONG' || code === 'TOO_LARGE' ? tpl(`failures.${code}`) : at(`failures.${code}`),
     ),
+  };
+}
+
+/** {@link StorySectionCopy.video}: the campaign video's copy, overridden from `story.blocks.sectionBlock.video`. */
+export function storySectionVideoCopyFrom(t: CampaignEditorTranslator): CampaignVideoCopy {
+  const at = (key: string) => t(`story.blocks.sectionBlock.video.${key}`);
+  const tpl = (key: string) => template(t, `story.blocks.sectionBlock.video.${key}`);
+
+  return {
+    ...campaignVideoCopyFrom(t),
+    label: at('label'),
+    hint: tpl('hint'),
+    prompt: at('prompt'),
+    set: at('set'),
+    previewLabel: tpl('previewLabel'),
+    notAttached: at('notAttached'),
   };
 }
 
