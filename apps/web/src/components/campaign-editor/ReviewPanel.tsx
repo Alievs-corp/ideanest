@@ -3,8 +3,11 @@
 import { Link, useRouter } from '../../i18n/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleAlert, CircleCheck, Info } from 'lucide-react';
-import { InlineAlert, Pill, ProgressBar, Skeleton, SkeletonGroup } from '@ideanest/ui';
+import { Checkbox, InlineAlert, Pill, ProgressBar, Skeleton, SkeletonGroup } from '@ideanest/ui';
+import { creatorAgreementRefusalOf, type PendingAgreement } from '@ideanest/legal/agreements';
+import { legalPath } from '@ideanest/legal/documents';
 import { ApiError } from '../../lib/api/problem';
+import { acceptCreatorAgreement, readPendingCreatorAgreement } from '../../lib/legal/agreements';
 import {
   getProjectChecklist,
   launchProject,
@@ -69,6 +72,15 @@ import { useProjectEdit } from './useProjectEdit';
  * 10 of 10 required items done" is the same fact twice. The counts are the part
  * that matters, because they are what says whether the remainder is optional.
  *
+ * <h3>THE CREATOR AGREEMENT IS ASKED FOR BEFORE THE SUBMISSION, NOT AFTER IT</h3>
+ *
+ * `POST /submit` refuses with `AGREEMENT_REQUIRED` until the version in force is accepted
+ * (#426), and nothing else in the application records that acceptance. So the tab reads
+ * `GET /v1/me/agreements`, and while a version is outstanding it draws the agreement, its
+ * version and a tick box above Submit. Submitting with the box ticked accepts that version and
+ * then submits. A read that fails draws nothing: the service still gates the submission, and
+ * its refusal names the version, which brings the box back.
+ *
  * MOTION: none. `docs/motion-system.md` §5 gives the campaign editor "none —
  * autosave indicator only", and nothing on this tab autosaves.
  */
@@ -123,8 +135,35 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
   const [launching, setLaunching] = useState(false);
   const [confirmingLaunch, setConfirmingLaunch] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [agreement, setAgreement] = useState<PendingAgreement | null>(null);
+  const [agreed, setAgreed] = useState(false);
 
   const blockingHeading = useRef<HTMLHeadingElement>(null);
+  const refusalBox = useRef<HTMLDivElement>(null);
+
+  // The refusal is drawn at the top and the control that caused it is at the bottom: take the
+  // reader to it. Instant, not smooth -- the editor's motion budget is none.
+  useEffect(() => {
+    if (refusal === null) return;
+    refusalBox.current?.scrollIntoView({ block: 'start' });
+    refusalBox.current?.focus({ preventScroll: true });
+  }, [refusal]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void (async () => {
+      try {
+        const pending = await readPendingCreatorAgreement(controller.signal);
+        if (controller.signal.aborted) return;
+        setAgreement(pending);
+      } catch {
+        // Fails open: the submission is still gated by the service, whose refusal asks again.
+      }
+    })();
+
+    return () => controller.abort();
+  }, [attempt]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -155,6 +194,11 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
     setSubmitting(true);
     setRefusal(null);
     try {
+      if (agreement !== null) {
+        await acceptCreatorAgreement(agreement.version);
+        setAgreement(null);
+        setAgreed(false);
+      }
       apply(await submitProject(projectId, undefined, locale));
       // The checklist is re-read rather than assumed: the state has changed, and
       // with it the moderation outcome's `current` flag.
@@ -181,6 +225,11 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
       if (cause instanceof ApiError && cause.problem?.code === 'SUBSCRIPTION_REQUIRED') {
         router.push(`/pricing?from=submit&project=${encodeURIComponent(projectId)}`);
         return;
+      }
+      const asked = cause instanceof ApiError ? creatorAgreementRefusalOf(cause.problem?.code, cause.problem?.meta) : null;
+      if (asked?.requires === 'ACCEPTANCE') {
+        setAgreement({ version: asked.version, effectiveFrom: asked.effectiveFrom });
+        setAgreed(false);
       }
       setRefusal(refusalFrom(cause, words));
     } finally {
@@ -260,6 +309,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
   const canOfferSubmit = offersSubmit(checklist.state);
   const canOfferLaunch = offersLaunch(checklist.state);
   const held = blockers.length > 0;
+  const unagreed = agreement !== null && !agreed;
 
   return (
     <EditorShell
@@ -307,34 +357,36 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
         )}
 
         {refusal !== null && (
-          <InlineAlert variant="danger" title={words.notSubmittedTitle}>
-            <p>{refusal.message}</p>
-            {refusal.unmet.length > 0 && (
-              <ul className="mt-2 flex flex-col gap-1">
-                {refusal.unmet.map((item) => (
-                  <li key={item.requirement}>
-                    {item.label}: {item.detail}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {/*
-              A plan bound, with the way out beside it. The link is offered rather than
-              followed, because changing plan is one of three answers here and the other
-              two — withdraw a campaign, lower the goal — are on this creator's own
-              screens.
-            */}
-            {refusal.limit != null && (
-              <p className="mt-3">
-                <Link href="/pricing" className="text-fg underline underline-offset-4">
-                  {words.seeOtherPlans}
-                </Link>
-              </p>
-            )}
-            <Pill variant="ghost" size="sm" className="mt-3" onClick={reloadAll}>
-              {words.checkAgain}
-            </Pill>
-          </InlineAlert>
+          <div ref={refusalBox} tabIndex={-1} className="scroll-mt-28" style={{ outline: 'none' }}>
+            <InlineAlert variant="danger" title={words.notSubmittedTitle}>
+              <p>{refusal.message}</p>
+              {refusal.unmet.length > 0 && (
+                <ul className="mt-2 flex flex-col gap-1">
+                  {refusal.unmet.map((item) => (
+                    <li key={item.requirement}>
+                      {item.label}: {item.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {/*
+                A plan bound, with the way out beside it. The link is offered rather than
+                followed, because changing plan is one of three answers here and the other
+                two — withdraw a campaign, lower the goal — are on this creator's own
+                screens.
+              */}
+              {refusal.limit != null && (
+                <p className="mt-3">
+                  <Link href="/pricing" className="text-fg underline underline-offset-4">
+                    {words.seeOtherPlans}
+                  </Link>
+                </p>
+              )}
+              <Pill variant="ghost" size="sm" className="mt-3" onClick={reloadAll}>
+                {words.checkAgain}
+              </Pill>
+            </InlineAlert>
+          </div>
         )}
 
         <section aria-labelledby="review-progress-heading">
@@ -403,10 +455,38 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
               never reaching it. Pressing it moves focus to the list of what is
               missing, which is the thing they were trying to find out.
             */}
+            {agreement !== null && (
+              <div className="rounded-2xl border border-fg/8 bg-surface-2 p-5">
+                <h3 className="text-[15px] font-medium text-fg">{words.agreementTitle}</h3>
+                <p className="mt-2 text-[13px] text-fg-64">
+                  {fillPlaceholders(words.agreementVersion, {
+                    version: String(agreement.version),
+                    date: agreement.effectiveFrom === null ? '' : formatDate(agreement.effectiveFrom, words.locale),
+                  })}{' '}
+                  <Link
+                    href={legalPath('creator-agreement')}
+                    target="_blank"
+                    rel="noopener"
+                    className="text-fg underline underline-offset-4"
+                  >
+                    {words.agreementRead}
+                  </Link>
+                </p>
+                <div className="mt-4">
+                  <Checkbox
+                    id="review-agreement"
+                    label={words.agreementAccept}
+                    checked={agreed}
+                    onChange={(event) => setAgreed(event.target.checked)}
+                  />
+                </div>
+              </div>
+            )}
+
             <Pill
               variant="accent"
               size="lg"
-              aria-disabled={held || submitting}
+              aria-disabled={held || unagreed || submitting}
               aria-describedby="review-submit-explanation"
               onClick={() => {
                 if (submitting) return;
@@ -414,9 +494,13 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
                   blockingHeading.current?.focus();
                   return;
                 }
+                if (unagreed) {
+                  document.getElementById('review-agreement')?.focus();
+                  return;
+                }
                 void submit();
               }}
-              className={held || submitting ? 'opacity-40' : undefined}
+              className={held || unagreed || submitting ? 'opacity-40' : undefined}
             >
               {submitting ? words.submitting : words.submit}
             </Pill>
@@ -428,7 +512,9 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
                       ? words.recommendedNotPartOfThis
                       : words.finishThem
                   }`
-                : words.moderatorNote}
+                : unagreed
+                  ? words.agreementRequired
+                  : words.moderatorNote}
             </p>
           </section>
         )}
@@ -678,6 +764,9 @@ function messageFor(cause: unknown, words: ReviewPanelCopy): string {
     if (cause.problem?.code === 'PLAN_LIMIT_EXCEEDED') {
       return cause.problem?.detail ?? words.planDoesNotCover;
     }
+    // Not "you do not have access": it is their own campaign, and the answer is the agreement.
+    const asked = creatorAgreementRefusalOf(cause.problem?.code, cause.problem?.meta);
+    if (asked !== null) return asked.requires === 'SIGNATURE' ? words.agreementSignature : words.agreementRequired;
     if (cause.status === 403) return words.noAccess;
     return cause.problem?.detail ?? cause.problem?.title ?? words.serviceRefused;
   }

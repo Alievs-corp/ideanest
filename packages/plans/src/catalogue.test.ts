@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  blocksChoice,
+  canChoose,
   isFreePrice,
   isHeldPlan,
   readMine,
@@ -140,11 +140,14 @@ describe('the rules the page draws by', () => {
     expect(standingOf({ ...subscription, entitled: false })).toBe('lapsed');
   });
 
-  it('blocks a second choice while anything but a cancelled plan is held', () => {
-    expect(blocksChoice(null)).toBe(false);
-    expect(blocksChoice(subscription)).toBe(true);
-    expect(blocksChoice({ ...subscription, state: 'PENDING_PAYMENT' })).toBe(true);
-    expect(blocksChoice({ ...subscription, state: 'CANCELED' })).toBe(false);
+  it('offers a choice unless an entitling plan is held, or it is the unpaid plan itself', () => {
+    expect(canChoose(null, growth.id)).toBe(true);
+    expect(canChoose(subscription, 'starter')).toBe(false);
+    expect(canChoose({ ...subscription, cancelAtPeriodEnd: true }, 'starter')).toBe(false);
+    expect(canChoose({ ...subscription, state: 'PENDING_PAYMENT', entitled: false }, 'starter')).toBe(true);
+    expect(canChoose({ ...subscription, state: 'PENDING_PAYMENT', entitled: false }, growth.id)).toBe(false);
+    expect(canChoose({ ...subscription, entitled: false }, growth.id)).toBe(true);
+    expect(canChoose({ ...subscription, state: 'CANCELED' }, growth.id)).toBe(true);
   });
 
   it('marks the held plan, unless it was cancelled', () => {

@@ -11,6 +11,7 @@ import {
   type ProjectChecklist,
   type ProjectEdit,
 } from '../../lib/projects/api';
+import { acceptCreatorAgreement, readPendingCreatorAgreement } from '../../lib/legal/agreements';
 import { ReviewPanel } from './ReviewPanel';
 import { EDITOR_COPY, REVIEW_COPY } from '../../test-editor-copy';
 
@@ -46,6 +47,13 @@ vi.mock('../../lib/projects/api', async (importOriginal) => ({
   launchProject: vi.fn(),
 }));
 
+vi.mock('../../lib/legal/agreements', () => ({
+  readPendingCreatorAgreement: vi.fn(),
+  acceptCreatorAgreement: vi.fn(),
+}));
+
+const readAgreementMock = vi.mocked(readPendingCreatorAgreement);
+const acceptAgreementMock = vi.mocked(acceptCreatorAgreement);
 const getProjectEditMock = vi.mocked(getProjectEdit);
 const getProjectChecklistMock = vi.mocked(getProjectChecklist);
 const submitProjectMock = vi.mocked(submitProject);
@@ -138,6 +146,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   getProjectEditMock.mockResolvedValue(PROJECT);
   getProjectChecklistMock.mockResolvedValue(checklist());
+  readAgreementMock.mockResolvedValue(null);
+  acceptAgreementMock.mockResolvedValue(undefined);
 });
 
 describe('ReviewPanel', () => {
@@ -284,6 +294,70 @@ describe('ReviewPanel', () => {
       const refusal = await screen.findByRole('alert');
       expect(refusal).toHaveTextContent('This campaign was not submitted');
       expect(refusal).toHaveTextContent('Cover image: A cover image is required.');
+    });
+
+    it('asks for the creator agreement before submitting, and accepts the version shown', async () => {
+      const user = userEvent.setup();
+      getProjectChecklistMock.mockResolvedValue(completeChecklist());
+      readAgreementMock.mockResolvedValue({ version: 4, effectiveFrom: '2026-10-13T20:47:38Z' });
+      submitProjectMock.mockResolvedValue({ ...PROJECT, state: 'SUBMITTED' });
+
+      await renderPanel();
+      expect(await screen.findByText(REVIEW_COPY.agreementTitle)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: REVIEW_COPY.agreementRead })).toHaveAttribute(
+        'href',
+        expect.stringContaining('/legal/creator-agreement'),
+      );
+
+      const submit = screen.getByRole('button', { name: 'Submit for review' });
+      expect(submit).toHaveAttribute('aria-disabled', 'true');
+      await user.click(submit);
+      expect(submitProjectMock).not.toHaveBeenCalled();
+      expect(screen.getByRole('checkbox', { name: REVIEW_COPY.agreementAccept })).toHaveFocus();
+
+      await user.click(screen.getByRole('checkbox', { name: REVIEW_COPY.agreementAccept }));
+      await user.click(submit);
+
+      await waitFor(() => expect(submitProjectMock).toHaveBeenCalled());
+      expect(acceptAgreementMock).toHaveBeenCalledWith(4);
+      expect(acceptAgreementMock.mock.invocationCallOrder[0]).toBeLessThan(
+        submitProjectMock.mock.invocationCallOrder[0] ?? 0,
+      );
+    });
+
+    it('says the agreement is missing, not that the campaign is out of reach, when the service asks for it', async () => {
+      const user = userEvent.setup();
+      getProjectChecklistMock.mockResolvedValue(completeChecklist());
+      submitProjectMock.mockRejectedValue(
+        new ApiError(403, {
+          code: 'AGREEMENT_REQUIRED',
+          meta: { requires: 'ACCEPTANCE', document: 'CREATOR_AGREEMENT', version: 4, effectiveFrom: '2026-10-13T20:47:38Z' },
+        }),
+      );
+
+      await renderPanel();
+      await user.click(screen.getByRole('button', { name: 'Submit for review' }));
+
+      const refusal = await screen.findByRole('alert');
+      expect(refusal).toHaveTextContent(REVIEW_COPY.agreementRequired);
+      expect(refusal).not.toHaveTextContent(REVIEW_COPY.noAccess);
+      expect(screen.getByRole('checkbox', { name: REVIEW_COPY.agreementAccept })).not.toBeChecked();
+    });
+
+    it('takes the reader up to a refusal, which is drawn far above the control that caused it', async () => {
+      const user = userEvent.setup();
+      const scrolled = vi.spyOn(Element.prototype, 'scrollIntoView');
+      getProjectChecklistMock.mockResolvedValue(completeChecklist());
+      submitProjectMock.mockRejectedValue(new ApiError(409, { code: 'PROJECT_TRANSITION_NOT_ALLOWED', detail: 'Moved.' }));
+
+      await renderPanel();
+      await user.click(screen.getByRole('button', { name: 'Submit for review' }));
+
+      const refusal = await screen.findByRole('alert');
+      const box = refusal.parentElement as HTMLElement;
+      await waitFor(() => expect(box).toHaveFocus());
+      expect(scrolled.mock.contexts).toContain(box);
+      scrolled.mockRestore();
     });
 
     it('renders a refusal that names no requirements at all', async () => {

@@ -254,14 +254,7 @@ export function standingOf(held: HeldSubscription): HeldStanding {
   return 'active';
 }
 
-/**
- * Whether a held subscription rules out choosing another plan: anything but a cancelled one. The
- * service refuses a second plan with `ALREADY_SUBSCRIBED`, and a button that is certain to be
- * refused is not offered.
- */
-export function blocksChoice(held: HeldSubscription | null): boolean {
-  return held !== null && held.state !== 'CANCELED';
-}
+export { canChoose } from './choice';
 
 /** Whether the plan on this card is the one held (and not cancelled). */
 export function isHeldPlan(held: HeldSubscription | null, planId: string): boolean {

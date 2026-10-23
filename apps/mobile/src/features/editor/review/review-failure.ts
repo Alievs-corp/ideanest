@@ -1,6 +1,7 @@
 import { ApiError } from '@ideanest/api-client';
 import { unmetFromRefusal, type UnmetRequirement } from '@ideanest/campaign-editor/checklist';
 import type { ReviewPanelCopy } from '@ideanest/campaign-editor/copy';
+import { creatorAgreementRefusalOf } from '@ideanest/legal/agreements';
 
 /**
  * What the Review tab says when the service refuses it — the web `ReviewPanel`'s `messageFor` and
@@ -20,6 +21,9 @@ export function reviewFailureMessage(cause: unknown, words: ReviewPanelCopy): st
     if (cause.problem?.code === 'PLAN_LIMIT_EXCEEDED') {
       return cause.problem?.detail ?? words.planDoesNotCover;
     }
+    // Not "you do not have access": it is their own campaign, and the answer is the agreement.
+    const asked = creatorAgreementRefusalOf(cause.problem?.code, cause.problem?.meta);
+    if (asked !== null) return asked.requires === 'SIGNATURE' ? words.agreementSignature : words.agreementRequired;
     if (cause.status === 403) return words.noAccess;
     return cause.problem?.detail ?? cause.problem?.title ?? words.serviceRefused;
   }
