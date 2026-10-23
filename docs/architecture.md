@@ -2539,6 +2539,7 @@ the first moment it stops being private.
 | Enforced in | `ProjectTransitionService.submit`, through `PublishingGate` |
 | Contract | `shared.access.PublishingEntitlement` → `PublishingAllowance` |
 | Refusals | `SUBSCRIPTION_REQUIRED` (403), `PLAN_LIMIT_EXCEEDED` (403) |
+| Exempt | A creator holding `SUPER_ADMIN`, granted or bootstrapped: no plan and no plan limits. Other staff roles buy a plan |
 
 **A second gate sits beside it, at the same edge and for a related reason.**
 Submission is also the first moment the creator takes on an obligation to anybody —
