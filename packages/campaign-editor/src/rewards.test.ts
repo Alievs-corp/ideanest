@@ -24,6 +24,7 @@ import {
   isScheduledReward,
   isShippingType,
   itemDraftFrom,
+  itemIdsInRewards,
   itemPatchFrom,
   movedTo,
   newItemFrom,
@@ -614,6 +615,16 @@ describe('the sentences the list draws (#162)', () => {
       'Contains Enamel mug ×2, an item no longer in this campaign',
     );
     expect(describeRewardContents({ ...REWARD, items: [] }, [ITEM], REWARDS_COPY)).toBe('Contains no items');
+  });
+
+  it('collects the items some tier contains, so the rest can be marked as unseen (#544)', () => {
+    const rewards: Reward[] = [
+      { ...REWARD, items: [{ itemId: 'item-mug', quantity: 2 }] },
+      { ...REWARD, id: 'reward-b', items: [{ itemId: 'item-mug', quantity: 1 }, { itemId: 'item-pin', quantity: 1 }] },
+      { ...REWARD, id: 'reward-c', items: [] },
+    ];
+    expect([...itemIdsInRewards(rewards)].sort()).toEqual(['item-mug', 'item-pin']);
+    expect(itemIdsInRewards([]).size).toBe(0);
   });
 
   it('names the tiers an item is still part of, by title', () => {

@@ -16,6 +16,7 @@ import {
   hidePatch,
   isHiddenReward,
   isScheduledReward,
+  itemIdsInRewards,
   shippingScopeLabel,
   showBlockedReason,
   showPatch,
@@ -57,8 +58,14 @@ import { ItemEditor } from './item-editor';
 import { RewardEditor } from './reward-editor';
 
 /**
- * The Rewards tab — the web's `RewardsPanel` and `ItemsSection` (#162): the campaign's items, and
- * the reward tiers composed from them, in the order backers see them.
+ * The Rewards tab — the web's `RewardsPanel` and `ItemsSection` (#162): the reward tiers, in the
+ * order backers see them, and under them the items they are composed from.
+ *
+ * <h2>Tiers first (#544)</h2>
+ *
+ * The items used to come first. A creator added one with a picture believing it was a reward and
+ * the campaign had none, so nothing showed. The tier is what a backer chooses, so it leads; an item
+ * no tier contains says, in words and with an icon, that backers do not see it.
  *
  * <h2>No autosave here</h2>
  *
@@ -270,6 +277,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
     setRewardEditor((current) => ({ open: true, session: current.session + 1, target }));
 
   const full = rewards.length >= MAX_REWARD_TIERS;
+  const inRewards = useMemo(() => itemIdsInRewards(rewards), [rewards]);
   const retry = () => {
     void itemsQuery.refetch();
     void refetchRewards();
@@ -322,58 +330,6 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
           {!ready && failedQuery === undefined && !online ? (
             <InlineAlert variant="warning" description={t('nothingCached')} testID="rewards-nothing-cached" />
           ) : null}
-
-          <View style={styles.section} testID="items-section">
-            <SectionHead
-              heading={words.items.itemsHeading}
-              count={ready ? String(items.length) : null}
-              add={words.items.add}
-              disabled={readOnly || !ready}
-              onAdd={() => openItem(null)}
-              testID="items-add"
-            />
-            {!ready ? (
-              failedQuery === undefined && online ? (
-                <SkeletonGroup label={words.items.loadingLabel} testID="items-loading">
-                  <View style={styles.list}>
-                    {ITEM_ROWS.map((row) => (
-                      <Skeleton key={row} height={72} radius="lg" />
-                    ))}
-                  </View>
-                </SkeletonGroup>
-              ) : null
-            ) : items.length === 0 ? (
-              <EmptyState
-                title={words.items.emptyTitle}
-                description={words.items.description}
-                testID="items-empty"
-                action={
-                  <Pill
-                    label={words.items.addFirst}
-                    variant="ghost"
-                    size="sm"
-                    disabled={readOnly}
-                    onPress={() => openItem(null)}
-                    testID="items-add-first"
-                  />
-                }
-              />
-            ) : (
-              <View style={styles.list}>
-                {items.map((item) => (
-                  <ItemCard
-                    key={item.id}
-                    item={item}
-                    words={words}
-                    busy={busyId === item.id}
-                    readOnly={readOnly}
-                    onEdit={() => openItem(item)}
-                    onDelete={() => setDeletingItem(item)}
-                  />
-                ))}
-              </View>
-            )}
-          </View>
 
           <View style={styles.section} testID="tiers-section">
             <SectionHead
@@ -443,6 +399,61 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
                     onHide={() => setVisibility(reward, true)}
                     onShow={() => setVisibility(reward, false)}
                     onDelete={() => setDeletingReward(reward)}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View style={styles.section} testID="items-section">
+            <SectionHead
+              heading={words.items.itemsHeading}
+              count={ready ? String(items.length) : null}
+              add={words.items.add}
+              disabled={readOnly || !ready}
+              onAdd={() => openItem(null)}
+              testID="items-add"
+            />
+            {/* The empty state says this itself; a list does not, so it is said here. */}
+            {ready && items.length > 0 ? <Body testID="items-description">{words.items.description}</Body> : null}
+            {!ready ? (
+              failedQuery === undefined && online ? (
+                <SkeletonGroup label={words.items.loadingLabel} testID="items-loading">
+                  <View style={styles.list}>
+                    {ITEM_ROWS.map((row) => (
+                      <Skeleton key={row} height={72} radius="lg" />
+                    ))}
+                  </View>
+                </SkeletonGroup>
+              ) : null
+            ) : items.length === 0 ? (
+              <EmptyState
+                title={words.items.emptyTitle}
+                description={words.items.description}
+                testID="items-empty"
+                action={
+                  <Pill
+                    label={words.items.addFirst}
+                    variant="ghost"
+                    size="sm"
+                    disabled={readOnly}
+                    onPress={() => openItem(null)}
+                    testID="items-add-first"
+                  />
+                }
+              />
+            ) : (
+              <View style={styles.list}>
+                {items.map((item) => (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    inRewards={inRewards.has(item.id)}
+                    words={words}
+                    busy={busyId === item.id}
+                    readOnly={readOnly}
+                    onEdit={() => openItem(item)}
+                    onDelete={() => setDeletingItem(item)}
                   />
                 ))}
               </View>
@@ -543,6 +554,7 @@ function SectionHead({
 
 function ItemCard({
   item,
+  inRewards,
   words,
   busy,
   readOnly,
@@ -550,6 +562,8 @@ function ItemCard({
   onDelete,
 }: {
   readonly item: Item;
+  /** Some tier contains it. Otherwise no backer ever sees it, and the card says so. */
+  readonly inRewards: boolean;
   readonly words: RewardsPanelCopy;
   readonly busy: boolean;
   readonly readOnly: boolean;
@@ -566,7 +580,11 @@ function ItemCard({
           <Tag label={item.isDigital ? words.items.digital : words.items.physical} />
           {item.weightGrams == null ? null : <Tag label={fillPlaceholders(words.items.weight, { grams: String(item.weightGrams) })} />}
           {item.sku == null || item.sku === '' ? null : <Tag label={item.sku} />}
+          {inRewards ? null : (
+            <Tag label={words.items.notInReward} icon={Glyphs.EyeSlash} variant="warning" testID={`item-${item.id}-unseen`} />
+          )}
         </View>
+        {inRewards ? null : <Caption>{words.items.notInRewardDetail}</Caption>}
       </View>
       <View style={styles.actions}>
         <Pill

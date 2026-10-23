@@ -195,6 +195,27 @@ describe('RewardsPanel', () => {
     expect(screen.getByTestId('tiers-add-first')).toBeTruthy();
   });
 
+  it('puts the rewards above the items, so the first reward is what a creator meets first (#544)', async () => {
+    mockRewards = async () => [];
+    await show();
+    const sections = screen.getAllByTestId(/^(tiers|items)-section$/u).map((node) => node.props.testID);
+    expect(sections).toEqual(['tiers-section', 'items-section']);
+    expect(within(screen.getByTestId('tiers-section')).getByTestId('tiers-add-first')).toBeTruthy();
+  });
+
+  it('says, with an icon and in words, that an item no reward contains is not seen by backers', async () => {
+    const PIN: Item = { ...MUG, id: 'i-pin', name: 'Enamel pin', sku: null };
+    mockItems = async () => [MUG, PIN];
+    await show();
+    // THANKS contains the mug; nothing contains the pin.
+    expect(screen.queryByTestId('item-i-mug-unseen')).toBeNull();
+    const pin = screen.getByTestId('item-i-pin');
+    expect(within(pin).getByTestId('item-i-pin-unseen')).toBeTruthy();
+    expect(within(pin).getByText(en.campaignEditor.rewards.items.notInReward)).toBeTruthy();
+    expect(within(pin).getByText(en.campaignEditor.rewards.items.notInRewardDetail)).toBeTruthy();
+    expect(screen.getByTestId('items-description')).toBeTruthy();
+  });
+
   it('draws an item’s kind, weight and stock code as words', async () => {
     await show();
     const card = screen.getByTestId('item-i-mug');
