@@ -123,6 +123,7 @@ function Harness({ hook, active }: { readonly hook: CampaignTabHook; readonly ac
   body = hook({
     campaign: CAMPAIGN,
     active,
+    screenActive: true,
     offline: false,
     params: {},
     setParam: () => undefined,

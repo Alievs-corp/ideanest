@@ -155,7 +155,14 @@ describe('a section', () => {
   it('is read by the shared reader, with or without its picture', () => {
     const story = readStoryDocument(SECTIONS);
     expect(story).not.toBeNull();
-    expect(story?.blocks[2]).toEqual({ type: 'section', id: 'the-team', title: 'The team', image: null, spans: [] });
+    expect(story?.blocks[2]).toEqual({
+      type: 'section',
+      id: 'the-team',
+      title: 'The team',
+      image: null,
+      video: null,
+      spans: [],
+    });
   });
 
   it('draws its title as a level-2 header, its picture at its own shape, then its text', async () => {
@@ -203,6 +210,40 @@ describe('a section', () => {
       expect(image.props.accessible).toBe(false);
       expect(image.props.importantForAccessibility).toBe('no-hide-descendants');
     }
+  });
+
+  it('draws a video as its poster and a play button named by the title, and plays only when pressed (#551)', async () => {
+    await show(
+      readStoryDocument({
+        version: 1,
+        blocks: [
+          {
+            type: 'section',
+            id: 'our-workshop',
+            title: 'Our workshop',
+            image: null,
+            video: {
+              mediaId: '0b6c2f4e-5f63-4c8e-9a51-2f7e4d1b9c10',
+              url: 'https://cdn.example/v.mp4',
+              posterUrl: 'https://cdn.example/v-poster.jpg',
+              width: 720,
+              height: 1280,
+              durationMs: 42_000,
+            },
+            spans: [],
+          },
+        ],
+      }) as StoryDocument,
+    );
+
+    const poster = screen.getByTestId('story-section-poster', { includeHiddenElements: true });
+    expect(poster.props.source).toEqual({ uri: 'https://cdn.example/v-poster.jpg' });
+    // The 16:9 box is reserved before the poster decodes; a portrait clip is letterboxed in it.
+    expect(StyleSheet.flatten(poster.parent?.props.style).aspectRatio).toBeCloseTo(16 / 9);
+    expect(screen.queryByTestId('campaign-video-player')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Watch the video: Our workshop' }));
+    expect(screen.getByTestId('campaign-video-player').props.accessibilityLabel).toBe('Video: Our workshop');
   });
 });
 

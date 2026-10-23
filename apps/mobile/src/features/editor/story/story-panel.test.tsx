@@ -21,7 +21,7 @@ import { spacing } from '../../../theme';
 import { setOnline } from '../../../lib/connectivity';
 import { setLocale } from '../../../lib/locale';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadImage } from '../../../lib/media/upload';
+import { uploadImage, uploadVideo } from '../../../lib/media/upload';
 import { memoryStore, type KeyValueStore } from '../../../lib/storage';
 import { heldKeyFor, readUnsent, unsentKeyFor, writeUnsent } from '../../../lib/unsent-edits';
 import { EditorProvider } from '../editor-context';
@@ -46,7 +46,7 @@ jest.mock('../../../api/client', () => ({
 const mockSend = jest.fn();
 jest.mock('../../../lib/media/upload', () => {
   const actual = jest.requireActual('../../../lib/media/upload');
-  return { ...actual, uploadImage: jest.fn() };
+  return { ...actual, uploadImage: jest.fn(), uploadVideo: jest.fn(), forgetPicked: jest.fn() };
 });
 
 // The system font scale: the owner's phone runs at 1.4.
@@ -983,6 +983,7 @@ describe('StoryPanel — sections', () => {
       id: 'our-workshop',
       title: 'Our workshop',
       image: null,
+      video: null,
       spans: parseSpans('Every lamp is **blown** here.'),
     });
     expect(within(screen.getByTestId('story-anchors')).getByText('#our-workshop')).toBeTruthy();
@@ -1001,7 +1002,9 @@ describe('StoryPanel — sections', () => {
 
   it('takes a picture from the library, warns until it is described, and can let it go again', async () => {
     mockProject = async () =>
-      project({ story: doc([{ type: 'section', id: 'our-workshop', title: 'Our workshop', image: null, spans: [] }]) });
+      project({
+        story: doc([{ type: 'section', id: 'our-workshop', title: 'Our workshop', image: null, video: null, spans: [] }]),
+      });
     picker.__setNextResult({ canceled: false, assets: [{ uri: 'file:///bench.heic', mimeType: 'image/jpeg' }] });
     upload.mockResolvedValue({ mediaId: 'm1', url: 'https://cdn.example.com/m1.jpg', width: 1440, height: 960, blurDataUrl: '' });
     await show();
@@ -1022,6 +1025,7 @@ describe('StoryPanel — sections', () => {
       id: 'our-workshop',
       title: 'Our workshop',
       image: { url: 'https://cdn.example.com/m1.jpg', width: 1440, height: 960, alt: 'Two benches and a kiln' },
+      video: null,
       spans: [],
     });
     expect(screen.queryByTestId('story-block-0-warning')).toBeNull();
@@ -1034,5 +1038,53 @@ describe('StoryPanel — sections', () => {
     await settle();
     expect(storyPatches().at(-1)?.blocks[0]).toMatchObject({ type: 'section', image: null });
     expect(screen.queryByTestId('story-block-0-image-size')).toBeNull();
+  });
+
+  it('takes a video instead of a picture, and offers the picture again once it is removed (#551)', async () => {
+    mockProject = async () =>
+      project({
+        story: doc([{ type: 'section', id: 'our-workshop', title: 'Our workshop', image: null, video: null, spans: [] }]),
+      });
+    picker.__setNextResult({
+      canceled: false,
+      assets: [{ uri: 'file:///clip.mov', type: 'video', mimeType: 'video/quicktime', duration: 42_000, fileSize: 1_000_000 }],
+    });
+    jest.mocked(uploadVideo).mockResolvedValue({
+      mediaId: 'v1',
+      url: 'https://cdn.example.com/v1.mp4',
+      posterUrl: 'https://cdn.example.com/v1-poster.jpg',
+      width: 1280,
+      height: 720,
+      durationMs: 42_000,
+      blurDataUrl: '',
+    });
+    await show();
+
+    await fireEvent.press(screen.getByTestId('story-block-0-video-choose'));
+    await settle();
+
+    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+      type: 'section',
+      id: 'our-workshop',
+      title: 'Our workshop',
+      image: null,
+      video: {
+        mediaId: 'v1',
+        url: 'https://cdn.example.com/v1.mp4',
+        posterUrl: 'https://cdn.example.com/v1-poster.jpg',
+        width: 1280,
+        height: 720,
+        durationMs: 42_000,
+      },
+      spans: [],
+    });
+    // One or the other: the picture's fields go while the section has a video.
+    expect(screen.queryByTestId('story-block-0-picture')).toBeNull();
+    expect(screen.getByTestId('story-block-0-video-preview')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('story-block-0-video-remove'));
+    await settle();
+    expect(storyPatches().at(-1)?.blocks[0]).toMatchObject({ type: 'section', image: null, video: null });
+    expect(screen.getByTestId('story-block-0-picture')).toBeTruthy();
   });
 });

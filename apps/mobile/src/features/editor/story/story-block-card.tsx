@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, useState, type ComponentProps } from 'react';
+import { memo, useCallback, useMemo, useRef, useState, type ComponentProps } from 'react';
 import {
   StyleSheet,
   View,
@@ -21,9 +21,12 @@ import {
   type SectionBlock,
   type StoryBlock,
 } from '@ideanest/campaign-editor/story';
+import { VIDEO_MAX_SECONDS } from '@ideanest/campaign-editor/video';
 import { Caption, Icon, IconButton, Meta, Pill, Select, TextInput } from '../../../components/ui';
 import { Glyphs } from '../../../icons';
 import { colors, radius, spacing } from '../../../theme';
+import { useVideoUpload } from '../use-video-upload';
+import { VideoField, type VideoFieldWords } from '../video-field';
 import type { StoryCopy } from './story-copy';
 import { StoryImageFields, type StoryPicture } from './story-image-fields';
 import { useStoryScroll } from './story-scroll';
@@ -511,6 +514,10 @@ const NO_PICTURE: StoryPicture = { url: '', width: 0, height: 0, alt: '' };
  * A section: its title (the anchor follows it, as a heading's does), an optional picture through
  * the image block's own fields, and its text with the marks toolbar. A picture is stored only
  * once it is chosen; until then the section has `image: null`, which is complete.
+ *
+ * <p>Or a clip instead of the picture (#551), through the campaign video's field and upload: up to
+ * `VIDEO_MAX_SECONDS`, the campaign video's limit. A section has one or the other, so each is
+ * offered only while the other is empty, and the one that arrives last clears the other.
  */
 function SectionFields({
   copy,
@@ -552,45 +559,55 @@ function SectionFields({
         />
       </View>
 
-      <View style={styles.part} testID={`${testID}-picture`}>
-        <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {`${section.image} · ${section.imageHint}`}
-        </Caption>
-        <StoryImageFields
-          key={removals}
-          copy={copy}
-          value={image ?? NO_PICTURE}
-          name={name}
-          disabled={disabled}
-          warning={warning}
-          hideAltUntilMeasured={image === null}
-          onChange={(next, sendNow) =>
-            onChange(
-              { ...block, image: { url: next.url, width: next.width, height: next.height, alt: next.alt } },
-              sendNow,
-            )
-          }
-          onFlush={onFlush}
-          testID={`${testID}-image`}
-        />
-        {image === null ? null : (
-          <View style={styles.start}>
-            <Pill
-              label={section.removeImage}
-              accessibilityLabel={fillPlaceholders(section.removeImageFrom, { name })}
-              iconLeft={Glyphs.Trash}
-              variant="ghost"
-              size="sm"
-              disabled={disabled}
-              onPress={() => {
-                setRemovals((count) => count + 1);
-                onChange({ ...block, image: null }, true);
-              }}
-              testID={`${testID}-image-remove`}
-            />
-          </View>
-        )}
-      </View>
+      {block.video !== null ? null : (
+        <View style={styles.part} testID={`${testID}-picture`}>
+          <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            {`${section.image} · ${section.imageHint}`}
+          </Caption>
+          <StoryImageFields
+            key={removals}
+            copy={copy}
+            value={image ?? NO_PICTURE}
+            name={name}
+            disabled={disabled}
+            warning={warning}
+            hideAltUntilMeasured={image === null}
+            onChange={(next, sendNow) =>
+              onChange(
+                {
+                  ...block,
+                  image: { url: next.url, width: next.width, height: next.height, alt: next.alt },
+                  video: null,
+                },
+                sendNow,
+              )
+            }
+            onFlush={onFlush}
+            testID={`${testID}-image`}
+          />
+          {image === null ? null : (
+            <View style={styles.start}>
+              <Pill
+                label={section.removeImage}
+                accessibilityLabel={fillPlaceholders(section.removeImageFrom, { name })}
+                iconLeft={Glyphs.Trash}
+                variant="ghost"
+                size="sm"
+                disabled={disabled}
+                onPress={() => {
+                  setRemovals((count) => count + 1);
+                  onChange({ ...block, image: null }, true);
+                }}
+                testID={`${testID}-image-remove`}
+              />
+            </View>
+          )}
+        </View>
+      )}
+
+      {image === null ? (
+        <SectionVideoField copy={copy} block={block} disabled={disabled} onChange={onChange} testID={testID} />
+      ) : null}
 
       <View style={styles.part}>
         <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -609,6 +626,53 @@ function SectionFields({
       </View>
     </View>
   );
+}
+
+/** A section's clip: the campaign video's field, kept in the block rather than saved on its own. */
+function SectionVideoField({
+  copy,
+  block,
+  disabled,
+  onChange,
+  testID,
+}: Pick<FieldsProps, 'copy' | 'disabled' | 'onChange' | 'testID'> & { readonly block: SectionBlock }) {
+  const words = copy.story.blocks.sectionBlock.video;
+  const upload = useVideoUpload({
+    saved: block.video,
+    // Nothing to queue: the clip travels in the story, which the tab saves.
+    save: () => undefined,
+    onChosen: (video) =>
+      onChange(
+        {
+          ...block,
+          image: null,
+          video:
+            video === null
+              ? null
+              : {
+                  mediaId: video.mediaId,
+                  url: video.url,
+                  posterUrl: video.posterUrl,
+                  width: video.width,
+                  height: video.height,
+                  durationMs: video.durationMs,
+                },
+        },
+        true,
+      ),
+    refusal: null,
+    forget: () => undefined,
+    pending: false,
+  });
+  const fieldWords = useMemo<VideoFieldWords>(
+    () => ({
+      label: words.label,
+      hint: fillPlaceholders(words.hint, { seconds: String(VIDEO_MAX_SECONDS) }),
+      set: words.set,
+    }),
+    [words],
+  );
+  return <VideoField upload={upload} disabled={disabled} words={fieldWords} testID={`${testID}-video`} />;
 }
 
 const styles = StyleSheet.create({

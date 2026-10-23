@@ -180,6 +180,7 @@ async function show({
   const contextFor = (view: string | undefined): CampaignTabContext => ({
     campaign: CAMPAIGN,
     active: true,
+    screenActive: true,
     offline,
     params: view === undefined ? {} : { thread: view },
     setParam: context.setParam,
