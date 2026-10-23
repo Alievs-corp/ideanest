@@ -963,6 +963,17 @@ export function describeRewardContents(
 }
 
 /**
+ * The items at least one tier contains (#544).
+ *
+ * A backer only ever meets an item inside a reward, so an item in none of them is on no public
+ * page at all. A creator who added one believing it was a reward saw it here and nowhere else;
+ * the item list marks every item missing from this set so that cannot pass unnoticed.
+ */
+export function itemIdsInRewards(rewards: readonly Reward[]): ReadonlySet<string> {
+  return new Set(rewards.flatMap((reward) => reward.items.map((line) => line.itemId)));
+}
+
+/**
  * `ITEM_IN_USE`, as a sentence naming the tiers by title rather than identifier.
  *
  * `meta.rewardTierIds` lists the tiers that still contain the item. A tier this

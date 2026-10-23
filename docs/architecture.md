@@ -1176,7 +1176,9 @@ duration (30–60 days), scheduled launch, late-pledge toggle, pre-launch page.
 title, description, price, included items with quantities, images, estimated
 delivery, quantity limit, shipping scope, per-country rates, early-bird windows,
 featured and secret flags, reordering, duplication. **Add-ons** are items
-sold alongside a tier.
+sold alongside a tier. The editor's tab lists the tiers above the items
+(#544): with the items first, a creator took an item for a reward and the campaign
+had none. An item no tier contains is marked, in words, as unseen by backers.
 
 > **Two notes on how the editor delivers this** (#34).
 >

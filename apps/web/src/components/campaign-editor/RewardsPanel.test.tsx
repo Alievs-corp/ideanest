@@ -241,6 +241,41 @@ describe('RewardsPanel', () => {
     expect(screen.getByText('Contains no items')).toBeInTheDocument();
   });
 
+  describe('a creator who has not made a reward yet (#544)', () => {
+    const PIN: Item = { ...MUG, id: 'item-pin', name: 'Enamel pin', weightGrams: null };
+
+    it('offers the first reward before anything about items', async () => {
+      await openRewards({ items: [MUG], rewards: [] });
+
+      const rewardsHeading = screen.getByRole('heading', { name: /^Rewards/ });
+      const itemsHeading = screen.getByRole('heading', { name: /^Items/ });
+      const addFirstReward = screen.getByRole('button', { name: 'Add the first reward' });
+      const addItem = screen.getByRole('button', { name: 'Add an item' });
+
+      // DOCUMENT_POSITION_FOLLOWING: the second node comes after the first.
+      expect(rewardsHeading.compareDocumentPosition(itemsHeading)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      expect(addFirstReward.compareDocumentPosition(addItem)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('says, in words, that an item no reward contains is not seen by backers', async () => {
+      await openRewards({ items: [MUG], rewards: [] });
+
+      expect(screen.getByText('Not in any reward')).toBeInTheDocument();
+      expect(
+        screen.getByText('Backers do not see it until it is added to a reward.'),
+      ).toBeInTheDocument();
+    });
+
+    it('marks only the items no reward contains', async () => {
+      // SECOND contains the mug; nothing contains the pin.
+      await openRewards({ items: [MUG, PIN], rewards: [FIRST, SECOND] });
+
+      const marked = screen.getAllByText('Not in any reward');
+      expect(marked).toHaveLength(1);
+      expect(marked[0]?.closest('li')).toHaveTextContent('Enamel pin');
+    });
+  });
+
   describe('the save model', () => {
     it('sends nothing while a reward is being typed, and everything when Save is pressed', async () => {
       const user = await openRewards({ rewards: [] });

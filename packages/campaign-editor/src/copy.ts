@@ -531,6 +531,10 @@ export interface ItemsSectionCopy {
   readonly deleteNamed: string;
   /** An item's shipping weight. Carries `{grams}`; the unit is the reader's ("г" in Russian). */
   readonly weight: string;
+  /** The marker on an item no reward contains (#544). */
+  readonly notInReward: string;
+  /** Why that matters: backers only ever meet an item inside a reward. */
+  readonly notInRewardDetail: string;
 }
 
 /** `RewardTierEditor` — the drawer one reward is edited in. */
@@ -815,6 +819,8 @@ export function rewardsPanelCopyFrom(
       editNamed: tpl('rewards.items.editNamed'),
       deleteNamed: tpl('rewards.items.deleteNamed'),
       weight: tpl('rewards.items.weight'),
+      notInReward: at('items.notInReward'),
+      notInRewardDetail: at('items.notInRewardDetail'),
     },
     item: {
       drawer: drawer('item'),

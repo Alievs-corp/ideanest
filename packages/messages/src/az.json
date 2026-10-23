@@ -5328,7 +5328,7 @@
       "earlyBird": "Erkən qiymət",
       "addOn": "Əlavə",
       "items": {
-        "description": "Əşya bir fiziki və ya rəqəmsal şeydir — fincan, plakat, yüklənən fayl. Mükafatlar onlardan qurulur, ona görə kampaniya buradan başlayır.",
+        "description": "Əşya bir fiziki və ya rəqəmsal şeydir — fincan, plakat, yüklənən fayl. O, mükafatın içinə qoyulur və dəstəkçilər onu yalnız mükafatda görür.",
         "loadingLabel": "Kampaniyanın əşyaları yüklənir",
         "emptyTitle": "Hələ əşya yoxdur",
         "add": "Əşya əlavə et",
@@ -5340,7 +5340,9 @@
         "deleteNamed": "«{name}» sil",
         "weight": "{grams} q",
         "itemsHeading": "Əşyalar",
-        "edit": "Dəyiş"
+        "edit": "Dəyiş",
+        "notInReward": "Heç bir mükafatda deyil",
+        "notInRewardDetail": "Mükafata əlavə edilənə qədər dəstəkçilər onu görmür."
       },
       "item": {
         "addTitle": "Əşya əlavə et",

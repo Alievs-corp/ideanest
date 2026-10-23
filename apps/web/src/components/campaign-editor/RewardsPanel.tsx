@@ -32,6 +32,7 @@ import {
   hidePatch,
   isHiddenReward,
   isScheduledReward,
+  itemIdsInRewards,
   movedTo,
   shippingScopeLabel,
   showBlockedReason,
@@ -54,11 +55,15 @@ import { useProjectEdit } from './useProjectEdit';
 /**
  * The rewards tab: the campaign's items, and the tiers composed from them.
  *
- * <h3>ITEMS FIRST, THEN TIERS</h3>
+ * <h3>TIERS FIRST, THEN ITEMS</h3>
  *
- * The order §4.6 puts them in, and the order the endpoints are shaped for: a
- * tier is a selection of items with quantities, so there is nothing to compose
- * until the items exist.
+ * §4.6 builds a campaign items first, because a tier is a selection of items
+ * with quantities. The page used to follow it, and a creator on production
+ * added an item with a picture believing it was a reward, and the campaign
+ * had none (#544). The reward is what a backer chooses, so it is what the page
+ * offers first; the items follow, each one no tier contains marked as unseen.
+ * A tier can still be composed only from items that exist, and the tier
+ * drawer says so when there are none.
  *
  * <h3>THERE IS NO AUTOSAVE ON THIS TAB</h3>
  *
@@ -445,16 +450,6 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
           </>
         )}
 
-        <ItemsSection
-          copy={words.items}
-          items={items}
-          loading={listStatus === 'loading'}
-          busyId={busyId}
-          onAdd={() => setItemEditor({ open: true, item: null })}
-          onEdit={(item) => setItemEditor({ open: true, item })}
-          onDelete={setDeletingItem}
-        />
-
         <section aria-labelledby="rewards-heading" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="rewards-heading" className="text-lg font-medium tracking-[-0.02em] text-fg">
@@ -538,6 +533,17 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
             </ol>
           )}
         </section>
+
+        <ItemsSection
+          copy={words.items}
+          items={items}
+          inRewards={itemIdsInRewards(rewards)}
+          loading={listStatus === 'loading'}
+          busyId={busyId}
+          onAdd={() => setItemEditor({ open: true, item: null })}
+          onEdit={(item) => setItemEditor({ open: true, item })}
+          onDelete={setDeletingItem}
+        />
       </div>
 
       <ItemEditor

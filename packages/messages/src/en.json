@@ -5328,7 +5328,7 @@
       "earlyBird": "Early bird",
       "addOn": "Add-on",
       "items": {
-        "description": "An item is one physical or digital thing — a mug, a poster, a download. Rewards are built out of them, so this is where a campaign starts.",
+        "description": "An item is one physical or digital thing — a mug, a poster, a download. It goes inside a reward, and backers see it only as part of one.",
         "loadingLabel": "Loading this campaign’s items",
         "emptyTitle": "No items yet",
         "add": "Add an item",
@@ -5340,7 +5340,9 @@
         "deleteNamed": "Delete {name}",
         "weight": "{grams} g",
         "itemsHeading": "Items",
-        "edit": "Edit"
+        "edit": "Edit",
+        "notInReward": "Not in any reward",
+        "notInRewardDetail": "Backers do not see it until it is added to a reward."
       },
       "item": {
         "addTitle": "Add an item",

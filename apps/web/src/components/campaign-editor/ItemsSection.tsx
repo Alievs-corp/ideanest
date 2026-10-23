@@ -1,16 +1,18 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { EyeOff, Plus } from 'lucide-react';
 import { EmptyState, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
 import type { Item } from '../../lib/projects/api';
 
 /**
  * The campaign's items: the atomic things it produces.
  *
- * FIRST ON THE PAGE, because that is the order §4.6 builds a campaign in — a
- * tier is a selection of items with quantities, so there is nothing to compose
- * until these exist. A creator who meets the reward form first meets an empty
- * item list inside it and has to leave to fix that.
+ * SECOND ON THE PAGE, under the tiers (#544). It used to come first, the order
+ * §4.6 builds a campaign in, and a creator on production met "Add an item"
+ * before anything else, added one with a picture, took it for a reward and
+ * the campaign had none — so nothing showed. A backer only ever meets an item
+ * inside a reward, so every item no tier contains says so, in words and with
+ * an icon rather than a colour alone.
  *
  * The list is presentational: every action is the panel's, because deleting an
  * item can be refused for a reason that is about the REWARDS (`ITEM_IN_USE`),
@@ -25,6 +27,8 @@ export interface ItemsSectionProps {
   /** This list's words. */
   copy: ItemsSectionCopy;
   items: readonly Item[];
+  /** The ids of the items some tier contains; every other item is marked unseen. */
+  inRewards: ReadonlySet<string>;
   loading: boolean;
   onAdd: () => void;
   onEdit: (item: Item) => void;
@@ -36,6 +40,7 @@ export interface ItemsSectionProps {
 export function ItemsSection({
   copy,
   items,
+  inRewards,
   loading,
   onAdd,
   onEdit,
@@ -61,6 +66,9 @@ export function ItemsSection({
           {copy.add}
         </Pill>
       </div>
+
+      {/* The empty state says this itself; a list does not, so it is said here. */}
+      {!loading && items.length > 0 && <p className="-mt-2 text-sm text-fg-64">{copy.description}</p>}
 
       {loading ? (
         <SkeletonGroup label={copy.loadingLabel}>
@@ -106,7 +114,17 @@ export function ItemsSection({
                     <Tag>{fillPlaceholders(copy.weight, { grams: String(item.weightGrams) })}</Tag>
                   )}
                   {item.sku != null && item.sku !== '' && <Tag>{item.sku}</Tag>}
+                  {!inRewards.has(item.id) && (
+                    <Tag variant="warning">
+                      <EyeOff aria-hidden="true" className="size-3.5" />
+                      {copy.notInReward}
+                    </Tag>
+                  )}
                 </div>
+
+                {!inRewards.has(item.id) && (
+                  <p className="mt-2 text-[13px] text-fg-64">{copy.notInRewardDetail}</p>
+                )}
               </div>
 
               <div className="flex shrink-0 items-center gap-2">

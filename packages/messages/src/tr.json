@@ -5328,7 +5328,7 @@
       "earlyBird": "Erken fiyat",
       "addOn": "Ek ürün",
       "items": {
-        "description": "Ürün tek bir fiziksel ya da dijital şeydir — bir kupa, bir afiş, bir indirme. Ödüller bunlardan kurulur, kampanya da buradan başlar.",
+        "description": "Ürün tek bir fiziksel ya da dijital şeydir — bir kupa, bir afiş, bir indirme. Bir ödülün içine girer ve destekçiler onu yalnızca bir ödülün parçası olarak görür.",
         "loadingLabel": "Kampanyanın ürünleri yükleniyor",
         "emptyTitle": "Henüz ürün yok",
         "add": "Ürün ekle",
@@ -5340,7 +5340,9 @@
         "deleteNamed": "«{name}» sil",
         "weight": "{grams} g",
         "itemsHeading": "Ürünler",
-        "edit": "Düzenle"
+        "edit": "Düzenle",
+        "notInReward": "Hiçbir ödülde değil",
+        "notInRewardDetail": "Bir ödüle eklenene kadar destekçiler onu görmez."
       },
       "item": {
         "addTitle": "Ürün ekle",
