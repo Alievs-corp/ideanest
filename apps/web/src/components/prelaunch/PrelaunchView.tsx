@@ -266,13 +266,13 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
         </p>
         <h1
           id={headingId}
-          className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-fg sm:text-4xl"
+          className="mt-2 text-3xl font-semibold tracking-[-0.03em] wrap-anywhere text-fg sm:text-4xl"
         >
           {page.title}
         </h1>
 
         {page.blurb != null && page.blurb !== '' && (
-          <p className="mt-4 text-lg text-reading">{page.blurb}</p>
+          <p className="mt-4 text-lg wrap-anywhere text-reading">{page.blurb}</p>
         )}
 
         <p className="mt-6 flex items-center gap-2 text-sm text-fg-64">

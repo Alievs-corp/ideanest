@@ -231,9 +231,9 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
                     href={`/projects/${encodeURIComponent(project.creatorSlug)}/${encodeURIComponent(project.slug)}`}
                     className="flex flex-col gap-1 rounded-lg border border-fg/8 bg-surface-2 p-4 transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
-                    <span className="text-sm font-medium text-fg">{project.title}</span>
+                    <span className="text-sm font-medium wrap-anywhere text-fg">{project.title}</span>
                     {project.blurb !== null && (
-                      <span className="line-clamp-2 text-sm text-fg-64">{project.blurb}</span>
+                      <span className="line-clamp-2 text-sm wrap-anywhere text-fg-64">{project.blurb}</span>
                     )}
                     {/*
                       The state as a word, never as a colour. §9.2: colour alone carries no

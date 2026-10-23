@@ -212,7 +212,7 @@ export function ProfileCampaignCard({
         </h3>
 
         {card.blurb !== null && card.blurb !== '' && (
-          <p className="line-clamp-2 text-xs lg:text-sm text-fg-64">{card.blurb}</p>
+          <p className="line-clamp-2 text-xs wrap-anywhere lg:text-sm text-fg-64">{card.blurb}</p>
         )}
 
         {funding === 'shown' && completion !== null && pledged !== null ? (
