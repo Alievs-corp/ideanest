@@ -81,4 +81,13 @@ public interface PlatformStaff {
      *     derived from the path, so that a reader of the endpoint can see what it costs
      */
     void requireCapability(UUID accountId, StaffCapability capability);
+
+    /**
+     * Whether this account holds {@code SUPER_ADMIN}, granted or bootstrapped.
+     *
+     * <p>A role rather than a capability, because the one caller asks who somebody is and
+     * not what a screen needs: {@code PublishingGate} lets the operator publish without
+     * buying a plan from themselves.
+     */
+    boolean isSuperAdmin(UUID accountId);
 }
