@@ -201,6 +201,8 @@ function Review({
   const stateNote = useRef<View>(null);
   /** Set by a submit or launch that succeeded: the state it produced is announced and focused. */
   const sayState = useRef(false);
+  const showState = useRef(false);
+  const stateY = useRef<number | null>(null);
 
   const { projectId, online, apply } = editor;
   // The project's state is the freshest: a submit or a launch applies its answer at once.
@@ -220,15 +222,21 @@ function Review({
     return () => clearTimeout(timer);
   }, [confirmingLaunch]);
 
+  useEffect(() => {
+    if (!isReviewNotedState(state)) stateY.current = null;
+  }, [state]);
+
   // After a submit or a launch, the new state is the news: focus it and say it.
   useEffect(() => {
     if (!sayState.current) return undefined;
     sayState.current = false;
     if (!isReviewNotedState(state)) return undefined;
+    if (stateY.current === null) showState.current = true;
+    else scroll.current?.scrollTo({ y: stateY.current, animated: !reduced });
     announce(`${chrome.states[state]}. ${words.stateNote[state]}`);
     const timer = setTimeout(() => focusOn(stateNote.current), FOCUS_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [state, chrome.states, words.stateNote]);
+  }, [state, chrome.states, words.stateNote, reduced]);
 
   useEffect(() => {
     let live = true;
@@ -348,6 +356,12 @@ function Review({
           // One element for a screen reader, so focus can be moved to it after a submit or launch.
           <View
             ref={stateNote}
+            onLayout={(event) => {
+              stateY.current = event.nativeEvent.layout.y;
+              if (!showState.current) return;
+              showState.current = false;
+              scroll.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: !reduced });
+            }}
             accessible
             accessibilityLabel={`${chrome.states[state]}. ${words.stateNote[state]}`}
             testID="review-state"

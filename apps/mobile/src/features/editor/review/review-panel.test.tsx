@@ -237,6 +237,24 @@ describe('ReviewPanel', () => {
     expect(screen.getByTestId('review-state-note')).toHaveTextContent(words.stateNote.SUBMITTED, { exact: false });
   });
 
+  it('scrolls up to the review notice once the campaign is submitted', async () => {
+    mockChecklist = async () => READY;
+    mockSend.mockImplementation(async () => project({ state: 'SUBMITTED' }));
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(() => {});
+    await show();
+
+    mockChecklist = async () => ({ ...READY, state: 'SUBMITTED' });
+    await fireEvent.press(screen.getByTestId('review-submit'));
+    await settle();
+
+    const layout = { nativeEvent: { layout: { x: 0, y: 260, width: 350, height: 90 } } };
+    await fireEvent(screen.getByTestId('review-state'), 'layout', layout);
+    await fireEvent(screen.getByTestId('review-state'), 'layout', layout);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ y: 260 }));
+    scrollTo.mockRestore();
+  });
+
   it('asks for the creator agreement before submitting, and accepts the version shown first', async () => {
     mockChecklist = async () => READY;
     mockAgreements = async () => ({
