@@ -32,9 +32,15 @@ jest.mock('../../../lib/use-session', () => ({
 }));
 let mockProject: () => Promise<unknown> = async () => ({});
 let mockChecklist: () => Promise<unknown> = async () => ({});
+let mockAgreements: () => Promise<unknown> = async () => ({ agreements: [] });
 jest.mock('../../../api/client', () => ({
   api: () => ({
-    get: (path: string) => (path === '/v1/projects/{id}/checklist' ? mockChecklist() : mockProject()),
+    get: (path: string) =>
+      path === '/v1/projects/{id}/checklist'
+        ? mockChecklist()
+        : path === '/v1/me/agreements'
+          ? mockAgreements()
+          : mockProject(),
   }),
   sendJson: (...args: unknown[]) => mockSend(...args),
   traceIdOfError: () => null,
@@ -148,6 +154,7 @@ beforeEach(() => {
   mockSend.mockReset();
   mockProject = async () => project();
   mockChecklist = async () => BLOCKED;
+  mockAgreements = async () => ({ agreements: [] });
   setOnline(true);
   jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
   jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions').mockImplementation(() => {});
@@ -228,6 +235,49 @@ describe('ReviewPanel', () => {
     expect(calls()).toEqual(['POST /v1/projects/p1/submit']);
     expect(screen.queryByTestId('review-submit')).toBeNull();
     expect(screen.getByTestId('review-state-note')).toHaveTextContent(words.stateNote.SUBMITTED, { exact: false });
+  });
+
+  it('asks for the creator agreement before submitting, and accepts the version shown first', async () => {
+    mockChecklist = async () => READY;
+    mockAgreements = async () => ({
+      agreements: [{ document: 'CREATOR_AGREEMENT', inForce: true, version: 4, effectiveFrom: '2026-10-13T20:47:38Z' }],
+    });
+    mockSend.mockImplementation(async (_method: string, path: string) =>
+      path.endsWith('/submit') ? project({ state: 'SUBMITTED' }) : {},
+    );
+    await show();
+    expect(screen.getByTestId('review-agreement')).toHaveTextContent(words.agreementTitle, { exact: false });
+    expect(screen.getByTestId('review-submit-explanation')).toHaveTextContent(words.agreementRequired);
+
+    await fireEvent.press(screen.getByTestId('review-submit'));
+    await settle();
+    expect(calls()).toEqual([]);
+
+    await fireEvent.press(screen.getByTestId('review-agreement-read'));
+    expect(mockRouter.push).toHaveBeenCalledWith('/legal/creator-agreement');
+
+    await fireEvent.press(screen.getByTestId('review-agreement-accept'));
+    await fireEvent.press(screen.getByTestId('review-submit'));
+    await settle();
+    expect(calls()).toEqual(['POST /v1/me/agreements/CREATOR_AGREEMENT', 'POST /v1/projects/p1/submit']);
+    expect(mockSend.mock.calls[0]?.[2]).toEqual({ version: 4 });
+  });
+
+  it('says the agreement is missing, not that the campaign is out of reach, when the service asks for it', async () => {
+    mockChecklist = async () => READY;
+    mockSend.mockRejectedValue(
+      new ApiError(403, {
+        status: 403,
+        code: 'AGREEMENT_REQUIRED',
+        meta: { requires: 'ACCEPTANCE', document: 'CREATOR_AGREEMENT', version: 4, effectiveFrom: '2026-10-13T20:47:38Z' },
+      }),
+    );
+    await show();
+    await fireEvent.press(screen.getByTestId('review-submit'));
+    await settle();
+    expect(screen.getByTestId('review-refusal')).toHaveTextContent(words.agreementRequired, { exact: false });
+    expect(screen.getByTestId('review-refusal')).not.toHaveTextContent(words.noAccess, { exact: false });
+    expect(screen.getByTestId('review-agreement')).toBeTruthy();
   });
 
   it('sends a creator with no plan to pricing, saying where they came from', async () => {

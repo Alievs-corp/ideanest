@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ProjectChecklist, ProjectEdit } from '@ideanest/campaign-editor/contract';
+import { CREATOR_AGREEMENT, pendingCreatorAgreement, type PendingAgreement } from '@ideanest/legal/agreements';
 import { api, sendJson } from '../../../api/client';
 import { queryKeys } from '../../../api/queries';
 
@@ -46,6 +47,16 @@ export function useProjectChecklist(projectId: string) {
 /** `POST /v1/projects/{id}/submit` — sends the campaign to moderation; answers the project. */
 export async function submitProject(projectId: string): Promise<ProjectEdit> {
   return (await sendJson('POST', `/v1/projects/${encodeURIComponent(projectId)}/submit`)) as ProjectEdit;
+}
+
+/** `GET /v1/me/agreements`: the creator agreement this account has still to accept, if any. */
+export async function fetchPendingCreatorAgreement(): Promise<PendingAgreement | null> {
+  return pendingCreatorAgreement(await api().get('/v1/me/agreements', {}));
+}
+
+/** `POST /v1/me/agreements/CREATOR_AGREEMENT`: accepts the version the creator was shown. */
+export async function acceptCreatorAgreement(version: number): Promise<void> {
+  await sendJson('POST', `/v1/me/agreements/${CREATOR_AGREEMENT}`, { version });
 }
 
 /** `POST /v1/projects/{id}/launch` — `APPROVED` or `SCHEDULED` → `LIVE`; answers the project. */

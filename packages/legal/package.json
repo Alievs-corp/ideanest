@@ -6,6 +6,7 @@
   "type": "module",
   "description": "The eight legal documents as both clients read them: the slugs, their service kinds, the response narrowing, the addresses and the paragraph split, shared by apps/web and apps/mobile.",
   "exports": {
+    "./agreements": "./src/agreements.ts",
     "./documents": "./src/documents.ts"
   },
   "scripts": {

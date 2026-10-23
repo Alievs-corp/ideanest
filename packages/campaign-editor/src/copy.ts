@@ -1803,6 +1803,13 @@ export interface ReviewPanelCopy {
   readonly progressSummary: string;
   readonly checkAgain: string;
   readonly seeOtherPlans: string;
+  readonly agreementTitle: string;
+  /** Carries `{version}` and `{date}`. */
+  readonly agreementVersion: string;
+  readonly agreementRead: string;
+  readonly agreementAccept: string;
+  readonly agreementRequired: string;
+  readonly agreementSignature: string;
   readonly requiredHeading: string;
   readonly requiredDescription: string;
   readonly recommendedHeading: string;
@@ -1873,6 +1880,12 @@ export function reviewPanelCopyFrom(
     progressSummary: tpl('progressSummary'),
     checkAgain: at('checkAgain'),
     seeOtherPlans: at('seeOtherPlans'),
+    agreementTitle: at('agreementTitle'),
+    agreementVersion: tpl('agreementVersion'),
+    agreementRead: at('agreementRead'),
+    agreementAccept: at('agreementAccept'),
+    agreementRequired: at('agreementRequired'),
+    agreementSignature: at('agreementSignature'),
     requiredHeading: at('requiredHeading'),
     requiredDescription: at('requiredDescription'),
     recommendedHeading: at('recommendedHeading'),

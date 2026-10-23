@@ -14,9 +14,13 @@ import {
 } from '@ideanest/campaign-editor/checklist';
 import type { ChecklistItem, ProjectChecklist, ProjectEdit } from '@ideanest/campaign-editor/contract';
 import { reviewPanelCopyFrom, type EditorChromeCopy, type ReviewPanelCopy } from '@ideanest/campaign-editor/copy';
+import { ApiError } from '@ideanest/api-client';
+import { creatorAgreementRefusalOf, type PendingAgreement } from '@ideanest/legal/agreements';
+import { legalPath } from '@ideanest/legal/documents';
 import {
   Body,
   Caption,
+  Checkbox,
   Eyebrow,
   Icon,
   InlineAlert,
@@ -35,7 +39,13 @@ import { colors, font, fontSize, lineHeight, radius, spacing } from '../../../th
 import { useEditor } from '../editor-context';
 import { editorTabHref } from '../editor-tabs';
 import { useEditorChromeCopy, useEditorTranslators } from '../translator';
-import { launchProject, submitProject, useProjectChecklist } from './api';
+import {
+  acceptCreatorAgreement,
+  fetchPendingCreatorAgreement,
+  launchProject,
+  submitProject,
+  useProjectChecklist,
+} from './api';
 import { needsSubscription, reviewFailureMessage, submitRefusal, type SubmitRefusal } from './review-failure';
 
 /**
@@ -55,6 +65,11 @@ import { needsSubscription, reviewFailureMessage, submitRefusal, type SubmitRefu
  * <p><b>A blocked Submit still answers.</b> With required items outstanding it is drawn and
  * announced as disabled (40%, `accessibilityState.disabled`) but pressing it moves screen-reader
  * focus to the "Required before you can submit" heading — what the creator was trying to find out.
+ *
+ * <p><b>The creator agreement is asked for before the submission.</b> While a version in force is
+ * not accepted (`GET /v1/me/agreements`), the agreement, its version and a tick box sit above
+ * Submit; submitting accepts that version first. A failed read draws nothing, and the service's
+ * `AGREEMENT_REQUIRED` refusal brings the box back with the version it names.
  *
  * <p><b>Launch is confirmed inline</b>, not in a dialog: the warning is stated before the second
  * press, and focus moves to "Launch now" so the question cannot be missed by somebody who cannot
@@ -170,6 +185,9 @@ function Review({
   const [confirmingLaunch, setConfirmingLaunch] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [agreement, setAgreement] = useState<PendingAgreement | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [agreementRead, setAgreementRead] = useState(0);
 
   const requiredHeading = useRef<Text>(null);
   const launchButton = useRef<View>(null);
@@ -207,9 +225,24 @@ function Review({
     return () => clearTimeout(timer);
   }, [state, chrome.states, words.stateNote]);
 
+  useEffect(() => {
+    let live = true;
+    fetchPendingCreatorAgreement()
+      .then((pending) => {
+        if (live) setAgreement(pending);
+      })
+      .catch(() => {
+        // Fails open: the submission is still gated by the service, whose refusal asks again.
+      });
+    return () => {
+      live = false;
+    };
+  }, [agreementRead]);
+
   function checkAgain(): void {
     setRefusal(null);
     setLaunchError(null);
+    setAgreementRead((n) => n + 1);
     reloadAll();
   }
 
@@ -217,6 +250,11 @@ function Review({
     setSubmitting(true);
     setRefusal(null);
     try {
+      if (agreement !== null) {
+        await acceptCreatorAgreement(agreement.version);
+        setAgreement(null);
+        setAgreed(false);
+      }
       const answer = await submitProject(projectId);
       sayState.current = true;
       apply(answer);
@@ -226,6 +264,11 @@ function Review({
       if (needsSubscription(cause)) {
         router.push({ pathname: '/pricing', params: { from: 'submit', project: projectId } });
         return;
+      }
+      const asked = cause instanceof ApiError ? creatorAgreementRefusalOf(cause.problem?.code, cause.problem?.meta) : null;
+      if (asked?.requires === 'ACCEPTANCE') {
+        setAgreement({ version: asked.version, effectiveFrom: asked.effectiveFrom });
+        setAgreed(false);
       }
       setRefusal(submitRefusal(cause, words));
     } finally {
@@ -251,11 +294,14 @@ function Review({
     }
   }
 
+  const unagreed = agreement !== null && !agreed;
   const submitExplanation = held
     ? `${fillPlaceholders(words.blockersRemaining[pluralCategory(words.locale, blockers.length)], {
         count: String(blockers.length),
       })} ${suggestions.length > 0 ? words.recommendedNotPartOfThis : words.finishThem}`
-    : words.moderatorNote;
+    : unagreed
+      ? words.agreementRequired
+      : words.moderatorNote;
 
   return (
     <ScrollView
@@ -400,6 +446,32 @@ function Review({
 
         {offersSubmit(state) ? (
           <View style={styles.stack}>
+            {agreement === null ? null : (
+              <View style={styles.confirm} testID="review-agreement">
+                <Subheading accessibilityRole="header">{words.agreementTitle}</Subheading>
+                <Caption>
+                  {fillPlaceholders(words.agreementVersion, {
+                    version: String(agreement.version),
+                    date: agreement.effectiveFrom === null ? '' : formatDate(agreement.effectiveFrom, words.locale),
+                  })}
+                </Caption>
+                <View style={styles.start}>
+                  <Pill
+                    label={words.agreementRead}
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => router.push(legalPath('creator-agreement'))}
+                    testID="review-agreement-read"
+                  />
+                </View>
+                <Checkbox
+                  label={words.agreementAccept}
+                  checked={agreed}
+                  onChange={setAgreed}
+                  testID="review-agreement-accept"
+                />
+              </View>
+            )}
             <Pill
               label={submitting ? words.submitting : words.submit}
               variant="accent"
@@ -408,12 +480,16 @@ function Review({
               wrap
               busy={submitting}
               disabled={!online}
-              softDisabled={held}
+              softDisabled={held || unagreed}
               accessibilityHint={submitExplanation}
               onPress={() => {
                 if (submitting) return;
                 if (held) {
                   focusOn(requiredHeading.current);
+                  return;
+                }
+                if (unagreed) {
+                  announce(words.agreementRequired);
                   return;
                 }
                 void submit();
