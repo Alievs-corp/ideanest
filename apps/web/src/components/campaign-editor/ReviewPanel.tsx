@@ -38,6 +38,7 @@ import { dateTimeFormat } from '../../lib/i18n/formats';
 import type { Locale } from '../../lib/i18n/locale';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { EditorShell } from './EditorShell';
+import { RevisionNotice } from './RevisionNotice';
 import { useProjectEdit } from './useProjectEdit';
 
 /**
@@ -334,6 +335,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
       projectId={projectId}
       copy={copy}
       active="review"
+      notice={<RevisionNotice projectId={projectId} project={project} copy={copy.revision} onProject={apply} />}
       title={project.title}
       state={checklist.state}
     >

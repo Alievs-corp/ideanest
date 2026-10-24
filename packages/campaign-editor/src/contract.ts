@@ -137,8 +137,32 @@ export interface ProjectEdit {
    * `409 PROJECT_FIELD_LOCKED`.
    */
   lockedFields: readonly string[];
+  /**
+   * For a launched campaign, the edit its creator has open (#558). The fields above then hold
+   * that edit, not what the public sees. Null or absent when there is none.
+   */
+  revision?: ProjectRevision | null;
+  /** Why moderation refused the latest edit, until the creator starts another. */
+  rejectedRevision?: ProjectRevisionRejection | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** `DRAFT` is the creator's own; `PENDING` is with a moderator. */
+export type ProjectRevisionStatus = 'DRAFT' | 'PENDING';
+
+export interface ProjectRevision {
+  id: string;
+  status: ProjectRevisionStatus;
+  changedFields: readonly string[];
+  submittedAt?: string | null;
+  updatedAt: string;
+}
+
+export interface ProjectRevisionRejection {
+  id: string;
+  reason: string;
+  decidedAt: string;
 }
 
 /** True when the server has said this field may no longer be edited. */

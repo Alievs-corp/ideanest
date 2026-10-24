@@ -225,6 +225,31 @@ export async function launchProject(id: string, signal?: AbortSignal): Promise<P
 }
 
 /**
+ * Sends the open edit to a launched campaign to moderation (#558).
+ *
+ * Refused with `REVISION_NOT_AVAILABLE` (409) when there is no edit, it has no changes, or it
+ * is already with a moderator; `meta.reason` says which.
+ */
+export async function submitRevision(id: string, signal?: AbortSignal): Promise<ProjectEdit> {
+  return readProject(
+    await authorizedFetch(`/v1/projects/${encodeURIComponent(id)}/revision/submit`, {
+      method: 'POST',
+      signal,
+    }),
+  );
+}
+
+/** Throws the open edit away; the campaign goes back to what the public sees (#558). */
+export async function discardRevision(id: string, signal?: AbortSignal): Promise<ProjectEdit> {
+  return readProject(
+    await authorizedFetch(`/v1/projects/${encodeURIComponent(id)}/revision`, {
+      method: 'DELETE',
+      signal,
+    }),
+  );
+}
+
+/**
  * Extends a campaign's deadline, once — IDN-EXT-01 §5.1 (#34, #44).
  *
  * `until` is an instant no later than sixty days after the first deadline. The service decides

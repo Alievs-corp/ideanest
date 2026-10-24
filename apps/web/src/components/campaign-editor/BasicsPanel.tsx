@@ -46,6 +46,7 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { EditorShell } from './EditorShell';
+import { RevisionNotice } from './RevisionNotice';
 import { SaveStatus } from './SaveStatus';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
 import { useAutosave } from './useAutosave';
@@ -265,6 +266,7 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
       projectId={projectId}
       copy={copy}
       active="basics"
+      notice={<RevisionNotice projectId={projectId} project={project} copy={copy.revision} onProject={apply} onDiscarded={() => setDraft(null)} />}
       title={project.title}
       state={project.state}
       status={<SaveStatus state={autosave.state} copy={copy.save} />}

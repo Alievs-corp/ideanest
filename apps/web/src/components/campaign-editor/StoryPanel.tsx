@@ -32,6 +32,7 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { INTL_LOCALE } from '../../lib/i18n/formats';
 import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
+import { RevisionNotice } from './RevisionNotice';
 import { SaveStatus } from './SaveStatus';
 import { StoryBlockEditor } from './StoryBlockEditor';
 import { StoryVersionHistory } from './StoryVersionHistory';
@@ -263,6 +264,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
       projectId={projectId}
       copy={copy}
       active="story"
+      notice={<RevisionNotice projectId={projectId} project={project} copy={copy.revision} onProject={apply} onDiscarded={() => setDocument(null)} />}
       title={project.title}
       state={project.state}
       status={<SaveStatus state={autosave.state} copy={copy.save} />}
