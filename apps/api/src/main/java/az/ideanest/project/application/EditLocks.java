@@ -28,8 +28,15 @@ import az.ideanest.project.domain.ProjectState;
  * @param rewardQuantityLoweringLocked whether a tier's {@code limitQuantity} may
  *     only be raised. Not "may not be changed": §5.3 permits raising it at any
  *     time, and a name that said otherwise would invite the wrong refusal
+ * @param rewardWritingHeld whether a tier's title, description, picture and clip go to the
+ *     campaign's revision for a moderator rather than to the tier (#559): the public has seen
+ *     the campaign
  */
-public record EditLocks(String state, boolean rewardPriceLocked, boolean rewardQuantityLoweringLocked) {
+public record EditLocks(
+        String state,
+        boolean rewardPriceLocked,
+        boolean rewardQuantityLoweringLocked,
+        boolean rewardWritingHeld) {
 
     /** Read off the one table, so that the two modules cannot come to disagree. */
     public static EditLocks of(Project project) {
@@ -37,6 +44,7 @@ public record EditLocks(String state, boolean rewardPriceLocked, boolean rewardQ
         return new EditLocks(
                 state.name(),
                 ProjectEditLocks.locks(state, LockedField.REWARD_PRICE),
-                ProjectEditLocks.locks(state, LockedField.REWARD_QUANTITY_DECREASE));
+                ProjectEditLocks.locks(state, LockedField.REWARD_QUANTITY_DECREASE),
+                ProjectEditLocks.isLaunched(state));
     }
 }

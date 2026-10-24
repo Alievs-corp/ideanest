@@ -12,10 +12,13 @@ import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +39,12 @@ import tools.jackson.databind.ObjectMapper;
  * the entity and writes the draft onto it, so the editing code that validates and assigns fields
  * runs unchanged and nothing it assigns is flushed. {@link #stage} then reads the result back
  * into the revision. The entity must not be used as the campaign after that.
+ *
+ * <p><strong>A reward tier's writing goes into the same revision (#559).</strong> Its title,
+ * description, picture and clip are staged by {@link #stageReward} and read back by
+ * {@link #heldRewardWriting}; the tier keeps what the public sees until approval, and
+ * {@link #publishRewards} writes it. The tier's price, stock and the rest are the reward
+ * module's and are not held.
  */
 @Service
 public class ProjectRevisionService {
@@ -45,6 +54,7 @@ public class ProjectRevisionService {
     private final ProjectRevisionRepository revisions;
     private final ProjectRepository projects;
     private final ProjectAccess access;
+    private final RewardWritings rewardWritings;
     private final EntityManager entityManager;
     private final Clock clock;
 
@@ -52,11 +62,13 @@ public class ProjectRevisionService {
             ProjectRevisionRepository revisions,
             ProjectRepository projects,
             ProjectAccess access,
+            RewardWritings rewardWritings,
             EntityManager entityManager,
             Clock clock) {
         this.revisions = revisions;
         this.projects = projects;
         this.access = access;
+        this.rewardWritings = rewardWritings;
         this.entityManager = entityManager;
         this.clock = clock;
     }
@@ -67,6 +79,9 @@ public class ProjectRevisionService {
 
     /** The refusal a moderator gave to the creator's latest revision. */
     public record Rejection(UUID id, String reason, Instant decidedAt) {}
+
+    /** One reward tier whose writing a revision changes, as the public sees it and as proposed. */
+    public record RewardChange(UUID rewardId, RewardWriting live, RewardWriting proposed) {}
 
     /**
      * The campaign as its creator is editing it: the entity itself for a campaign nobody has
@@ -93,10 +108,94 @@ public class ProjectRevisionService {
     public void stage(Project workingCopy, UUID authorId) {
         Project live = projects.findByIdForUpdate(workingCopy.getId())
                 .orElseThrow(() -> new ProjectNotFoundException(workingCopy.getId()));
-        RevisionContent proposed = RevisionContent.of(workingCopy, storyOf(workingCopy));
-        Optional<ProjectRevision> open = revisions.findOpenByProjectId(live.getId());
+        Optional<ProjectRevision> open = openAfterLock(live.getId());
+        Map<UUID, RevisionContent.Reward> heldRewards =
+                open.map(revision -> contentOf(revision).rewards()).orElse(Map.of());
 
-        if (proposed.changedFrom(liveContent(live)).isEmpty()) {
+        keep(live, liveContent(live), open, RevisionContent.of(workingCopy, storyOf(workingCopy), heldRewards), authorId);
+    }
+
+    /**
+     * Applies an edit to one reward tier's writing in the open revision, opening one if there
+     * is none, and answers the writing the tier now has in it.
+     *
+     * <p>{@code edit} is given the tier's writing as the revision holds it, or as the tier shows
+     * it, read after the campaign is locked, so two editors saving different fields of one tier
+     * do not undo each other. It validates as it goes and may throw. An edit that changes
+     * nothing leaves the revision alone, so an autosave does not take a submitted revision back
+     * to a draft.
+     */
+    @Transactional
+    public RewardWriting stageReward(UUID projectId, UUID rewardId, UUID authorId, UnaryOperator<RewardWriting> edit) {
+        Project live = projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Optional<ProjectRevision> open = openAfterLock(projectId);
+        RevisionContent liveContent = liveContent(live);
+        RevisionContent.Reward shown = liveContent.rewards().get(rewardId);
+        if (shown == null) {
+            throw new IllegalStateException("Reward " + rewardId + " is not a tier of project " + projectId);
+        }
+
+        RevisionContent current = open.map(this::contentOf).orElse(liveContent);
+        RewardWriting before = RewardWriting.of(current.rewards().getOrDefault(rewardId, shown));
+        RewardWriting after = edit.apply(before);
+        if (!after.equals(before)) {
+            keep(live, liveContent, open, current.withReward(rewardId, after.held()), authorId);
+        }
+        return after;
+    }
+
+    /**
+     * The writing the open revision holds for the campaign's tiers, by tier: the ones it
+     * changes, and none of the others. Empty when nothing is open.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, RewardWriting> heldRewardWriting(UUID projectId) {
+        return revisions.findOpenByProjectId(projectId)
+                .map(open -> writings(contentOf(open).rewards()))
+                .orElse(Map.of());
+    }
+
+    /** The tiers a revision would change, beside what they show now, in display order. */
+    public List<RewardChange> rewardChanges(RevisionContent proposed, RevisionContent live) {
+        return proposed.changedRewardsFrom(live).stream()
+                .map(rewardId -> new RewardChange(
+                        rewardId,
+                        RewardWriting.of(live.rewards().get(rewardId)),
+                        RewardWriting.of(proposed.rewards().get(rewardId))))
+                .toList();
+    }
+
+    /** Writes an approved revision's tier writing onto the tiers. Part of approving it. */
+    public void publishRewards(UUID projectId, RevisionContent approved, RevisionContent live) {
+        Map<UUID, RevisionContent.Reward> held = approved.heldAgainst(live).rewards();
+        if (!held.isEmpty()) {
+            rewardWritings.publish(projectId, writings(held));
+        }
+    }
+
+    /**
+     * The open revision, read again now that the campaign is locked: the editor may have loaded
+     * it earlier in this transaction, before another save committed.
+     */
+    private Optional<ProjectRevision> openAfterLock(UUID projectId) {
+        Optional<ProjectRevision> open = revisions.findOpenByProjectId(projectId);
+        open.ifPresent(entityManager::refresh);
+        return open;
+    }
+
+    /**
+     * Keeps {@code proposed} as the open revision, or closes the revision when it has come back
+     * to what the campaign shows: an unsent draft is deleted and a submitted one is withdrawn,
+     * so a moderator is never asked to approve nothing.
+     */
+    private void keep(
+            Project live,
+            RevisionContent liveContent,
+            Optional<ProjectRevision> open,
+            RevisionContent proposed,
+            UUID authorId) {
+        RevisionContent held = proposed.heldAgainst(liveContent);
+        if (held.changedFrom(liveContent).isEmpty()) {
             open.ifPresent(revision -> {
                 if (revision.getStatus() == RevisionStatus.DRAFT) {
                     revisions.delete(revision);
@@ -107,7 +206,7 @@ public class ProjectRevisionService {
             return;
         }
 
-        String content = write(proposed);
+        String content = write(held);
         if (open.isPresent()) {
             open.get().rewrite(content, authorId);
         } else {
@@ -123,6 +222,11 @@ public class ProjectRevisionService {
                 .orElseThrow(() -> new RevisionNotAvailableException(RevisionNotAvailableException.Reason.NO_OPEN_REVISION));
         if (open.getStatus() == RevisionStatus.PENDING) {
             throw new RevisionNotAvailableException(RevisionNotAvailableException.Reason.ALREADY_SUBMITTED);
+        }
+        // A revision whose only change was to a reward tier deleted since changes nothing.
+        Project live = projects.findById(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        if (contentOf(open).changedFrom(liveContent(live)).isEmpty()) {
+            throw new RevisionNotAvailableException(RevisionNotAvailableException.Reason.NO_CHANGES);
         }
         open.submit(clock.instant().truncatedTo(ChronoUnit.MICROS));
         return open;
@@ -161,9 +265,17 @@ public class ProjectRevisionService {
                 .findFirst();
     }
 
-    /** The content a campaign shows the public now. */
+    /** The content a campaign shows the public now, with every reward tier's writing. */
     public RevisionContent liveContent(Project live) {
-        return RevisionContent.of(live, storyOf(live));
+        Map<UUID, RevisionContent.Reward> rewards = new LinkedHashMap<>();
+        rewardWritings.liveWritingOf(live.getId()).forEach((rewardId, writing) -> rewards.put(rewardId, writing.held()));
+        return RevisionContent.of(live, storyOf(live), rewards);
+    }
+
+    private static Map<UUID, RewardWriting> writings(Map<UUID, RevisionContent.Reward> rewards) {
+        Map<UUID, RewardWriting> writings = new LinkedHashMap<>();
+        rewards.forEach((rewardId, reward) -> writings.put(rewardId, RewardWriting.of(reward)));
+        return writings;
     }
 
     public RevisionContent contentOf(ProjectRevision revision) {

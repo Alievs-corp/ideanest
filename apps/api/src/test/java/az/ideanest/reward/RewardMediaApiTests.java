@@ -224,15 +224,14 @@ class RewardMediaApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("replacing the picture deletes the old one, and a live campaign's reward may still change it")
-    void replacingDeletesTheOldOneEvenAfterLaunch() {
+    @DisplayName("replacing the picture deletes the old one, and on a live campaign keeps it until a moderator approves")
+    void replacingDeletesTheOldOneUnlessLive() {
         String creator = signIn();
         UUID projectId = draft(creator);
         UUID first = uploadImage(creator);
         Map<String, Object> body = tier("Replaced");
         body.put("imageMediaId", first.toString());
         UUID rewardId = idOf(create(projectId, creator, body).getBody());
-        Campaigns.launch(dataSource, projectId);
 
         UUID second = uploadImage(creator);
         ResponseEntity<Map<String, Object>> saved = patch(rewardId, creator, Map.of("imageMediaId", second.toString()));
@@ -241,6 +240,17 @@ class RewardMediaApiTests extends AbstractIntegrationTest {
         assertThat(mapOf(saved.getBody(), "image")).containsEntry("mediaId", second.toString());
         assertThat(store.has("media/" + first + ".jpg")).isFalse();
         assertThat(store.has("media/" + second + ".jpg")).isTrue();
+
+        // After launch the change waits in the campaign's revision (#559): the editor shows the
+        // new picture, and the one the public sees is kept. RewardRevisionApiTests approves it.
+        Campaigns.launch(dataSource, projectId);
+        UUID third = uploadImage(creator);
+        ResponseEntity<Map<String, Object>> held = patch(rewardId, creator, Map.of("imageMediaId", third.toString()));
+
+        assertThat(held.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(mapOf(held.getBody(), "image")).containsEntry("mediaId", third.toString());
+        assertThat(store.has("media/" + second + ".jpg")).isTrue();
+        assertThat(store.has("media/" + third + ".jpg")).isTrue();
     }
 
     @Test

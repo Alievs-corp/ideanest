@@ -33,8 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
  * The moderators' side of an edit to a launched campaign (#558): what is waiting, what it
  * would change, and the decision.
  *
- * <p>Approving applies the revision to the campaign in the same transaction that records it,
- * audits it and announces it, so a campaign never shows an approved edit that has no decision
+ * <p>Approving applies the revision to the campaign, and to its reward tiers, in the same
+ * transaction that records it, audits it and announces it, so a campaign never shows an approved edit that has no decision
  * behind it, nor a decision whose edit is missing. Rejecting changes only the revision.
  *
  * <p>Authorised as the campaign's three outcomes are: reading asks for
@@ -53,9 +53,14 @@ public class ProjectRevisionModeration {
      *
      * <p>{@code live} and {@code proposed} are the same campaign twice: the first as the public
      * sees it, the second a detached copy with the revision written on it. Neither is to be
-     * saved.
+     * saved. {@code rewards} are the reward tiers whose writing it changes (#559).
      */
-    public record Review(ProjectRevision revision, Project live, Project proposed, List<String> changedFields) {}
+    public record Review(
+            ProjectRevision revision,
+            Project live,
+            Project proposed,
+            List<String> changedFields,
+            List<ProjectRevisionService.RewardChange> rewards) {}
 
     private final ProjectRevisionRepository revisions;
     private final ProjectRepository projects;
@@ -143,8 +148,14 @@ public class ProjectRevisionModeration {
         content.copyOnto(proposed);
         Project live = projects.findById(revision.getProjectId())
                 .orElseThrow(() -> new ProjectNotFoundException(revision.getProjectId()));
+        RevisionContent liveContent = revisionService.liveContent(live);
 
-        return new Review(revision, live, proposed, content.changedFrom(revisionService.liveContent(live)));
+        return new Review(
+                revision,
+                live,
+                proposed,
+                content.changedFrom(liveContent),
+                revisionService.rewardChanges(content, liveContent));
     }
 
     /** Applies the revision to the campaign. A note is optional. */
@@ -154,9 +165,11 @@ public class ProjectRevisionModeration {
         Project project = projects.findById(revision.getProjectId())
                 .orElseThrow(() -> new ProjectNotFoundException(revision.getProjectId()));
         RevisionContent content = revisionService.contentOf(revision);
-        List<String> changed = content.changedFrom(revisionService.liveContent(project));
+        RevisionContent liveContent = revisionService.liveContent(project);
+        List<String> changed = content.changedFrom(liveContent);
 
         editing.applyApproved(project, content, revision.getAuthorId());
+        revisionService.publishRewards(project.getId(), content, liveContent);
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         revision.approve(moderatorId, now, blankAsNull(note));
 

@@ -18168,12 +18168,73 @@
           "reason" : {
             "type" : "string"
           },
+          "rewards" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionRewardBody"
+            }
+          },
           "status" : {
             "type" : "string"
           },
           "submittedAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "RevisionRewardBody" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "live" : {
+            "$ref" : "#/components/schemas/RevisionRewardWriting"
+          },
+          "proposed" : {
+            "$ref" : "#/components/schemas/RevisionRewardWriting"
+          }
+        }
+      },
+      "RevisionRewardImage" : {
+        "type" : "object",
+        "properties" : {
+          "blurDataUrl" : {
+            "type" : "string"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mediaId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "RevisionRewardWriting" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "image" : {
+            "$ref" : "#/components/schemas/RevisionRewardImage"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "video" : {
+            "$ref" : "#/components/schemas/CampaignVideoBody"
           }
         }
       },
@@ -18344,6 +18405,12 @@
           "reservedQuantity" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "revisionChangedFields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           },
           "secretToken" : {
             "type" : "string"

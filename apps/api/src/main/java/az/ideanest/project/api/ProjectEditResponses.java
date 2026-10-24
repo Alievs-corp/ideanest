@@ -3,10 +3,17 @@ package az.ideanest.project.api;
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.CampaignVideo;
 import az.ideanest.project.application.ProjectRevisionService;
+import az.ideanest.project.application.RewardWriting;
 import az.ideanest.project.domain.LockedField;
 import az.ideanest.project.domain.Project;
 import az.ideanest.project.domain.ProjectEditLocks;
 import az.ideanest.shared.money.Money;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -70,6 +77,38 @@ public class ProjectEditResponses {
                 launched ? revisions.latestRejection(project.getId()).map(RevisionRejectionBody::of).orElse(null) : null,
                 project.getCreatedAt(),
                 project.getUpdatedAt());
+    }
+
+    /** The reward tiers a revision changes, with their pictures and clips resolved in two queries. */
+    public List<RevisionRewardBody> rewardsOf(List<ProjectRevisionService.RewardChange> changes) {
+        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(changes.stream()
+                .flatMap(change -> Stream.of(change.live().imageMediaId(), change.proposed().imageMediaId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
+        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(changes.stream()
+                .flatMap(change -> Stream.of(change.live().videoMediaId(), change.proposed().videoMediaId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
+        return changes.stream()
+                .map(change -> new RevisionRewardBody(
+                        change.rewardId(),
+                        writingOf(change.live(), images, videos),
+                        writingOf(change.proposed(), images, videos)))
+                .toList();
+    }
+
+    private static RevisionRewardBody.RevisionRewardWriting writingOf(
+            RewardWriting writing, Map<UUID, MediaLibrary.MediaView> images, Map<UUID, MediaLibrary.VideoView> videos) {
+        MediaLibrary.MediaView image = writing.imageMediaId() == null ? null : images.get(writing.imageMediaId());
+        MediaLibrary.VideoView video = writing.videoMediaId() == null ? null : videos.get(writing.videoMediaId());
+        return new RevisionRewardBody.RevisionRewardWriting(
+                writing.title(),
+                writing.description(),
+                image == null
+                        ? null
+                        : new RevisionRewardBody.RevisionRewardImage(
+                                image.id(), image.url(), image.width(), image.height(), image.blurDataUrl()),
+                video == null ? null : CampaignVideoBody.of(CampaignVideo.of(video)));
     }
 
     private CampaignVideoBody videoOf(Project project) {

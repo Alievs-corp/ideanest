@@ -2,6 +2,8 @@ package az.ideanest.reward.application;
 
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.EditLocks;
+import az.ideanest.project.application.ProjectRevisionService;
+import az.ideanest.project.application.RewardWriting;
 import az.ideanest.reward.domain.RewardTier;
 import az.ideanest.reward.domain.RewardTierItem;
 import az.ideanest.reward.domain.ShippingRule;
@@ -59,6 +61,12 @@ import org.springframework.transaction.annotation.Transactional;
  *       <em>before</em> launch — claimed plus reserved — is a different rule and is
  *       still {@link #withinLimit}.
  * </ul>
+ *
+ * <p><strong>A launched campaign's tier writing waits for a moderator (#559).</strong> Its
+ * title, description, picture and clip are written to the campaign's open revision through
+ * {@link ProjectRevisionService} rather than to the tier, which keeps showing the public what
+ * was approved; every read here returns what the revision holds. Everything else about a
+ * tier, and every tier created, duplicated or deleted, is written as before.
  */
 @Service
 public class RewardService {
@@ -93,6 +101,7 @@ public class RewardService {
     private final ItemRepository items;
     private final RewardAccess access;
     private final MediaLibrary media;
+    private final ProjectRevisionService revisions;
 
     public RewardService(
             RewardTierRepository rewards,
@@ -102,7 +111,8 @@ public class RewardService {
             ShippingZoneRepository shippingZones,
             ItemRepository items,
             RewardAccess access,
-            MediaLibrary media) {
+            MediaLibrary media,
+            ProjectRevisionService revisions) {
         this.rewards = rewards;
         this.compositions = compositions;
         this.shippingRules = shippingRules;
@@ -111,6 +121,7 @@ public class RewardService {
         this.items = items;
         this.access = access;
         this.media = media;
+        this.revisions = revisions;
     }
 
     /**
@@ -167,15 +178,21 @@ public class RewardService {
      * <p>§5.3's post-launch rules are checked before anything is applied, so a body
      * that renames a tier and reprices it changes neither. Half a save is worse than
      * none: the creator would have to work out which half.
+     *
+     * <p>On a launched campaign the title, description, picture and clip go to its revision,
+     * after everything else has been applied and checked; see {@link #edited}.
      */
     @Transactional
     public RewardDetail edit(UUID rewardId, UUID accountId, RewardPatch patch) {
         RewardAccess.AuthorisedReward authorised = access.requireEditableReward(rewardId, accountId);
         RewardTier tier = authorised.tier();
         requireNothingLocked(tier, authorised.locks(), patch);
+        boolean held = authorised.locks().rewardWritingHeld();
 
-        patch.title().ifPresent(title -> tier.setTitle(requireTitle(title)));
-        patch.description().ifPresent(description -> tier.setDescription(blankAsNull(description)));
+        if (!held) {
+            patch.title().ifPresent(title -> tier.setTitle(requireTitle(title)));
+            patch.description().ifPresent(description -> tier.setDescription(blankAsNull(description)));
+        }
         patch.price().ifPresent(price -> {
             Money accepted = requirePrice(price);
             tier.setPrice(accepted.amount(), accepted.currency());
@@ -198,8 +215,10 @@ public class RewardService {
         // native query, which flushes the tier, and a flush before requireConsistent would
         // turn a 400 into a constraint violation.
         List<UUID> released = new ArrayList<>();
-        patch.imageMediaId().ifPresent(mediaId -> released.add(replaceImage(tier, accountId, mediaId)));
-        patch.videoMediaId().ifPresent(mediaId -> released.add(replaceVideo(tier, accountId, mediaId)));
+        if (!held) {
+            patch.imageMediaId().ifPresent(mediaId -> released.add(replaceImage(tier, accountId, mediaId)));
+            patch.videoMediaId().ifPresent(mediaId -> released.add(replaceVideo(tier, accountId, mediaId)));
+        }
 
         if (patch.changesAvailability()) {
             Instant from = patch.availableFrom().isPresent()
@@ -213,6 +232,10 @@ public class RewardService {
 
         requireConsistent(tier);
         released.forEach(mediaId -> release(tier, mediaId));
+        if (held && patch.changesWriting()) {
+            revisions.stageReward(
+                    tier.getProjectId(), tier.getId(), accountId, writing -> edited(writing, patch, accountId));
+        }
 
         if (patch.items().isPresent()) {
             List<RewardContent> contents =
@@ -295,7 +318,15 @@ public class RewardService {
                 .toList();
         shippingZoneRules.saveAll(copiedZoneRules);
 
-        return new RewardDetail(copy, copiedContents, copiedRules, copiedZoneRules, authorised.locks(), null, null);
+        return new RewardDetail(
+                copy,
+                copiedContents,
+                copiedRules,
+                copiedZoneRules,
+                authorised.locks(),
+                RewardTierWritings.writingOf(copy),
+                null,
+                null);
     }
 
     /**
@@ -414,14 +445,17 @@ public class RewardService {
             }
         });
 
+        List<ShippingZoneRule> zoneResult = replaceZoneRates(tier, zoneRates);
+        RewardWriting writing = writingOf(tier, authorised.locks());
         return new RewardDetail(
                 tier,
                 compositions.findByRewardTier(rewardId),
                 List.copyOf(result),
-                replaceZoneRates(tier, zoneRates),
+                zoneResult,
                 authorised.locks(),
-                imageOf(tier),
-                videoOf(tier));
+                writing,
+                imageOf(writing),
+                videoOf(writing));
     }
 
     /**
@@ -529,6 +563,27 @@ public class RewardService {
     }
 
     /**
+     * A patch's title, description, picture and clip applied to a launched campaign's writing
+     * for the tier, as its revision holds it: checked as they would be on the tier, and nothing
+     * released, because the tier still shows the public what it showed. What the revision
+     * replaces is released when a moderator approves it.
+     */
+    private RewardWriting edited(RewardWriting writing, RewardPatch patch, UUID accountId) {
+        String title = patch.title().isPresent() ? requireTitle(patch.title().value()) : writing.title();
+        String description =
+                patch.description().isPresent() ? blankAsNull(patch.description().value()) : writing.description();
+        UUID image = writing.imageMediaId();
+        if (patch.imageMediaId().isPresent() && !Objects.equals(patch.imageMediaId().value(), image)) {
+            image = claimImage(accountId, patch.imageMediaId().value());
+        }
+        UUID video = writing.videoMediaId();
+        if (patch.videoMediaId().isPresent() && !Objects.equals(patch.videoMediaId().value(), video)) {
+            video = claimVideo(accountId, patch.videoMediaId().value());
+        }
+        return new RewardWriting(title, description, image, video);
+    }
+
+    /**
      * The caller's own ready image, or a refusal naming the field — a campaign cover's rules.
      *
      * <p>The caller rather than the campaign's creator: an upload belongs to whoever made it,
@@ -577,12 +632,21 @@ public class RewardService {
         }
     }
 
-    private MediaLibrary.MediaView imageOf(RewardTier tier) {
-        return tier.getImageMediaId() == null ? null : media.viewOf(tier.getImageMediaId()).orElse(null);
+    private MediaLibrary.MediaView imageOf(RewardWriting writing) {
+        return writing.imageMediaId() == null ? null : media.viewOf(writing.imageMediaId()).orElse(null);
     }
 
-    private MediaLibrary.VideoView videoOf(RewardTier tier) {
-        return tier.getVideoMediaId() == null ? null : media.videoViewOf(tier.getVideoMediaId()).orElse(null);
+    private MediaLibrary.VideoView videoOf(RewardWriting writing) {
+        return writing.videoMediaId() == null ? null : media.videoViewOf(writing.videoMediaId()).orElse(null);
+    }
+
+    /** What the creator is editing for the tier: the tier's own writing, or its revision's. */
+    private RewardWriting writingOf(RewardTier tier, EditLocks locks) {
+        RewardWriting shown = RewardTierWritings.writingOf(tier);
+        if (!locks.rewardWritingHeld()) {
+            return shown;
+        }
+        return revisions.heldRewardWriting(tier.getProjectId()).getOrDefault(tier.getId(), shown);
     }
 
     // ------------------------------------------------------------------
@@ -656,18 +720,21 @@ public class RewardService {
     // ------------------------------------------------------------------
 
     private RewardDetail detailOf(RewardTier tier, EditLocks locks) {
+        RewardWriting writing = writingOf(tier, locks);
         return new RewardDetail(
                 tier,
                 compositions.findByRewardTier(tier.getId()),
                 shippingRules.findByRewardTier(tier.getId()),
                 shippingZoneRules.findByRewardTier(tier.getId()),
                 locks,
-                imageOf(tier),
-                videoOf(tier));
+                writing,
+                imageOf(writing),
+                videoOf(writing));
     }
 
     /**
-     * A whole reward list with its compositions, rates and media, in six queries.
+     * A whole reward list with its compositions, rates and media, in six queries, and a seventh
+     * for the revision on a launched campaign.
      *
      * <p>Not one query per tier. A campaign with forty tiers is eighty extra round
      * trips on every load of the rewards tab, and an N+1 over a list this central is
@@ -679,30 +746,40 @@ public class RewardService {
         }
 
         List<UUID> ids = tiers.stream().map(RewardTier::getId).toList();
+        Map<UUID, RewardWriting> held = locks.rewardWritingHeld()
+                ? revisions.heldRewardWriting(tiers.get(0).getProjectId())
+                : Map.of();
+        Map<UUID, RewardWriting> writings = tiers.stream()
+                .collect(Collectors.toMap(
+                        RewardTier::getId, tier -> held.getOrDefault(tier.getId(), RewardTierWritings.writingOf(tier))));
         Map<UUID, List<RewardTierItem>> contents = compositions.findByRewardTiers(ids).stream()
                 .collect(Collectors.groupingBy(RewardTierItem::getRewardTierId));
         Map<UUID, List<ShippingRule>> rules = shippingRules.findByRewardTiers(ids).stream()
                 .collect(Collectors.groupingBy(ShippingRule::getRewardTierId));
         Map<UUID, List<ShippingZoneRule>> zoneRules = shippingZoneRules.findByRewardTiers(ids).stream()
                 .collect(Collectors.groupingBy(ShippingZoneRule::getRewardTierId));
-        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(tiers.stream()
-                .map(RewardTier::getImageMediaId)
+        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(writings.values().stream()
+                .map(RewardWriting::imageMediaId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
-        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(tiers.stream()
-                .map(RewardTier::getVideoMediaId)
+        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(writings.values().stream()
+                .map(RewardWriting::videoMediaId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
 
         return tiers.stream()
-                .map(tier -> new RewardDetail(
-                        tier,
-                        contents.getOrDefault(tier.getId(), List.of()),
-                        rules.getOrDefault(tier.getId(), List.of()),
-                        zoneRules.getOrDefault(tier.getId(), List.of()),
-                        locks,
-                        tier.getImageMediaId() == null ? null : images.get(tier.getImageMediaId()),
-                        tier.getVideoMediaId() == null ? null : videos.get(tier.getVideoMediaId())))
+                .map(tier -> {
+                    RewardWriting writing = writings.get(tier.getId());
+                    return new RewardDetail(
+                            tier,
+                            contents.getOrDefault(tier.getId(), List.of()),
+                            rules.getOrDefault(tier.getId(), List.of()),
+                            zoneRules.getOrDefault(tier.getId(), List.of()),
+                            locks,
+                            writing,
+                            writing.imageMediaId() == null ? null : images.get(writing.imageMediaId()),
+                            writing.videoMediaId() == null ? null : videos.get(writing.videoMediaId()));
+                })
                 .toList();
     }
 

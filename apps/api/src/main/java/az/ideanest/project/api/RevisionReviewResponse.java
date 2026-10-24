@@ -11,6 +11,9 @@ import java.util.UUID;
  * @param live the campaign as the public sees it
  * @param proposed the same campaign with the revision written on it
  * @param changedFields what differs between the two
+ * @param rewards the reward tiers whose writing the revision changes (#559), each as the public
+ *     sees it and as proposed; empty when it changes none. {@code rewards} is then one of the
+ *     changed fields
  */
 public record RevisionReviewResponse(
         UUID id,
@@ -22,10 +25,15 @@ public record RevisionReviewResponse(
         String reason,
         List<String> changedFields,
         ProjectEdit live,
-        ProjectEdit proposed) {
+        ProjectEdit proposed,
+        List<RevisionRewardBody> rewards) {
 
     static RevisionReviewResponse of(
-            ProjectRevision revision, List<String> changed, ProjectEdit live, ProjectEdit proposed) {
+            ProjectRevision revision,
+            List<String> changed,
+            ProjectEdit live,
+            ProjectEdit proposed,
+            List<RevisionRewardBody> rewards) {
         return new RevisionReviewResponse(
                 revision.getId(),
                 revision.getProjectId(),
@@ -36,6 +44,7 @@ public record RevisionReviewResponse(
                 revision.getReason(),
                 changed,
                 live,
-                proposed);
+                proposed,
+                rewards);
     }
 }
