@@ -755,7 +755,8 @@
       "/admin/revenue": "Gelir",
       "/admin/partners": "Ortaklar",
       "/admin/partner-statistics": "Ortak istatistikleri",
-      "/admin/maintenance": "Bakım"
+      "/admin/maintenance": "Bakım",
+      "/admin/moderation/revisions": "Kampanya düzenlemeleri"
     },
     "states": {
       "built": "Hazır",
@@ -1135,6 +1136,18 @@
         "detailsPasses": "Geçenler: ekip üyeleri, giriş, ödeme sağlayıcılarının bildirimleri ve banka doğrulamasından sonra siteye dönüş. Diğer her istek reddedilir.",
         "detailsPaused": "Duran altı arka plan işi: iadeler, yanıtsız ödeme sayfalarının kontrolü, defter mutabakatı, bildirim gönderimi ve özetleri, açılış hatırlatmaları.",
         "detailsRunning": "Çalışmaya devam edenler: kampanyaların açılması ve süresinde kapanması, otomatik para çekme ve giden kuyruğu."
+      },
+      "revisions": {
+        "metaTitle": "Kampanya düzenlemeleri",
+        "metaDescription": "Yayındaki kampanyalarda yapılan, moderatörü bekleyen düzenlemeler.",
+        "title": "Kampanya düzenlemeleri",
+        "intro": "Kurucuların zaten yayında olan kampanyalarda yaptığı değişiklikler, eskiden yeniye. Bir düzenleme burada onaylanana kadar destekçiler onaylı sürümü okumaya devam eder."
+      },
+      "revisionReview": {
+        "metaTitle": "Kampanya düzenlemesini incele",
+        "metaDescription": "Yayındaki kampanya ile önerilen düzenleme yan yana, karar veren moderatör için.",
+        "title": "Kampanya düzenlemesini incele",
+        "intro": "Solda yayındaki sürüm, sağda kurucunun önerisi. Yalnızca değişen alanlar gösterilir."
       }
     },
     "screens": {
@@ -3655,6 +3668,107 @@
         "cancelYes": "Evet, iptal et",
         "endInvalid": "Bitiş başlangıçtan sonra ve gelecekte olmalı. Pencereyi şimdi bitirmek için «Şimdi bitir»i kullanın.",
         "zoneNote": "Bu sayfadaki saatler sizin saat diliminizde: {zone}."
+      },
+      "revisionQueue": {
+        "subject": "kampanya düzenlemeleri kuyruğu",
+        "heading": "Karar bekleyenler",
+        "loadingList": "Kampanya düzenlemeleri yükleniyor",
+        "emptyTitle": "Bekleyen düzenleme yok",
+        "emptyBody": "Yayındaki kampanyalara yapılan düzenlemeler, kurucuları incelemeye gönderdiğinde burada görünür.",
+        "changedLabel": "Değişenler:",
+        "submitted": "Gönderildi: {date}",
+        "by": "kurucu: {name}",
+        "creatorGone": "Kurucunun hesabı kapatıldı",
+        "review": "Düzenlemeyi incele",
+        "reviewLabel": "{title} kampanyasının düzenlemesini incele"
+      },
+      "revisionReview": {
+        "subject": "bu kampanya düzenlemesi",
+        "loadingReview": "Düzenleme yükleniyor",
+        "notFoundTitle": "Bu düzenleme bulunamadı",
+        "notFoundBody": "Kurucu geri çekmiş olabilir ya da karar verilmiş olabilir. Kuyrukta hâlâ bekleyenler listelenir.",
+        "backToQueue": "Düzenleme kuyruğuna dön",
+        "openCampaign": "Kampanyayı yeni sekmede aç",
+        "noticeTitle": "Destekçiler hâlâ yayındaki sürümü okuyor",
+        "noticeBody": "Onaylamak, destekçilerin okuduğunu hemen önerilen sürümle değiştirir. Reddetmek yayındaki kampanyayı olduğu gibi bırakır ve taslağı notunuzla kurucuya geri gönderir.",
+        "legend": "Üstü çizili metin kampanyadan çıkar, altı çizili metin yenidir. Her değişiklik ekran okuyucular için sözcüklerle de duyurulur.",
+        "liveHeading": "Şu an yayında",
+        "proposedHeading": "Önerilen",
+        "changesHeading": "Ne değişti",
+        "noChanges": "Bu düzenleme burada gösterilen alanların hiçbirini değiştirmiyor.",
+        "fields": {
+          "title": "Başlık",
+          "blurb": "Kısa açıklama",
+          "category": "Kategori",
+          "coverImage": "Kapak görseli",
+          "videoMediaId": "Kampanya videosu",
+          "story": "Hikâye",
+          "risks": "Riskler ve zorluklar",
+          "countries": "Ülkeler"
+        },
+        "removed": "Silindi:",
+        "added": "Eklendi:",
+        "empty": "Boş",
+        "noCategory": "Kategori yok",
+        "noCover": "Kapak görseli yok",
+        "noVideo": "Video yok",
+        "noCountries": "Ülke belirtilmemiş",
+        "coverAlt": "{title} kampanyasının kapak görseli",
+        "openVideo": "Videoyu yeni sekmede aç",
+        "videoLabel": "{title} kampanyasının video kapağı",
+        "unchangedBlocks": {
+          "one": "{count} değişmeyen blok",
+          "few": "{count} değişmeyen blok",
+          "many": "{count} değişmeyen blok",
+          "other": "{count} değişmeyen blok"
+        },
+        "storyUnreadable": "Bu hikâye, bu ekranın tanımadığı daha yeni bir düzenleyiciyle yazılmış, bu yüzden burada karşılaştırılamıyor. Okumak için kampanyayı açın.",
+        "blocks": {
+          "heading": "Başlık",
+          "paragraph": "Paragraf",
+          "list": "Liste",
+          "orderedList": "Numaralı liste",
+          "quote": "Alıntı",
+          "rule": "Ayırıcı",
+          "image": "Görsel",
+          "embed": "Gömülü video",
+          "section": "Bölüm"
+        },
+        "statusLabel": "Durum",
+        "status": {
+          "PENDING": "Karar bekliyor",
+          "DRAFT": "Kurucuda",
+          "APPROVED": "Onaylandı",
+          "REJECTED": "Reddedildi"
+        },
+        "notPending": "Bu düzenleme artık karar beklemiyor ({status}), bu yüzden buradan karar verilemez.",
+        "submitted": "Gönderildi: {date}",
+        "decidedOn": "Karar verildi: {date}",
+        "reasonLabel": "Not:",
+        "decideHeading": "Bu düzenleme için karar verin",
+        "approve": "Düzenlemeyi onayla",
+        "reject": "Düzenlemeyi reddet",
+        "approveDialog": {
+          "title": "Bu düzenleme onaylansın mı?",
+          "description": "Destekçiler {title} kampanyasının önerilen sürümünü hemen okumaya başlayacak.",
+          "noteLabel": "Kurucu için not",
+          "noteHint": "İsteğe bağlı. Kurucu bunu kararla birlikte görür.",
+          "confirmLabel": "Düzenlemeyi onayla",
+          "busyLabel": "Onaylanıyor"
+        },
+        "rejectDialog": {
+          "title": "Bu düzenleme reddedilsin mi?",
+          "description": "{title} kampanyasının yayındaki sürümü olduğu gibi kalır, taslak kurucuya geri döner.",
+          "noteLabel": "Neden reddediliyor",
+          "noteHint": "Zorunlu. Kurucu bunu okur ve yeniden düzenleyebilir.",
+          "confirmLabel": "Düzenlemeyi reddet",
+          "busyLabel": "Reddediliyor"
+        },
+        "noteRequired": "Nedenini yazın. Kurucu bu notu görür ve ona göre hareket etmesi gerekir.",
+        "tooLong": "Not {limit} karakterden uzun olamaz.",
+        "approved": "Düzenleme onaylandı. Destekçiler artık önerilen sürümü okuyor.",
+        "rejected": "Düzenleme reddedildi. Kurucu notunuzu aldı.",
+        "unavailable": "Siz incelerken kurucu bu düzenlemeyi değiştirdi, bu yüzden kararınız kaydedilmedi. Sayfa şu anki durumla yeniden yüklendi."
       }
     },
     "moderation": {

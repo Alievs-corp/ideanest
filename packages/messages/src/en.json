@@ -755,7 +755,8 @@
       "/admin/revenue": "Revenue",
       "/admin/partners": "Partners",
       "/admin/partner-statistics": "Partner statistics",
-      "/admin/maintenance": "Maintenance"
+      "/admin/maintenance": "Maintenance",
+      "/admin/moderation/revisions": "Campaign edits"
     },
     "states": {
       "built": "Built",
@@ -1135,6 +1136,18 @@
         "detailsPasses": "Let through: staff, sign-in, payment providers' notifications and the return from bank verification. Every other request is refused.",
         "detailsPaused": "The six background jobs that pause: refunds, checks on unanswered payment pages, ledger reconciliation, sending notifications and their digests, and launch reminders.",
         "detailsRunning": "Keeps running: campaigns opening and closing at their deadline, automatic withdrawals and the outbox."
+      },
+      "revisions": {
+        "metaTitle": "Campaign edits",
+        "metaDescription": "Edits to launched campaigns, waiting on a moderator.",
+        "title": "Campaign edits",
+        "intro": "Changes creators have made to campaigns that are already live, oldest first. Backers keep reading the approved version until an edit is approved here."
+      },
+      "revisionReview": {
+        "metaTitle": "Review a campaign edit",
+        "metaDescription": "The live campaign beside the proposed edit, for the moderator deciding it.",
+        "title": "Review a campaign edit",
+        "intro": "The live version on the left, the creator’s proposal on the right. Only the fields that changed are shown."
       }
     },
     "screens": {
@@ -3655,6 +3668,107 @@
         "cancelYes": "Yes, cancel it",
         "endInvalid": "The end has to be after the start and in the future. To end the window now, use End now.",
         "zoneNote": "Times on this page are in your time zone, {zone}."
+      },
+      "revisionQueue": {
+        "subject": "the campaign edit queue",
+        "heading": "Waiting for a decision",
+        "loadingList": "Loading campaign edits",
+        "emptyTitle": "No edits are waiting",
+        "emptyBody": "Edits to launched campaigns appear here once their creators submit them for review.",
+        "changedLabel": "Changed:",
+        "submitted": "Submitted {date}",
+        "by": "by {name}",
+        "creatorGone": "Creator account closed",
+        "review": "Review edit",
+        "reviewLabel": "Review the edit to {title}"
+      },
+      "revisionReview": {
+        "subject": "this campaign edit",
+        "loadingReview": "Loading the edit",
+        "notFoundTitle": "This edit was not found",
+        "notFoundBody": "It may have been withdrawn by its creator or decided already. The queue lists what is still waiting.",
+        "backToQueue": "Back to the edit queue",
+        "openCampaign": "Open the campaign in a new tab",
+        "noticeTitle": "Backers still read the live version",
+        "noticeBody": "Approving replaces what backers read with the proposed version straight away. Rejecting leaves the live campaign as it is and sends the draft back to its creator with your note.",
+        "legend": "Struck-through text leaves the campaign and underlined text is new. Each change is also announced in words for screen readers.",
+        "liveHeading": "Live now",
+        "proposedHeading": "Proposed",
+        "changesHeading": "What changed",
+        "noChanges": "This edit changes none of the fields shown here.",
+        "fields": {
+          "title": "Title",
+          "blurb": "Short description",
+          "category": "Category",
+          "coverImage": "Cover image",
+          "videoMediaId": "Campaign video",
+          "story": "Story",
+          "risks": "Risks and challenges",
+          "countries": "Countries"
+        },
+        "removed": "Removed:",
+        "added": "Added:",
+        "empty": "Nothing",
+        "noCategory": "No category",
+        "noCover": "No cover image",
+        "noVideo": "No video",
+        "noCountries": "No countries listed",
+        "coverAlt": "Cover image of {title}",
+        "openVideo": "Open the video in a new tab",
+        "videoLabel": "Video poster for {title}",
+        "unchangedBlocks": {
+          "one": "{count} unchanged block",
+          "few": "{count} unchanged blocks",
+          "many": "{count} unchanged blocks",
+          "other": "{count} unchanged blocks"
+        },
+        "storyUnreadable": "This story was written by a newer editor than this screen understands, so it cannot be compared here. Open the campaign to read it.",
+        "blocks": {
+          "heading": "Heading",
+          "paragraph": "Paragraph",
+          "list": "List",
+          "orderedList": "Numbered list",
+          "quote": "Quote",
+          "rule": "Divider",
+          "image": "Image",
+          "embed": "Embedded video",
+          "section": "Section"
+        },
+        "statusLabel": "Status",
+        "status": {
+          "PENDING": "Waiting for a decision",
+          "DRAFT": "Back with its creator",
+          "APPROVED": "Approved",
+          "REJECTED": "Rejected"
+        },
+        "notPending": "This edit is no longer waiting for a decision ({status}), so it cannot be decided from here.",
+        "submitted": "Submitted {date}",
+        "decidedOn": "Decided {date}",
+        "reasonLabel": "Note:",
+        "decideHeading": "Decide this edit",
+        "approve": "Approve edit",
+        "reject": "Reject edit",
+        "approveDialog": {
+          "title": "Approve this edit?",
+          "description": "Backers will read the proposed version of {title} straight away.",
+          "noteLabel": "Note for the creator",
+          "noteHint": "Optional. The creator sees it with the decision.",
+          "confirmLabel": "Approve edit",
+          "busyLabel": "Approving"
+        },
+        "rejectDialog": {
+          "title": "Reject this edit?",
+          "description": "The live version of {title} stays as it is and the draft goes back to its creator.",
+          "noteLabel": "Why it is rejected",
+          "noteHint": "Required. The creator reads this and can edit again.",
+          "confirmLabel": "Reject edit",
+          "busyLabel": "Rejecting"
+        },
+        "noteRequired": "Say why. The creator is shown this note and has to act on it.",
+        "tooLong": "A note may not exceed {limit} characters.",
+        "approved": "Edit approved. Backers now read the proposed version.",
+        "rejected": "Edit rejected. The creator has your note.",
+        "unavailable": "The creator changed this edit while you were reviewing it, so your decision was not recorded. The page has been reloaded with what is there now."
       }
     },
     "moderation": {
