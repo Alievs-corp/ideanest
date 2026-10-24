@@ -59,6 +59,12 @@ import {
   type ReconciliationCopy,
   type RefundConsoleCopy,
 } from './money-copy';
+import {
+  revisionQueueCopyFrom,
+  revisionReviewCopyFrom,
+  type RevisionQueueCopy,
+  type RevisionReviewCopy,
+} from './revision-copy';
 import { consoleDashboardCopyFrom, type ConsoleDashboardCopy } from './dashboard-copy';
 import {
   partnerManagerCopyFrom,
@@ -269,6 +275,14 @@ export async function reportDetailCopy(): Promise<ReportDetailCopy> {
 
 export async function submissionQueueCopy(): Promise<SubmissionQueueCopy> {
   return submissionQueueCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+export async function revisionQueueCopy(): Promise<RevisionQueueCopy> {
+  return revisionQueueCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+export async function revisionReviewCopy(): Promise<RevisionReviewCopy> {
+  return revisionReviewCopyFrom(await getTranslations('admin'), await consoleChrome());
 }
 
 export async function campaignDirectoryCopy(): Promise<CampaignDirectoryCopy> {

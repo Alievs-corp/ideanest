@@ -111,7 +111,7 @@ export const CONSOLE_MODULES: readonly ConsoleModule[] = Object.freeze([
      * DONE something — been reported, been submitted — so a draft, a live campaign, or
      * one cleared for launch a week ago and never launched appeared on no screen here.
      */
-    otherScreens: ['/admin/moderation/submissions', '/admin/campaigns'],
+    otherScreens: ['/admin/moderation/submissions', '/admin/moderation/revisions', '/admin/campaigns'],
     issue: 101,
   },
   {
@@ -335,6 +335,7 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
     links: [
       '/admin/moderation',
       '/admin/moderation/submissions',
+      '/admin/moderation/revisions',
       '/admin/campaigns',
       '/admin/moderation/content',
       '/admin/moderation/profiles',
@@ -420,6 +421,7 @@ export const CONSOLE_LINK_CAPABILITIES: Readonly<Record<string, readonly StaffCa
     // one authority: MODERATE_CONTENT, which is what StaffRole.MODERATOR is mostly made of.
     '/admin/moderation': ['MODERATE_CONTENT'],
     '/admin/moderation/submissions': ['MODERATE_CONTENT'],
+    '/admin/moderation/revisions': ['MODERATE_CONTENT'],
     '/admin/campaigns': ['MODERATE_CONTENT'],
     '/admin/moderation/content': ['MODERATE_CONTENT'],
     '/admin/moderation/profiles': ['MODERATE_CONTENT'],

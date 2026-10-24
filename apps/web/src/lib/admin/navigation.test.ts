@@ -145,6 +145,7 @@ describe('the rail and the page it opens', () => {
    */
   function pageKeyFor(href: string): string {
     if (href === '/admin/moderation/submissions') return 'submissions';
+    if (href === '/admin/moderation/revisions') return 'revisions';
 
     const [head = '', ...rest] = href.slice('/admin/'.length).split(/[/-]/);
     return head + rest.map((part) => part.slice(0, 1).toUpperCase() + part.slice(1)).join('');
