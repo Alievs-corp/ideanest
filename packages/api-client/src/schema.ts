@@ -7098,9 +7098,32 @@ export interface components {
             projectId?: string;
             proposed?: components["schemas"]["ProjectEdit"];
             reason?: string;
+            rewards?: components["schemas"]["RevisionRewardBody"][];
             status?: string;
             /** Format: date-time */
             submittedAt?: string;
+        };
+        RevisionRewardBody: {
+            /** Format: uuid */
+            id?: string;
+            live?: components["schemas"]["RevisionRewardWriting"];
+            proposed?: components["schemas"]["RevisionRewardWriting"];
+        };
+        RevisionRewardImage: {
+            blurDataUrl?: string;
+            /** Format: int32 */
+            height?: number;
+            /** Format: uuid */
+            mediaId?: string;
+            url?: string;
+            /** Format: int32 */
+            width?: number;
+        };
+        RevisionRewardWriting: {
+            description?: string;
+            image?: components["schemas"]["RevisionRewardImage"];
+            title?: string;
+            video?: components["schemas"]["CampaignVideoBody"];
         };
         RewardImageBody: {
             blurDataUrl?: string;
@@ -7171,6 +7194,7 @@ export interface components {
             remainingQuantity?: number;
             /** Format: int32 */
             reservedQuantity?: number;
+            revisionChangedFields?: string[];
             secretToken?: string;
             shippingRules?: components["schemas"]["ShippingRuleBody"][];
             shippingType?: string;
@@ -8288,6 +8312,9 @@ export type SchemaRevisionDecisionResponse = components['schemas']['RevisionDeci
 export type SchemaRevisionQueueResponse = components['schemas']['RevisionQueueResponse'];
 export type SchemaRevisionRejectionBody = components['schemas']['RevisionRejectionBody'];
 export type SchemaRevisionReviewResponse = components['schemas']['RevisionReviewResponse'];
+export type SchemaRevisionRewardBody = components['schemas']['RevisionRewardBody'];
+export type SchemaRevisionRewardImage = components['schemas']['RevisionRewardImage'];
+export type SchemaRevisionRewardWriting = components['schemas']['RevisionRewardWriting'];
 export type SchemaRewardImageBody = components['schemas']['RewardImageBody'];
 export type SchemaRewardItemBody = components['schemas']['RewardItemBody'];
 export type SchemaRewardPatchRequest = components['schemas']['RewardPatchRequest'];

@@ -2,11 +2,14 @@ package az.ideanest.reward.application;
 
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.EditLocks;
+import az.ideanest.project.application.RewardWriting;
 import az.ideanest.reward.domain.RewardTier;
 import az.ideanest.reward.domain.RewardTierItem;
 import az.ideanest.reward.domain.ShippingRule;
 import az.ideanest.reward.domain.ShippingZoneRule;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A reward tier with everything that hangs off it.
@@ -36,8 +39,11 @@ import java.util.List;
  *     because the answer that reaches the client must be the one the service used —
  *     see {@code RewardResponse.pricingLocked} for what a client does with it, and
  *     #183 for what happened when there was nothing to do it with
- * @param image the tier's picture, or null when it has none or it is not servable
- * @param video the tier's clip, or null likewise
+ * @param writing the title, description, picture and clip the creator is editing: the tier's
+ *     own, or on a launched campaign what its open revision holds for the tier (#559), which
+ *     the public does not see until a moderator approves it
+ * @param image the picture {@code writing} names, or null when it has none or it is not servable
+ * @param video the clip {@code writing} names, or null likewise
  */
 public record RewardDetail(
         RewardTier tier,
@@ -45,6 +51,7 @@ public record RewardDetail(
         List<ShippingRule> shippingRules,
         List<ShippingZoneRule> shippingZoneRules,
         EditLocks locks,
+        RewardWriting writing,
         MediaLibrary.MediaView image,
         MediaLibrary.VideoView video) {
 
@@ -52,5 +59,27 @@ public record RewardDetail(
         contents = List.copyOf(contents);
         shippingRules = List.copyOf(shippingRules);
         shippingZoneRules = List.copyOf(shippingZoneRules);
+    }
+
+    /**
+     * Which of {@code title}, {@code description}, {@code imageMediaId} and
+     * {@code videoMediaId} the creator has changed and the public does not see yet. Empty
+     * unless the campaign has launched and its revision changes this tier.
+     */
+    public List<String> revisionChangedFields() {
+        List<String> changed = new ArrayList<>();
+        if (!Objects.equals(writing.title(), tier.getTitle())) {
+            changed.add("title");
+        }
+        if (!Objects.equals(writing.description(), tier.getDescription())) {
+            changed.add("description");
+        }
+        if (!Objects.equals(writing.imageMediaId(), tier.getImageMediaId())) {
+            changed.add("imageMediaId");
+        }
+        if (!Objects.equals(writing.videoMediaId(), tier.getVideoMediaId())) {
+            changed.add("videoMediaId");
+        }
+        return List.copyOf(changed);
     }
 }

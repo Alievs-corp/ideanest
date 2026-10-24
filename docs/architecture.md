@@ -2467,7 +2467,25 @@ individual agreement can differ without a deployment.
 > `409 REVISION_NOT_AVAILABLE`), and a draft that has come back to what the campaign shows
 > is deleted rather than queued. Drafts, pre-launch pages, approved-but-unopened and
 > `REJECTED` campaigns are edited in place, as before; the frozen fields above still answer
-> `409`. Reward text and media follow in a second step (#559).
+> `409`.
+>
+> **A reward tier's writing is held in the same revision (#559).** On a launched campaign,
+> `PATCH /v1/rewards/{id}` writes a tier's `title`, `description`, `imageMediaId` and
+> `videoMediaId` to the campaign's open revision instead of `reward_tiers`, keyed by tier,
+> so the public catalogue, checkout and every pledge keep reading what was approved. The
+> rest of the tier (delivery, shipping, flags, availability, a raised quantity, items,
+> rates) is still written at once, and the price and a lowered quantity still answer
+> `409`; stock and pledges are untouched. The creator's reward reads return the draft and
+> name the held fields in `revisionChangedFields`; the revision's `changedFields` gains
+> `rewards`, and a moderator's `GET .../revisions/{id}` lists each changed tier's live and
+> proposed writing under `rewards`. A revision holds only the tiers it changes, not the
+> whole list, because tiers are still created, deleted and reordered at once while it is
+> open: a tier deleted since is ignored, and a revision left changing nothing cannot be
+> submitted (`409 REVISION_NOT_AVAILABLE`, `NO_CHANGES`). Approval writes the tiers in the
+> same transaction as the campaign and releases a replaced picture or clip once nothing
+> else shows it. Creating, duplicating and deleting a tier on a launched campaign are not
+> held: they were allowed before #557, and holding a new tier would mean teaching the
+> public catalogue and checkout about tiers that do not exist yet.
 >
 > **A refused edit is `409`, not `400`.** `PROJECT_FIELD_LOCKED` and
 > `REWARD_FIELD_LOCKED`, each with the field and the campaign's state in `meta`. A
@@ -3428,7 +3446,8 @@ be forgotten.
 #### `project_revisions` (V117)
 
 An edit to a launched campaign waiting for a moderator (§5.3). `content` is the whole of the
-editable writing as the creator wants it, not a diff; `status` is `DRAFT`, `PENDING`,
+editable writing as the creator wants it, not a diff, plus under `rewards` the writing of the
+reward tiers it changes, keyed by tier id (#559; no migration, the column is `jsonb`); `status` is `DRAFT`, `PENDING`,
 `APPROVED`, `REJECTED` or `WITHDRAWN`; a partial unique index allows one `DRAFT` or `PENDING`
 row per campaign. A rejection carries the moderator's `reason`.
 

@@ -12,7 +12,8 @@ import java.util.UUID;
  *     the moderators
  * @param changedFields the names of what differs from the public page: {@code title},
  *     {@code blurb}, {@code category}, {@code story}, {@code risks}, {@code coverImage},
- *     {@code videoMediaId}, {@code countries}
+ *     {@code videoMediaId}, {@code countries}, and {@code rewards} when it changes the writing of a
+ *     reward tier (#559)
  * @param submittedAt null while it is a draft
  */
 public record RevisionBody(

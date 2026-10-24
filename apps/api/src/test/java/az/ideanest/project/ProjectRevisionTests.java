@@ -10,7 +10,9 @@ import az.ideanest.project.domain.ProjectState;
 import az.ideanest.project.domain.RevisionContent;
 import az.ideanest.project.domain.RevisionStatus;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +33,8 @@ class ProjectRevisionTests {
                 "Risks",
                 new CoverImage("https://cdn.example/cover.jpg", 1600, 900),
                 null,
-                List.of("AZ"));
+                List.of("AZ"),
+                Map.of());
     }
 
     @Test
@@ -53,7 +56,8 @@ class ProjectRevisionTests {
                 live.risks(),
                 null,
                 UUID.randomUUID(),
-                List.of("AZ", "TR"));
+                List.of("AZ", "TR"),
+                Map.of());
 
         assertThat(edited.changedFrom(live))
                 .containsExactly(
@@ -68,11 +72,65 @@ class ProjectRevisionTests {
     @DisplayName("a story whose keys were reordered is not a change")
     void keyOrderIsNotAnEdit() {
         RevisionContent live = new RevisionContent(
-                "T", null, null, null, JSON.createObjectNode().put("a", 1).put("b", 2), null, null, null, List.of("AZ"));
+                "T", null, null, null, JSON.createObjectNode().put("a", 1).put("b", 2), null, null, null, List.of("AZ"), null);
         RevisionContent reordered = new RevisionContent(
-                "T", null, null, null, JSON.createObjectNode().put("b", 2).put("a", 1), null, null, null, List.of("AZ"));
+                "T", null, null, null, JSON.createObjectNode().put("b", 2).put("a", 1), null, null, null, List.of("AZ"), null);
 
         assertThat(reordered.changedFrom(live)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a reward tier's writing is a change only for a tier the campaign still has, and only if it differs")
+    void rewardWritingIsComparedAgainstTheLiveTiers() {
+        UUID kept = UUID.randomUUID();
+        UUID edited = UUID.randomUUID();
+        UUID deleted = UUID.randomUUID();
+        Map<UUID, RevisionContent.Reward> tiers = new LinkedHashMap<>();
+        tiers.put(kept, new RevisionContent.Reward("Mug", "A mug", null, null));
+        tiers.put(edited, new RevisionContent.Reward("Poster", null, null, null));
+        RevisionContent live = withRewards(tiers);
+
+        RevisionContent proposed = live
+                .withReward(kept, new RevisionContent.Reward("Mug", "A mug", null, null))
+                .withReward(edited, new RevisionContent.Reward("Signed poster", null, UUID.randomUUID(), null))
+                .withReward(deleted, new RevisionContent.Reward("Gone", null, null, null));
+
+        assertThat(proposed.changedFrom(live)).containsExactly(RevisionContent.REWARDS);
+        assertThat(proposed.changedRewardsFrom(live)).containsExactly(edited);
+        assertThat(proposed.heldAgainst(live).rewards()).containsOnlyKeys(edited);
+
+        RevisionContent onlyGone = withRewards(Map.of(deleted, new RevisionContent.Reward("Gone", null, null, null)));
+        assertThat(onlyGone.changedFrom(live)).isEmpty();
+        assertThat(onlyGone.heldAgainst(live).rewards()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("content written before reward tiers were held reads with none, and tiers survive a round trip")
+    void rewardsRoundTripThroughJson() {
+        UUID tier = UUID.randomUUID();
+        RevisionContent held = content().withReward(tier, new RevisionContent.Reward("Mug", null, null, UUID.randomUUID()));
+
+        RevisionContent read = JSON.readValue(JSON.writeValueAsString(held), RevisionContent.class);
+        assertThat(read.rewards()).isEqualTo(held.rewards());
+
+        RevisionContent older = JSON.readValue(
+                "{\"title\":\"T\",\"countries\":[\"AZ\"]}", RevisionContent.class);
+        assertThat(older.rewards()).isEmpty();
+    }
+
+    private static RevisionContent withRewards(Map<UUID, RevisionContent.Reward> rewards) {
+        RevisionContent base = content();
+        return new RevisionContent(
+                base.title(),
+                base.blurb(),
+                base.categoryId(),
+                base.subcategoryId(),
+                base.story(),
+                base.risks(),
+                base.coverImage(),
+                base.videoMediaId(),
+                base.countries(),
+                rewards);
     }
 
     @Test

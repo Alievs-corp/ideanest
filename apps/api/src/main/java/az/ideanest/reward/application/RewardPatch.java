@@ -77,4 +77,9 @@ public record RewardPatch(
     public boolean changesAvailability() {
         return availableFrom.isPresent() || availableUntil.isPresent();
     }
+
+    /** Whether it touches what a launched campaign holds for review: see {@code RewardWriting}. */
+    public boolean changesWriting() {
+        return title.isPresent() || description.isPresent() || imageMediaId.isPresent() || videoMediaId.isPresent();
+    }
 }

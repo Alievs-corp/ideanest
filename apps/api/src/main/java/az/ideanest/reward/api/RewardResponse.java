@@ -26,6 +26,11 @@ import java.util.UUID;
  * the editor binds a form to every field, and an absent key cannot be told from a
  * field that is genuinely unset.
  *
+ * <p><strong>On a launched campaign it is the creator's draft (#559).</strong> The title,
+ * description, image and video are what the campaign's open revision holds for the tier, which
+ * the public does not see until a moderator approves it; {@code revisionChangedFields} names
+ * the ones that differ from what the public sees.
+ *
  * @param price amount and currency, the amount a string on the wire. §10.3, and
  *     {@link Money} for why
  * @param estimatedDelivery an ISO date. A month is what a creator can honestly
@@ -58,6 +63,9 @@ import java.util.UUID;
  * @param image the tier's picture, or null
  * @param video the tier's clip, or null. Null as well while an attached upload is not
  *     servable, which a ready one always is
+ * @param revisionChangedFields which of {@code title}, {@code description},
+ *     {@code imageMediaId} and {@code videoMediaId} wait in the campaign's revision with a
+ *     value the public does not see yet. Empty before launch and when nothing waits
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record RewardResponse(
@@ -87,6 +95,7 @@ public record RewardResponse(
         boolean pricingLocked,
         RewardImageBody image,
         RewardVideoBody video,
+        List<String> revisionChangedFields,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -96,8 +105,8 @@ public record RewardResponse(
         return new RewardResponse(
                 tier.getId(),
                 tier.getProjectId(),
-                tier.getTitle(),
-                tier.getDescription(),
+                detail.writing().title(),
+                detail.writing().description(),
                 Money.of(tier.getAmount(), tier.getCurrency()),
                 tier.getEstimatedDelivery(),
                 tier.getLimitQuantity(),
@@ -122,6 +131,7 @@ public record RewardResponse(
                 detail.locks().rewardPriceLocked(),
                 RewardImageBody.of(detail.image()),
                 RewardVideoBody.of(detail.video()),
+                detail.revisionChangedFields(),
                 tier.getCreatedAt(),
                 tier.getUpdatedAt());
     }
