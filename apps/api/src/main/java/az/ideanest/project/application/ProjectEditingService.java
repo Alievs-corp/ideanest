@@ -7,6 +7,7 @@ import az.ideanest.project.domain.LockedField;
 import az.ideanest.project.domain.Project;
 import az.ideanest.project.domain.ProjectEditLocks;
 import az.ideanest.project.domain.ProjectState;
+import az.ideanest.project.domain.RevisionContent;
 import az.ideanest.project.domain.StoryDocumentInvalidException;
 import az.ideanest.project.domain.StoryDocuments;
 import az.ideanest.project.domain.SubmissionChecklist;
@@ -103,6 +104,7 @@ public class ProjectEditingService {
     private final ProjectAccess access;
     private final ProjectTransitionService transitions;
     private final StoryVersionService storyVersions;
+    private final ProjectRevisionService revisions;
 
     /**
      * The media module, reached through its application layer -- which is the only part of it
@@ -119,6 +121,7 @@ public class ProjectEditingService {
             ProjectAccess access,
             ProjectTransitionService transitions,
             StoryVersionService storyVersions,
+            ProjectRevisionService revisions,
             MediaLibrary media) {
         this.projects = projects;
         this.categories = categories;
@@ -126,6 +129,7 @@ public class ProjectEditingService {
         this.access = access;
         this.transitions = transitions;
         this.storyVersions = storyVersions;
+        this.revisions = revisions;
         this.media = media;
     }
 
@@ -154,7 +158,7 @@ public class ProjectEditingService {
     /** The campaign as its creator edits it. Refuses anybody else; see {@link ProjectAccess}. */
     @Transactional(readOnly = true)
     public Project forEdit(UUID projectId, UUID accountId) {
-        return access.requireEditable(projectId, accountId);
+        return revisions.workingCopy(access.requireEditable(projectId, accountId));
     }
 
     /**
@@ -174,14 +178,20 @@ public class ProjectEditingService {
         Project project = access.requireEditableForAll(projectId, accountId, capabilitiesFor(patch));
         requireNothingLocked(project, patch);
 
+        boolean held = ProjectEditLocks.isLaunched(project.getState());
+        List<String> liveCountries = project.getCountries();
+        if (held) {
+            revisions.workingCopy(project);
+        }
+
         patch.title().ifPresent(title -> project.setTitle(requireTitle(title)));
         patch.blurb().ifPresent(blurb -> project.setBlurb(withinLength("blurb", blurb, BLURB_MAX)));
         patch.risks().ifPresent(risks -> project.setRisks(blankAsNull(risks)));
-        patch.story().ifPresent(story -> applyStory(project, accountId, story));
+        patch.story().ifPresent(story -> applyStory(project, accountId, story, held));
         patch.scheduledLaunchAt().ifPresent(project::setScheduledLaunchAt);
         patch.coverImage().ifPresent(selection -> project.setCoverImage(resolveCover(selection, accountId)));
-        patch.videoMediaId().ifPresent(mediaId -> replaceVideo(project, accountId, mediaId));
-        patch.countries().ifPresent(countries -> project.setCountries(validCountries(project, countries)));
+        patch.videoMediaId().ifPresent(mediaId -> replaceVideo(project, accountId, mediaId, held));
+        patch.countries().ifPresent(countries -> project.setCountries(validCountries(project, liveCountries, countries)));
         patch.durationDays().ifPresent(days -> project.setDurationDays(validDuration(days)));
         patch.goal().ifPresent(goal -> applyGoal(project, goal));
 
@@ -189,6 +199,9 @@ public class ProjectEditingService {
             refile(project, patch);
         }
 
+        if (held) {
+            revisions.stage(project, accountId);
+        }
         return project;
     }
 
@@ -249,7 +262,7 @@ public class ProjectEditingService {
      * would be storage spent on a file nobody can reach. Media rows are created before they
      * are attached, so a reupload of the same campaign is the ordinary way an orphan appears.
      */
-    private void replaceVideo(Project project, UUID accountId, UUID mediaId) {
+    private void replaceVideo(Project project, UUID accountId, UUID mediaId, boolean held) {
         UUID previous = project.getVideoMediaId();
         if (Objects.equals(previous, mediaId)) {
             return;
@@ -260,11 +273,44 @@ public class ProjectEditingService {
         }
         project.setVideoMediaId(mediaId);
 
+        if (!held) {
+            releaseVideo(project, previous);
+        }
+    }
+
+    private void releaseVideo(Project project, UUID previous) {
         if (previous != null
                 && !projects.existsByVideoMediaIdAndIdNot(previous, project.getId())
                 && !projects.isVideoShownByAReward(previous)
                 && !projects.isVideoInAStory(previous)) {
             media.discardAfterCommit(previous);
+        }
+    }
+
+    /**
+     * Publishes an approved revision: copies its content onto the campaign, with the side
+     * effects an edit of a draft has at the moment it is saved.
+     *
+     * <p>The story is preserved as a version first, and the video it replaces is released once
+     * this commits. Neither could happen while the creator was editing, because the campaign was
+     * not changing.
+     */
+    public void applyApproved(Project project, RevisionContent content, UUID authorId) {
+        JsonNode current = null;
+        if (project.getStory() != null) {
+            try {
+                current = JSON_TREES.readTree(project.getStory());
+            } catch (JacksonException e) {
+                throw new IllegalStateException("Project " + project.getId() + " holds a story that is not JSON", e);
+            }
+        }
+        if (!StoryDocuments.isSameDocument(content.story(), current)) {
+            storyVersions.recordIfDue(project, content.story(), authorId);
+        }
+        UUID previousVideo = project.getVideoMediaId();
+        content.copyOnto(project);
+        if (!Objects.equals(previousVideo, content.videoMediaId())) {
+            releaseVideo(project, previousVideo);
         }
     }
 
@@ -324,10 +370,12 @@ public class ProjectEditingService {
      * worth testing without a Spring context, a database, and an HTTP request in
      * front of it.
      */
-    private void applyStory(Project project, UUID accountId, JsonNode story) {
+    private void applyStory(Project project, UUID accountId, JsonNode story, boolean held) {
         StoryDocuments.validate(story);
         JsonNode measured = withMeasuredVideos(project, accountId, story);
-        storyVersions.recordIfDue(project, measured, accountId);
+        if (!held) {
+            storyVersions.recordIfDue(project, measured, accountId);
+        }
         // Text into a jsonb column. Serialising the tree rather than the raw request
         // body means what is stored is what was validated, with nothing between the two
         // but the section videos' measurements.
@@ -530,7 +578,7 @@ public class ProjectEditingService {
      * was promised a reward there, and taking that country off the campaign would not take the
      * promise with it.
      */
-    private static List<String> validCountries(Project project, List<String> requested) {
+    private static List<String> validCountries(Project project, List<String> kept, List<String> requested) {
         if (requested == null || requested.isEmpty()) {
             throw new ProjectFieldRejectedException("countries", "Choose at least one country.");
         }
@@ -542,7 +590,7 @@ public class ProjectEditingService {
             }
             chosen.add(normalised);
         }
-        if (project.getLaunchedAt() != null && !chosen.containsAll(project.getCountries())) {
+        if (project.getLaunchedAt() != null && !chosen.containsAll(kept)) {
             throw new ProjectFieldRejectedException(
                     "countries", "A launched campaign can add countries but not remove them.");
         }

@@ -2,6 +2,7 @@ package az.ideanest.project.application;
 
 import az.ideanest.project.ProjectProperties;
 import az.ideanest.project.domain.Project;
+import az.ideanest.project.domain.ProjectEditLocks;
 import az.ideanest.project.domain.StoryDocuments;
 import az.ideanest.project.domain.StoryVersion;
 import az.ideanest.project.infrastructure.StoryVersionRepository;
@@ -65,13 +66,19 @@ public class StoryVersionService {
     private final StoryVersionRepository versions;
     private final ProjectAccess access;
     private final ProjectProperties properties;
+    private final ProjectRevisionService revisions;
     private final Clock clock;
 
     public StoryVersionService(
-            StoryVersionRepository versions, ProjectAccess access, ProjectProperties properties, Clock clock) {
+            StoryVersionRepository versions,
+            ProjectAccess access,
+            ProjectProperties properties,
+            ProjectRevisionService revisions,
+            Clock clock) {
         this.versions = versions;
         this.access = access;
         this.properties = properties;
+        this.revisions = revisions;
         this.clock = clock;
     }
 
@@ -124,6 +131,14 @@ public class StoryVersionService {
 
         JsonNode document = parse(version.getDocument());
         StoryDocuments.validate(document);
+
+        if (ProjectEditLocks.isLaunched(project.getState())) {
+            // The public story stays as it is until a moderator approves the revision.
+            revisions.workingCopy(project);
+            project.setStory(version.getDocument());
+            revisions.stage(project, accountId);
+            return project;
+        }
 
         recordNow(project, storyOf(project), accountId);
 

@@ -2,6 +2,7 @@ package az.ideanest.project.api;
 
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.CampaignVideo;
+import az.ideanest.project.application.ProjectRevisionService;
 import az.ideanest.project.domain.LockedField;
 import az.ideanest.project.domain.Project;
 import az.ideanest.project.domain.ProjectEditLocks;
@@ -32,12 +33,16 @@ public class ProjectEditResponses {
     /** Where the campaign's video is served from is the media module's to say (#331). */
     private final MediaLibrary media;
 
-    public ProjectEditResponses(ObjectMapper json, MediaLibrary media) {
+    private final ProjectRevisionService revisions;
+
+    public ProjectEditResponses(ObjectMapper json, MediaLibrary media, ProjectRevisionService revisions) {
         this.json = json;
         this.media = media;
+        this.revisions = revisions;
     }
 
     public ProjectEdit of(Project project) {
+        boolean launched = ProjectEditLocks.isLaunched(project.getState());
         return new ProjectEdit(
                 project.getId(),
                 project.getSlug(),
@@ -61,6 +66,8 @@ public class ProjectEditResponses {
                 // reward's price is frozen by the same rule and is not on this
                 // screen. See ProjectEditLocks.
                 ProjectEditLocks.lockedFieldNamesIn(project.getState(), LockedField.Resource.PROJECT),
+                launched ? revisions.summaryOf(project.getId()).map(RevisionBody::of).orElse(null) : null,
+                launched ? revisions.latestRejection(project.getId()).map(RevisionRejectionBody::of).orElse(null) : null,
                 project.getCreatedAt(),
                 project.getUpdatedAt());
     }

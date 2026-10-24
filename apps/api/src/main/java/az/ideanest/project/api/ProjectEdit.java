@@ -37,6 +37,11 @@ import java.util.UUID;
  *     {@code 409 PROJECT_FIELD_LOCKED} when it tries. A reward's price is frozen by
  *     the same rule and is deliberately not listed here — it is not a field of this
  *     body. See {@code ProjectEditLocks}
+ * @param revision for a launched campaign, the edit its creator has open: the fields above then
+ *     hold that edit rather than what the public sees, until a moderator approves it (#558).
+ *     Null when there is none
+ * @param rejectedRevision the reason moderation refused the creator's latest edit, until they
+ *     start another. Null otherwise
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record ProjectEdit(
@@ -58,6 +63,8 @@ public record ProjectEdit(
         CampaignVideoBody video,
         List<String> countries,
         List<String> lockedFields,
+        RevisionBody revision,
+        RevisionRejectionBody rejectedRevision,
         Instant createdAt,
         Instant updatedAt) {
 }

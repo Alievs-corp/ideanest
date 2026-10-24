@@ -13,6 +13,8 @@ import az.ideanest.project.application.ProjectNotFoundException;
 import az.ideanest.project.application.ProjectNotLaunchableException;
 import az.ideanest.project.application.PlanLimitExceededException;
 import az.ideanest.project.application.ProjectNotSubmittableException;
+import az.ideanest.project.application.RevisionNotAvailableException;
+import az.ideanest.project.application.RevisionNotFoundException;
 import az.ideanest.project.application.SubscriptionRequiredException;
 import az.ideanest.project.application.UnreviewableStateException;
 import az.ideanest.project.application.ProjectTransitionNotAllowedException;
@@ -52,6 +54,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
             // move §6.1 does not allow -- a campaign that has already closed cannot be
             // suspended, and the client is told which state it is actually in.
             ProjectSuspensionController.class,
+            // And the moderators' side of an edit to a launched campaign (#558).
+            ProjectRevisionModerationController.class,
             // The public pre-launch endpoints raise four of the five failures
             // below unchanged — a campaign that does not exist, a field that is not
             // an address, a value type that refused its input. Listing the
@@ -447,6 +451,34 @@ public class ProjectExceptionHandler {
         problem.setTitle("This campaign cannot be extended now");
         problem.setDetail(exception.getMessage());
         problem.setProperty("code", "EXTENSION_NOT_AVAILABLE");
+        problem.setProperty("meta", Map.of("reason", exception.reason().name()));
+        return problem;
+    }
+
+    /** 404 for a revision that does not exist. */
+    @ExceptionHandler(RevisionNotFoundException.class)
+    public ProblemDetail handleRevisionNotFound(RevisionNotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setType(URI.create("https://ideanest.az/problems/revision-not-found"));
+        problem.setTitle("No such revision");
+        problem.setDetail("That revision does not exist.");
+        problem.setProperty("code", "REVISION_NOT_FOUND");
+        return problem;
+    }
+
+    /**
+     * 409 for an edit to a launched campaign that is not in the state the request needs (#558).
+     *
+     * <p>{@code meta.reason} says which, so the editor can tell "nothing to send" from "already
+     * sent", and a moderator who opened a revision the creator then changed learns that it moved.
+     */
+    @ExceptionHandler(RevisionNotAvailableException.class)
+    public ProblemDetail handleRevisionNotAvailable(RevisionNotAvailableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/revision-not-available"));
+        problem.setTitle("Revision not available");
+        problem.setDetail("That edit is not in a state this request applies to.");
+        problem.setProperty("code", "REVISION_NOT_AVAILABLE");
         problem.setProperty("meta", Map.of("reason", exception.reason().name()));
         return problem;
     }

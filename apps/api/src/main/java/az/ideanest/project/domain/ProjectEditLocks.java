@@ -178,4 +178,9 @@ public final class ProjectEditLocks {
                 .map(LockedField::wireName)
                 .toList();
     }
+
+    /** Whether the public has seen a campaign in this state, so that an edit to its writing waits for a moderator. */
+    public static boolean isLaunched(ProjectState state) {
+        return !lockedIn(state).isEmpty();
+    }
 }

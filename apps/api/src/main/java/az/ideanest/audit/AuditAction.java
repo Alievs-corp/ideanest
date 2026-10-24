@@ -44,6 +44,15 @@ public enum AuditAction {
     PROJECT_CHANGES_REQUESTED("project.changes_requested", "project"),
 
     /**
+     * Moderation applied a creator's edit to a launched campaign (#558). The entity is the campaign;
+     * the detail names the fields that changed.
+     */
+    PROJECT_REVISION_APPROVED("project.revision_approved", "project"),
+
+    /** Moderation refused a creator's edit to a launched campaign. The public page is unchanged. */
+    PROJECT_REVISION_REJECTED("project.revision_rejected", "project"),
+
+    /**
      * An update was published to a campaign's backers (#83).
      *
      * <p>The entity is the campaign rather than the update, unlike
