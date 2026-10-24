@@ -57,6 +57,20 @@ export async function patchProject(projectId: string, patch: ProjectPatch): Prom
 }
 
 /**
+ * `POST /v1/projects/{id}/revision/submit` — sends the open edit to a launched campaign to a
+ * moderator (#558). Answers with the whole project. Refused with 409 `REVISION_NOT_AVAILABLE`,
+ * `meta.reason` saying why (`revisionRefusalOf`).
+ */
+export async function submitRevision(projectId: string): Promise<ProjectEdit> {
+  return (await sendJson('POST', `/v1/projects/${encodeURIComponent(projectId)}/revision/submit`)) as ProjectEdit;
+}
+
+/** `DELETE /v1/projects/{id}/revision` — throws the open edit away; the whole project comes back (#558). */
+export async function discardRevision(projectId: string): Promise<ProjectEdit> {
+  return (await sendJson('DELETE', `/v1/projects/${encodeURIComponent(projectId)}/revision`)) as ProjectEdit;
+}
+
+/**
  * The category tree as the editor's pickers read it (`categoriesFrom`). The same key as the
  * discovery screens' `useCategories`, so the taxonomy is read once; each reads it through its own
  * `select`. Not retried: a failure here never blocks the rest of the form.

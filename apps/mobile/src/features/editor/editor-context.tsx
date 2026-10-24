@@ -81,6 +81,12 @@ export interface EditorContextValue {
   readonly autosave: Autosave<ProjectPatch>;
   readonly revision: number;
   readonly apply: (project: ProjectEdit) => void;
+  /**
+   * Re-seeds the mounted forms from `seed`, as a bump of `revision` does. For a server answer that
+   * changed the fields themselves: a discarded edit puts the live values back, and a form that kept
+   * its own text would otherwise show, and send again, what was just thrown away.
+   */
+  readonly reseed: () => void;
   readonly reload: () => void;
   readonly store: KeyValueStore;
   /**
@@ -228,6 +234,7 @@ export function EditorProvider({
 
   const unsaved = autosave.unsaved;
   const seed = useMemo(() => (project === null ? null : withUnsaved(project, unsaved)), [project, unsaved]);
+  const reseed = useCallback(() => setRevision((value) => value + 1), []);
   const refetch = query.refetch;
   const reload = useCallback(() => void refetch(), [refetch]);
 
@@ -246,11 +253,12 @@ export function EditorProvider({
       autosave: { ...autosave, sendUnsent: sendOffered },
       revision,
       apply,
+      reseed,
       reload,
       store,
       video,
     }),
-    [projectId, project, load, query, online, fresh, canSeed, seed, autosave, sendOffered, revision, apply, reload, store, video],
+    [projectId, project, load, query, online, fresh, canSeed, seed, autosave, sendOffered, revision, apply, reseed, reload, store, video],
   );
 
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
