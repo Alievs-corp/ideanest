@@ -1251,6 +1251,8 @@
             "approved": "Kampaniya təsdiqləndi",
             "backers_exported": "Dəstəkçilər ixrac edildi",
             "changes_requested": "Dəyişiklik tələb olundu",
+            "revision_approved": "Kampaniya redaktəsi təsdiqləndi",
+            "revision_rejected": "Kampaniya redaktəsi rədd edildi",
             "comment_removed": "Şərh silindi",
             "fulfilments_imported": "Çatdırılmalar idxal edildi",
             "launched": "Kampaniya təsdiqlə yayımlandı",

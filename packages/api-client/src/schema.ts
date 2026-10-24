@@ -836,6 +836,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/moderation/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["projectRevisionModerationQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/moderation/revisions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["projectRevisionModerationReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/moderation/revisions/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["projectRevisionModerationApprove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/moderation/revisions/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["projectRevisionModerationReject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/moderation/submissions": {
         parameters: {
             query?: never;
@@ -3566,6 +3630,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["contentReportReportProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/projects/{id}/revision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["projectDiscardRevision"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/projects/{id}/revision/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["projectSubmitRevision"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6543,6 +6639,8 @@ export interface components {
             /** Format: date-time */
             launchedAt?: string;
             lockedFields?: string[];
+            rejectedRevision?: components["schemas"]["RevisionRejectionBody"];
+            revision?: components["schemas"]["RevisionBody"];
             risks?: string;
             /** Format: date-time */
             scheduledLaunchAt?: string;
@@ -6956,6 +7054,53 @@ export interface components {
             displayHint?: string;
             holderName?: string;
             iban?: string;
+        };
+        RevisionBody: {
+            changedFields?: string[];
+            /** Format: uuid */
+            id?: string;
+            status?: string;
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        RevisionDecisionResponse: {
+            /** Format: date-time */
+            decidedAt?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            projectId?: string;
+            reason?: string;
+            status?: string;
+        };
+        RevisionQueueResponse: {
+            revisions?: components["schemas"]["Entry"][];
+        };
+        RevisionRejectionBody: {
+            /** Format: date-time */
+            decidedAt?: string;
+            /** Format: uuid */
+            id?: string;
+            reason?: string;
+        };
+        RevisionReviewResponse: {
+            /** Format: uuid */
+            authorId?: string;
+            changedFields?: string[];
+            /** Format: date-time */
+            decidedAt?: string;
+            /** Format: uuid */
+            id?: string;
+            live?: components["schemas"]["ProjectEdit"];
+            /** Format: uuid */
+            projectId?: string;
+            proposed?: components["schemas"]["ProjectEdit"];
+            reason?: string;
+            status?: string;
+            /** Format: date-time */
+            submittedAt?: string;
         };
         RewardImageBody: {
             blurDataUrl?: string;
@@ -8138,6 +8283,11 @@ export type SchemaResolution = components['schemas']['Resolution'];
 export type SchemaResolveRequest = components['schemas']['ResolveRequest'];
 export type SchemaRespondRequest = components['schemas']['RespondRequest'];
 export type SchemaRevealedBankAccount = components['schemas']['RevealedBankAccount'];
+export type SchemaRevisionBody = components['schemas']['RevisionBody'];
+export type SchemaRevisionDecisionResponse = components['schemas']['RevisionDecisionResponse'];
+export type SchemaRevisionQueueResponse = components['schemas']['RevisionQueueResponse'];
+export type SchemaRevisionRejectionBody = components['schemas']['RevisionRejectionBody'];
+export type SchemaRevisionReviewResponse = components['schemas']['RevisionReviewResponse'];
 export type SchemaRewardImageBody = components['schemas']['RewardImageBody'];
 export type SchemaRewardItemBody = components['schemas']['RewardItemBody'];
 export type SchemaRewardPatchRequest = components['schemas']['RewardPatchRequest'];
@@ -9685,6 +9835,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QueuedReportResponse"];
+                };
+            };
+        };
+    };
+    projectRevisionModerationQueue: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionQueueResponse"];
+                };
+            };
+        };
+    };
+    projectRevisionModerationReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionReviewResponse"];
+                };
+            };
+        };
+    };
+    projectRevisionModerationApprove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ModerationDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionDecisionResponse"];
+                };
+            };
+        };
+    };
+    projectRevisionModerationReject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModerationDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionDecisionResponse"];
                 };
             };
         };
@@ -14406,6 +14652,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportResponse"];
+                };
+            };
+        };
+    };
+    projectDiscardRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectEdit"];
+                };
+            };
+        };
+    };
+    projectSubmitRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectEdit"];
                 };
             };
         };

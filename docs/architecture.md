@@ -2438,6 +2438,28 @@ individual agreement can differ without a deployment.
 > computed once, at launch, from `launched_at` and `duration_days`; freezing it means
 > refusing `durationDays` and `scheduledLaunchAt` after launch.
 >
+> **The writing is held, not frozen (#558).** From `LIVE` onwards an edit to the title,
+> summary, category, story, risks, cover, video or countries is not written to
+> `projects`. `ProjectEditingService` validates it exactly as it validates a draft's, then
+> stores the result in the campaign's one open *revision* (`project_revisions`), and the
+> public page keeps showing the last approved version. The creator sees their own draft
+> in the editor, submits it with `POST /v1/projects/{id}/revision/submit`, and may throw it
+> away with `DELETE /v1/projects/{id}/revision`. A moderator reads the queue at
+> `GET /v1/admin/moderation/revisions`, sees the live campaign beside the proposal at
+> `GET .../revisions/{id}`, and decides with `POST .../approve` or `POST .../reject` (a
+> reason is required, because the creator is shown it). Approval copies the content onto
+> the campaign in one transaction with the audit row (`project.revision_approved`) and a
+> `project.revision_decided` outbox event; it is also when a story version is kept and a
+> replaced video is released, because neither can happen while the campaign is not
+> changing.
+>
+> Two rules keep a moderator from approving something they did not read: an edit to a
+> submitted revision moves it back to a draft (a later approval answers
+> `409 REVISION_NOT_AVAILABLE`), and a draft that has come back to what the campaign shows
+> is deleted rather than queued. Drafts, pre-launch pages, approved-but-unopened and
+> `REJECTED` campaigns are edited in place, as before; the frozen fields above still answer
+> `409`. Reward text and media follow in a second step (#559).
+>
 > **A refused edit is `409`, not `400`.** `PROJECT_FIELD_LOCKED` and
 > `REWARD_FIELD_LOCKED`, each with the field and the campaign's state in `meta`. A
 > 400 says "fix the value" and the value is fine — 6000 is a perfectly good goal, and
@@ -3393,6 +3415,13 @@ be forgotten.
 > somebody who was not in the room — and a single mutable column answers none of
 > it. A creator's cancellation reason and a moderator's note live here for the
 > same reason: they are shown to people, so they are part of the record.
+
+#### `project_revisions` (V117)
+
+An edit to a launched campaign waiting for a moderator (§5.3). `content` is the whole of the
+editable writing as the creator wants it, not a diff; `status` is `DRAFT`, `PENDING`,
+`APPROVED`, `REJECTED` or `WITHDRAWN`; a partial unique index allows one `DRAFT` or `PENDING`
+row per campaign. A rejection carries the moderator's `reason`.
 
 #### `collaborators`
 `id`, `project_id`, `account_id` (null until accepted), `invited_email` (citext),

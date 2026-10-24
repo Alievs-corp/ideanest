@@ -2,6 +2,7 @@ package az.ideanest.project.api;
 
 import az.ideanest.project.application.ProjectChecklistService;
 import az.ideanest.project.application.ProjectEditingService;
+import az.ideanest.project.application.ProjectRevisionService;
 import az.ideanest.project.application.ProjectTransitionService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +52,7 @@ public class ProjectController {
     private final ProjectEditingService editing;
     private final ProjectTransitionService transitions;
     private final ProjectChecklistService checklist;
+    private final ProjectRevisionService revisions;
     private final ProjectEditResponses responses;
     private final ChecklistCopy checklistCopy;
 
@@ -57,11 +60,13 @@ public class ProjectController {
             ProjectEditingService editing,
             ProjectTransitionService transitions,
             ProjectChecklistService checklist,
+            ProjectRevisionService revisions,
             ProjectEditResponses responses,
             ChecklistCopy checklistCopy) {
         this.editing = editing;
         this.transitions = transitions;
         this.checklist = checklist;
+        this.revisions = revisions;
         this.responses = responses;
         this.checklistCopy = checklistCopy;
     }
@@ -102,6 +107,25 @@ public class ProjectController {
             @RequestBody ProjectPatchRequest request) {
 
         return responses.of(editing.edit(id, callerOf(accessToken), request.toPatch()));
+    }
+
+    /**
+     * Sends the edit a launched campaign has open to the moderators (#558).
+     *
+     * <p>Until a moderator approves it the public page is unchanged. Refused with 409
+     * {@code REVISION_NOT_AVAILABLE} when there is no edit open or it has already been sent.
+     */
+    @PostMapping("/{id}/revision/submit")
+    public ProjectEdit submitRevision(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
+        revisions.submit(id, callerOf(accessToken));
+        return responses.of(editing.forEdit(id, callerOf(accessToken)));
+    }
+
+    /** Throws away the edit a launched campaign has open, sent or not. The public page is unchanged. */
+    @DeleteMapping("/{id}/revision")
+    public ProjectEdit discardRevision(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
+        revisions.discard(id, callerOf(accessToken));
+        return responses.of(editing.forEdit(id, callerOf(accessToken)));
     }
 
     /**
