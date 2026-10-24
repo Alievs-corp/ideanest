@@ -1251,6 +1251,8 @@
             "approved": "Кампания одобрена",
             "backers_exported": "Бэкеры выгружены",
             "changes_requested": "Запрошены изменения",
+            "revision_approved": "Правка кампании одобрена",
+            "revision_rejected": "Правка кампании отклонена",
             "comment_removed": "Комментарий удалён",
             "fulfilments_imported": "Отгрузки импортированы",
             "launched": "Кампания опубликована при одобрении",

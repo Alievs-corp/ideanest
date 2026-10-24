@@ -1251,6 +1251,8 @@
             "approved": "Campaign approved",
             "backers_exported": "Backers exported",
             "changes_requested": "Changes requested",
+            "revision_approved": "Campaign edit approved",
+            "revision_rejected": "Campaign edit rejected",
             "comment_removed": "Comment removed",
             "fulfilments_imported": "Fulfilments imported",
             "launched": "Campaign published on approval",

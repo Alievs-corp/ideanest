@@ -1251,6 +1251,8 @@
             "approved": "Kampanya onaylandı",
             "backers_exported": "Destekçiler dışa aktarıldı",
             "changes_requested": "Değişiklik istendi",
+            "revision_approved": "Kampanya düzenlemesi onaylandı",
+            "revision_rejected": "Kampanya düzenlemesi reddedildi",
             "comment_removed": "Yorum kaldırıldı",
             "fulfilments_imported": "Teslimatlar içe aktarıldı",
             "launched": "Kampanya onayla yayınlandı",
