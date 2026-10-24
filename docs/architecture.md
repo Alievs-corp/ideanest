@@ -2453,6 +2453,15 @@ individual agreement can differ without a deployment.
 > replaced video is released, because neither can happen while the campaign is not
 > changing.
 >
+> The console screens are `/admin/moderation/revisions` (the queue, beside the submission
+> queue) and `/admin/moderation/revisions/{id}` (#560): the live campaign beside the
+> proposal for exactly the fields the service names as changed, with a word diff for the
+> title, summary and risks, a block diff for the story and before and after pictures for
+> the cover and video. Approve takes an optional note and reject requires one; a
+> `409 REVISION_NOT_AVAILABLE` tells the moderator the creator changed it and reloads the
+> page. The decision dialog is loaded when it opens, because `Modal` costs the route about
+> 120 KiB of First Load JS.
+>
 > Two rules keep a moderator from approving something they did not read: an edit to a
 > submitted revision moves it back to a draft (a later approval answers
 > `409 REVISION_NOT_AVAILABLE`), and a draft that has come back to what the campaign shows

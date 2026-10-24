@@ -33,6 +33,8 @@
     "/[locale]/admin/moderation/[reportId]": 723,
     "/[locale]/admin/moderation/content": 724,
     "/[locale]/admin/moderation/profiles": 723,
+    "/[locale]/admin/moderation/revisions": 584,
+    "/[locale]/admin/moderation/revisions/[revisionId]": 621,
     "/[locale]/admin/moderation/submissions": 753,
     "/[locale]/admin/modules": 527,
     "/[locale]/admin/partner-statistics": 638,

@@ -755,7 +755,8 @@
       "/admin/revenue": "Gəlir",
       "/admin/partners": "Tərəfdaşlar",
       "/admin/partner-statistics": "Tərəfdaş statistikası",
-      "/admin/maintenance": "Texniki xidmət"
+      "/admin/maintenance": "Texniki xidmət",
+      "/admin/moderation/revisions": "Kampaniya redaktələri"
     },
     "states": {
       "built": "Hazırdır",
@@ -1135,6 +1136,18 @@
         "detailsPasses": "Keçənlər: əməkdaşlar, giriş, ödəniş provayderlərinin bildirişləri və bank yoxlamasından sonra sayta qayıdış. Qalan hər sorğu rədd edilir.",
         "detailsPaused": "Dayanan altı fon işi: geri ödəmələr, cavabsız ödəniş səhifələrinin yoxlanması, mühasibat tutuşdurması, bildirişlərin göndərilməsi və icmalları, açılış xatırlatmaları.",
         "detailsRunning": "İşləməyə davam edənlər: kampaniyaların açılması və son tarixdə bağlanması, vəsaitin avtomatik çıxarılması və göndərilənlər növbəsi."
+      },
+      "revisions": {
+        "metaTitle": "Kampaniya redaktələri",
+        "metaDescription": "Artıq başlamış kampaniyalara edilən, moderatoru gözləyən redaktələr.",
+        "title": "Kampaniya redaktələri",
+        "intro": "Müəlliflərin artıq canlı kampaniyalara etdiyi dəyişikliklər, köhnədən yeniyə. Redaktə burada təsdiqlənənə qədər dəstəkçilər təsdiqlənmiş versiyanı oxumağa davam edir."
+      },
+      "revisionReview": {
+        "metaTitle": "Kampaniya redaktəsinə baxış",
+        "metaDescription": "Canlı kampaniya və təklif olunan redaktə yan-yana, qərar verən moderator üçün.",
+        "title": "Kampaniya redaktəsinə baxış",
+        "intro": "Solda canlı versiya, sağda müəllifin təklifi. Yalnız dəyişən sahələr göstərilir."
       }
     },
     "screens": {
@@ -3655,6 +3668,107 @@
         "cancelYes": "Bəli, ləğv et",
         "endInvalid": "Bitmə vaxtı başlamadan sonra və gələcəkdə olmalıdır. Pəncərəni indi bitirmək üçün «İndi bitir»dən istifadə edin.",
         "zoneNote": "Bu səhifədəki vaxtlar sizin saat qurşağınızdadır: {zone}."
+      },
+      "revisionQueue": {
+        "subject": "kampaniya redaktələri növbəsi",
+        "heading": "Qərar gözləyənlər",
+        "loadingList": "Kampaniya redaktələri yüklənir",
+        "emptyTitle": "Gözləyən redaktə yoxdur",
+        "emptyBody": "Başlamış kampaniyalara edilən redaktələr müəllifləri onları baxışa göndərəndə burada görünür.",
+        "changedLabel": "Dəyişənlər:",
+        "submitted": "Göndərilib: {date}",
+        "by": "müəllif: {name}",
+        "creatorGone": "Müəllifin hesabı bağlanıb",
+        "review": "Redaktəyə bax",
+        "reviewLabel": "{title} kampaniyasının redaktəsinə bax"
+      },
+      "revisionReview": {
+        "subject": "bu kampaniya redaktəsi",
+        "loadingReview": "Redaktə yüklənir",
+        "notFoundTitle": "Bu redaktə tapılmadı",
+        "notFoundBody": "Müəllif onu geri çəkmiş ola bilər və ya artıq qərar verilib. Növbədə hələ gözləyənlər göstərilir.",
+        "backToQueue": "Redaktə növbəsinə qayıt",
+        "openCampaign": "Kampaniyanı yeni tabda aç",
+        "noticeTitle": "Dəstəkçilər hələ də canlı versiyanı oxuyur",
+        "noticeBody": "Təsdiq dəstəkçilərin oxuduğunu dərhal təklif olunan versiya ilə əvəz edir. Rədd canlı kampaniyanı olduğu kimi saxlayır və qaralamanı qeydinizlə müəllifə qaytarır.",
+        "legend": "Üstündən xətt çəkilmiş mətn kampaniyadan çıxır, altından xətt çəkilmiş mətn isə yenidir. Hər dəyişiklik ekran oxuyucular üçün sözlə də elan olunur.",
+        "liveHeading": "İndi canlı",
+        "proposedHeading": "Təklif olunan",
+        "changesHeading": "Nə dəyişib",
+        "noChanges": "Bu redaktə burada göstərilən sahələrdən heç birini dəyişmir.",
+        "fields": {
+          "title": "Başlıq",
+          "blurb": "Qısa təsvir",
+          "category": "Kateqoriya",
+          "coverImage": "Örtük şəkli",
+          "videoMediaId": "Kampaniya videosu",
+          "story": "Hekayə",
+          "risks": "Risklər və çətinliklər",
+          "countries": "Ölkələr"
+        },
+        "removed": "Silinib:",
+        "added": "Əlavə olunub:",
+        "empty": "Boşdur",
+        "noCategory": "Kateqoriya yoxdur",
+        "noCover": "Örtük şəkli yoxdur",
+        "noVideo": "Video yoxdur",
+        "noCountries": "Ölkə göstərilməyib",
+        "coverAlt": "{title} kampaniyasının örtük şəkli",
+        "openVideo": "Videonu yeni tabda aç",
+        "videoLabel": "{title} kampaniyasının video örtüyü",
+        "unchangedBlocks": {
+          "one": "{count} dəyişməyən blok",
+          "few": "{count} dəyişməyən blok",
+          "many": "{count} dəyişməyən blok",
+          "other": "{count} dəyişməyən blok"
+        },
+        "storyUnreadable": "Bu hekayə bu ekranın tanımadığı daha yeni redaktorda yazılıb, ona görə burada müqayisə oluna bilmir. Oxumaq üçün kampaniyanı açın.",
+        "blocks": {
+          "heading": "Başlıq",
+          "paragraph": "Abzas",
+          "list": "Siyahı",
+          "orderedList": "Nömrələnmiş siyahı",
+          "quote": "Sitat",
+          "rule": "Ayırıcı",
+          "image": "Şəkil",
+          "embed": "Quraşdırılmış video",
+          "section": "Bölmə"
+        },
+        "statusLabel": "Status",
+        "status": {
+          "PENDING": "Qərar gözləyir",
+          "DRAFT": "Müəllifdədir",
+          "APPROVED": "Təsdiqlənib",
+          "REJECTED": "Rədd edilib"
+        },
+        "notPending": "Bu redaktə artıq qərar gözləmir ({status}), ona görə buradan qərar verilə bilməz.",
+        "submitted": "Göndərilib: {date}",
+        "decidedOn": "Qərar verilib: {date}",
+        "reasonLabel": "Qeyd:",
+        "decideHeading": "Bu redaktə barədə qərar verin",
+        "approve": "Redaktəni təsdiqlə",
+        "reject": "Redaktəni rədd et",
+        "approveDialog": {
+          "title": "Bu redaktə təsdiqlənsin?",
+          "description": "Dəstəkçilər {title} kampaniyasının təklif olunan versiyasını dərhal oxuyacaq.",
+          "noteLabel": "Müəllif üçün qeyd",
+          "noteHint": "İstəyə bağlı. Müəllif onu qərarla birlikdə görür.",
+          "confirmLabel": "Redaktəni təsdiqlə",
+          "busyLabel": "Təsdiqlənir"
+        },
+        "rejectDialog": {
+          "title": "Bu redaktə rədd edilsin?",
+          "description": "{title} kampaniyasının canlı versiyası olduğu kimi qalır, qaralama isə müəllifə qayıdır.",
+          "noteLabel": "Niyə rədd edilir",
+          "noteHint": "Məcburidir. Müəllif bunu oxuyur və yenidən redaktə edə bilər.",
+          "confirmLabel": "Redaktəni rədd et",
+          "busyLabel": "Rədd edilir"
+        },
+        "noteRequired": "Səbəbi yazın. Müəllif bu qeydi görür və ona uyğun hərəkət etməlidir.",
+        "tooLong": "Qeyd {limit} simvoldan çox ola bilməz.",
+        "approved": "Redaktə təsdiqləndi. Dəstəkçilər indi təklif olunan versiyanı oxuyur.",
+        "rejected": "Redaktə rədd edildi. Müəllif qeydinizi görür.",
+        "unavailable": "Siz baxarkən müəllif bu redaktəni dəyişdi, ona görə qərarınız qeydə alınmadı. Səhifə indiki vəziyyətlə yenidən yükləndi."
       }
     },
     "moderation": {
