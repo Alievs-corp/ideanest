@@ -93,6 +93,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
         // campaign that still owes a notice — so a test that left rows behind
         // would have the next test's launch send them.
         jdbc.update("DELETE FROM reminders");
+        jdbc.update("DELETE FROM outbox_events");
         jdbc.update("DELETE FROM project_state_transitions");
         jdbc.update("DELETE FROM projects");
     }
@@ -216,7 +217,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     }
 
     /**
-     * The real route to {@code LIVE}: submit, approve, launch.
+     * The real route to {@code LIVE}: submit, then approve, which publishes it (#552).
      *
      * <p><strong>Every step is asserted, not just the last one.</strong> This
      * previously checked only the final state, so when #37 started refusing an
@@ -231,9 +232,6 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
                         .getBody())
                 .containsEntry("state", "SUBMITTED");
         assertThat(post("/v1/admin/moderation/" + id + "/approve", moderator().accessToken(), null)
-                        .getBody())
-                .containsEntry("state", "APPROVED");
-        assertThat(post("/v1/projects/" + id + "/launch", creator.accessToken(), null)
                         .getBody())
                 .containsEntry("state", "LIVE");
     }

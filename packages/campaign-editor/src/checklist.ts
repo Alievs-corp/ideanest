@@ -80,6 +80,9 @@ export const SUBMITTABLE_FROM: readonly ProjectState[] = ['DRAFT', 'PRELAUNCH', 
  * a moderator clears a campaign into `APPROVED`, and `SCHEDULED` is that campaign
  * waiting for a time it may still be taken past. Everything else the server
  * refuses, and the refusal is rendered.
+ *
+ * Since #552 an approval publishes the campaign itself, so a campaign is found here
+ * only if it was approved before that, or is waiting for its launch time.
  */
 export const LAUNCHABLE_FROM: readonly ProjectState[] = ['APPROVED', 'SCHEDULED'];
 
@@ -87,8 +90,31 @@ export function offersSubmit(state: ProjectState): boolean {
   return SUBMITTABLE_FROM.includes(state);
 }
 
-export function offersLaunch(state: ProjectState): boolean {
-  return LAUNCHABLE_FROM.includes(state);
+/**
+ * Whether an approved campaign opens on its own: it has a launch time still to come, and the
+ * service's `campaign-launcher` opens it then with nobody signed in (#552).
+ */
+export function opensOnItsOwn(
+  state: ProjectState,
+  scheduledLaunchAt: string | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (!LAUNCHABLE_FROM.includes(state) || scheduledLaunchAt == null) return false;
+  const at = Date.parse(scheduledLaunchAt);
+  return !Number.isNaN(at) && at > now.getTime();
+}
+
+/**
+ * Whether to draw Launch: only for an approved campaign that would otherwise not open — one
+ * approved before #552 with no launch time, or whose time was cleared. One that opens on its
+ * own needs nothing pressed.
+ */
+export function offersLaunch(
+  state: ProjectState,
+  scheduledLaunchAt?: string | null,
+  now: Date = new Date(),
+): boolean {
+  return LAUNCHABLE_FROM.includes(state) && !opensOnItsOwn(state, scheduledLaunchAt, now);
 }
 
 /** Whether this state is one the review tab has a sentence for. The other eleven get none. */

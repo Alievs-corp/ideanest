@@ -21,6 +21,7 @@ import {
   isReviewNotedState,
   offersLaunch,
   offersSubmit,
+  opensOnItsOwn,
   progressOf,
   sectionHref,
   unmetFromRefusal,
@@ -317,7 +318,14 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
   const suggestions = unmetOf(checklist.advisory);
   const moderation = checklist.moderation;
   const canOfferSubmit = offersSubmit(checklist.state);
-  const canOfferLaunch = offersLaunch(checklist.state);
+  const canOfferLaunch = offersLaunch(checklist.state, project.scheduledLaunchAt);
+  // #552: an approval publishes the campaign, at its launch time when one is still to come.
+  const stateNote =
+    project.scheduledLaunchAt != null && opensOnItsOwn(checklist.state, project.scheduledLaunchAt)
+      ? fillPlaceholders(words.opensAt, { date: formatDateTime(project.scheduledLaunchAt, words.locale) })
+      : isReviewNotedState(checklist.state)
+        ? words.stateNote[checklist.state]
+        : null;
   const held = blockers.length > 0;
   const unagreed = agreement !== null && !agreed;
 
@@ -360,10 +368,10 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
           not look like something went wrong: `info`, not `warning`, and a sentence
           that says there is nothing to do.
         */}
-        {isReviewNotedState(checklist.state) && (
+        {stateNote !== null && (
           <div ref={statusBox} tabIndex={-1} className="scroll-mt-28" style={{ outline: 'none' }}>
             <InlineAlert variant="info" title={copy.states[checklist.state]}>
-              {words.stateNote[checklist.state]}
+              {stateNote}
             </InlineAlert>
           </div>
         )}
@@ -532,13 +540,12 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
         )}
 
         {/*
-          THE CAMPAIGN CANNOT GO LIVE WITHOUT THIS CONTROL.
+          ONLY FOR A CAMPAIGN THAT WOULD OTHERWISE NOT OPEN.
 
-          `POST /v1/projects/{id}/launch` has existed since #31 and nothing in this
-          application called it, so a cleared campaign sat in `APPROVED` — invisible
-          to every public listing, which show `LIVE` alone — and its creator had been
-          told by this very panel that it goes live when they launch it. There was
-          nothing to press.
+          Since #552 an approval publishes the campaign, now or at its launch time, so
+          this is drawn only for one approved before that with no launch time, or whose
+          time was cleared afterwards. Without it that campaign would sit in `APPROVED`,
+          invisible to every public listing, with nothing to press.
         */}
         {canOfferLaunch && (
           <section aria-labelledby="review-launch-heading" className="flex flex-col gap-3">
@@ -823,6 +830,16 @@ function planLimitFrom(cause: ApiError): Refusal['limit'] {
     allowed: typeof meta.allowed === 'string' ? meta.allowed : '',
     actual: typeof meta.actual === 'string' ? meta.actual : '',
   };
+}
+
+function formatDateTime(iso: string, locale: Locale): string {
+  const when = new Date(iso);
+  if (Number.isNaN(when.getTime())) return iso;
+  return dateTimeFormat(
+    locale,
+    { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' },
+    'review-opens-at',
+  ).format(when);
 }
 
 function formatDate(iso: string, locale: Locale): string {

@@ -174,7 +174,8 @@ describe('the campaign review queue', () => {
     decideCampaignMock.mockResolvedValue({
       id: PROJECT_ID,
       slug: 'xari-bulbul-ceramics',
-      state: 'APPROVED',
+      // Approving publishes it (#552): the answer is the campaign live.
+      state: 'LIVE',
       title: 'Xari Bulbul Ceramics',
     });
 
@@ -189,7 +190,36 @@ describe('the campaign review queue', () => {
     // It has left SUBMITTED, so it leaves a list the filter says is SUBMITTED.
     await waitFor(() => expect(screen.queryByText('Xari Bulbul Ceramics')).not.toBeInTheDocument());
     // The service's state in the reader's words, not its constant.
-    expect(screen.getByRole('status')).toHaveTextContent('Xari Bulbul Ceramics is now approved.');
+    expect(screen.getByRole('status')).toHaveTextContent('Xari Bulbul Ceramics is now live.');
+  });
+
+  it('says before approving that approval publishes the campaign (#552)', async () => {
+    const user = userEvent.setup();
+    render(<SubmissionQueue copy={COPY} />);
+    await screen.findByText('Xari Bulbul Ceramics');
+
+    await user.click(screen.getByRole('button', { name: 'Approve and publish' }));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(dialog).toHaveTextContent('goes live as soon as you approve it, or at the launch time its creator set');
+  });
+
+  it('says why a campaign that cannot open was not approved, and what to do instead', async () => {
+    const user = userEvent.setup();
+    decideCampaignMock.mockRejectedValue(
+      new ApiError(409, { code: 'PROJECT_NOT_LAUNCHABLE', meta: { missing: ['goal'] } }),
+    );
+
+    render(<SubmissionQueue copy={COPY} />);
+    await screen.findByText('Xari Bulbul Ceramics');
+
+    await user.click(screen.getByRole('button', { name: COPY.moderation.campaignOutcome.approve }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: COPY.moderation.decision.verb.approve.confirmLabel }));
+
+    expect(await screen.findByText(COPY.notLaunchable)).toBeInTheDocument();
+    // Nothing was approved, so the campaign is still waiting for a decision.
+    expect(screen.getByText('Xari Bulbul Ceramics')).toBeInTheDocument();
   });
 
   it('names the campaign in the dialog and says nothing about a report, because there is none', async () => {

@@ -2764,7 +2764,7 @@ stateDiagram-v2
     SUBMITTED --> REJECTED
     SUBMITTED --> APPROVED
     APPROVED --> SCHEDULED
-    APPROVED --> LIVE
+    APPROVED --> LIVE: on approval, or at its launch time
     SCHEDULED --> LIVE
     LIVE --> SUSPENDED
     LIVE --> CANCELED
@@ -2828,10 +2828,33 @@ stateDiagram-v2
 > a client that will eventually shout at somebody whose campaign is fine.
 >
 > **Submission is checked against §5.3 before the edge is taken**, so a campaign
-> with no goal or no deadline cannot reach `APPROVED` and therefore cannot be
-> launched from there. `PROJECT_NOT_LAUNCHABLE` is consequently unreachable through
-> the API and is kept: the scheduled launch of §8.4 moves `SCHEDULED → LIVE` on a
-> timer, from a row somebody may have edited since.
+> with no goal or no deadline cannot be submitted. Both fields stay editable in
+> review, though, so the approval checks them again (below).
+>
+> **Approval publishes the campaign (#552).** The creator no longer presses Launch.
+> `POST /v1/admin/moderation/{id}/approve` takes `SUBMITTED → APPROVED` and, in the
+> same transaction, `APPROVED → LIVE` through the same code path the creator's launch
+> uses: deadline, edit locks, `project.launched` to followers. A launch time still to
+> come leaves the campaign `APPROVED`, and §8.4's `campaign-launcher` opens it at that
+> time with nobody signed in; one already past launches now. The `LIVE` row is
+> `SYSTEM`'s, as the timer's is, so the moderator's `APPROVED` row stays the last
+> moderation decision the creator reads back; `audit_logs` records both
+> `project.approved` and `project.launched` under the moderator. The creator is told
+> once, by `PROJECT_APPROVED` from `project.approved` (which nothing produced before
+> #552), and never by the followers' launch notice.
+>
+> **An approval that cannot publish is refused, not taken.** A goal or a duration
+> cleared while the campaign was in review answers `409 PROJECT_NOT_LAUNCHABLE`, the
+> campaign stays `SUBMITTED`, and the console tells the moderator to request changes.
+> The same check holds for a campaign with a launch time to come, which the timer
+> would otherwise skip silently when it arrived.
+>
+> **`POST /v1/projects/{id}/launch` stays.** Campaigns approved before #552 sit in
+> `APPROVED` with no launch time and are not migrated: publishing them in a migration
+> would skip the launch's announcements and choose a moment for the creator. They,
+> and a campaign whose launch time is cleared after approval, are the only ones the
+> review tab still offers Launch to, and app builds from before #552 keep calling it.
+> Nothing performs `APPROVED → SCHEDULED`; the timer reads both states.
 
 ### 6.2 Pledge
 
@@ -3953,7 +3976,7 @@ load profile).
 
 | Job | Frequency | Purpose |
 |---|---|---|
-| `campaign-launcher` | Every minute | Takes a cleared campaign live at the launch time its creator chose. **Built (#389).** §6.1 has carried `APPROVED → SCHEDULED → LIVE` since the state machine was written and nothing performed it: `ProjectTransitionService.launch` was the only producer of `LIVE` and it needs somebody signed in to press something, so a creator who set a time for nine on Monday and was not at a keyboard at nine on Monday had a campaign that did not open. The sweep reads both `APPROVED` and `SCHEDULED`, because nothing sets the second state today and a job that read only it would find nothing for as long as that stayed true. Every minute, for the reason `campaign-finalizer` is: the interval is the gap between the moment a creator told their followers the campaign opens and the moment it does |
+| `campaign-launcher` | Every minute | Takes a cleared campaign live at the launch time its creator chose. **Built (#389).** §6.1 has carried `APPROVED → SCHEDULED → LIVE` since the state machine was written and nothing performed it: `ProjectTransitionService.launch` was the only producer of `LIVE` and it needs somebody signed in to press something, so a creator who set a time for nine on Monday and was not at a keyboard at nine on Monday had a campaign that did not open. The sweep reads both `APPROVED` and `SCHEDULED`, because nothing sets the second state today and a job that read only it would find nothing for as long as that stayed true. **Since #552 it is the scheduled half of approval**: an approval with a launch time still to come leaves the campaign `APPROVED`, and this opens it. Every minute, for the reason `campaign-finalizer` is: the interval is the gap between the moment a creator told their followers the campaign opens and the moment it does |
 | `campaign-finalizer` | Every minute | Determine success at the deadline |
 | ~~`charge-processor`~~ | — | **Removed by #45.** Opened the stored-card collection of campaigns that closed above goal and made §9.6's first attempt (#64). IDN-EXT-01 charges a pledge when it is made, so there is nothing to collect at close |
 | ~~`charge-retry`~~ | — | **Removed by #45.** Retried declined stored-card charges within §9.6's window and dropped what ran out of it (#65). V106 deleted both jobs' `scheduled_jobs` rows |

@@ -478,15 +478,18 @@ describe('ReviewPanel', () => {
      * edge into `LIVE` is an endpoint no part of this application called. A campaign could
      * be approved and stay invisible for as long as its creator was prepared to wait.
      */
-    async function renderCleared(state: ProjectChecklist['state'] = 'APPROVED') {
-      getProjectEditMock.mockResolvedValue({ ...PROJECT, state });
+    async function renderCleared(
+      state: ProjectChecklist['state'] = 'APPROVED',
+      scheduledLaunchAt: string | null = null,
+    ) {
+      getProjectEditMock.mockResolvedValue({ ...PROJECT, state, scheduledLaunchAt });
       getProjectChecklistMock.mockResolvedValue(completeChecklist({ state }));
       const user = userEvent.setup();
       await renderPanel();
       return user;
     }
 
-    it('is offered once moderation has cleared the campaign', async () => {
+    it('is offered to a campaign approved with no launch time, which would otherwise not open', async () => {
       await renderCleared();
 
       expect(screen.getByRole('button', { name: 'Launch this campaign' })).toBeInTheDocument();
@@ -495,8 +498,22 @@ describe('ReviewPanel', () => {
       expect(screen.queryByRole('button', { name: 'Submit for review' })).not.toBeInTheDocument();
     });
 
-    it('is offered to a campaign waiting for its scheduled time, which can still be brought forward', async () => {
-      await renderCleared('SCHEDULED');
+    it('is not offered to a campaign that opens on its own at its launch time (#552)', async () => {
+      await renderCleared('APPROVED', '2099-01-01T09:00:00Z');
+
+      expect(screen.queryByRole('button', { name: 'Launch this campaign' })).not.toBeInTheDocument();
+      // What is drawn instead says when, and that nothing is left to press.
+      expect(screen.getByText(/opens on its own on .*2099/)).toBeInTheDocument();
+    });
+
+    it('is not offered in SCHEDULED either while the time is still to come', async () => {
+      await renderCleared('SCHEDULED', '2099-01-01T09:00:00Z');
+
+      expect(screen.queryByRole('button', { name: 'Launch this campaign' })).not.toBeInTheDocument();
+    });
+
+    it('is offered again once the launch time has been cleared', async () => {
+      await renderCleared('SCHEDULED', null);
 
       expect(screen.getByRole('button', { name: 'Launch this campaign' })).toBeInTheDocument();
     });

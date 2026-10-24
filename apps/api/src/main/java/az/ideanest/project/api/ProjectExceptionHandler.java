@@ -372,12 +372,10 @@ public class ProjectExceptionHandler {
     /**
      * 409 for an approved campaign with nothing to be live with.
      *
-     * <p>See {@link ProjectNotLaunchableException}. Unreachable through the API now
-     * that a submission is checked against §5.3 — a campaign with no goal cannot
-     * reach {@code APPROVED} to be launched from — and kept because it is the last
-     * thing between a campaign that got there another way and a constraint
-     * violation served as a 500. A guard whose whole value is that it never fires
-     * is not a guard to delete the moment it stops firing.
+     * <p>See {@link ProjectNotLaunchableException}. Since #552 an approval can raise it: a
+     * goal or a duration cleared while the campaign was in review would otherwise be approved
+     * into a campaign that cannot open. The moderator is answered with this and the campaign
+     * stays where it was.
      */
     @ExceptionHandler(ProjectNotLaunchableException.class)
     public ProblemDetail handleNotLaunchable(ProjectNotLaunchableException exception) {

@@ -9,6 +9,7 @@ import {
   isReviewNotedState,
   offersLaunch,
   offersSubmit,
+  opensOnItsOwn,
   progressOf,
   unmetOf,
 } from '@ideanest/campaign-editor/checklist';
@@ -35,7 +36,7 @@ import {
 } from '../../../components/ui';
 import { FOCUS_DELAY_MS, focusOn } from '../../../components/ui/overlay';
 import { Glyphs } from '../../../icons';
-import { formatDate, pluralCategory } from '../../../lib/i18n';
+import { formatDate, formatDateTime, pluralCategory } from '../../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, spacing } from '../../../theme';
 import { useEditor } from '../editor-context';
 import { editorTabHref } from '../editor-tabs';
@@ -74,7 +75,8 @@ import { needsSubscription, reviewFailureMessage, submitRefusal, type SubmitRefu
  *
  * <p><b>Launch is confirmed inline</b>, not in a dialog: the warning is stated before the second
  * press, and focus moves to "Launch now" so the question cannot be missed by somebody who cannot
- * see it appear.
+ * see it appear. Since #552 an approval publishes the campaign, so Launch is drawn only for one
+ * that would otherwise not open: approved before that with no launch time, or with it cleared.
  *
  * <p>Motion: none, except the one the issue sanctions — the completeness fill, 800ms
  * (`motion.progress`), once, drawn at its figure under Reduce Motion.
@@ -212,6 +214,12 @@ function Review({
   const suggestions = unmetOf(checklist.advisory);
   const held = blockers.length > 0;
   const moderation = checklist.moderation;
+  // #552: an approval publishes the campaign, at its launch time when one is still to come.
+  const note = opensOnItsOwn(state, project.scheduledLaunchAt)
+    ? fillPlaceholders(words.opensAt, { date: formatDateTime(project.scheduledLaunchAt, words.locale) })
+    : isReviewNotedState(state)
+      ? words.stateNote[state]
+      : null;
 
   // Focus follows the consequence: the question appeared, so its answer is where focus lands.
   useEffect(() => {
@@ -230,13 +238,13 @@ function Review({
   useEffect(() => {
     if (!sayState.current) return undefined;
     sayState.current = false;
-    if (!isReviewNotedState(state)) return undefined;
+    if (note === null) return undefined;
     if (stateY.current === null) showState.current = true;
     else scroll.current?.scrollTo({ y: stateY.current, animated: !reduced });
-    announce(`${chrome.states[state]}. ${words.stateNote[state]}`);
+    announce(`${chrome.states[state]}. ${note}`);
     const timer = setTimeout(() => focusOn(stateNote.current), FOCUS_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [state, chrome.states, words.stateNote, reduced]);
+  }, [state, chrome.states, note, reduced]);
 
   useEffect(() => {
     let live = true;
@@ -352,7 +360,7 @@ function Review({
           />
         ) : null}
 
-        {isReviewNotedState(state) ? (
+        {note !== null ? (
           // One element for a screen reader, so focus can be moved to it after a submit or launch.
           <View
             ref={stateNote}
@@ -363,14 +371,14 @@ function Review({
               scroll.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: !reduced });
             }}
             accessible
-            accessibilityLabel={`${chrome.states[state]}. ${words.stateNote[state]}`}
+            accessibilityLabel={`${chrome.states[state]}. ${note}`}
             testID="review-state"
           >
             <InlineAlert
               variant="info"
               politeness="off"
               title={chrome.states[state]}
-              description={words.stateNote[state]}
+              description={note}
               testID="review-state-note"
             />
           </View>
@@ -530,7 +538,7 @@ function Review({
           </View>
         ) : null}
 
-        {offersLaunch(state) ? (
+        {offersLaunch(state, project.scheduledLaunchAt) ? (
           <View style={styles.stack}>
             {launchError === null ? null : (
               <InlineAlert

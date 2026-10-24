@@ -556,7 +556,7 @@
         "GOAL_REACHED": "{campaign} kampaniyası {amount} hədəfinə çatdı",
         "CAMPAIGN_SUCCEEDED": "{campaign} kampaniyası {amount} məbləği ilə maliyyələşdi",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} kampaniyası hədəfinə çatmadan bağlandı",
-        "PROJECT_APPROVED": "{campaign} təsdiqləndi və başladıla bilər",
+        "PROJECT_APPROVED": "{campaign} təsdiqləndi və yayımlandı",
         "PAYMENT_COLLECTED": "{campaign} üçün {amount} məbləğində ödəniş alındı",
         "FINAL_PAYMENT_WARNING": "Son xəbərdarlıq: {campaign} üçün {amount} məbləğində ödəniş",
         "PAYOUT_SENT": "{campaign} üçün {amount} məbləğində ödəniş {when} köçürüldü",
@@ -589,7 +589,7 @@
         "GOAL_REACHED": "Bir kampaniya {amount} hədəfinə çatdı",
         "CAMPAIGN_SUCCEEDED": "Bir kampaniya {amount} məbləği ilə maliyyələşdi",
         "CAMPAIGN_UNSUCCESSFUL": "Bir kampaniya hədəfinə çatmadan bağlandı",
-        "PROJECT_APPROVED": "Bir kampaniya təsdiqləndi və başladıla bilər",
+        "PROJECT_APPROVED": "Bir kampaniya təsdiqləndi və yayımlandı",
         "PAYMENT_COLLECTED": "Bir kampaniya üçün {amount} məbləğində ödəniş alındı",
         "FINAL_PAYMENT_WARNING": "Son xəbərdarlıq: bir kampaniya üçün {amount} məbləğində ödəniş",
         "PAYOUT_SENT": "Bir kampaniya üçün {amount} məbləğində ödəniş {when} köçürüldü",
@@ -1253,6 +1253,7 @@
             "changes_requested": "Dəyişiklik tələb olundu",
             "comment_removed": "Şərh silindi",
             "fulfilments_imported": "Çatdırılmalar idxal edildi",
+            "launched": "Kampaniya təsdiqlə yayımlandı",
             "rejected": "Kampaniya rədd edildi",
             "segment_messaged": "Dəstəkçi qrupuna yazıldı",
             "survey_sent": "Sorğu göndərildi",
@@ -3211,12 +3212,13 @@
         "notStaff": "Kampaniyalara platforma işçiləri baxır.",
         "transitionNotAllowed": "Kampaniya artıq bu qərarın verilə biləcəyi vəziyyətdə deyil. Növbəni yeniləyin.",
         "transitionNotAllowedFrom": "Bu kampaniya barədə artıq qərar verilib — indi {state} vəziyyətindədir.",
+        "notLaunchable": "Təsdiq bu kampaniyanı yayımlayardı, amma onun artıq maliyyə hədəfi və ya müddəti yoxdur. Müəllif onları təyin etsin deyə dəyişiklik istəyin.",
         "refused": "Xidmət bunu qəbul etmədi.",
         "unreachable": "Xidmətə çata bilmədik. Yenidən cəhd edin.",
         "heading": {
           "SUBMITTED": "Qərar gözləyir",
           "CHANGES_REQUESTED": "Müəlliflərinə geri qaytarılıb",
-          "APPROVED": "Başlanğıca hazırdır",
+          "APPROVED": "Təsdiqlənib, hələ aktiv deyil",
           "REJECTED": "Rədd edilib"
         },
         "state": {
@@ -3689,7 +3691,7 @@
         "dismiss": "Rədd et"
       },
       "campaignOutcome": {
-        "approve": "Təsdiqlə",
+        "approve": "Təsdiqlə və yayımla",
         "request-changes": "Dəyişiklik istə",
         "reject": "Rədd et"
       },
@@ -3735,9 +3737,9 @@
           "noteHint": "İstəyə bağlı. Növbəti moderator üçün yazılır, şikayət edən şəxs üçün deyil — heç nə onu ona göstərmir."
         },
         "approve": {
-          "title": "Bu kampaniya təsdiqlənsin?",
-          "description": "{name} işə salınmağa hazırdır.",
-          "confirmLabel": "Kampaniyanı təsdiqlə",
+          "title": "Bu kampaniya təsdiqlənib yayımlansın?",
+          "description": "{name} təsdiqləndiyi an və ya müəllifin təyin etdiyi başlanğıc vaxtında yayımlanır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı baxışa qaytarmaq olmaz.",
+          "confirmLabel": "Təsdiqlə və yayımla",
           "busyLabel": "Təsdiqlənir",
           "noteLabel": "Qeyd",
           "noteHint": "Qərar haqqında istəyə bağlı şərh."
@@ -5956,12 +5958,13 @@
       "planDoesNotCover": "Planınız bu kampaniyanı əhatə etmir.",
       "serviceRefused": "Xidmət sorğunu rədd etdi.",
       "stateNote": {
-        "SUBMITTED": "Kampaniya moderatorlardadır. Baxış gedərkən sizdən heç nə tələb olunmur, nəticə barədə xəbər veriləcək. Bu müddətdə redaktə etmək olar.",
-        "APPROVED": "Moderasiya keçilib. Kampaniya siz başladanda və ya təyin etdiyiniz vaxtda ictimai olur.",
-        "SCHEDULED": "Baxışdan keçib, başlanğıc vaxtını gözləyir.",
+        "SUBMITTED": "Kampaniya moderatorlardadır. Baxış gedərkən sizdən heç nə tələb olunmur. Təsdiqlənsə, dərhal və ya təyin etdiyiniz vaxtda yayımlanacaq və sizə xəbər veriləcək. Bu müddətdə redaktə etmək olar.",
+        "APPROVED": "Moderasiya keçilib. Kampaniya siz başladanda ictimai olur.",
+        "SCHEDULED": "Baxışdan keçib, başlanğıc vaxtını gözləyir. Vaxtı çatanda özü açılacaq.",
         "REJECTED": "Kampaniya rədd edilib və yenidən göndərmək olmaz.",
         "LIVE": "Kampaniya aktivdir və dəstək qəbul edir."
       },
+      "opensAt": "Moderasiya keçilib. Kampaniya {date} tarixində özü açılacaq, sizdən başqa heç nə tələb olunmur.",
       "notFound": "Belə bir kampaniya tapılmadı.",
       "noAccess": "Bu kampaniyaya girişiniz yoxdur.",
       "unreachable": "Xidmətlə əlaqə qurulmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
@@ -5972,7 +5975,7 @@
         "many": "{count} mütləq bənd hələ tamamlanmayıb.",
         "other": "{count} mütləq bənd hələ tamamlanmayıb."
       },
-      "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Baxış gedərkən redaktə etmək olar.",
+      "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Təsdiq kampaniyanı dərhal və ya təyin etdiyiniz vaxtda yayımlayır, o andan hədəf və son tarix dəyişmir. Baxış gedərkən redaktə etmək olar.",
       "done": "Hazırdır",
       "launchExplanation": "Kampaniya başladığı andan platformanın hər yerində görünür və dəstək qəbul etməyə başlayır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı yenidən qaralamaya qaytarmaq olmaz.",
       "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz."

@@ -26,6 +26,17 @@ public enum AuditAction {
     /** Moderation cleared a campaign for launch. */
     PROJECT_APPROVED("project.approved", "project"),
 
+    /**
+     * A campaign went live because moderation approved it (#552).
+     *
+     * <p>Recorded beside {@link #PROJECT_APPROVED}, in its transaction and under the same
+     * moderator, when the approval had no launch time still to come: approving is what
+     * published the campaign, and "who made this public" is answered here rather than left to
+     * be inferred from two rows of another table. A creator's own launch and the clock's are
+     * not privileged actions and are not recorded here.
+     */
+    PROJECT_LAUNCHED("project.launched", "project"),
+
     /** Moderation refused a campaign. Terminal for the campaign. */
     PROJECT_REJECTED("project.rejected", "project"),
 

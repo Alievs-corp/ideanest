@@ -53,6 +53,12 @@ function messageFor(cause: unknown, copy: SubmissionQueueCopy, locale: Locale): 
           })
         : copy.transitionNotAllowed;
     }
+    /*
+     * Approving publishes the campaign (#552), and the service refuses to publish one whose
+     * goal or duration was cleared while it was in review. Nothing changed, and the answer is
+     * the next button along.
+     */
+    if (cause.problem?.code === 'PROJECT_NOT_LAUNCHABLE') return copy.notLaunchable;
     return cause.problem?.detail ?? cause.problem?.title ?? copy.refused;
   }
   return copy.unreachable;

@@ -40,9 +40,10 @@ import tools.jackson.databind.ObjectMapper;
  * {@code pledge.collected}), the team speaking ({@code project.update_published}), the audience
  * speaking ({@code comment.posted}), and the campaign's own state changing.
  *
- * <p><strong>{@code project.approved} is not here</strong>, because approval is not
- * publication — §6.1 gives a campaign a separate {@code launched} transition, and a page that
- * does not exist yet has no cache entry to drop.
+ * <p><strong>{@code project.approved} is not here</strong>, because the event is not the
+ * publication. An approval that publishes the campaign (#552) also records
+ * {@code project.launched}, which is, and one waiting for a launch time leaves a page that does
+ * not exist yet and has no cache entry to drop.
  *
  * <p><strong>{@code pledge.edited} and the payment failures are not here either.</strong> A
  * pledge that changed or failed alters a total the public page shows, so on paper they qualify;
