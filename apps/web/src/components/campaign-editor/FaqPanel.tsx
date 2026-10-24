@@ -20,6 +20,7 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { EditorShell } from './EditorShell';
+import { RevisionNotice } from './RevisionNotice';
 import { FaqEntryEditor } from './FaqEntryEditor';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
 import { describeFailure } from './useAutosave';
@@ -86,7 +87,7 @@ export interface FaqPanelProps {
 }
 
 export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
-  const { project, status, error, reload } = useProjectEdit(projectId, copy.load);
+  const { project, status, error, reload, apply } = useProjectEdit(projectId, copy.load);
 
   const [faqs, setFaqs] = useState<readonly ProjectFaq[]>([]);
   const [listStatus, setListStatus] = useState<ListStatus>('loading');
@@ -307,7 +308,7 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
   const full = faqs.length >= MAX_PROJECT_FAQS;
 
   return (
-    <EditorShell projectId={projectId} copy={copy} active="faq" title={project.title} state={project.state}>
+    <EditorShell projectId={projectId} copy={copy} active="faq" notice={<RevisionNotice projectId={projectId} project={project} copy={copy.revision} onProject={apply} />} title={project.title} state={project.state}>
       <div className="flex flex-col gap-6">
         {/*
           Present from the first render, so the region is registered before

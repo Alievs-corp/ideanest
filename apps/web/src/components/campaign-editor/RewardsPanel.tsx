@@ -45,6 +45,7 @@ import type {
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
+import { RevisionNotice } from './RevisionNotice';
 import { ItemEditor } from './ItemEditor';
 import { ItemsSection } from './ItemsSection';
 import { RewardTierEditor } from './RewardTierEditor';
@@ -118,7 +119,7 @@ export interface RewardsPanelProps {
 }
 
 export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelProps) {
-  const { project, status, error, reload } = useProjectEdit(projectId, copy.load);
+  const { project, status, error, reload, apply } = useProjectEdit(projectId, copy.load);
 
   const [items, setItems] = useState<readonly Item[]>([]);
   const [rewards, setRewards] = useState<readonly Reward[]>([]);
@@ -407,6 +408,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
       projectId={projectId}
       copy={copy}
       active="rewards"
+      notice={<RevisionNotice projectId={projectId} project={project} copy={copy.revision} onProject={apply} />}
       title={project.title}
       state={project.state}
     >

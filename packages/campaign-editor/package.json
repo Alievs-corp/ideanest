@@ -17,6 +17,7 @@
     "./countries": "./src/countries.ts",
     "./tabs": "./src/tabs.ts",
     "./autosave": "./src/autosave.ts",
+    "./revision": "./src/revision.ts",
     "./copy": "./src/copy.ts"
   },
   "scripts": {

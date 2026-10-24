@@ -44,6 +44,7 @@ import type {
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralForm } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
+import { RevisionNotice } from './RevisionNotice';
 import { SaveStatus } from './SaveStatus';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
 import { useAutosave, describeFailure } from './useAutosave';
@@ -272,6 +273,7 @@ export function PrelaunchPanel({
       projectId={projectId}
       copy={copy}
       active="prelaunch"
+      notice={<RevisionNotice projectId={projectId} project={project} copy={copy.revision} onProject={apply} />}
       title={project.title}
       state={project.state}
       status={<SaveStatus state={autosave.state} copy={copy.save} />}

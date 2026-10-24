@@ -3,6 +3,7 @@ import type { PluralForms } from '@ideanest/messages/plurals';
 import type { StoryBlockType } from '@ideanest/campaign/story';
 import type { ProjectState, ShippingType } from './contract';
 import type { EditorTabKey } from './tabs';
+import { REVISION_FIELDS, REVISION_REFUSALS, type RevisionField, type RevisionRefusal } from './revision';
 
 /*
  * One spelling of the plural forms for every builder below. `@ideanest/ui`'s `PluralForms` is
@@ -143,6 +144,42 @@ export interface EditorChromeCopy {
   readonly failures: SaveFailureCopy;
   /** What a project that could not be loaded is put in, on every tab (#78). */
   readonly load: ProjectLoadCopy;
+  /** The notice about an edit to a launched campaign, on every tab (#561). */
+  readonly revision: RevisionCopy;
+}
+
+/**
+ * The notice a launched campaign's open edit is put in (#561).
+ *
+ * Each situation has a title that says where the edit stands and a body that says what the
+ * public sees meanwhile; the creator should never have to infer that backers still see the
+ * approved version.
+ */
+export interface RevisionCopy {
+  readonly draftTitle: string;
+  readonly draftBody: string;
+  readonly pendingTitle: string;
+  readonly pendingBody: string;
+  readonly rejectedTitle: string;
+  readonly rejectedBody: string;
+  readonly reasonLabel: string;
+  /** Shown after a save moved an edit that was in review back to a draft. */
+  readonly returnedToDraft: string;
+  readonly changedHeading: string;
+  /** The sections an edit can change, in the creator's words. */
+  readonly fields: Readonly<Record<RevisionField, string>>;
+  readonly submit: string;
+  readonly submitting: string;
+  readonly discard: string;
+  readonly discarding: string;
+  readonly confirmDiscardTitle: string;
+  readonly confirmDiscardBody: string;
+  readonly confirmDiscard: string;
+  readonly keepEditing: string;
+  readonly refusedTitle: string;
+  /** 409 `REVISION_NOT_AVAILABLE`, by `meta.reason`. */
+  readonly refusals: Readonly<Record<RevisionRefusal, string>>;
+  readonly failed: string;
 }
 
 /**
@@ -310,6 +347,33 @@ export function editorChromeCopyFrom(
     },
     failures: saveFailureCopyFrom(t),
     load: projectLoadCopyFrom(t),
+    revision: revisionCopyFrom(t),
+  };
+}
+
+export function revisionCopyFrom(t: CampaignEditorTranslator): RevisionCopy {
+  return {
+    draftTitle: t('revision.draftTitle'),
+    draftBody: t('revision.draftBody'),
+    pendingTitle: t('revision.pendingTitle'),
+    pendingBody: t('revision.pendingBody'),
+    rejectedTitle: t('revision.rejectedTitle'),
+    rejectedBody: t('revision.rejectedBody'),
+    reasonLabel: t('revision.reasonLabel'),
+    returnedToDraft: t('revision.returnedToDraft'),
+    changedHeading: t('revision.changedHeading'),
+    fields: record(REVISION_FIELDS, (field) => t(`revision.fields.${field}`)),
+    submit: t('revision.submit'),
+    submitting: t('revision.submitting'),
+    discard: t('revision.discard'),
+    discarding: t('revision.discarding'),
+    confirmDiscardTitle: t('revision.confirmDiscardTitle'),
+    confirmDiscardBody: t('revision.confirmDiscardBody'),
+    confirmDiscard: t('revision.confirmDiscard'),
+    keepEditing: t('revision.keepEditing'),
+    refusedTitle: t('revision.refusedTitle'),
+    refusals: record(REVISION_REFUSALS, (reason) => t(`revision.refusals.${reason}`)),
+    failed: t('revision.failed'),
   };
 }
 

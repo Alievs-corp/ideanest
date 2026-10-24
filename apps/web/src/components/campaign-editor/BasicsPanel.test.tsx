@@ -257,6 +257,22 @@ describe('BasicsPanel', () => {
     expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('category-technology');
   });
 
+  it('shows the open edit of a launched campaign above the form', async () => {
+    await openBasics({
+      state: 'LIVE',
+      revision: {
+        id: 'revision-1',
+        status: 'DRAFT',
+        changedFields: ['title'],
+        updatedAt: '2026-10-03T09:00:00Z',
+      },
+    });
+
+    expect(screen.getByText(EDITOR_COPY.revision.draftTitle)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: EDITOR_COPY.revision.submit })).toBeInTheDocument();
+    expect(titleField()).toHaveValue('A field recorder');
+  });
+
   describe('countries', () => {
     const addCountry = (): HTMLElement => screen.getByRole('combobox', { name: 'Countries' });
 

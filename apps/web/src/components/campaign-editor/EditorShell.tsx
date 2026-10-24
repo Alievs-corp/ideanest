@@ -56,6 +56,11 @@ export interface EditorShellProps {
    * every form inside it.
    */
   status?: ReactNode;
+  /**
+   * Where a launched campaign's open edit stands (#561), drawn above the tab's content.
+   * Supplied by the tab, which holds the project the notice reads.
+   */
+  notice?: ReactNode;
   children: ReactNode;
 }
 
@@ -66,6 +71,7 @@ export function EditorShell({
   title,
   state,
   status,
+  notice,
   children,
 }: EditorShellProps) {
   return (
@@ -193,7 +199,10 @@ export function EditorShell({
         </ul>
       </nav>
 
-      <div className="mt-8">{children}</div>
+      <div className="mt-8">
+        {notice}
+        {children}
+      </div>
     </div>
   );
 }

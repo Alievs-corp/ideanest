@@ -6102,6 +6102,44 @@
       "notFound": "That project could not be found.",
       "refused": "The service refused the request. Try again.",
       "unreachable": "The service could not be reached. Check your connection and try again."
+    },
+    "revision": {
+      "draftTitle": "Your changes are not public yet",
+      "draftBody": "Backers keep seeing the approved version of your campaign. Send your changes for review when they are ready; they go live once a moderator approves them.",
+      "pendingTitle": "Awaiting review",
+      "pendingBody": "A moderator is reviewing your changes. Backers keep seeing the approved version meanwhile. If you edit again, the changes go back to draft and you will need to send them again.",
+      "rejectedTitle": "Your last edit was not approved",
+      "rejectedBody": "Backers still see the approved version. Edit the campaign to start a new draft.",
+      "reasonLabel": "Moderator's reason",
+      "returnedToDraft": "You edited while the changes were in review, so they are back to draft. Send them for review again.",
+      "changedHeading": "Sections changed",
+      "fields": {
+        "title": "Title",
+        "blurb": "Short description",
+        "category": "Category",
+        "story": "Story",
+        "risks": "Risks",
+        "coverImage": "Cover image",
+        "videoMediaId": "Video",
+        "countries": "Countries"
+      },
+      "submit": "Send for review",
+      "submitting": "Sending…",
+      "discard": "Discard changes",
+      "discarding": "Discarding…",
+      "confirmDiscardTitle": "Discard these changes?",
+      "confirmDiscardBody": "Your unpublished changes are deleted and the campaign goes back to the approved version. This cannot be undone.",
+      "confirmDiscard": "Discard changes",
+      "keepEditing": "Keep editing",
+      "refusedTitle": "Could not update the changes",
+      "refusals": {
+        "NO_OPEN_REVISION": "There are no changes waiting. The page has been refreshed.",
+        "ALREADY_SUBMITTED": "These changes were already sent for review. The page has been refreshed.",
+        "NO_CHANGES": "Nothing differs from the approved version, so there is nothing to send.",
+        "NOT_PENDING": "These changes are no longer in review. The page has been refreshed.",
+        "UNKNOWN": "The changes are not in a state that allows this. The page has been refreshed."
+      },
+      "failed": "That did not work. Check your connection and try again."
     }
   },
   "moderation": {

@@ -6102,6 +6102,44 @@
       "notFound": "Belə layihə tapılmadı.",
       "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
       "unreachable": "Xidmətlə əlaqə qurulmadı. Bağlantını yoxlayıb yenidən cəhd edin."
+    },
+    "revision": {
+      "draftTitle": "Dəyişikliklər hələ ictimai deyil",
+      "draftBody": "Dəstəkçilər kampaniyanın təsdiqlənmiş versiyasını görməyə davam edir. Dəyişikliklər hazır olanda baxışa göndərin; moderator təsdiqləyəndən sonra yayımlanır.",
+      "pendingTitle": "Baxış gözlənilir",
+      "pendingBody": "Moderator dəyişikliklərinizə baxır. Bu müddətdə dəstəkçilər təsdiqlənmiş versiyanı görür. Yenidən redaktə etsəniz, dəyişikliklər qaralamaya qayıdır və onları təkrar göndərməlisiniz.",
+      "rejectedTitle": "Son redaktəniz təsdiqlənmədi",
+      "rejectedBody": "Dəstəkçilər hələ də təsdiqlənmiş versiyanı görür. Yeni qaralama başlamaq üçün kampaniyanı redaktə edin.",
+      "reasonLabel": "Moderatorun səbəbi",
+      "returnedToDraft": "Dəyişikliklər baxışda olarkən redaktə etdiniz, ona görə qaralamaya qayıtdı. Onları yenidən baxışa göndərin.",
+      "changedHeading": "Dəyişən bölmələr",
+      "fields": {
+        "title": "Başlıq",
+        "blurb": "Qısa təsvir",
+        "category": "Kateqoriya",
+        "story": "Hekayə",
+        "risks": "Risklər",
+        "coverImage": "Üz qabığı şəkli",
+        "videoMediaId": "Video",
+        "countries": "Ölkələr"
+      },
+      "submit": "Baxışa göndər",
+      "submitting": "Göndərilir…",
+      "discard": "Dəyişiklikləri ləğv et",
+      "discarding": "Ləğv edilir…",
+      "confirmDiscardTitle": "Bu dəyişikliklər ləğv edilsin?",
+      "confirmDiscardBody": "Yayımlanmamış dəyişikliklər silinir və kampaniya təsdiqlənmiş versiyaya qayıdır. Bunu geri qaytarmaq olmur.",
+      "confirmDiscard": "Dəyişiklikləri ləğv et",
+      "keepEditing": "Redaktəyə davam et",
+      "refusedTitle": "Dəyişikliklər yenilənmədi",
+      "refusals": {
+        "NO_OPEN_REVISION": "Gözləyən dəyişiklik yoxdur. Səhifə yeniləndi.",
+        "ALREADY_SUBMITTED": "Bu dəyişikliklər artıq baxışa göndərilib. Səhifə yeniləndi.",
+        "NO_CHANGES": "Təsdiqlənmiş versiyadan fərq yoxdur, göndəriləcək heç nə yoxdur.",
+        "NOT_PENDING": "Bu dəyişikliklər artıq baxışda deyil. Səhifə yeniləndi.",
+        "UNKNOWN": "Dəyişikliklər bu əməliyyata uyğun vəziyyətdə deyil. Səhifə yeniləndi."
+      },
+      "failed": "Alınmadı. Bağlantınızı yoxlayıb yenidən cəhd edin."
     }
   },
   "moderation": {

@@ -6102,6 +6102,44 @@
       "notFound": "Bu proje bulunamadı.",
       "refused": "Hizmet isteği reddetti. Yeniden deneyin.",
       "unreachable": "Hizmete ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."
+    },
+    "revision": {
+      "draftTitle": "Değişiklikleriniz henüz herkese açık değil",
+      "draftBody": "Destekçiler kampanyanın onaylı sürümünü görmeye devam eder. Hazır olduğunda değişiklikleri incelemeye gönderin; moderatör onayladıktan sonra yayına girer.",
+      "pendingTitle": "İnceleme bekleniyor",
+      "pendingBody": "Bir moderatör değişikliklerinizi inceliyor. Bu sırada destekçiler onaylı sürümü görür. Yeniden düzenlerseniz değişiklikler taslağa döner ve tekrar göndermeniz gerekir.",
+      "rejectedTitle": "Son düzenlemeniz onaylanmadı",
+      "rejectedBody": "Destekçiler hâlâ onaylı sürümü görüyor. Yeni bir taslak başlatmak için kampanyayı düzenleyin.",
+      "reasonLabel": "Moderatörün gerekçesi",
+      "returnedToDraft": "Değişiklikler incelemedeyken düzenleme yaptınız, bu yüzden taslağa döndü. Tekrar incelemeye gönderin.",
+      "changedHeading": "Değişen bölümler",
+      "fields": {
+        "title": "Başlık",
+        "blurb": "Kısa açıklama",
+        "category": "Kategori",
+        "story": "Hikâye",
+        "risks": "Riskler",
+        "coverImage": "Kapak görseli",
+        "videoMediaId": "Video",
+        "countries": "Ülkeler"
+      },
+      "submit": "İncelemeye gönder",
+      "submitting": "Gönderiliyor…",
+      "discard": "Değişiklikleri at",
+      "discarding": "Atılıyor…",
+      "confirmDiscardTitle": "Bu değişiklikler atılsın mı?",
+      "confirmDiscardBody": "Yayımlanmamış değişiklikler silinir ve kampanya onaylı sürüme döner. Bu geri alınamaz.",
+      "confirmDiscard": "Değişiklikleri at",
+      "keepEditing": "Düzenlemeye devam et",
+      "refusedTitle": "Değişiklikler güncellenemedi",
+      "refusals": {
+        "NO_OPEN_REVISION": "Bekleyen değişiklik yok. Sayfa yenilendi.",
+        "ALREADY_SUBMITTED": "Bu değişiklikler zaten incelemeye gönderilmiş. Sayfa yenilendi.",
+        "NO_CHANGES": "Onaylı sürümden fark yok, gönderilecek bir şey yok.",
+        "NOT_PENDING": "Bu değişiklikler artık incelemede değil. Sayfa yenilendi.",
+        "UNKNOWN": "Değişiklikler bu işlem için uygun durumda değil. Sayfa yenilendi."
+      },
+      "failed": "Olmadı. Bağlantınızı kontrol edip tekrar deneyin."
     }
   },
   "moderation": {
