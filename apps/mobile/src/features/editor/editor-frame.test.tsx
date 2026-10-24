@@ -337,3 +337,40 @@ describe('SaveStatus', () => {
     expect(screen.queryByTestId('save-status-spinner')).toBeNull();
   });
 });
+
+describe('EditorFrame revision notice', () => {
+  const held = project({
+    state: 'LIVE',
+    revision: {
+      id: 'r1',
+      status: 'DRAFT',
+      changedFields: ['title'],
+      submittedAt: null,
+      updatedAt: '2026-10-02T10:00:00.000Z',
+    },
+  });
+
+  it('draws the state of an edit to a launched campaign above the tab', async () => {
+    mockGet.mockResolvedValueOnce(held);
+    await show();
+    expect(screen.getByText(en.campaignEditor.revision.draftTitle)).toBeTruthy();
+    expect(screen.getByTestId('tab-slot')).toBeTruthy();
+  });
+
+  it('draws nothing for a campaign with no held edit', async () => {
+    mockGet.mockResolvedValueOnce(project());
+    await show();
+    expect(screen.queryByTestId('revision-notice')).toBeNull();
+  });
+
+  it('takes the project the service answers to a discard', async () => {
+    mockGet.mockResolvedValueOnce(held);
+    mockSend.mockResolvedValueOnce(project({ state: 'LIVE' }));
+    await show();
+    await fireEvent.press(screen.getByTestId('revision-discard'));
+    await fireEvent.press(screen.getByTestId('revision-discard-dialog-delete'));
+    await settle();
+    expect(mockSend).toHaveBeenCalledWith('DELETE', '/v1/projects/p1/revision');
+    expect(screen.queryByTestId('revision-notice')).toBeNull();
+  });
+});

@@ -10,6 +10,7 @@ import { useLocale } from '../../lib/locale';
 import { colors, spacing } from '../../theme';
 import { EditorProvider, useEditor } from './editor-context';
 import { EditorTabs, editorTabHref, editorTabOf } from './editor-tabs';
+import { RevisionNotice } from './revision-notice';
 import { SaveStatus } from './save-status';
 import { useEditorChromeCopy } from './translator';
 
@@ -169,6 +170,20 @@ function Frame() {
                 />
               )}
             </View>
+          ) : null}
+          {load === 'ready' && project !== null ? (
+            <RevisionNotice
+              projectId={editor.projectId}
+              project={project}
+              copy={copy.revision}
+              readOnly={editor.readOnly}
+              onProject={editor.apply}
+              onDiscarded={() => {
+                // What was typed on top of the thrown-away edit must not be sent over the live copy.
+                autosave.dropQueued(Object.keys(autosave.unsaved ?? {}));
+                editor.reseed();
+              }}
+            />
           ) : null}
           <View style={styles.tab}>
             <Slot />
