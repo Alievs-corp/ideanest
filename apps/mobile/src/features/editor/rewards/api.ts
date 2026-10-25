@@ -30,6 +30,20 @@ export async function listItems(projectId: string, signal?: AbortSignal): Promis
   return body as unknown as readonly Item[];
 }
 
+/** Where a tier stands against the moderator: new, edited, or removed on approval (#569). */
+export type RewardPending = 'created' | 'changed' | 'deleted';
+
+/** A tier as the creator's list returns it: the shared `Reward` plus what a launched campaign's open edit says of it. */
+export type EditorReward = Reward & {
+  readonly pending?: RewardPending | null;
+  readonly revisionChangedFields?: readonly string[] | null;
+};
+
+export function pendingOf(reward: Reward): RewardPending | null {
+  const pending = (reward as EditorReward).pending;
+  return pending === 'created' || pending === 'changed' || pending === 'deleted' ? pending : null;
+}
+
 /** `GET /v1/projects/{id}/rewards` — every tier, hidden and secret ones included, in order. */
 export async function listRewards(projectId: string, signal?: AbortSignal): Promise<readonly Reward[]> {
   const body = await api().get('/v1/projects/{projectId}/rewards', {
@@ -64,6 +78,11 @@ export async function patchReward(rewardId: string, patch: RewardPatch): Promise
 /** `204`. Refused with `REWARD_HAS_BACKERS` once somebody has chosen the tier. */
 export async function deleteReward(rewardId: string): Promise<void> {
   await sendJson('DELETE', `/v1/rewards/${id(rewardId)}`);
+}
+
+/** Takes back a delete the moderator has not yet approved; answered with the tier (`pending` cleared). */
+export async function restoreReward(rewardId: string): Promise<Reward> {
+  return (await sendJson('POST', `/v1/rewards/${id(rewardId)}/restore`)) as Reward;
 }
 
 /** The copy is the service's: a new id, appended at the end of the list. */

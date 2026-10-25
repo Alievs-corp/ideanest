@@ -480,3 +480,107 @@ describe('RewardsPanel', () => {
     expect(screen.queryByTestId('tiers-loading')).toBeNull();
   });
 });
+
+describe('RewardsPanel on a launched campaign (#569)', () => {
+  const words = en.mobile.editor.rewards;
+  const LAUNCHED: ProjectEdit = { ...PROJECT, state: 'LIVE', launchedAt: '2026-10-05T10:00:00.000Z' };
+  const held = (base: Reward, pending: string): Reward => ({ ...base, pending }) as Reward;
+
+  beforeEach(() => {
+    mockProject = async () => LAUNCHED;
+  });
+
+  it('tells the creator that new tiers are hidden until a moderator approves them', async () => {
+    await show();
+    expect(within(screen.getByTestId('tiers-hidden-until-approved')).getByText(words.newTiersHidden)).toBeTruthy();
+  });
+
+  it('says nothing of review on a campaign that has not launched', async () => {
+    mockProject = async () => PROJECT;
+    await show();
+    expect(screen.queryByTestId('tiers-hidden-until-approved')).toBeNull();
+  });
+
+  it('marks a new tier as waiting for review, in words and with its own note', async () => {
+    mockRewards = async () => [held(THANKS, 'created'), LAMP];
+    await show();
+    expect(within(screen.getByTestId('reward-r-thanks-pending')).getByText(words.waitingForReview)).toBeTruthy();
+    expect(within(screen.getByTestId('reward-r-thanks')).getByText(words.createdNote)).toBeTruthy();
+    expect(screen.queryByTestId('reward-r-lamp-pending')).toBeNull();
+    expect(screen.getByTestId('reward-r-thanks-edit')).toBeTruthy();
+  });
+
+  it('marks an edited tier as waiting for review', async () => {
+    mockRewards = async () => [held(LAMP, 'changed')];
+    await show();
+    expect(within(screen.getByTestId('reward-r-lamp-pending')).getByText(words.waitingForReview)).toBeTruthy();
+    expect(within(screen.getByTestId('reward-r-lamp')).getByText(words.changedNote)).toBeTruthy();
+  });
+
+  it('keeps a tier marked for removal in the list, with Undo instead of the tier controls', async () => {
+    mockRewards = async () => [held(LAMP, 'deleted'), THANKS];
+    await show();
+    expect(within(screen.getByTestId('reward-r-lamp-pending')).getByText(words.removeOnApproval)).toBeTruthy();
+    expect(within(screen.getByTestId('reward-r-lamp')).getByText(words.deletedNote)).toBeTruthy();
+    expect(screen.getByTestId('reward-r-lamp-undo').props.accessibilityLabel).toBe('Undo removing The lamp');
+    for (const id of ['edit', 'duplicate', 'delete', 'hide']) {
+      expect(screen.queryByTestId(`reward-r-lamp-${id}`)).toBeNull();
+    }
+    expect(screen.getByTestId('reward-r-lamp-summary').props.accessibilityActions).toEqual([]);
+  });
+
+  it('reads deleting an approved tier as removal on approval, and keeps it in the list', async () => {
+    mockSend.mockImplementation(async () => null);
+    await show();
+    await fireEvent.press(screen.getByTestId('reward-r-thanks-delete'));
+    expect(screen.getByText('Delete Thank you?')).toBeTruthy();
+    expect(screen.getByText(words.removeOnApprovalBody.replace('{title}', 'Thank you'))).toBeTruthy();
+    expect(screen.getByTestId('reward-delete-delete').props.accessibilityLabel).toBe(words.removeOnApprovalConfirm);
+    await fireEvent.press(screen.getByTestId('reward-delete-delete'));
+    await settle();
+    expect(calls('DELETE')).toEqual([['DELETE', '/v1/rewards/r-thanks']]);
+    expect(within(screen.getByTestId('reward-r-thanks-pending')).getByText(words.removeOnApproval)).toBeTruthy();
+    expect(screen.getByTestId('reward-r-thanks-undo')).toBeTruthy();
+    expect(said()).toContain('Thank you will be removed once a moderator approves.');
+  });
+
+  it('really deletes a tier that was never approved', async () => {
+    mockRewards = async () => [held(THANKS, 'created'), LAMP];
+    mockSend.mockImplementation(async () => null);
+    await show();
+    await fireEvent.press(screen.getByTestId('reward-r-thanks-delete'));
+    expect(screen.getByText(en.campaignEditor.rewards.cannotBeUndone, { exact: false })).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('reward-delete-delete'));
+    await settle();
+    expect(screen.queryByTestId('reward-r-thanks')).toBeNull();
+    expect(said()).toContain('Thank you was deleted.');
+  });
+
+  it('undoes a removal with a restore, and the tier goes back to normal', async () => {
+    mockRewards = async () => [held(LAMP, 'deleted')];
+    mockSend.mockImplementation(async () => LAMP);
+    await show();
+    await fireEvent.press(screen.getByTestId('reward-r-lamp-undo'));
+    await settle();
+    expect(calls('POST')).toEqual([['POST', '/v1/rewards/r-lamp/restore']]);
+    expect(screen.queryByTestId('reward-r-lamp-undo')).toBeNull();
+    expect(screen.queryByTestId('reward-r-lamp-pending')).toBeNull();
+    expect(screen.getByTestId('reward-r-lamp-edit')).toBeTruthy();
+    expect(said()).toContain('The lamp will stay.');
+  });
+
+  it('reads the campaign again after a tier changes, so the revision notice follows', async () => {
+    mockSend.mockImplementation(async () => null);
+    let reads = 0;
+    mockProject = async () => {
+      reads += 1;
+      return LAUNCHED;
+    };
+    await show();
+    const before = reads;
+    await fireEvent.press(screen.getByTestId('reward-r-thanks-delete'));
+    await fireEvent.press(screen.getByTestId('reward-delete-delete'));
+    await settle();
+    expect(reads).toBeGreaterThan(before);
+  });
+});

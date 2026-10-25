@@ -7469,7 +7469,20 @@
         "copied": "Copied",
         "tokenCopied": "Token copied",
         "copyFailed": "The token could not be copied. Select it and copy it by hand.",
-        "nothingCached": "You are offline, and the rewards have not been loaded on this phone yet."
+        "nothingCached": "You are offline, and the rewards have not been loaded on this phone yet.",
+        "waitingForReview": "Waiting for review",
+        "removeOnApproval": "Remove on approval",
+        "createdNote": "New tier. Backers cannot see it until a moderator approves it.",
+        "changedNote": "Your changes to this tier are not public yet. Backers still see the approved version.",
+        "deletedNote": "This tier stays public until a moderator approves your changes, then it is removed.",
+        "undo": "Undo",
+        "undoLabel": "Undo removing {title}",
+        "undoneAnnouncement": "{title} will stay.",
+        "removeOnApprovalAnnouncement": "{title} will be removed once a moderator approves.",
+        "removeOnApprovalBody": "{title} stays public until a moderator approves your changes, then it is removed. You can undo this until then.",
+        "removeOnApprovalConfirm": "Remove on approval",
+        "newTiersHidden": "New tiers stay hidden from backers until a moderator approves them.",
+        "revisionField": "Rewards"
       },
       "faq": {
         "nothingCached": "You are offline, and the questions have not been loaded on this phone yet."

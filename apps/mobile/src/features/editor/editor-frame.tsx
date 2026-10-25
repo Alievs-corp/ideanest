@@ -1,8 +1,10 @@
 import { StyleSheet, View } from 'react-native';
 import { Slot, Stack, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import type { ProjectLoadCopy } from '@ideanest/campaign-editor/copy';
 import { traceIdOfError } from '../../api/client';
+import { queryKeys } from '../../api/queries';
 import { Eyebrow, InlineAlert, MotionBudgetProvider, Pill, Screen, Tag } from '../../components/ui';
 import { signInHrefFor } from '../../lib/guard';
 import { formatDateTime, useT } from '../../lib/i18n';
@@ -48,6 +50,7 @@ const EDGES = ['left', 'right', 'bottom'] as const;
 
 function Frame() {
   const editor = useEditor();
+  const queryClient = useQueryClient();
   const copy = useEditorChromeCopy();
   const t = useT('mobile.editor');
   const tAll = useT();
@@ -182,6 +185,8 @@ function Frame() {
                 // What was typed on top of the thrown-away edit must not be sent over the live copy.
                 autosave.dropQueued(Object.keys(autosave.unsaved ?? {}));
                 editor.reseed();
+                // Tiers created or removed in the thrown-away edit are not the list any more.
+                void queryClient.invalidateQueries({ queryKey: queryKeys.editorRewards(editor.projectId) });
               }}
             />
           ) : null}

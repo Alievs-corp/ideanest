@@ -5,6 +5,7 @@ import type { ProjectEdit } from '@ideanest/campaign-editor/contract';
 import type { RevisionCopy } from '@ideanest/campaign-editor/copy';
 import { isRevisionField, revisionRefusalOf, revisionView } from '@ideanest/campaign-editor/revision';
 import { InlineAlert, Pill } from '../../components/ui';
+import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { discardRevision, fetchProjectEdit, submitRevision } from './api';
 import { DeleteDialog } from './delete-dialog';
@@ -48,6 +49,7 @@ export function RevisionNotice({ projectId, project, copy, onProject, onDiscarde
   const view = revisionView(project);
   const { height } = useWindowDimensions();
   const describe = useDescribeFailure();
+  const rewardsWords = useT('mobile.editor.rewards');
   const [busy, setBusy] = useState<Busy>(null);
   const [confirming, setConfirming] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -103,7 +105,10 @@ export function RevisionNotice({ projectId, project, copy, onProject, onDiscarde
     view.kind === 'rejected' ? copy.rejectedBody : view.kind === 'pending' ? copy.pendingBody : copy.draftBody;
   const working = busy !== null;
   const open = view.kind === 'draft' || view.kind === 'pending';
-  const changed = view.changedFields.map((field) => (isRevisionField(field) ? copy.fields[field] : field));
+  // `rewards` is a section of its own in the service's list that the shared copy does not name yet.
+  const changed = view.changedFields.map((field) =>
+    isRevisionField(field) ? copy.fields[field] : field === 'rewards' ? rewardsWords('revisionField') : field,
+  );
 
   return (
     <ScrollView
