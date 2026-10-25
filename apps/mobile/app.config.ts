@@ -227,13 +227,28 @@ const projectId = easProjectId();
  * and an update published from it reaches only builds of that runtime: never a store build whose
  * native code it would not match. Each build profile's `channel` in `eas.json` is the channel its
  * builds listen on.
+ *
+ * Every update is code-signed (#579). A build embeds `certs/certificate.pem` and runs only an
+ * update whose signature that certificate verifies; an unsigned one, or one signed by any other
+ * key, is refused on the phone. Publishing JavaScript to the phones therefore takes the private
+ * key, which only the release workflow holds (`EXPO_UPDATES_PRIVATE_KEY`), and not merely the
+ * Expo account or `EXPO_TOKEN`. The certificate is part of the fingerprint: these fields put its
+ * path and metadata in the resolved config, and `fingerprint.config.js` hashes its bytes, which
+ * nothing else reads. Switching signing on was therefore a new runtime, and so is a rotated
+ * certificate: only a new build receives updates signed with the new key (apps/mobile/README.md).
  */
 const updates: Pick<ExpoConfig, 'runtimeVersion' | 'updates'> = {
   runtimeVersion: { policy: 'fingerprint' },
   updates:
     projectId === undefined
       ? { enabled: false }
-      : { enabled: true, url: `https://u.expo.dev/${projectId}`, checkAutomatically: 'ON_LOAD' },
+      : {
+          enabled: true,
+          url: `https://u.expo.dev/${projectId}`,
+          checkAutomatically: 'ON_LOAD',
+          codeSigningCertificate: './certs/certificate.pem',
+          codeSigningMetadata: { keyid: 'main', alg: 'rsa-v1_5-sha256' },
+        },
 };
 
 /**

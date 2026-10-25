@@ -39,3 +39,13 @@ apps/api/config/
 
 # Local credential notes. Never committed
 hesablar.txt
+
+# The over-the-air update signing key (#579). It lives outside the repository
+# and in the release workflow's EXPO_UPDATES_PRIVATE_KEY secret, never here; the
+# public certificate is apps/mobile/certs/certificate.pem. These are where
+# `expo-updates codesigning:generate` and `eas update` would put or look for it.
+apps/mobile/keys/
+apps/mobile/certs/private-key.pem
+apps/mobile/certs/public-key.pem
+*private-key*.pem
+*.private.pem
