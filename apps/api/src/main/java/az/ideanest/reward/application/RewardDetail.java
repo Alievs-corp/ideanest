@@ -2,14 +2,12 @@ package az.ideanest.reward.application;
 
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.EditLocks;
-import az.ideanest.project.application.RewardWriting;
 import az.ideanest.reward.domain.RewardTier;
 import az.ideanest.reward.domain.RewardTierItem;
 import az.ideanest.reward.domain.ShippingRule;
 import az.ideanest.reward.domain.ShippingZoneRule;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Locale;
 
 /**
  * A reward tier with everything that hangs off it.
@@ -39,11 +37,19 @@ import java.util.Objects;
  *     because the answer that reaches the client must be the one the service used —
  *     see {@code RewardResponse.pricingLocked} for what a client does with it, and
  *     #183 for what happened when there was nothing to do it with
- * @param writing the title, description, picture and clip the creator is editing: the tier's
- *     own, or on a launched campaign what its open revision holds for the tier (#559), which
- *     the public does not see until a moderator approves it
- * @param image the picture {@code writing} names, or null when it has none or it is not servable
- * @param video the clip {@code writing} names, or null likewise
+ * @param tier the tier as its creator is editing it: the row, or on a launched campaign a copy
+ *     of it with what the campaign's open revision proposes for it (#559, #569), which the public
+ *     does not see until a moderator approves it. Never to be saved
+ * @param contents the same: the rows, or what the revision proposes
+ * @param shippingRules likewise
+ * @param shippingZoneRules likewise
+ * @param image the picture the tier shows, or null when it has none or it is not servable
+ * @param video the clip, or null likewise
+ * @param sortOrder its place in the list as its creator is editing it
+ * @param pending what waits for a moderator: the tier was created, changed or deleted since
+ *     the public saw it, or null for nothing
+ * @param revisionChangedFields for a changed tier, which fields differ from what the public
+ *     sees, as {@link az.ideanest.project.application.RewardWriting#changedFrom} names them
  */
 public record RewardDetail(
         RewardTier tier,
@@ -51,35 +57,27 @@ public record RewardDetail(
         List<ShippingRule> shippingRules,
         List<ShippingZoneRule> shippingZoneRules,
         EditLocks locks,
-        RewardWriting writing,
         MediaLibrary.MediaView image,
-        MediaLibrary.VideoView video) {
+        MediaLibrary.VideoView video,
+        int sortOrder,
+        Pending pending,
+        List<String> revisionChangedFields) {
+
+    /** What waits for a moderator about a tier on a launched campaign (#569). */
+    public enum Pending {
+        CREATED,
+        CHANGED,
+        DELETED;
+
+        public String wireName() {
+            return name().toLowerCase(Locale.ROOT);
+        }
+    }
 
     public RewardDetail {
         contents = List.copyOf(contents);
         shippingRules = List.copyOf(shippingRules);
         shippingZoneRules = List.copyOf(shippingZoneRules);
-    }
-
-    /**
-     * Which of {@code title}, {@code description}, {@code imageMediaId} and
-     * {@code videoMediaId} the creator has changed and the public does not see yet. Empty
-     * unless the campaign has launched and its revision changes this tier.
-     */
-    public List<String> revisionChangedFields() {
-        List<String> changed = new ArrayList<>();
-        if (!Objects.equals(writing.title(), tier.getTitle())) {
-            changed.add("title");
-        }
-        if (!Objects.equals(writing.description(), tier.getDescription())) {
-            changed.add("description");
-        }
-        if (!Objects.equals(writing.imageMediaId(), tier.getImageMediaId())) {
-            changed.add("imageMediaId");
-        }
-        if (!Objects.equals(writing.videoMediaId(), tier.getVideoMediaId())) {
-            changed.add("videoMediaId");
-        }
-        return List.copyOf(changed);
+        revisionChangedFields = List.copyOf(revisionChangedFields);
     }
 }

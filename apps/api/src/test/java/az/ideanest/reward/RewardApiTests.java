@@ -724,16 +724,20 @@ class RewardApiTests extends AbstractIntegrationTest {
 
         // Lowering is not, and it is refused above what is claimed as well as below it
         // — the floor after launch is the number the tier already advertises, not the
-        // number somebody has taken.
+        // number somebody has taken. What it advertises is what the public sees: a raise
+        // that waits for a moderator (#569) can be taken back down as far as that.
         ResponseEntity<Map<String, Object>> lowered =
-                patch("/v1/rewards/" + rewardId, creator.accessToken(), Map.of("limitQuantity", 30));
+                patch("/v1/rewards/" + rewardId, creator.accessToken(), Map.of("limitQuantity", 10));
         assertThat(lowered.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(lowered.getBody()).containsEntry("code", "REWARD_FIELD_LOCKED");
         assertThat(lowered.getBody().get("meta")).isEqualTo(Map.of("field", "limitQuantity", "state", "LIVE"));
+        assertThat(patch("/v1/rewards/" + rewardId, creator.accessToken(), Map.of("limitQuantity", 30))
+                        .getBody())
+                .containsEntry("limitQuantity", 30);
 
         // The same number is not a decrease, so an autosave that echoes what is stored
         // is not refused for changing nothing.
-        assertThat(patch("/v1/rewards/" + rewardId, creator.accessToken(), Map.of("limitQuantity", 40))
+        assertThat(patch("/v1/rewards/" + rewardId, creator.accessToken(), Map.of("limitQuantity", 20))
                         .getStatusCode())
                 .isEqualTo(HttpStatus.OK);
 
@@ -741,9 +745,19 @@ class RewardApiTests extends AbstractIntegrationTest {
         assertThat(patchJson("/v1/rewards/" + rewardId, creator.accessToken(), "{\"limitQuantity\": null}")
                         .getBody())
                 .containsEntry("limitQuantity", null);
+    }
 
-        // And putting one back takes places away from a tier that promised there were
-        // always more.
+    @Test
+    @DisplayName("a live tier without a limit cannot be given one")
+    void aLiveUnlimitedTierStaysUnlimited() {
+        Creator creator = creator();
+        UUID projectId = project(creator);
+        UUID rewardId = idOf(reward(creator, projectId, "A reward"));
+
+        launch(projectId);
+
+        // Putting a limit on a tier takes places away from a page that promised there
+        // were always more.
         assertThat(patch("/v1/rewards/" + rewardId, creator.accessToken(), Map.of("limitQuantity", 100))
                         .getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);

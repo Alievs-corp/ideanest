@@ -9,7 +9,9 @@ import az.ideanest.project.domain.ProjectRevision;
 import az.ideanest.project.domain.ProjectState;
 import az.ideanest.project.domain.RevisionContent;
 import az.ideanest.project.domain.RevisionStatus;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +36,10 @@ class ProjectRevisionTests {
                 new CoverImage("https://cdn.example/cover.jpg", 1600, 900),
                 null,
                 List.of("AZ"),
-                Map.of());
+                Map.of(),
+                null,
+                null,
+                null);
     }
 
     @Test
@@ -57,7 +62,10 @@ class ProjectRevisionTests {
                 null,
                 UUID.randomUUID(),
                 List.of("AZ", "TR"),
-                Map.of());
+                Map.of(),
+                null,
+                null,
+                null);
 
         assertThat(edited.changedFrom(live))
                 .containsExactly(
@@ -72,65 +80,155 @@ class ProjectRevisionTests {
     @DisplayName("a story whose keys were reordered is not a change")
     void keyOrderIsNotAnEdit() {
         RevisionContent live = new RevisionContent(
-                "T", null, null, null, JSON.createObjectNode().put("a", 1).put("b", 2), null, null, null, List.of("AZ"), null);
+                "T", null, null, null, JSON.createObjectNode().put("a", 1).put("b", 2), null, null, null, List.of("AZ"), null,
+                null, null, null);
         RevisionContent reordered = new RevisionContent(
-                "T", null, null, null, JSON.createObjectNode().put("b", 2).put("a", 1), null, null, null, List.of("AZ"), null);
+                "T", null, null, null, JSON.createObjectNode().put("b", 2).put("a", 1), null, null, null, List.of("AZ"), null,
+                null, null, null);
 
         assertThat(reordered.changedFrom(live)).isEmpty();
     }
 
     @Test
-    @DisplayName("a reward tier's writing is a change only for a tier the campaign still has, and only if it differs")
+    @DisplayName("a reward tier's proposed state is a change only for a tier the campaign still has, and only if it differs")
     void rewardWritingIsComparedAgainstTheLiveTiers() {
         UUID kept = UUID.randomUUID();
         UUID edited = UUID.randomUUID();
         UUID deleted = UUID.randomUUID();
         Map<UUID, RevisionContent.Reward> tiers = new LinkedHashMap<>();
-        tiers.put(kept, new RevisionContent.Reward("Mug", "A mug", null, null));
-        tiers.put(edited, new RevisionContent.Reward("Poster", null, null, null));
+        tiers.put(kept, reward("Mug", "A mug", null, terms(null)));
+        tiers.put(edited, reward("Poster", null, null, terms(null)));
         RevisionContent live = withRewards(tiers);
 
         RevisionContent proposed = live
-                .withReward(kept, new RevisionContent.Reward("Mug", "A mug", null, null))
-                .withReward(edited, new RevisionContent.Reward("Signed poster", null, UUID.randomUUID(), null))
-                .withReward(deleted, new RevisionContent.Reward("Gone", null, null, null));
+                .withReward(kept, reward("Mug", "A mug", null, terms(null)))
+                .withReward(edited, reward("Signed poster", null, UUID.randomUUID(), terms(null)))
+                .withReward(deleted, reward("Gone", null, null, terms(null)));
 
         assertThat(proposed.changedFrom(live)).containsExactly(RevisionContent.REWARDS);
         assertThat(proposed.changedRewardsFrom(live)).containsExactly(edited);
         assertThat(proposed.heldAgainst(live).rewards()).containsOnlyKeys(edited);
 
-        RevisionContent onlyGone = withRewards(Map.of(deleted, new RevisionContent.Reward("Gone", null, null, null)));
+        RevisionContent onlyGone = withRewards(Map.of(deleted, reward("Gone", null, null, terms(null))));
         assertThat(onlyGone.changedFrom(live)).isEmpty();
         assertThat(onlyGone.heldAgainst(live).rewards()).isEmpty();
     }
 
     @Test
-    @DisplayName("content written before reward tiers were held reads with none, and tiers survive a round trip")
+    @DisplayName("a tier's limit, composition or rates are a change like its title (#569)")
+    void rewardTermsAreCompared() {
+        UUID tier = UUID.randomUUID();
+        RevisionContent live = withRewards(Map.of(tier, reward("Mug", null, null, terms(10))));
+
+        RevisionContent raised = live.withReward(tier, reward("Mug", null, null, terms(20)));
+
+        assertThat(raised.changedFrom(live)).containsExactly(RevisionContent.REWARDS);
+        assertThat(raised.heldAgainst(live).rewards().get(tier).terms().limitQuantity()).isEqualTo(20);
+        assertThat(live.withReward(tier, reward("Mug", null, null, terms(10))).changedFrom(live)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a deleted, created or moved tier is a change to the rewards, and only while it still is one")
+    void deletedCreatedAndMovedTiersAreChanges() {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        UUID created = UUID.randomUUID();
+        Map<UUID, RevisionContent.Reward> tiers = new LinkedHashMap<>();
+        tiers.put(first, reward("First", null, null, terms(null)));
+        tiers.put(second, reward("Second", null, null, terms(null)));
+        RevisionContent live = withRewards(tiers);
+
+        RevisionContent deleting = live.withRewardChanges(Map.of(), List.of(second, UUID.randomUUID()), null, null);
+        assertThat(deleting.changedFrom(live)).containsExactly(RevisionContent.REWARDS);
+        assertThat(deleting.heldAgainst(live).deletedRewards()).containsExactly(second);
+        assertThat(deleting.proposedRewardOrder(live)).containsExactly(first);
+
+        RevisionContent creating = live.withCreatedRewards(List.of(created));
+        assertThat(creating.changedFrom(live)).containsExactly(RevisionContent.REWARDS);
+        assertThat(creating.proposedRewardOrder(live)).containsExactly(first, second, created);
+
+        RevisionContent moving = live.withRewardChanges(Map.of(), null, null, List.of(second, first));
+        assertThat(moving.reordersFrom(live)).isTrue();
+        assertThat(moving.changedFrom(live)).containsExactly(RevisionContent.REWARDS);
+        assertThat(moving.proposedRewardOrder(live)).containsExactly(second, first);
+
+        RevisionContent notMoving = live.withRewardChanges(Map.of(), null, null, List.of(first, second));
+        assertThat(notMoving.changedFrom(live)).isEmpty();
+        assertThat(notMoving.heldAgainst(live).rewardOrder()).isNull();
+
+        RevisionContent createdFirst =
+                live.withRewardChanges(Map.of(), null, List.of(created), List.of(created, first, second));
+        assertThat(createdFirst.reordersFrom(live)).as("the approved tiers keep their order").isFalse();
+        assertThat(createdFirst.heldAgainst(live).rewardOrder()).containsExactly(created, first, second);
+        assertThat(createdFirst.proposedRewardOrder(live)).containsExactly(created, first, second);
+    }
+
+    @Test
+    @DisplayName("content written before tiers were held reads with none, and tiers survive a round trip")
     void rewardsRoundTripThroughJson() {
         UUID tier = UUID.randomUUID();
-        RevisionContent held = content().withReward(tier, new RevisionContent.Reward("Mug", null, null, UUID.randomUUID()));
+        RevisionContent held = content()
+                .withRewardChanges(
+                        Map.of(tier, reward("Mug", null, null, terms(5))),
+                        List.of(UUID.randomUUID()),
+                        List.of(UUID.randomUUID()),
+                        List.of(tier));
 
         RevisionContent read = JSON.readValue(JSON.writeValueAsString(held), RevisionContent.class);
         assertThat(read.rewards()).isEqualTo(held.rewards());
+        assertThat(read.deletedRewards()).isEqualTo(held.deletedRewards());
+        assertThat(read.createdRewards()).isEqualTo(held.createdRewards());
+        assertThat(read.rewardOrder()).isEqualTo(held.rewardOrder());
 
-        RevisionContent older = JSON.readValue(
-                "{\"title\":\"T\",\"countries\":[\"AZ\"]}", RevisionContent.class);
+        RevisionContent older = JSON.readValue("{\"title\":\"T\",\"countries\":[\"AZ\"]}", RevisionContent.class);
         assertThat(older.rewards()).isEmpty();
+        assertThat(older.deletedRewards()).isEmpty();
+        assertThat(older.createdRewards()).isEmpty();
+        assertThat(older.rewardOrder()).isNull();
+    }
+
+    @Test
+    @DisplayName("a tier's writing held before #569 still reads, and keeps the rest of the tier as it is")
+    void writingHeldBefore569IsCompletedFromTheTier() {
+        UUID tier = UUID.randomUUID();
+        RevisionContent older = JSON.readValue(
+                "{\"title\":\"T\",\"countries\":[\"AZ\"],\"rewards\":{\"" + tier
+                        + "\":{\"title\":\"Signed mug\",\"description\":null,\"imageMediaId\":null,\"videoMediaId\":null}}}",
+                RevisionContent.class);
+        assertThat(older.rewards().get(tier).terms()).isNull();
+
+        RevisionContent live = withRewards(Map.of(tier, reward("Mug", null, null, terms(10))));
+        RevisionContent held = older.heldAgainst(live);
+
+        assertThat(held.rewards().get(tier).title()).isEqualTo("Signed mug");
+        assertThat(held.rewards().get(tier).terms()).isEqualTo(terms(10));
+        assertThat(older.changedRewardsFrom(live)).containsExactly(tier);
+    }
+
+    private static RevisionContent.Reward reward(
+            String title, String description, UUID imageMediaId, RevisionContent.Terms terms) {
+        return new RevisionContent.Reward(title, description, imageMediaId, null, terms);
+    }
+
+    private static RevisionContent.Terms terms(Integer limit) {
+        return new RevisionContent.Terms(
+                LocalDate.parse("2027-03-01"),
+                limit,
+                "DOMESTIC",
+                false,
+                false,
+                false,
+                null,
+                null,
+                Instant.parse("2027-01-01T00:00:00Z"),
+                List.of(new RevisionContent.Terms.Line(UUID.fromString("00000000-0000-0000-0000-000000000001"), 2)),
+                List.of(new RevisionContent.Terms.CountryRate(
+                        "AZ", new BigDecimal("5.00"), new BigDecimal("1.50"), new BigDecimal("0.00"))),
+                List.of());
     }
 
     private static RevisionContent withRewards(Map<UUID, RevisionContent.Reward> rewards) {
-        RevisionContent base = content();
-        return new RevisionContent(
-                base.title(),
-                base.blurb(),
-                base.categoryId(),
-                base.subcategoryId(),
-                base.story(),
-                base.risks(),
-                base.coverImage(),
-                base.videoMediaId(),
-                base.countries(),
-                rewards);
+        return content().withRewardChanges(rewards, null, null, null);
     }
 
     @Test

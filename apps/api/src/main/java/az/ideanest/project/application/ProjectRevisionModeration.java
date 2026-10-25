@@ -35,7 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Approving applies the revision to the campaign, and to its reward tiers, in the same
  * transaction that records it, audits it and announces it, so a campaign never shows an approved edit that has no decision
- * behind it, nor a decision whose edit is missing. Rejecting changes only the revision.
+ * behind it, nor a decision whose edit is missing. Rejecting changes only the revision, and
+ * deletes the tiers created for it, which the public never saw (#569).
  *
  * <p>Authorised as the campaign's three outcomes are: reading asks for
  * {@code MODERATE_CONTENT}, and deciding goes through {@link ProjectAccess#requireModeratable},
@@ -53,14 +54,16 @@ public class ProjectRevisionModeration {
      *
      * <p>{@code live} and {@code proposed} are the same campaign twice: the first as the public
      * sees it, the second a detached copy with the revision written on it. Neither is to be
-     * saved. {@code rewards} are the reward tiers whose writing it changes (#559).
+     * saved. {@code rewards} are the reward tiers it creates, deletes, moves or changes (#559, #569),
+     * and {@code rewardNames} the names of the items and shipping zones their lines refer to.
      */
     public record Review(
             ProjectRevision revision,
             Project live,
             Project proposed,
             List<String> changedFields,
-            List<ProjectRevisionService.RewardChange> rewards) {}
+            List<ProjectRevisionService.RewardChange> rewards,
+            Map<UUID, String> rewardNames) {}
 
     private final ProjectRevisionRepository revisions;
     private final ProjectRepository projects;
@@ -155,7 +158,8 @@ public class ProjectRevisionModeration {
                 live,
                 proposed,
                 content.changedFrom(liveContent),
-                revisionService.rewardChanges(content, liveContent));
+                revisionService.rewardChanges(live.getId(), content, liveContent),
+                revisionService.rewardNames(live.getId()));
     }
 
     /** Applies the revision to the campaign. A note is optional. */
@@ -169,16 +173,19 @@ public class ProjectRevisionModeration {
         List<String> changed = content.changedFrom(liveContent);
 
         editing.applyApproved(project, content, revision.getAuthorId());
-        revisionService.publishRewards(project.getId(), content, liveContent);
+        List<UUID> kept = revisionService.publishRewards(project.getId(), content, liveContent);
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         revision.approve(moderatorId, now, blankAsNull(note));
 
+        // A tier somebody backed after its deletion was proposed stays, as §5.3 requires of
+        // any tier with backers; the record says so rather than the moderator finding out.
         audit.record(
                 AuditAction.PROJECT_REVISION_APPROVED,
                 project.getId(),
                 AuditActor.moderator(moderatorId),
                 AuditOutcome.SUCCEEDED,
-                "revision " + revision.getId() + ": " + String.join(",", changed));
+                "revision " + revision.getId() + ": " + String.join(",", changed)
+                        + (kept.isEmpty() ? "" : "; kept backed tiers " + kept));
         announce(project, revision, "APPROVED", now);
         return revision;
     }
@@ -195,6 +202,7 @@ public class ProjectRevisionModeration {
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         revision.reject(moderatorId, now, reason.trim());
+        revisionService.discardRewards(project.getId());
 
         audit.record(
                 AuditAction.PROJECT_REVISION_REJECTED,

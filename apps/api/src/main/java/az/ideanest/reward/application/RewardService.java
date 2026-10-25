@@ -2,12 +2,15 @@ package az.ideanest.reward.application;
 
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.EditLocks;
+import az.ideanest.project.application.HeldRewards;
 import az.ideanest.project.application.ProjectRevisionService;
 import az.ideanest.project.application.RewardWriting;
+import az.ideanest.reward.domain.Item;
 import az.ideanest.reward.domain.RewardTier;
 import az.ideanest.reward.domain.RewardTierItem;
 import az.ideanest.reward.domain.ShippingRule;
 import az.ideanest.reward.domain.ShippingType;
+import az.ideanest.reward.domain.ShippingZone;
 import az.ideanest.reward.domain.ShippingZoneRule;
 import az.ideanest.reward.infrastructure.ItemRepository;
 import az.ideanest.reward.infrastructure.RewardTierItemRepository;
@@ -16,9 +19,12 @@ import az.ideanest.reward.infrastructure.ShippingRuleRepository;
 import az.ideanest.reward.infrastructure.ShippingZoneRepository;
 import az.ideanest.reward.infrastructure.ShippingZoneRuleRepository;
 import az.ideanest.shared.money.Money;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -62,11 +68,15 @@ import org.springframework.transaction.annotation.Transactional;
  *       still {@link #withinLimit}.
  * </ul>
  *
- * <p><strong>A launched campaign's tier writing waits for a moderator (#559).</strong> Its
- * title, description, picture and clip are written to the campaign's open revision through
- * {@link ProjectRevisionService} rather than to the tier, which keeps showing the public what
- * was approved; every read here returns what the revision holds. Everything else about a
- * tier, and every tier created, duplicated or deleted, is written as before.
+ * <p><strong>Every change to a launched campaign's tiers waits for a moderator (#559,
+ * #569).</strong> An approved tier's new state — its writing, its delivery, limit, flags,
+ * window, composition and rates — is written to the campaign's open revision through
+ * {@link ProjectRevisionService} rather than to the tier, and so are its deletion and a new
+ * order; the tier keeps showing the public what was approved. A tier created or duplicated is
+ * a row the public does not see ({@link RewardTier#isApproved}), written directly, and the
+ * revision names it. Every read here returns the draft. Each of these changes locks the
+ * campaign first and reads the tier again, so it is serialised against approval: a tier
+ * approved or deleted a moment ago is not edited as it was before.
  */
 @Service
 public class RewardService {
@@ -102,6 +112,8 @@ public class RewardService {
     private final RewardAccess access;
     private final MediaLibrary media;
     private final ProjectRevisionService revisions;
+    private final RewardTierWritings writings;
+    private final EntityManager entityManager;
 
     public RewardService(
             RewardTierRepository rewards,
@@ -112,7 +124,9 @@ public class RewardService {
             ItemRepository items,
             RewardAccess access,
             MediaLibrary media,
-            ProjectRevisionService revisions) {
+            ProjectRevisionService revisions,
+            RewardTierWritings writings,
+            EntityManager entityManager) {
         this.rewards = rewards;
         this.compositions = compositions;
         this.shippingRules = shippingRules;
@@ -122,6 +136,8 @@ public class RewardService {
         this.access = access;
         this.media = media;
         this.revisions = revisions;
+        this.writings = writings;
+        this.entityManager = entityManager;
     }
 
     /**
@@ -131,16 +147,24 @@ public class RewardService {
      * tier they cannot see in their own editor is a tier they cannot edit or withdraw,
      * and the reason it is secret is that the <em>public</em> list omits it. That
      * public list is a different response, owned by the campaign page.
+     *
+     * <p>On a launched campaign, the draft: tiers created since launch included, tiers
+     * whose deletion waits still listed, each marked with what waits for it.
      */
     @Transactional(readOnly = true)
     public List<RewardDetail> list(UUID projectId, UUID accountId) {
         EditLocks locks = access.requireEditableProject(projectId, accountId);
-        return detailsOf(rewards.findByProjectIdOrderBySortOrderAscCreatedAtAsc(projectId), locks);
+        return draftsOf(projectId, rewards.findByProjectIdOrderBySortOrderAscCreatedAtAsc(projectId), locks, true);
     }
 
+    /** On a launched campaign the tier is created withheld from the public, and its revision names it. */
     @Transactional
     public RewardDetail create(UUID projectId, UUID accountId, NewReward draft) {
         EditLocks locks = access.requireEditableProject(projectId, accountId);
+        boolean held = locks.rewardWritingHeld();
+        if (held) {
+            revisions.lockForRewards(projectId);
+        }
         requireRoomForAnotherTier(projectId);
 
         Money price = requirePrice(draft.price());
@@ -160,10 +184,16 @@ public class RewardService {
         }
         tier.setImageMediaId(claimImage(accountId, draft.imageMediaId()));
         tier.setVideoMediaId(claimVideo(accountId, draft.videoMediaId()));
+        if (held) {
+            tier.withhold();
+        }
 
         requireConsistent(tier);
         RewardTier saved = rewards.save(tier);
-        replaceComposition(saved, draft.items());
+        writings.writeComposition(saved, desiredComposition(projectId, draft.items()));
+        if (held) {
+            revisions.touchRewards(projectId, accountId);
+        }
 
         return detailOf(saved, locks);
     }
@@ -179,71 +209,43 @@ public class RewardService {
      * that renames a tier and reprices it changes neither. Half a save is worse than
      * none: the creator would have to work out which half.
      *
-     * <p>On a launched campaign the title, description, picture and clip go to its revision,
-     * after everything else has been applied and checked; see {@link #edited}.
+     * <p>On a launched campaign an approved tier is not touched: the patch is applied to what
+     * the campaign's revision proposes for it, checked as it would be on the tier, and kept
+     * there; see {@link #proposed}. A tier created since launch is edited in place, and its
+     * revision goes back to a draft when anything changed.
      */
     @Transactional
     public RewardDetail edit(UUID rewardId, UUID accountId, RewardPatch patch) {
         RewardAccess.AuthorisedReward authorised = access.requireEditableReward(rewardId, accountId);
         RewardTier tier = authorised.tier();
-        requireNothingLocked(tier, authorised.locks(), patch);
-        boolean held = authorised.locks().rewardWritingHeld();
-
-        if (!held) {
-            patch.title().ifPresent(title -> tier.setTitle(requireTitle(title)));
-            patch.description().ifPresent(description -> tier.setDescription(blankAsNull(description)));
+        EditLocks locks = authorised.locks();
+        boolean held = locks.rewardWritingHeld();
+        if (held) {
+            lockAndReread(tier);
         }
-        patch.price().ifPresent(price -> {
-            Money accepted = requirePrice(price);
-            tier.setPrice(accepted.amount(), accepted.currency());
-        });
-        patch.estimatedDelivery().ifPresent(tier::setEstimatedDelivery);
-        patch.limitQuantity().ifPresent(limit -> tier.setLimitQuantity(withinLimit(tier, limit)));
-        patch.shippingType()
-                .ifPresent(type -> tier.setShippingType(type == null ? ShippingType.NONE : type));
-        patch.earlyBird().ifPresent(early -> tier.setEarlyBird(requireBoolean("isEarlyBird", early)));
-        patch.featured().ifPresent(featured -> tier.setFeatured(requireBoolean("isFeatured", featured)));
-        patch.addon().ifPresent(addon -> tier.setAddon(requireBoolean("isAddon", addon)));
-        patch.secret().ifPresent(secret -> {
-            if (requireBoolean("isSecret", secret)) {
-                tier.makeSecret();
-            } else {
-                tier.makePublic();
-            }
-        });
+        requireNothingLocked(tier, locks, patch);
+
+        if (held && tier.isApproved()) {
+            revisions.stageReward(
+                    tier.getProjectId(), rewardId, accountId, before -> proposed(tier, before, patch, accountId));
+            return detailOf(tier, locks);
+        }
+
+        RewardWriting before = held ? stateOf(tier) : null;
         // Released only once the tier is known to be consistent: the reference check is a
         // native query, which flushes the tier, and a flush before requireConsistent would
         // turn a 400 into a constraint violation.
-        List<UUID> released = new ArrayList<>();
-        if (!held) {
-            patch.imageMediaId().ifPresent(mediaId -> released.add(replaceImage(tier, accountId, mediaId)));
-            patch.videoMediaId().ifPresent(mediaId -> released.add(replaceVideo(tier, accountId, mediaId)));
-        }
-
-        if (patch.changesAvailability()) {
-            Instant from = patch.availableFrom().isPresent()
-                    ? patch.availableFrom().value()
-                    : tier.getAvailableFrom();
-            Instant until = patch.availableUntil().isPresent()
-                    ? patch.availableUntil().value()
-                    : tier.getAvailableUntil();
-            applyAvailability(tier, from, until);
-        }
-
-        requireConsistent(tier);
+        List<UUID> released = applyPatch(tier, patch, accountId);
         released.forEach(mediaId -> release(tier, mediaId));
-        if (held && patch.changesWriting()) {
-            revisions.stageReward(
-                    tier.getProjectId(), tier.getId(), accountId, writing -> edited(writing, patch, accountId));
-        }
 
         if (patch.items().isPresent()) {
-            List<RewardContent> contents =
-                    patch.items().value() == null ? List.of() : patch.items().value();
-            replaceComposition(tier, contents);
+            writings.writeComposition(tier, desiredComposition(tier.getProjectId(), itemsOf(patch)));
+        }
+        if (before != null && !before.equals(stateOf(tier))) {
+            revisions.touchRewards(tier.getProjectId(), accountId);
         }
 
-        return detailOf(tier, authorised.locks());
+        return detailOf(tier, locks);
     }
 
     /**
@@ -252,16 +254,56 @@ public class RewardService {
      * <p>The composition and the shipping rates go with it, by cascade in the
      * database rather than by two more statements here: neither has any meaning
      * without the tier, and a cascade cannot be forgotten by a future caller.
+     *
+     * <p>On a launched campaign an approved tier is not deleted but marked for deletion in
+     * the campaign's revision; it stays public until a moderator approves that, and
+     * {@link #restore} takes the mark away. A tier created since launch is deleted at once.
      */
     @Transactional
     public void delete(UUID rewardId, UUID accountId) {
-        RewardTier tier = access.requireEditableReward(rewardId, accountId).tier();
+        RewardAccess.AuthorisedReward authorised = access.requireEditableReward(rewardId, accountId);
+        RewardTier tier = authorised.tier();
+        boolean held = authorised.locks().rewardWritingHeld();
+        if (held) {
+            lockAndReread(tier);
+        }
         if (tier.hasBackers()) {
             throw new RewardHasBackersException(rewardId, tier.getClaimedQuantity());
         }
+
+        if (held && tier.isApproved()) {
+            revisions.stageRewards(tier.getProjectId(), accountId, current -> {
+                List<UUID> deleted = new ArrayList<>(current.deleted());
+                if (!deleted.contains(rewardId)) {
+                    deleted.add(rewardId);
+                }
+                return new HeldRewards(current.changed(), deleted, current.created(), current.order());
+            });
+            return;
+        }
+
         release(tier, tier.getImageMediaId());
         release(tier, tier.getVideoMediaId());
         rewards.delete(tier);
+        if (held) {
+            revisions.touchRewards(tier.getProjectId(), accountId);
+        }
+    }
+
+    /** Takes a tier's deletion back out of a launched campaign's revision. See {@link #delete}. */
+    @Transactional
+    public RewardDetail restore(UUID rewardId, UUID accountId) {
+        RewardAccess.AuthorisedReward authorised = access.requireEditableReward(rewardId, accountId);
+        RewardTier tier = authorised.tier();
+        if (authorised.locks().rewardWritingHeld() && tier.isApproved()) {
+            lockAndReread(tier);
+            revisions.stageRewards(tier.getProjectId(), accountId, current -> new HeldRewards(
+                    current.changed(),
+                    current.deleted().stream().filter(id -> !id.equals(rewardId)).toList(),
+                    current.created(),
+                    current.order()));
+        }
+        return detailOf(tier, authorised.locks());
     }
 
     /**
@@ -277,37 +319,53 @@ public class RewardService {
      * structural rather than a rule this method remembers to apply. See
      * {@link RewardTier#duplicateAt(int)} for why a secret tier gets a new token, and
      * why the copy starts without the original's image and video.
+     *
+     * <p>On a launched campaign the copy is of the tier as its creator is editing it, and it is
+     * a created tier: withheld from the public, and named by the campaign's revision.
      */
     @Transactional
     public RewardDetail duplicate(UUID rewardId, UUID accountId) {
         RewardAccess.AuthorisedReward authorised = access.requireEditableReward(rewardId, accountId);
         RewardTier original = authorised.tier();
+        EditLocks locks = authorised.locks();
+        boolean held = locks.rewardWritingHeld();
+        if (held) {
+            lockAndReread(original);
+        }
         requireRoomForAnotherTier(original.getProjectId());
 
-        RewardTier copy = rewards.save(original.duplicateAt(nextSortOrder(original.getProjectId())));
+        RewardDetail source = held ? detailOf(original, locks) : null;
+        RewardTier template = held ? source.tier() : original;
+        RewardTier unsaved = template.duplicateAt(nextSortOrder(original.getProjectId()));
+        if (held) {
+            unsaved.withhold();
+        }
+        RewardTier copy = rewards.save(unsaved);
 
-        List<RewardTierItem> copiedContents = compositions.findByRewardTier(rewardId).stream()
+        List<RewardTierItem> contents = held ? source.contents() : compositions.findByRewardTier(rewardId);
+        compositions.saveAll(contents.stream()
                 .map(content -> RewardTierItem.of(
                         copy.getProjectId(), copy.getId(), content.getItemId(), content.getQuantity()))
-                .toList();
-        compositions.saveAll(copiedContents);
+                .toList());
 
-        List<ShippingRule> copiedRules = shippingRules.findByRewardTier(rewardId).stream()
+        List<ShippingRule> countryRates = held ? source.shippingRules() : shippingRules.findByRewardTier(rewardId);
+        shippingRules.saveAll(countryRates.stream()
                 .map(rule -> ShippingRule.of(
                         copy.getId(),
                         rule.getCountryCode(),
                         rule.getAmount(),
                         rule.getAdditionalItemAmount(),
                         rule.getPerKilogramAmount()))
-                .toList();
-        shippingRules.saveAll(copiedRules);
+                .toList());
 
         // The zone rates are copied too, for the reason the country rates are: a
         // duplicated tier that priced nowhere would look like a tier the creator had
         // finished, and the first sign otherwise would be a backer unable to check
         // out. The zones themselves are the campaign's, so there is nothing to copy
         // on that side.
-        List<ShippingZoneRule> copiedZoneRules = shippingZoneRules.findByRewardTier(rewardId).stream()
+        List<ShippingZoneRule> zoneRates =
+                held ? source.shippingZoneRules() : shippingZoneRules.findByRewardTier(rewardId);
+        shippingZoneRules.saveAll(zoneRates.stream()
                 .map(rule -> ShippingZoneRule.of(
                         copy.getId(),
                         rule.getZoneId(),
@@ -315,18 +373,12 @@ public class RewardService {
                         rule.getAmount(),
                         rule.getAdditionalItemAmount(),
                         rule.getPerKilogramAmount()))
-                .toList();
-        shippingZoneRules.saveAll(copiedZoneRules);
+                .toList());
 
-        return new RewardDetail(
-                copy,
-                copiedContents,
-                copiedRules,
-                copiedZoneRules,
-                authorised.locks(),
-                RewardTierWritings.writingOf(copy),
-                null,
-                null);
+        if (held) {
+            revisions.touchRewards(copy.getProjectId(), accountId);
+        }
+        return detailOf(copy, locks);
     }
 
     /**
@@ -341,13 +393,22 @@ public class RewardService {
      * list makes the stored order exactly the list the client sent, so two clients
      * that reorder concurrently produce one of the two orders rather than a blend of
      * both.
+     *
+     * <p>On a launched campaign the order is kept in the campaign's revision, created tiers
+     * included, and the public sees it on approval. A tier whose deletion waits may be named
+     * or left out.
      */
     @Transactional
     public List<RewardDetail> reorder(UUID projectId, UUID accountId, List<UUID> rewardIds) {
         EditLocks locks = access.requireEditableProject(projectId, accountId);
+        boolean held = locks.rewardWritingHeld();
+        if (held) {
+            revisions.lockForRewards(projectId);
+        }
 
         List<RewardTier> tiers = rewards.findByProjectIdOrderBySortOrderAscCreatedAtAsc(projectId);
         Map<UUID, RewardTier> byId = tiers.stream().collect(Collectors.toMap(RewardTier::getId, Function.identity()));
+        Set<UUID> leaving = held ? Set.copyOf(revisions.heldRewards(projectId).deleted()) : Set.of();
 
         List<UUID> requested = rewardIds == null ? List.of() : rewardIds;
         List<UUID> unexpected = new ArrayList<>();
@@ -359,11 +420,22 @@ public class RewardService {
                 unexpected.add(rewardId);
             }
         }
-        List<UUID> missing =
-                tiers.stream().map(RewardTier::getId).filter(id -> !seen.contains(id)).toList();
+        List<UUID> missing = tiers.stream()
+                .map(RewardTier::getId)
+                .filter(id -> !seen.contains(id) && !leaving.contains(id))
+                .toList();
 
         if (!missing.isEmpty() || !unexpected.isEmpty()) {
             throw new RewardOrderIncompleteException(missing, unexpected);
+        }
+
+        if (held) {
+            List<UUID> order = requested.stream().filter(id -> !leaving.contains(id)).toList();
+            revisions.stageRewards(
+                    projectId,
+                    accountId,
+                    current -> new HeldRewards(current.changed(), current.deleted(), current.created(), order));
+            return draftsOf(projectId, tiers, locks, true);
         }
 
         List<RewardTier> reordered = new ArrayList<>();
@@ -374,7 +446,7 @@ public class RewardService {
             reordered.add(tier);
         }
 
-        return detailsOf(reordered, locks);
+        return draftsOf(projectId, reordered, locks, true);
     }
 
     /**
@@ -386,9 +458,7 @@ public class RewardService {
      * do. An empty set is therefore a legitimate request and clears the table.
      *
      * <p>A destination present in both the old and the new table keeps its row and is
-     * repriced. Deleting and reinserting it would be the same result in one more
-     * statement, and would have to be flushed between the halves — Hibernate orders
-     * inserts before deletes.
+     * repriced; see {@link RewardTierWritings#writeCountryRates}.
      *
      * <p><strong>Both tables at once, since #77.</strong> A tier's rate table is now
      * per-country rows and per-zone rows, and they are replaced in one request
@@ -397,6 +467,9 @@ public class RewardService {
      * whether a zone containing Germany is priced. Two endpoints would let a creator
      * commit half of a rate change, and the half they committed would be quoting to
      * backers while they went to find the other one.
+     *
+     * <p>On a launched campaign an approved tier's new rates wait in the campaign's revision,
+     * like the rest of it.
      */
     @Transactional
     public RewardDetail replaceShippingRules(
@@ -404,20 +477,51 @@ public class RewardService {
 
         RewardAccess.AuthorisedReward authorised = access.requireEditableReward(rewardId, accountId);
         RewardTier tier = authorised.tier();
+        EditLocks locks = authorised.locks();
+        boolean held = locks.rewardWritingHeld();
+        if (held) {
+            lockAndReread(tier);
+        }
 
+        if (held && tier.isApproved()) {
+            revisions.stageReward(tier.getProjectId(), rewardId, accountId, before -> {
+                RewardTier draft = RewardTierWritings.draftOf(tier, before);
+                requireShipped(draft);
+                return RewardTierWritings.writingOf(
+                        draft,
+                        before.items(),
+                        countryRatesOf(countryRulesOf(rewardId, rates)),
+                        zoneRatesOf(zoneRulesOf(tier, zoneRates)));
+            });
+            return detailOf(tier, locks);
+        }
+
+        requireShipped(tier);
+        RewardWriting before = held ? stateOf(tier) : null;
+        writings.writeCountryRates(rewardId, countryRulesOf(rewardId, rates));
+        writings.writeZoneRates(rewardId, zoneRulesOf(tier, zoneRates));
+        if (before != null && !before.equals(stateOf(tier))) {
+            revisions.touchRewards(tier.getProjectId(), accountId);
+        }
+        return detailOf(tier, locks);
+    }
+
+    /**
+     * Rates for a tier that is not shipped are rates nothing will ever read, and a creator who
+     * entered them believes shipping is priced. §7.2 puts the scope on the tier; this is what
+     * keeps the two consistent.
+     */
+    private static void requireShipped(RewardTier tier) {
         if (!tier.getShippingType().isShipped()) {
-            // Rates for a tier that is not shipped are rates nothing will ever read,
-            // and a creator who entered them believes shipping is priced. §7.2 puts
-            // the scope on the tier; this is what keeps the two consistent.
             throw new RewardFieldRejectedException(
                     "shippingType",
                     "Only a tier shipped domestically or internationally has per-country rates."
                             + " Change the shipping scope first.");
         }
+    }
 
-        Map<String, ShippingRule> existing = shippingRules.findByRewardTier(rewardId).stream()
-                .collect(Collectors.toMap(ShippingRule::getCountryCode, Function.identity()));
-
+    /** The country half of a rate table, checked: each destination once, each rate valid. */
+    private static List<ShippingRule> countryRulesOf(UUID rewardId, List<ShippingRate> rates) {
         List<ShippingRule> result = new ArrayList<>();
         Set<String> requested = new LinkedHashSet<>();
         for (ShippingRate rate : rates == null ? List.<ShippingRate>of() : rates) {
@@ -426,54 +530,20 @@ public class RewardService {
                 throw new RewardFieldRejectedException(
                         "rules", "Each destination appears once: " + candidate.getCountryCode() + " is listed twice.");
             }
-
-            ShippingRule stored = existing.get(candidate.getCountryCode());
-            if (stored == null) {
-                result.add(shippingRules.save(candidate));
-            } else {
-                stored.reprice(
-                        candidate.getAmount(),
-                        candidate.getAdditionalItemAmount(),
-                        candidate.getPerKilogramAmount());
-                result.add(stored);
-            }
+            result.add(candidate);
         }
-
-        existing.forEach((country, stored) -> {
-            if (!requested.contains(country)) {
-                shippingRules.delete(stored);
-            }
-        });
-
-        List<ShippingZoneRule> zoneResult = replaceZoneRates(tier, zoneRates);
-        RewardWriting writing = writingOf(tier, authorised.locks());
-        return new RewardDetail(
-                tier,
-                compositions.findByRewardTier(rewardId),
-                List.copyOf(result),
-                zoneResult,
-                authorised.locks(),
-                writing,
-                imageOf(writing),
-                videoOf(writing));
+        return List.copyOf(result);
     }
 
     /**
-     * The zone half of the same replacement — §4.8's PM-13 (#77).
-     *
-     * <p>The same diff the country half does, keyed by zone instead of by country
-     * and for the same reason: a zone present in both tables keeps its row, so
-     * repricing the EU does not delete and reinsert a row inside one flush.
+     * The zone half of the same table — §4.8's PM-13 (#77), checked the same way.
      *
      * <p>Every zone named is checked against <em>this campaign</em> before anything
      * is written. The composite foreign key refuses another campaign's zone anyway,
      * which is what actually makes it impossible; this is what makes the refusal a
      * sentence naming the zone rather than a constraint violation.
      */
-    private List<ShippingZoneRule> replaceZoneRates(RewardTier tier, List<ZoneRate> zoneRates) {
-        Map<UUID, ShippingZoneRule> existing = shippingZoneRules.findByRewardTier(tier.getId()).stream()
-                .collect(Collectors.toMap(ShippingZoneRule::getZoneId, Function.identity()));
-
+    private List<ShippingZoneRule> zoneRulesOf(RewardTier tier, List<ZoneRate> zoneRates) {
         List<ShippingZoneRule> result = new ArrayList<>();
         Set<UUID> requested = new LinkedHashSet<>();
         for (ZoneRate rate : zoneRates == null ? List.<ZoneRate>of() : zoneRates) {
@@ -484,30 +554,18 @@ public class RewardService {
                 throw new RewardFieldRejectedException(
                         "zoneRates", "Each zone appears once: " + rate.zoneId() + " is listed twice.");
             }
-            if (shippingZones
-                    .findOnProject(tier.getProjectId(), rate.zoneId())
-                    .isEmpty()) {
+            if (shippingZones.findOnProject(tier.getProjectId(), rate.zoneId()).isEmpty()) {
                 throw new RewardFieldRejectedException(
                         "zoneRates", "This campaign has no shipping zone " + rate.zoneId() + ".");
             }
-
-            ShippingZoneRule stored = existing.get(rate.zoneId());
             try {
-                if (stored == null) {
-                    result.add(shippingZoneRules.save(ShippingZoneRule.of(
-                            tier.getId(),
-                            rate.zoneId(),
-                            tier.getProjectId(),
-                            rate.amount(),
-                            orZero(rate.additionalItemAmount()),
-                            orZero(rate.perKilogramAmount()))));
-                } else {
-                    stored.reprice(
-                            rate.amount(),
-                            orZero(rate.additionalItemAmount()),
-                            orZero(rate.perKilogramAmount()));
-                    result.add(stored);
-                }
+                result.add(ShippingZoneRule.of(
+                        tier.getId(),
+                        rate.zoneId(),
+                        tier.getProjectId(),
+                        rate.amount(),
+                        orZero(rate.additionalItemAmount()),
+                        orZero(rate.perKilogramAmount())));
             } catch (IllegalArgumentException rejected) {
                 // The value object refuses a negative rate and a third decimal
                 // place. Both are the client's mistake and both should name the
@@ -515,19 +573,121 @@ public class RewardService {
                 throw new RewardFieldRejectedException("zoneRates", rejected.getMessage());
             }
         }
-
-        existing.forEach((zoneId, stored) -> {
-            if (!requested.contains(zoneId)) {
-                shippingZoneRules.delete(stored);
-            }
-        });
-
         return List.copyOf(result);
+    }
+
+    private static List<RewardWriting.CountryRate> countryRatesOf(List<ShippingRule> rules) {
+        return rules.stream()
+                .map(rule -> new RewardWriting.CountryRate(
+                        rule.getCountryCode(), rule.getAmount(), rule.getAdditionalItemAmount(), rule.getPerKilogramAmount()))
+                .toList();
+    }
+
+    private static List<RewardWriting.ZoneRate> zoneRatesOf(List<ShippingZoneRule> rules) {
+        return rules.stream()
+                .map(rule -> new RewardWriting.ZoneRate(
+                        rule.getZoneId(), rule.getAmount(), rule.getAdditionalItemAmount(), rule.getPerKilogramAmount()))
+                .toList();
     }
 
     /** An omitted rate is free rather than unspecified. See {@code ShippingRate}. */
     private static BigDecimal orZero(BigDecimal amount) {
         return amount == null ? BigDecimal.ZERO : amount;
+    }
+
+    // ------------------------------------------------------------------
+    // Applying a patch
+    // ------------------------------------------------------------------
+
+    /**
+     * Every field of a patch but the composition, applied to {@code target} and checked.
+     *
+     * @return the uploads the tier no longer shows, for the caller to {@link #release} once it
+     *     is saving the tier rather than a copy of it
+     */
+    private List<UUID> applyPatch(RewardTier target, RewardPatch patch, UUID accountId) {
+        patch.title().ifPresent(title -> target.setTitle(requireTitle(title)));
+        patch.description().ifPresent(description -> target.setDescription(blankAsNull(description)));
+        patch.price().ifPresent(price -> {
+            Money accepted = requirePrice(price);
+            target.setPrice(accepted.amount(), accepted.currency());
+        });
+        patch.estimatedDelivery().ifPresent(target::setEstimatedDelivery);
+        patch.limitQuantity().ifPresent(limit -> target.setLimitQuantity(withinLimit(target, limit)));
+        patch.shippingType()
+                .ifPresent(type -> target.setShippingType(type == null ? ShippingType.NONE : type));
+        patch.earlyBird().ifPresent(early -> target.setEarlyBird(requireBoolean("isEarlyBird", early)));
+        patch.featured().ifPresent(featured -> target.setFeatured(requireBoolean("isFeatured", featured)));
+        patch.addon().ifPresent(addon -> target.setAddon(requireBoolean("isAddon", addon)));
+        patch.secret().ifPresent(secret -> {
+            if (requireBoolean("isSecret", secret)) {
+                target.makeSecret();
+            } else {
+                target.makePublic();
+            }
+        });
+        List<UUID> released = new ArrayList<>();
+        patch.imageMediaId().ifPresent(mediaId -> released.add(replaceImage(target, accountId, mediaId)));
+        patch.videoMediaId().ifPresent(mediaId -> released.add(replaceVideo(target, accountId, mediaId)));
+
+        if (patch.changesAvailability()) {
+            Instant from = patch.availableFrom().isPresent()
+                    ? patch.availableFrom().value()
+                    : target.getAvailableFrom();
+            Instant until = patch.availableUntil().isPresent()
+                    ? patch.availableUntil().value()
+                    : target.getAvailableUntil();
+            applyAvailability(target, from, until);
+        }
+
+        requireConsistent(target);
+        released.removeIf(Objects::isNull);
+        return released;
+    }
+
+    /**
+     * A patch applied to what a launched campaign's revision proposes for an approved tier,
+     * checked as it would be on the tier, and nothing released, because the tier still shows
+     * the public what it showed. What the revision replaces is released when a moderator
+     * approves it.
+     */
+    private RewardWriting proposed(RewardTier tier, RewardWriting before, RewardPatch patch, UUID accountId) {
+        RewardTier draft = RewardTierWritings.draftOf(tier, before);
+        applyPatch(draft, patch, accountId);
+        List<RewardWriting.Line> lines = before.items();
+        if (patch.items().isPresent()) {
+            lines = new ArrayList<>();
+            for (Map.Entry<UUID, Integer> line : desiredComposition(tier.getProjectId(), itemsOf(patch)).entrySet()) {
+                lines.add(new RewardWriting.Line(line.getKey(), line.getValue()));
+            }
+        }
+        return RewardTierWritings.writingOf(draft, lines, before.shippingRules(), before.zoneRates());
+    }
+
+    private static List<RewardContent> itemsOf(RewardPatch patch) {
+        return patch.items().value() == null ? List.of() : patch.items().value();
+    }
+
+    /**
+     * Locks the campaign before a change to a launched campaign's tier and reads the tier again
+     * behind the lock, so that one approved, or deleted, a moment ago is seen as it now is.
+     */
+    private void lockAndReread(RewardTier tier) {
+        revisions.lockForRewards(tier.getProjectId());
+        try {
+            entityManager.refresh(tier);
+        } catch (EntityNotFoundException gone) {
+            throw new RewardNotFoundException(tier.getId());
+        }
+    }
+
+    /** A tier, its composition and its rates as they are now, to tell whether an edit changed it. */
+    private RewardWriting stateOf(RewardTier tier) {
+        return RewardTierWritings.writingOfRows(
+                tier,
+                compositions.findByRewardTier(tier.getId()),
+                shippingRules.findByRewardTier(tier.getId()),
+                shippingZoneRules.findByRewardTier(tier.getId()));
     }
 
     // ------------------------------------------------------------------
@@ -560,27 +720,6 @@ public class RewardService {
         }
         tier.setVideoMediaId(claimVideo(accountId, mediaId));
         return previous;
-    }
-
-    /**
-     * A patch's title, description, picture and clip applied to a launched campaign's writing
-     * for the tier, as its revision holds it: checked as they would be on the tier, and nothing
-     * released, because the tier still shows the public what it showed. What the revision
-     * replaces is released when a moderator approves it.
-     */
-    private RewardWriting edited(RewardWriting writing, RewardPatch patch, UUID accountId) {
-        String title = patch.title().isPresent() ? requireTitle(patch.title().value()) : writing.title();
-        String description =
-                patch.description().isPresent() ? blankAsNull(patch.description().value()) : writing.description();
-        UUID image = writing.imageMediaId();
-        if (patch.imageMediaId().isPresent() && !Objects.equals(patch.imageMediaId().value(), image)) {
-            image = claimImage(accountId, patch.imageMediaId().value());
-        }
-        UUID video = writing.videoMediaId();
-        if (patch.videoMediaId().isPresent() && !Objects.equals(patch.videoMediaId().value(), video)) {
-            video = claimVideo(accountId, patch.videoMediaId().value());
-        }
-        return new RewardWriting(title, description, image, video);
     }
 
     /**
@@ -632,41 +771,21 @@ public class RewardService {
         }
     }
 
-    private MediaLibrary.MediaView imageOf(RewardWriting writing) {
-        return writing.imageMediaId() == null ? null : media.viewOf(writing.imageMediaId()).orElse(null);
-    }
-
-    private MediaLibrary.VideoView videoOf(RewardWriting writing) {
-        return writing.videoMediaId() == null ? null : media.videoViewOf(writing.videoMediaId()).orElse(null);
-    }
-
-    /** What the creator is editing for the tier: the tier's own writing, or its revision's. */
-    private RewardWriting writingOf(RewardTier tier, EditLocks locks) {
-        RewardWriting shown = RewardTierWritings.writingOf(tier);
-        if (!locks.rewardWritingHeld()) {
-            return shown;
-        }
-        return revisions.heldRewardWriting(tier.getProjectId()).getOrDefault(tier.getId(), shown);
-    }
-
     // ------------------------------------------------------------------
     // Composition
     // ------------------------------------------------------------------
 
     /**
-     * Makes the tier contain exactly these items, in these quantities.
-     *
-     * <p>A diff rather than a delete-and-reinsert. An item that stays keeps its row
-     * and has its quantity changed, which leaves the composition's creation
-     * timestamps meaning what they say and avoids the ordering problem that
-     * delete-then-insert has inside one Hibernate flush.
+     * The composition a creator asked for, checked: every line names one of the campaign's
+     * items, once, at least once over. Written by {@link RewardTierWritings#writeComposition},
+     * or proposed in a launched campaign's revision.
      *
      * <p>Every identifier is checked against the campaign, so an item belonging to
      * somebody else's campaign is a 400 naming it. The composite foreign key refuses
      * the same row — that is what actually makes it impossible — and this is what
      * makes the refusal answerable.
      */
-    private void replaceComposition(RewardTier tier, List<RewardContent> contents) {
+    private Map<UUID, Integer> desiredComposition(UUID projectId, List<RewardContent> contents) {
         Map<UUID, Integer> desired = new LinkedHashMap<>();
         for (RewardContent content : contents) {
             if (content == null || content.itemId() == null) {
@@ -685,8 +804,8 @@ public class RewardService {
         }
 
         if (!desired.isEmpty()) {
-            Set<UUID> belonging = items.findByProjectIdAndIdIn(tier.getProjectId(), desired.keySet()).stream()
-                    .map(item -> item.getId())
+            Set<UUID> belonging = items.findByProjectIdAndIdIn(projectId, desired.keySet()).stream()
+                    .map(Item::getId)
                     .collect(Collectors.toCollection(HashSet::new));
             List<UUID> foreign =
                     desired.keySet().stream().filter(id -> !belonging.contains(id)).toList();
@@ -695,24 +814,7 @@ public class RewardService {
                         "items", "Those items are not part of this campaign: " + foreign + ".");
             }
         }
-
-        Map<UUID, RewardTierItem> existing = compositions.findByRewardTier(tier.getId()).stream()
-                .collect(Collectors.toMap(RewardTierItem::getItemId, Function.identity()));
-
-        desired.forEach((itemId, quantity) -> {
-            RewardTierItem stored = existing.get(itemId);
-            if (stored == null) {
-                compositions.save(RewardTierItem.of(tier.getProjectId(), tier.getId(), itemId, quantity));
-            } else {
-                stored.changeQuantityTo(quantity);
-            }
-        });
-
-        existing.forEach((itemId, stored) -> {
-            if (!desired.containsKey(itemId)) {
-                compositions.delete(stored);
-            }
-        });
+        return desired;
     }
 
     // ------------------------------------------------------------------
@@ -720,68 +822,125 @@ public class RewardService {
     // ------------------------------------------------------------------
 
     private RewardDetail detailOf(RewardTier tier, EditLocks locks) {
-        RewardWriting writing = writingOf(tier, locks);
-        return new RewardDetail(
-                tier,
-                compositions.findByRewardTier(tier.getId()),
-                shippingRules.findByRewardTier(tier.getId()),
-                shippingZoneRules.findByRewardTier(tier.getId()),
-                locks,
-                writing,
-                imageOf(writing),
-                videoOf(writing));
+        return draftsOf(tier.getProjectId(), List.of(tier), locks, false).get(0);
     }
 
     /**
-     * A whole reward list with its compositions, rates and media, in six queries, and a seventh
-     * for the revision on a launched campaign.
+     * Reward tiers as their creator is editing them, with their compositions, rates and media,
+     * in six queries for a whole list, and a few more for the revision on a launched campaign.
      *
      * <p>Not one query per tier. A campaign with forty tiers is eighty extra round
      * trips on every load of the rewards tab, and an N+1 over a list this central is
      * only noticed once there are enough sessions for it to matter.
+     *
+     * <p>On a launched campaign each tier is shown as the campaign's revision would leave it,
+     * marked with what waits for it, and the list is in the order the revision proposes. A
+     * line for an item or a zone deleted since it was proposed is left out, as approval leaves
+     * it out.
+     *
+     * @param whole whether {@code tiers} is the campaign's whole list, so that a tier's place in
+     *     it is its position
      */
-    private List<RewardDetail> detailsOf(List<RewardTier> tiers, EditLocks locks) {
+    private List<RewardDetail> draftsOf(UUID projectId, List<RewardTier> tiers, EditLocks locks, boolean whole) {
         if (tiers.isEmpty()) {
             return List.of();
         }
 
+        HeldRewards held = locks.rewardWritingHeld() ? revisions.heldRewards(projectId) : HeldRewards.NONE;
         List<UUID> ids = tiers.stream().map(RewardTier::getId).toList();
-        Map<UUID, RewardWriting> held = locks.rewardWritingHeld()
-                ? revisions.heldRewardWriting(tiers.get(0).getProjectId())
-                : Map.of();
-        Map<UUID, RewardWriting> writings = tiers.stream()
-                .collect(Collectors.toMap(
-                        RewardTier::getId, tier -> held.getOrDefault(tier.getId(), RewardTierWritings.writingOf(tier))));
         Map<UUID, List<RewardTierItem>> contents = compositions.findByRewardTiers(ids).stream()
                 .collect(Collectors.groupingBy(RewardTierItem::getRewardTierId));
         Map<UUID, List<ShippingRule>> rules = shippingRules.findByRewardTiers(ids).stream()
                 .collect(Collectors.groupingBy(ShippingRule::getRewardTierId));
         Map<UUID, List<ShippingZoneRule>> zoneRules = shippingZoneRules.findByRewardTiers(ids).stream()
                 .collect(Collectors.groupingBy(ShippingZoneRule::getRewardTierId));
-        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(writings.values().stream()
-                .map(RewardWriting::imageMediaId)
+        boolean anyChanged = ids.stream().anyMatch(held.changed()::containsKey);
+        Set<UUID> catalogue = anyChanged
+                ? items.findByProjectIdOrderByCreatedAtAsc(projectId).stream().map(Item::getId).collect(Collectors.toSet())
+                : Set.of();
+        Set<UUID> zones = anyChanged
+                ? shippingZones.findByProject(projectId).stream().map(ShippingZone::getId).collect(Collectors.toSet())
+                : Set.of();
+
+        List<Draft> drafts = new ArrayList<>();
+        for (RewardTier row : tiers) {
+            List<RewardTierItem> rowContents = contents.getOrDefault(row.getId(), List.of());
+            List<ShippingRule> rowRules = rules.getOrDefault(row.getId(), List.of());
+            List<ShippingZoneRule> rowZoneRules = zoneRules.getOrDefault(row.getId(), List.of());
+            RewardWriting proposed = row.isApproved() ? held.changed().get(row.getId()) : null;
+
+            Draft draft;
+            if (proposed == null) {
+                draft = new Draft(row, rowContents, rowRules, rowZoneRules, List.of());
+            } else {
+                RewardWriting kept = RewardTierWritings.withoutGone(proposed, catalogue, zones);
+                RewardTier view = RewardTierWritings.draftOf(row, kept);
+                draft = new Draft(
+                        view,
+                        RewardTierWritings.contentsOf(view, kept),
+                        RewardTierWritings.countryRulesOf(view, kept),
+                        RewardTierWritings.zoneRulesOf(view, kept),
+                        kept.changedFrom(RewardTierWritings.writingOfRows(row, rowContents, rowRules, rowZoneRules)));
+            }
+            drafts.add(draft);
+        }
+
+        List<UUID> order = held.order();
+        if (order != null) {
+            drafts.sort(Comparator.comparingInt(draft -> {
+                int position = order.indexOf(draft.tier().getId());
+                return position < 0 ? Integer.MAX_VALUE : position;
+            }));
+        }
+
+        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(drafts.stream()
+                .map(draft -> draft.tier().getImageMediaId())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
-        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(writings.values().stream()
-                .map(RewardWriting::videoMediaId)
+        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(drafts.stream()
+                .map(draft -> draft.tier().getVideoMediaId())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
 
-        return tiers.stream()
-                .map(tier -> {
-                    RewardWriting writing = writings.get(tier.getId());
-                    return new RewardDetail(
-                            tier,
-                            contents.getOrDefault(tier.getId(), List.of()),
-                            rules.getOrDefault(tier.getId(), List.of()),
-                            zoneRules.getOrDefault(tier.getId(), List.of()),
-                            locks,
-                            writing,
-                            writing.imageMediaId() == null ? null : images.get(writing.imageMediaId()),
-                            writing.videoMediaId() == null ? null : videos.get(writing.videoMediaId()));
-                })
-                .toList();
+        List<RewardDetail> details = new ArrayList<>();
+        for (int index = 0; index < drafts.size(); index++) {
+            Draft draft = drafts.get(index);
+            RewardTier tier = draft.tier();
+            int sortOrder = whole && order != null
+                    ? index
+                    : order != null && order.contains(tier.getId()) ? order.indexOf(tier.getId()) : tier.getSortOrder();
+            details.add(new RewardDetail(
+                    tier,
+                    draft.contents(),
+                    draft.rules(),
+                    draft.zoneRules(),
+                    locks,
+                    tier.getImageMediaId() == null ? null : images.get(tier.getImageMediaId()),
+                    tier.getVideoMediaId() == null ? null : videos.get(tier.getVideoMediaId()),
+                    sortOrder,
+                    pendingOf(tier, held, draft.changedFields()),
+                    draft.changedFields()));
+        }
+        return List.copyOf(details);
     }
+
+    private static RewardDetail.Pending pendingOf(RewardTier tier, HeldRewards held, List<String> changedFields) {
+        if (!tier.isApproved()) {
+            return RewardDetail.Pending.CREATED;
+        }
+        if (held.deleted().contains(tier.getId())) {
+            return RewardDetail.Pending.DELETED;
+        }
+        return changedFields.isEmpty() ? null : RewardDetail.Pending.CHANGED;
+    }
+
+    /** One tier as its creator is editing it, before its media are resolved. */
+    private record Draft(
+            RewardTier tier,
+            List<RewardTierItem> contents,
+            List<ShippingRule> rules,
+            List<ShippingZoneRule> zoneRules,
+            List<String> changedFields) {}
 
     // ------------------------------------------------------------------
     // Validation
@@ -812,7 +971,9 @@ public class RewardService {
      * </ul>
      *
      * <p>Equal is not a decrease and is allowed, which keeps an autosave that echoes
-     * the stored limit from being refused for changing nothing.
+     * the stored limit from being refused for changing nothing. The limit compared
+     * against is the one the public sees, not one a revision proposes: a raise that waits
+     * for review can be taken back down as far as what was approved.
      */
     private static void requireNothingLocked(RewardTier tier, EditLocks locks, RewardPatch patch) {
         if (patch.price().isPresent() && locks.rewardPriceLocked()) {

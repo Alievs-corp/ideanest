@@ -120,6 +120,13 @@ public class RewardTier {
     @Column(name = "video_media_id")
     private UUID videoMediaId;
 
+    /**
+     * False for a tier created on a launched campaign until a moderator approves it (#569).
+     * Nothing a backer or the public reads shows or accepts such a tier. V118.
+     */
+    @Column(name = "approved", nullable = false)
+    private boolean approved = true;
+
     @Version
     @Column(name = "version", nullable = false)
     private long version;
@@ -197,6 +204,35 @@ public class RewardTier {
         if (secret) {
             copy.makeSecret();
         }
+        return copy;
+    }
+
+    /**
+     * A copy of this tier that is not the row: the same identifier, counts and everything
+     * else, to be edited into what a launched campaign's revision proposes for it (#569) and
+     * shown, but never saved. Only an instance JPA loaded or was given is written.
+     */
+    public RewardTier draftCopy() {
+        RewardTier copy = new RewardTier(id, projectId, title, amount, currency, sortOrder);
+        copy.description = description;
+        copy.estimatedDelivery = estimatedDelivery;
+        copy.limitQuantity = limitQuantity;
+        copy.claimedQuantity = claimedQuantity;
+        copy.reservedQuantity = reservedQuantity;
+        copy.shippingType = shippingType;
+        copy.earlyBird = earlyBird;
+        copy.featured = featured;
+        copy.secret = secret;
+        copy.secretToken = secretToken;
+        copy.addon = addon;
+        copy.availableFrom = availableFrom;
+        copy.availableUntil = availableUntil;
+        copy.imageMediaId = imageMediaId;
+        copy.videoMediaId = videoMediaId;
+        copy.approved = approved;
+        copy.version = version;
+        copy.createdAt = createdAt;
+        copy.updatedAt = updatedAt;
         return copy;
     }
 
@@ -354,6 +390,28 @@ public class RewardTier {
     public void makePublic() {
         this.secret = false;
         this.secretToken = null;
+    }
+
+    /**
+     * Makes the tier secret with this link, or public when it is null: what a moderator
+     * approved, which may be a link minted when the creator made the tier secret (#569).
+     */
+    public void keepSecretBehind(String token) {
+        this.secret = token != null;
+        this.secretToken = token;
+    }
+
+    public boolean isApproved() {
+        return approved;
+    }
+
+    /** A tier created on a launched campaign, which the public does not see until approval. */
+    public void withhold() {
+        this.approved = false;
+    }
+
+    public void approve() {
+        this.approved = true;
     }
 
     public boolean isAddon() {

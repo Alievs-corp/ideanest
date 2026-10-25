@@ -2469,23 +2469,52 @@ individual agreement can differ without a deployment.
 > `REJECTED` campaigns are edited in place, as before; the frozen fields above still answer
 > `409`.
 >
-> **A reward tier's writing is held in the same revision (#559).** On a launched campaign,
-> `PATCH /v1/rewards/{id}` writes a tier's `title`, `description`, `imageMediaId` and
-> `videoMediaId` to the campaign's open revision instead of `reward_tiers`, keyed by tier,
-> so the public catalogue, checkout and every pledge keep reading what was approved. The
-> rest of the tier (delivery, shipping, flags, availability, a raised quantity, items,
-> rates) is still written at once, and the price and a lowered quantity still answer
-> `409`; stock and pledges are untouched. The creator's reward reads return the draft and
-> name the held fields in `revisionChangedFields`; the revision's `changedFields` gains
-> `rewards`, and a moderator's `GET .../revisions/{id}` lists each changed tier's live and
-> proposed writing under `rewards`. A revision holds only the tiers it changes, not the
-> whole list, because tiers are still created, deleted and reordered at once while it is
-> open: a tier deleted since is ignored, and a revision left changing nothing cannot be
-> submitted (`409 REVISION_NOT_AVAILABLE`, `NO_CHANGES`). Approval writes the tiers in the
-> same transaction as the campaign and releases a replaced picture or clip once nothing
-> else shows it. Creating, duplicating and deleting a tier on a launched campaign are not
-> held: they were allowed before #557, and holding a new tier would mean teaching the
-> public catalogue and checkout about tiers that do not exist yet.
+> **Every change to a launched campaign's reward tiers is held in the same revision (#559,
+> #569).** On a launched campaign nothing the creator does to a tier reaches `reward_tiers`
+> as the public reads it until a moderator approves the campaign's revision:
+>
+> - `PATCH /v1/rewards/{id}` and `PUT /v1/rewards/{id}/shipping-rules` on an approved tier
+>   write the tier's whole proposed state to the revision, keyed by tier: its writing,
+>   delivery, raised quantity, shipping type, flags, secrecy, availability, composition
+>   and country and zone rates. The price and a quantity below the one the public sees
+>   still answer `409`; a raise that waits can be taken back down as far as that.
+> - `POST /v1/projects/{id}/rewards` and `POST /v1/rewards/{id}/duplicate` insert a real
+>   row with `reward_tiers.approved = false` (V118), so its items, rates and media keep
+>   the constraints of any other tier; edits to it write the row, and send a submitted
+>   revision back to a draft. The revision names it under `createdRewards`.
+> - `DELETE /v1/rewards/{id}` on an approved tier adds it to `deletedRewards`; it stays
+>   public, and `POST /v1/rewards/{id}/restore` takes the deletion back. A tier with
+>   backers is still `409 REWARD_HAS_BACKERS`. A created tier is deleted at once.
+> - `PATCH /v1/projects/{id}/rewards/reorder` keeps the order, created tiers included, as
+>   `rewardOrder`. A tier whose deletion waits may be named or left out.
+>
+> **What the public reaches reads approved tiers only.** The public catalogue (and so the
+> campaign page, with or without a secret link), the price a pledge is quoted, the
+> selection a checkout and an add-on are priced from, the alternatives offered for a
+> sold-out tier, the checklist's prices, and the stock statements themselves
+> (`reservePlaces`, `claimPlaces` carry `AND approved`) all leave out an unapproved tier,
+> which is answered as one that does not exist (`404 REWARD_NOT_FOUND` on a pledge). No
+> other module reads `reward_tiers`: discovery, search and the sitemap never did.
+>
+> The creator's reward reads (`GET /v1/projects/{id}/rewards` and every response of a
+> reward write) return the draft: created tiers listed, edits and the order applied, and a
+> tier whose deletion waits still listed. Each carries `pending` — `created`, `changed`,
+> `deleted` or null — and a changed one names its fields in `revisionChangedFields`. The
+> revision's `changedFields` gains `rewards` for any of the four. A moderator's
+> `GET .../revisions/{id}` lists under `rewards` every tier the revision touches, with
+> `changes` (`created`, `deleted`, or `changed` and/or `reordered`, a tier being reordered
+> when its place among the approved tiers that stay moves), `livePosition`,
+> `proposedPosition`, `price`, `changedFields`, and the whole `live` and `proposed` tier
+> (null for a created and a deleted tier respectively), with item and zone names.
+>
+> Approval applies all of it in the transaction that applies the campaign: created tiers
+> are approved, changed ones written, deleted ones deleted, the order written from zero,
+> and a replaced picture or clip released once nothing else shows it. A tier somebody
+> backed, reserved or surveyed after its deletion was proposed is kept, and the audit row
+> says so. A line for an item or zone deleted since it was proposed is dropped. Refusing,
+> discarding, or a revision withdrawn because it came back to what the public sees deletes
+> the created rows and their media. A revision saved before #569 holds only a tier's four
+> writing fields; it still reads, and the rest of such a tier is taken as it is.
 >
 > **A refused edit is `409`, not `400`.** `PROJECT_FIELD_LOCKED` and
 > `REWARD_FIELD_LOCKED`, each with the field and the campaign's state in `meta`. A
@@ -3446,8 +3475,10 @@ be forgotten.
 #### `project_revisions` (V117)
 
 An edit to a launched campaign waiting for a moderator (§5.3). `content` is the whole of the
-editable writing as the creator wants it, not a diff, plus under `rewards` the writing of the
-reward tiers it changes, keyed by tier id (#559; no migration, the column is `jsonb`); `status` is `DRAFT`, `PENDING`,
+editable writing as the creator wants it, not a diff, plus what it changes about the reward
+tiers: under `rewards` the whole proposed state of each approved tier it changes, keyed by tier
+id (#559, #569; no migration, the column is `jsonb`; an entry written before #569 has only the
+writing), `deletedRewards`, `createdRewards` and `rewardOrder`; `status` is `DRAFT`, `PENDING`,
 `APPROVED`, `REJECTED` or `WITHDRAWN`; a partial unique index allows one `DRAFT` or `PENDING`
 row per campaign. A rejection carries the moderator's `reason`.
 
@@ -3518,7 +3549,11 @@ Atomic units: `id`, `project_id`, `name`, `description`, `image_id`,
 `estimated_delivery`, `limit_quantity`, `claimed_quantity`, `reserved_quantity`,
 `shipping_type`, `is_early_bird`, `is_featured`, `is_secret`, `secret_token`,
 `is_addon`, `sort_order`, `available_from`, `available_until`, `image_media_id`,
-`video_media_id`, `version`.
+`video_media_id`, `approved`, `version`.
+
+`approved` (V118) is false for a tier created on a launched campaign until a moderator
+approves the campaign's revision (§5.3, #569). Every read a backer or the public reaches
+filters on it, and so do the two statements that take places.
 
 **Constraint:** `claimed_quantity + reserved_quantity <= limit_quantity`.
 

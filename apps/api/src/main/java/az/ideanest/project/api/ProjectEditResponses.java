@@ -79,26 +79,44 @@ public class ProjectEditResponses {
                 project.getUpdatedAt());
     }
 
-    /** The reward tiers a revision changes, with their pictures and clips resolved in two queries. */
-    public List<RevisionRewardBody> rewardsOf(List<ProjectRevisionService.RewardChange> changes) {
-        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(changes.stream()
-                .flatMap(change -> Stream.of(change.live().imageMediaId(), change.proposed().imageMediaId()))
+    /**
+     * The reward tiers a revision touches, with their pictures and clips resolved in two
+     * queries and their items and zones named.
+     */
+    public List<RevisionRewardBody> rewardsOf(List<ProjectRevisionService.RewardChange> changes, Map<UUID, String> names) {
+        List<RewardWriting> writings = changes.stream()
+                .flatMap(change -> Stream.of(change.live(), change.proposed()))
+                .filter(Objects::nonNull)
+                .toList();
+        Map<UUID, MediaLibrary.MediaView> images = media.viewsOf(writings.stream()
+                .map(RewardWriting::imageMediaId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
-        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(changes.stream()
-                .flatMap(change -> Stream.of(change.live().videoMediaId(), change.proposed().videoMediaId()))
+        Map<UUID, MediaLibrary.VideoView> videos = media.videoViewsOf(writings.stream()
+                .map(RewardWriting::videoMediaId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
         return changes.stream()
                 .map(change -> new RevisionRewardBody(
                         change.rewardId(),
-                        writingOf(change.live(), images, videos),
-                        writingOf(change.proposed(), images, videos)))
+                        change.changes(),
+                        change.livePosition(),
+                        change.proposedPosition(),
+                        change.price(),
+                        change.changedFields(),
+                        writingOf(change.live(), images, videos, names),
+                        writingOf(change.proposed(), images, videos, names)))
                 .toList();
     }
 
     private static RevisionRewardBody.RevisionRewardWriting writingOf(
-            RewardWriting writing, Map<UUID, MediaLibrary.MediaView> images, Map<UUID, MediaLibrary.VideoView> videos) {
+            RewardWriting writing,
+            Map<UUID, MediaLibrary.MediaView> images,
+            Map<UUID, MediaLibrary.VideoView> videos,
+            Map<UUID, String> names) {
+        if (writing == null) {
+            return null;
+        }
         MediaLibrary.MediaView image = writing.imageMediaId() == null ? null : images.get(writing.imageMediaId());
         MediaLibrary.VideoView video = writing.videoMediaId() == null ? null : videos.get(writing.videoMediaId());
         return new RevisionRewardBody.RevisionRewardWriting(
@@ -108,7 +126,32 @@ public class ProjectEditResponses {
                         ? null
                         : new RevisionRewardBody.RevisionRewardImage(
                                 image.id(), image.url(), image.width(), image.height(), image.blurDataUrl()),
-                video == null ? null : CampaignVideoBody.of(CampaignVideo.of(video)));
+                video == null ? null : CampaignVideoBody.of(CampaignVideo.of(video)),
+                writing.estimatedDelivery(),
+                writing.limitQuantity(),
+                writing.shippingType(),
+                writing.earlyBird(),
+                writing.featured(),
+                writing.secret(),
+                writing.addon(),
+                writing.availableFrom(),
+                writing.availableUntil(),
+                writing.items().stream()
+                        .map(line -> new RevisionRewardBody.RevisionRewardItem(
+                                line.itemId(), names.get(line.itemId()), line.quantity()))
+                        .toList(),
+                writing.shippingRules().stream()
+                        .map(rate -> new RevisionRewardBody.RevisionShippingRule(
+                                rate.countryCode(), rate.amount(), rate.additionalItemAmount(), rate.perKilogramAmount()))
+                        .toList(),
+                writing.zoneRates().stream()
+                        .map(rate -> new RevisionRewardBody.RevisionShippingZoneRate(
+                                rate.zoneId(),
+                                names.get(rate.zoneId()),
+                                rate.amount(),
+                                rate.additionalItemAmount(),
+                                rate.perKilogramAmount()))
+                        .toList());
     }
 
     private CampaignVideoBody videoOf(Project project) {

@@ -4260,6 +4260,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/rewards/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rewardRestore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/rewards/{id}/shipping-rules": {
         parameters: {
             query?: never;
@@ -7104,10 +7120,17 @@ export interface components {
             submittedAt?: string;
         };
         RevisionRewardBody: {
+            changedFields?: string[];
+            changes?: string[];
             /** Format: uuid */
             id?: string;
             live?: components["schemas"]["RevisionRewardWriting"];
+            /** Format: int32 */
+            livePosition?: number;
+            price?: components["schemas"]["Money"];
             proposed?: components["schemas"]["RevisionRewardWriting"];
+            /** Format: int32 */
+            proposedPosition?: number;
         };
         RevisionRewardImage: {
             blurDataUrl?: string;
@@ -7119,11 +7142,48 @@ export interface components {
             /** Format: int32 */
             width?: number;
         };
+        RevisionRewardItem: {
+            /** Format: uuid */
+            itemId?: string;
+            name?: string;
+            /** Format: int32 */
+            quantity?: number;
+        };
         RevisionRewardWriting: {
+            /** Format: date-time */
+            availableFrom?: string;
+            /** Format: date-time */
+            availableUntil?: string;
             description?: string;
+            /** Format: date */
+            estimatedDelivery?: string;
             image?: components["schemas"]["RevisionRewardImage"];
+            isAddon?: boolean;
+            isEarlyBird?: boolean;
+            isFeatured?: boolean;
+            isSecret?: boolean;
+            items?: components["schemas"]["RevisionRewardItem"][];
+            /** Format: int32 */
+            limitQuantity?: number;
+            shippingRules?: components["schemas"]["RevisionShippingRule"][];
+            shippingType?: string;
+            shippingZoneRates?: components["schemas"]["RevisionShippingZoneRate"][];
             title?: string;
             video?: components["schemas"]["CampaignVideoBody"];
+        };
+        RevisionShippingRule: {
+            additionalItemAmount?: number;
+            amount?: number;
+            countryCode?: string;
+            perKilogramAmount?: number;
+        };
+        RevisionShippingZoneRate: {
+            additionalItemAmount?: number;
+            amount?: number;
+            perKilogramAmount?: number;
+            /** Format: uuid */
+            zoneId?: string;
+            zoneName?: string;
         };
         RewardImageBody: {
             blurDataUrl?: string;
@@ -7186,6 +7246,7 @@ export interface components {
             items?: components["schemas"]["RewardItemBody"][];
             /** Format: int32 */
             limitQuantity?: number;
+            pending?: string;
             price?: components["schemas"]["Money"];
             pricingLocked?: boolean;
             /** Format: uuid */
@@ -8314,7 +8375,10 @@ export type SchemaRevisionRejectionBody = components['schemas']['RevisionRejecti
 export type SchemaRevisionReviewResponse = components['schemas']['RevisionReviewResponse'];
 export type SchemaRevisionRewardBody = components['schemas']['RevisionRewardBody'];
 export type SchemaRevisionRewardImage = components['schemas']['RevisionRewardImage'];
+export type SchemaRevisionRewardItem = components['schemas']['RevisionRewardItem'];
 export type SchemaRevisionRewardWriting = components['schemas']['RevisionRewardWriting'];
+export type SchemaRevisionShippingRule = components['schemas']['RevisionShippingRule'];
+export type SchemaRevisionShippingZoneRate = components['schemas']['RevisionShippingZoneRate'];
 export type SchemaRewardImageBody = components['schemas']['RewardImageBody'];
 export type SchemaRewardItemBody = components['schemas']['RewardItemBody'];
 export type SchemaRewardPatchRequest = components['schemas']['RewardPatchRequest'];
@@ -15910,6 +15974,28 @@ export interface operations {
         responses: {
             /** @description Created */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RewardResponse"];
+                };
+            };
+        };
+    };
+    rewardRestore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
