@@ -4955,6 +4955,10 @@
           "title": "Bu kampaniya dəstək qəbul etmir",
           "detail": "Bağlanmış ola bilər, ya da hələ açılmayıb. Heç nə dəyişmədi."
         },
+        "OWN_PROJECT_PLEDGE": {
+          "title": "Bu kampaniyanın komandasındasınız",
+          "detail": "Kampaniyanın müəllifi və əməkdaşları ona dəstək verə bilməz. Heç nə dəyişmədi."
+        },
         "PLEDGE_CANNOT_BE_CANCELLED": {
           "title": "Təsdiqlənmiş dəstək geri götürülə bilməz",
           "detail": "Bu dəstəyi artıra bilərsiniz, amma ləğv edə bilməzsiniz. Heç nə dəyişmədi. Kampaniya uğur həddinin altında bitsə, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul qaytarılır."

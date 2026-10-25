@@ -143,7 +143,8 @@ function mutationHeaders(idempotencyKey: string): HeadersInit {
  * Refusals, as §10.4 problem details: `REWARD_SOLD_OUT` (409, with
  * `meta.availableAlternatives`), `PLEDGE_ALREADY_EXISTS` (409),
  * `IDEMPOTENCY_KEY_REUSED` (409), `SHIPPING_DESTINATION_UNPRICED` (422),
- * `CONTRIBUTION_BELOW_REWARD_PRICE` (422) and `PROJECT_NOT_LIVE` (409). Each is
+ * `CONTRIBUTION_BELOW_REWARD_PRICE` (422), `PROJECT_NOT_LIVE` (409) and, for the
+ * campaign's own creator or collaborators, `OWN_PROJECT_PLEDGE` (403, #575). Each is
  * given wording a backer can act on in `./failure`.
  *
  * And four the contract did not name, which #52 answered and both mutations can

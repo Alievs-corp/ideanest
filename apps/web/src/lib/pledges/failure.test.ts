@@ -102,6 +102,20 @@ describe('PLEDGE_MODIFIED', () => {
   });
 });
 
+describe('OWN_PROJECT_PLEDGE', () => {
+  it("is a dead end in our words, not a retry in the service's", () => {
+    const failure = describeFailure(refusal('OWN_PROJECT_PLEDGE', 403), COPY);
+
+    // #575: the caller works on the campaign. An unknown code would be offered a retry, which is
+    // the one button that cannot help, and its English title rather than the reader's language.
+    expect(failure.recovery).toBe('none');
+    expect(failure.title).toBe(COPY.codes.OWN_PROJECT_PLEDGE.title);
+    expect(failure.title).not.toBe('Refused');
+    expect(failure.retireKey).toBe(false);
+    expect(failure.clientBug).toBe(false);
+  });
+});
+
 describe('the catalogue behind the table', () => {
   it('has a title and a detail for every code this module answers for', () => {
     /*
