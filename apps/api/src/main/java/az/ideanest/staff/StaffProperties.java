@@ -8,6 +8,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @param bootstrapEmails accounts treated as holding {@code SUPER_ADMIN} by
  *     configuration rather than by a grant, by verified address.
+ *     <p><strong>"Verified" is a check, not a description (#577).</strong> An account
+ *     whose address is listed but unconfirmed is nobody here, because registration and
+ *     sign-in both accept an address its holder has not proven; {@code StaffDirectory}
+ *     has the argument.
  *     <p><strong>This is not a leftover of the list V48 replaced; it is the answer to
  *     the question that table cannot answer.</strong> Granting a role needs
  *     {@code ADMINISTER_STAFF}, which is conferred by a role, which has to be granted by

@@ -128,13 +128,18 @@ ideanest:
       schedule: "-"
 
   staff:
-    # One address, so the fail-closed default is exercised by every other
-    # account in the suite: any account that is not this one is refused, which
-    # is the assertion that matters. The moderator fixture registers exactly
-    # this address, and holds SUPER_ADMIN through the bootstrap -- so the
-    # suites written before #295 keep passing unchanged, and the ones that
-    # assert a narrower capability grant a role explicitly.
-    bootstrap-emails: moderator@ideanest.test
+    # Two addresses, so the fail-closed default is exercised by every other
+    # account in the suite: any account that is not one of these is refused,
+    # which is the assertion that matters. The moderator fixture registers the
+    # first, FixtureAdministratorInbox redeems its verification link, and it
+    # holds SUPER_ADMIN through the bootstrap -- so the suites written before
+    # #295 keep passing unchanged, and the ones that assert a narrower
+    # capability grant a role explicitly.
+    #
+    # The second belongs to BootstrapAdministratorApiTests alone (#577). Nothing
+    # verifies it on the suite's behalf, because what that suite asserts is
+    # that a listed address is nobody until its account has proven it.
+    bootstrap-emails: moderator@ideanest.test,unproven-administrator@ideanest.test
 
   obligation:
     # Disabled, exactly as every other schedule here is: `-` is Spring's own value for
