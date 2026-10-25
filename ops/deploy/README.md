@@ -129,6 +129,71 @@ charge can still need either (`docs/architecture.md` §9.4).
 proxy and by the server reads, so one API image and one web image run against
 staging and production alike.
 
+## The client's address behind Coolify's Traefik (#578)
+
+Every per-address limit in the API (sign-in, registration, password reset,
+search, referral visits) and the address on every session and audit row comes
+from `getRemoteAddr()`. Behind Traefik that is the proxy's address unless the API
+is told otherwise. Until #578 it was not told, so the whole site shared one
+bucket: five wrong passwords from anybody answered `/login` with `429` for
+everybody for fifteen minutes.
+
+**The API trusts `X-Forwarded-For` from private peers only.**
+`server.forward-headers-strategy: native` in `apps/api/src/main/resources/application.yml`
+installs Tomcat's `RemoteIpValve` with its default
+`server.tomcat.remoteip.internal-proxies`: loopback, the private ranges (10/8,
+172.16/12, 192.168/16), link-local, carrier-grade NAT (100.64/10) and their IPv6
+counterparts. A connection from one of those (Traefik, or the web container on
+the Coolify network) has its address replaced by the header's **right-most hop
+that is not private**. A connection from anywhere else is taken as the address it
+came from, and whatever header it sent is ignored. A client that puts its own
+value in front of a real proxy's header has written to the left of the hop that
+is used. Do not set `internal-proxies` to a pattern that matches a public
+address, and do not change the strategy to `framework`: either lets a client
+choose its own bucket again.
+
+What that resolves to, per entry point:
+
+| Entry | Path | Address the API records |
+|---|---|---|
+| `api.ideyanest.com` (the mobile app, provider callbacks) | DNS-only, so Traefik's peer is the client | The client's |
+| `ideyanest.com/v1/*` (the browser) | Cloudflare's proxy, Traefik, then the web's `/v1` rewrite | **A Cloudflare edge address**, see below |
+| The web's server-side reads (`IDEANEST_API_ORIGIN`) | The web container, with no header | The web container's |
+
+The web's rewrite forwards the header unchanged. Next 16's external rewrite
+copies every incoming header to the API and adds no `X-Forwarded-For` hop of its
+own, so the API reads the header Traefik wrote. No change to `apps/web` is needed.
+
+**Behind Cloudflare, Traefik's peer is Cloudflare, not the reader.** By default
+Traefik does not trust `X-Forwarded-*` from a public peer: it drops the header
+Cloudflare sent and writes the edge address in its place. So browser traffic is
+counted per Cloudflare edge address. That is much better than one bucket for the
+whole site, but readers who reach the site through the same edge still share one.
+Two settings, both the owner's, make it per reader:
+
+1. **Coolify's proxy:** add Cloudflare's published ranges
+   (<https://www.cloudflare.com/ips/>) as `forwardedHeaders.trustedIPs` on the
+   `http` and `https` entry points, so Traefik keeps Cloudflare's header and
+   appends the edge address after it.
+2. **The API's environment:** `SERVER_TOMCAT_REMOTEIP_TRUSTEDPROXIES` set to the
+   same ranges, comma separated in CIDR form (Tomcat 11 accepts CIDR here), so
+   the valve passes over the edge hop and takes the one before it.
+
+Either one alone changes nothing: the API keeps recording the edge address. The
+cost of setting both is that requests from Cloudflare's address space are not
+only from Cloudflare's proxy. A Worker that anybody can deploy also sends from
+those ranges, and such a caller could then name the address it is counted as.
+That gap is much narrower than one bucket for everybody, but it is why this
+setting is an owner's decision and not the API's default. Neither setting has
+been checked against the live proxy from this repository.
+
+**Server-rendered pages count as the web container.** A page rendered on a cache
+miss calls `/v1/discover` or `/v1/search` from the web container without a
+reader, so those reads share the web container's search budget. They did before
+#578 as well, together with everybody else. Forwarding a reader's address there
+would mean reading request headers in pages that are deliberately static, so it
+is left as it is.
+
 ## Building the images by hand
 
 ```bash

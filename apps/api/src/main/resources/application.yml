@@ -140,6 +140,38 @@ server:
   # In-flight requests finish before the process exits. During a rolling deploy
   # the alternative is a truncated response to a real user.
   shutdown: graceful
+  # THE CLIENT IS WHO A PRIVATE-NETWORK PROXY SAYS IT IS, AND NOBODY ELSE -- issue #578.
+  #
+  # Every deployed request arrives through a proxy: Coolify's Traefik, and for the
+  # browser the web container's `/v1` rewrite as well. Without this, the address the
+  # container saw was the proxy's, so every per-address limit -- five sign-ins per
+  # fifteen minutes, five registrations, sixty searches a minute -- was one bucket
+  # shared by every visitor. Five wrong passwords from anybody answered `/login` with
+  # 429 for everybody, and the registration limit capped the whole site at five
+  # sign-ups per window. Session and audit rows named the proxy, not the actor.
+  #
+  # `native` is Tomcat's RemoteIpValve, and its trust rule is the point. It rewrites
+  # `getRemoteAddr()` from `X-Forwarded-For` only when the connection comes from
+  # `server.tomcat.remoteip.internal-proxies`, left at its default: the loopback,
+  # private, link-local and carrier-grade-NAT ranges (127/8, 10/8, 172.16/12,
+  # 192.168/16, 169.254/16, 100.64/10 and their IPv6 counterparts), which is where
+  # Traefik and the web container are. It reads the header from the right and stops
+  # at the first hop outside those ranges. So a client that connects directly is
+  # counted as the address it connected from, whatever header it sends, and a client
+  # that puts its own value in front of a real proxy's header has written to the left
+  # of the hop that is used. Never `framework`, and never a trust list that matches a
+  # public address: either one lets the client choose its bucket again, and the
+  # limiter is off.
+  #
+  # A public hop is where the valve stops, which behind Cloudflare's proxy is
+  # Cloudflare's edge rather than the reader. ops/deploy/README.md has what the
+  # deployment must add for that, and it is configuration, not a change here.
+  #
+  # The valve applies `X-Forwarded-Proto`, `-Host` and `-Port` from the same peers.
+  # Nothing in this service builds a URL or a cookie from the request's scheme or host
+  # (WEB_BASE_URL and the auth cookie settings are explicit), so today that only
+  # makes the request describe itself correctly.
+  forward-headers-strategy: native
   error:
     # An error page is not a debugging channel. Detail belongs in the logs.
     include-message: never

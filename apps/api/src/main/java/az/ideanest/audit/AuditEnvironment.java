@@ -25,7 +25,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * <p>Everything is null when there is no request: a scheduled sweep has no client,
  * and a row that invented one would be worse than a row that says so.
  *
- * @param sourceAddress the address the container saw
+ * @param sourceAddress the client's address as the container resolved it, behind
+ *     the proxy included; see {@code addressOf}
  * @param userAgent what the client called itself, unredacted here and redacted by
  *     {@link AuditLog} on the way to the column
  * @param requestId §18.1's {@code requestId}, as
@@ -74,15 +75,17 @@ public record AuditEnvironment(String sourceAddress, String userAgent, String re
     }
 
     /**
-     * The remote address as the container saw it.
+     * The remote address as the container resolved it.
      *
-     * <p>Deliberately not {@code X-Forwarded-For}, for {@code AuthController}'s
-     * reason and more so: that header is whatever the client typed, and an audit
-     * row naming an address of the actor's own choosing is worse than one naming
-     * none at all. Behind a load balancer the fix is
-     * {@code server.forward-headers-strategy}, set per environment where the proxy
-     * is known to be in front (#139), which makes {@code getRemoteAddr} itself
-     * correct rather than teaching this class to trust a header.
+     * <p>Deliberately not {@code X-Forwarded-For} read here, for
+     * {@code ClientAddress}'s reason and more so: that header is whatever the client
+     * typed, and an audit row naming an address of the actor's own choosing is worse
+     * than one naming none at all. {@code server.forward-headers-strategy: native} in
+     * {@code application.yml} (#578) makes {@code getRemoteAddr} itself correct behind
+     * the proxy, rather than teaching this class to trust a header: Tomcat takes the
+     * header only from a private-network peer, and only its right-most hop that is not
+     * one, so the value is the proxy's account of the client and never the client's
+     * account of itself.
      */
     private static String addressOf(HttpServletRequest request) {
         String address = request.getRemoteAddr();

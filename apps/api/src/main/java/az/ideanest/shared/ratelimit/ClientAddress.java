@@ -16,13 +16,17 @@ public final class ClientAddress {
     }
 
     /**
-     * The remote address as the container saw it.
+     * The remote address as the container resolved it.
      *
-     * <p>Deliberately not {@code X-Forwarded-For}. Trusting that header without a
-     * proxy in front means any client can pick its own rate-limit bucket by inventing
-     * one, which turns the limiter off. Behind a load balancer the correct fix is
-     * {@code server.forward-headers-strategy}, set per environment where the proxy is
-     * known to be there (#139).
+     * <p>Deliberately not {@code X-Forwarded-For} read here. Trusting that header from
+     * anybody means any client can pick its own rate-limit bucket by inventing one,
+     * which turns the limiter off. {@code server.forward-headers-strategy: native} in
+     * {@code application.yml} (#578) is what makes this the client's address behind
+     * the proxy: Tomcat rewrites {@code getRemoteAddr} from the header only when the
+     * connection comes from a private-network proxy, and takes the right-most hop that
+     * is not one. A caller that reaches the container directly is still counted as the
+     * address it connected from. One rule in the container, rather than a header
+     * parser in every class that needs an address.
      */
     public static String of(HttpServletRequest request) {
         String address = request.getRemoteAddr();
