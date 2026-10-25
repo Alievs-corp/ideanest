@@ -7,6 +7,7 @@ import az.ideanest.auth.infrastructure.SessionRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.AdjustableClock;
+import az.ideanest.user.application.UserDirectory;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
@@ -63,6 +64,9 @@ class TwoFactorApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private DataSource dataSource;
+
+    @Autowired
+    private UserDirectory directory;
 
     private JdbcTemplate jdbc;
 
@@ -370,6 +374,51 @@ class TwoFactorApiTests extends AbstractIntegrationTest {
     }
 
     // ------------------------------------------------------------------
+    // Suspension (#576)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a challenge issued before a suspension does not complete into a session")
+    void aChallengeIssuedBeforeASuspensionIsWorthNothing() {
+        Enrolled account = enrolled();
+        String challenge = challengeFrom(signIn(account.email()));
+        suspend(account.account().userId());
+        int sessionsBefore = sessionsOf(account.account().userId());
+
+        // A wrong code is still the ordinary refusal: the suspension is told only to
+        // somebody who has proved both factors, like the password path tells it only to
+        // somebody who has the password.
+        assertThat(verify(challenge, wrongCode(account.secret()), null).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        // The hole this closes: the ban revoked every session, and the challenge the
+        // password had already bought used to turn into a new one.
+        Map<String, String> body = Map.of("challenge", challenge, "code", currentCode(account.secret()));
+        ResponseEntity<Map<String, Object>> verified = rest.exchange(
+                "/v1/auth/2fa/verify", HttpMethod.POST, new HttpEntity<>(body, jsonHeaders()), mapOfObjects());
+
+        assertThat(verified.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(verified.getBody()).containsEntry("code", "ACCOUNT_SUSPENDED");
+        assertThat(verified.getBody()).doesNotContainKey("accessToken");
+        // The default delivery is the cookie, so this is where a refresh token would be.
+        assertThat(verified.getHeaders().get(HttpHeaders.SET_COOKIE)).isNull();
+        assertThat(sessionsOf(account.account().userId())).isEqualTo(sessionsBefore);
+    }
+
+    @Test
+    @DisplayName("a suspended account with two-factor on is not handed a challenge for its password")
+    void aSuspendedAccountIsNotChallenged() {
+        Enrolled account = enrolled();
+        suspend(account.account().userId());
+
+        ResponseEntity<Map<String, Object>> signIn = signIn(account.email());
+
+        assertThat(signIn.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(signIn.getBody()).containsEntry("code", "ACCOUNT_SUSPENDED");
+        assertThat(signIn.getBody()).doesNotContainKey("challenge");
+    }
+
+    // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
 
@@ -493,6 +542,18 @@ class TwoFactorApiTests extends AbstractIntegrationTest {
     private byte[] secretOf(UUID userId) {
         return jdbc().queryForObject(
                 "SELECT secret FROM user_two_factor WHERE user_id = ?", byte[].class, userId);
+    }
+
+    /** AD-04's ban as the user module records it, by an account other than the one banned. */
+    private void suspend(UUID userId) {
+        directory.suspend(userId, registeredAndSignedIn().userId(), "Counterfeit goods.");
+    }
+
+    /** Every session the account has ever had, revoked or not: what a refusal must not add to. */
+    private int sessionsOf(UUID userId) {
+        Integer count = jdbc().queryForObject(
+                "SELECT count(*) FROM sessions WHERE user_id = ?", Integer.class, userId);
+        return count == null ? 0 : count;
     }
 
     private String currentCode(byte[] secret) {

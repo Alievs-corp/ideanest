@@ -104,10 +104,12 @@ public class SignInService {
 
         // §4.11's AD-04 (#104). After the password and before anything that issues
         // anything: a suspended account gets no session, no tokens, and no two-factor
-        // challenge. Checked here rather than at the token filter because the ban revokes
-        // every session in the same transaction, so this is the one way back in that is
-        // left -- and refusing it with the usual "those details are wrong" would send
-        // somebody round a password reset that cannot help them.
+        // challenge. Checked at sign-in rather than at the token filter because the ban
+        // revokes every session in the same transaction, so signing in again is the only
+        // way back -- and refusing it with the usual "those details are wrong" would send
+        // somebody round a password reset that cannot help them. Every path, not only
+        // this one, is refused again where the challenge and the session are issued
+        // (#576); this early check is what puts the suspension ahead of maintenance.
         if (user.suspended()) {
             throw new AccountSuspendedException();
         }

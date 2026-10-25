@@ -13,6 +13,7 @@ import az.ideanest.support.OidcProviderStub;
 import az.ideanest.support.RecordingVerificationNotifier;
 import az.ideanest.user.application.UserAccount;
 import az.ideanest.user.application.UserAccounts;
+import az.ideanest.user.application.UserDirectory;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,6 +71,9 @@ class SocialSignInApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private java.time.Clock clock;
+
+    @Autowired
+    private UserDirectory directory;
 
     // ------------------------------------------------------------------
     // Fixtures
@@ -593,30 +597,7 @@ class SocialSignInApiTests extends AbstractIntegrationTest {
         // An account that has proven its address here and turned two-factor on.
         EmailAddress email = uniqueEmail();
         UserAccount account = verifiedLocalAccount(email);
-
-        ResponseEntity<Map<String, Object>> signedIn = rest.exchange(
-                "/v1/auth/login",
-                HttpMethod.POST,
-                new HttpEntity<>(
-                        Map.of("email", email.value(), "password", PASSWORD, "tokenDelivery", "body"),
-                        jsonHeaders()),
-                new ParameterizedTypeReference<Map<String, Object>>() {});
-        String accessToken = (String) signedIn.getBody().get("accessToken");
-
-        HttpHeaders bearer = jsonHeaders();
-        bearer.setBearerAuth(accessToken);
-        rest.exchange(
-                "/v1/auth/2fa/enable",
-                HttpMethod.POST,
-                new HttpEntity<>(Map.of("password", PASSWORD), bearer),
-                new ParameterizedTypeReference<Map<String, Object>>() {});
-        byte[] secret = new org.springframework.jdbc.core.JdbcTemplate(dataSource)
-                .queryForObject("SELECT secret FROM user_two_factor WHERE user_id = ?", byte[].class, account.id());
-        rest.exchange(
-                "/v1/auth/2fa/confirm",
-                HttpMethod.POST,
-                new HttpEntity<>(Map.of("code", Totp.codeAt(secret, Totp.stepAt(clock.instant()))), bearer),
-                new ParameterizedTypeReference<Map<String, Object>>() {});
+        byte[] secret = enrolTwoFactor(email, account.id());
 
         // Now sign in with Google, as the same person, with the address the
         // provider has verified.
@@ -657,5 +638,153 @@ class SocialSignInApiTests extends AbstractIntegrationTest {
         assertThat(completed.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(accessTokenOf(completed)).isNotBlank();
         assertThat(userIdOf(completed)).isEqualTo(account.id());
+    }
+
+    // ------------------------------------------------------------------
+    // Suspension (#576)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a suspended account gets no session from the provider account already linked to it")
+    void aSuspendedAccountIsRefusedByItsLinkedProvider() {
+        String subject = uniqueSubject();
+        EmailAddress email = uniqueEmail();
+        ResponseEntity<Map<String, Object>> first = signInWithGoogle(OidcProviderStub.googleToken(subject)
+                .email(email.value())
+                .emailVerified(true)
+                .nonce(NONCE)
+                .sign());
+        UUID userId = userIdOf(first);
+        suspend(userId);
+        int sessionsBefore = sessionsOf(userId);
+
+        // The hole this closes: a ban revokes every session, and the account's own
+        // Google button used to hand it a fresh one a second later.
+        ResponseEntity<Map<String, Object>> again = signInWithCookie(OidcProviderStub.googleToken(subject)
+                .email(email.value())
+                .emailVerified(true)
+                .nonce(NONCE)
+                .sign());
+
+        assertSuspended(again);
+        assertThat(sessionsOf(userId)).isEqualTo(sessionsBefore);
+    }
+
+    @Test
+    @DisplayName("a suspended account is not linked to a provider and gets no session from it")
+    void aSuspendedAccountIsNotLinkedToANewProvider() {
+        EmailAddress email = uniqueEmail();
+        UserAccount local = verifiedLocalAccount(email);
+        suspend(local.id());
+        int sessionsBefore = sessionsOf(local.id());
+        String subject = uniqueSubject();
+
+        ResponseEntity<Map<String, Object>> response = signInWithCookie(OidcProviderStub.googleToken(subject)
+                .email(email.value())
+                .emailVerified(true)
+                .nonce(NONCE)
+                .sign());
+
+        assertSuspended(response);
+        assertThat(sessionsOf(local.id())).isEqualTo(sessionsBefore);
+        // Refused as a whole: a link left behind would be a way back in the day the
+        // check moved, and it was made by somebody the platform had just stopped.
+        assertThat(identities.findByProviderAndSubject(IdentityProvider.GOOGLE, subject))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("a suspended account with two-factor on is not handed a challenge by a provider sign-in")
+    void aSuspendedAccountIsNotChallengedByAProvider() {
+        EmailAddress email = uniqueEmail();
+        UserAccount account = verifiedLocalAccount(email);
+        enrolTwoFactor(email, account.id());
+        suspend(account.id());
+        int sessionsBefore = sessionsOf(account.id());
+
+        ResponseEntity<Map<String, Object>> response = signInWithCookie(OidcProviderStub.googleToken(uniqueSubject())
+                .email(email.value())
+                .emailVerified(true)
+                .nonce(NONCE)
+                .sign());
+
+        // "No session, no tokens, no two-factor challenge", as the password path has
+        // said since #104: asking for a code only to refuse after it is the loop the
+        // 403 exists to avoid.
+        assertSuspended(response);
+        assertThat(response.getBody()).doesNotContainKey("challenge");
+        assertThat(outstandingChallengesOf(account.id())).isZero();
+        assertThat(sessionsOf(account.id())).isEqualTo(sessionsBefore);
+    }
+
+    /** A provider sign-in with the default delivery, so a refresh cookie would show. */
+    private ResponseEntity<Map<String, Object>> signInWithCookie(String idToken) {
+        return rest.exchange(
+                "/v1/auth/oauth/google",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("idToken", idToken, "nonce", NONCE), jsonHeaders()),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    private static void assertSuspended(ResponseEntity<Map<String, Object>> response) {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).containsEntry("code", "ACCOUNT_SUSPENDED");
+        assertThat(response.getBody()).doesNotContainKey("accessToken");
+        assertThat(response.getHeaders().get(HttpHeaders.SET_COOKIE)).isNull();
+    }
+
+    /** AD-04's ban as the user module records it, by an account other than the one banned. */
+    private void suspend(UUID userId) {
+        UUID moderator = verifiedLocalAccount(uniqueEmail()).id();
+        directory.suspend(userId, moderator, "Counterfeit goods.");
+    }
+
+    /** Every session the account has ever had, revoked or not: what a refusal must not add to. */
+    private int sessionsOf(UUID userId) {
+        Integer count = new org.springframework.jdbc.core.JdbcTemplate(dataSource)
+                .queryForObject("SELECT count(*) FROM sessions WHERE user_id = ?", Integer.class, userId);
+        return count == null ? 0 : count;
+    }
+
+    private int outstandingChallengesOf(UUID userId) {
+        Integer count = new org.springframework.jdbc.core.JdbcTemplate(dataSource)
+                .queryForObject(
+                        "SELECT count(*) FROM two_factor_challenges WHERE user_id = ? AND consumed_at IS NULL",
+                        Integer.class,
+                        userId);
+        return count == null ? 0 : count;
+    }
+
+    /**
+     * Two-factor switched on and confirmed for an account with a password, the way its
+     * owner would: sign in, enable, confirm with the current code.
+     *
+     * @return the secret, as the server stores it
+     */
+    private byte[] enrolTwoFactor(EmailAddress email, UUID userId) {
+        ResponseEntity<Map<String, Object>> signedIn = rest.exchange(
+                "/v1/auth/login",
+                HttpMethod.POST,
+                new HttpEntity<>(
+                        Map.of("email", email.value(), "password", PASSWORD, "tokenDelivery", "body"),
+                        jsonHeaders()),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+        String accessToken = (String) signedIn.getBody().get("accessToken");
+
+        HttpHeaders bearer = jsonHeaders();
+        bearer.setBearerAuth(accessToken);
+        rest.exchange(
+                "/v1/auth/2fa/enable",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("password", PASSWORD), bearer),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+        byte[] secret = new org.springframework.jdbc.core.JdbcTemplate(dataSource)
+                .queryForObject("SELECT secret FROM user_two_factor WHERE user_id = ?", byte[].class, userId);
+        rest.exchange(
+                "/v1/auth/2fa/confirm",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("code", Totp.codeAt(secret, Totp.stepAt(clock.instant()))), bearer),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+        return secret;
     }
 }

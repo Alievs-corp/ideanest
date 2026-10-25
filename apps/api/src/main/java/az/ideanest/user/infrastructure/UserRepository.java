@@ -161,7 +161,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     /**
      * The row, locked until the transaction ends.
      *
-     * <p>The one place a lock is taken. Anonymisation reads the row, decides
+     * <p>The one place a write lock is taken. Anonymisation reads the row, decides
      * whether it is due, and overwrites it; two instances running the job at the
      * same moment would otherwise both read a due row and both proceed. With the
      * lock the second one waits, re-reads, finds the work already done, and does
@@ -175,4 +175,25 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") UUID id);
+
+    /**
+     * Whether the account is suspended, read from the row as it is now and share-locked
+     * until the transaction ends — #576.
+     *
+     * <p>A scalar rather than the entity on purpose. Sign-in has usually loaded this user
+     * already in the same transaction, and a locking query that returns an entity the
+     * persistence context already holds hands back the stale instance, not the row it just
+     * locked. {@code FOR SHARE} conflicts with the {@code FOR UPDATE} that
+     * {@link #findByIdForUpdate} takes for a ban, so one of the two waits for the other:
+     * either the ban commits first and this reads it, or the session this transaction is
+     * about to write is committed before the ban's revocation runs and is revoked with the
+     * rest.
+     *
+     * @return empty for an identifier that names nothing or a deleted account
+     */
+    @Query(
+            value = "SELECT suspended_at IS NOT NULL FROM users"
+                    + " WHERE id = :id AND deleted_at IS NULL FOR SHARE",
+            nativeQuery = true)
+    Optional<Boolean> isSuspendedForShare(@Param("id") UUID id);
 }
