@@ -1937,7 +1937,13 @@ Preferences are per category and per channel, with a digest option.
 > then refuses it with **403 and `ACCOUNT_SUSPENDED` rather than the usual 401**: the
 > refusal comes after the password has been verified, so it tells the person nothing they
 > did not know about their own account, and a 401 would put them in a loop with a password
-> that is correct. **An access token already issued is not revoked** — they are signed and
+> that is correct. **Every way in is refused, not only the password** (#576): a provider
+> sign-in, and the completion of a two-factor challenge issued before the ban, get the same
+> 403. It is checked where a challenge is issued and where every session starts
+> (`SessionStarter`) rather than in each sign-in path, so a new path cannot forget it, and
+> it reads the row share-locked against the ban's own lock, so a sign-in racing a ban
+> either sees it or commits its session before the ban's revocation runs.
+> **An access token already issued is not revoked** — they are signed and
 > short-lived, and a database lookup in the token filter would put a query on the hot path
 > of every endpoint to close a window of minutes.
 >
