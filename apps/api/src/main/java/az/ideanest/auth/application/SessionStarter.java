@@ -8,6 +8,7 @@ import az.ideanest.auth.domain.Session;
 import az.ideanest.auth.infrastructure.RefreshTokenRepository;
 import az.ideanest.auth.infrastructure.SessionRepository;
 import az.ideanest.shared.maintenance.MaintenanceGate;
+import az.ideanest.user.application.UserAccounts;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
@@ -36,6 +37,7 @@ public class SessionStarter {
     private final RefreshTokenRepository refreshTokens;
     private final AccessTokenIssuer accessTokens;
     private final MaintenanceGate maintenance;
+    private final UserAccounts users;
     private final AuthProperties properties;
     private final Clock clock;
 
@@ -44,12 +46,14 @@ public class SessionStarter {
             RefreshTokenRepository refreshTokens,
             AccessTokenIssuer accessTokens,
             MaintenanceGate maintenance,
+            UserAccounts users,
             AuthProperties properties,
             Clock clock) {
         this.sessions = sessions;
         this.refreshTokens = refreshTokens;
         this.accessTokens = accessTokens;
         this.maintenance = maintenance;
+        this.users = users;
         this.properties = properties;
         this.clock = clock;
     }
@@ -76,6 +80,17 @@ public class SessionStarter {
 
     @Transactional
     public IssuedTokens start(NewSession request) {
+        // #576, for the same reason as the line below it: a suspended account gets no
+        // session whichever way it arrived. Only the password path used to ask, so a ban
+        // was undone by the account's own Google button, or by finishing a two-factor
+        // challenge issued before it. Read fresh and share-locked rather than taken from
+        // the caller's copy of the account; UserAccounts.isSuspendedForSignIn says why.
+        // Before maintenance, so a banned reader is told the thing that will still be
+        // true when the window closes.
+        if (users.isSuspendedForSignIn(request.userId())) {
+            throw new AccountSuspendedException();
+        }
+
         // #214: every way in — password, two-factor completion, a provider's ID token —
         // ends here, so this is the one check that cannot be forgotten by a new one.
         maintenance.admitSession(request.userId());

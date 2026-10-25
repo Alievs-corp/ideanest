@@ -99,6 +99,16 @@ public class TwoFactorChallenges {
     @Transactional
     public SignInOutcome.TwoFactorRequired issue(
             UUID userId, String deviceLabel, String userAgent, String ipAddress, Instant now) {
+        // #576. No session, no tokens, and no challenge for a suspended account, here
+        // rather than in each caller because both sign-in paths end up here and the
+        // provider one used not to ask. Asking a banned person for a code only to refuse
+        // them after it would be the loop AccountSuspendedException exists to avoid.
+        // A ban that lands after this is caught when the challenge is spent:
+        // SessionStarter asks again.
+        if (users.isSuspendedForSignIn(userId)) {
+            throw new AccountSuspendedException();
+        }
+
         challenges.consumeOutstanding(userId, now);
 
         String value = SecureTokens.generate();

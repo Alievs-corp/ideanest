@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -65,6 +66,29 @@ public class UserAccounts {
     @Transactional(readOnly = true)
     public Optional<UserAccount> findById(UUID id) {
         return users.findByIdAndDeletedAtIsNull(id).map(UserAccounts::toAccount);
+    }
+
+    /**
+     * Whether trust and safety has stopped this account, asked by sign-in immediately
+     * before it issues anything — #576.
+     *
+     * <p><strong>Not {@code findById(id).suspended()}</strong>, for two reasons. The answer
+     * comes from the row as it is now rather than from whatever this transaction loaded
+     * earlier, which on the password path is from before Argon2 ran. And the row stays
+     * share-locked until the caller's transaction ends, so a ban that lands at the same
+     * moment either is seen here or waits, and then revokes the session this sign-in has
+     * just committed. Without the lock, the ban's revocation would miss a session that was
+     * still uncommitted when it ran, and that session would outlive the ban.
+     *
+     * <p>{@code MANDATORY} because a lock released when this method returned would protect
+     * nothing: it has to be held by the transaction that writes the session.
+     *
+     * @return false for an identifier that names no live account. Whether that is a refusal
+     *     is the caller's decision, and every sign-in path has already made it
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean isSuspendedForSignIn(UUID id) {
+        return users.isSuspendedForShare(id).orElse(false);
     }
 
     /**
