@@ -16,8 +16,16 @@
  *   2. an edit to a catalogue key the config does not read leaves the fingerprint as it was;
  *   3. an edit to `mobile.native.displayName`, which the config does read, changes it.
  *
- * Steps 2 and 3 edit `packages/messages/src/en.json` and put back its exact bytes afterwards,
- * also on Ctrl-C. Run it on its own, never beside a test run that reads the catalogue.
+ * It also holds the code-signing certificate in the hash (#579), which `fingerprint.config.js`
+ * adds because nothing else reads its bytes. A build embeds the certificate, so a different one
+ * must be a different runtime, or an update signed with the new key reaches builds that refuse it:
+ *
+ *   4. a different certificate changes the fingerprint;
+ *   5. the same certificate with CRLF line endings, as a Windows checkout has it, does not.
+ *
+ * Steps 2 and 3 edit `packages/messages/src/en.json`, steps 4 and 5 `certs/certificate.pem`, and
+ * each is put back to its exact bytes afterwards, also on Ctrl-C. Run it on its own, never beside
+ * a test run that reads the catalogue.
  *
  * Usage: `node apps/mobile/scripts/check-fingerprint.mjs`.
  */
@@ -28,20 +36,38 @@ import { fileURLToPath } from 'node:url';
 
 const mobile = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const catalogue = resolve(mobile, '../../packages/messages/src/en.json');
+const certificate = resolve(mobile, 'certs/certificate.pem');
+const fingerprintConfig = resolve(mobile, 'fingerprint.config.js');
 
 // @expo/fingerprint is expo-updates' dependency, not the app's: resolve it the way expo-updates does.
 const fromMobile = createRequire(join(mobile, 'package.json'));
 const fromUpdates = createRequire(fromMobile.resolve('expo-updates/package.json'));
 const { createFingerprintAsync } = fromUpdates('@expo/fingerprint');
 
-const fingerprint = () => createFingerprintAsync(mobile, { silent: true });
+// The fingerprint `require`s `fingerprint.config.js`, which reads the certificate as it loads, and
+// Node keeps the module: without dropping it first, steps 4 and 5 would hash the certificate as it
+// was on the first run.
+const fingerprint = () => {
+  delete fromMobile.cache[fingerprintConfig];
+  return createFingerprintAsync(mobile, { silent: true });
+};
 
 const original = readFileSync(catalogue);
+const originalCertificate = readFileSync(certificate);
 let edited = false;
+let certificateEdited = false;
 const restore = () => {
   if (edited) writeFileSync(catalogue, original);
+  if (certificateEdited) writeFileSync(certificate, originalCertificate);
   edited = false;
+  certificateEdited = false;
 };
+
+/** The certificate file replaced by `contents`, until `restore` puts the original back. */
+function writeCertificate(contents) {
+  certificateEdited = true;
+  writeFileSync(certificate, contents);
+}
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     restore();
@@ -110,9 +136,32 @@ try {
     failures.push('editing mobile.native.displayName left the fingerprint unchanged; the name would ship by OTA');
   }
 
+  const pem = originalCertificate.toString('utf8');
+  if (!pem.includes('-----BEGIN CERTIFICATE-----')) throw new Error(`${certificate} is not a PEM certificate`);
+  if (!before.sources.some((source) => source.type === 'contents' && source.id === 'codeSigningCertificate')) {
+    failures.push('the code-signing certificate is not a hash source; fingerprint.config.js did not load');
+  }
+
+  // Any change to the bytes stands in for another certificate: the hash cannot tell them apart.
+  writeCertificate(`${pem.trimEnd()}\n\n`);
+  const rotated = await fingerprint();
+  restore();
+  if (rotated.hash === before.hash) {
+    failures.push('another code-signing certificate left the fingerprint unchanged; its updates would reach builds that refuse them');
+  }
+
+  writeCertificate(pem.replace(/\r?\n/g, '\r\n'));
+  const crlf = await fingerprint();
+  restore();
+  if (crlf.hash !== before.hash) {
+    failures.push('the certificate with CRLF line endings changed the fingerprint; a Windows checkout would compute another runtime');
+  }
+
   console.log(`fingerprint ${before.hash}`);
   console.log(`  ${key.join('.')} edited: ${unrelated.hash === before.hash ? 'unchanged' : unrelated.hash}`);
   console.log(`  mobile.native.displayName edited: ${native.hash === before.hash ? 'unchanged' : native.hash}`);
+  console.log(`  certificate replaced: ${rotated.hash === before.hash ? 'unchanged' : rotated.hash}`);
+  console.log(`  certificate with CRLF: ${crlf.hash === before.hash ? 'unchanged' : crlf.hash}`);
 } finally {
   restore();
 }
@@ -121,4 +170,4 @@ if (failures.length > 0) {
   for (const failure of failures) console.error(`check-fingerprint: ${failure}`);
   process.exit(1);
 }
-console.log('check-fingerprint: catalogue files are out of the hash, the native strings are in it');
+console.log('check-fingerprint: catalogue files are out of the hash, the native strings and the certificate are in it');

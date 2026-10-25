@@ -285,6 +285,37 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # Every build verifies an update against `apps/mobile/certs/certificate.pem`
+      # and refuses one that its private key did not sign (#579), so the key is
+      # what lets this job publish and the Expo account alone no longer does. It
+      # lives only in the `mobile` environment's EXPO_UPDATES_PRIVATE_KEY secret
+      # and in a file in the runner's temporary directory, readable by this user
+      # only, for as long as the job runs.
+      #
+      # Unlike EXPO_TOKEN, a missing key fails the job. An unsigned update would
+      # still be published, and then refused by every phone: a green run that
+      # delivered nothing. A key that is not the certificate's fails for the same
+      # reason, before anything is published.
+      - name: Write the update signing key
+        id: key
+        if: steps.eas.outputs.configured == 'true'
+        env:
+          EXPO_UPDATES_PRIVATE_KEY: ${{ secrets.EXPO_UPDATES_PRIVATE_KEY }}
+        run: |
+          if [ -z "$EXPO_UPDATES_PRIVATE_KEY" ]; then
+            echo "::error::EXPO_UPDATES_PRIVATE_KEY is not set in the mobile environment. Builds refuse an unsigned update, so none was published. See apps/mobile/README.md."
+            exit 1
+          fi
+          umask 077
+          key="$RUNNER_TEMP/expo-updates-private-key.pem"
+          printf '%s\n' "$EXPO_UPDATES_PRIVATE_KEY" > "$key"
+          certified="$(openssl x509 -in apps/mobile/certs/certificate.pem -noout -pubkey)"
+          if ! held="$(openssl pkey -in "$key" -pubout 2>/dev/null)" || [ "$held" != "$certified" ]; then
+            echo "::error::EXPO_UPDATES_PRIVATE_KEY is not the private key of apps/mobile/certs/certificate.pem. Builds would refuse what it signs, so no update was published. See apps/mobile/README.md."
+            exit 1
+          fi
+          echo "path=$key" >> "$GITHUB_OUTPUT"
+
       # `--environment` loads the EAS environment variables the channel's
       # builds were made with (the provider sign-ins, for one), for the reason
       # the export step above gives: a different evaluation is a different
@@ -299,11 +330,12 @@ jobs:
           ENVIRONMENT: ${{ inputs.profile == 'github' && 'production' || inputs.profile }}
           ROLLOUT: ${{ inputs.rollout }}
           MESSAGE: ${{ inputs.message || format('Update from {0}', github.sha) }}
+          PRIVATE_KEY_PATH: ${{ steps.key.outputs.path }}
         # EAS takes a rollout percentage from 0 to 99 only; everybody is the flag left out.
         run: |
           rollout=()
           if [ "$ROLLOUT" -lt 100 ]; then rollout=(--rollout-percentage "$ROLLOUT"); fi
-          pnpm dlx eas-cli@latest update             --channel "$CHANNEL"             --environment "$ENVIRONMENT"             "${rollout[@]}"             --message "$MESSAGE"             --non-interactive
+          pnpm dlx eas-cli@latest update             --channel "$CHANNEL"             --environment "$ENVIRONMENT"             "${rollout[@]}"             --message "$MESSAGE"             --private-key-path "$PRIVATE_KEY_PATH"             --non-interactive
 
       # The update's source maps, so a crash in the JavaScript it shipped is
       # symbolicated (#165). `eas update` exported the bundles and their maps
@@ -327,6 +359,12 @@ jobs:
           fi
           if [ -z "$SENTRY_URL" ]; then unset SENTRY_URL; fi
           pnpm exec sentry-expo-upload-sourcemaps dist
+
+      # Also when a step above failed or the run was cancelled. GitHub's hosted
+      # runners are discarded after the job; this does not rely on that.
+      - name: Remove the update signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/expo-updates-private-key.pem"
 
   # An installable Android APK on the repository's Releases page.
   #

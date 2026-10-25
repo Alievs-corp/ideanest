@@ -727,6 +727,7 @@ secrets. Without it the workflow says so and stops rather than failing.
 |---|---|---|
 | `eas.json` → `build.base.env` | `IDEANEST_EAS_PROJECT_ID` | `@alievsteamss-team/ideanest` on expo.dev, owned by the organization (`owner` in `app.config.ts`), not by a person. Not a secret (every update manifest carries it), so it is committed. Unset, builds have updates switched off and no push token |
 | GitHub secret (`mobile` environment) | `EXPO_TOKEN` | A robot token for the Expo account |
+| GitHub secret (`mobile` environment) | `EXPO_UPDATES_PRIVATE_KEY` | The PEM private key that signs every over-the-air update, the pair of the committed `certs/certificate.pem` (see Over-the-air updates). Without it, or with a key that is not the certificate's, `operation: update` fails and publishes nothing |
 | GitHub secret | `IDEANEST_ASC_APP_ID` | The App Store Connect app id (digits). `eas submit` cannot read it from the environment, so the workflow writes it into the submit profile on the runner |
 | GitHub secret | `IDEANEST_APPLE_TEAM_ID` | The 10-character Apple team id, written the same way and passed as `EXPO_APPLE_TEAM_ID` |
 | EAS credentials (`eas credentials`) | — | The App Store Connect API key and the Play service-account key, held by EAS so neither is in the repository or in GitHub |
@@ -815,6 +816,53 @@ the hash through the resolved config. `scripts/check-fingerprint.mjs`, in
 unrelated catalogue key leaves the fingerprint alone, and an edit to
 `mobile.native.displayName` changes it. A new workspace import in
 `app.config.ts` fails that check until it is added to the ignore file.
+
+**Every update is code-signed (#579).** A build embeds
+`certs/certificate.pem` (self-signed, common name `IdeaNest`, valid until
+2036-10-25; `codeSigningMetadata` `keyid: main`, `alg: rsa-v1_5-sha256`) and runs
+an update only when the certificate verifies its signature. An unsigned update,
+or one signed by any other key, is downloaded and refused. Holding the Expo
+account or `EXPO_TOKEN` is therefore no longer enough to put JavaScript on the
+phones: it also takes the private key, which is the `mobile` environment's
+`EXPO_UPDATES_PRIVATE_KEY` secret and is nowhere in this repository. The release
+workflow writes it to a file only its own user can read in the runner's
+temporary directory, passes it to `eas update --private-key-path`, and deletes it
+when the job ends, also on failure. It fails, publishing nothing, when the
+secret is missing or is not the certificate's key, because an unsigned update
+would be published and then refused by every phone. Signing does not stand
+between the phones and somebody who can run that workflow: a push to `main`
+still publishes a signed update to the `github` channel, by design.
+
+The certificate is part of the fingerprint. `app.config.ts` names it, so the
+path and metadata are in the resolved config, and `fingerprint.config.js` hashes
+its bytes, which nothing else reads (line endings normalised, so a Windows
+checkout computes the same runtime); `check-fingerprint.mjs` holds both. That has
+two consequences:
+
+- **Switching signing on was a new runtime.** No build made before #579 receives
+  another update. Every installed build has to be replaced once before
+  over-the-air updates reach it again: a new `github-release` for the phones that
+  installed the APK, and new `preview` and `production` builds for those
+  channels when they have users. Until then each update is published for a
+  runtime no phone runs, and reaches nobody.
+- **A new certificate is a new native build for every phone.** There is no
+  revocation: a build trusts the certificate it shipped with until it is
+  replaced. If the private key is **lost**, nothing can sign for the installed
+  builds any more; if it **leaks**, every installed build trusts whoever holds it.
+  Either way, generate a new pair (below), commit the new certificate, replace the
+  secret, and rebuild and reinstall every profile. Do the same before the
+  certificate expires.
+
+To generate a pair, from this directory, with the key directory **outside** the
+repository: `npx expo-updates codesigning:generate --key-output-directory <dir>
+--certificate-output-directory ./certs --certificate-validity-duration-years 10
+--certificate-common-name "IdeaNest"`. Commit `certs/certificate.pem`; put the
+contents of `<dir>/private-key.pem` in `EXPO_UPDATES_PRIVATE_KEY` and keep a copy
+in the owner's password manager, because losing it costs a rebuild of every
+phone. `.gitignore` refuses `apps/mobile/keys/`, `private-key.pem` and
+`public-key.pem` beside the certificate (where `eas update` looks for the key by
+default) and any `*private-key*.pem`. An update published from a laptop needs the
+same key: `eas update --private-key-path <dir>/private-key.pem`.
 
 **Every merge to `main` that touches `apps/mobile`, a shared package the app
 uses, or the lockfile publishes one to the `github` channel at 100%**:

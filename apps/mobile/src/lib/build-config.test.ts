@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { X509Certificate } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ExpoConfig } from 'expo/config';
 import type { AndroidConfig, IOSConfig } from 'expo/config-plugins';
@@ -165,6 +166,29 @@ describe('over-the-air updates', () => {
 
   it('refuse a project id that is not one', () => {
     expect(() => loadConfig({ IDEANEST_EAS_PROJECT_ID: 'ideanest' })).toThrow(/IDEANEST_EAS_PROJECT_ID/);
+  });
+
+  // #579: without these two fields a build runs whatever the Expo account publishes.
+  it('run only what the release key signed, against the committed certificate', () => {
+    const config = loadConfig({ IDEANEST_EAS_PROJECT_ID: PROJECT }).default;
+    expect(config.updates).toMatchObject({
+      codeSigningCertificate: './certs/certificate.pem',
+      codeSigningMetadata: { keyid: 'main', alg: 'rsa-v1_5-sha256' },
+    });
+
+    const path = join(MOBILE_ROOT, 'certs', 'certificate.pem');
+    const certificate = new X509Certificate(readFileSync(path));
+    // An expired certificate makes every phone refuse every update, signed or not.
+    expect(new Date(certificate.validTo).getTime()).toBeGreaterThan(Date.now());
+    // Self-signed, and for code signing, which is the only kind expo-updates accepts.
+    expect(certificate.verify(certificate.publicKey)).toBe(true);
+    expect(certificate.keyUsage).toContain('1.3.6.1.5.5.7.3.3');
+  });
+
+  it('keep the private key out of the repository', () => {
+    const certs = readdirSync(join(MOBILE_ROOT, 'certs'));
+    expect(certs).toEqual(['certificate.pem']);
+    expect(readFileSync(join(MOBILE_ROOT, 'certs', 'certificate.pem'), 'utf8')).not.toMatch(/PRIVATE KEY/);
   });
 });
 
