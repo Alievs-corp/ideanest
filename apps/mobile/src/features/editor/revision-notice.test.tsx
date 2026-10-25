@@ -126,6 +126,12 @@ describe('RevisionNotice', () => {
     expect(screen.getByLabelText(WORDS.discard)).toBeTruthy();
   });
 
+  it('names a reward-only edit as Rewards, not as the raw field name', async () => {
+    await show(project({ revision: { ...DRAFT.revision!, changedFields: ['rewards'] } }));
+    expect(screen.getByTestId('revision-changed')).toHaveTextContent(`${WORDS.changedHeading}: ${en.mobile.editor.rewards.revisionField}`);
+    expect(screen.getByLabelText(WORDS.submit)).toBeTruthy();
+  });
+
   it('says a pending edit is with a moderator, and still lets it be sent back to nothing', async () => {
     await show(PENDING);
     expect(screen.getByText(WORDS.pendingTitle)).toBeTruthy();

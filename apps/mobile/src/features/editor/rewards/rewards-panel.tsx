@@ -50,7 +50,9 @@ import {
   deleteReward,
   duplicateReward,
   patchReward,
+  pendingOf,
   reorderRewards,
+  restoreReward,
   useEditorItems,
   useEditorRewards,
 } from './api';
@@ -146,7 +148,9 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const describe = useDescribeFailure();
-  const { projectId, readOnly, online } = editor;
+  const { projectId, readOnly, online, reload } = editor;
+  /** The public has seen it: every tier change waits for a moderator, and a new tier is hidden until then. */
+  const launched = project.launchedAt != null;
 
   const itemsQuery = useEditorItems(projectId);
   const rewardsQuery = useEditorRewards(projectId);
@@ -184,8 +188,10 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
     (next: (current: readonly Reward[] | undefined) => readonly Reward[]) => {
       queryClient.setQueryData<readonly Reward[]>(queryKeys.editorRewards(projectId), next);
       publicStale();
+      // A held tier change opens or changes the campaign's edit, which the notice above the tabs shows.
+      if (launched) reload();
     },
-    [queryClient, projectId, publicStale],
+    [queryClient, projectId, publicStale, launched, reload],
   );
 
   const refetchRewards = rewardsQuery.refetch;
@@ -210,7 +216,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
       }),
     labels: { moveUp: words.moveUpLabel, moveDown: words.moveDownLabel, delete: words.delete },
     onDelete: (reward) => {
-      if (!readOnly && reward.claimedQuantity === 0) setDeletingReward(reward);
+      if (!readOnly && reward.claimedQuantity === 0 && pendingOf(reward) !== 'deleted') setDeletingReward(reward);
     },
   });
   /*
@@ -255,12 +261,29 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
       announce(fillPlaceholders(hidden ? words.hiddenAnnouncement : words.shownAnnouncement, { title: reward.title }));
     });
 
+  /** A tier the moderator has approved is only marked for removal; one that was never approved is gone. */
+  const heldRemoval = (reward: Reward) => launched && pendingOf(reward) !== 'created';
+
   const removeReward = (reward: Reward) =>
     void run(reward.id, async () => {
       await deleteReward(reward.id);
-      setRewards((current) => (current ?? []).filter((one) => one.id !== reward.id));
+      if (heldRemoval(reward)) {
+        setRewards((current) =>
+          (current ?? []).map((one) => (one.id === reward.id ? ({ ...one, pending: 'deleted' } as Reward) : one)),
+        );
+        announce(fillPlaceholders(t('removeOnApprovalAnnouncement'), { title: reward.title }));
+      } else {
+        setRewards((current) => (current ?? []).filter((one) => one.id !== reward.id));
+        announce(fillPlaceholders(words.rewardDeletedAnnouncement, { title: reward.title }));
+      }
       setDeletingReward(null);
-      announce(fillPlaceholders(words.rewardDeletedAnnouncement, { title: reward.title }));
+    });
+
+  const undoRemoval = (reward: Reward) =>
+    void run(reward.id, async () => {
+      const saved = await restoreReward(reward.id);
+      setRewards((current) => upsert(current, saved));
+      announce(fillPlaceholders(t('undoneAnnouncement'), { title: reward.title }));
     });
 
   const removeItem = (item: Item) =>
@@ -344,6 +367,14 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
               onAdd={() => openReward(null)}
               testID="tiers-add"
             />
+            {launched ? (
+              <InlineAlert
+                variant="info"
+                politeness="off"
+                description={t('newTiersHidden')}
+                testID="tiers-hidden-until-approved"
+              />
+            ) : null}
             {full ? (
               <InlineAlert
                 variant="warning"
@@ -399,6 +430,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
                     onHide={() => setVisibility(reward, true)}
                     onShow={() => setVisibility(reward, false)}
                     onDelete={() => setDeletingReward(reward)}
+                    onUndo={() => undoRemoval(reward)}
                   />
                 ))}
               </View>
@@ -508,8 +540,12 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
             ? words.deleteRewardTitle
             : fillPlaceholders(words.deleteRewardNamed, { title: deletingReward.title })
         }
-        description={`${words.cannotBeUndone}\n\n${words.deleteRewardBody}`}
-        deleteLabel={words.delete}
+        description={
+          deletingReward !== null && heldRemoval(deletingReward)
+            ? fillPlaceholders(t('removeOnApprovalBody'), { title: deletingReward.title })
+            : `${words.cannotBeUndone}\n\n${words.deleteRewardBody}`
+        }
+        deleteLabel={deletingReward !== null && heldRemoval(deletingReward) ? t('removeOnApprovalConfirm') : words.delete}
         keepLabel={words.keepIt}
         deleting={deletingReward !== null && busyId === deletingReward.id}
         onDelete={() => {
@@ -626,6 +662,7 @@ function RewardCard({
   onHide,
   onShow,
   onDelete,
+  onUndo,
 }: {
   readonly reward: Reward;
   readonly items: readonly Item[];
@@ -643,7 +680,11 @@ function RewardCard({
   readonly onHide: () => void;
   readonly onShow: () => void;
   readonly onDelete: () => void;
+  readonly onUndo: () => void;
 }) {
+  const t = useT('mobile.editor.rewards');
+  const pending = pendingOf(reward);
+  const removed = pending === 'deleted';
   const hidden = isHiddenReward(reward);
   const scheduled = isScheduledReward(reward);
   const backed = reward.claimedQuantity > 0;
@@ -659,7 +700,7 @@ function RewardCard({
    */
   const own = reorder.accessibilityFor(reward);
   const actions =
-    readOnly || busy
+    readOnly || busy || removed
       ? []
       : own.accessibilityActions
           .filter((action) => action.name !== 'delete' || (!backed && !reordering))
@@ -668,7 +709,7 @@ function RewardCard({
             label: action.name === 'moveUp' ? upLabel : action.name === 'moveDown' ? downLabel : deleteLabel,
           }));
   const onAction = (event: AccessibilityActionEvent) => {
-    if (readOnly || busy) return;
+    if (readOnly || busy || removed) return;
     if (event.nativeEvent.actionName === 'delete') {
       if (!backed && !reordering) onDelete();
     } else own.onAccessibilityAction(event);
@@ -682,6 +723,14 @@ function RewardCard({
           {[formatMoney(reward.price), describeStock(reward, words.vocabulary), shippingScopeLabel(reward.shippingType, words.vocabulary.scopes)].join(' · ')}
         </Body>
         <View style={styles.tags}>
+          {pending === null ? null : (
+            <Tag
+              label={removed ? t('removeOnApproval') : t('waitingForReview')}
+              icon={removed ? Glyphs.Trash : Glyphs.Clock}
+              variant="warning"
+              testID={`reward-${reward.id}-pending`}
+            />
+          )}
           {hidden ? <Tag label={words.hidden} variant="warning" /> : null}
           {scheduled ? <Tag label={words.opensLater} /> : null}
           {reward.isFeatured ? <Tag label={words.featured} /> : null}
@@ -693,69 +742,88 @@ function RewardCard({
           )}
         </View>
         <Caption>{describeRewardContents(reward, items, words)}</Caption>
+        {pending === null ? null : (
+          <Caption testID={`reward-${reward.id}-pending-note`}>
+            {t(pending === 'created' ? 'createdNote' : pending === 'changed' ? 'changedNote' : 'deletedNote')}
+          </Caption>
+        )}
       </View>
 
-      <View style={styles.actions}>
-        <ReorderButtons
-          reorder={reorder}
-          id={reward.id}
-          upLabel={upLabel}
-          downLabel={downLabel}
-          disabled={readOnly || busy}
-          testID={`reward-${reward.id}-move`}
-        />
-        <Pill
-          label={words.edit}
-          accessibilityLabel={fillPlaceholders(words.editLabel, { title: reward.title })}
-          variant="ghost"
-          size="sm"
-          disabled={busy || readOnly}
-          onPress={onEdit}
-          testID={`reward-${reward.id}-edit`}
-        />
-        <Pill
-          label={words.duplicate}
-          accessibilityLabel={fillPlaceholders(words.duplicateLabel, { title: reward.title })}
-          variant="ghost"
-          size="sm"
-          disabled={busy || readOnly || reordering}
-          onPress={onDuplicate}
-          testID={`reward-${reward.id}-duplicate`}
-        />
-        {hidden ? (
+      {removed ? (
+        <View style={styles.actions}>
           <Pill
-            label={words.show}
-            accessibilityLabel={fillPlaceholders(words.showLabel, { title: reward.title })}
-            variant="ghost"
-            size="sm"
-            disabled={busy || readOnly || blocked !== null}
-            onPress={onShow}
-            testID={`reward-${reward.id}-show`}
-          />
-        ) : (
-          <Pill
-            label={words.hide}
-            accessibilityLabel={fillPlaceholders(words.hideLabel, { title: reward.title })}
+            label={t('undo')}
+            accessibilityLabel={fillPlaceholders(t('undoLabel'), { title: reward.title })}
             variant="ghost"
             size="sm"
             disabled={busy || readOnly}
-            onPress={onHide}
-            testID={`reward-${reward.id}-hide`}
+            onPress={onUndo}
+            testID={`reward-${reward.id}-undo`}
           />
-        )}
-        {/* §5.3: once chosen, a reward can only be hidden — the control is not offered at all. */}
-        {backed ? null : (
+        </View>
+      ) : (
+        <View style={styles.actions}>
+          <ReorderButtons
+            reorder={reorder}
+            id={reward.id}
+            upLabel={upLabel}
+            downLabel={downLabel}
+            disabled={readOnly || busy}
+            testID={`reward-${reward.id}-move`}
+          />
           <Pill
-            label={words.delete}
-            accessibilityLabel={deleteLabel}
+            label={words.edit}
+            accessibilityLabel={fillPlaceholders(words.editLabel, { title: reward.title })}
+            variant="ghost"
+            size="sm"
+            disabled={busy || readOnly}
+            onPress={onEdit}
+            testID={`reward-${reward.id}-edit`}
+          />
+          <Pill
+            label={words.duplicate}
+            accessibilityLabel={fillPlaceholders(words.duplicateLabel, { title: reward.title })}
             variant="ghost"
             size="sm"
             disabled={busy || readOnly || reordering}
-            onPress={onDelete}
-            testID={`reward-${reward.id}-delete`}
+            onPress={onDuplicate}
+            testID={`reward-${reward.id}-duplicate`}
           />
-        )}
-      </View>
+          {hidden ? (
+            <Pill
+              label={words.show}
+              accessibilityLabel={fillPlaceholders(words.showLabel, { title: reward.title })}
+              variant="ghost"
+              size="sm"
+              disabled={busy || readOnly || blocked !== null}
+              onPress={onShow}
+              testID={`reward-${reward.id}-show`}
+            />
+          ) : (
+            <Pill
+              label={words.hide}
+              accessibilityLabel={fillPlaceholders(words.hideLabel, { title: reward.title })}
+              variant="ghost"
+              size="sm"
+              disabled={busy || readOnly}
+              onPress={onHide}
+              testID={`reward-${reward.id}-hide`}
+            />
+          )}
+          {/* §5.3: once chosen, a reward can only be hidden — the control is not offered at all. */}
+          {backed ? null : (
+            <Pill
+              label={words.delete}
+              accessibilityLabel={deleteLabel}
+              variant="ghost"
+              size="sm"
+              disabled={busy || readOnly || reordering}
+              onPress={onDelete}
+              testID={`reward-${reward.id}-delete`}
+            />
+          )}
+        </View>
+      )}
 
       {backed ? (
         <Caption testID={`reward-${reward.id}-backed`}>

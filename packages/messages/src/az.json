@@ -7469,7 +7469,20 @@
         "copied": "Kopyalandı",
         "tokenCopied": "Token kopyalandı",
         "copyFailed": "Tokeni kopyalamaq alınmadı. Onu seçib əllə kopyalayın.",
-        "nothingCached": "Oflaynsınız, mükafatlar isə bu telefonda hələ yüklənməyib."
+        "nothingCached": "Oflaynsınız, mükafatlar isə bu telefonda hələ yüklənməyib.",
+        "waitingForReview": "Yoxlama gözlənilir",
+        "removeOnApproval": "Təsdiqlə silinəcək",
+        "createdNote": "Yeni səviyyə. Moderator təsdiq edənə qədər dəstəkçilər onu görmür.",
+        "changedNote": "Bu səviyyədəki dəyişikliklər hələ açıq deyil. Dəstəkçilər təsdiqlənmiş versiyanı görür.",
+        "deletedNote": "Moderator dəyişikliklərinizi təsdiq edənə qədər bu səviyyə açıq qalır, sonra silinir.",
+        "undo": "Geri qaytar",
+        "undoLabel": "{title} səviyyəsinin silinməsini geri qaytar",
+        "undoneAnnouncement": "{title} qalacaq.",
+        "removeOnApprovalAnnouncement": "{title} moderator təsdiq edəndə silinəcək.",
+        "removeOnApprovalBody": "{title} moderator dəyişikliklərinizi təsdiq edənə qədər açıq qalır, sonra silinir. O vaxta qədər bunu geri qaytara bilərsiniz.",
+        "removeOnApprovalConfirm": "Təsdiqlə sil",
+        "newTiersHidden": "Yeni səviyyələr moderator təsdiq edənə qədər dəstəkçilərdən gizli qalır.",
+        "revisionField": "Mükafatlar"
       },
       "faq": {
         "nothingCached": "Oflaynsınız, suallar isə bu telefonda hələ yüklənməyib."

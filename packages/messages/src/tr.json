@@ -7469,7 +7469,20 @@
         "copied": "Kopyalandı",
         "tokenCopied": "Jeton kopyalandı",
         "copyFailed": "Jeton kopyalanamadı. Seçip elle kopyalayın.",
-        "nothingCached": "Çevrimdışısınız ve ödüller bu telefonda henüz yüklenmedi."
+        "nothingCached": "Çevrimdışısınız ve ödüller bu telefonda henüz yüklenmedi.",
+        "waitingForReview": "İnceleme bekleniyor",
+        "removeOnApproval": "Onayla kaldırılacak",
+        "createdNote": "Yeni kademe. Bir moderatör onaylayana kadar destekçiler onu göremez.",
+        "changedNote": "Bu kademedeki değişiklikleriniz henüz herkese açık değil. Destekçiler onaylı sürümü görmeye devam eder.",
+        "deletedNote": "Bu kademe, bir moderatör değişikliklerinizi onaylayana kadar herkese açık kalır, sonra kaldırılır.",
+        "undo": "Geri al",
+        "undoLabel": "{title} kademesinin kaldırılmasını geri al",
+        "undoneAnnouncement": "{title} kalacak.",
+        "removeOnApprovalAnnouncement": "{title}, moderatör onayladığında kaldırılacak.",
+        "removeOnApprovalBody": "{title}, bir moderatör değişikliklerinizi onaylayana kadar herkese açık kalır, sonra kaldırılır. O zamana kadar bunu geri alabilirsiniz.",
+        "removeOnApprovalConfirm": "Onayla kaldır",
+        "newTiersHidden": "Yeni kademeler, bir moderatör onaylayana kadar destekçilerden gizli kalır.",
+        "revisionField": "Ödüller"
       },
       "faq": {
         "nothingCached": "Çevrimdışısınız ve sorular bu telefonda henüz yüklenmedi."
