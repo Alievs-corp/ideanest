@@ -29,6 +29,14 @@ const RevisionDecisionDialog = lazy(() =>
   import('./RevisionDecisionDialog').then((module) => ({ default: module.RevisionDecisionDialog })),
 );
 
+/*
+ * The reward tiers are drawn only by an edit that touches some, and their field-by-field
+ * comparison is not what most revisions are opened to read, so it is a chunk of its own.
+ */
+const RevisionRewards = lazy(() =>
+  import('./RevisionRewards').then((module) => ({ default: module.RevisionRewards })),
+);
+
 type Outcome = 'approve' | 'reject';
 
 type Notice = { readonly variant: 'success' | 'warning'; readonly text: string };
@@ -259,7 +267,13 @@ export function RevisionReview({ revisionId, copy }: RevisionReviewProps) {
           categories={categories}
           locale={locale}
           copy={copy}
+          hasRewards={revision.rewards.length > 0}
         />
+        {revision.rewards.length > 0 && (
+          <Suspense fallback={<Skeleton height="6rem" className="mt-8" />}>
+            <RevisionRewards rewards={revision.rewards} locale={locale} copy={copy} />
+          </Suspense>
+        )}
       </section>
 
       {decidable && (

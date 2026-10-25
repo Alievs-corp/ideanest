@@ -33,6 +33,7 @@ export const REVISION_FIELDS = [
   'story',
   'risks',
   'countries',
+  'rewards',
 ] as const;
 
 export type RevisionField = (typeof REVISION_FIELDS)[number];
@@ -56,6 +57,62 @@ export interface RevisionQueue {
   readonly revisions: readonly QueuedRevision[];
 }
 
+type Schemas = components['schemas'];
+
+/**
+ * A shipping amount as the service sends it. The generated schema types a `BigDecimal` as a
+ * number; on the wire money is a string (docs/architecture.md §10.3), so it is read as one.
+ */
+type WireAmount<T> = Omit<T, 'amount' | 'additionalItemAmount' | 'perKilogramAmount'> & {
+  readonly amount?: string;
+  readonly additionalItemAmount?: string;
+  readonly perKilogramAmount?: string;
+};
+
+export type RevisionRewardImage = Schemas['RevisionRewardImage'];
+export type RevisionRewardItem = Schemas['RevisionRewardItem'];
+export type RevisionShippingRule = WireAmount<Schemas['RevisionShippingRule']>;
+export type RevisionShippingZoneRate = WireAmount<Schemas['RevisionShippingZoneRate']>;
+
+export type RevisionRewardWriting = Omit<Schemas['RevisionRewardWriting'], 'shippingRules' | 'shippingZoneRates'> & {
+  readonly shippingRules?: readonly RevisionShippingRule[] | null;
+  readonly shippingZoneRates?: readonly RevisionShippingZoneRate[] | null;
+};
+
+/** What the revision does to one tier. A tier can be both `changed` and `reordered`. */
+export type RevisionRewardChange = 'created' | 'deleted' | 'changed' | 'reordered';
+
+/** The names the service gives a changed tier's fields: the creator's reward response names. */
+export type RevisionRewardField =
+  | 'title'
+  | 'description'
+  | 'imageMediaId'
+  | 'videoMediaId'
+  | 'estimatedDelivery'
+  | 'limitQuantity'
+  | 'shippingType'
+  | 'isEarlyBird'
+  | 'isFeatured'
+  | 'isSecret'
+  | 'isAddon'
+  | 'availableFrom'
+  | 'availableUntil'
+  | 'items'
+  | 'shippingRules'
+  | 'shippingZoneRates';
+
+/** A tier the revision creates, deletes, moves or changes. `live` is null for a created tier and `proposed` for a deleted one. */
+export interface RevisionReward {
+  readonly id: string;
+  readonly changes: readonly string[];
+  readonly livePosition?: number | null;
+  readonly proposedPosition?: number | null;
+  readonly price: Schemas['Money'];
+  readonly changedFields: readonly string[];
+  readonly live?: RevisionRewardWriting | null;
+  readonly proposed?: RevisionRewardWriting | null;
+}
+
 export interface RevisionReview {
   readonly id: string;
   readonly projectId: string;
@@ -68,6 +125,8 @@ export interface RevisionReview {
   readonly changedFields: readonly string[];
   readonly live: ProjectEdit;
   readonly proposed: ProjectEdit;
+  /** Empty when the revision touches no reward tier. */
+  readonly rewards: readonly RevisionReward[];
 }
 
 export interface RevisionDecision {
@@ -103,10 +162,11 @@ export async function readRevisionReview(id: string, signal?: AbortSignal): Prom
   const response = await authorizedFetch(revisionPath(id), { signal });
   if (!response.ok) throw await errorFrom(response);
 
-  const body = (await response.json()) as Omit<RevisionReview, 'changedFields'> & {
+  const body = (await response.json()) as Omit<RevisionReview, 'changedFields' | 'rewards'> & {
     changedFields?: readonly string[] | null;
+    rewards?: readonly RevisionReward[] | null;
   };
-  return { ...body, changedFields: body.changedFields ?? [] };
+  return { ...body, changedFields: body.changedFields ?? [], rewards: body.rewards ?? [] };
 }
 
 /** An absent note is absent from the body, not an empty string. */

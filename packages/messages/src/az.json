@@ -3704,7 +3704,8 @@
           "videoMediaId": "Kampaniya videosu",
           "story": "Hekayə",
           "risks": "Risklər və çətinliklər",
-          "countries": "Ölkələr"
+          "countries": "Ölkələr",
+          "rewards": "Mükafatlar"
         },
         "removed": "Silinib:",
         "added": "Əlavə olunub:",
@@ -3768,7 +3769,66 @@
         "tooLong": "Qeyd {limit} simvoldan çox ola bilməz.",
         "approved": "Redaktə təsdiqləndi. Dəstəkçilər indi təklif olunan versiyanı oxuyur.",
         "rejected": "Redaktə rədd edildi. Müəllif qeydinizi görür.",
-        "unavailable": "Siz baxarkən müəllif bu redaktəni dəyişdi, ona görə qərarınız qeydə alınmadı. Səhifə indiki vəziyyətlə yenidən yükləndi."
+        "unavailable": "Siz baxarkən müəllif bu redaktəni dəyişdi, ona görə qərarınız qeydə alınmadı. Səhifə indiki vəziyyətlə yenidən yükləndi.",
+        "rewards": {
+          "heading": "Mükafat pillələri",
+          "intro": "Bu redaktənin yaratdığı, sildiyi, yerini dəyişdiyi və ya dəyişdiyi bütün pillələr. Adı çəkilməyən pillə olduğu kimi qalır.",
+          "untitled": "Adsız pillə",
+          "tierLabel": "Mükafat pilləsi: {title}",
+          "changes": {
+            "created": "Yeni pillə",
+            "deleted": "Silinəcək",
+            "changed": "Dəyişdirilib",
+            "reordered": "Yeri dəyişib"
+          },
+          "changesLabel": "Onunla nə olur",
+          "placeLive": "İndi: {place}. yer",
+          "placeProposed": "Təklif olunan yer: {place}",
+          "placeBoth": "İndi: {live}. yer, təklif olunan yer: {proposed}",
+          "price": "Qiymət: {price}",
+          "priceFrozen": "Qiymət redaktə ilə heç vaxt dəyişmir.",
+          "createdNote": "Yeni pillə. Bu redaktə təsdiqlənənə qədər dəstəkçilər onu görə və ona pledge verə bilməz.",
+          "deletedNote": "Redaktə təsdiqləndikdə bu pillə silinir. O vaxta qədər canlı qalır.",
+          "movedOnly": "Yalnız siyahıdakı yeri dəyişir.",
+          "fields": {
+            "title": "Ad",
+            "description": "Təsvir",
+            "imageMediaId": "Şəkil",
+            "videoMediaId": "Video",
+            "estimatedDelivery": "Təxmini çatdırılma",
+            "limitQuantity": "Say limiti",
+            "shippingType": "Göndəriş",
+            "isEarlyBird": "Erkən quş",
+            "isFeatured": "Seçilmiş",
+            "isSecret": "Gizli",
+            "isAddon": "Əlavə",
+            "availableFrom": "Başlama vaxtı",
+            "availableUntil": "Bitmə vaxtı",
+            "items": "Nələr daxildir",
+            "shippingRules": "Ölkələr üzrə göndəriş tarifləri",
+            "shippingZoneRates": "Zonalar üzrə göndəriş tarifləri"
+          },
+          "yes": "Bəli",
+          "no": "Xeyr",
+          "none": "Yoxdur",
+          "unlimited": "Limitsiz",
+          "noImage": "Şəkil yoxdur",
+          "imageAlt": "{title} pilləsinin şəkli",
+          "shippingTypes": {
+            "NONE": "Heç nə çatdırılmır",
+            "DIGITAL": "Rəqəmsal çatdırılma",
+            "LOCAL_PICKUP": "Əldən təhvil",
+            "DOMESTIC": "Ölkə daxilində göndərilir",
+            "INTERNATIONAL": "Beynəlxalq göndərilir"
+          },
+          "itemLine": "{name} × {quantity}",
+          "itemGone": "Sonradan silinmiş məhsul",
+          "rateLine": "əsas {amount}, hər əlavə məhsula {additional}, hər kiloqrama {perKilogram}",
+          "zoneGone": "Sonradan silinmiş zona",
+          "noItems": "Məhsul yoxdur",
+          "noRates": "Tarif yoxdur",
+          "secretLinkReplaced": "Gizli link əvəz olunur. Köhnəsi işləməyəcək."
+        }
       }
     },
     "moderation": {

@@ -1,7 +1,7 @@
 import type { AdminTranslator } from '../admin-copy';
 import type { ConsoleChromeCopy } from './common-copy';
 import type { PluralForms } from '../plurals';
-import type { RevisionField } from '../../admin/revisions';
+import type { RevisionField, RevisionRewardChange, RevisionRewardField } from '../../admin/revisions';
 import type { StoryLineKind } from '../../admin/revision-diff';
 
 /**
@@ -39,6 +39,47 @@ export interface RevisionDialogCopy {
   readonly noteHint: string;
   readonly confirmLabel: string;
   readonly busyLabel: string;
+}
+
+/** The words of the reward tiers a revision touches — issue #569, part of epic #557. */
+export interface RevisionRewardsCopy {
+  readonly heading: string;
+  readonly intro: string;
+  readonly untitled: string;
+  /** Carries `{title}`. */
+  readonly tierLabel: string;
+  readonly changes: Readonly<Record<RevisionRewardChange, string>>;
+  readonly changesLabel: string;
+  /** Carries `{place}`, counted from one. */
+  readonly placeLive: string;
+  /** Carries `{place}`, counted from one. */
+  readonly placeProposed: string;
+  /** Carries `{live}` and `{proposed}`, counted from one. */
+  readonly placeBoth: string;
+  /** Carries `{price}`. */
+  readonly price: string;
+  readonly priceFrozen: string;
+  readonly createdNote: string;
+  readonly deletedNote: string;
+  readonly movedOnly: string;
+  readonly fields: Readonly<Record<RevisionRewardField, string>>;
+  readonly yes: string;
+  readonly no: string;
+  readonly none: string;
+  readonly unlimited: string;
+  readonly noImage: string;
+  /** Carries `{title}`. */
+  readonly imageAlt: string;
+  readonly shippingTypes: Readonly<Record<string, string>>;
+  /** Carries `{name}` and `{quantity}`. */
+  readonly itemLine: string;
+  readonly itemGone: string;
+  /** Carries `{amount}`, `{additional}` and `{perKilogram}`. */
+  readonly rateLine: string;
+  readonly zoneGone: string;
+  readonly noItems: string;
+  readonly noRates: string;
+  readonly secretLinkReplaced: string;
 }
 
 export interface RevisionReviewCopy extends ConsoleChromeCopy {
@@ -92,6 +133,7 @@ export interface RevisionReviewCopy extends ConsoleChromeCopy {
   readonly approved: string;
   readonly rejected: string;
   readonly unavailable: string;
+  readonly rewards: RevisionRewardsCopy;
 }
 
 export function revisionQueueCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy): RevisionQueueCopy {
@@ -170,5 +212,43 @@ export function revisionReviewCopyFrom(t: AdminTranslator, chrome: ConsoleChrome
     approved: t(at('approved')),
     rejected: t(at('rejected')),
     unavailable: t(at('unavailable')),
+    rewards: rewardsCopyFrom(t),
+  };
+}
+
+function rewardsCopyFrom(t: AdminTranslator): RevisionRewardsCopy {
+  const at = (key: string) => `screens.revisionReview.rewards.${key}`;
+  const text = (key: string) => String(t.raw(at(key)));
+
+  return {
+    heading: t(at('heading')),
+    intro: t(at('intro')),
+    untitled: t(at('untitled')),
+    tierLabel: text('tierLabel'),
+    changes: t.raw(at('changes')) as RevisionRewardsCopy['changes'],
+    changesLabel: t(at('changesLabel')),
+    placeLive: text('placeLive'),
+    placeProposed: text('placeProposed'),
+    placeBoth: text('placeBoth'),
+    price: text('price'),
+    priceFrozen: t(at('priceFrozen')),
+    createdNote: t(at('createdNote')),
+    deletedNote: t(at('deletedNote')),
+    movedOnly: t(at('movedOnly')),
+    fields: t.raw(at('fields')) as RevisionRewardsCopy['fields'],
+    yes: t(at('yes')),
+    no: t(at('no')),
+    none: t(at('none')),
+    unlimited: t(at('unlimited')),
+    noImage: t(at('noImage')),
+    imageAlt: text('imageAlt'),
+    shippingTypes: t.raw(at('shippingTypes')) as RevisionRewardsCopy['shippingTypes'],
+    itemLine: text('itemLine'),
+    itemGone: t(at('itemGone')),
+    rateLine: text('rateLine'),
+    zoneGone: t(at('zoneGone')),
+    noItems: t(at('noItems')),
+    noRates: t(at('noRates')),
+    secretLinkReplaced: t(at('secretLinkReplaced')),
   };
 }

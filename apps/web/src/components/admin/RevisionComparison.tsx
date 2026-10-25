@@ -36,12 +36,14 @@ export interface RevisionComparisonProps {
   readonly categories: readonly Category[] | null;
   readonly locale: Locale;
   readonly copy: RevisionReviewCopy;
+  /** The reward tiers are drawn beside this, so an edit that changes only them is not "no changes". */
+  readonly hasRewards?: boolean;
 }
 
-const REMOVED_CLASS = 'bg-danger/12 text-fg line-through decoration-danger decoration-2';
-const ADDED_CLASS = 'bg-success/12 text-fg underline decoration-success decoration-2 underline-offset-2';
-const BLOCK_REMOVED = 'border-danger bg-danger/12';
-const BLOCK_ADDED = 'border-success bg-success/12';
+export const REMOVED_CLASS = 'bg-danger/12 text-fg line-through decoration-danger decoration-2';
+export const ADDED_CLASS = 'bg-success/12 text-fg underline decoration-success decoration-2 underline-offset-2';
+export const BLOCK_REMOVED = 'border-danger bg-danger/12';
+export const BLOCK_ADDED = 'border-success bg-success/12';
 
 export function RevisionComparison({
   live,
@@ -50,10 +52,11 @@ export function RevisionComparison({
   categories,
   locale,
   copy,
+  hasRewards = false,
 }: RevisionComparisonProps) {
-  const fields = REVISION_FIELDS.filter((field) => changedFields.includes(field));
+  const fields = REVISION_FIELDS.filter((field) => field !== 'rewards' && changedFields.includes(field));
 
-  if (fields.length === 0) return <p className="mt-4 text-sm text-fg-64">{copy.noChanges}</p>;
+  if (fields.length === 0) return hasRewards ? null : <p className="mt-4 text-sm text-fg-64">{copy.noChanges}</p>;
 
   return (
     <div className="mt-4 space-y-8">
@@ -76,7 +79,7 @@ export function RevisionComparison({
   );
 }
 
-function Pane({
+export function Pane({
   heading,
   field,
   children,
@@ -121,16 +124,18 @@ function renderSide(
       return <StorySide side={side} live={live} proposed={proposed} locale={locale} copy={copy} />;
     case 'countries':
       return <CountriesSide side={side} live={live} proposed={proposed} locale={locale} copy={copy} />;
+    case 'rewards':
+      return null;
   }
 }
 
 /** The spoken marker for a changed span. Hidden from sight: the strike and the underline are the visible one. */
-function Marker({ kind, copy }: { readonly kind: DiffKind; readonly copy: RevisionReviewCopy }) {
+export function Marker({ kind, copy }: { readonly kind: DiffKind; readonly copy: RevisionReviewCopy }) {
   if (kind === 'same') return null;
   return <span className="sr-only">{kind === 'removed' ? copy.removed : copy.added} </span>;
 }
 
-function Span({ part, copy }: { readonly part: DiffPart<string>; readonly copy: RevisionReviewCopy }) {
+export function Span({ part, copy }: { readonly part: DiffPart<string>; readonly copy: RevisionReviewCopy }) {
   if (part.kind === 'same') return <>{part.value}</>;
 
   const Tag = part.kind === 'removed' ? 'del' : 'ins';
@@ -142,7 +147,7 @@ function Span({ part, copy }: { readonly part: DiffPart<string>; readonly copy: 
   );
 }
 
-function TextSide({
+export function TextSide({
   side,
   before,
   after,

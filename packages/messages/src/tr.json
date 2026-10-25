@@ -3704,7 +3704,8 @@
           "videoMediaId": "Kampanya videosu",
           "story": "Hikâye",
           "risks": "Riskler ve zorluklar",
-          "countries": "Ülkeler"
+          "countries": "Ülkeler",
+          "rewards": "Ödüller"
         },
         "removed": "Silindi:",
         "added": "Eklendi:",
@@ -3768,7 +3769,66 @@
         "tooLong": "Not {limit} karakterden uzun olamaz.",
         "approved": "Düzenleme onaylandı. Destekçiler artık önerilen sürümü okuyor.",
         "rejected": "Düzenleme reddedildi. Kurucu notunuzu aldı.",
-        "unavailable": "Siz incelerken kurucu bu düzenlemeyi değiştirdi, bu yüzden kararınız kaydedilmedi. Sayfa şu anki durumla yeniden yüklendi."
+        "unavailable": "Siz incelerken kurucu bu düzenlemeyi değiştirdi, bu yüzden kararınız kaydedilmedi. Sayfa şu anki durumla yeniden yüklendi.",
+        "rewards": {
+          "heading": "Ödül kademeleri",
+          "intro": "Bu düzenlemenin oluşturduğu, kaldırdığı, yerini değiştirdiği veya değiştirdiği tüm kademeler. Adı geçmeyen kademe olduğu gibi kalır.",
+          "untitled": "Adsız kademe",
+          "tierLabel": "Ödül kademesi: {title}",
+          "changes": {
+            "created": "Yeni kademe",
+            "deleted": "Kaldırılacak",
+            "changed": "Değiştirildi",
+            "reordered": "Yeri değişti"
+          },
+          "changesLabel": "Ona ne olacak",
+          "placeLive": "Şimdi {place}. sıra",
+          "placeProposed": "Önerilen sıra: {place}",
+          "placeBoth": "Şimdi {live}. sıra, önerilen sıra: {proposed}",
+          "price": "Fiyat: {price}",
+          "priceFrozen": "Fiyat bir düzenlemeyle asla değişmez.",
+          "createdNote": "Yeni bir kademe. Bu düzenleme onaylanana kadar destekçiler onu göremez ve ona destek veremez.",
+          "deletedNote": "Düzenleme onaylandığında bu kademe kaldırılır. O zamana kadar yayında kalır.",
+          "movedOnly": "Yalnızca listedeki yeri değişir.",
+          "fields": {
+            "title": "Başlık",
+            "description": "Açıklama",
+            "imageMediaId": "Görsel",
+            "videoMediaId": "Video",
+            "estimatedDelivery": "Tahmini teslimat",
+            "limitQuantity": "Adet sınırı",
+            "shippingType": "Gönderim",
+            "isEarlyBird": "Erken kuş",
+            "isFeatured": "Öne çıkan",
+            "isSecret": "Gizli",
+            "isAddon": "Ek ürün",
+            "availableFrom": "Başlangıç",
+            "availableUntil": "Bitiş",
+            "items": "İçeriği",
+            "shippingRules": "Ülkelere göre gönderim ücretleri",
+            "shippingZoneRates": "Bölgelere göre gönderim ücretleri"
+          },
+          "yes": "Evet",
+          "no": "Hayır",
+          "none": "Yok",
+          "unlimited": "Sınırsız",
+          "noImage": "Görsel yok",
+          "imageAlt": "{title} kademesinin görseli",
+          "shippingTypes": {
+            "NONE": "Hiçbir şey teslim edilmez",
+            "DIGITAL": "Dijital teslimat",
+            "LOCAL_PICKUP": "Elden teslim",
+            "DOMESTIC": "Yurt içine gönderilir",
+            "INTERNATIONAL": "Yurt dışına gönderilir"
+          },
+          "itemLine": "{name} × {quantity}",
+          "itemGone": "Sonradan silinen ürün",
+          "rateLine": "temel {amount}, her ek ürün için {additional}, kilogram başına {perKilogram}",
+          "zoneGone": "Sonradan silinen bölge",
+          "noItems": "Ürün yok",
+          "noRates": "Ücret yok",
+          "secretLinkReplaced": "Gizli bağlantı değiştirilir. Eskisi çalışmaz."
+        }
       }
     },
     "moderation": {
