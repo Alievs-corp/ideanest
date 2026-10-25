@@ -118,6 +118,8 @@ public class PledgeSupplementService {
      *     cannot buy anything more
      * @throws CampaignStillTakingPledgesException while §4.5's PL-09 edit is the way to
      *     change this pledge
+     * @throws az.ideanest.project.application.OwnProjectPledgeException when the backer
+     *     works on the campaign (#575)
      * @throws SupplementNotAnIncreaseException when the chosen tier costs no more than
      *     the one the pledge already has
      */
@@ -203,10 +205,10 @@ public class PledgeSupplementService {
     /**
      * The pledge, if this account holds it and it can still buy something.
      *
-     * <p>Three refusals in one order, and the order matters: whose it is, then whether
-     * the campaign has moved on, then what state the pledge is in. A caller who does
-     * not own the pledge learns nothing about the other two, which is the rule
-     * {@code PledgeService} applies to every read.
+     * <p>Four refusals in one order, and the order matters: whose it is, then whether
+     * the campaign has moved on, then whether the backer works on it (#575), then what
+     * state the pledge is in. A caller who does not own the pledge learns nothing about
+     * the others, which is the rule {@code PledgeService} applies to every read.
      */
     private Pledge supplementable(UUID pledgeId, UUID backerId) {
         Pledge pledge =
@@ -215,6 +217,7 @@ public class PledgeSupplementService {
         if (acceptance.isAcceptingPledges(pledge.getProjectId())) {
             throw new CampaignStillTakingPledgesException(pledge.getProjectId(), pledge.getState());
         }
+        acceptance.requireOutsideTheTeam(pledge.getProjectId(), backerId);
         if (!SUPPLEMENTABLE.contains(pledge.getState())) {
             throw new PledgeNotSupplementableException(pledgeId, pledge.getState());
         }

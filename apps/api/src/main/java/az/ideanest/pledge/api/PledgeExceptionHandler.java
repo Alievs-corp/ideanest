@@ -21,6 +21,7 @@ import az.ideanest.pledge.application.ShippingDestinationUnpricedException;
 import az.ideanest.pledge.application.SupplementNotAnIncreaseException;
 import az.ideanest.pledge.application.UnknownRewardTierException;
 import az.ideanest.pledge.domain.PledgeState;
+import az.ideanest.project.application.OwnProjectPledgeException;
 import az.ideanest.project.application.ProjectNotAcceptingPledgesException;
 import az.ideanest.project.application.ProjectNotFoundException;
 import az.ideanest.reward.application.RewardStock;
@@ -156,6 +157,23 @@ public class PledgeExceptionHandler {
         meta.put("state", exception.state());
         meta.put("deadline", exception.deadline() == null ? null : exception.deadline().toString());
         problem.setProperty("meta", meta);
+        return problem;
+    }
+
+    /**
+     * 403 for a pledge from the campaign's own team — #575.
+     *
+     * <p>Forbidden rather than a conflict because nothing about the timing or the pledge would
+     * change the answer: it is who is asking. {@link OwnProjectPledgeException} has the reason the
+     * rule exists.
+     */
+    @ExceptionHandler(OwnProjectPledgeException.class)
+    public ProblemDetail handleOwnProject(OwnProjectPledgeException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problem.setType(URI.create("https://ideanest.az/problems/own-project-pledge"));
+        problem.setTitle("You work on this campaign");
+        problem.setDetail("A campaign's creator and collaborators cannot pledge to it.");
+        problem.setProperty("code", "OWN_PROJECT_PLEDGE");
         return problem;
     }
 

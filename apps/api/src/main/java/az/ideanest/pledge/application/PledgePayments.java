@@ -88,6 +88,9 @@ public class PledgePayments {
      * @throws PledgeNotDraftException when it has already been confirmed, paid for or ended
      * @throws ReservationExpiredException when its reservation has lapsed
      * @throws BackerAgreementRequiredException when the agreement in force was not acknowledged
+     * @throws az.ideanest.project.application.OwnProjectPledgeException when the backer has since
+     *     joined the campaign's team — the draft was taken before the grant, and paying is what
+     *     would count it (#575)
      */
     @Transactional
     public PayablePledge prepare(UUID pledgeId, UUID backerId, Integer acknowledgedVersion) {
@@ -100,7 +103,7 @@ public class PledgePayments {
         if (pledge.hasLapsed(now)) {
             throw new ReservationExpiredException(pledgeId, pledge.getReservationExpiresAt());
         }
-        acceptance.requireAcceptingPledges(pledge.getProjectId());
+        acceptance.requireAcceptingPledgesFrom(pledge.getProjectId(), backerId);
 
         Optional<AgreementInForce> required = agreements.inForce(AgreementKind.BACKER_AGREEMENT);
         if (required.isPresent()) {
