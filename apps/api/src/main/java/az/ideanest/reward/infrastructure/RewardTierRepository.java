@@ -48,6 +48,16 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
      */
     List<RewardTier> findByProjectIdOrderBySortOrderAscCreatedAtAsc(UUID projectId);
 
+    /**
+     * The tiers the public may see, in display order: every tier but one created on a launched
+     * campaign that a moderator has not approved (#569). What every reader a backer or a
+     * visitor reaches starts from.
+     */
+    List<RewardTier> findByProjectIdAndApprovedTrueOrderBySortOrderAscCreatedAtAsc(UUID projectId);
+
+    /** The tiers created on a launched campaign that wait for its revision, in display order. */
+    List<RewardTier> findByProjectIdAndApprovedFalseOrderBySortOrderAscCreatedAtAsc(UUID projectId);
+
     long countByProjectId(UUID projectId);
 
     /**
@@ -108,10 +118,14 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
      * saving. The flush before it is kept, so a pending write cannot be ordered after
      * this statement.
      *
+     * <p>{@code approved} is in the condition too (#569). A tier that waits for a moderator is
+     * refused long before this by the reads that price a selection, and the statement says
+     * so as well rather than trusting that every caller asked first.
+     *
      * @param places how many, at least one. For a reward tier it is always one; for
      *     an add-on it is the quantity the backer chose
-     * @return 1 when the places were taken, 0 when the tier has too few left or no
-     *     longer exists
+     * @return 1 when the places were taken, 0 when the tier has too few left, no
+     *     longer exists, or waits for approval
      */
     @Modifying(flushAutomatically = true)
     @Query(
@@ -120,6 +134,7 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
                     UPDATE reward_tiers
                        SET reserved_quantity = reserved_quantity + :places
                      WHERE id = :id
+                       AND approved
                        AND (limit_quantity IS NULL
                             OR claimed_quantity + reserved_quantity + :places <= limit_quantity)
                     """,
@@ -231,10 +246,11 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
      * no limit is unlimited and always matches, and the count still moves, for
      * {@link #reservePlaces}'s reason.
      *
-     * <p>{@code version} is not incremented, for {@link #reservePlaces}'s reason.
+     * <p>{@code version} is not incremented, and {@code approved} is in the condition, for
+     * {@link #reservePlaces}'s reasons.
      *
-     * @return 1 when the places were claimed, 0 when the tier has too few left or no
-     *     longer exists
+     * @return 1 when the places were claimed, 0 when the tier has too few left, no
+     *     longer exists, or waits for approval
      */
     @Modifying(flushAutomatically = true)
     @Query(
@@ -243,6 +259,7 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
                     UPDATE reward_tiers
                        SET claimed_quantity = claimed_quantity + :places
                      WHERE id = :id
+                       AND approved
                        AND (limit_quantity IS NULL
                             OR claimed_quantity + reserved_quantity + :places <= limit_quantity)
                     """,
@@ -291,11 +308,14 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
      *
      * <p>In display order, so that a quote built from this reads in the order the
      * backer saw.
+     *
+     * <p>Approved tiers only (#569): a tier waiting for a moderator is answered as one that
+     * does not exist, which is what the public catalogue says about it too.
      */
     @Query(
             """
             SELECT tier FROM RewardTier tier
-            WHERE tier.projectId = :projectId AND tier.id IN :ids
+            WHERE tier.projectId = :projectId AND tier.id IN :ids AND tier.approved = true
             ORDER BY tier.sortOrder, tier.createdAt
             """)
     List<RewardTier> findSelected(@Param("projectId") UUID projectId, @Param("ids") Collection<UUID> ids);
@@ -330,11 +350,15 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
      * get a place. It is deliberately still {@code < limit} rather than "room for as
      * many as they wanted": what is offered is a tier with something left, and how
      * many of it they can have is the next request's answer.
+     *
+     * <p>A fifth since #569: a tier waiting for a moderator is not offered, for the
+     * secret tier's reason.
      */
     @Query(
             """
             SELECT tier.id FROM RewardTier tier
             WHERE tier.projectId = :projectId
+              AND tier.approved = true
               AND tier.id <> :excluding
               AND tier.addon = (SELECT refused.addon FROM RewardTier refused WHERE refused.id = :excluding)
               AND tier.secret = false
@@ -346,6 +370,23 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
             """)
     List<UUID> findAvailableAlternatives(
             @Param("projectId") UUID projectId, @Param("excluding") UUID excluding, @Param("at") Instant at);
+
+    /**
+     * Whether a pledge, an add-on line or a survey question names the tier, any of which would
+     * make deleting it a foreign-key violation. Asked before an approved revision deletes a tier
+     * (#569): the creator was allowed to propose it while the tier had no backers, and a backer
+     * may have arrived since. The other modules' tables are read for {@link #isMediaShownElsewhere}'s
+     * reason.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT EXISTS (SELECT 1 FROM pledges WHERE reward_tier_id = :id)
+                        OR EXISTS (SELECT 1 FROM pledge_addons WHERE reward_tier_id = :id)
+                        OR EXISTS (SELECT 1 FROM survey_questions WHERE reward_tier_id = :id)
+                    """,
+            nativeQuery = true)
+    boolean isReferencedByPledgesOrSurveys(@Param("id") UUID id);
 
     /**
      * Whether anything but this tier still shows the upload: another tier, a campaign's cover

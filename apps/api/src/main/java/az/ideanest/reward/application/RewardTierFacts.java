@@ -41,7 +41,9 @@ import org.springframework.transaction.annotation.Transactional;
  * secret tier is one somebody will be charged for through a private link, and a
  * tier whose availability window has closed can be reopened by editing one field.
  * Both are priced, both are the campaign's, and excluding either would let a
- * campaign pass the price floor by hiding the tier that fails it.
+ * campaign pass the price floor by hiding the tier that fails it. A tier created on a
+ * launched campaign that waits for a moderator (#569) is not counted, priced or sold: the
+ * campaign does not offer it until it is approved.
  *
  * <p>No authorisation here. Every caller of this has already been through
  * {@code ProjectAccess} — the checklist endpoint and the submission both load the
@@ -66,7 +68,7 @@ public class RewardTierFacts implements RewardFacts, RewardStock, RewardTitles {
     @Override
     @Transactional(readOnly = true)
     public List<BigDecimal> pricesOf(UUID projectId) {
-        return rewards.findByProjectIdOrderBySortOrderAscCreatedAtAsc(projectId).stream()
+        return rewards.findByProjectIdAndApprovedTrueOrderBySortOrderAscCreatedAtAsc(projectId).stream()
                 .map(RewardTier::getAmount)
                 .toList();
     }
@@ -134,12 +136,16 @@ public class RewardTierFacts implements RewardFacts, RewardStock, RewardTitles {
      * particular backer may select one is a question about a secret link and about
      * the campaign's state, and it is answered by the endpoint that already loaded
      * the campaign to render it (#52) — not by the method that hands out a price.
+     *
+     * <p>A tier waiting for a moderator (#569) is not priced: nobody may pledge to a tier the
+     * public cannot see, and the answer is the one for a tier that does not exist.
      */
     @Override
     @Transactional(readOnly = true)
     public Optional<RewardTierPrice> priceOf(UUID projectId, UUID rewardTierId) {
         return rewards.findById(rewardTierId)
                 .filter(tier -> tier.getProjectId().equals(projectId))
+                .filter(RewardTier::isApproved)
                 .map(tier -> new RewardTierPrice(tier.getId(), tier.getAmount(), tier.getCurrency()));
     }
 

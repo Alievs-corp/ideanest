@@ -26,10 +26,12 @@ import java.util.UUID;
  * the editor binds a form to every field, and an absent key cannot be told from a
  * field that is genuinely unset.
  *
- * <p><strong>On a launched campaign it is the creator's draft (#559).</strong> The title,
- * description, image and video are what the campaign's open revision holds for the tier, which
- * the public does not see until a moderator approves it; {@code revisionChangedFields} names
- * the ones that differ from what the public sees.
+ * <p><strong>On a launched campaign it is the creator's draft (#559, #569).</strong> Every
+ * change to a tier waits in the campaign's open revision until a moderator approves it, and
+ * this is the tier as that revision would leave it: a created tier is listed, a changed one
+ * shows its proposed values, and a deleted one is still listed so that the deletion can be
+ * seen and undone. {@code pending} says which, and {@code revisionChangedFields} names what a
+ * changed tier changes. The public sees none of it until approval.
  *
  * @param price amount and currency, the amount a string on the wire. §10.3, and
  *     {@link Money} for why
@@ -63,9 +65,18 @@ import java.util.UUID;
  * @param image the tier's picture, or null
  * @param video the tier's clip, or null. Null as well while an attached upload is not
  *     servable, which a ready one always is
- * @param revisionChangedFields which of {@code title}, {@code description},
- *     {@code imageMediaId} and {@code videoMediaId} wait in the campaign's revision with a
- *     value the public does not see yet. Empty before launch and when nothing waits
+ * @param sortOrder its place in the list; on a launched campaign, in the order the creator
+ *     gave it, which the public sees only on approval
+ * @param revisionChangedFields for a tier the revision changes, which fields wait with a value
+ *     the public does not see yet: any of {@code title}, {@code description},
+ *     {@code imageMediaId}, {@code videoMediaId}, {@code estimatedDelivery},
+ *     {@code limitQuantity}, {@code shippingType}, {@code isEarlyBird}, {@code isFeatured},
+ *     {@code isSecret}, {@code isAddon}, {@code availableFrom}, {@code availableUntil},
+ *     {@code items}, {@code shippingRules} and {@code shippingZoneRates}. Empty before launch,
+ *     for a created tier, and when nothing waits
+ * @param pending what waits for a moderator about this tier on a launched campaign:
+ *     {@code created} (the public does not see it yet), {@code changed} (the public sees the
+ *     approved values) or {@code deleted} (the public still sees it). Null when nothing waits
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record RewardResponse(
@@ -96,6 +107,7 @@ public record RewardResponse(
         RewardImageBody image,
         RewardVideoBody video,
         List<String> revisionChangedFields,
+        String pending,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -105,8 +117,8 @@ public record RewardResponse(
         return new RewardResponse(
                 tier.getId(),
                 tier.getProjectId(),
-                detail.writing().title(),
-                detail.writing().description(),
+                tier.getTitle(),
+                tier.getDescription(),
                 Money.of(tier.getAmount(), tier.getCurrency()),
                 tier.getEstimatedDelivery(),
                 tier.getLimitQuantity(),
@@ -119,7 +131,7 @@ public record RewardResponse(
                 tier.isSecret(),
                 tier.getSecretToken(),
                 tier.isAddon(),
-                tier.getSortOrder(),
+                detail.sortOrder(),
                 tier.getAvailableFrom(),
                 tier.getAvailableUntil(),
                 detail.contents().stream().map(RewardItemBody::of).toList(),
@@ -132,6 +144,7 @@ public record RewardResponse(
                 RewardImageBody.of(detail.image()),
                 RewardVideoBody.of(detail.video()),
                 detail.revisionChangedFields(),
+                detail.pending() == null ? null : detail.pending().wireName(),
                 tier.getCreatedAt(),
                 tier.getUpdatedAt());
     }

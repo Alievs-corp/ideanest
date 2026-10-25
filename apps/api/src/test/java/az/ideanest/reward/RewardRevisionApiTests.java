@@ -185,8 +185,8 @@ class RewardRevisionApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("the price and a lower quantity are still refused, and the rest of a tier still changes at once")
-    void lockedAndUnheldFieldsAreUnchanged() {
+    @DisplayName("the price and a lower quantity are still refused, and the rest of a tier waits for review too (#569)")
+    void lockedFieldsAreRefusedAndTheRestIsHeld() {
         String creator = signIn();
         UUID projectId = draft(creator);
         Map<String, Object> body = tier("Limited");
@@ -205,11 +205,22 @@ class RewardRevisionApiTests extends AbstractIntegrationTest {
         ResponseEntity<Map<String, Object>> raised =
                 patch(rewardId, creator, Map.of("limitQuantity", 20, "shippingType", "DOMESTIC"));
         assertThat(raised.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(raised.getBody()).containsEntry("revisionChangedFields", List.of());
-        assertThat(publicCatalogue(projectId).get(0))
+        assertThat(raised.getBody())
                 .containsEntry("limitQuantity", 20)
-                .containsEntry("shippingType", "DOMESTIC");
-        assertThat(openRevisionCount(projectId)).isZero();
+                .containsEntry("shippingType", "DOMESTIC")
+                .containsEntry("pending", "changed")
+                .containsEntry("revisionChangedFields", List.of("limitQuantity", "shippingType"));
+        assertThat(publicCatalogue(projectId).get(0))
+                .containsEntry("limitQuantity", 10)
+                .containsEntry("shippingType", "NONE");
+        assertThat(openRevisionCount(projectId)).isOne();
+
+        ResponseEntity<Map<String, Object>> backDown = patch(rewardId, creator, Map.of("limitQuantity", 15));
+        assertThat(backDown.getStatusCode())
+                .as("a waiting raise can be taken back as far as what the public sees")
+                .isEqualTo(HttpStatus.OK);
+        assertThat(patch(rewardId, creator, Map.of("limitQuantity", 9)).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
     }
 
     @Test
@@ -276,22 +287,24 @@ class RewardRevisionApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a revision whose only change was to a tier since deleted cannot be submitted")
-    void aDeletedTierLeavesNothingToSubmit() {
+    @DisplayName("a tier created and deleted again leaves nothing to review")
+    void aCreatedTierDeletedAgainLeavesNothingToSubmit() {
         String creator = signIn();
         UUID projectId = draft(creator);
-        UUID rewardId = idOf(create(projectId, creator, tier("Temporary")).getBody());
         Campaigns.launch(dataSource, projectId);
+        UUID rewardId = idOf(create(projectId, creator, tier("Temporary")).getBody());
         patch(rewardId, creator, Map.of("title", "Still temporary"));
+        assertThat(openRevisionCount(projectId)).isOne();
 
         assertThat(send(HttpMethod.DELETE, "/v1/rewards/" + rewardId, creator, null).getStatusCode())
                 .isEqualTo(HttpStatus.NO_CONTENT);
 
+        assertThat(openRevisionCount(projectId)).isZero();
         ResponseEntity<Map<String, Object>> submitted =
                 post("/v1/projects/" + projectId + "/revision/submit", creator, null);
         assertThat(submitted.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(submitted.getBody()).containsEntry("code", "REVISION_NOT_AVAILABLE");
-        assertThat(mapOf(submitted.getBody(), "meta")).containsEntry("reason", "NO_CHANGES");
+        assertThat(mapOf(submitted.getBody(), "meta")).containsEntry("reason", "NO_OPEN_REVISION");
     }
 
     @Test

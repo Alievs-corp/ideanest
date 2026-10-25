@@ -120,7 +120,9 @@ public class PublicRewardCatalogue {
 
         Instant now = clock.instant();
         Set<String> presented = presentedTokens(secretTokens);
-        List<RewardTier> offered = rewards.findByProjectIdOrderBySortOrderAscCreatedAtAsc(projectId).stream()
+        // Approved tiers only (#569). A tier created on a launched campaign is a row before a
+        // moderator has seen it, and no token or window makes it one the public may see.
+        List<RewardTier> offered = rewards.findByProjectIdAndApprovedTrueOrderBySortOrderAscCreatedAtAsc(projectId).stream()
                 .filter(tier -> isOffered(tier, now, presented))
                 .toList();
 

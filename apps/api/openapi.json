@@ -10308,6 +10308,33 @@
         "tags" : [ "reward-controller" ]
       }
     },
+    "/v1/rewards/{id}/restore" : {
+      "post" : {
+        "operationId" : "rewardRestore",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RewardResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "reward-controller" ]
+      }
+    },
     "/v1/rewards/{id}/shipping-rules" : {
       "put" : {
         "operationId" : "rewardReplaceShippingRules",
@@ -18186,6 +18213,18 @@
       "RevisionRewardBody" : {
         "type" : "object",
         "properties" : {
+          "changedFields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "changes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "id" : {
             "type" : "string",
             "format" : "uuid"
@@ -18193,8 +18232,19 @@
           "live" : {
             "$ref" : "#/components/schemas/RevisionRewardWriting"
           },
+          "livePosition" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "price" : {
+            "$ref" : "#/components/schemas/Money"
+          },
           "proposed" : {
             "$ref" : "#/components/schemas/RevisionRewardWriting"
+          },
+          "proposedPosition" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -18221,20 +18271,123 @@
           }
         }
       },
+      "RevisionRewardItem" : {
+        "type" : "object",
+        "properties" : {
+          "itemId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "quantity" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "RevisionRewardWriting" : {
         "type" : "object",
         "properties" : {
+          "availableFrom" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "availableUntil" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "description" : {
             "type" : "string"
           },
+          "estimatedDelivery" : {
+            "type" : "string",
+            "format" : "date"
+          },
           "image" : {
             "$ref" : "#/components/schemas/RevisionRewardImage"
+          },
+          "isAddon" : {
+            "type" : "boolean"
+          },
+          "isEarlyBird" : {
+            "type" : "boolean"
+          },
+          "isFeatured" : {
+            "type" : "boolean"
+          },
+          "isSecret" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionRewardItem"
+            }
+          },
+          "limitQuantity" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "shippingRules" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionShippingRule"
+            }
+          },
+          "shippingType" : {
+            "type" : "string"
+          },
+          "shippingZoneRates" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionShippingZoneRate"
+            }
           },
           "title" : {
             "type" : "string"
           },
           "video" : {
             "$ref" : "#/components/schemas/CampaignVideoBody"
+          }
+        }
+      },
+      "RevisionShippingRule" : {
+        "type" : "object",
+        "properties" : {
+          "additionalItemAmount" : {
+            "type" : "number"
+          },
+          "amount" : {
+            "type" : "number"
+          },
+          "countryCode" : {
+            "type" : "string"
+          },
+          "perKilogramAmount" : {
+            "type" : "number"
+          }
+        }
+      },
+      "RevisionShippingZoneRate" : {
+        "type" : "object",
+        "properties" : {
+          "additionalItemAmount" : {
+            "type" : "number"
+          },
+          "amount" : {
+            "type" : "number"
+          },
+          "perKilogramAmount" : {
+            "type" : "number"
+          },
+          "zoneId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "zoneName" : {
+            "type" : "string"
           }
         }
       },
@@ -18387,6 +18540,9 @@
           "limitQuantity" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "pending" : {
+            "type" : "string"
           },
           "price" : {
             "$ref" : "#/components/schemas/Money"

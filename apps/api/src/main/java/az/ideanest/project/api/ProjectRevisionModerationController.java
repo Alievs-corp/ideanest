@@ -49,7 +49,7 @@ public class ProjectRevisionModerationController {
                 review.changedFields(),
                 responses.of(review.live()),
                 responses.of(review.proposed()),
-                responses.rewardsOf(review.rewards()));
+                responses.rewardsOf(review.rewards(), review.rewardNames()));
     }
 
     /** Publishes the edit. The note is optional. */

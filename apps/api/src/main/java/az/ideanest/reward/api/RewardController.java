@@ -90,11 +90,26 @@ public class RewardController {
      * <p>{@code 409 REWARD_HAS_BACKERS} once somebody has. §5.3 permits no exception and
      * gives the alternative: the tier is withdrawn from sale rather than deleted, so that
      * the people who chose it still have a description of what they are owed.
+     *
+     * <p>On a launched campaign the deletion of a tier the public sees waits for a moderator
+     * (#569): the tier stays public, and in the creator's list with {@code pending: "deleted"},
+     * until the campaign's revision is approved. A tier created since launch is deleted at once.
      */
     @DeleteMapping("/v1/rewards/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
         rewards.delete(id, callerOf(accessToken));
+    }
+
+    /**
+     * Withdraws a deletion that waits for a moderator (#569), and answers with the tier.
+     *
+     * <p>A tier with no deletion waiting is answered as it is, so a client that sends this
+     * twice is not refused.
+     */
+    @PostMapping("/v1/rewards/{id}/restore")
+    public RewardResponse restore(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
+        return RewardResponse.of(rewards.restore(id, callerOf(accessToken)));
     }
 
     /**

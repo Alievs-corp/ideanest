@@ -8,17 +8,21 @@ import az.ideanest.project.domain.RevisionContent;
 import az.ideanest.project.domain.RevisionStatus;
 import az.ideanest.project.infrastructure.ProjectRepository;
 import az.ideanest.project.infrastructure.ProjectRevisionRepository;
+import az.ideanest.shared.money.Money;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,14 +44,23 @@ import tools.jackson.databind.ObjectMapper;
  * runs unchanged and nothing it assigns is flushed. {@link #stage} then reads the result back
  * into the revision. The entity must not be used as the campaign after that.
  *
- * <p><strong>A reward tier's writing goes into the same revision (#559).</strong> Its title,
- * description, picture and clip are staged by {@link #stageReward} and read back by
- * {@link #heldRewardWriting}; the tier keeps what the public sees until approval, and
- * {@link #publishRewards} writes it. The tier's price, stock and the rest are the reward
- * module's and are not held.
+ * <p><strong>Every change to the reward tiers goes into the same revision (#559, #569).</strong>
+ * An approved tier's new state is staged by {@link #stageReward}, a deletion or a new order by
+ * {@link #stageRewards}, and all of it is read back by {@link #heldRewards}; the tier keeps what
+ * the public sees until approval. A tier created after launch is a row the public does not see,
+ * and {@link #touchRewards} keeps the revision naming it. {@link #publishRewards} applies the
+ * lot on approval, and a refusal or a discard deletes the created rows. The tier's price and
+ * its counts are not held: the price is frozen and the counts are backers'.
  */
 @Service
 public class ProjectRevisionService {
+
+    /** What a moderator is told happened to a tier. */
+    public static final String CREATED = "created";
+
+    public static final String DELETED = "deleted";
+    public static final String REORDERED = "reordered";
+    public static final String CHANGED = "changed";
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -80,8 +93,26 @@ public class ProjectRevisionService {
     /** The refusal a moderator gave to the creator's latest revision. */
     public record Rejection(UUID id, String reason, Instant decidedAt) {}
 
-    /** One reward tier whose writing a revision changes, as the public sees it and as proposed. */
-    public record RewardChange(UUID rewardId, RewardWriting live, RewardWriting proposed) {}
+    /**
+     * One reward tier a revision touches, as the public sees it and as proposed.
+     *
+     * @param changes {@link #CREATED}, {@link #DELETED}, or one or both of {@link #CHANGED}
+     *     and {@link #REORDERED}
+     * @param livePosition where the public sees it now, or null for a created tier
+     * @param proposedPosition where it would be, or null for a deleted tier
+     * @param live null for a created tier
+     * @param proposed null for a deleted tier
+     * @param changedFields what {@link RewardWriting#changedFrom} names, for a changed tier
+     */
+    public record RewardChange(
+            UUID rewardId,
+            List<String> changes,
+            Integer livePosition,
+            Integer proposedPosition,
+            Money price,
+            RewardWriting live,
+            RewardWriting proposed,
+            List<String> changedFields) {}
 
     /**
      * The campaign as its creator is editing it: the entity itself for a campaign nobody has
@@ -109,21 +140,33 @@ public class ProjectRevisionService {
         Project live = projects.findByIdForUpdate(workingCopy.getId())
                 .orElseThrow(() -> new ProjectNotFoundException(workingCopy.getId()));
         Optional<ProjectRevision> open = openAfterLock(live.getId());
-        Map<UUID, RevisionContent.Reward> heldRewards =
-                open.map(revision -> contentOf(revision).rewards()).orElse(Map.of());
+        RevisionContent proposed = RevisionContent.of(workingCopy, storyOf(workingCopy), Map.of());
+        if (open.isPresent()) {
+            proposed = proposed.withRewardsOf(contentOf(open.get()));
+        }
 
-        keep(live, liveContent(live), open, RevisionContent.of(workingCopy, storyOf(workingCopy), heldRewards), authorId);
+        keep(live, liveContent(live), open, proposed, authorId);
     }
 
     /**
-     * Applies an edit to one reward tier's writing in the open revision, opening one if there
-     * is none, and answers the writing the tier now has in it.
+     * Locks the campaign before a change to a launched campaign's tiers writes a row, so that
+     * the write and the revision that names it are serialised against approval and against the
+     * creator's other saves, and taken in the same order by all of them.
+     */
+    @Transactional
+    public void lockForRewards(UUID projectId) {
+        projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+    }
+
+    /**
+     * Applies an edit to one approved reward tier's proposed state in the open revision, opening
+     * one if there is none, and answers the state the tier now has in it.
      *
-     * <p>{@code edit} is given the tier's writing as the revision holds it, or as the tier shows
-     * it, read after the campaign is locked, so two editors saving different fields of one tier
-     * do not undo each other. It validates as it goes and may throw. An edit that changes
-     * nothing leaves the revision alone, so an autosave does not take a submitted revision back
-     * to a draft.
+     * <p>{@code edit} is given the tier as the revision holds it, or as the tier shows it, read
+     * after the campaign is locked, so two editors saving different fields of one tier do not
+     * undo each other. It validates as it goes and may throw. An edit that changes nothing
+     * leaves the revision alone, so an autosave does not take a submitted revision back to a
+     * draft.
      */
     @Transactional
     public RewardWriting stageReward(UUID projectId, UUID rewardId, UUID authorId, UnaryOperator<RewardWriting> edit) {
@@ -132,10 +175,10 @@ public class ProjectRevisionService {
         RevisionContent liveContent = liveContent(live);
         RevisionContent.Reward shown = liveContent.rewards().get(rewardId);
         if (shown == null) {
-            throw new IllegalStateException("Reward " + rewardId + " is not a tier of project " + projectId);
+            throw new IllegalStateException("Reward " + rewardId + " is not an approved tier of project " + projectId);
         }
 
-        RevisionContent current = open.map(this::contentOf).orElse(liveContent);
+        RevisionContent current = open.map(this::contentOf).orElse(liveContent).heldAgainst(liveContent);
         RewardWriting before = RewardWriting.of(current.rewards().getOrDefault(rewardId, shown));
         RewardWriting after = edit.apply(before);
         if (!after.equals(before)) {
@@ -145,32 +188,153 @@ public class ProjectRevisionService {
     }
 
     /**
-     * The writing the open revision holds for the campaign's tiers, by tier: the ones it
-     * changes, and none of the others. Empty when nothing is open.
+     * Applies an edit to what the open revision holds about the campaign's tiers as a whole — a
+     * deletion, its undoing, a new order — opening a revision if there is none. Read and kept
+     * as {@link #stageReward} does, and left alone when the edit changes nothing.
      */
-    @Transactional(readOnly = true)
-    public Map<UUID, RewardWriting> heldRewardWriting(UUID projectId) {
-        return revisions.findOpenByProjectId(projectId)
-                .map(open -> writings(contentOf(open).rewards()))
-                .orElse(Map.of());
-    }
+    @Transactional
+    public HeldRewards stageRewards(UUID projectId, UUID authorId, UnaryOperator<HeldRewards> edit) {
+        Project live = projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Optional<ProjectRevision> open = openAfterLock(projectId);
+        RevisionContent liveContent = liveContent(live);
 
-    /** The tiers a revision would change, beside what they show now, in display order. */
-    public List<RewardChange> rewardChanges(RevisionContent proposed, RevisionContent live) {
-        return proposed.changedRewardsFrom(live).stream()
-                .map(rewardId -> new RewardChange(
-                        rewardId,
-                        RewardWriting.of(live.rewards().get(rewardId)),
-                        RewardWriting.of(proposed.rewards().get(rewardId))))
-                .toList();
-    }
-
-    /** Writes an approved revision's tier writing onto the tiers. Part of approving it. */
-    public void publishRewards(UUID projectId, RevisionContent approved, RevisionContent live) {
-        Map<UUID, RevisionContent.Reward> held = approved.heldAgainst(live).rewards();
-        if (!held.isEmpty()) {
-            rewardWritings.publish(projectId, writings(held));
+        RevisionContent current = open.map(this::contentOf).orElse(liveContent).heldAgainst(liveContent);
+        HeldRewards before = heldOf(current);
+        HeldRewards after = edit.apply(before);
+        if (!after.equals(before)) {
+            Map<UUID, RevisionContent.Reward> changed = new LinkedHashMap<>();
+            after.changed().forEach((rewardId, writing) -> changed.put(rewardId, writing.held()));
+            keep(
+                    live,
+                    liveContent,
+                    open,
+                    current.withRewardChanges(changed, after.deleted(), current.createdRewards(), after.order()),
+                    authorId);
         }
+        return after;
+    }
+
+    /**
+     * Keeps the open revision in step after a tier created on the launched campaign was
+     * created, changed or deleted: the tier is the row itself, so the revision has nothing of
+     * it to hold but its name, and a submitted revision goes back to a draft because what a
+     * moderator would approve has changed. A revision left with nothing is closed.
+     */
+    @Transactional
+    public void touchRewards(UUID projectId, UUID authorId) {
+        Project live = projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Optional<ProjectRevision> open = openAfterLock(projectId);
+        RevisionContent liveContent = liveContent(live);
+        keep(live, liveContent, open, open.map(this::contentOf).orElse(liveContent), authorId);
+    }
+
+    /** What the open revision holds about the campaign's tiers. {@link HeldRewards#NONE} when nothing is open. */
+    @Transactional(readOnly = true)
+    public HeldRewards heldRewards(UUID projectId) {
+        return revisions.findOpenByProjectId(projectId)
+                .flatMap(open -> projects.findById(projectId)
+                        .map(live -> heldOf(contentOf(open).heldAgainst(liveContent(live)))))
+                .orElse(HeldRewards.NONE);
+    }
+
+    /**
+     * Every tier a revision would create, delete, move or change, beside what it shows now:
+     * the kept and created ones in the order proposed, and then the deleted ones.
+     *
+     * <p>A tier counts as moved when its place among the approved tiers that stay is not the
+     * place it has now, so creating a tier in the middle of the list moves nothing else.
+     */
+    public List<RewardChange> rewardChanges(UUID projectId, RevisionContent proposed, RevisionContent live) {
+        RevisionContent held = proposed.heldAgainst(live);
+        Map<UUID, RewardWritings.Tier> liveTiers = byId(rewardWritings.liveTiersOf(projectId));
+        Map<UUID, RewardWritings.Tier> createdTiers = byId(rewardWritings.createdTiersOf(projectId));
+
+        List<UUID> liveOrder = List.copyOf(live.rewards().keySet());
+        List<UUID> proposedOrder = held.proposedRewardOrder(live).stream()
+                .filter(id -> live.rewards().containsKey(id) || createdTiers.containsKey(id))
+                .toList();
+        List<UUID> kept = liveOrder.stream().filter(proposedOrder::contains).toList();
+        List<UUID> keptProposed = proposedOrder.stream().filter(kept::contains).toList();
+
+        List<RewardChange> changes = new ArrayList<>();
+        for (UUID rewardId : proposedOrder) {
+            RewardWritings.Tier created = createdTiers.get(rewardId);
+            if (created != null) {
+                changes.add(new RewardChange(
+                        rewardId,
+                        List.of(CREATED),
+                        null,
+                        proposedOrder.indexOf(rewardId),
+                        created.price(),
+                        null,
+                        created.writing(),
+                        List.of()));
+                continue;
+            }
+            RewardWriting shown = RewardWriting.of(live.rewards().get(rewardId));
+            RevisionContent.Reward entry = held.rewards().get(rewardId);
+            RewardWriting wanted = entry == null ? shown : RewardWriting.of(entry);
+            List<String> fields = wanted.changedFrom(shown);
+            List<String> kinds = new ArrayList<>();
+            if (!fields.isEmpty()) {
+                kinds.add(CHANGED);
+            }
+            if (kept.indexOf(rewardId) != keptProposed.indexOf(rewardId)) {
+                kinds.add(REORDERED);
+            }
+            if (!kinds.isEmpty()) {
+                changes.add(new RewardChange(
+                        rewardId,
+                        List.copyOf(kinds),
+                        liveOrder.indexOf(rewardId),
+                        proposedOrder.indexOf(rewardId),
+                        priceOf(liveTiers.get(rewardId)),
+                        shown,
+                        wanted,
+                        fields));
+            }
+        }
+        for (UUID rewardId : held.deletedRewardsFrom(live)) {
+            changes.add(new RewardChange(
+                    rewardId,
+                    List.of(DELETED),
+                    liveOrder.indexOf(rewardId),
+                    null,
+                    priceOf(liveTiers.get(rewardId)),
+                    RewardWriting.of(live.rewards().get(rewardId)),
+                    null,
+                    List.of()));
+        }
+        return List.copyOf(changes);
+    }
+
+    /** The names of the campaign's items and shipping zones, which a tier's lines name by identifier. */
+    public Map<UUID, String> rewardNames(UUID projectId) {
+        return rewardWritings.namesOf(projectId);
+    }
+
+    /**
+     * Applies an approved revision to the campaign's tiers. Part of approving it.
+     *
+     * @return the tiers it deleted that are kept because somebody has backed them since
+     */
+    public List<UUID> publishRewards(UUID projectId, RevisionContent approved, RevisionContent live) {
+        RevisionContent held = approved.heldAgainst(live);
+        HeldRewards rewards = heldOf(held);
+        if (rewards.isEmpty()) {
+            return List.of();
+        }
+        HeldRewards ordered = new HeldRewards(
+                rewards.changed(),
+                rewards.deleted(),
+                rewards.created(),
+                held.rewardOrder() == null ? null : held.proposedRewardOrder(live));
+        return rewardWritings.publish(projectId, ordered);
+    }
+
+    /** Deletes the tiers created for a revision that will not be approved. Part of refusing it. */
+    public void discardRewards(UUID projectId) {
+        rewardWritings.discardCreated(projectId);
     }
 
     /**
@@ -187,6 +351,10 @@ public class ProjectRevisionService {
      * Keeps {@code proposed} as the open revision, or closes the revision when it has come back
      * to what the campaign shows: an unsent draft is deleted and a submitted one is withdrawn,
      * so a moderator is never asked to approve nothing.
+     *
+     * <p>The tiers it names as created are read here, from the rows that wait for it, rather
+     * than trusted from the caller: a created tier is created and deleted as a row, and the
+     * revision is what has to keep up with it.
      */
     private void keep(
             Project live,
@@ -194,7 +362,10 @@ public class ProjectRevisionService {
             Optional<ProjectRevision> open,
             RevisionContent proposed,
             UUID authorId) {
-        RevisionContent held = proposed.heldAgainst(liveContent);
+        List<UUID> created = rewardWritings.createdTiersOf(live.getId()).stream()
+                .map(RewardWritings.Tier::id)
+                .toList();
+        RevisionContent held = proposed.withCreatedRewards(created).heldAgainst(liveContent);
         if (held.changedFrom(liveContent).isEmpty()) {
             open.ifPresent(revision -> {
                 if (revision.getStatus() == RevisionStatus.DRAFT) {
@@ -232,13 +403,15 @@ public class ProjectRevisionService {
         return open;
     }
 
-    /** Throws the open revision away. The campaign is unchanged. */
+    /** Throws the open revision away, and the tiers created for it. The campaign is unchanged. */
     @Transactional
     public void discard(UUID projectId, UUID accountId) {
         access.requireEditable(projectId, accountId);
-        ProjectRevision open = revisions.findOpenByProjectId(projectId)
+        lockForRewards(projectId);
+        ProjectRevision open = openAfterLock(projectId)
                 .orElseThrow(() -> new RevisionNotAvailableException(RevisionNotAvailableException.Reason.NO_OPEN_REVISION));
         open.withdraw();
+        discardRewards(projectId);
     }
 
     /** The open revision, described against what the campaign shows now. */
@@ -265,17 +438,26 @@ public class ProjectRevisionService {
                 .findFirst();
     }
 
-    /** The content a campaign shows the public now, with every reward tier's writing. */
+    /** The content a campaign shows the public now, with every approved reward tier. */
     public RevisionContent liveContent(Project live) {
         Map<UUID, RevisionContent.Reward> rewards = new LinkedHashMap<>();
-        rewardWritings.liveWritingOf(live.getId()).forEach((rewardId, writing) -> rewards.put(rewardId, writing.held()));
+        rewardWritings.liveTiersOf(live.getId()).forEach(tier -> rewards.put(tier.id(), tier.writing().held()));
         return RevisionContent.of(live, storyOf(live), rewards);
     }
 
-    private static Map<UUID, RewardWriting> writings(Map<UUID, RevisionContent.Reward> rewards) {
-        Map<UUID, RewardWriting> writings = new LinkedHashMap<>();
-        rewards.forEach((rewardId, reward) -> writings.put(rewardId, RewardWriting.of(reward)));
-        return writings;
+    /** What a revision read against the live content holds about the tiers. */
+    private static HeldRewards heldOf(RevisionContent held) {
+        Map<UUID, RewardWriting> changed = new LinkedHashMap<>();
+        held.rewards().forEach((rewardId, reward) -> changed.put(rewardId, RewardWriting.of(reward)));
+        return new HeldRewards(changed, held.deletedRewards(), held.createdRewards(), held.rewardOrder());
+    }
+
+    private static Map<UUID, RewardWritings.Tier> byId(List<RewardWritings.Tier> tiers) {
+        return tiers.stream().collect(Collectors.toMap(RewardWritings.Tier::id, Function.identity()));
+    }
+
+    private static Money priceOf(RewardWritings.Tier tier) {
+        return tier == null ? null : tier.price();
     }
 
     public RevisionContent contentOf(ProjectRevision revision) {
