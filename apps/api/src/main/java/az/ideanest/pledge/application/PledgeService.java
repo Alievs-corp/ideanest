@@ -91,10 +91,12 @@ public class PledgeService {
      *     no such campaign
      * @throws az.ideanest.project.application.ProjectNotAcceptingPledgesException
      *     when it is not live — §10.4's {@code PROJECT_NOT_LIVE}
+     * @throws az.ideanest.project.application.OwnProjectPledgeException when the backer
+     *     is its creator or an active collaborator — {@code OWN_PROJECT_PLEDGE} (#575)
      */
     @Transactional
     public PledgeDetail draft(DraftPledge command) {
-        acceptance.requireAcceptingPledges(command.projectId());
+        acceptance.requireAcceptingPledgesFrom(command.projectId(), command.backerId());
         // Never a late pledge: IDN-EXT-01 (#36) switched them off, so every pledge counts
         // towards the goal the campaign is judged on. The flag goes with stage 4 (#45).
         return detailOf(reservations.draft(command));

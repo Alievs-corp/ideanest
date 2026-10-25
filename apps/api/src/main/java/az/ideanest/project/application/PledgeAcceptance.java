@@ -24,11 +24,15 @@ import org.springframework.transaction.annotation.Transactional;
  * would mean this module being depended on in order to say no twice, and the
  * endpoint has to have asked before it reserves anything anyway.
  *
- * <p><strong>Deliberately not {@link ProjectAccess}.</strong> That class answers
- * "may this account act on this campaign", and every one of its methods is about a
- * relationship between a person and a campaign. This is a question about the
- * campaign alone: a backer has no relationship to it, and a rule stated in terms of
- * capabilities would be a rule about the wrong thing.
+ * <p><strong>Not part of {@link ProjectAccess}, and it asks that class one thing.</strong>
+ * {@code ProjectAccess} answers "may this account act on this campaign", and every one of
+ * its methods is about a relationship between a person and a campaign. Whether the
+ * campaign is taking pledges is a question about the campaign alone, and a rule stated in
+ * terms of capabilities would be a rule about the wrong thing. The one relationship that
+ * does matter here is the reverse — a backer who is <em>on</em> the team — and that is
+ * {@link ProjectAccess#grantsOf}, asked rather than re-implemented, so "who works on this
+ * campaign" keeps the one answer that class exists to give. See
+ * {@link #requireAcceptingPledgesFrom} for why it matters (#575).
  *
  * <p><strong>Three periods, one funding window — IDN-EXT-01 (#36).</strong> A campaign
  * takes pledges while it is {@code LIVE} and before its first deadline, while it is in
@@ -46,11 +50,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class PledgeAcceptance {
 
     private final ProjectRepository projects;
+    private final ProjectAccess access;
     private final ProjectProperties properties;
     private final Clock clock;
 
-    public PledgeAcceptance(ProjectRepository projects, ProjectProperties properties, Clock clock) {
+    public PledgeAcceptance(
+            ProjectRepository projects, ProjectAccess access, ProjectProperties properties, Clock clock) {
         this.projects = projects;
+        this.access = access;
         this.properties = properties;
         this.clock = clock;
     }
@@ -142,6 +149,56 @@ public class PledgeAcceptance {
                 // The end of the period the campaign is in, so a backer refused on the fifth
                 // day of an extension is not told about a deadline weeks earlier.
                 ends == null ? project.getDeadline() : ends);
+    }
+
+    /**
+     * {@link #requireAcceptingPledges}, and then whether <em>this backer</em> may pledge to it.
+     *
+     * <p>The form every path that puts money into a campaign asks: the draft, the payment that
+     * collects it, and #171's raise. The campaign is asked first, so a closed or unlaunched
+     * campaign is refused exactly as it was for everybody — a creator holding the identifier of
+     * their own draft campaign still gets the 404 rather than learning anything new.
+     *
+     * <p><strong>Not on the edit or the cancellation of a draft.</strong> Neither moves money: a
+     * draft counts towards nothing until it is paid, and the payment asks this. Refusing the
+     * cancellation would only stop somebody who was invited onto the team after drafting from
+     * giving back the place they hold.
+     *
+     * @throws OwnProjectPledgeException when the backer is the campaign's creator or holds an
+     *     active collaborator grant on it
+     */
+    @Transactional(readOnly = true)
+    public void requireAcceptingPledgesFrom(UUID projectId, UUID backerId) {
+        requireAcceptingPledges(projectId);
+        requireOutsideTheTeam(projectId, backerId);
+    }
+
+    /**
+     * Refuses a backer who works on this campaign, whatever state it is in — #575.
+     *
+     * <p>On its own for §4.8's pledge manager, which buys only <em>after</em> the campaign
+     * stopped taking pledges and so cannot ask the composed form above. Nothing it buys moves
+     * {@code pledged_amount}, but the rule is "the team does not back its own campaign", and a
+     * rule with an exception for the one route that happens not to matter today is a rule the
+     * next route inherits the exception from.
+     *
+     * <p><strong>"The team" is {@link ProjectAccess#grantsOf}</strong>: the creator, and a
+     * collaborator whose grant is active. A pending invitation is nobody yet and a revoked grant
+     * is nobody again, so both pledge like anybody else — the same line that class draws for
+     * every other question about the campaign. Any capability counts, including one that has
+     * nothing to do with money: the grant is the creator's trust, and it is the creator's
+     * interest that a self-pledge serves.
+     *
+     * <p>Loaded again rather than passed in, because a {@link Project} may not leave this module.
+     * Inside the caller's transaction the second load is the persistence context's copy of the
+     * row {@link #requireAcceptingPledges} already read, not a second query.
+     */
+    @Transactional(readOnly = true)
+    public void requireOutsideTheTeam(UUID projectId, UUID backerId) {
+        Project project = projects.findById(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        if (!access.grantsOf(project, backerId).isEmpty()) {
+            throw new OwnProjectPledgeException(projectId, backerId);
+        }
     }
 
     private static boolean takesPledges(Project project) {

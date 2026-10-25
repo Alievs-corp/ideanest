@@ -183,6 +183,7 @@ export const PLEDGE_FAILURE_CODES = [
   'SHIPPING_DESTINATION_UNPRICED',
   'CONTRIBUTION_BELOW_REWARD_PRICE',
   'PROJECT_NOT_LIVE',
+  'OWN_PROJECT_PLEDGE',
   'PLEDGE_CANNOT_BE_CANCELLED',
   'PLEDGE_DECREASE_NOT_ALLOWED',
   'PLEDGE_NOT_EDITABLE',
@@ -239,6 +240,13 @@ const BEHAVIOUR: Record<PledgeFailureCode, Behaviour> = {
    * was never anything to reserve.
    */
   PROJECT_NOT_LIVE: { recovery: 'none' },
+  /*
+   * #575: the caller is the campaign's creator or an active collaborator. A 403 from the draft,
+   * the payment, the raise and the pledge manager's purchases alike, and nothing on this screen
+   * changes it — so it is a dead end, and named here rather than left to the unknown-code branch,
+   * whose recovery is `retry` and would offer the button that cannot work.
+   */
+  OWN_PROJECT_PLEDGE: { recovery: 'none' },
   /*
    * IDN-EXT-01 (#35): a backer cannot withdraw a confirmed pledge. The web no longer offers
    * the control, so this is reached from an old tab or another client.

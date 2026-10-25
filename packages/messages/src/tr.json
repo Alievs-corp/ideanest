@@ -4955,6 +4955,10 @@
           "title": "Bu kampanya destek almıyor",
           "detail": "Kapanmış ya da henüz açılmamış olabilir. Hiçbir şey değişmedi."
         },
+        "OWN_PROJECT_PLEDGE": {
+          "title": "Bu kampanyanın ekibindesiniz",
+          "detail": "Bir kampanyanın yaratıcısı ve ortak çalışanları onu destekleyemez. Hiçbir şey değişmedi."
+        },
         "PLEDGE_CANNOT_BE_CANCELLED": {
           "title": "Onaylanmış bir destek geri çekilemez",
           "detail": "Bu desteği artırabilirsiniz ama iptal edemezsiniz. Hiçbir şey değişmedi. Kampanya başarı eşiğinin altında biterse, askıya alınırsa ya da iptal edilirse her destekçiye iade yapılır."

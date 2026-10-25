@@ -889,6 +889,7 @@ sequenceDiagram
 | PL-14 | Idempotency | `Idempotency-Key` prevents duplicates |
 | PL-15 | Secret rewards | Reachable only by a private URL |
 | PL-16 | ~~Late pledge~~ | **Withdrawn by IDN-EXT-01**: withdrawal closes the campaign. Built by #81; switched off by #36 — `PledgeAcceptance` takes a pledge only while `LIVE` before the first deadline, in `CLOSING_WINDOW` before the seven days end, and `EXTENDED` before the extension ends, and the edge into `LATE_PLEDGE` is gone; removed by #45 |
+| PL-17 | Not from the campaign's own team | Built (#575): the creator and any collaborator with an active grant are refused with `OWN_PROJECT_PLEDGE` (403) on the draft, the payment, the raise and the pledge manager's purchases. A pledge from the team counts towards `pledged_amount`, which decides the 80% early withdrawal and the 50% extension, so a creator could reach either with their own card and close a campaign early on other backers' money. `PledgeAcceptance` asks `ProjectAccess#grantsOf`, so a pending invitation and a revoked grant are not the team. Editing or abandoning a draft is not refused; neither moves money, and the payment is checked |
 
 > **Everything below about PL-10 and PL-16 records what was built, and IDN-EXT-01 has
 > withdrawn both.** Pledges are accepted while the campaign is live, during the 7-day

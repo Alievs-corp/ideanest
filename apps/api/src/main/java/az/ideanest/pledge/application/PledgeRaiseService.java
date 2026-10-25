@@ -108,15 +108,18 @@ public class PledgeRaiseService {
      * Refuses a raise that cannot be paid for, and holds the places of one that can.
      *
      * <p>The refusals, in order: whose pledge it is (a stranger's is not found, exactly as on every
-     * read), whether it is a paid pledge, whether the campaign still takes pledges, whether a raise is
-     * already waiting for its payment, whether the new selection can be priced at all, whether it is an
-     * increase, and whether the increase is the figure the backer agreed to. Only then is anything
-     * held, so every refusal leaves the pledge and every counter exactly as they were.
+     * read), whether it is a paid pledge, whether the campaign still takes pledges and from this
+     * backer (#575), whether a raise is already waiting for its payment, whether the new selection can
+     * be priced at all, whether it is an increase, and whether the increase is the figure the backer
+     * agreed to. Only then is anything held, so every refusal leaves the pledge and every counter
+     * exactly as they were.
      *
      * @throws PledgeNotFoundException when there is no such pledge of this backer's
      * @throws PledgeNotRaisableException when the pledge is not {@code COLLECTED}
      * @throws az.ideanest.project.application.ProjectNotAcceptingPledgesException when the campaign
      *     has stopped taking pledges
+     * @throws az.ideanest.project.application.OwnProjectPledgeException when the backer has since
+     *     joined the campaign's team (#575)
      * @throws PledgeRaiseInProgressException when another raise is waiting for its payment
      * @throws PledgeDecreaseNotAllowedException when the new selection costs less
      * @throws RaiseNotAnIncreaseException when it costs the same
@@ -136,7 +139,7 @@ public class PledgeRaiseService {
         if (pledge.getState() != PledgeState.COLLECTED) {
             throw new PledgeNotRaisableException(pledge.getId(), pledge.getState());
         }
-        acceptance.requireAcceptingPledges(pledge.getProjectId());
+        acceptance.requireAcceptingPledgesFrom(pledge.getProjectId(), pledge.getBackerId());
         // A pledge whose money is being or has been returned is not taken more money for: the raise
         // would not be applied when it was paid (recordPaid), only refunded.
         if (raises.hasRefundOfPledgeMoney(pledge.getId())) {

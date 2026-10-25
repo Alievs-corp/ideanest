@@ -4955,6 +4955,10 @@
           "title": "This campaign is not taking pledges",
           "detail": "It may have closed, or it may not have opened yet. Nothing has changed."
         },
+        "OWN_PROJECT_PLEDGE": {
+          "title": "You work on this campaign",
+          "detail": "A campaign's creator and its collaborators cannot back it. Nothing has changed."
+        },
         "PLEDGE_CANNOT_BE_CANCELLED": {
           "title": "A confirmed pledge cannot be withdrawn",
           "detail": "You can raise this pledge, but not cancel it. Nothing has changed. If the campaign ends below its success threshold, is suspended, or is cancelled, every backer is refunded."
