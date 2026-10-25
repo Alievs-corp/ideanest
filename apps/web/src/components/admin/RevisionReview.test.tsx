@@ -53,6 +53,7 @@ function review(overrides: Partial<Review> = {}): Review {
     status: 'PENDING',
     submittedAt: '2026-10-20T09:00:00Z',
     changedFields: ['title', 'story', 'category', 'countries', 'coverImage'],
+    rewards: [],
     live: {
       title: 'Cedar and Salt',
       categoryId: CATEGORY,
@@ -143,6 +144,36 @@ describe('the campaign edit review, issue #560', () => {
     await pane(COPY.liveHeading, COPY.fields.title);
     expect(
       screen.queryByRole('group', { name: `${COPY.liveHeading}: ${COPY.fields.story}` }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('draws the reward tiers an edit changes, and says nothing is missing when it changes only them', async () => {
+    readMock.mockResolvedValue(
+      review({
+        changedFields: ['rewards'],
+        rewards: [
+          {
+            id: '0193f2a1-0000-7000-8000-00000000a001',
+            changes: ['deleted'],
+            livePosition: 0,
+            price: { amount: '10.00', currency: 'AZN' },
+            changedFields: [],
+            live: { title: 'Old bundle' },
+            proposed: null,
+          },
+        ],
+      }),
+    );
+
+    renderReview();
+
+    const card = await screen.findByRole('article', {
+      name: fillPlaceholders(COPY.rewards.tierLabel, { title: 'Old bundle' }),
+    });
+    expect(within(card).getByText(COPY.rewards.changes.deleted)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.noChanges)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('group', { name: `${COPY.liveHeading}: ${COPY.fields.title}` }),
     ).not.toBeInTheDocument();
   });
 

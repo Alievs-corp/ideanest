@@ -2516,6 +2516,14 @@ individual agreement can differ without a deployment.
 > the created rows and their media. A revision saved before #569 holds only a tier's four
 > writing fields; it still reads, and the rest of such a tier is taken as it is.
 >
+> The review page draws `rewards` under the campaign's fields (#569): one card per tier
+> with a tag, an icon and a word for each of created, deleted, changed and reordered, its
+> place now and as proposed, and its price. A created tier is shown whole as new, a deleted
+> one whole as to be removed, and a changed one as a before and after for each field the
+> service names (a word diff for the title and description, pictures, delivery, limit,
+> shipping type, flags, availability, composition and country and zone rates). The cards
+> are loaded only when an edit touches a tier, so the route's First Load JS is unchanged.
+>
 > **A refused edit is `409`, not `400`.** `PROJECT_FIELD_LOCKED` and
 > `REWARD_FIELD_LOCKED`, each with the field and the campaign's state in `meta`. A
 > 400 says "fix the value" and the value is fine — 6000 is a perfectly good goal, and

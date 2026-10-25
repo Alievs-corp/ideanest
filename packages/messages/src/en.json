@@ -3704,7 +3704,8 @@
           "videoMediaId": "Campaign video",
           "story": "Story",
           "risks": "Risks and challenges",
-          "countries": "Countries"
+          "countries": "Countries",
+          "rewards": "Rewards"
         },
         "removed": "Removed:",
         "added": "Added:",
@@ -3768,7 +3769,66 @@
         "tooLong": "A note may not exceed {limit} characters.",
         "approved": "Edit approved. Backers now read the proposed version.",
         "rejected": "Edit rejected. The creator has your note.",
-        "unavailable": "The creator changed this edit while you were reviewing it, so your decision was not recorded. The page has been reloaded with what is there now."
+        "unavailable": "The creator changed this edit while you were reviewing it, so your decision was not recorded. The page has been reloaded with what is there now.",
+        "rewards": {
+          "heading": "Reward tiers",
+          "intro": "Every tier this edit creates, removes, moves or changes. A tier it does not name stays as it is.",
+          "untitled": "Untitled tier",
+          "tierLabel": "Reward tier: {title}",
+          "changes": {
+            "created": "New tier",
+            "deleted": "To be removed",
+            "changed": "Changed",
+            "reordered": "Moved"
+          },
+          "changesLabel": "What happens to it",
+          "placeLive": "Place {place} now",
+          "placeProposed": "Place {place} proposed",
+          "placeBoth": "Place {live} now, place {proposed} proposed",
+          "price": "Price: {price}",
+          "priceFrozen": "A price never changes in an edit.",
+          "createdNote": "A new tier. Backers cannot see it or pledge to it until this edit is approved.",
+          "deletedNote": "This tier is removed when the edit is approved. It stays live until then.",
+          "movedOnly": "Only its place in the list changes.",
+          "fields": {
+            "title": "Title",
+            "description": "Description",
+            "imageMediaId": "Picture",
+            "videoMediaId": "Video",
+            "estimatedDelivery": "Estimated delivery",
+            "limitQuantity": "Quantity limit",
+            "shippingType": "Shipping",
+            "isEarlyBird": "Early bird",
+            "isFeatured": "Featured",
+            "isSecret": "Secret",
+            "isAddon": "Add-on",
+            "availableFrom": "Available from",
+            "availableUntil": "Available until",
+            "items": "What is included",
+            "shippingRules": "Shipping rates by country",
+            "shippingZoneRates": "Shipping rates by zone"
+          },
+          "yes": "Yes",
+          "no": "No",
+          "none": "None",
+          "unlimited": "Unlimited",
+          "noImage": "No picture",
+          "imageAlt": "Picture of the tier {title}",
+          "shippingTypes": {
+            "NONE": "Nothing is delivered",
+            "DIGITAL": "Digital delivery",
+            "LOCAL_PICKUP": "Collected in person",
+            "DOMESTIC": "Shipped domestically",
+            "INTERNATIONAL": "Shipped internationally"
+          },
+          "itemLine": "{name} × {quantity}",
+          "itemGone": "An item deleted since",
+          "rateLine": "{amount} base, {additional} per extra item, {perKilogram} per kilogram",
+          "zoneGone": "A zone deleted since",
+          "noItems": "No items",
+          "noRates": "No rates",
+          "secretLinkReplaced": "The private link is replaced. The old one stops working."
+        }
       }
     },
     "moderation": {
