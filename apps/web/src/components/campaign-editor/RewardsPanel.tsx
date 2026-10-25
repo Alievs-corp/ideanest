@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, CirclePlus, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   EmptyState,
   IconButton,
@@ -17,10 +17,12 @@ import {
   deleteItem,
   deleteReward,
   duplicateReward,
+  getProjectEdit,
   listItems,
   listRewards,
   patchReward,
   reorderRewards,
+  restoreReward,
   type Item,
   type Reward,
 } from '../../lib/projects/api';
@@ -208,14 +210,29 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
    * tier stored, the rate table refused — and pushing the saved tier back down
    * would re-seed the form and throw away the rates the creator is about to fix.
    */
-  const applyReward = useCallback((saved: Reward) => {
-    setRewards((current) => {
-      const known = current.some((reward) => reward.id === saved.id);
-      return known
-        ? current.map((reward) => (reward.id === saved.id ? saved : reward))
-        : [...current, saved];
-    });
-  }, []);
+  const launched = project?.launchedAt != null;
+
+  /* A held change opens or alters the campaign's revision, so the notice must be read again. */
+  const refreshRevision = useCallback(async (): Promise<void> => {
+    try {
+      apply(await getProjectEdit(projectId));
+    } catch {
+      /* The list is already right; the notice catches up on the next load. */
+    }
+  }, [projectId, apply]);
+
+  const applyReward = useCallback(
+    (saved: Reward) => {
+      setRewards((current) => {
+        const known = current.some((reward) => reward.id === saved.id);
+        return known
+          ? current.map((reward) => (reward.id === saved.id ? saved : reward))
+          : [...current, saved];
+      });
+      if (launched) void refreshRevision();
+    },
+    [launched, refreshRevision],
+  );
 
   const applyItem = useCallback((saved: Item) => {
     setItems((current) => {
@@ -254,6 +271,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
         try {
           setRewards(await reorderRewards(projectId, order));
           setFailure(null);
+          if (launched) void refreshRevision();
         } catch (cause) {
           setFailure(describeFailure(cause, copy.failures));
           /*
@@ -271,7 +289,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
     } finally {
       reordering.current = false;
     }
-  }, [projectId]);
+  }, [projectId, launched, refreshRevision]);
 
   function move(index: number, direction: -1 | 1): void {
     const target = index + direction;
@@ -323,6 +341,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
     await run(reward.id, async () => {
       const copy = await duplicateReward(reward.id);
       setRewards((current) => [...current, copy]);
+      if (launched) void refreshRevision();
       setAnnouncement(
         fillPlaceholders(words.duplicatedAnnouncement, {
           title: reward.title,
@@ -347,10 +366,35 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
   async function removeReward(reward: Reward): Promise<void> {
     await run(reward.id, async () => {
       await deleteReward(reward.id);
+      if (waitsForApproval(reward)) {
+        /* The tier stays, marked for removal; the service is the one that knows how it reads now. */
+        setRewards(await listRewards(projectId));
+        void refreshRevision();
+        setDeletingReward(null);
+        setAnnouncement(
+          fillPlaceholders(words.pending.removalQueuedAnnouncement, { title: reward.title }),
+        );
+        return;
+      }
       setRewards((current) => current.filter((one) => one.id !== reward.id));
+      if (launched) void refreshRevision();
       setDeletingReward(null);
       setAnnouncement(fillPlaceholders(words.rewardDeletedAnnouncement, { title: reward.title }));
     });
+  }
+
+  async function undoRemoval(reward: Reward): Promise<void> {
+    await run(reward.id, async () => {
+      const saved = await restoreReward(reward.id);
+      setRewards((current) => current.map((one) => (one.id === saved.id ? saved : one)));
+      void refreshRevision();
+      setAnnouncement(fillPlaceholders(words.pending.undoneAnnouncement, { title: reward.title }));
+    });
+  }
+
+  /* An approved tier of a launched campaign is removed when a moderator approves, not now. */
+  function waitsForApproval(reward: Reward): boolean {
+    return launched && reward.pending !== 'created';
   }
 
   async function removeItem(item: Item): Promise<void> {
@@ -423,6 +467,10 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
         <p role="status" aria-live="polite" className="sr-only">
           {announcement}
         </p>
+
+        {launched && (
+          <InlineAlert variant="info">{words.pending.newTiersNotice}</InlineAlert>
+        )}
 
         {failure !== null && (
           <InlineAlert variant="danger" title={words.failedTitle}>
@@ -530,6 +578,8 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
                   onHide={() => void setVisibility(reward, true)}
                   onShow={() => void setVisibility(reward, false)}
                   onDelete={() => setDeletingReward(reward)}
+                  onUndo={() => void undoRemoval(reward)}
+                  removesOnApproval={waitsForApproval(reward)}
                 />
               ))}
             </ol>
@@ -612,9 +662,16 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
         title={
           deletingReward === null
             ? words.deleteRewardTitle
-            : fillPlaceholders(words.deleteRewardNamed, { title: deletingReward.title })
+            : fillPlaceholders(
+                waitsForApproval(deletingReward) ? words.pending.removeTitle : words.deleteRewardNamed,
+                { title: deletingReward.title },
+              )
         }
-        description={words.cannotBeUndone}
+        description={
+          deletingReward !== null && waitsForApproval(deletingReward)
+            ? words.pending.removeBody
+            : words.cannotBeUndone
+        }
         closeOnBackdropClick={false}
         showClose={false}
         footer={
@@ -633,7 +690,9 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
                 if (deletingReward !== null) void removeReward(deletingReward);
               }}
             >
-              {words.delete}
+              {deletingReward !== null && waitsForApproval(deletingReward)
+                ? words.pending.removeOnApproval
+                : words.delete}
             </Pill>
           </div>
         }
@@ -662,6 +721,8 @@ function RewardCard({
   onHide,
   onShow,
   onDelete,
+  onUndo,
+  removesOnApproval,
 }: {
   words: RewardsPanelCopy;
   reward: Reward;
@@ -676,7 +737,10 @@ function RewardCard({
   onHide: () => void;
   onShow: () => void;
   onDelete: () => void;
+  onUndo: () => void;
+  removesOnApproval: boolean;
 }) {
+  const removing = reward.pending === 'deleted';
   const hidden = isHiddenReward(reward);
   const scheduled = isScheduledReward(reward);
   const backed = reward.claimedQuantity > 0;
@@ -706,6 +770,24 @@ function RewardCard({
               screen reader or to a creator who cannot separate two hues
               (docs/ui-kit.md §9.2).
             */}
+            {reward.pending === 'created' && (
+              <Tag>
+                <CirclePlus aria-hidden="true" className="me-1 inline size-3.5" />
+                {words.pending.created}
+              </Tag>
+            )}
+            {reward.pending === 'changed' && (
+              <Tag>
+                <Pencil aria-hidden="true" className="me-1 inline size-3.5" />
+                {words.pending.changed}
+              </Tag>
+            )}
+            {removing && (
+              <Tag variant="warning">
+                <Trash2 aria-hidden="true" className="me-1 inline size-3.5" />
+                {words.pending.deleted}
+              </Tag>
+            )}
             {hidden && <Tag variant="warning">{words.hidden}</Tag>}
             {scheduled && <Tag>{words.opensLater}</Tag>}
             {reward.isFeatured && <Tag>{words.featured}</Tag>}
@@ -758,20 +840,30 @@ function RewardCard({
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <Pill variant="ghost" size="sm" disabled={busy} aria-label={fillPlaceholders(words.editLabel, { title: reward.title })} onClick={onEdit}>
+            <Pill variant="ghost" size="sm" disabled={busy || removing} aria-label={fillPlaceholders(words.editLabel, { title: reward.title })} onClick={onEdit}>
               {words.edit}
             </Pill>
             <Pill
               variant="ghost"
               size="sm"
-              disabled={busy}
+              disabled={busy || removing}
               aria-label={fillPlaceholders(words.duplicateLabel, { title: reward.title })}
               onClick={onDuplicate}
             >
               {words.duplicate}
             </Pill>
 
-            {hidden ? (
+            {removing ? (
+              <Pill
+                variant="ghost"
+                size="sm"
+                disabled={busy}
+                aria-label={fillPlaceholders(words.pending.undoLabel, { title: reward.title })}
+                onClick={onUndo}
+              >
+                {words.pending.undo}
+              </Pill>
+            ) : hidden ? (
               <Pill
                 variant="ghost"
                 size="sm"
@@ -799,20 +891,25 @@ function RewardCard({
               refused, and the sentence below says why — a disabled button with
               no explanation is a dead end.
             */}
-            {!backed && (
+            {!backed && !removing && (
               <Pill
                 variant="ghost"
                 size="sm"
                 disabled={busy}
-                aria-label={fillPlaceholders(words.deleteLabel, { title: reward.title })}
+                aria-label={fillPlaceholders(
+                  removesOnApproval ? words.pending.removeLabel : words.deleteLabel,
+                  { title: reward.title },
+                )}
                 onClick={onDelete}
               >
-                {words.delete}
+                {removesOnApproval ? words.pending.removeOnApproval : words.delete}
               </Pill>
             )}
           </div>
         </div>
       </div>
+
+      {removing && <p className="mt-3 text-[13px] text-fg-64">{words.pending.deletedNote}</p>}
 
       {backed && (
         <p className="mt-3 text-[13px] text-fg-64">

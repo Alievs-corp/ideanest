@@ -625,6 +625,15 @@ export async function duplicateReward(id: string, signal?: AbortSignal): Promise
 }
 
 /**
+ * Withdraws the removal of an approved tier that waits for a moderator (#569), and answers with
+ * the tier.
+ */
+export async function restoreReward(id: string, signal?: AbortSignal): Promise<Reward> {
+  const path = `/v1/rewards/${encodeURIComponent(id)}/restore`;
+  return readReward(await authorizedFetch(path, { method: 'POST', signal }));
+}
+
+/**
  * Puts the tiers in the order given, and answers the list in that order.
  *
  * EVERY TIER, EXACTLY ONCE, or the service answers `400

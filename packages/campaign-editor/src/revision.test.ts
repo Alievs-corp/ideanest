@@ -93,6 +93,7 @@ describe('revisionRefusalOf', () => {
 describe('isRevisionField', () => {
   it('knows the sections an edit can change', () => {
     expect(isRevisionField('coverImage')).toBe(true);
+    expect(isRevisionField('rewards')).toBe(true);
     expect(isRevisionField('goal')).toBe(false);
   });
 });

@@ -5711,7 +5711,22 @@
       "atCapacityBody": "Bir kampanya en fazla {max} ödül sunabilir. Yenisini eklemeden önce birini silin ya da birleştirin.",
       "deleteItemBody": "Bir ödülün içindeki ürün silinemez — önce onu ödülden çıkarın. Bu sayfanın bildiği kadarıyla bu ürün hiçbir ödülde yok; hizmet bunu yeniden kontrol eder.",
       "deleteRewardBody": "Bir ödülü biri seçtikten sonra o artık silinemez, yalnızca gizlenebilir — bu yüzden silme, henüz kimse seçmemişken sunulur.",
-      "deliversOn": "Teslimat: {date}"
+      "deliversOn": "Teslimat: {date}",
+      "pending": {
+        "created": "Yeni, incelemeyi bekliyor",
+        "changed": "Değiştirildi, incelemeyi bekliyor",
+        "deleted": "Kaldırılması incelemeyi bekliyor",
+        "newTiersNotice": "Yeni ödül seviyeleri, bir moderatör onaylayana kadar destekçilere görünmez. Yayınlamak için değişikliklerinizi incelemeye gönderin.",
+        "deletedNote": "Bu seviye, bir moderatör kaldırılmasını onaylayana kadar kampanya sayfasında kalır.",
+        "removeOnApproval": "Onayda kaldır",
+        "removeLabel": "{title} seviyesini onayda kaldır",
+        "removeTitle": "{title} onayda kaldırılsın mı?",
+        "removeBody": "Seviye, moderatör değişikliklerinizi onaylayana kadar kampanya sayfasında kalır. O zamana kadar geri alabilirsiniz.",
+        "undo": "Geri al",
+        "undoLabel": "{title} seviyesinin kaldırılmasını geri al",
+        "removalQueuedAnnouncement": "{title}, moderatör değişikliklerinizi onayladığında kaldırılacak.",
+        "undoneAnnouncement": "{title} kampanyada kalacak."
+      }
     },
     "drawer": {
       "cancel": "İptal",
@@ -6235,7 +6250,8 @@
         "risks": "Riskler",
         "coverImage": "Kapak görseli",
         "videoMediaId": "Video",
-        "countries": "Ülkeler"
+        "countries": "Ülkeler",
+        "rewards": "Ödüller"
       },
       "submit": "İncelemeye gönder",
       "submitting": "Gönderiliyor…",

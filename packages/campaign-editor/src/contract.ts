@@ -572,9 +572,18 @@ export interface Reward {
   /** Absent or null for a tier without one. Editable after launch, unlike the price. */
   image?: RewardImage | null;
   video?: RewardVideo | null;
+  /**
+   * What the campaign's open revision holds for this tier (#569): created since launch, changed,
+   * or its removal waiting for a moderator. Absent or null when nothing is held.
+   */
+  pending?: RewardPending | null;
+  /** The fields of this tier that differ from the approved one, while `pending` is `changed`. */
+  revisionChangedFields?: readonly string[] | null;
   createdAt: string;
   updatedAt: string;
 }
+
+export type RewardPending = 'created' | 'changed' | 'deleted';
 
 /** `CreateRewardRequest`. A title and a price; the rest is edited afterwards. */
 export interface NewReward {

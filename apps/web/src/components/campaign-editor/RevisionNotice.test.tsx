@@ -107,6 +107,14 @@ describe('RevisionNotice', () => {
     expect(discardButton()).not.toHaveAttribute('aria-disabled', 'true');
   });
 
+  it('names the rewards when they are all an edit changed, and lets it be sent', () => {
+    render(<Harness initial={withRevision('DRAFT', ['rewards'])} />);
+
+    expect(screen.getByText(copy.fields.rewards)).toBeInTheDocument();
+    expect(screen.queryByText('rewards')).not.toBeInTheDocument();
+    expect(submitButton()).not.toHaveAttribute('aria-disabled', 'true');
+  });
+
   it('shows a pending edit as awaiting review with the send action unavailable', async () => {
     const user = userEvent.setup();
     render(<Harness initial={PENDING} />);

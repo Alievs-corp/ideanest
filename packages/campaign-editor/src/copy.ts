@@ -794,6 +794,29 @@ export interface RewardsPanelCopy {
   readonly items: ItemsSectionCopy;
   readonly item: ItemEditorCopy;
   readonly tier: RewardTierEditorCopy;
+  readonly pending: RewardPendingCopy;
+}
+
+/** What a tier of a launched campaign says while the campaign's edit waits for a moderator (#569). */
+export interface RewardPendingCopy {
+  readonly created: string;
+  readonly changed: string;
+  readonly deleted: string;
+  readonly newTiersNotice: string;
+  readonly deletedNote: string;
+  readonly removeOnApproval: string;
+  /** Carries `{title}`. */
+  readonly removeLabel: string;
+  /** Carries `{title}`. */
+  readonly removeTitle: string;
+  readonly removeBody: string;
+  readonly undo: string;
+  /** Carries `{title}`. */
+  readonly undoLabel: string;
+  /** Carries `{title}`. */
+  readonly removalQueuedAnnouncement: string;
+  /** Carries `{title}`. */
+  readonly undoneAnnouncement: string;
 }
 
 export function rewardsPanelCopyFrom(
@@ -867,6 +890,21 @@ export function rewardsPanelCopyFrom(
     itemInUse: t.raw('rewards.itemInUse') as AppPluralForms,
     rewardHasBackers: at('rewardHasBackers'),
     chosenBy: t.raw('rewards.chosenBy') as AppPluralForms,
+    pending: {
+      created: at('pending.created'),
+      changed: at('pending.changed'),
+      deleted: at('pending.deleted'),
+      newTiersNotice: at('pending.newTiersNotice'),
+      deletedNote: at('pending.deletedNote'),
+      removeOnApproval: at('pending.removeOnApproval'),
+      removeLabel: tpl('rewards.pending.removeLabel'),
+      removeTitle: tpl('rewards.pending.removeTitle'),
+      removeBody: at('pending.removeBody'),
+      undo: at('pending.undo'),
+      undoLabel: tpl('rewards.pending.undoLabel'),
+      removalQueuedAnnouncement: tpl('rewards.pending.removalQueuedAnnouncement'),
+      undoneAnnouncement: tpl('rewards.pending.undoneAnnouncement'),
+    },
     locale,
     vocabulary: rewardsVocabularyCopyFrom(t, locale),
     items: {
