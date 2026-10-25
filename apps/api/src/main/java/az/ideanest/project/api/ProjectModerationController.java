@@ -21,21 +21,21 @@ import org.springframework.web.bind.annotation.RestController;
  * first would mean a module whose only content is a call into another module's
  * service.
  *
- * <p><strong>There is no role model yet, so staff is a configured list of
- * addresses.</strong> Nothing in the schema, the access token, or
- * {@code SecurityConfiguration} distinguishes platform staff from anybody else, and
- * epic #100 owns that. Until it lands, {@code ideanest.project.moderation
- * staff role model (#295) is what these three endpoints check, through
+ * <p><strong>{@code MODERATE_CONTENT}, checked in one place.</strong> Nothing in the
+ * access token or {@code SecurityConfiguration} distinguishes platform staff from
+ * anybody else, so the staff role model (#295) is asked one layer in, through
  * {@code ProjectAccess.requireModeratable} — one method, called by all three, rather
- * than an annotation somebody forgets on the fourth. The list is empty by default,
- * which means no account can moderate anything until a deployment says who can.
+ * than an annotation somebody forgets on the fourth. It names the capability rather
+ * than asking whether the caller is staff at all: a partner or a curator works here
+ * and is still not somebody who decides which campaigns are published (#574). An
+ * account with no role holds nothing, so no account can moderate anything until
+ * somebody is granted a role that carries it.
  *
  * <p>The alternatives were worse. Requiring only a valid access token — which is all
  * the filter chain can enforce on its own — lets a creator approve their own
  * campaign, and moderation exists to prevent exactly that. So does "the creator may
  * not approve their own", one free second account later. A claim carried in the
- * request is not authorisation at all. Configuration is the one option that fails
- * closed and that epic #100 can replace by deleting it.
+ * request is not authorisation at all.
  */
 @RestController
 @RequestMapping("/v1/admin/moderation")

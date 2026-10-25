@@ -655,22 +655,17 @@ public class SecurityConfiguration {
                         // under this prefix later.
                         //
                         // Authentication is all the filter chain can decide here.
-                        // There is no role model anywhere in the service — not in
-                        // the schema, not in the access token — so this matcher
-                        // cannot tell platform staff from a creator, and being
-                        // authenticated is emphatically not enough to approve a
-                        // campaign. Who may is decided one layer in, by
-                        // ProjectAccess.requireModeratable against the configured
-                        // moderator list, which is empty by default: an endpoint
+                        // Staff roles (#295) live in staff_role_grants and not in
+                        // the access token, so this matcher cannot tell platform
+                        // staff from a creator, and being authenticated is
+                        // emphatically not enough to approve a campaign. Who may is
+                        // decided one layer in, by the capability each handler
+                        // names through PlatformStaff.requireCapability —
+                        // MODERATE_CONTENT, through ProjectAccess.requireModeratable,
+                        // for a campaign's moderation decisions (#574). An endpoint
                         // added under this prefix without its own check therefore
                         // reaches its handler, and it is the handler's job to
                         // refuse.
-                        //
-                        // **Epic #100 owns administrative roles and audit.** When
-                        // it lands this matcher becomes hasAuthority("MODERATOR")
-                        // or equivalent, the configured list is deleted, and
-                        // requireModeratable keeps its signature — which is why
-                        // the interim control lives there rather than here.
                         .requestMatchers("/v1/admin/**")
                         .hasAuthority(ACCOUNT_ACTIVE)
                         // Everything else additionally requires that the account

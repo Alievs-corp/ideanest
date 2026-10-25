@@ -215,11 +215,17 @@ public class ProjectRevisionModeration {
     }
 
     /**
-     * The revision, once the caller is known to be staff and the campaign is locked, and only
-     * if it is still waiting. Locking the campaign first is what serialises this against the
-     * creator's own saves and a second moderator.
+     * The revision, once the caller is known to be a moderator and the campaign is locked, and
+     * only if it is still waiting. Locking the campaign first is what serialises this against
+     * the creator's own saves and a second moderator.
+     *
+     * <p>The capability is asked before the revision is looked up, not only by
+     * {@link ProjectAccess#requireModeratable} after it: the campaign is found through the
+     * revision, and a 404 for an unknown identifier beside a 403 for a known one would tell a
+     * caller who may not moderate which revisions exist (#574).
      */
     private ProjectRevision pendingFor(UUID revisionId, UUID moderatorId) {
+        staff.requireCapability(moderatorId, StaffCapability.MODERATE_CONTENT);
         UUID projectId = revisions.findById(revisionId)
                 .orElseThrow(() -> new RevisionNotFoundException(revisionId))
                 .getProjectId();

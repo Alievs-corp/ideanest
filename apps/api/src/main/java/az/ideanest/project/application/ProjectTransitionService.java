@@ -381,10 +381,11 @@ public class ProjectTransitionService {
      * starts again as a campaign rather than resuming one whose backers have been told it
      * was stopped.
      *
-     * <p><strong>Staff only, through {@code requireModeratable}</strong> — the same
-     * configured list the three moderation decisions use, for the reason §10.2 gives:
-     * two lists that can disagree about who is staff is worse than one dependency that
-     * epic #100 deletes. It is audited for the same reason those are, and the reason is
+     * <p><strong>{@code MODERATE_CONTENT}, through {@code requireModeratable}</strong> — the
+     * same check the three moderation decisions make, because the capability says it
+     * includes the suspension: a moderator who may reject a campaign before launch and may
+     * not stop one after it has to escalate the urgent half of the job. Any other member of
+     * staff is refused (#574). It is audited for the same reason those are, and the reason is
      * required because it is the only thing anybody — the creator, a backer, a
      * regulator — is ever told about why.
      *

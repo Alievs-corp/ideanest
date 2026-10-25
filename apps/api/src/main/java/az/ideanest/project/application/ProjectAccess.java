@@ -10,7 +10,7 @@ import az.ideanest.project.infrastructure.ProjectRepository;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.ProjectAuthorisation;
 import az.ideanest.shared.access.ProjectCapability;
-import az.ideanest.staff.application.NotAModeratorException;
+import az.ideanest.shared.access.StaffCapability;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
@@ -242,23 +242,26 @@ public class ProjectAccess implements ProjectAuthorisation {
     /**
      * The campaign, locked, for a moderation decision by this account.
      *
-     * <p>Staff is a configured list of addresses, and an empty list is nobody —
-     * see {@link PlatformStaff} for why that is the shape and why it fails
-     * closed. It is deployment configuration standing in for a role model, and it
-     * is the only thing that keeps "state transitions are enforced server-side and
-     * cannot be bypassed" true before epic #100 exists: without it these endpoints
-     * require a valid access token and nothing else, which is a creator approving
-     * their own campaign.
+     * <p><strong>{@link StaffCapability#MODERATE_CONTENT}, not "is staff".</strong>
+     * This is the only thing that keeps "state transitions are enforced server-side
+     * and cannot be bypassed" true for the edges a creator may not take: without it
+     * these endpoints require a valid access token and nothing else, which is a
+     * creator approving their own campaign. #295 replaced the configured list behind
+     * {@link PlatformStaff} with a role model, and this method went on asking the
+     * list's old question — whether the caller works here at all — so a partner,
+     * a curator or the finance team could publish a draft or halt a live campaign
+     * while the queue those decisions come from refused to show them one (#574).
+     * Every caller decides a campaign's fate as a moderator — approve, reject,
+     * request changes, suspend, and the same three for an edit — and the capability
+     * says it includes the suspension.
      *
      * <p><strong>Checked before the campaign is loaded</strong>, so a caller who
-     * is not staff learns nothing about which identifiers exist. #295 replaced
-     * the directory behind {@link PlatformStaff} with a role model and changed
-     * nothing here, which is what that interface was for.
+     * may not moderate learns nothing about which identifiers exist: a stranger and
+     * a member of staff without the capability get their 403 whether or not the
+     * campaign is there.
      */
     public Project requireModeratable(UUID projectId, UUID accountId) {
-        if (!moderators.isStaff(accountId)) {
-            throw new NotAModeratorException(accountId);
-        }
+        moderators.requireCapability(accountId, StaffCapability.MODERATE_CONTENT);
         return projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 

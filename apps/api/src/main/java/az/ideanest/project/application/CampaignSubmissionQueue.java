@@ -53,13 +53,10 @@ import org.springframework.transaction.annotation.Transactional;
  * campaign on the platform, its title, its goal and the fact that its creator is
  * waiting on us — so a check of some kind is not optional.
  *
- * <p><strong>It is a narrower check than the three outcomes it feeds make.</strong>
- * {@code ProjectAccess.requireModeratable} asks only whether the caller is staff at
- * all, so a finance-only account can still approve a campaign over the API while this
- * screen refuses to show it one. That is a pre-existing looseness and this class does
- * not widen it; narrowing the outcomes to match is a change to three endpoints with
- * their own tests, and belongs in its own pull request rather than riding along with a
- * screen.
+ * <p><strong>The same check the three outcomes it feeds make.</strong> It was narrower
+ * until #574: {@code ProjectAccess.requireModeratable} asked only whether the caller was
+ * staff at all, so a finance-only account could approve a campaign over the API while
+ * this screen refused to show it one. A queue and its decisions now ask one question.
  */
 @Service
 public class CampaignSubmissionQueue {
