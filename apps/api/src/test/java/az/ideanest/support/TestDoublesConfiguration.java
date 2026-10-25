@@ -1,8 +1,10 @@
 package az.ideanest.support;
 
+import az.ideanest.auth.application.EmailVerificationService;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * The collaborators tests substitute.
@@ -19,6 +21,13 @@ public class TestDoublesConfiguration {
     @Primary
     RecordingVerificationNotifier recordingVerificationNotifier() {
         return new RecordingVerificationNotifier();
+    }
+
+    /** The shared administrator proving its address, as its operator would — see the class. */
+    @Bean
+    FixtureAdministratorInbox fixtureAdministratorInbox(
+            EmailVerificationService verifications, PlatformTransactionManager transactions) {
+        return new FixtureAdministratorInbox(verifications, transactions);
     }
 
     /**

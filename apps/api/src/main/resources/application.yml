@@ -419,6 +419,12 @@ ideanest:
     # open, which is a visible problem with a one-variable fix, where the
     # opposite mistake has no symptom until somebody uses it.
     #
+    # "Verified" is enforced, not assumed (#577): an account holding a listed
+    # address is a super admin only after it has redeemed the verification
+    # link sent to that address. Registering an address proves nothing about
+    # owning it, so list only inboxes a real person reads, and after the first
+    # sign-up confirm the address before expecting the console to open.
+    #
     # Once real roles are granted, empty this. An administrator who exists only
     # in an environment variable is one nobody can withdraw through the console,
     # and /admin/staff says so.

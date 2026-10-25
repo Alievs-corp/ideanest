@@ -170,6 +170,21 @@ public class StaffDirectory implements PlatformStaff {
         return new StaffMember(accountId, roles, capabilities, bootstrapped);
     }
 
+    /**
+     * Whether configuration makes this account a super admin.
+     *
+     * <p><strong>Only once the account has proven the address</strong> (#577). Holding an
+     * address in {@code users} is not owning it: registration takes whatever is typed and
+     * sign-in does not wait for verification, so without this a listed address nobody had
+     * registered yet — a fresh deployment, or a role alias such as {@code admin@} that no
+     * person signs up with — made a super admin of whoever typed it into the registration
+     * form first. Verification is the one step that needs the inbox, and the inbox is
+     * what the operator vouched for by listing the address.
+     *
+     * <p>No timestamp comparison is needed beyond the flag: an address change completes
+     * only by spending a link sent to the new address, so a verified account's proof is
+     * always about the address compared here.
+     */
     private boolean isBootstrapAdministrator(UUID accountId) {
         if (bootstrapAdministrators.isEmpty()) {
             // No query when there is no list. Not an optimisation — it keeps the
@@ -177,7 +192,7 @@ public class StaffDirectory implements PlatformStaff {
             return false;
         }
         return accounts.findById(accountId)
-                .map(account -> bootstrapAdministrators.contains(account.email()))
+                .map(account -> account.emailVerified() && bootstrapAdministrators.contains(account.email()))
                 .orElse(false);
     }
 }
