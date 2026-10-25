@@ -21,10 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
  * money. They share the staff check and nothing else — different edge, different
  * consequences, different audit action.
  *
- * <p><strong>Staff only</strong>, through the same configured list, which
- * {@code ProjectModerationController} argues at length. Until epic #100 gives the
- * platform a role model, two lists that can disagree about who is staff would be worse
- * than one dependency that epic deletes.
+ * <p><strong>{@code MODERATE_CONTENT}</strong>, through the same
+ * {@code ProjectAccess.requireModeratable} the three outcomes use, which
+ * {@code ProjectModerationController} argues at length. Halting a campaign that is
+ * taking money is a moderator's decision, not any staff member's (#574).
  *
  * <p>{@code POST} rather than {@code DELETE}: nothing is removed. The campaign keeps its
  * page, its history and its pledges — which are cancelled rather than charged — and what

@@ -1958,8 +1958,8 @@ Preferences are per category and per channel, with a digest option.
 > yet.
 >
 > **AD-02's suspension, as #103 built it.** `POST /v1/admin/projects/{id}/suspend`
-> takes §6.1's `LIVE → SUSPENDED`, staff-only through the same configured list the three
-> moderation decisions use, audited as `project.suspended`, and with a reason that is
+> takes §6.1's `LIVE → SUSPENDED`, under `MODERATE_CONTENT` as the three moderation
+> decisions are (#574), audited as `project.suspended`, and with a reason that is
 > required because it is the only thing anybody is ever told about why. **It is
 > terminal**: a suspension that could be lifted back into `LIVE` would restart a funding
 > window whose deadline has moved on.
@@ -2010,10 +2010,9 @@ Preferences are per category and per channel, with a digest option.
 >
 > The queue is `GET /v1/admin/moderation/reports` with
 > `?state=&after=&limit=`, plus `GET`, `POST …/{id}/uphold` and
-> `POST …/{id}/dismiss` on a single report. Staff-only through the same
-> configured moderator list AD-01 uses, because there is no role model until
-> epic #100 and two lists that can disagree about who is staff is worse than one
-> dependency that #100 deletes. Both resolutions are terminal and both are
+> `POST …/{id}/dismiss` on a single report. `MODERATE_CONTENT`, the capability
+> AD-01's decisions ask for (#574), so the staff who may clear a report are the
+> staff who may act on the campaign behind it. Both resolutions are terminal and both are
 > written to `audit_logs` in the transaction that performs them — including the
 > dismissals, since "who dismissed the fourteen reports about this campaign" is
 > the question an investigation starts from.
@@ -5397,7 +5396,7 @@ GET    /v1/admin/projects              # AD-01 (#387); every campaign, any state
                                          #   ?query= title, creator, path or identifier (#404)
                                          #   ?creatorId= one person's campaigns (#404)
 GET    /v1/admin/projects/{id}           # AD-01 (#399); the staff preview: one campaign as its page reads, in any state
-POST   /v1/admin/projects/{id}/suspend   # AD-02 (#103); staff only, audited, ends every pledge
+POST   /v1/admin/projects/{id}/suspend   # AD-02 (#103); MODERATE_CONTENT, audited, ends every pledge
 GET    /v1/admin/users                   # AD-04 (#104); staff only, audited, no-store
 GET    /v1/admin/users/{id}              # AD-04 (#104); one account, audited
 GET    /v1/admin/users/{id}/pledges      # AD-04 (#404); what they backed, before deciding to stop them
