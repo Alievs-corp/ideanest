@@ -14,6 +14,7 @@ import {
   patchReward,
   reorderRewards,
   replaceShippingRules,
+  restoreReward,
   type Item,
   type ProjectEdit,
   type Reward,
@@ -50,6 +51,7 @@ vi.mock('../../lib/projects/api', async (importOriginal) => ({
   duplicateReward: vi.fn(),
   reorderRewards: vi.fn(),
   replaceShippingRules: vi.fn(),
+  restoreReward: vi.fn(),
 }));
 
 /*
@@ -83,6 +85,7 @@ const deleteRewardMock = vi.mocked(deleteReward);
 const duplicateRewardMock = vi.mocked(duplicateReward);
 const reorderRewardsMock = vi.mocked(reorderRewards);
 const replaceShippingRulesMock = vi.mocked(replaceShippingRules);
+const restoreRewardMock = vi.mocked(restoreReward);
 
 const PROJECT: ProjectEdit = {
   id: 'project-1',
@@ -900,6 +903,107 @@ describe('RewardsPanel', () => {
    * own patch keys and could never name a field of a reward. The control was
    * enabled on every live campaign and the test said otherwise (#183).
    */
+  describe('a launched campaign holds every reward change for review (#569)', () => {
+    const LIVE: Partial<ProjectEdit> = { state: 'LIVE', launchedAt: '2026-09-01T09:00:00.000Z' };
+
+    it('tells the creator that a new tier is not visible to backers until approved', async () => {
+      await openRewards({ project: LIVE, rewards: [FIRST] });
+
+      expect(screen.getByText(/not visible to backers until a moderator approves/)).toBeInTheDocument();
+    });
+
+    it('does not say so before launch, when nothing is held', async () => {
+      await openRewards({ rewards: [FIRST] });
+
+      expect(screen.queryByText(/not visible to backers until a moderator approves/)).not.toBeInTheDocument();
+    });
+
+    it('badges a tier created since launch, in words', async () => {
+      await openRewards({ project: LIVE, rewards: [reward({ pending: 'created' })] });
+
+      expect(screen.getByText('New, waiting for review')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Delete Early bird' })).toBeInTheDocument();
+    });
+
+    it('badges a changed tier', async () => {
+      await openRewards({
+        project: LIVE,
+        rewards: [reward({ pending: 'changed', revisionChangedFields: ['estimatedDelivery'] })],
+      });
+
+      expect(screen.getByText('Changed, waiting for review')).toBeInTheDocument();
+    });
+
+    it('badges a tier whose removal waits, and offers Undo instead of the other actions', async () => {
+      await openRewards({ project: LIVE, rewards: [reward({ pending: 'deleted' })] });
+
+      expect(screen.getByText('Removal waiting for review')).toBeInTheDocument();
+      expect(screen.getByText(/stays on the campaign page until a moderator approves its removal/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Undo the removal of Early bird' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Edit Early bird' })).toBeDisabled();
+      expect(screen.queryByRole('button', { name: /Remove Early bird/ })).not.toBeInTheDocument();
+    });
+
+    it('shows no badge on a tier nothing is held for', async () => {
+      await openRewards({ project: LIVE, rewards: [FIRST] });
+
+      expect(screen.queryByText(/waiting for review/)).not.toBeInTheDocument();
+    });
+
+    it('reads a delete of an approved tier as Remove on approval, and keeps the tier listed', async () => {
+      const user = await openRewards({ project: LIVE, rewards: [FIRST] });
+      deleteRewardMock.mockResolvedValue(undefined);
+      listRewardsMock.mockResolvedValue([reward({ pending: 'deleted' })]);
+
+      await user.click(screen.getByRole('button', { name: 'Remove Early bird on approval' }));
+      await user.click(screen.getByRole('button', { name: 'Remove on approval' }));
+      await tick();
+
+      expect(deleteRewardMock).toHaveBeenCalledWith('reward-a');
+      expect(screen.getByText('Removal waiting for review')).toBeInTheDocument();
+      const announcements = screen.getAllByRole('status').map((region) => region.textContent);
+      expect(announcements).toContain(
+        'Early bird will be removed once a moderator approves your changes.',
+      );
+    });
+
+    it('deletes a tier created since launch at once, as before', async () => {
+      const user = await openRewards({ project: LIVE, rewards: [reward({ pending: 'created' })] });
+      deleteRewardMock.mockResolvedValue(undefined);
+
+      await user.click(screen.getByRole('button', { name: 'Delete Early bird' }));
+      await user.click(screen.getByRole('button', { name: 'Delete' }));
+      await tick();
+
+      expect(screen.queryByText('Early bird')).not.toBeInTheDocument();
+    });
+
+    it('undoes a waiting removal through the restore endpoint', async () => {
+      const user = await openRewards({ project: LIVE, rewards: [reward({ pending: 'deleted' })] });
+      restoreRewardMock.mockResolvedValue(reward({ pending: null }));
+
+      await user.click(screen.getByRole('button', { name: 'Undo the removal of Early bird' }));
+      await tick();
+
+      expect(restoreRewardMock).toHaveBeenCalledWith('reward-a');
+      expect(screen.queryByText('Removal waiting for review')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Edit Early bird' })).toBeEnabled();
+      const announcements = screen.getAllByRole('status').map((region) => region.textContent);
+      expect(announcements).toContain('Early bird will stay on the campaign.');
+    });
+
+    it('re-reads the campaign after a change so the revision notice follows', async () => {
+      const user = await openRewards({ project: LIVE, rewards: [FIRST] });
+      duplicateRewardMock.mockResolvedValue(reward({ id: 'reward-c', pending: 'created' }));
+      getProjectEditMock.mockClear();
+
+      await user.click(screen.getByRole('button', { name: 'Duplicate Early bird' }));
+      await tick();
+
+      expect(getProjectEditMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('disables a price the tier says is locked', async () => {
     const user = await openRewards({
       rewards: [{ ...FIRST, pricingLocked: true }],

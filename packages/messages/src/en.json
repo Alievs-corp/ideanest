@@ -5711,7 +5711,22 @@
       "atCapacityBody": "A campaign can offer {max} rewards. Delete or combine one before adding another.",
       "deleteItemBody": "An item that a reward contains cannot be deleted — take it out of the reward first. This one is not in any reward as far as this page knows, and the service checks again.",
       "deleteRewardBody": "Once somebody has backed a reward it can no longer be deleted, only hidden — so deleting is offered while nobody has.",
-      "deliversOn": "Delivers {date}"
+      "deliversOn": "Delivers {date}",
+      "pending": {
+        "created": "New, waiting for review",
+        "changed": "Changed, waiting for review",
+        "deleted": "Removal waiting for review",
+        "newTiersNotice": "New reward tiers are not visible to backers until a moderator approves them. Send your changes for review to publish them.",
+        "deletedNote": "This tier stays on the campaign page until a moderator approves its removal.",
+        "removeOnApproval": "Remove on approval",
+        "removeLabel": "Remove {title} on approval",
+        "removeTitle": "Remove {title} on approval?",
+        "removeBody": "The tier stays on the campaign page until a moderator approves your changes. You can undo this until then.",
+        "undo": "Undo",
+        "undoLabel": "Undo the removal of {title}",
+        "removalQueuedAnnouncement": "{title} will be removed once a moderator approves your changes.",
+        "undoneAnnouncement": "{title} will stay on the campaign."
+      }
     },
     "drawer": {
       "cancel": "Cancel",
@@ -6235,7 +6250,8 @@
         "risks": "Risks",
         "coverImage": "Cover image",
         "videoMediaId": "Video",
-        "countries": "Countries"
+        "countries": "Countries",
+        "rewards": "Rewards"
       },
       "submit": "Send for review",
       "submitting": "Sending…",

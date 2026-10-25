@@ -77,6 +77,7 @@ export const REVISION_FIELDS = [
   'coverImage',
   'videoMediaId',
   'countries',
+  'rewards',
 ] as const;
 
 export type RevisionField = (typeof REVISION_FIELDS)[number];

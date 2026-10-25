@@ -5711,7 +5711,22 @@
       "atCapacityBody": "Kampaniya ən çox {max} mükafat təklif edə bilər. Yenisini əlavə etməzdən əvvəl birini silin və ya birləşdirin.",
       "deleteItemBody": "Mükafatın tərkibində olan əşya silinə bilməz — əvvəlcə onu mükafatdan çıxarın. Bu səhifənin bildiyinə görə bu əşya heç bir mükafatda deyil, xidmət isə bunu yenidən yoxlayır.",
       "deleteRewardBody": "Kimsə mükafatı seçəndən sonra onu silmək olmur, yalnız gizlətmək olar — ona görə silmək hələ heç kim seçməyəndə təklif olunur.",
-      "deliversOn": "Çatdırılma: {date}"
+      "deliversOn": "Çatdırılma: {date}",
+      "pending": {
+        "created": "Yeni, yoxlanışı gözləyir",
+        "changed": "Dəyişdirilib, yoxlanışı gözləyir",
+        "deleted": "Silinməsi yoxlanışı gözləyir",
+        "newTiersNotice": "Yeni mükafat səviyyələri moderator təsdiqləyənə qədər dəstəkçilərə görünmür. Dərc etmək üçün dəyişiklikləri yoxlamaya göndərin.",
+        "deletedNote": "Bu səviyyə moderator silinməni təsdiqləyənə qədər kampaniya səhifəsində qalır.",
+        "removeOnApproval": "Təsdiqdə sil",
+        "removeLabel": "{title} səviyyəsini təsdiqdə sil",
+        "removeTitle": "{title} təsdiqdə silinsin?",
+        "removeBody": "Səviyyə moderator dəyişikliklərinizi təsdiqləyənə qədər kampaniya səhifəsində qalır. Bu vaxta qədər geri qaytara bilərsiniz.",
+        "undo": "Geri qaytar",
+        "undoLabel": "{title} səviyyəsinin silinməsini geri qaytar",
+        "removalQueuedAnnouncement": "{title} moderator dəyişikliklərinizi təsdiqləyəndə silinəcək.",
+        "undoneAnnouncement": "{title} kampaniyada qalacaq."
+      }
     },
     "drawer": {
       "cancel": "Ləğv et",
@@ -6235,7 +6250,8 @@
         "risks": "Risklər",
         "coverImage": "Üz qabığı şəkli",
         "videoMediaId": "Video",
-        "countries": "Ölkələr"
+        "countries": "Ölkələr",
+        "rewards": "Mükafatlar"
       },
       "submit": "Baxışa göndər",
       "submitting": "Göndərilir…",
