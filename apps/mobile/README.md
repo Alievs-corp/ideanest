@@ -16,7 +16,7 @@ pnpm --filter @ideanest/mobile start   # a development build, not Expo Go
 | Navigation | **Expo Router**, file-based, under `src/app/` |
 | Styling | `StyleSheet` over `@ideanest/design-tokens` — see below |
 | Server state | **TanStack Query 5**, persisted to MMKV |
-| Storage | **MMKV** for the cache, the platform keychain for the session |
+| Storage | **MMKV** for the cache, AES-256 under a random key kept in the keychain (#587, `src/lib/storage.ts`); the platform keychain for the session. Android backup is off (`allowBackup: false`) |
 | Lists | **FlashList** |
 | Animation | **Reanimated 4** |
 | Push | **Expo notifications** |
