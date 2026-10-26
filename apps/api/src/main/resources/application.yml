@@ -343,6 +343,12 @@ ideanest:
     # anything beyond it encodes pixels nobody can resolve.
     longest-edge: 1440
     jpeg-quality: 82
+    # #587: how many upload addresses one account may be issued an hour, and hold live and
+    # unannounced at once. Each is a row and a write credential to the bucket.
+    uploads:
+      per-account: 120
+      window: PT1H
+      max-outstanding: 10
 
     processing:
       # Every five seconds, and it is the one schedule in this file that is not a

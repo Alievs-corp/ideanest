@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * Uploading an image and putting it on a campaign — the media pipeline design of 2026-08-30.
@@ -72,6 +74,9 @@ class MediaUploadApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private MediaProcessingJob processing;
+
+    @Autowired
+    private DataSource dataSource;
 
     @BeforeEach
     void clean() {
@@ -249,6 +254,64 @@ class MediaUploadApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("every address is signed as a byte stream and for the declared length, whatever was declared")
+    void anAddressIsSignedAsBytesOfTheDeclaredLength() {
+        String creator = signIn();
+
+        ResponseEntity<Map<String, Object>> issued = rest.exchange(
+                "/v1/media/uploads",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("contentType", "image/svg+xml", "byteSize", 1234), bearer(creator)),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        // #587: the raw object sits under the public base URL until the sweep replaces it, and
+        // stored as image/svg+xml it was a document a browser runs scripts in. As a byte stream
+        // it is a download. The length is signed so the store refuses any other size.
+        assertThat(issued.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(issued.getBody()).containsEntry("contentType", "application/octet-stream");
+        assertThat((String) issued.getBody().get("uploadUrl"))
+                .contains("type=application/octet-stream")
+                .contains("length=1234");
+    }
+
+    @Test
+    @DisplayName("an account holding ten live, unannounced addresses is refused an eleventh")
+    void outstandingAddressesAreBounded() {
+        String creator = signIn();
+        for (int issued = 0; issued < 10; issued++) {
+            begin(creator);
+        }
+
+        ResponseEntity<Map<String, Object>> refused = rest.exchange(
+                "/v1/media/uploads",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("contentType", "image/jpeg", "byteSize", BYTES.length), bearer(creator)),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        // #587: each address is a live write credential to the bucket and a row until the
+        // sweep, and nothing bounded how many one account could hold.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(refused.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("an upload written and never announced is removed with its object")
+    void anAbandonedUploadTakesItsObjectWithIt() {
+        String creator = signIn();
+        UUID mediaId = begin(creator);
+        store.put(MediaLibrary.rawKeyOf(mediaId), BYTES);
+        new JdbcTemplate(dataSource)
+                .update("UPDATE media SET created_at = now() - interval '7 days' WHERE id = ?", mediaId);
+
+        processing.run();
+
+        // #587: the sweep assumed nothing was ever written to an abandoned address, so bytes
+        // uploaded without the completing call stayed in the bucket for good.
+        assertThat(get("/v1/media/" + mediaId, creator).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(store.has(MediaLibrary.rawKeyOf(mediaId))).isFalse();
+    }
+
+    @Test
     @DisplayName("a file over the ceiling is refused before an address is issued")
     void anOversizedFileIsRefusedUpFront() {
         String creator = signIn();
@@ -287,7 +350,7 @@ class MediaUploadApiTests extends AbstractIntegrationTest {
         assertThat(issued.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         // The type the address was signed for comes back, because a client that reproduced
         // it would have every upload refused by the store as a signature mismatch.
-        assertThat(issued.getBody()).containsEntry("contentType", "image/jpeg");
+        assertThat(issued.getBody()).containsEntry("contentType", "application/octet-stream");
         return UUID.fromString((String) issued.getBody().get("mediaId"));
     }
 

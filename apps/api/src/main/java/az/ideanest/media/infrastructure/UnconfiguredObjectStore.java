@@ -25,7 +25,7 @@ public class UnconfiguredObjectStore implements ObjectStore {
     private static final String EXPLANATION = "This deployment has no media storage configured.";
 
     @Override
-    public URI presignedPut(String key, String contentType, Duration window) {
+    public URI presignedPut(String key, String contentType, long contentLength, Duration window) {
         throw new UploadsUnavailableException(EXPLANATION);
     }
 
