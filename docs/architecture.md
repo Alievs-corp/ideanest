@@ -2554,8 +2554,9 @@ individual agreement can differ without a deployment.
 > and `proposed`). Approval applies both before the tiers, so a tier rate for a region the
 > revision deletes is dropped; nothing about either is a row until then, so refusing has nothing
 > to delete. A region proposed in a revision can be priced once it has been approved. The web
-> and mobile editors and the admin review page do not yet draw any of this: they show the two
-> new changed fields by their raw names.
+> and mobile editors mark an item whose changes wait, on its card and on each held field, and
+> say so after a save the service held (#589); neither has a shipping-region editor, so regions
+> are only named in the revision notice. The admin review page draws both (below).
 >
 > The review page draws `rewards` under the campaign's fields (#569): one card per tier
 > with a tag, an icon and a word for each of created, deleted, changed and reordered, its
@@ -2564,6 +2565,16 @@ individual agreement can differ without a deployment.
 > service names (a word diff for the title and description, pictures, delivery, limit,
 > shipping type, flags, availability, composition and country and zone rates). The cards
 > are loaded only when an edit touches a tier, so the route's First Load JS is unchanged.
+>
+> Its `items` and `shippingZones` are drawn after the tiers (#589), from a chunk of their
+> own that is loaded only when an edit touches either. An item is a card named by its live
+> name, with a before and after for each field the service names: a word diff for the name
+> and description, the picture beside its address (drawn only for an `https:` one), weight
+> and digital delivery. A zone is matched with its live self by identifier, so a renamed
+> zone is one card: a new or a removed zone is shown whole with its countries, a changed one
+> as a before and after of its name and of its countries by name, each with a tag, an icon
+> and a word, and a zone the proposed set leaves as it is is not drawn. The queue and the
+> review name both fields in words.
 >
 > **A refused edit is `409`, not `400`.** `PROJECT_FIELD_LOCKED` and
 > `REWARD_FIELD_LOCKED`, each with the field and the campaign's state in `meta`. A
@@ -2684,7 +2695,7 @@ the first moment it stops being private.
 
 | | |
 |---|---|
-| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator, who is told (`SCHEDULED_LAUNCH_REFUSED`, from `project.scheduled_launch_refused`: renew or upgrade the plan, or lower the goal, then set a new launch time or launch); the refusal is audited as `project.scheduled_launch_refused` under the system actor, with the bound in the detail |
+| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator, who is told (`SCHEDULED_LAUNCH_REFUSED`, from `project.scheduled_launch_refused`: renew or upgrade the plan, or lower the goal, then set a new launch time or launch); the refusal is audited as `project.scheduled_launch_refused` under the system actor, with the bound in the detail. The notification opens the campaign's editor at its review tab (`/projects/{id}/edit/review`, `NotificationFacts.appPathFor` and the inbox's `hrefOf`; the app reads it as `/campaigns/{id}/edit/review`), not its public page, which an approved campaign does not have; and until a launch time is set again or the campaign opens, the creator's `ProjectEdit` carries `scheduledLaunchRefusedAt`, the moment of that audit row (read from it, not stored twice), so the review tab says why the launch time is gone and links to the plans. A Launch press refused with `SUBSCRIPTION_REQUIRED` or `PLAN_LIMIT_EXCEEDED` says the plan does not cover the campaign beside the same link, and stays on the tab: unlike a refused submission it is not sent to the pricing page (#589) |
 | Contract | `shared.access.PublishingEntitlement` → `PublishingAllowance` |
 | Refusals | `SUBSCRIPTION_REQUIRED` (403), `PLAN_LIMIT_EXCEEDED` (403) |
 | Exempt | A creator holding `SUPER_ADMIN`, granted or bootstrapped: no plan and no plan limits. Other staff roles buy a plan |

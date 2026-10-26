@@ -3724,7 +3724,9 @@
           "story": "Story",
           "risks": "Risks and challenges",
           "countries": "Countries",
-          "rewards": "Rewards"
+          "rewards": "Rewards",
+          "items": "Items",
+          "shippingZones": "Shipping zones"
         },
         "removed": "Removed:",
         "added": "Added:",
@@ -3847,6 +3849,37 @@
           "noItems": "No items",
           "noRates": "No rates",
           "secretLinkReplaced": "The private link is replaced. The old one stops working."
+        },
+        "items": {
+          "intro": "Every item inside a live reward tier that this edit changes. A field it does not name stays as it is.",
+          "untitled": "Untitled item",
+          "itemLabel": "Item: {name}",
+          "fields": {
+            "name": "Name",
+            "description": "Description",
+            "imageUrl": "Picture",
+            "weightGrams": "Weight",
+            "isDigital": "Digital"
+          },
+          "weight": "{grams} g",
+          "noWeight": "No weight",
+          "imageAlt": "Picture of the item {name}"
+        },
+        "shippingZones": {
+          "intro": "Every shipping zone this edit adds, removes or changes. A zone it does not name stays as it is.",
+          "untitled": "Untitled zone",
+          "zoneLabel": "Shipping zone: {name}",
+          "changes": {
+            "added": "New zone",
+            "removed": "To be removed",
+            "renamed": "Renamed",
+            "countries": "Countries changed"
+          },
+          "addedNote": "A new zone. It does not exist until this edit is approved.",
+          "removedNote": "This zone is removed when the edit is approved. It stays live until then.",
+          "name": "Name",
+          "countries": "Countries",
+          "unchanged": "The proposed zones are the same as the live ones."
         }
       }
     },
@@ -5553,7 +5586,12 @@
         "itemsHeading": "Items",
         "edit": "Edit",
         "notInReward": "Not in any reward",
-        "notInRewardDetail": "Backers do not see it until it is added to a reward."
+        "notInRewardDetail": "Backers do not see it until it is added to a reward.",
+        "pending": {
+          "changed": "Changed, waiting for review",
+          "changedNote": "Backers still see the approved version of this item until a moderator approves your changes.",
+          "heldAnnouncement": "Your changes to {name} wait for a moderator. Backers see the approved version until then."
+        }
       },
       "item": {
         "addTitle": "Add an item",
@@ -5586,7 +5624,12 @@
         "imageButtonLabel": "Choose an image",
         "imageDropHint": "Up to 20 MB: JPEG, PNG, WebP, AVIF or HEIC.",
         "imageRemove": "Remove image",
-        "imageUploaded": "Image uploaded. Save the item to keep it."
+        "imageUploaded": "Image uploaded. Save the item to keep it.",
+        "held": {
+          "title": "Some changes wait for review",
+          "body": "This item is in an approved reward, so the fields marked below show your proposed changes. Backers still see the approved values until a moderator approves them. Send your changes for review to publish them.",
+          "field": "Waiting for review. Backers still see the approved value."
+        }
       },
       "tier": {
         "addTitle": "Add a reward",
@@ -6192,7 +6235,11 @@
       "moderatorNote": "A moderator reads the campaign and either approves it, asks for changes, or refuses it. Approval publishes it straight away, or at the launch time you set, and its goal and deadline are fixed from then. You can keep editing while it is in review.",
       "done": "Done",
       "launchExplanation": "The campaign appears everywhere on the platform and starts taking pledges the moment it launches. Its goal and its deadline freeze from that point, and a live campaign cannot be taken back to a draft.",
-      "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft."
+      "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft.",
+      "scheduledLaunchRefused": {
+        "title": "This campaign did not open at its launch time",
+        "body": "Your plan did not cover this campaign when it was due to open on {date}, so it was not published and its launch time was cleared. It is still approved. Renew or change your plan, or lower the goal to one your plan covers, then launch it here or set a new launch time."
+      }
     },
     "cover": {
       "label": "Cover image",
@@ -6334,7 +6381,9 @@
         "coverImage": "Cover image",
         "videoMediaId": "Video",
         "countries": "Countries",
-        "rewards": "Rewards"
+        "rewards": "Rewards",
+        "items": "Items",
+        "shippingZones": "Shipping zones"
       },
       "submit": "Send for review",
       "submitting": "Sending…",
@@ -7565,7 +7614,16 @@
         "removeOnApprovalBody": "{title} stays public until a moderator approves your changes, then it is removed. You can undo this until then.",
         "removeOnApprovalConfirm": "Remove on approval",
         "newTiersHidden": "New tiers stay hidden from backers until a moderator approves them.",
-        "revisionField": "Rewards"
+        "revisionField": "Rewards",
+        "heldItem": {
+          "note": "Your changes to this item are not public yet. Backers still see the approved version.",
+          "fields": "Waiting for review: {fields}",
+          "editorTitle": "Some changes wait for review",
+          "editorBody": "A reward backers can see contains this item, so the fields marked “Waiting for review” show your new values. Backers still see the approved ones until a moderator approves your changes.",
+          "savedAnnouncement": "{name} was saved. Backers will see the changes once a moderator approves them.",
+          "revisionItemsField": "Items",
+          "revisionShippingZonesField": "Shipping zones"
+        }
       },
       "faq": {
         "nothingCached": "You are offline, and the questions have not been loaded on this phone yet."

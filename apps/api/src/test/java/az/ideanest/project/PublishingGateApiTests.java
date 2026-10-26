@@ -10,6 +10,7 @@ import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -405,6 +406,58 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
                 .isEqualTo(1L);
     }
 
+    @Test
+    @DisplayName("the editor says when a scheduled launch was refused, until a launch time is set again or it opens")
+    void theEditorCarriesTheRefusalUntilItIsAnswered() {
+        UUID capped = addPlan("REFUSEDEDIT", "5.00", null, "10000.00");
+        Account creator = account();
+        activate(creator, subscribeTo(creator, capped));
+        UUID project = approvedOverTheCeiling(creator);
+        String edit = "/v1/projects/" + project + "/edit";
+
+        // Never refused: nothing to explain, and the key is written out as null like every other.
+        Map<String, Object> before = get(edit, creator.accessToken()).getBody();
+        assertThat(before).containsKey("scheduledLaunchRefusedAt");
+        assertThat(before.get("scheduledLaunchRefusedAt")).isNull();
+
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        jdbc.update("UPDATE projects SET scheduled_launch_at = now() - interval '1 minute' WHERE id = ?", project);
+        assertThat(transitions.launchScheduled(project, Instant.now())).isEmpty();
+
+        // The moment the trail recorded, so the tab and an investigator name the same instant.
+        Instant audited = jdbc.queryForObject(
+                "SELECT occurred_at FROM audit_logs WHERE action = 'project.scheduled_launch_refused' AND entity_id = ?",
+                Timestamp.class,
+                project).toInstant();
+        Map<String, Object> refused = get(edit, creator.accessToken()).getBody();
+        assertThat(refused.get("scheduledLaunchAt")).isNull();
+        assertThat(Instant.parse((String) refused.get("scheduledLaunchRefusedAt"))).isEqualTo(audited);
+
+        // A lower goal is half an answer: nothing opens the campaign until it is launched or timed.
+        ResponseEntity<Map<String, Object>> lowered = patch(
+                project, creator, Map.of("goal", Map.of("amount", "10000.00", "currency", "AZN")));
+        assertThat(lowered.getBody().get("scheduledLaunchRefusedAt")).isNotNull();
+
+        // A launch time set again is the answer, and the explanation goes with the time it explained.
+        ResponseEntity<Map<String, Object>> retimed = patch(
+                project, creator, Map.of("scheduledLaunchAt", Instant.now().plusSeconds(86_400).toString()));
+        assertThat(retimed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(retimed.getBody().get("scheduledLaunchRefusedAt")).isNull();
+
+        // Cleared again by hand, the refusal is the last thing that stopped it opening on its own,
+        // and is said again: the trail cannot tell the two clearings apart, and it is still true.
+        // Written out, because the test client's mapper drops a null entry from a Map.
+        ResponseEntity<Map<String, Object>> cleared = patch(project, creator, "{\"scheduledLaunchAt\":null}");
+        assertThat(cleared.getBody().get("scheduledLaunchAt")).isNull();
+        assertThat(cleared.getBody().get("scheduledLaunchRefusedAt")).isNotNull();
+
+        // Launched by hand, it is live, and a live campaign has nothing left to explain.
+        ResponseEntity<Map<String, Object>> launched = post("/v1/projects/" + project + "/launch", creator.accessToken(), null);
+        assertThat(launched.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(launched.getBody().get("state")).isEqualTo("LIVE");
+        assertThat(launched.getBody().get("scheduledLaunchRefusedAt")).isNull();
+    }
+
     /* ------------------------------------------------------------------
      * Fixtures
      * --------------------------------------------------------------- */
@@ -609,6 +662,14 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
 
     private ResponseEntity<Map<String, Object>> get(String path, String accessToken) {
         return rest.exchange(path, HttpMethod.GET, new HttpEntity<>(authorised(accessToken)), mapType());
+    }
+
+    private ResponseEntity<Map<String, Object>> patch(UUID project, Account creator, Object body) {
+        return rest.exchange(
+                "/v1/projects/" + project,
+                HttpMethod.PATCH,
+                new HttpEntity<>(body, authorised(creator.accessToken())),
+                mapType());
     }
 
     private ResponseEntity<Map<String, Object>> post(String path, String accessToken, Object body) {

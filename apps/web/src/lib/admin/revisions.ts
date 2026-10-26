@@ -34,6 +34,8 @@ export const REVISION_FIELDS = [
   'risks',
   'countries',
   'rewards',
+  'items',
+  'shippingZones',
 ] as const;
 
 export type RevisionField = (typeof REVISION_FIELDS)[number];
@@ -113,6 +115,43 @@ export interface RevisionReward {
   readonly proposed?: RevisionRewardWriting | null;
 }
 
+/**
+ * An item's writing as the review sends it (#587). The console's own type because the service
+ * writes every field, a null included, and the generated schema has no null.
+ */
+export interface RevisionItemWriting {
+  readonly name?: string | null;
+  readonly description?: string | null;
+  readonly imageUrl?: string | null;
+  /** Null for a digital item, and for a physical one nobody has weighed. */
+  readonly weightGrams?: number | null;
+  readonly isDigital?: boolean | null;
+}
+
+/** The names the service gives a changed item's fields: the creator's item response names. */
+export type RevisionItemField = 'name' | 'description' | 'imageUrl' | 'weightGrams' | 'isDigital';
+
+/** An item an approved tier contains that the revision changes. */
+export interface RevisionItem {
+  readonly id: string;
+  readonly changedFields: readonly string[];
+  readonly live?: RevisionItemWriting | null;
+  readonly proposed?: RevisionItemWriting | null;
+}
+
+/** One shipping region. A region the revision adds already carries the identifier it will be created with. */
+export interface RevisionZone {
+  readonly id: string;
+  readonly name?: string | null;
+  readonly countryCodes?: readonly string[] | null;
+}
+
+/** The campaign's shipping regions, and the whole set the revision proposes instead. */
+export interface RevisionZones {
+  readonly live: readonly RevisionZone[];
+  readonly proposed: readonly RevisionZone[];
+}
+
 export interface RevisionReview {
   readonly id: string;
   readonly projectId: string;
@@ -127,6 +166,10 @@ export interface RevisionReview {
   readonly proposed: ProjectEdit;
   /** Empty when the revision touches no reward tier. */
   readonly rewards: readonly RevisionReward[];
+  /** Empty when the revision touches no item an approved tier contains. */
+  readonly items: readonly RevisionItem[];
+  /** Null when the revision leaves the shipping regions alone. */
+  readonly shippingZones: RevisionZones | null;
 }
 
 export interface RevisionDecision {
@@ -162,11 +205,23 @@ export async function readRevisionReview(id: string, signal?: AbortSignal): Prom
   const response = await authorizedFetch(revisionPath(id), { signal });
   if (!response.ok) throw await errorFrom(response);
 
-  const body = (await response.json()) as Omit<RevisionReview, 'changedFields' | 'rewards'> & {
+  const body = (await response.json()) as Omit<RevisionReview, 'changedFields' | 'rewards' | 'items' | 'shippingZones'> & {
     changedFields?: readonly string[] | null;
     rewards?: readonly RevisionReward[] | null;
+    items?: readonly (Omit<RevisionItem, 'changedFields'> & { changedFields?: readonly string[] | null })[] | null;
+    shippingZones?: { live?: readonly RevisionZone[] | null; proposed?: readonly RevisionZone[] | null } | null;
   };
-  return { ...body, changedFields: body.changedFields ?? [], rewards: body.rewards ?? [] };
+
+  // A revision saved before #587 holds neither, and the review then has no such fields at all:
+  // it reads as an edit that leaves the items and the regions alone.
+  const zones = body.shippingZones;
+  return {
+    ...body,
+    changedFields: body.changedFields ?? [],
+    rewards: body.rewards ?? [],
+    items: (body.items ?? []).map((item) => ({ ...item, changedFields: item.changedFields ?? [] })),
+    shippingZones: zones == null ? null : { live: zones.live ?? [], proposed: zones.proposed ?? [] },
+  };
 }
 
 /** An absent note is absent from the body, not an empty string. */

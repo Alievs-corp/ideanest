@@ -6661,6 +6661,8 @@ export interface components {
             risks?: string;
             /** Format: date-time */
             scheduledLaunchAt?: string;
+            /** Format: date-time */
+            scheduledLaunchRefusedAt?: string;
             slug?: string;
             state?: string;
             story?: components["schemas"]["JsonNode"];

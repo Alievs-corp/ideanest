@@ -115,6 +115,16 @@ describe('RevisionNotice', () => {
     expect(submitButton()).not.toHaveAttribute('aria-disabled', 'true');
   });
 
+  it('names held items and shipping zones in words, not as the server spells them (#587)', () => {
+    render(<Harness initial={withRevision('DRAFT', ['items', 'shippingZones'])} />);
+
+    expect(screen.getByText(copy.fields.items)).toBeInTheDocument();
+    expect(screen.getByText(copy.fields.shippingZones)).toBeInTheDocument();
+    expect(screen.queryByText('items')).not.toBeInTheDocument();
+    expect(screen.queryByText('shippingZones')).not.toBeInTheDocument();
+    expect(submitButton()).not.toHaveAttribute('aria-disabled', 'true');
+  });
+
   it('shows a pending edit as awaiting review with the send action unavailable', async () => {
     const user = userEvent.setup();
     render(<Harness initial={PENDING} />);

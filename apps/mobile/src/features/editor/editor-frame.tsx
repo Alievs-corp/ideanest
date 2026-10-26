@@ -187,6 +187,8 @@ function Frame() {
                 editor.reseed();
                 // Tiers created or removed in the thrown-away edit are not the list any more.
                 void queryClient.invalidateQueries({ queryKey: queryKeys.editorRewards(editor.projectId) });
+                // Items show the thrown-away proposed values until read again (#587).
+                void queryClient.invalidateQueries({ queryKey: queryKeys.editorItems(editor.projectId) });
               }}
             />
           ) : null}

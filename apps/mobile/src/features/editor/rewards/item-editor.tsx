@@ -27,16 +27,34 @@ import {
   Media,
   Pill,
   Switch,
+  Tag,
   TextInput,
   Textarea,
 } from '../../../components/ui';
+import { Glyphs } from '../../../icons';
 import { useT } from '../../../lib/i18n';
 import { colors, radius, spacing } from '../../../theme';
 import { EditorModal } from '../editor-modal';
 import { ImageSourceControls, imageSourceCopyFrom, useImageSource } from '../image-source';
 import { useEditorTranslators } from '../translator';
 import { useDescribeFailure } from '../use-describe-failure';
-import { createItem, patchItem } from './api';
+import { createItem, heldFieldsOf, patchItem, type ItemHeldField } from './api';
+
+/** A held field in the words of the form that edits it, so the panel and the editor name it alike. */
+export function itemFieldLabel(field: ItemHeldField, words: RewardsPanelCopy['item'], image: string): string {
+  switch (field) {
+    case 'name':
+      return words.name;
+    case 'description':
+      return words.description;
+    case 'imageUrl':
+      return image;
+    case 'weightGrams':
+      return words.weight;
+    case 'isDigital':
+      return words.isDigital;
+  }
+}
 
 /**
  * The web's `ItemEditor`, as a full-screen `EditorModal` (#162): one physical or digital thing a
@@ -52,6 +70,13 @@ import { createItem, patchItem } from './api';
  * <p>The image is picked from the library, taken with the camera, or given as an address (#162,
  * "Native decisions: Images") — the web is address-only, but a phone has no practical way to
  * produce one. The upload's `url` is what the item stores as `imageUrl`.
+ *
+ * <p>On a launched campaign, an item in a tier backers can see has its name, description, image,
+ * weight and delivery held for a moderator (#587). The list already hands this form the proposed
+ * values, so without a word the creator would believe them public: an alert above the form says
+ * the marked fields wait, and each held field carries "Waiting for review" in words and with a
+ * clock, never a colour alone. What the service holds after this save is said by the panel, which
+ * gets the answer once the modal has closed.
  *
  * <p>Mount it with a fresh `key` each time it opens, so the form is seeded from `item` once.
  */
@@ -75,6 +100,11 @@ export function ItemEditor({ visible, projectId, item, copy, readOnly, onClose, 
   const describe = useDescribeFailure();
   const imageCopy = useMemo(() => imageSourceCopyFrom(basicsPanelCopyFrom(editorT).cover), [editorT]);
 
+  const [held] = useState<ReadonlySet<ItemHeldField>>(() => new Set(item === null ? [] : heldFieldsOf(item)));
+  const heldMark = (field: ItemHeldField) =>
+    held.has(field) ? (
+      <Tag label={t('waitingForReview')} icon={Glyphs.Clock} variant="warning" testID={`item-${field}-held`} />
+    ) : null;
   const [seed] = useState<ItemDraft>(() => (item === null ? EMPTY_ITEM : itemDraftFrom(item)));
   const [draft, setDraft] = useState<ItemDraft>(seed);
   const [saving, setSaving] = useState(false);
@@ -134,12 +164,23 @@ export function ItemEditor({ visible, projectId, item, copy, readOnly, onClose, 
         />
       )}
 
+      {held.size === 0 ? null : (
+        <InlineAlert
+          variant="info"
+          politeness="off"
+          title={t('heldItem.editorTitle')}
+          description={t('heldItem.editorBody')}
+          testID="item-editor-held"
+        />
+      )}
+
       <Field
         label={words.name}
         required
         hint={fillPlaceholders(words.nameHint, { max: String(ITEM_NAME_MAX_CHARACTERS) })}
         error={visibleErrors.name}
       >
+        {heldMark('name')}
         <TextInput
           value={draft.name}
           autoComplete="off"
@@ -150,6 +191,7 @@ export function ItemEditor({ visible, projectId, item, copy, readOnly, onClose, 
       </Field>
 
       <Field label={words.description} hint={words.descriptionHint} error={visibleErrors.description}>
+        {heldMark('description')}
         <Textarea
           value={draft.description}
           numberOfLines={3}
@@ -159,6 +201,7 @@ export function ItemEditor({ visible, projectId, item, copy, readOnly, onClose, 
       </Field>
 
       <Field label={t('image')} hint={t('imageHint')} error={visibleErrors.imageUrl} grouped>
+        {heldMark('imageUrl')}
         {draft.imageUrl === '' ? null : (
           <View style={styles.image}>
             <View style={styles.preview}>
@@ -180,6 +223,7 @@ export function ItemEditor({ visible, projectId, item, copy, readOnly, onClose, 
       </Field>
 
       <View style={styles.card}>
+        {heldMark('isDigital')}
         <Switch
           label={words.isDigital}
           description={words.isDigitalHint}
@@ -197,6 +241,7 @@ export function ItemEditor({ visible, projectId, item, copy, readOnly, onClose, 
         hint={draft.isDigital ? words.weightHintDigital : words.weightHint}
         error={visibleErrors.weightGrams}
       >
+        {heldMark('weightGrams')}
         <TextInput
           value={draft.weightGrams}
           keyboardType="number-pad"

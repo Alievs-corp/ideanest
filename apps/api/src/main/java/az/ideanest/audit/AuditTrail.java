@@ -2,6 +2,7 @@ package az.ideanest.audit;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -96,6 +97,25 @@ public class AuditTrail {
     @Transactional(readOnly = true)
     public List<AuditEntry> historyOf(String entityType, UUID entityId) {
         return entries.findByEntityTypeAndEntityIdOrderByOccurredAtDesc(entityType, entityId);
+    }
+
+    /**
+     * When {@code action} was last recorded about {@code entityId}, or empty if it never was.
+     *
+     * <p>A product read rather than an investigator's, and the only one: the campaign editor says
+     * why a launch time disappeared from the moment the clock refused it (#589), and that moment is
+     * already this row. Storing it a second time on the campaign would be a second record of one
+     * fact, written by the same transaction, that could only ever disagree with this one.
+     *
+     * <p>No authorisation, as above: the caller has already decided its reader may see the thing.
+     * The answer is an instant, never the row, so nothing an investigator wrote in the detail
+     * leaves through this.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Instant> lastRecorded(AuditAction action, UUID entityId) {
+        return entries.findFirstByEntityTypeAndEntityIdAndActionOrderByOccurredAtDesc(
+                        action.entityType(), entityId, action.action())
+                .map(AuditEntry::getOccurredAt);
     }
 
     /**

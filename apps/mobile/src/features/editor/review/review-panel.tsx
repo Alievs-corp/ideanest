@@ -48,7 +48,14 @@ import {
   submitProject,
   useProjectChecklist,
 } from './api';
-import { needsSubscription, reviewFailureMessage, submitRefusal, type SubmitRefusal } from './review-failure';
+import {
+  launchRefusal,
+  needsSubscription,
+  reviewFailureMessage,
+  submitRefusal,
+  type LaunchRefusal,
+  type SubmitRefusal,
+} from './review-failure';
 
 /**
  * The Review tab — the web's `ReviewPanel` (#162): how complete the campaign is, what moderation
@@ -191,7 +198,7 @@ function Review({
   const [refusal, setRefusal] = useState<SubmitRefusal | null>(null);
   const [confirmingLaunch, setConfirmingLaunch] = useState(false);
   const [launching, setLaunching] = useState(false);
-  const [launchError, setLaunchError] = useState<string | null>(null);
+  const [launchError, setLaunchError] = useState<LaunchRefusal | null>(null);
   const [agreement, setAgreement] = useState<PendingAgreement | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [agreementRead, setAgreementRead] = useState(0);
@@ -309,8 +316,8 @@ function Review({
       refetchChecklist();
     } catch (cause) {
       // The confirmation stays open with the reason under it: closing it would look like nothing
-      // happened.
-      setLaunchError(reviewFailureMessage(cause, words));
+      // happened. A plan refusal offers the plans rather than going to them: `launchRefusal`.
+      setLaunchError(launchRefusal(cause, words));
     } finally {
       setLaunching(false);
     }
@@ -359,6 +366,38 @@ function Review({
             action={<Caption testID="review-moderation-date">{formatDate(moderation.decidedAt, words.locale)}</Caption>}
           />
         ) : null}
+
+        {/*
+          Why the launch time is gone (#589): the clock refused to open the campaign at that time
+          because the plan did not cover it, and cleared it. Without this the tab shows an approved
+          campaign that has simply lost its date. `warning`, because it is something to fix: the
+          plans are one answer, a lower goal the other, and Launch below ends either. The service
+          stops sending it once a new launch time is set or the campaign opens.
+        */}
+        {project.scheduledLaunchRefusedAt == null ? null : (
+          <InlineAlert
+            variant="warning"
+            title={words.scheduledLaunchRefused.title}
+            description={fillPlaceholders(words.scheduledLaunchRefused.body, {
+              date: formatDateTime(project.scheduledLaunchRefusedAt, words.locale),
+            })}
+            // Read where it stands, like the moderator's note: it greets every visit to the tab.
+            politeness="polite"
+            testID="review-launch-refused"
+            action={
+              <View style={styles.start}>
+                <Pill
+                  label={words.seeOtherPlans}
+                  variant="outline"
+                  size="sm"
+                  wrap
+                  onPress={() => router.push('/pricing')}
+                  testID="review-launch-refused-plans"
+                />
+              </View>
+            }
+          />
+        )}
 
         {note !== null ? (
           // One element for a screen reader, so focus can be moved to it after a submit or launch.
@@ -544,10 +583,20 @@ function Review({
               <InlineAlert
                 variant="danger"
                 title={words.notLaunchedTitle}
-                description={launchError}
+                description={launchError.message}
                 testID="review-launch-failed"
                 action={
-                  <View style={styles.start}>
+                  <View style={styles.actions}>
+                    {launchError.plans ? (
+                      <Pill
+                        label={words.seeOtherPlans}
+                        variant="outline"
+                        size="sm"
+                        wrap
+                        onPress={() => router.push('/pricing')}
+                        testID="review-launch-plans"
+                      />
+                    ) : null}
                     <Pill label={words.checkAgain} variant="ghost" size="sm" onPress={checkAgain} />
                   </View>
                 }

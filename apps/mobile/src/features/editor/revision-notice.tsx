@@ -105,9 +105,20 @@ export function RevisionNotice({ projectId, project, copy, onProject, onDiscarde
     view.kind === 'rejected' ? copy.rejectedBody : view.kind === 'pending' ? copy.pendingBody : copy.draftBody;
   const working = busy !== null;
   const open = view.kind === 'draft' || view.kind === 'pending';
-  // `rewards` is a section of its own in the service's list that the shared copy does not name yet.
+  /*
+   * `rewards`, `items` and `shippingZones` are sections of their own in the service's list (#569,
+   * #587); where the shared copy does not name one, the app's own words do, never the raw key.
+   */
   const changed = view.changedFields.map((field) =>
-    isRevisionField(field) ? copy.fields[field] : field === 'rewards' ? rewardsWords('revisionField') : field,
+    isRevisionField(field)
+      ? copy.fields[field]
+      : field === 'rewards'
+        ? rewardsWords('revisionField')
+        : field === 'items'
+          ? rewardsWords('heldItem.revisionItemsField')
+          : field === 'shippingZones'
+            ? rewardsWords('heldItem.revisionShippingZonesField')
+            : field,
   );
 
   return (

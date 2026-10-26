@@ -239,10 +239,22 @@ public class NotificationFacts {
      * message's destination on the web, in the browser, rather than in the application: the
      * application does not sell or renew plans (Apple 3.1.1 and Play Billing, #164), the website
      * does. An application built before #452 opens its own pricing screen, which links to the web.
+     *
+     * <p>A campaign that did not open at its launch time goes to its editor's review tab (#589), not
+     * to its public page: the campaign is not public, so that page is not one its creator can act
+     * on, and the review tab is where the refusal is explained and the campaign launched. The web
+     * and the application share the path ({@code @ideanest/links} parses it to the app's editor). A
+     * document with no {@code projectId} falls through to the campaign's page, as before.
      */
     public String appPathFor(NotificationType type, JsonNode params) {
         if (isAboutAPlan(type)) {
             return PRICING;
+        }
+        if (type == NotificationType.SCHEDULED_LAUNCH_REFUSED) {
+            UUID projectId = uuid(params);
+            if (projectId != null) {
+                return "/projects/" + projectId + "/edit/review";
+            }
         }
         if (type == NotificationType.REFUND_NEEDS_BANK_DETAILS || type == NotificationType.REFUND_SENT_BY_BANK) {
             String pledge = text(params, "pledgeId");

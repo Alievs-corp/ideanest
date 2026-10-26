@@ -3724,7 +3724,9 @@
           "story": "Hikâye",
           "risks": "Riskler ve zorluklar",
           "countries": "Ülkeler",
-          "rewards": "Ödüller"
+          "rewards": "Ödüller",
+          "items": "Ürünler",
+          "shippingZones": "Gönderim bölgeleri"
         },
         "removed": "Silindi:",
         "added": "Eklendi:",
@@ -3847,6 +3849,37 @@
           "noItems": "Ürün yok",
           "noRates": "Ücret yok",
           "secretLinkReplaced": "Gizli bağlantı değiştirilir. Eskisi çalışmaz."
+        },
+        "items": {
+          "intro": "Bu düzenlemenin değiştirdiği, yayındaki ödül kademelerinde yer alan tüm ürünler. Adı geçmeyen alan olduğu gibi kalır.",
+          "untitled": "Adsız ürün",
+          "itemLabel": "Ürün: {name}",
+          "fields": {
+            "name": "Ad",
+            "description": "Açıklama",
+            "imageUrl": "Görsel",
+            "weightGrams": "Ağırlık",
+            "isDigital": "Dijital"
+          },
+          "weight": "{grams} g",
+          "noWeight": "Ağırlık yok",
+          "imageAlt": "{name} ürününün görseli"
+        },
+        "shippingZones": {
+          "intro": "Bu düzenlemenin eklediği, kaldırdığı veya değiştirdiği tüm gönderim bölgeleri. Adı geçmeyen bölge olduğu gibi kalır.",
+          "untitled": "Adsız bölge",
+          "zoneLabel": "Gönderim bölgesi: {name}",
+          "changes": {
+            "added": "Yeni bölge",
+            "removed": "Kaldırılacak",
+            "renamed": "Adı değişti",
+            "countries": "Ülkeleri değişti"
+          },
+          "addedNote": "Yeni bir bölge. Bu düzenleme onaylanana kadar yoktur.",
+          "removedNote": "Düzenleme onaylandığında bu bölge kaldırılır. O zamana kadar yayında kalır.",
+          "name": "Ad",
+          "countries": "Ülkeler",
+          "unchanged": "Önerilen bölgeler yayındakilerle aynı."
         }
       }
     },
@@ -5553,7 +5586,12 @@
         "itemsHeading": "Ürünler",
         "edit": "Düzenle",
         "notInReward": "Hiçbir ödülde değil",
-        "notInRewardDetail": "Bir ödüle eklenene kadar destekçiler onu görmez."
+        "notInRewardDetail": "Bir ödüle eklenene kadar destekçiler onu görmez.",
+        "pending": {
+          "changed": "Değiştirildi, incelemeyi bekliyor",
+          "changedNote": "Bir moderatör değişikliklerinizi onaylayana kadar destekçiler bu ürünün onaylı sürümünü görür.",
+          "heldAnnouncement": "{name} için yaptığınız değişiklikler moderatörü bekliyor. O zamana kadar destekçiler onaylı sürümü görür."
+        }
       },
       "item": {
         "addTitle": "Ürün ekle",
@@ -5586,7 +5624,12 @@
         "imageButtonLabel": "Bir görsel seçin",
         "imageDropHint": "En fazla 20 MB: JPEG, PNG, WebP, AVIF veya HEIC.",
         "imageRemove": "Görseli kaldır",
-        "imageUploaded": "Görsel yüklendi. Saklamak için ürünü kaydedin."
+        "imageUploaded": "Görsel yüklendi. Saklamak için ürünü kaydedin.",
+        "held": {
+          "title": "Bazı değişiklikler incelemeyi bekliyor",
+          "body": "Bu ürün onaylı bir ödülde yer aldığı için aşağıda işaretli alanlar önerdiğiniz değişiklikleri gösterir. Bir moderatör onaylayana kadar destekçiler onaylı değerleri görür. Yayınlamak için değişikliklerinizi incelemeye gönderin.",
+          "field": "İncelemeyi bekliyor. Destekçiler hâlâ onaylı değeri görür."
+        }
       },
       "tier": {
         "addTitle": "Ödül ekle",
@@ -6192,7 +6235,11 @@
       "moderatorNote": "Bir moderatör kampanyayı okur ve ya onaylar, ya değişiklik ister, ya da reddeder. Onay kampanyayı hemen ya da belirlediğiniz lansman saatinde yayınlar, o andan itibaren hedefi ve bitiş tarihi değişmez. İnceleme sürerken düzenlemeye devam edebilirsiniz.",
       "done": "Tamamlandı",
       "launchExplanation": "Kampanya başlatıldığı anda platformun her yerinde görünür ve destek almaya başlar. O andan itibaren hedefi ve bitiş tarihi değişmez, yayındaki bir kampanya taslağa geri alınamaz.",
-      "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz."
+      "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz.",
+      "scheduledLaunchRefused": {
+        "title": "Bu kampanya lansman saatinde açılmadı",
+        "body": "Kampanya {date} tarihinde açılacağı sırada planınız onu kapsamıyordu, bu yüzden yayınlanmadı ve lansman saati kaldırıldı. Kampanya onaylı olarak kalıyor. Planınızı yenileyin ya da değiştirin veya hedefi planınızın kapsadığı bir tutara düşürün, ardından kampanyayı buradan başlatın ya da yeni bir lansman saati belirleyin."
+      }
     },
     "cover": {
       "label": "Kapak görseli",
@@ -6334,7 +6381,9 @@
         "coverImage": "Kapak görseli",
         "videoMediaId": "Video",
         "countries": "Ülkeler",
-        "rewards": "Ödüller"
+        "rewards": "Ödüller",
+        "items": "Ürünler",
+        "shippingZones": "Gönderim bölgeleri"
       },
       "submit": "İncelemeye gönder",
       "submitting": "Gönderiliyor…",
@@ -7565,7 +7614,16 @@
         "removeOnApprovalBody": "{title}, bir moderatör değişikliklerinizi onaylayana kadar herkese açık kalır, sonra kaldırılır. O zamana kadar bunu geri alabilirsiniz.",
         "removeOnApprovalConfirm": "Onayla kaldır",
         "newTiersHidden": "Yeni kademeler, bir moderatör onaylayana kadar destekçilerden gizli kalır.",
-        "revisionField": "Ödüller"
+        "revisionField": "Ödüller",
+        "heldItem": {
+          "note": "Bu üründeki değişiklikleriniz henüz herkese açık değil. Destekçiler onaylı sürümü görmeye devam eder.",
+          "fields": "İnceleme bekleniyor: {fields}",
+          "editorTitle": "Bazı değişiklikler inceleme bekliyor",
+          "editorBody": "Bu ürün destekçilerin gördüğü bir ödülde yer alıyor, bu yüzden «İnceleme bekleniyor» işaretli alanlar yeni değerlerinizi gösterir. Bir moderatör değişikliklerinizi onaylayana kadar destekçiler onaylı değerleri görür.",
+          "savedAnnouncement": "{name} kaydedildi. Destekçiler değişiklikleri bir moderatör onayladığında görecek.",
+          "revisionItemsField": "Ürünler",
+          "revisionShippingZonesField": "Gönderim bölgeleri"
+        }
       },
       "faq": {
         "nothingCached": "Çevrimdışısınız ve sorular bu telefonda henüz yüklenmedi."

@@ -108,6 +108,16 @@ interface Refusal {
   limit?: { plan: string; allowed: string; actual: string };
 }
 
+/** A refused launch, as something to render beside the confirmation. */
+interface LaunchRefusal {
+  message: string;
+  /**
+   * The plan refused it, either because there is none or because it does not stretch this far:
+   * the plans are offered beside the reason. See `launch` on why they are not navigated to.
+   */
+  plans: boolean;
+}
+
 export interface ReviewPanelProps {
   projectId: string;
   /** The editor frame's words, resolved by this tab's page. */
@@ -136,7 +146,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
   const [refusal, setRefusal] = useState<Refusal | null>(null);
   const [launching, setLaunching] = useState(false);
   const [confirmingLaunch, setConfirmingLaunch] = useState(false);
-  const [launchError, setLaunchError] = useState<string | null>(null);
+  const [launchError, setLaunchError] = useState<LaunchRefusal | null>(null);
   const [agreement, setAgreement] = useState<PendingAgreement | null>(null);
   const [agreed, setAgreed] = useState(false);
 
@@ -261,6 +271,15 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
    * <p>The dialog is closed only on success. A failure leaves it open with the
    * reason under it, because closing it would return the creator to a screen that
    * looks exactly as it did before they pressed anything.
+   *
+   * <p><strong>A plan refusal is answered here, not by the pricing page.</strong> `submit`
+   * navigates on `SUBSCRIPTION_REQUIRED` because a creator with no plan has nothing to fix on
+   * the campaign and the pricing page's `from=submit` banner explains a submission. A launch
+   * is refused for the same plan at a different moment: the creator is at the last,
+   * irreversible step with the confirmation open, a lapsed plan and a goal over the plan's
+   * ceiling read the same to them (#589), and that banner would explain the wrong thing. So
+   * both plan codes say the plan does not cover the campaign and offer the plans, and the
+   * creator stays where the Launch button is.
    */
   async function launch(): Promise<void> {
     setLaunching(true);
@@ -271,7 +290,12 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
       // The state has changed, and with it what this tab has to offer.
       setAttempt((n) => n + 1);
     } catch (cause) {
-      setLaunchError(messageFor(cause, words));
+      setLaunchError({
+        message: messageFor(cause, words),
+        plans:
+          cause instanceof ApiError &&
+          (cause.problem?.code === 'SUBSCRIPTION_REQUIRED' || cause.problem?.code === 'PLAN_LIMIT_EXCEEDED'),
+      });
     } finally {
       setLaunching(false);
     }
@@ -361,6 +385,29 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
             </p>
             <p className="mt-2">
               <time dateTime={moderation.decidedAt}>{formatDate(moderation.decidedAt, words.locale)}</time>
+            </p>
+          </InlineAlert>
+        )}
+
+        {/*
+          WHY THE LAUNCH TIME IS GONE (#589). The clock refused to open the campaign at its
+          time because the plan did not cover it, and cleared the time, so without this the
+          tab shows an approved campaign that has simply lost its date. `warning`, because it
+          is something to fix rather than a refusal: the plans are one answer, a lower goal
+          the other, and the Launch control below is how either ends. The server stops
+          sending the time once a new launch time is set or the campaign opens.
+        */}
+        {project.scheduledLaunchRefusedAt != null && (
+          <InlineAlert variant="warning" title={words.scheduledLaunchRefused.title}>
+            <p>
+              {fillPlaceholders(words.scheduledLaunchRefused.body, {
+                date: formatDateTime(project.scheduledLaunchRefusedAt, words.locale),
+              })}
+            </p>
+            <p className="mt-3">
+              <Link href="/pricing" className="text-fg underline underline-offset-4">
+                {words.seeOtherPlans}
+              </Link>
             </p>
           </InlineAlert>
         )}
@@ -557,7 +604,14 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
 
             {launchError !== null && (
               <InlineAlert variant="danger" title={words.notLaunchedTitle}>
-                <p>{launchError}</p>
+                <p>{launchError.message}</p>
+                {launchError.plans && (
+                  <p className="mt-3">
+                    <Link href="/pricing" className="text-fg underline underline-offset-4">
+                      {words.seeOtherPlans}
+                    </Link>
+                  </p>
+                )}
                 <Pill variant="ghost" size="sm" className="mt-3" onClick={reloadAll}>
                   {words.checkAgain}
                 </Pill>
@@ -785,6 +839,12 @@ function messageFor(cause: unknown, words: ReviewPanelCopy): string {
     if (cause.problem?.code === 'PLAN_LIMIT_EXCEEDED') {
       return cause.problem?.detail ?? words.planDoesNotCover;
     }
+    /*
+     * No plan, met where it is not navigated away from: a launch (#589). The service's own
+     * sentence is about sending a campaign for review, which is not what was pressed, so the
+     * catalogue's is used. `submit` never gets here; it goes to the pricing page instead.
+     */
+    if (cause.problem?.code === 'SUBSCRIPTION_REQUIRED') return words.planDoesNotCover;
     // Not "you do not have access": it is their own campaign, and the answer is the agreement.
     const asked = creatorAgreementRefusalOf(cause.problem?.code, cause.problem?.meta);
     if (asked !== null) return asked.requires === 'SIGNATURE' ? words.agreementSignature : words.agreementRequired;

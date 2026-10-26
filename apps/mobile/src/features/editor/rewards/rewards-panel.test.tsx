@@ -584,3 +584,73 @@ describe('RewardsPanel on a launched campaign (#569)', () => {
     expect(reads).toBeGreaterThan(before);
   });
 });
+
+describe('RewardsPanel items held on a launched campaign (#587)', () => {
+  const words = en.mobile.editor.rewards;
+  const item = en.campaignEditor.rewards.item;
+  const LAUNCHED: ProjectEdit = { ...PROJECT, state: 'LIVE', launchedAt: '2026-10-05T10:00:00.000Z' };
+  const heldMug = (fields: readonly string[], extra: Partial<Item> = {}): Item =>
+    ({ ...MUG, ...extra, revisionChangedFields: fields }) as Item;
+
+  beforeEach(() => {
+    mockProject = async () => LAUNCHED;
+  });
+
+  it('marks an item whose changes wait, in words, naming the held fields', async () => {
+    mockItems = async () => [heldMug(['name', 'imageUrl'], { name: 'Enamel mug, blue' })];
+    await show();
+    const card = screen.getByTestId('item-i-mug');
+    expect(within(screen.getByTestId('item-i-mug-pending')).getByText(words.waitingForReview)).toBeTruthy();
+    expect(within(card).getByText('Enamel mug, blue')).toBeTruthy();
+    expect(screen.getByTestId('item-i-mug-pending-note')).toHaveTextContent(
+      `${words.heldItem.note} Waiting for review: ${item.name}, ${words.image}`,
+    );
+  });
+
+  it('says nothing of review for an item nothing is held for', async () => {
+    mockItems = async () => [heldMug([]), { ...MUG, id: 'i-pin', name: 'Enamel pin' }];
+    await show();
+    expect(screen.queryByTestId('item-i-mug-pending')).toBeNull();
+    expect(screen.queryByTestId('item-i-pin-pending')).toBeNull();
+    expect(screen.queryByText(words.heldItem.note, { exact: false })).toBeNull();
+  });
+
+  it('after a save the service held, marks the item, says why aloud, and reads the campaign again', async () => {
+    let reads = 0;
+    mockProject = async () => {
+      reads += 1;
+      return LAUNCHED;
+    };
+    mockSend.mockImplementation(async (_method: string, _path: string, body: Record<string, unknown>) =>
+      heldMug(['name'], body as Partial<Item>),
+    );
+    await show();
+    const before = reads;
+    expect(screen.queryByTestId('item-i-mug-pending')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('item-i-mug-edit'));
+    await fireEvent.changeText(screen.getByTestId('item-name'), 'Enamel mug, blue');
+    await fireEvent.press(screen.getByTestId('item-editor-save'));
+    await settle();
+
+    expect(calls('PATCH')).toEqual([['PATCH', '/v1/items/i-mug', { name: 'Enamel mug, blue' }]]);
+    expect(within(screen.getByTestId('item-i-mug-pending')).getByText(words.waitingForReview)).toBeTruthy();
+    expect(screen.getByTestId('item-i-mug-pending-note')).toHaveTextContent(`${words.heldItem.note} Waiting for review: ${item.name}`);
+    expect(said()).toContain('Enamel mug, blue was saved. Backers will see the changes once a moderator approves them.');
+    expect(reads).toBeGreaterThan(before);
+  });
+
+  it('says nothing of review after a save the service wrote at once', async () => {
+    mockSend.mockImplementation(async (_method: string, _path: string, body: Record<string, unknown>) =>
+      heldMug([], body as Partial<Item>),
+    );
+    await show();
+    await fireEvent.press(screen.getByTestId('item-i-mug-edit'));
+    await fireEvent.changeText(screen.getByTestId('item-sku'), 'MUG-02');
+    await fireEvent.press(screen.getByTestId('item-editor-save'));
+    await settle();
+    expect(within(screen.getByTestId('item-i-mug')).getByText('MUG-02')).toBeTruthy();
+    expect(screen.queryByTestId('item-i-mug-pending')).toBeNull();
+    expect(said()).not.toContain('Enamel mug was saved. Backers will see the changes once a moderator approves them.');
+  });
+});

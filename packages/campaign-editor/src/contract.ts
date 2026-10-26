@@ -115,6 +115,12 @@ export interface ProjectEdit {
   durationDays?: number | null;
   /** ISO 8601, UTC. */
   scheduledLaunchAt?: string | null;
+  /**
+   * When the clock last refused to open the campaign at its launch time because the creator's
+   * plan did not cover it, and cleared that time (#589). Set only while the campaign is approved
+   * with no launch time; null once one is set again or the campaign opens.
+   */
+  scheduledLaunchRefusedAt?: string | null;
   launchedAt?: string | null;
   deadline?: string | null;
   story?: StoryDocument | null;
@@ -416,6 +422,12 @@ export interface Item {
   sku?: string | null;
   createdAt: string;
   updatedAt: string;
+  /**
+   * On a launched campaign, the fields of an item an approved tier contains whose new values
+   * wait in the campaign's revision for a moderator (#587). The other fields already show those
+   * proposed values, not the ones backers see. Absent, null or empty when nothing waits.
+   */
+  revisionChangedFields?: readonly string[] | null;
 }
 
 /** `CreateItemRequest`. Only the name is required. */

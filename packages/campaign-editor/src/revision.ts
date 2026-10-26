@@ -78,6 +78,8 @@ export const REVISION_FIELDS = [
   'videoMediaId',
   'countries',
   'rewards',
+  'items',
+  'shippingZones',
 ] as const;
 
 export type RevisionField = (typeof REVISION_FIELDS)[number];

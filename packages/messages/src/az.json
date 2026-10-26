@@ -3724,7 +3724,9 @@
           "story": "Hekayə",
           "risks": "Risklər və çətinliklər",
           "countries": "Ölkələr",
-          "rewards": "Mükafatlar"
+          "rewards": "Mükafatlar",
+          "items": "Əşyalar",
+          "shippingZones": "Göndəriş zonaları"
         },
         "removed": "Silinib:",
         "added": "Əlavə olunub:",
@@ -3847,6 +3849,37 @@
           "noItems": "Məhsul yoxdur",
           "noRates": "Tarif yoxdur",
           "secretLinkReplaced": "Gizli link əvəz olunur. Köhnəsi işləməyəcək."
+        },
+        "items": {
+          "intro": "Bu redaktənin dəyişdiyi, canlı mükafat pillələrinin içindəki bütün əşyalar. Adı çəkilməyən sahə olduğu kimi qalır.",
+          "untitled": "Adsız əşya",
+          "itemLabel": "Əşya: {name}",
+          "fields": {
+            "name": "Ad",
+            "description": "Təsvir",
+            "imageUrl": "Şəkil",
+            "weightGrams": "Çəki",
+            "isDigital": "Rəqəmsal"
+          },
+          "weight": "{grams} q",
+          "noWeight": "Çəki yoxdur",
+          "imageAlt": "{name} əşyasının şəkli"
+        },
+        "shippingZones": {
+          "intro": "Bu redaktənin əlavə etdiyi, sildiyi və ya dəyişdiyi bütün göndəriş zonaları. Adı çəkilməyən zona olduğu kimi qalır.",
+          "untitled": "Adsız zona",
+          "zoneLabel": "Göndəriş zonası: {name}",
+          "changes": {
+            "added": "Yeni zona",
+            "removed": "Silinəcək",
+            "renamed": "Adı dəyişib",
+            "countries": "Ölkələri dəyişib"
+          },
+          "addedNote": "Yeni zona. Bu redaktə təsdiqlənənə qədər mövcud deyil.",
+          "removedNote": "Redaktə təsdiqləndikdə bu zona silinir. O vaxta qədər canlı qalır.",
+          "name": "Ad",
+          "countries": "Ölkələr",
+          "unchanged": "Təklif olunan zonalar canlı olanlarla eynidir."
         }
       }
     },
@@ -5553,7 +5586,12 @@
         "itemsHeading": "Əşyalar",
         "edit": "Dəyiş",
         "notInReward": "Heç bir mükafatda deyil",
-        "notInRewardDetail": "Mükafata əlavə edilənə qədər dəstəkçilər onu görmür."
+        "notInRewardDetail": "Mükafata əlavə edilənə qədər dəstəkçilər onu görmür.",
+        "pending": {
+          "changed": "Dəyişdirilib, yoxlanışı gözləyir",
+          "changedNote": "Moderator dəyişikliklərinizi təsdiqləyənə qədər dəstəkçilər bu əşyanın təsdiqlənmiş versiyasını görür.",
+          "heldAnnouncement": "{name} üzrə dəyişiklikləriniz moderatoru gözləyir. O vaxta qədər dəstəkçilər təsdiqlənmiş versiyanı görür."
+        }
       },
       "item": {
         "addTitle": "Əşya əlavə et",
@@ -5586,7 +5624,12 @@
         "imageButtonLabel": "Şəkil seçin",
         "imageDropHint": "20 MB-a qədər: JPEG, PNG, WebP, AVIF və ya HEIC.",
         "imageRemove": "Şəkli sil",
-        "imageUploaded": "Şəkil yükləndi. Saxlamaq üçün əşyanı yadda saxlayın."
+        "imageUploaded": "Şəkil yükləndi. Saxlamaq üçün əşyanı yadda saxlayın.",
+        "held": {
+          "title": "Bəzi dəyişikliklər yoxlanışı gözləyir",
+          "body": "Bu əşya təsdiqlənmiş mükafatdadır, ona görə aşağıda işarələnmiş sahələr təklif etdiyiniz dəyişiklikləri göstərir. Moderator onları təsdiqləyənə qədər dəstəkçilər təsdiqlənmiş dəyərləri görür. Dərc etmək üçün dəyişiklikləri yoxlamaya göndərin.",
+          "field": "Yoxlanışı gözləyir. Dəstəkçilər hələ təsdiqlənmiş dəyəri görür."
+        }
       },
       "tier": {
         "addTitle": "Mükafat əlavə et",
@@ -6192,7 +6235,11 @@
       "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Təsdiq kampaniyanı dərhal və ya təyin etdiyiniz vaxtda yayımlayır, o andan hədəf və son tarix dəyişmir. Baxış gedərkən redaktə etmək olar.",
       "done": "Hazırdır",
       "launchExplanation": "Kampaniya başladığı andan platformanın hər yerində görünür və dəstək qəbul etməyə başlayır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı yenidən qaralamaya qaytarmaq olmaz.",
-      "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz."
+      "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz.",
+      "scheduledLaunchRefused": {
+        "title": "Kampaniya başlanğıc vaxtında açılmadı",
+        "body": "{date} tarixində açılmalı olanda planınız bu kampaniyanı əhatə etmirdi, ona görə də kampaniya yayımlanmadı və başlanğıc vaxtı ləğv edildi. Kampaniya təsdiqlənmiş olaraq qalır. Planınızı yeniləyin və ya dəyişin, yaxud hədəfi planınızın əhatə etdiyi məbləğə endirin, sonra kampaniyanı burada başladın və ya yeni başlanğıc vaxtı təyin edin."
+      }
     },
     "cover": {
       "label": "Örtük şəkli",
@@ -6334,7 +6381,9 @@
         "coverImage": "Üz qabığı şəkli",
         "videoMediaId": "Video",
         "countries": "Ölkələr",
-        "rewards": "Mükafatlar"
+        "rewards": "Mükafatlar",
+        "items": "Əşyalar",
+        "shippingZones": "Göndəriş zonaları"
       },
       "submit": "Baxışa göndər",
       "submitting": "Göndərilir…",
@@ -7565,7 +7614,16 @@
         "removeOnApprovalBody": "{title} moderator dəyişikliklərinizi təsdiq edənə qədər açıq qalır, sonra silinir. O vaxta qədər bunu geri qaytara bilərsiniz.",
         "removeOnApprovalConfirm": "Təsdiqlə sil",
         "newTiersHidden": "Yeni səviyyələr moderator təsdiq edənə qədər dəstəkçilərdən gizli qalır.",
-        "revisionField": "Mükafatlar"
+        "revisionField": "Mükafatlar",
+        "heldItem": {
+          "note": "Bu əşyadakı dəyişikliklər hələ açıq deyil. Dəstəkçilər təsdiqlənmiş versiyanı görür.",
+          "fields": "Yoxlama gözlənilir: {fields}",
+          "editorTitle": "Bəzi dəyişikliklər yoxlama gözləyir",
+          "editorBody": "Bu əşya dəstəkçilərin gördüyü mükafatdadır, ona görə «Yoxlama gözlənilir» ilə işarələnmiş sahələr yeni dəyərlərinizi göstərir. Moderator dəyişikliklərinizi təsdiq edənə qədər dəstəkçilər təsdiqlənmiş dəyərləri görür.",
+          "savedAnnouncement": "{name} yadda saxlanıldı. Moderator təsdiq edəndən sonra dəstəkçilər dəyişiklikləri görəcək.",
+          "revisionItemsField": "Əşyalar",
+          "revisionShippingZonesField": "Göndəriş zonaları"
+        }
       },
       "faq": {
         "nothingCached": "Oflaynsınız, suallar isə bu telefonda hələ yüklənməyib."

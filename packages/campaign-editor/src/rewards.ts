@@ -194,6 +194,23 @@ export function isItemField(value: string): value is ItemField {
   return (ITEM_FIELDS as readonly string[]).includes(value);
 }
 
+/**
+ * The fields of `item` whose new values wait for a moderator (#587), in the editor's order.
+ *
+ * A name the editor has no control for is dropped rather than shown raw: the server may learn
+ * to hold a field before this client knows how to mark it, and a field it cannot point at is
+ * still covered by the item's own "waiting for review" marker.
+ */
+export function heldItemFields(item: Item): readonly ItemField[] {
+  const held = item.revisionChangedFields ?? [];
+  return ITEM_FIELDS.filter((field) => held.includes(field));
+}
+
+/** Whether anything of `item` waits for a moderator, including a field this client cannot mark. */
+export function isItemHeld(item: Item): boolean {
+  return (item.revisionChangedFields?.length ?? 0) > 0;
+}
+
 export type ItemErrors = Partial<Record<ItemField, string>>;
 
 /** THE COPY IS AN ARGUMENT, for the reason `validateBasics` states: this runs per keystroke. */

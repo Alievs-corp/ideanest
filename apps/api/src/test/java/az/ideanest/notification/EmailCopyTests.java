@@ -266,6 +266,21 @@ class EmailCopyTests extends AbstractIntegrationTest {
     }
 
     /**
+     * That a campaign which did not open at its launch time goes to where it is launched (#589).
+     *
+     * <p>The campaign is approved and not public, and its button used to open the public page,
+     * where its creator could neither read why nor launch it.
+     */
+    @Test
+    @DisplayName("a refused scheduled launch links to the campaign's editor, at its review tab")
+    void aRefusedScheduledLaunchLinksToTheEditor() {
+        EmailContent content =
+                composer.compose(named(NotificationType.SCHEDULED_LAUNCH_REFUSED), RECIPIENT, PRIMARY);
+
+        assertThat(content.actionUrl()).endsWith("/projects/01890000-0000-7000-8000-000000000001/edit/review");
+    }
+
+    /**
      * That the reminder to enter an IBAN goes where an IBAN is entered (#411).
      *
      * <p>It names a campaign, and its button used to open that campaign's page, where the
