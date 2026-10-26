@@ -1335,19 +1335,33 @@ ideanest:
       # §17.3: five sign-in attempts per address per fifteen minutes.
       sign-ins-per-address: 5
       sign-ins-per-email: 5
-      # #587: FAILURES ONLY, AND PER ACCOUNT A BACK-OFF RATHER THAN A LOCKOUT.
-      # A correct password gives its attempt back on both budgets. Past the five
-      # free failures an account makes each further attempt wait, from the last
-      # failure: 30s, 1m, 2m, 4m, 8m, then 15m each. Failures are forgotten a day
-      # after the last one -- longer than the ceiling, so waiting out one delay
-      # does not also hand back the free five. See SignInBackoff.
+      # #587: FAILURES ONLY, AND PER ACCOUNT AND ADDRESS A BACK-OFF RATHER THAN A
+      # LOCKOUT. A correct password gives its attempt back on both budgets. Past
+      # the five free failures from one address, that address waits before each
+      # further attempt on the account, from the last failure: 30s, 1m, 2m, 4m,
+      # 8m, then 15m each. Other addresses -- the owner's -- are not held back.
+      # Failures are forgotten a day after the last one -- longer than the
+      # ceiling, so waiting out one delay does not also hand back the free five.
+      # A wrong two-factor code is a failure too. See SignInBackoff.
       sign-in-backoff: PT30S
       sign-in-backoff-ceiling: PT15M
       sign-in-failure-memory: PT24H
+      # And across every address together: fifty failures in a sliding hour and
+      # the account refuses every attempt, the owner's included, until the
+      # oldest leaves the hour. Bounds guessing from many addresses at 1,200 a
+      # day. One address cannot reach it -- about a dozen in its first hour, four
+      # an hour after. Ten addresses' free failures close the account for an
+      # hour; keeping it shut takes a dozen or more failing continuously. Must
+      # exceed sign-ins-per-email.
+      sign-in-failures-per-account: 50
+      sign-in-failures-per-account-window: PT1H
       # The control that makes a six-digit code safe. Three codes are valid at
       # any moment once a step of clock skew either side is allowed, so five
-      # attempts is fifteen chances in a million per challenge -- and a new
-      # challenge costs the password again.
+      # attempts is fifteen chances in a million per challenge. A new challenge
+      # costs the password again but does not reset anything: each wrong code
+      # also counts against the account's sign-in back-off and the ceiling
+      # above. Only a completed challenge clears the back-off; the ceiling just
+      # ages out.
       two-factor-codes-per-challenge: 5
       # Enabling, confirming, or disabling. Each costs an Argon2 verification,
       # so this bounds what a stolen access token can spend as well as guess.

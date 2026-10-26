@@ -13,6 +13,7 @@ import az.ideanest.user.application.UserAccount;
 import az.ideanest.user.application.UserAccounts;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
  * without a limit an attacker with a stolen password guesses one in a few
  * hundred thousand attempts, which is minutes of scripting. The limit is per
  * challenge, and a challenge is retired when a new one is issued, so collecting
- * challenges does not buy more guesses.
+ * challenges does not buy more guesses. Sending the password again does, five
+ * at a time, so a wrong code also counts as a failed sign-in against the account
+ * in {@link SignInBackoff}, and only a completed challenge clears those (#587).
  */
 @Service
 public class TwoFactorChallenges {
@@ -46,6 +49,7 @@ public class TwoFactorChallenges {
     private final SessionStarter sessionStarter;
     private final UserAccounts users;
     private final RateLimiter rateLimiter;
+    private final SignInBackoff backoff;
     private final AuthProperties properties;
     private final Clock clock;
 
@@ -56,6 +60,7 @@ public class TwoFactorChallenges {
             SessionStarter sessionStarter,
             UserAccounts users,
             RateLimiter rateLimiter,
+            SignInBackoff backoff,
             AuthProperties properties,
             Clock clock) {
         this.challenges = challenges;
@@ -64,6 +69,7 @@ public class TwoFactorChallenges {
         this.sessionStarter = sessionStarter;
         this.users = users;
         this.rateLimiter = rateLimiter;
+        this.backoff = backoff;
         this.properties = properties;
         this.clock = clock;
     }
@@ -147,7 +153,17 @@ public class TwoFactorChallenges {
                 .findByUserIdAndConfirmedAtIsNotNull(challenge.getUserId())
                 .orElseThrow(() -> new AuthenticationFailedException(REFUSAL));
 
+        // The address the challenge's password came from, which is the one
+        // SignInBackoff gates: charging a wrong code there makes the next
+        // challenge from it wait, wherever the codes themselves were sent from.
+        String passwordAddress = Objects.requireNonNullElse(challenge.getIpAddress(), "unknown");
+
         if (!secondFactors.accepts(secret, command.code(), command.recoveryCode(), now)) {
+            // A guess at the code, and the per-challenge limit alone does not bound
+            // those: each correct password buys a new challenge. So it is also a
+            // failed sign-in against the account (#587).
+            users.findById(challenge.getUserId())
+                    .ifPresent(account -> backoff.codeRejected(account.email().value(), passwordAddress));
             throw new AuthenticationFailedException(REFUSAL);
         }
 
@@ -159,6 +175,9 @@ public class TwoFactorChallenges {
 
         UserAccount account = users.findById(challenge.getUserId())
                 .orElseThrow(() -> new AuthenticationFailedException(REFUSAL));
+
+        // Both factors proved: only now are the failures before them forgotten.
+        backoff.signedIn(account.email().value(), passwordAddress);
 
         return sessionStarter.start(new SessionStarter.NewSession(
                 account.id(),
