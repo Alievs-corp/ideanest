@@ -146,8 +146,9 @@ describe('the funding trend', () => {
       payload: processColor(colors.textPrimary),
     });
     expect(screen.queryByTestId('trend-dot', { includeHiddenElements: true })).toBeNull();
-    expect(screen.getByText('Running total, 2026-07-20 to 2026-08-18 (Asia/Baku)')).toBeTruthy();
-    expect(screen.getByText('150.00 AZN by 2026-08-05')).toBeTruthy();
+    // Days in words and no zone identifier (#597).
+    expect(screen.getByText('Running total, 20 Jul 2026 to 18 Aug 2026')).toBeTruthy();
+    expect(screen.getByText('150.00 AZN by 5 Aug 2026')).toBeTruthy();
     expect(screen.getByText(/^Aggregated 4 minutes ago\./)).toBeTruthy();
   });
 
@@ -171,7 +172,7 @@ describe('the funding trend', () => {
     expect(screen.getByTestId('daily-toggle').props.accessibilityState).toMatchObject({ expanded: true });
     expect(screen.getByLabelText(en.mobile.dashboardFigures.hideDaily)).toBeTruthy();
     expect(screen.getByTestId('day-2026-08-01').props.accessibilityLabel).toBe(
-      'Day 2026-08-01, Backers 2, Pledged 100.00 AZN, Running total 100.00 AZN',
+      'Day 1 Aug 2026, Backers 2, Pledged 100.00 AZN, Running total 100.00 AZN',
     );
     expect(within(screen.getByTestId('day-2026-08-05')).getByText('150.00 AZN')).toBeTruthy();
 

@@ -110,7 +110,7 @@ export function CampaignClock({ deadline, skewMs, nowImpl, copy, opensAt = null 
     <div
       className={
         urgent
-          ? 'inline-flex items-center gap-2 rounded-[10px] bg-[--lime-500] px-3 py-2 text-[--text-on-lime]'
+          ? 'inline-flex items-center gap-2 rounded-[10px] bg-lime-500 px-3 py-2 text-on-lime'
           : 'inline-flex items-center gap-2 text-fg'
       }
     >

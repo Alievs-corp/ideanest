@@ -82,7 +82,7 @@ describe('extending', () => {
     await user.click(screen.getByRole('button', { name: 'Extend to this date' }));
 
     await waitFor(() => expect(extend).toHaveBeenCalledWith('project-1', '2026-10-01T12:00:00.000Z'));
-    expect(await screen.findByText(/The deadline is now October 1, 2026/)).toBeInTheDocument();
+    expect(await screen.findByText(/The deadline is now 1 October 2026/)).toBeInTheDocument();
     expect(onChanged).toHaveBeenCalledTimes(1);
   });
 
@@ -92,7 +92,7 @@ describe('extending', () => {
     await user.type(screen.getByLabelText('New deadline'), '2026-11-19');
     await user.click(screen.getByRole('button', { name: 'Extend the deadline' }));
 
-    expect(await screen.findByText(/no later than November 18, 2026/)).toBeInTheDocument();
+    expect(await screen.findByText(/no later than 18 November 2026/)).toBeInTheDocument();
     expect(extend).not.toHaveBeenCalled();
   });
 
@@ -125,7 +125,7 @@ describe('extending', () => {
     await user.click(screen.getByRole('button', { name: 'Extend the deadline' }));
     await user.click(screen.getByRole('button', { name: 'Extend to this date' }));
 
-    expect(await screen.findByText(/no later than November 18, 2026/)).toBeInTheDocument();
+    expect(await screen.findByText(/no later than 18 November 2026/)).toBeInTheDocument();
   });
 
   it('is not offered to an extended campaign, or below 50%', () => {

@@ -126,13 +126,17 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
         {projected ? copy.projectedIntro : copy.settledIntro}
       </p>
 
+      {/* As on the overview: the first figure full size, the other two a pair beside it. */}
       <StatRow className="mt-8">
         <StatBlock label={copy.gross} value={formatMoney(finance.gross)} />
-        <StatBlock
-          label={projected ? copy.netProjected : copy.net}
-          value={formatMoney(finance.net)}
-        />
-        <StatBlock label={copy.paidOut} value={formatMoney(finance.paidOut)} />
+        <StatRow>
+          <StatBlock
+            size="md"
+            label={projected ? copy.netProjected : copy.net}
+            value={formatMoney(finance.net)}
+          />
+          <StatBlock size="md" label={copy.paidOut} value={formatMoney(finance.paidOut)} />
+        </StatRow>
       </StatRow>
 
       <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-fg">
@@ -226,8 +230,8 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
           <tbody>
             {finance.ledger.map((balance) => (
               <tr key={`${balance.account}-${balance.net.currency}`} className="border-b border-fg/8">
-                <td className="py-2 font-mono text-fg-64">{balance.account}</td>
-                <td className="py-2 text-right tabular-nums text-fg">
+                <td className="py-2 pr-4 text-fg-64">{accountName(balance.account, copy.accounts)}</td>
+                <td className="py-2 text-right tabular-nums whitespace-nowrap text-fg">
                   {formatMoney(balance.net)}
                 </td>
               </tr>
@@ -274,7 +278,7 @@ function Row({
         {label}
         {note !== undefined && <span className="mt-1 block text-xs font-normal text-fg-64">{note}</span>}
       </th>
-      <td className={`py-3 text-right tabular-nums ${total ? 'font-medium text-fg' : 'text-fg'}`}>
+      <td className={`py-3 pl-4 text-right tabular-nums whitespace-nowrap ${total ? 'font-medium text-fg' : 'text-fg'}`}>
         {amount}
       </td>
     </tr>
@@ -306,4 +310,10 @@ function PayoutRow({
       <span className="tabular-nums text-fg">{formatMoney(payout.net)}</span>
     </li>
   );
+}
+
+/** A ledger account in words: `creator:<id>` is the creator's own, the rest by name (#597). */
+function accountName(account: string, names: Readonly<Record<string, string>>): string {
+  const key = account.startsWith('creator:') ? 'creator' : account;
+  return names[key] ?? account;
 }

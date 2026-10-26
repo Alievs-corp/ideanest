@@ -215,28 +215,36 @@ export function BackerReport({
       </h1>
       <p className="mt-2 max-w-[62ch] text-sm text-fg-64">{copy.intro}</p>
 
-      <form onSubmit={search} className="mt-6 flex flex-wrap items-end gap-3">
-        <div className="min-w-[240px] flex-1">
-          <Field label={copy.searchLabel} hint={copy.searchHint}>
-            <TextInput value={term} onChange={(event) => setTerm(event.target.value)} />
-          </Field>
-        </div>
-        <button
-          type="submit"
-          className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-[--surface-3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
-        >
-          <Search className="size-4" aria-hidden />
-          {copy.search}
-        </button>
-        <button
-          type="button"
-          onClick={onExport}
-          disabled={busy}
-          className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-[--surface-3] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
-        >
-          <Download className="size-4" aria-hidden />
-          {copy.export}
-        </button>
+      {/*
+        The two actions share the input's row, inside the field, so they line up with the input
+        rather than with the input and its hint together; the hint then reads under all three.
+      */}
+      <form onSubmit={search} className="mt-6">
+        <Field label={copy.searchLabel} hint={copy.searchHint}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 sm:flex-1">
+              <TextInput value={term} onChange={(event) => setTerm(event.target.value)} />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              >
+                <Search className="size-4" aria-hidden />
+                {copy.search}
+              </button>
+              <button
+                type="button"
+                onClick={onExport}
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-surface-3 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+              >
+                <Download className="size-4" aria-hidden />
+                {copy.export}
+              </button>
+            </div>
+          </div>
+        </Field>
       </form>
 
       <fieldset className="mt-6">
@@ -276,7 +284,7 @@ export function BackerReport({
                   onClick={() => onDelete(segment)}
                   disabled={busy}
                   aria-label={fillPlaceholders(copy.deleteSegment, { name: segment.name })}
-                  className="rounded-full p-1 text-fg-64 hover:text-fg disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+                  className="rounded-full p-1 text-fg-64 hover:text-fg disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   <X className="size-4" aria-hidden />
                 </button>
@@ -301,7 +309,7 @@ export function BackerReport({
           <button
             type="submit"
             disabled={busy || segmentName.trim() === ''}
-            className="inline-flex items-center gap-2 rounded-full bg-[--lime-500] px-4 py-2.5 text-sm font-semibold text-[--text-on-lime] hover:bg-[--lime-400] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+            className="inline-flex items-center gap-2 rounded-full bg-inverse px-4 py-2.5 text-sm font-semibold text-on-inverse hover:bg-inverse-muted disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             {copy.saveSegment}
           </button>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { privatePageMetadata } from '../../../../../lib/seo/metadata';
 import { DashboardNav } from '../../../../../components/dashboard/DashboardNav';
+import { SiteShell } from '../../../../../components/shell/SiteShell';
 import { dashboardMetaCopy, dashboardNavCopy } from '../../../../../lib/i18n/shell-copy.server';
 
 /**
@@ -50,10 +51,15 @@ export default async function DashboardLayout({
 }) {
   const [{ id }, nav] = await Promise.all([params, dashboardNavCopy()]);
 
+  // Inside the site's shell, as the campaign editor is (#597): the dashboard had no header, so a
+  // creator in it had no way to the rest of the site but the browser's back button. The shell
+  // owns `<main>`, so this is a `<div>`.
   return (
-    <main className="mx-auto w-full max-w-[1080px] px-5 py-10 sm:px-6 sm:py-14">
-      <DashboardNav projectId={id} copy={nav} />
-      <div className="mt-8">{children}</div>
-    </main>
+    <SiteShell>
+      <div className="mx-auto w-full max-w-[1080px] px-5 py-8 sm:px-6 sm:py-12">
+        <DashboardNav projectId={id} copy={nav} />
+        <div className="mt-6 sm:mt-8">{children}</div>
+      </div>
+    </SiteShell>
   );
 }

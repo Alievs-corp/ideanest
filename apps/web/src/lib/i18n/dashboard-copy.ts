@@ -426,6 +426,11 @@ export interface FinanceCopy {
   readonly ledgerEmpty: string;
   readonly ledgerCaption: string;
   readonly account: string;
+  /**
+   * §7.2's accounts in words (#597), by the ledger's own name; `creator` is the creator's own,
+   * whatever identifier follows the prefix. A name with no entry is shown as it stands.
+   */
+  readonly accounts: Readonly<Record<string, string>>;
   readonly balance: string;
   /** Carries `{time}`, which is a `<time>` element rather than a string. */
   readonly asOf: string;
@@ -467,6 +472,7 @@ export function financeCopyFrom(t: DashboardTranslator): FinanceCopy {
     ledgerEmpty: t('finance.ledgerEmpty'),
     ledgerCaption: t('finance.ledgerCaption'),
     account: t('finance.account'),
+    accounts: t.raw('finance.accounts') as Record<string, string>,
     balance: t('finance.balance'),
     asOf: String(t.raw('finance.asOf')),
     payoutStates: {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type ComponentType } from 'react';
+import { Check, ChevronDown, ClipboardList, LayoutDashboard, LineChart, Users, Wallet } from 'lucide-react';
 import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { cn } from '@ideanest/ui/server';
@@ -63,6 +64,16 @@ import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
  * that is only partly off the edge where it is, so `revealFocusedItem` from `@ideanest/ui`
  * asks for it (#181) — instantly, like the load-time reveal below.
  *
+ * <h2>On a phone, a section picker instead of the row — #597</h2>
+ *
+ * The owner asked for something other than tabs below `sm`: a sideways-scrolling row hides most
+ * of its five entries on a phone, and the one a creator is on is the only label that says where
+ * they are. So below `sm` the row gives way to one full-width button naming the current section,
+ * which opens the five as a list in place (it pushes the panel down rather than covering it, so
+ * there is no overlay to trap focus in). The list closes on a choice, on Escape and on a route
+ * change, and returns focus to the button on Escape. The row above is unchanged at `sm` and up.
+ * The chevron's turn is the only motion, on `transform`, and none under reduced motion.
+ *
  * <h2>Accessibility</h2>
  *
  * `aria-current="page"` carries the selection, not the colour. docs/ui-kit.md §9.2:
@@ -73,16 +84,17 @@ import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
 interface Panel {
   readonly href: string;
   readonly label: string;
+  readonly icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
 }
 
 function panelsFor(projectId: string, copy: DashboardNavCopy): readonly Panel[] {
   const base = `/projects/${encodeURIComponent(projectId)}/dashboard`;
   return [
-    { href: base, label: copy.overview },
-    { href: `${base}/charts`, label: copy.charts },
-    { href: `${base}/backers`, label: copy.backers },
-    { href: `${base}/finance`, label: copy.finance },
-    { href: `${base}/surveys`, label: copy.surveys },
+    { href: base, label: copy.overview, icon: LayoutDashboard },
+    { href: `${base}/charts`, label: copy.charts, icon: LineChart },
+    { href: `${base}/backers`, label: copy.backers, icon: Users },
+    { href: `${base}/finance`, label: copy.finance, icon: Wallet },
+    { href: `${base}/surveys`, label: copy.surveys, icon: ClipboardList },
   ];
 }
 
@@ -125,11 +137,12 @@ export function DashboardNav({ projectId, copy }: DashboardNavProps) {
   }, [pathname]);
 
   return (
-    <nav aria-label={copy.label} className="border-b border-fg/8">
+    <nav aria-label={copy.label} className="sm:border-b sm:border-fg/8">
+      <SectionPicker panels={panels} pathname={pathname} caption={copy.label} />
       {/* `-m-1 p-1`: room for the focus ring inside the scroll container, given back. */}
       <ul
         ref={rowRef}
-        className="-m-1 flex gap-1 overflow-x-auto p-1"
+        className="scrollbar-none -m-1 flex gap-1 overflow-x-auto p-1 max-sm:hidden"
         onFocus={revealFocusedItem}
       >
         {panels.map((panel) => {
@@ -157,5 +170,87 @@ export function DashboardNav({ projectId, copy }: DashboardNavProps) {
         })}
       </ul>
     </nav>
+  );
+}
+
+/** Below `sm`: the current section as a button, and the five as a list it opens in place. */
+function SectionPicker({
+  panels,
+  pathname,
+  caption,
+}: {
+  readonly panels: readonly Panel[];
+  readonly pathname: string;
+  readonly caption: string;
+}) {
+  // Open for the page it was opened on, and so closed again by the navigation a choice makes.
+  const [openOn, setOpenOn] = useState<string | null>(null);
+  const open = openOn === pathname;
+  const setOpen = (next: boolean) => setOpenOn(next ? pathname : null);
+  const listId = useId();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const current = panels.find((panel) => panel.href === pathname) ?? panels[0];
+
+  if (current === undefined) return null;
+  const CurrentIcon = current.icon;
+
+  return (
+    <div
+      className="sm:hidden"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && open) {
+          setOpen(false);
+          buttonRef.current?.focus();
+        }
+      }}
+    >
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-3 rounded-[14px] border border-fg/8 bg-surface-2 px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+      >
+        <CurrentIcon className="size-5 shrink-0 text-fg-64" aria-hidden />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-xs text-fg-64">{caption}</span>
+          <span className="truncate text-sm font-medium text-fg">{current.label}</span>
+        </span>
+        <ChevronDown
+          className={cn(
+            'size-5 shrink-0 text-fg-64 transition-transform duration-150 ease-out motion-reduce:transition-none',
+            open && 'rotate-180',
+          )}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <ul id={listId} className="mt-2 flex flex-col gap-1 rounded-[14px] border border-fg/8 bg-surface-2 p-1">
+          {panels.map((panel) => {
+            const here = panel.href === pathname;
+            const Icon = panel.icon;
+            return (
+              <li key={panel.href}>
+                <Link
+                  href={panel.href}
+                  aria-current={here ? 'page' : undefined}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    'flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium',
+                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+                    here ? 'bg-surface-3 text-fg' : 'text-fg-64 hover:bg-surface-3 hover:text-fg',
+                  )}
+                >
+                  <Icon className="size-5 shrink-0" aria-hidden />
+                  <span className="flex-1">{panel.label}</span>
+                  {here ? <Check className="size-4 shrink-0" aria-hidden /> : null}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

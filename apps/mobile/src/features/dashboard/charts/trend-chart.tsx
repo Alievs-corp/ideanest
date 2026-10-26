@@ -8,6 +8,15 @@ import { BLOCK } from '../../../components/ui/surface';
 import { Glyphs } from '../../../icons';
 import { formatCount, useT } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
+import { dateTimeFormat } from '@ideanest/messages/formats';
+import type { Locale } from '@ideanest/messages/locale';
+
+/** A rollup's `YYYY-MM-DD` day in the reader's language, read in UTC so no zone moves it (#597). */
+function formatDay(day: string, locale: Locale): string {
+  const at = /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00Z`) : null;
+  if (at === null || Number.isNaN(at.getTime())) return day;
+  return dateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }, 'calendar-day').format(at);
+}
 import { colors, font, fontSize, lineHeight, radius, size, spacing } from '../../../theme';
 
 /**
@@ -26,6 +35,7 @@ const DOT = 4;
 
 export function TrendChart({ trend }: { readonly trend: Trend }) {
   const t = useT();
+  const locale = useLocale();
   const [width, setWidth] = useState(0);
   const points = trendPoints(trend.days, trend.from, trend.to);
   const peak = trend.days[trend.days.length - 1];
@@ -86,10 +96,12 @@ export function TrendChart({ trend }: { readonly trend: Trend }) {
         </View>
       </View>
       <View style={styles.captions}>
-        <Caption>{t('dashboard.charts.trendLabel', { from: trend.from, to: trend.to, zone: trend.zone })}</Caption>
+        <Caption>
+          {t('dashboard.charts.trendLabel', { from: formatDay(trend.from, locale), to: formatDay(trend.to, locale) })}
+        </Caption>
         {peak === undefined ? null : (
           <Caption tone="primary">
-            {t('dashboard.trend.peak', { amount: formatMoney(peak.cumulativeAmount), day: peak.day })}
+            {t('dashboard.trend.peak', { amount: formatMoney(peak.cumulativeAmount), day: formatDay(peak.day, locale) })}
           </Caption>
         )}
       </View>
@@ -145,11 +157,11 @@ function DayCard({ day }: { readonly day: TrendDay }) {
   return (
     <View
       accessible
-      accessibilityLabel={[`${t('day')} ${day.day}`, ...rows.map((row) => `${row.label} ${row.value}`)].join(', ')}
+      accessibilityLabel={[`${t('day')} ${formatDay(day.day, locale)}`, ...rows.map((row) => `${row.label} ${row.value}`)].join(', ')}
       style={styles.card}
       testID={`day-${day.day}`}
     >
-      <Body tone="primary">{day.day}</Body>
+      <Body tone="primary">{formatDay(day.day, locale)}</Body>
       {rows.map((row) => (
         <View key={row.key} style={styles.row}>
           <Meta tone="secondary" style={styles.rowLabel}>

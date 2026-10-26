@@ -149,21 +149,29 @@ export function DashboardOverview({
         />
       </div>
 
+      {/*
+        The total is the figure; the other two are its context, a size down and wrapping as a
+        pair, so no width leaves one of them alone on a line of its own.
+      */}
       <StatRow className="mt-8">
         <StatBlock label={copy.raised} value={formatMoney(dashboard.raised)} />
-        <StatBlock
-          label={copy.backers}
-          value={
-            <span className="inline-flex items-center gap-2">
-              <Users className="size-5" aria-hidden />
-              {dashboard.backersCount}
-            </span>
-          }
-        />
-        <StatBlock
-          label={copy.goal}
-          value={dashboard.goal ? formatMoney(dashboard.goal) : copy.goalUnset}
-        />
+        <StatRow>
+          <StatBlock
+            size="md"
+            label={copy.backers}
+            value={
+              <span className="inline-flex items-center gap-2">
+                <Users className="size-6" aria-hidden />
+                {dashboard.backersCount}
+              </span>
+            }
+          />
+          <StatBlock
+            size="md"
+            label={copy.goal}
+            value={dashboard.goal ? formatMoney(dashboard.goal) : copy.goalUnset}
+          />
+        </StatRow>
       </StatRow>
 
       {percent === undefined || percent === null ? (
@@ -183,7 +191,7 @@ export function DashboardOverview({
               {fillPlaceholders(copy.percentFunded, { percent: String(percent) })}
             </span>
             {funded ? (
-              <span className="inline-flex items-center gap-1 text-[--success]">
+              <span className="inline-flex items-center gap-1 text-success">
                 <CircleCheck className="size-4" aria-hidden />
                 {copy.goalReached}
               </span>
