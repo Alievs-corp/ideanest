@@ -13,8 +13,10 @@ import az.ideanest.shared.money.Money;
 import az.ideanest.shared.outbox.Outbox;
 import az.ideanest.shared.outbox.OutboxMessage;
 import az.ideanest.shared.outbox.OutboxRelay;
+import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.StaffGrants;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -24,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -63,6 +66,9 @@ class RiskApiTests extends AbstractIntegrationTest {
 
     private static final String AGGREGATE = "pledge";
 
+    /** The note this suite's staff grants carry, so the cleanup removes exactly those. */
+    private static final String STAFF_FIXTURE_NOTE = "risk queue fixture";
+
     @Autowired
     private TestRestTemplate rest;
 
@@ -92,6 +98,11 @@ class RiskApiTests extends AbstractIntegrationTest {
 
     private UUID projectId;
 
+    @AfterEach
+    void clearGrants() {
+        StaffGrants.clear(dataSource, STAFF_FIXTURE_NOTE);
+    }
+
     @BeforeEach
     void seed() {
         repository.deleteAll();
@@ -106,7 +117,7 @@ class RiskApiTests extends AbstractIntegrationTest {
         Account backer = account("risk-backer-");
         UUID pledgeId = confirmPledge(backer);
 
-        List<RiskAssessment> history = assessments.historyOf(pledgeId);
+        List<RiskAssessment> history = historyOf(pledgeId);
 
         assertThat(history).hasSize(1);
         assertThat(history.getFirst().getSubjectUserId()).isEqualTo(backer.id());
@@ -121,7 +132,7 @@ class RiskApiTests extends AbstractIntegrationTest {
 
         // "Was this flagged at the time" is the question asked after a chargeback, and
         // "we did not write it down because it looked fine" is not an answer.
-        RiskAssessment assessment = assessments.historyOf(pledgeId).getFirst();
+        RiskAssessment assessment = historyOf(pledgeId).getFirst();
         assertThat(assessment.getScore()).isNotNegative();
     }
 
@@ -134,7 +145,7 @@ class RiskApiTests extends AbstractIntegrationTest {
         // No IP geolocation source is configured on any deployment, so geography is always
         // one of these. A low score with an unavailable signal is a different statement
         // from a low score with none.
-        assertThat(assessments.historyOf(pledgeId).getFirst().getSignalsUnavailable())
+        assertThat(historyOf(pledgeId).getFirst().getSignalsUnavailable())
                 .isPositive();
     }
 
@@ -186,6 +197,40 @@ class RiskApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("staff without VIEW_FINANCE are refused the queue, a pledge's history and the review mark")
+    void staffWithoutFinanceAreRefused() {
+        Account curator = account("risk-curator-");
+        StaffGrants.grant(dataSource, curator.id(), StaffRole.CURATOR, STAFF_FIXTURE_NOTE);
+        Account backer = account("risk-curated-");
+        UUID pledgeId = confirmPledge(backer);
+        UUID assessmentId = historyOf(pledgeId).getFirst().getId();
+
+        // #295 made every role "staff". A curator arranges the front page and has no business
+        // with the list of backers the platform's arithmetic suspects.
+        for (ResponseEntity<Map<String, Object>> refused : List.of(
+                exchange("/v1/admin/risk/queue", HttpMethod.GET, curator),
+                exchange("/v1/admin/risk/pledges/" + pledgeId, HttpMethod.GET, curator),
+                exchange("/v1/admin/risk/" + assessmentId + "/reviewed", HttpMethod.POST, curator))) {
+            assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+            assertThat(refused.getBody()).containsEntry("code", "INSUFFICIENT_STAFF_CAPABILITY");
+        }
+        assertThat(historyOf(pledgeId).getFirst().getReviewedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("finance reads the queue and a pledge's history")
+    void financeReadsTheQueue() {
+        Account finance = account("risk-finance-");
+        StaffGrants.grant(dataSource, finance.id(), StaffRole.FINANCE, STAFF_FIXTURE_NOTE);
+        UUID pledgeId = confirmPledge(account("risk-read-"));
+
+        assertThat(exchange("/v1/admin/risk/queue", HttpMethod.GET, finance).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(exchange("/v1/admin/risk/pledges/" + pledgeId, HttpMethod.GET, finance).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
     @DisplayName("the queue is never cached, because it is a list of suspected people")
     void theQueueIsNeverCached() {
         Account backer = account("risk-cache-");
@@ -206,11 +251,12 @@ class RiskApiTests extends AbstractIntegrationTest {
     void reviewingIsIdempotent() {
         Account backer = account("risk-review-");
         UUID pledgeId = confirmPledge(backer);
-        RiskAssessment assessment = assessments.historyOf(pledgeId).getFirst();
+        RiskAssessment assessment = historyOf(pledgeId).getFirst();
 
         // A real account: `reviewed_by` is a foreign key, so a random identifier would
         // fail the insert rather than the assertion.
         UUID staffId = account("risk-staff-").id();
+        StaffGrants.grant(dataSource, staffId, StaffRole.FINANCE, STAFF_FIXTURE_NOTE);
         assertThat(assessments.markReviewed(assessment.getId(), staffId)).isPresent();
 
         // A second member of staff pressing the button on a row their colleague has just
@@ -263,6 +309,16 @@ class RiskApiTests extends AbstractIntegrationTest {
 
         UUID id = users.findByEmailAndDeletedAtIsNull(email).orElseThrow().getId();
         return new Account((String) signedIn.getBody().get("accessToken"), id);
+    }
+
+    /** Everything noticed about one pledge, read from the table rather than through the guarded service. */
+    private List<RiskAssessment> historyOf(UUID pledgeId) {
+        return repository.findBySubjectTypeAndSubjectIdOrderByAssessedAtDesc(RiskAssessment.PLEDGE, pledgeId);
+    }
+
+    private ResponseEntity<Map<String, Object>> exchange(String path, HttpMethod method, Account caller) {
+        return rest.exchange(
+                path, method, new HttpEntity<>(bearer(caller)), new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
     private static HttpHeaders bearer(Account account) {
