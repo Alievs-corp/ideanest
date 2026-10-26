@@ -1284,7 +1284,11 @@ package's `offersSubmit` / `offersLaunch`, shared with the web; whether the camp
 submitted is the server's answer alone. A blocked "Submit for review" is the kit pill's
 `softDisabled` — announced disabled at 40%, but a press moves screen-reader focus to the
 required list. `SUBSCRIPTION_REQUIRED` opens `pricing?from=submit&project={id}`; a plan limit
-offers the plans beside the refusal. Launch is confirmed inline, with focus on "Launch now". The
+offers the plans beside the refusal. Launch is confirmed inline, with focus on "Launch now"; a
+launch refused for the plan (no plan, or a bound) says the plan does not cover the campaign and
+offers the plans without leaving the tab, and `scheduledLaunchRefusedAt` draws why a launch time
+the clock refused is gone (#589). An inbox row opens its web path through the link parser
+(`lib/links.ts` `inboxRouteOf`), so a refused launch's `/projects/{id}/edit/review` is the editor. The
 completeness bar is the one motion the editor allows: the kit `ProgressBar`'s `rise="progress"`
 (800ms, once), drawn at its figure under Reduce Motion, and without the funded glow at 100%.
 
