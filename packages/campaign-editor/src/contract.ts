@@ -416,6 +416,12 @@ export interface Item {
   sku?: string | null;
   createdAt: string;
   updatedAt: string;
+  /**
+   * On a launched campaign, the fields of an item an approved tier contains whose new values
+   * wait in the campaign's revision for a moderator (#587). The other fields already show those
+   * proposed values, not the ones backers see. Absent, null or empty when nothing waits.
+   */
+  revisionChangedFields?: readonly string[] | null;
 }
 
 /** `CreateItemRequest`. Only the name is required. */

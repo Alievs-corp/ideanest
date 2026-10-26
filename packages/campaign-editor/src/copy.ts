@@ -575,6 +575,15 @@ export interface ItemEditorCopy {
   readonly failures: SaveFailureCopy;
   readonly sku: string;
   readonly skuHint: string;
+  readonly held: ItemHeldCopy;
+}
+
+/** The item drawer's words for fields whose new values wait for a moderator (#587). */
+export interface ItemHeldCopy {
+  readonly title: string;
+  readonly body: string;
+  /** Under each held field: the value shown is the proposed one. */
+  readonly field: string;
 }
 
 /** `ItemsSection` — the list the rewards are assembled from. */
@@ -599,6 +608,15 @@ export interface ItemsSectionCopy {
   readonly notInReward: string;
   /** Why that matters: backers only ever meet an item inside a reward. */
   readonly notInRewardDetail: string;
+  readonly pending: ItemPendingCopy;
+}
+
+/** What an item of a launched campaign says while its changes wait for a moderator (#587). */
+export interface ItemPendingCopy {
+  readonly changed: string;
+  readonly changedNote: string;
+  /** Carries `{name}`. Said after a save the campaign's revision holds. */
+  readonly heldAnnouncement: string;
 }
 
 /** `RewardTierEditor` — the drawer one reward is edited in. */
@@ -923,6 +941,11 @@ export function rewardsPanelCopyFrom(
       weight: tpl('rewards.items.weight'),
       notInReward: at('items.notInReward'),
       notInRewardDetail: at('items.notInRewardDetail'),
+      pending: {
+        changed: at('items.pending.changed'),
+        changedNote: at('items.pending.changedNote'),
+        heldAnnouncement: tpl('rewards.items.pending.heldAnnouncement'),
+      },
     },
     item: {
       drawer: drawer('item'),
@@ -956,6 +979,11 @@ export function rewardsPanelCopyFrom(
       failures,
       sku: at('item.sku'),
       skuHint: at('item.skuHint'),
+      held: {
+        title: at('item.held.title'),
+        body: at('item.held.body'),
+        field: at('item.held.field'),
+      },
     },
     tier: {
       drawer: drawer('tier'),

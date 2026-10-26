@@ -5553,7 +5553,12 @@
         "itemsHeading": "Items",
         "edit": "Edit",
         "notInReward": "Not in any reward",
-        "notInRewardDetail": "Backers do not see it until it is added to a reward."
+        "notInRewardDetail": "Backers do not see it until it is added to a reward.",
+        "pending": {
+          "changed": "Changed, waiting for review",
+          "changedNote": "Backers still see the approved version of this item until a moderator approves your changes.",
+          "heldAnnouncement": "Your changes to {name} wait for a moderator. Backers see the approved version until then."
+        }
       },
       "item": {
         "addTitle": "Add an item",
@@ -5586,7 +5591,12 @@
         "imageButtonLabel": "Choose an image",
         "imageDropHint": "Up to 20 MB: JPEG, PNG, WebP, AVIF or HEIC.",
         "imageRemove": "Remove image",
-        "imageUploaded": "Image uploaded. Save the item to keep it."
+        "imageUploaded": "Image uploaded. Save the item to keep it.",
+        "held": {
+          "title": "Some changes wait for review",
+          "body": "This item is in an approved reward, so the fields marked below show your proposed changes. Backers still see the approved values until a moderator approves them. Send your changes for review to publish them.",
+          "field": "Waiting for review. Backers still see the approved value."
+        }
       },
       "tier": {
         "addTitle": "Add a reward",
@@ -6334,7 +6344,9 @@
         "coverImage": "Cover image",
         "videoMediaId": "Video",
         "countries": "Countries",
-        "rewards": "Rewards"
+        "rewards": "Rewards",
+        "items": "Items",
+        "shippingZones": "Shipping zones"
       },
       "submit": "Send for review",
       "submitting": "Sending…",

@@ -5553,7 +5553,12 @@
         "itemsHeading": "Əşyalar",
         "edit": "Dəyiş",
         "notInReward": "Heç bir mükafatda deyil",
-        "notInRewardDetail": "Mükafata əlavə edilənə qədər dəstəkçilər onu görmür."
+        "notInRewardDetail": "Mükafata əlavə edilənə qədər dəstəkçilər onu görmür.",
+        "pending": {
+          "changed": "Dəyişdirilib, yoxlanışı gözləyir",
+          "changedNote": "Moderator dəyişikliklərinizi təsdiqləyənə qədər dəstəkçilər bu əşyanın təsdiqlənmiş versiyasını görür.",
+          "heldAnnouncement": "{name} üzrə dəyişiklikləriniz moderatoru gözləyir. O vaxta qədər dəstəkçilər təsdiqlənmiş versiyanı görür."
+        }
       },
       "item": {
         "addTitle": "Əşya əlavə et",
@@ -5586,7 +5591,12 @@
         "imageButtonLabel": "Şəkil seçin",
         "imageDropHint": "20 MB-a qədər: JPEG, PNG, WebP, AVIF və ya HEIC.",
         "imageRemove": "Şəkli sil",
-        "imageUploaded": "Şəkil yükləndi. Saxlamaq üçün əşyanı yadda saxlayın."
+        "imageUploaded": "Şəkil yükləndi. Saxlamaq üçün əşyanı yadda saxlayın.",
+        "held": {
+          "title": "Bəzi dəyişikliklər yoxlanışı gözləyir",
+          "body": "Bu əşya təsdiqlənmiş mükafatdadır, ona görə aşağıda işarələnmiş sahələr təklif etdiyiniz dəyişiklikləri göstərir. Moderator onları təsdiqləyənə qədər dəstəkçilər təsdiqlənmiş dəyərləri görür. Dərc etmək üçün dəyişiklikləri yoxlamaya göndərin.",
+          "field": "Yoxlanışı gözləyir. Dəstəkçilər hələ təsdiqlənmiş dəyəri görür."
+        }
       },
       "tier": {
         "addTitle": "Mükafat əlavə et",
@@ -6334,7 +6344,9 @@
         "coverImage": "Üz qabığı şəkli",
         "videoMediaId": "Video",
         "countries": "Ölkələr",
-        "rewards": "Mükafatlar"
+        "rewards": "Mükafatlar",
+        "items": "Əşyalar",
+        "shippingZones": "Göndəriş zonaları"
       },
       "submit": "Baxışa göndər",
       "submitting": "Göndərilir…",

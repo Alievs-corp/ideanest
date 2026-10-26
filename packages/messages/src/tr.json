@@ -5553,7 +5553,12 @@
         "itemsHeading": "Ürünler",
         "edit": "Düzenle",
         "notInReward": "Hiçbir ödülde değil",
-        "notInRewardDetail": "Bir ödüle eklenene kadar destekçiler onu görmez."
+        "notInRewardDetail": "Bir ödüle eklenene kadar destekçiler onu görmez.",
+        "pending": {
+          "changed": "Değiştirildi, incelemeyi bekliyor",
+          "changedNote": "Bir moderatör değişikliklerinizi onaylayana kadar destekçiler bu ürünün onaylı sürümünü görür.",
+          "heldAnnouncement": "{name} için yaptığınız değişiklikler moderatörü bekliyor. O zamana kadar destekçiler onaylı sürümü görür."
+        }
       },
       "item": {
         "addTitle": "Ürün ekle",
@@ -5586,7 +5591,12 @@
         "imageButtonLabel": "Bir görsel seçin",
         "imageDropHint": "En fazla 20 MB: JPEG, PNG, WebP, AVIF veya HEIC.",
         "imageRemove": "Görseli kaldır",
-        "imageUploaded": "Görsel yüklendi. Saklamak için ürünü kaydedin."
+        "imageUploaded": "Görsel yüklendi. Saklamak için ürünü kaydedin.",
+        "held": {
+          "title": "Bazı değişiklikler incelemeyi bekliyor",
+          "body": "Bu ürün onaylı bir ödülde yer aldığı için aşağıda işaretli alanlar önerdiğiniz değişiklikleri gösterir. Bir moderatör onaylayana kadar destekçiler onaylı değerleri görür. Yayınlamak için değişikliklerinizi incelemeye gönderin.",
+          "field": "İncelemeyi bekliyor. Destekçiler hâlâ onaylı değeri görür."
+        }
       },
       "tier": {
         "addTitle": "Ödül ekle",
@@ -6334,7 +6344,9 @@
         "coverImage": "Kapak görseli",
         "videoMediaId": "Video",
         "countries": "Ülkeler",
-        "rewards": "Ödüller"
+        "rewards": "Ödüller",
+        "items": "Ürünler",
+        "shippingZones": "Gönderim bölgeleri"
       },
       "submit": "İncelemeye gönder",
       "submitting": "Gönderiliyor…",
