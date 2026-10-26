@@ -34,7 +34,7 @@
     "/[locale]/admin/moderation/content": 724,
     "/[locale]/admin/moderation/profiles": 723,
     "/[locale]/admin/moderation/revisions": 584,
-    "/[locale]/admin/moderation/revisions/[revisionId]": 622,
+    "/[locale]/admin/moderation/revisions/[revisionId]": 623,
     "/[locale]/admin/moderation/submissions": 753,
     "/[locale]/admin/modules": 527,
     "/[locale]/admin/partner-statistics": 638,
