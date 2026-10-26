@@ -26,6 +26,15 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
             """)
     List<Session> findLiveByUser(@Param("userId") UUID userId, @Param("now") Instant now);
 
+    /** Whether {@link #findLiveByUser} would find anything, without loading it. */
+    @Query("""
+            SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Session s
+            WHERE s.userId = :userId
+              AND s.revokedAt IS NULL
+              AND s.expiresAt > :now
+            """)
+    boolean existsLiveByUser(@Param("userId") UUID userId, @Param("now") Instant now);
+
     /**
      * Revokes every live session for a user in one statement.
      *

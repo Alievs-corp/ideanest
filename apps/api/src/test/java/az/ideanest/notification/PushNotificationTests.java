@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * Push registration and push copy — issue #87.
@@ -81,6 +83,9 @@ class PushNotificationTests extends AbstractIntegrationTest {
 
     @Autowired
     private PushDeviceRepository repository;
+
+    @Autowired
+    private DataSource dataSource;
 
     @Autowired
     private PushComposer composer;
@@ -135,12 +140,45 @@ class PushNotificationTests extends AbstractIntegrationTest {
         Account second = account("push-shared-b-");
 
         register(first, TOKEN, "ios");
-        register(second, TOKEN, "ios");
+        signOutEverywhere(first);
+        ResponseEntity<Map<String, Object>> moved = register(second, TOKEN, "ios");
 
         // Not two rows. The first person's notifications must not reach a phone the
         // second person is now holding.
+        assertThat(moved.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(repository.findByUserId(first.id())).isEmpty();
         assertThat(repository.findByUserId(second.id())).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("a token is not taken from an account that is still signed in")
+    void aTokenIsNotTakenFromASignedInAccount() {
+        Account owner = account("push-held-a-");
+        Account taker = account("push-held-b-");
+        register(owner, TOKEN, "ios");
+
+        ResponseEntity<Map<String, Object>> refused = register(taker, TOKEN, "ios");
+
+        // #587: whoever learned a token could otherwise take somebody's notifications by
+        // registering it. Signing out on the phone forgets the row, so the second person on
+        // a shared phone finds nothing to take; a row still there is somebody's who is in.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody().get("code")).isEqualTo("DEVICE_TOKEN_HELD");
+        assertThat(refused.getBody().toString()).doesNotContain(TOKEN);
+        assertThat(repository.findByUserId(owner.id())).hasSize(1);
+        assertThat(repository.findByUserId(taker.id())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("signing out forgets only the caller's own registration")
+    void forgettingTouchesOnlyTheCallersRow() {
+        Account owner = account("push-forget-own-a-");
+        Account stranger = account("push-forget-own-b-");
+        register(owner, TOKEN, "ios");
+
+        // 204 like any other sign-out, so the answer says nothing about whose token it was.
+        assertThat(forget(stranger, TOKEN).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(repository.findByUserId(owner.id())).hasSize(1);
     }
 
     @Test
@@ -361,6 +399,15 @@ class PushNotificationTests extends AbstractIntegrationTest {
                 "{}",
                 now,
                 now);
+    }
+
+    /** What signing out of every device leaves behind: no session that could still be used. */
+    private void signOutEverywhere(Account person) {
+        new JdbcTemplate(dataSource)
+                .update(
+                        "UPDATE sessions SET revoked_at = now(), revoked_reason = 'SIGNED_OUT'"
+                                + " WHERE user_id = ? AND revoked_at IS NULL",
+                        person.id());
     }
 
     private ResponseEntity<Map<String, Object>> register(Account person, String token, String platform) {
