@@ -2565,6 +2565,16 @@ individual agreement can differ without a deployment.
 > shipping type, flags, availability, composition and country and zone rates). The cards
 > are loaded only when an edit touches a tier, so the route's First Load JS is unchanged.
 >
+> Its `items` and `shippingZones` are drawn after the tiers (#589), from a chunk of their
+> own that is loaded only when an edit touches either. An item is a card named by its live
+> name, with a before and after for each field the service names: a word diff for the name
+> and description, the picture beside its address (drawn only for an `https:` one), weight
+> and digital delivery. A zone is matched with its live self by identifier, so a renamed
+> zone is one card: a new or a removed zone is shown whole with its countries, a changed one
+> as a before and after of its name and of its countries by name, each with a tag, an icon
+> and a word, and a zone the proposed set leaves as it is is not drawn. The queue and the
+> review name both fields in words.
+>
 > **A refused edit is `409`, not `400`.** `PROJECT_FIELD_LOCKED` and
 > `REWARD_FIELD_LOCKED`, each with the field and the campaign's state in `meta`. A
 > 400 says "fix the value" and the value is fine — 6000 is a perfectly good goal, and

@@ -3724,7 +3724,9 @@
           "story": "Hikâye",
           "risks": "Riskler ve zorluklar",
           "countries": "Ülkeler",
-          "rewards": "Ödüller"
+          "rewards": "Ödüller",
+          "items": "Ürünler",
+          "shippingZones": "Gönderim bölgeleri"
         },
         "removed": "Silindi:",
         "added": "Eklendi:",
@@ -3847,6 +3849,37 @@
           "noItems": "Ürün yok",
           "noRates": "Ücret yok",
           "secretLinkReplaced": "Gizli bağlantı değiştirilir. Eskisi çalışmaz."
+        },
+        "items": {
+          "intro": "Bu düzenlemenin değiştirdiği, yayındaki ödül kademelerinde yer alan tüm ürünler. Adı geçmeyen alan olduğu gibi kalır.",
+          "untitled": "Adsız ürün",
+          "itemLabel": "Ürün: {name}",
+          "fields": {
+            "name": "Ad",
+            "description": "Açıklama",
+            "imageUrl": "Görsel",
+            "weightGrams": "Ağırlık",
+            "isDigital": "Dijital"
+          },
+          "weight": "{grams} g",
+          "noWeight": "Ağırlık yok",
+          "imageAlt": "{name} ürününün görseli"
+        },
+        "shippingZones": {
+          "intro": "Bu düzenlemenin eklediği, kaldırdığı veya değiştirdiği tüm gönderim bölgeleri. Adı geçmeyen bölge olduğu gibi kalır.",
+          "untitled": "Adsız bölge",
+          "zoneLabel": "Gönderim bölgesi: {name}",
+          "changes": {
+            "added": "Yeni bölge",
+            "removed": "Kaldırılacak",
+            "renamed": "Adı değişti",
+            "countries": "Ülkeleri değişti"
+          },
+          "addedNote": "Yeni bir bölge. Bu düzenleme onaylanana kadar yoktur.",
+          "removedNote": "Düzenleme onaylandığında bu bölge kaldırılır. O zamana kadar yayında kalır.",
+          "name": "Ad",
+          "countries": "Ülkeler",
+          "unchanged": "Önerilen bölgeler yayındakilerle aynı."
         }
       }
     },

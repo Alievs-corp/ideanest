@@ -54,6 +54,8 @@ function review(overrides: Partial<Review> = {}): Review {
     submittedAt: '2026-10-20T09:00:00Z',
     changedFields: ['title', 'story', 'category', 'countries', 'coverImage'],
     rewards: [],
+    items: [],
+    shippingZones: null,
     live: {
       title: 'Cedar and Salt',
       categoryId: CATEGORY,
@@ -175,6 +177,39 @@ describe('the campaign edit review, issue #560', () => {
     expect(
       screen.queryByRole('group', { name: `${COPY.liveHeading}: ${COPY.fields.title}` }),
     ).not.toBeInTheDocument();
+  });
+
+  it('draws the items and shipping zones an edit changes, and says nothing is missing when it changes only them', async () => {
+    readMock.mockResolvedValue(
+      review({
+        changedFields: ['items', 'shippingZones'],
+        items: [
+          {
+            id: '0193f2a1-0000-7000-8000-00000000e001',
+            changedFields: ['name'],
+            live: { name: 'Mug', isDigital: false },
+            proposed: { name: 'Enamel mug', isDigital: false },
+          },
+        ],
+        shippingZones: {
+          live: [],
+          proposed: [{ id: '0193f2a1-0000-7000-8000-00000000f001', name: 'Caucasus', countryCodes: ['AZ', 'GE'] }],
+        },
+      }),
+    );
+
+    renderReview();
+
+    expect(
+      await screen.findByRole('article', { name: fillPlaceholders(COPY.items.itemLabel, { name: 'Mug' }) }),
+    ).toBeInTheDocument();
+    const zone = await screen.findByRole('article', {
+      name: fillPlaceholders(COPY.shippingZones.zoneLabel, { name: 'Caucasus' }),
+    });
+    expect(within(zone).getByText(COPY.shippingZones.changes.added)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: COPY.fields.items })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: COPY.fields.shippingZones })).toBeInTheDocument();
+    expect(screen.queryByText(COPY.noChanges)).not.toBeInTheDocument();
   });
 
   it('approves with no note, sends none, and then offers no more decisions', async () => {

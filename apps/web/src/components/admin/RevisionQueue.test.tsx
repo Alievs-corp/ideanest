@@ -66,6 +66,19 @@ describe('the campaign edit queue — issue #560', () => {
     expect(screen.getByText(fillPlaceholders(COPY.by, { name: COPY.creatorGone }))).toBeInTheDocument();
   });
 
+  it('names an edit to items and shipping zones in words, not by the service field names', async () => {
+    listMock.mockResolvedValue({ revisions: [{ ...FIRST, changedFields: ['items', 'shippingZones'] }] });
+
+    render(<RevisionQueue copy={COPY} />);
+
+    const row = (await screen.findByText('Cedar and Salt')).closest('li');
+    if (row === null) throw new Error('no row');
+
+    expect(within(row).getByText(COPY.fields.items)).toBeInTheDocument();
+    expect(within(row).getByText(COPY.fields.shippingZones)).toBeInTheDocument();
+    expect(within(row).queryByText('shippingZones')).not.toBeInTheDocument();
+  });
+
   it('says so when nothing is waiting', async () => {
     listMock.mockResolvedValue({ revisions: [] });
 

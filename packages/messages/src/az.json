@@ -3724,7 +3724,9 @@
           "story": "Hekayə",
           "risks": "Risklər və çətinliklər",
           "countries": "Ölkələr",
-          "rewards": "Mükafatlar"
+          "rewards": "Mükafatlar",
+          "items": "Əşyalar",
+          "shippingZones": "Göndəriş zonaları"
         },
         "removed": "Silinib:",
         "added": "Əlavə olunub:",
@@ -3847,6 +3849,37 @@
           "noItems": "Məhsul yoxdur",
           "noRates": "Tarif yoxdur",
           "secretLinkReplaced": "Gizli link əvəz olunur. Köhnəsi işləməyəcək."
+        },
+        "items": {
+          "intro": "Bu redaktənin dəyişdiyi, canlı mükafat pillələrinin içindəki bütün əşyalar. Adı çəkilməyən sahə olduğu kimi qalır.",
+          "untitled": "Adsız əşya",
+          "itemLabel": "Əşya: {name}",
+          "fields": {
+            "name": "Ad",
+            "description": "Təsvir",
+            "imageUrl": "Şəkil",
+            "weightGrams": "Çəki",
+            "isDigital": "Rəqəmsal"
+          },
+          "weight": "{grams} q",
+          "noWeight": "Çəki yoxdur",
+          "imageAlt": "{name} əşyasının şəkli"
+        },
+        "shippingZones": {
+          "intro": "Bu redaktənin əlavə etdiyi, sildiyi və ya dəyişdiyi bütün göndəriş zonaları. Adı çəkilməyən zona olduğu kimi qalır.",
+          "untitled": "Adsız zona",
+          "zoneLabel": "Göndəriş zonası: {name}",
+          "changes": {
+            "added": "Yeni zona",
+            "removed": "Silinəcək",
+            "renamed": "Adı dəyişib",
+            "countries": "Ölkələri dəyişib"
+          },
+          "addedNote": "Yeni zona. Bu redaktə təsdiqlənənə qədər mövcud deyil.",
+          "removedNote": "Redaktə təsdiqləndikdə bu zona silinir. O vaxta qədər canlı qalır.",
+          "name": "Ad",
+          "countries": "Ölkələr",
+          "unchanged": "Təklif olunan zonalar canlı olanlarla eynidir."
         }
       }
     },
