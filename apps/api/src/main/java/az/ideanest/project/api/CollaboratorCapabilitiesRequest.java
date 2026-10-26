@@ -2,6 +2,7 @@ package az.ideanest.project.api;
 
 import az.ideanest.project.domain.Capability;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import java.util.Set;
 
 /**
@@ -16,5 +17,5 @@ import java.util.Set;
  *     are on a campaign they cannot touch — revoke the grant instead
  */
 public record CollaboratorCapabilitiesRequest(
-        @NotEmpty(message = "At least one capability is required") Set<Capability> capabilities) {
+        @NotEmpty(message = "At least one capability is required") @Size(max = 64) Set<Capability> capabilities) {
 }

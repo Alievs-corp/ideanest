@@ -3,6 +3,7 @@ package az.ideanest.pledgemanager.api;
 import az.ideanest.pledgemanager.application.QuestionDefinition;
 import az.ideanest.pledgemanager.domain.SurveyQuestion;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,7 +35,7 @@ public record SurveyQuestionBody(
         String helpText,
         String type,
         boolean required,
-        List<String> choices,
+        @Size(max = 200) List<String> choices,
         UUID rewardTierId) {
 
     public SurveyQuestionBody {

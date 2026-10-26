@@ -285,7 +285,7 @@ public class AdminSubscriptionController {
             @NotBlank @Pattern(regexp = "^[A-Za-z][A-Za-z0-9_]{1,39}$") String code,
             @NotBlank @Size(max = 120) String name,
             @Size(max = 2000) String description,
-            Map<String, @Valid PlanText> translations,
+            @Size(max = 20) Map<String, @Valid PlanText> translations,
             @NotNull @DecimalMin("0") BigDecimal price,
             @NotBlank @Pattern(regexp = "^[A-Z]{3}$") String currency,
             @NotNull BillingPeriod billingPeriod,
@@ -311,7 +311,7 @@ public class AdminSubscriptionController {
     public record ChangePlanRequest(
             @Size(max = 120) String name,
             @Size(max = 2000) String description,
-            Map<String, @Valid PlanText> translations,
+            @Size(max = 20) Map<String, @Valid PlanText> translations,
             @DecimalMin("0") BigDecimal price,
             @Pattern(regexp = "^[A-Z]{3}$") String currency,
             @Min(1) Integer maxActiveCampaigns,

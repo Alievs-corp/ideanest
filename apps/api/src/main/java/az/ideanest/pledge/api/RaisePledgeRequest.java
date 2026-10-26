@@ -3,6 +3,7 @@ package az.ideanest.pledge.api;
 import az.ideanest.pledge.application.RaisePledge;
 import az.ideanest.shared.Patched;
 import az.ideanest.shared.money.Money;
+import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
@@ -22,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public record RaisePledgeRequest(
         Patched<UUID> rewardTierId,
-        Patched<List<PledgeAddonBody>> addons,
+        Patched<@Size(max = 200) List<PledgeAddonBody>> addons,
         Patched<Money> contribution,
         Patched<String> shippingCountry,
         Money expectedAmount,

@@ -2,6 +2,7 @@ package az.ideanest.community.api;
 
 import az.ideanest.community.application.ProjectFaqService;
 import az.ideanest.community.domain.ProjectFaq;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -121,7 +122,7 @@ public class ProjectFaqController {
     public ResponseEntity<ProjectFaqListResponse> reorder(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID projectId,
-            @RequestBody ReorderFaqsRequest request) {
+            @Valid @RequestBody ReorderFaqsRequest request) {
 
         List<ProjectFaq> reordered = faqs.reorder(projectId, callerOf(accessToken), request.faqIds());
         return ResponseEntity.ok(new ProjectFaqListResponse(

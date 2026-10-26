@@ -2,6 +2,7 @@ package az.ideanest.reward.api;
 
 import az.ideanest.reward.application.ShippingRate;
 import az.ideanest.reward.application.ZoneRate;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -23,7 +24,8 @@ import java.util.List;
  * @param zoneRates §4.8's PM-13. Omitted is an empty table and clears the tier's
  *     regional rates, exactly as an omitted {@code rules} clears its per-country ones
  */
-public record ShippingRulesRequest(List<ShippingRuleBody> rules, List<ShippingZoneRateBody> zoneRates) {
+public record ShippingRulesRequest(
+        @Size(max = 300) List<ShippingRuleBody> rules, @Size(max = 100) List<ShippingZoneRateBody> zoneRates) {
 
     public ShippingRulesRequest {
         rules = rules == null ? List.of() : rules;

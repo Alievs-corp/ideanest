@@ -1,6 +1,7 @@
 package az.ideanest.pledgemanager.api;
 
 import az.ideanest.pledgemanager.domain.SurveyAnswer;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,7 +16,7 @@ import java.util.UUID;
  * option list. An index would break the moment a creator reordered the options, and it
  * would break silently.
  */
-public record AnswerBody(UUID questionId, List<String> value) {
+public record AnswerBody(UUID questionId, @Size(max = 200) List<String> value) {
 
     public AnswerBody {
         value = value == null ? List.of() : List.copyOf(value);

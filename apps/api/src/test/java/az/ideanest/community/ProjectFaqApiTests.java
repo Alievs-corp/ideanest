@@ -493,6 +493,22 @@ class ProjectFaqApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("a reorder longer than any campaign's list is refused before it is read")
+    void anOversizedReorderIsRefused() {
+        Account creator = account("creator");
+        UUID project = liveCampaign(creator);
+        createdEntry(project, creator, "When do you ship?", "In March.");
+
+        List<UUID> runaway = java.util.stream.Stream.generate(UUID::randomUUID).limit(201).toList();
+        ResponseEntity<Map<String, Object>> refused = reorder(project, creator, runaway);
+
+        // #587: a bound on the request rather than on the campaign, so a list of any length
+        // is not held in memory and compared against the entries before being refused.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(refused.getBody().get("errors").toString()).contains("faqIds");
+    }
+
+    @Test
     @DisplayName("a reorder rewrites every position from zero")
     void aReorderRewritesPositionsFromZero() {
         Account creator = account("creator");

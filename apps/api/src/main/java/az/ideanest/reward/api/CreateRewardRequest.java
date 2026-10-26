@@ -43,7 +43,7 @@ public record CreateRewardRequest(
         Boolean isAddon,
         Instant availableFrom,
         Instant availableUntil,
-        List<RewardItemBody> items,
+        @Size(max = 200) List<RewardItemBody> items,
         UUID imageMediaId,
         UUID videoMediaId) {
 

@@ -1,6 +1,8 @@
 package az.ideanest.pledgemanager.api;
 
 import az.ideanest.pledgemanager.application.SurveyDefinition;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
 
@@ -17,7 +19,8 @@ import java.util.List;
  *
  * @param respondBy PM-06's cut-off, or null for none — which is not "closed"
  */
-public record SurveyRequest(String title, String message, Instant respondBy, List<SurveyQuestionBody> questions) {
+public record SurveyRequest(
+        String title, String message, Instant respondBy, @Size(max = 100) List<@Valid SurveyQuestionBody> questions) {
 
     public SurveyRequest {
         questions = questions == null ? List.of() : List.copyOf(questions);

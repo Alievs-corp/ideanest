@@ -1,6 +1,7 @@
 package az.ideanest.pledgemanager.api;
 
 import az.ideanest.pledgemanager.application.SurveyResponseService;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -64,7 +65,7 @@ public class BackerSurveyController {
     public ResponseEntity<BackerSurveyBody> respond(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID surveyId,
-            @RequestBody RespondRequest request) {
+            @Valid @RequestBody RespondRequest request) {
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())

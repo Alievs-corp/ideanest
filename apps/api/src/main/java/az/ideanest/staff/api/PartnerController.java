@@ -87,7 +87,7 @@ public class PartnerController {
      * @param sections the console sections to open, possibly none
      */
     public record SaveRequest(
-            @NotBlank @Size(max = 10) String percentage, @NotNull Set<PartnerSection> sections) {}
+            @NotBlank @Size(max = 10) String percentage, @NotNull @Size(max = 64) Set<PartnerSection> sections) {}
 
     /** Whoever is signed in, read from the token and never from the request. */
     private static UUID callerOf(Jwt accessToken) {

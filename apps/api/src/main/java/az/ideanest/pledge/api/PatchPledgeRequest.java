@@ -3,6 +3,7 @@ package az.ideanest.pledge.api;
 import az.ideanest.pledge.application.EditPledge;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.Patched;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
  */
 public record PatchPledgeRequest(
         Patched<UUID> rewardTierId,
-        Patched<List<PledgeAddonBody>> addons,
+        Patched<@Size(max = 200) List<PledgeAddonBody>> addons,
         Patched<Money> contribution,
         Patched<String> shippingCountry,
         Patched<Boolean> isAnonymous) {
