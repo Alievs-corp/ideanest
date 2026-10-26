@@ -132,8 +132,9 @@ public class TwoFactorController {
 
         AuthProperties.RateLimit limits = properties.rateLimit();
         // The same allowance as sign-in itself, because this is sign-in: the
-        // per-challenge limit inside the service is what bounds guessing at one
-        // account, and this bounds one client working through many.
+        // per-challenge limit inside the service bounds one challenge, a wrong code
+        // counting against the account's sign-in back-off bounds the account
+        // (#587), and this bounds one client working through many.
         RateLimits.enforce(rateLimiter.recordAttempt(
                 "2fa:verify:ip:" + ClientAddress.of(httpRequest), limits.signInsPerAddress(), limits.window()));
 

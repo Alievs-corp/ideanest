@@ -311,6 +311,77 @@ class TwoFactorApiTests extends AbstractIntegrationTest {
                 .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    @Test
+    @DisplayName("a correct password that only buys a challenge does not clear the sign-in back-off")
+    void aChallengeDoesNotClearTheBackoff() {
+        Enrolled account = enrolled();
+        String address = "203.0.113.80";
+
+        for (int attempt = 0; attempt < 4; attempt++) {
+            assertThat(signInFrom(account.email(), "wrong-password", address).getStatusCode())
+                    .isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+        challengeFrom(signInFrom(account.email(), PASSWORD, address));
+        assertThat(signInFrom(account.email(), "wrong-password", address).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        // #587's review: the challenge used to clear the failures before it, so a
+        // stolen password reset the account's back-off every time it was sent.
+        ResponseEntity<Map<String, Object>> refused = signInFrom(account.email(), PASSWORD, address);
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(refused.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("30");
+    }
+
+    @Test
+    @DisplayName("wrong codes count as failed sign-ins from the password's address, and a completed challenge clears them")
+    void wrongCodesCountAgainstTheAccount() {
+        Enrolled account = enrolled();
+        String address = "203.0.113.81";
+
+        // The codes are sent from somewhere else; they are charged to the address
+        // that sent the password, because that is where the next challenge comes from.
+        String challenge = challengeFrom(signInFrom(account.email(), PASSWORD, address));
+        for (int attempt = 0; attempt < 5; attempt++) {
+            assertThat(verify(challenge, wrongCode(account.secret()), null).getStatusCode())
+                    .isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        ResponseEntity<Map<String, Object>> refused = signInFrom(account.email(), PASSWORD, address);
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(refused.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("30");
+
+        clock.advance(Duration.ofSeconds(30));
+        String next = challengeFrom(signInFrom(account.email(), PASSWORD, address));
+        assertThat(verify(next, currentCode(account.secret()), null).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // Both factors proved, so the address starts again with its free failures.
+        for (int attempt = 0; attempt < 4; attempt++) {
+            assertThat(signInFrom(account.email(), "wrong-password", address).getStatusCode())
+                    .isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+        challengeFrom(signInFrom(account.email(), PASSWORD, address));
+    }
+
+    @Test
+    @DisplayName("a stolen password sent from many addresses cannot guess codes past the account's ceiling")
+    void codeGuessesAreBoundedPerAccount() {
+        Enrolled account = enrolled();
+
+        // Each address stays inside its own five: one password, five wrong codes.
+        for (int address = 0; address < 10; address++) {
+            String challenge = challengeFrom(signInFrom(account.email(), PASSWORD, "198.51.100." + (40 + address)));
+            for (int attempt = 0; attempt < 5; attempt++) {
+                assertThat(verify(challenge, wrongCode(account.secret()), null).getStatusCode())
+                        .isEqualTo(HttpStatus.UNAUTHORIZED);
+            }
+        }
+
+        // Fifty wrong codes in the hour: no further challenge, from anywhere. Before
+        // #587's review fix each correct password bought five more without end.
+        assertThat(signInFrom(account.email(), PASSWORD, "198.51.100.99").getStatusCode())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     // ------------------------------------------------------------------
     // Recovery codes
     // ------------------------------------------------------------------
@@ -471,6 +542,18 @@ class TwoFactorApiTests extends AbstractIntegrationTest {
                 new HttpEntity<>(
                         Map.of("email", email.value(), "password", PASSWORD, "tokenDelivery", "body"),
                         jsonHeaders()),
+                mapOfObjects());
+    }
+
+    /** A sign-in from {@code address}, which the container takes from the trusted proxy's header. */
+    private ResponseEntity<Map<String, Object>> signInFrom(EmailAddress email, String password, String address) {
+        HttpHeaders headers = jsonHeaders();
+        headers.set("X-Forwarded-For", address);
+        return rest.exchange(
+                "/v1/auth/login",
+                HttpMethod.POST,
+                new HttpEntity<>(
+                        Map.of("email", email.value(), "password", password, "tokenDelivery", "body"), headers),
                 mapOfObjects());
     }
 

@@ -98,12 +98,15 @@ public class TokenController {
         // password is checked and handed back afterwards if it was right: counting
         // only after a failure would let a burst of concurrent guesses all pass the
         // check before the first of them was counted. Per address, a sliding
-        // window; per account, a back-off rather than a lockout, so that knowing
-        // somebody's address is not a way to keep them out -- see SignInBackoff.
-        String addressKey = "login:ip:" + ClientAddress.of(httpRequest);
+        // window; per account, a back-off keyed on the account and this address
+        // under a looser ceiling for the account, so that a stranger's wrong
+        // passwords hold back the stranger's address rather than the owner -- see
+        // SignInBackoff.
+        String address = ClientAddress.of(httpRequest);
+        String addressKey = "login:ip:" + address;
         RateLimits.enforce(rateLimiter.recordAttempt(addressKey, limits.signInsPerAddress(), limits.window()));
 
-        RateLimitDecision account = backoff.admit(email.value());
+        RateLimitDecision account = backoff.admit(email.value(), address);
         if (!account.allowed()) {
             // Refused before the password, so not a guess: the address keeps its
             // attempt. What it costs us is a map lookup, not an Argon2 verification.
@@ -118,7 +121,7 @@ public class TokenController {
                     request.password(),
                     request.deviceLabel(),
                     httpRequest.getHeader(HttpHeaders.USER_AGENT),
-                    ClientAddress.of(httpRequest)));
+                    address));
         } catch (AuthenticationFailedException wrongPassword) {
             // The one outcome that stays counted.
             throw wrongPassword;
@@ -127,17 +130,35 @@ public class TokenController {
             // password had been accepted, so not a failed guess. Anything else
             // thrown here is a fault of ours, which is not the caller's guess
             // either.
-            passwordAccepted(addressKey, email);
+            passwordAccepted(addressKey, email, address);
             throw refusedAfterThePassword;
         }
-        passwordAccepted(addressKey, email);
+        passwordAccepted(addressKey, email, address);
+
+        switch (outcome) {
+            // Signed in: the failures from this address are cleared.
+            case SignInOutcome.Authenticated ignored -> backoff.signedIn(email.value(), address);
+            // The password alone, on an account that also asks for a code. Earlier
+            // failures stand until TwoFactorChallenges sees the code: clearing them
+            // here handed every holder of a stolen password a fresh run at the
+            // codes each time they sent it.
+            case SignInOutcome.TwoFactorRequired ignored -> {
+            }
+        }
 
         return respondTo(outcome, request.wantsTokenInBody());
     }
 
-    private void passwordAccepted(String addressKey, EmailAddress email) {
+    /**
+     * Gives back what this attempt claimed. The per-address budget included, even when
+     * a code is still to come: that budget counts wrong passwords across accounts, and
+     * guessing codes from one address is bounded by {@code /2fa/verify}'s own
+     * per-address budget, by the per-challenge limit, and per account by
+     * {@link SignInBackoff}.
+     */
+    private void passwordAccepted(String addressKey, EmailAddress email, String address) {
         rateLimiter.refund(addressKey);
-        backoff.passwordAccepted(email.value());
+        backoff.passwordAccepted(email.value(), address);
     }
 
     /**

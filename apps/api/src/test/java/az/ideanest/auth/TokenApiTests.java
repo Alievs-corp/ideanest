@@ -71,6 +71,21 @@ class TokenApiTests extends AbstractIntegrationTest {
                 new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
+    /**
+     * A sign-in from {@code address}, as the proxy reports it. The test client connects
+     * from loopback, which the container trusts as a proxy, so this is the address the
+     * limits see; {@code ForwardedClientAddressApiTests} shows that end to end.
+     */
+    private ResponseEntity<Map<String, Object>> signInFrom(EmailAddress email, String password, String address) {
+        HttpHeaders headers = jsonHeaders();
+        headers.set("X-Forwarded-For", address);
+        return rest.exchange(
+                "/v1/auth/login",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("email", email.value(), "password", password, "tokenDelivery", "body"), headers),
+                new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
     private static HttpHeaders jsonHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -243,6 +258,49 @@ class TokenApiTests extends AbstractIntegrationTest {
             assertThat(signIn(email, "wrong-password", true).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         }
         assertThat(signIn(email, PASSWORD, true).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("a stranger's wrong passwords hold back the stranger's address, not the owner signing in elsewhere")
+    void theOwnerIsNotLockedOutByAStranger() {
+        EmailAddress email = registeredUser();
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            assertThat(signInFrom(email, "wrong-password", "203.0.113.66").getStatusCode())
+                    .isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+        assertThat(signInFrom(email, PASSWORD, "203.0.113.66").getStatusCode())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+
+        // #587's review: the back-off used to be the account's alone, so one wrong
+        // password each time it expired kept the owner out from everywhere.
+        assertThat(signInFrom(email, PASSWORD, "198.51.100.20").getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // And the owner's sign-in does not reopen the stranger's address.
+        assertThat(signInFrom(email, PASSWORD, "203.0.113.66").getStatusCode())
+                .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    @Test
+    @DisplayName("fifty failures in an hour from many addresses refuse the account from every address")
+    void theAccountCeilingHoldsAcrossAddresses() {
+        EmailAddress email = registeredUser();
+
+        for (int address = 0; address < 10; address++) {
+            for (int attempt = 0; attempt < 5; attempt++) {
+                assertThat(signInFrom(email, "wrong-password", "192.0.2." + address).getStatusCode())
+                        .isEqualTo(HttpStatus.UNAUTHORIZED);
+            }
+        }
+
+        // Each address stayed inside its own five free failures, and the account is
+        // still closed: the bound on guessing from many addresses. The cost, which
+        // SignInBackoff states, is that the owner is refused as well until the hour
+        // moves on.
+        ResponseEntity<Map<String, Object>> refused = signInFrom(email, PASSWORD, "198.51.100.21");
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(Long.parseLong(refused.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)))
+                .isBetween(Duration.ofMinutes(55).toSeconds(), Duration.ofHours(1).toSeconds());
     }
 
     // ------------------------------------------------------------------
