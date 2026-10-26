@@ -218,6 +218,18 @@ tasks.withType<Test>().configureEach {
     }
 }
 
+// #587: `local` is opted into here, and nowhere in the application itself.
+//
+// application.yml declares no default profile, so a process that names none runs
+// in the production shape. `bootRun` is development by definition -- it starts
+// the compose stack -- so it is the one launcher that asks for `local`. As the
+// *default* profile, exactly as application.yml used to: SPRING_PROFILES_ACTIVE
+// still wins when a developer sets one, and JwtConfiguration and ReturnUrls,
+// which read the default profiles, see what they always saw under bootRun.
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    systemProperty("spring.profiles.default", "local")
+}
+
 // #136: rewrite openapi.json from the running application.
 //
 // A task rather than something `build` does, and that is the point. The contract

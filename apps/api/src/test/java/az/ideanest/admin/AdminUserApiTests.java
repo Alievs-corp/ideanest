@@ -218,6 +218,23 @@ class AdminUserApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("a ban stops the access token the account already holds, at its next request")
+    void aBanEndsTheAccessTokenAlreadyIssued() {
+        Account person = account("admin-ban-token");
+        // Used once before the ban, so the session's "still open" verdict is cached --
+        // the case where a cache that was not cleared on revocation would let it through.
+        assertThat(exchange("/v1/me", HttpMethod.GET, person.accessToken(), null).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        ban(person, "Counterfeit goods.");
+
+        // #587. It used to keep working for up to fifteen minutes: long enough to pledge,
+        // post and message on a token issued before trust and safety stopped the account.
+        assertThat(exchange("/v1/me", HttpMethod.GET, person.accessToken(), null).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     @DisplayName("a banned account is told why rather than refused as though the password were wrong")
     void aBannedAccountIsToldWhyRatherThanBeingRefusedAsWrong() {
         Account person = account("admin-refused");

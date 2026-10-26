@@ -1,8 +1,14 @@
 spring:
   application:
     name: ideanest-api
-  profiles:
-    default: local
+  # NO DEFAULT PROFILE -- #587. This used to say `profiles.default: local`, which
+  # made the insecure profile the one a process fell back to: a deployment that
+  # set no profile ran with an ephemeral signing key allowed, a refresh cookie
+  # without Secure, every verification and reset link written to the log, and
+  # health details on show. Now a process that names no profile gets the
+  # production shape, and `local` is something a developer asks for: `bootRun`
+  # asks for it (build.gradle.kts), and anything else -- an IDE run
+  # configuration, `java -jar` on a laptop -- sets SPRING_PROFILES_ACTIVE=local.
   mvc:
     problemdetails:
       # RFC 9457 responses for framework-raised errors, so the shape of an error
@@ -10,6 +16,18 @@ spring:
       enabled: true
   jackson:
     default-property-inclusion: non_null
+
+  # #587: the one multipart upload this service takes -- an identity document,
+  # ideanest.verification.documents.max-bytes, five megabytes -- sized here so the
+  # container refuses anything larger while it parses. Spring's own default was a
+  # one-megabyte file, which quietly refused most phone photographs of a passport
+  # long before the service's five-megabyte rule could. Media never comes this way:
+  # it goes straight to object storage on a presigned URL. Every other body is
+  # bounded by RequestBodyLimitFilter (ideanest.request-body, two megabytes).
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 
   http:
     clients:
@@ -177,6 +195,13 @@ server:
     include-message: never
     include-stacktrace: never
     include-binding-errors: never
+  tomcat:
+    # #587. Form posts are a payment provider's callback and the sandbox card page,
+    # each a few hundred bytes; Tomcat's two-megabyte default was room for a body
+    # nobody sends. What it swallows of a refused upload stays at its default and is
+    # written down so that it is a decision: past it the connection is closed.
+    max-http-form-post-size: 64KB
+    max-swallow-size: 2MB
 
 management:
   endpoints:
@@ -1270,6 +1295,13 @@ ideanest:
     # read logs, and that set is always larger than it looks. On in local only.
     log-verification-links: false
 
+    # #587: auth mail leaves on a pool of its own, after the request has been
+    # answered. On the request's thread a password reset for a registered address
+    # took an SMTP round trip longer than one for an unknown address, which
+    # answered "is this address registered?" for anyone with a stopwatch. True only
+    # in the test profile. See VerificationNotificationListener.
+    synchronous-mail: false
+
     argon2:
       # OWASP's recommendation: 19 MiB, two iterations, one lane. Memory is the
       # parameter that makes a GPU no better at this than a CPU. Raising these
@@ -1303,6 +1335,15 @@ ideanest:
       # §17.3: five sign-in attempts per address per fifteen minutes.
       sign-ins-per-address: 5
       sign-ins-per-email: 5
+      # #587: FAILURES ONLY, AND PER ACCOUNT A BACK-OFF RATHER THAN A LOCKOUT.
+      # A correct password gives its attempt back on both budgets. Past the five
+      # free failures an account makes each further attempt wait, from the last
+      # failure: 30s, 1m, 2m, 4m, 8m, then 15m each. Failures are forgotten a day
+      # after the last one -- longer than the ceiling, so waiting out one delay
+      # does not also hand back the free five. See SignInBackoff.
+      sign-in-backoff: PT30S
+      sign-in-backoff-ceiling: PT15M
+      sign-in-failure-memory: PT24H
       # The control that makes a six-digit code safe. Three codes are valid at
       # any moment once a step of clock skew either side is allowed, so five
       # attempts is fifteen chances in a million per challenge -- and a new
@@ -1321,9 +1362,9 @@ ideanest:
     token:
       issuer: ${TOKEN_ISSUER:https://api.ideanest.az}
       audience: ${TOKEN_AUDIENCE:ideanest}
-      # Short, because an access token is stateless: revoking a session cannot
-      # reach one already issued, so this value is exactly the window in which a
-      # revoked session still works.
+      # Short. Not because revoking a session cannot reach a token already issued
+      # -- since #587 it does, at the token's next request (RevokedSessions) -- but
+      # because it bounds what a copied token is worth to whoever copied it.
       access-token-ttl: PT15M
       # Absolute, and not extended by use. A session is thirty days and then the
       # user signs in again.

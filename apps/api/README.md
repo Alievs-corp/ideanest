@@ -16,6 +16,13 @@ cd apps/api
 ./gradlew exportOpenApi  # rewrite openapi.json from the running application
 ```
 
+**`local` is asked for, never assumed (#587).** The service has no default
+profile: a process that names none runs in the production shape and refuses to
+start without a signing key. `bootRun` asks for `local` itself, so the commands
+above need nothing extra. Anything else that starts the application on a
+developer's machine — an IDE run configuration, `java -jar build/libs/*.jar` —
+sets `SPRING_PROFILES_ACTIVE=local` (or `--spring.profiles.active=local`).
+
 There is no wrapper to install and no Gradle to install: `./gradlew` downloads
 the distribution it is pinned to and verifies its checksum before running it.
 A JDK 21 or newer must be on the path; the build compiles against a Java 21

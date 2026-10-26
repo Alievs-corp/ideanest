@@ -10,7 +10,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 /**
- * What the six auth emails say.
+ * What the seven auth emails say.
  *
  * <p>The counterpart of {@code EmailComposer}, for the messages that are not
  * notifications. It reads {@code messages.properties} and produces a
@@ -108,6 +108,23 @@ public class AuthEmailComposer {
                 copy(base + "subject", arguments, locale),
                 copy(base + "headline", arguments, locale),
                 paragraphs(base, arguments, locale));
+    }
+
+    /**
+     * What the owner of an address is told when somebody asks to move another account
+     * onto it (#587).
+     *
+     * <p>No button, unlike its registration counterpart. Nothing happened to this
+     * account and nothing can: the request was answered as though it had worked, and
+     * the account asking was not sent a link. The message is there so the owner knows,
+     * not so they act.
+     */
+    public TransactionalMail emailChangeOnExistingAccount(Locale locale) {
+        String base = PREFIX + "EMAIL_CHANGE_ON_EXISTING_ACCOUNT.";
+        return TransactionalMail.withoutAction(
+                copy(base + "subject", null, locale),
+                copy(base + "headline", null, locale),
+                paragraphs(base, null, locale));
     }
 
     /**

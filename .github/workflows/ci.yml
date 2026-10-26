@@ -76,7 +76,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: dorny/paths-filter@v4
+      # Pinned to a commit rather than to the tag. A tag is a pointer its owner can
+      # move, and this action runs with `pull-requests: read` and decides which
+      # jobs run at all -- a moved tag could quietly report "nothing changed" and
+      # wave a pull request through `CI complete` untested. A commit cannot be
+      # moved. Bumping it is resolving the new tag to its commit and changing both.
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           # WHAT BELONGS IN WHICH FILTER, AND WHY IT IS NOT ONE DIRECTORY EACH.

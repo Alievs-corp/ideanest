@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 
 /**
- * That the six auth emails have copy, in all four languages, and that it is finished.
+ * That the seven auth emails have copy, in all four languages, and that it is finished.
  *
  * <p>{@code EmailCopyTests} makes this argument for the twenty notification types and it
  * is the same one: a missing key throws, a key with a placeholder nothing fills renders
@@ -60,7 +60,8 @@ class AuthEmailCopyTests extends AbstractIntegrationTest {
                 new Message("PASSWORD_RESET", locale -> composer.passwordReset(TOKEN, locale)),
                 new Message("PASSWORD_CHANGED", composer::passwordChanged),
                 new Message("EMAIL_CHANGE_CONFIRMATION", locale -> composer.emailChangeConfirmation(TOKEN, locale)),
-                new Message("EMAIL_CHANGE_NOTICE", locale -> composer.emailChangeNotice(NEW_ADDRESS, locale)));
+                new Message("EMAIL_CHANGE_NOTICE", locale -> composer.emailChangeNotice(NEW_ADDRESS, locale)),
+                new Message("EMAIL_CHANGE_ON_EXISTING_ACCOUNT", composer::emailChangeOnExistingAccount));
     }
 
     @Test

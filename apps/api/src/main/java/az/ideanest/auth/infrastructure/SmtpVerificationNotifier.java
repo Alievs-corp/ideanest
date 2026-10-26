@@ -111,6 +111,15 @@ public class SmtpVerificationNotifier implements VerificationNotifier {
                 composer.emailChangeNotice(newEmail.value(), localeOf(locale)));
     }
 
+    @Override
+    public void sendEmailChangeAttemptOnExistingAccount(EmailAddress email, String locale) {
+        send(
+                email,
+                locale,
+                "email change attempt notice",
+                composer.emailChangeOnExistingAccount(localeOf(locale)));
+    }
+
     /**
      * Sends, and swallows a refusal after saying so.
      *

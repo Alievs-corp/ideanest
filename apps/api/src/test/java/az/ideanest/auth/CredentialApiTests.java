@@ -208,11 +208,11 @@ class CredentialApiTests extends AbstractIntegrationTest {
         forgot(account.email());
         reset(notifier.resetTokenSentTo(account.email()).orElseThrow(), NEW_PASSWORD);
 
-        // The access token itself is stateless and lives out its fifteen minutes; what
-        // must be dead is the session behind it, so the refresh cookie cannot mint
-        // another. A reset is asked for precisely when the old password is believed to
-        // be known.
+        // The session behind it is dead, so the refresh cookie cannot mint another --
+        // and since #587 neither does the access token it already issued keep working.
+        // A reset is asked for precisely when the old password is believed to be known.
         assertThat(refresh(account.refreshToken()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(me(accessToken).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(notifier.passwordChangeNoticesSentTo(account.email())).isEqualTo(1);
     }
 
@@ -332,18 +332,45 @@ class CredentialApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("an address that already has an account is refused out loud")
-    void addressAlreadyTakenIsRefused() {
+    @DisplayName("an address that already has an account is answered like any other, and its owner is told")
+    void addressAlreadyTakenIsNotAnOracle() {
         Account account = registered();
         Account other = registered();
+        EmailAddress free = uniqueEmail();
 
-        assertThat(changeEmail(account, PASSWORD, other.email()).getStatusCode())
-                .isEqualTo(HttpStatus.CONFLICT);
+        ResponseEntity<String> taken = changeEmail(account, PASSWORD, other.email());
+        ResponseEntity<String> untaken = changeEmail(registered(), PASSWORD, free);
 
-        // Refusing silently would leave somebody waiting for a confirmation that is
-        // never coming. Saying so is affordable here in a way it is not on
-        // registration: the caller is signed in and rate limited per account.
+        // #587. A 409 here answered "is this address registered?" for anybody with an
+        // account and a list of addresses to walk through the form.
+        assertThat(taken.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(taken.getStatusCode()).isEqualTo(untaken.getStatusCode());
+        assertThat(taken.getBody()).isEqualTo(untaken.getBody());
+
+        // No link that could move this account onto somebody else's address; the owner
+        // of that address is told instead, as registration tells them. And the caller's
+        // own mailbox gets the notice it would have got either way, so watching it
+        // reveals nothing either.
         assertThat(notifier.emailChangeTokenSentTo(other.email())).isEmpty();
+        assertThat(notifier.emailChangeAttemptsSentTo(other.email())).isEqualTo(1);
+        assertThat(notifier.emailChangeNoticesSentTo(account.email())).isEqualTo(1);
+        assertThat(users.findByEmail(other.email()).orElseThrow().id()).isEqualTo(other.userId());
+    }
+
+    @Test
+    @DisplayName("asking for a taken address still retires the outstanding link, as any request does")
+    void aTakenAddressRetiresTheOutstandingLinkToo() {
+        Account account = registered();
+        Account other = registered();
+        EmailAddress first = uniqueEmail();
+
+        changeEmail(account, PASSWORD, first);
+        String firstToken = notifier.emailChangeTokenSentTo(first).orElseThrow();
+        changeEmail(account, PASSWORD, other.email());
+
+        // Otherwise the first link still working would say the second request was the
+        // kind that did nothing -- the oracle the 202 exists to remove.
+        assertThat(confirmEmailChange(firstToken).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test

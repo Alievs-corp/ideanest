@@ -293,6 +293,10 @@ Marked `[W]` web, `[M]` mobile, `[A]` admin.
 > Registration writes to an already-registered address because its owner deserves
 > to know somebody is probing it; the reset form takes whatever was typed into it,
 > so mailing that would make this platform a delivery service for strangers.
+> **Nor does the time it takes (#587).** The registered branch used to send its mail
+> on the request thread, an SMTP round trip the unknown branch never waited for; auth
+> mail now leaves from a pool of its own after the response. Not through the outbox:
+> the event carries the token, and an outbox row would put a live credential in a table.
 >
 > The link is single-use, lasts **one hour** rather than the verification link's
 > twenty-four, and issuing a second one retires the first. The password policy is
@@ -317,6 +321,13 @@ Marked `[W]` web, `[M]` mobile, `[A]` admin.
 > one gets the link. The old one gets a notice with no link at all — it cannot
 > approve the change and does not need to; what it does is make an address takeover
 > visible to the person losing the account, at the address they still hold.
+>
+> **An address that already has an account is answered like any other (#587).** It
+> was a 409, which made the form a "who is registered here?" oracle for anybody signed
+> in. Now it is the same 202, the same notice to the old address and the same
+> retirement of an outstanding link, no link is sent, and the address's owner gets
+> `EMAIL_CHANGE_ON_EXISTING_ACCOUNT` instead — registration's rule. A 409 remains on
+> the confirmation only, when the address acquired an account after the request.
 >
 > **A-13 revokes every session including the caller's; A-12 revokes none.** A
 > password is changed precisely when somebody believes the old one is known, and
@@ -1949,9 +1960,10 @@ Preferences are per category and per channel, with a digest option.
 > (`SessionStarter`) rather than in each sign-in path, so a new path cannot forget it, and
 > it reads the row share-locked against the ban's own lock, so a sign-in racing a ban
 > either sees it or commits its session before the ban's revocation runs.
-> **An access token already issued is not revoked** — they are signed and
-> short-lived, and a database lookup in the token filter would put a query on the hot path
-> of every endpoint to close a window of minutes.
+> **An access token already issued stops at its next request** (#587). It used to be
+> left to expire, up to fifteen minutes in which a banned account could still pledge and
+> post. The ban revokes every session, and the token filter now refuses a token whose
+> `sid` names a revoked session — one cached primary-key probe, §17.1.
 >
 > **Reversible, unlike a campaign's suspension**, and `POST …/reinstate` is why the endpoint
 > list above gained a line: a campaign cannot go back to `LIVE` because its funding window
@@ -3883,7 +3895,7 @@ by a database constraint and verified by a nightly reconciliation job.
 | `signature_sessions` | A signing session in flight (#429): what was to be signed, by whom, and what became of it. **A row rather than a handle the client holds**, and V71 names the three quiet failures of the stateless alternative -- a session identifier becomes a bearer token for somebody else's signature, the hash a resolve compares against arrives from the party with the reason to change it, and a cancellation leaves nothing, so "the citizen declined" is indistinguishable from "nothing happened". The FIN and mobile number the citizen typed are passed to the provider and **not stored**: §17.4 asks for the data the purpose needs and this purpose needs neither; the FIN that is kept is the certificate's, in `signatures`. Terminal outcomes are recorded once and a resolved session is never re-resolved, which is what stops one act of signing producing two `signatures` rows |
 | `creator_legal_subjects` | Who a creator legally is (#430): the subject kind, the legal name, the VÖEN -- a company's, or an individual entrepreneur's since #239, because §6.3 approves no payout without one -- and, for a registered entity only, the registered address and the registration number. **A fact about the account and not a record of a check**, which is the whole of #430: `identity_verifications.subject_kind` says what a reviewer was looking at when they looked, and a creator who has never been asked to verify has no row there at all while a payout still needs to know whether to withhold as a person or as a company. The VÖEN is **shape-validated and nothing more** -- ten digits, in the schema -- because a validator that appeared to confirm existence "would produce a green tick that means nothing, in front of the exact field where a green tick is relied upon"; whether the number names a real company is a human reading a `COMPANY_REGISTRATION` document in V58's queue. There is deliberately **no constraint requiring a legal entity to carry all three of its fields**: completeness is a gate's question, asked of a row rather than enforced on one, so a creator part-way through a form does not lose their work. The foreign key cascades, for the reason every reference to `users` in this schema gives twice over |
 | `campaign_legal_subjects` | The creator's legal subject as it stood when a campaign was submitted (#430). **A copy, never a reference**, and there is no foreign key back to the live row precisely so it cannot follow it: §5.6 snapshots a subscription's price, V42 freezes a retry window, and `payouts.creator_id` is denormalised because "a campaign's creator is a mutable fact and the payout was calculated for the person who held it at the time". A creator who submits as an individual and registers a company three months later has not retroactively submitted as a company, and a payout reading the live row would withhold as though they had. Keyed by the campaign: a resubmission overwrites, because that submission is the one being decided |
-| `audit_logs` | Privileged actions (#107). Append-only in PostgreSQL rather than by convention: a statement-level `BEFORE UPDATE OR DELETE OR TRUNCATE` trigger raises `restrict_violation`, chosen over a rewrite rule — which would succeed silently — and over a revoked grant, which names a role the migration does not know, does not bind the owner, and does not survive a restore. Carries the actor and, for an impersonated action, whom they acted for; the entity, the outcome, the source address and user agent, and the correlation identifiers. The write is `Propagation.MANDATORY`, so the row and the change it describes are one commit and a failed audit takes the action with it. Deliberately **not** partitioned yet: a statement trigger on a partitioned parent does not fire for a statement aimed at a partition directly, so partitioning today would weaken the guarantee the table exists for |
+| `audit_logs` | Privileged actions (#107). Append-only in PostgreSQL rather than by convention: a statement-level `BEFORE UPDATE OR DELETE OR TRUNCATE` trigger raises `restrict_violation`, chosen over a rewrite rule — which would succeed silently — and over a revoked grant, which names a role the migration does not know, does not bind the owner, and does not survive a restore. Carries the actor and, for an impersonated action, whom they acted for; the entity, the outcome, the source address and user agent, and the correlation identifiers. The write is `Propagation.MANDATORY`, so the row and the change it describes are one commit and a failed audit takes the action with it. Deliberately **not** partitioned yet: a statement trigger on a partitioned parent does not fire for a statement aimed at a partition directly, so partitioning today would weaken the guarantee the table exists for **`source_address` is the client's address as Tomcat's `RemoteIpValve` resolves it** since #585 — the right-most `X-Forwarded-For` hop outside the private-proxy ranges. V21's column comment still says "the address the container saw, never X-Forwarded-For"; that comment is stale and this row is the correction (#587), left as a note rather than a comment-only migration |
 | `fee_schedules` | Configurable rates. **Not built.** #64 collects without needing them: the collection posts escrow against the creator's account and §9.5's split happens at payout, so the first thing that has to know a rate is #69 — see §9.2's note on which of the two diagrams the platform implements |
 | `outbox_events` | Transactional outbox (#135). One row per recorded event, written by the same transaction as the business change it describes — which is the whole of the guarantee: the commit that creates the pledge is the commit that creates the event, so neither can exist without the other. Carries the stable `id` a consumer deduplicates on, an `aggregate_type`/`aggregate_id` that is the ordering key and deliberately not a foreign key (an event stays true after its aggregate is deleted, and no single reference can point at four tables), the serialised `payload` as `text` rather than `jsonb` so a consumer receives the bytes the transaction committed, a database-assigned `sequence_no` that decides dispatch order, and `PENDING → PUBLISHED` or `PENDING → DEAD` with `attempts`, `next_attempt_at`, and `last_error`. A relay claims one row at a time with `FOR UPDATE SKIP LOCKED`, so replicas divide the queue rather than double-publishing, and will not dispatch an event while an earlier `PENDING` one for the same aggregate exists. Published rows are not swept yet |
 | `idempotency_keys` | Replay protection (#52). One row per `(account_id, idempotency_key)`, carrying the operation, a SHA-256 fingerprint of the request, and the status and exact bytes of the response the first attempt answered with. The row is inserted *before* the work as a claim — the unique index is what makes two identical requests arriving at once resolve to one — and completed with the response afterwards, in the same transaction as the work. Only successes are recorded; a refusal releases the key so that a client can retry it. Swept after §17.2's 24 hours |
@@ -7189,7 +7201,7 @@ report, bounded by the number of tiers a campaign has rather than by its backers
 | Access token | JWT, 15 minutes, asymmetric signature |
 | Refresh token | Opaque, stored hashed, 30 days, rotating |
 | **Token theft detection** | Reuse of a rotated refresh token invalidates the whole family |
-| Access token revocation | Not possible before expiry. Verification reads no state, so revoking a session takes effect within the access token's lifetime and not sooner. That window is the reason the lifetime is fifteen minutes |
+| Access token revocation | **Checked on every request since #587.** The token's `sid` is looked up in `sessions` by primary key, and a token whose session is revoked gets the bearer-token 401 — so signing out, a password change or reset, a replayed refresh token and a ban (§4.11's AD-04) stop the token at its next request rather than when it expires. `RevokedSessions` caches the answer: a revoked session for good, a live one for ten seconds, and every revocation this instance makes clears the live answers when it commits. A second instance would not hear another's revocations, so the lag there is the ten seconds, not the fifteen minutes. A session id with no row is not treated as revoked |
 | Client requirement | Refresh must be **single-flight**. Two concurrent refreshes present the same token, which is indistinguishable from theft and signs the user out |
 | Web storage | Refresh in an httpOnly, secure, same-site cookie; access in memory, never local storage |
 | Mobile storage | Platform secure storage: Keychain Services on iOS, the Android Keystore behind `EncryptedSharedPreferences`. The access token is held in memory and never written down, exactly as on the web |
@@ -7263,6 +7275,14 @@ Apple requires to revoke the token.
 > effective limit multiplies by the number of instances. The shared counter is
 > #142. Until then the deployment is single-instance and the limiter is honest
 > protection against a script rather than against a botnet.
+>
+> **Move it to PostgreSQL or Redis before running a second API container (#587).**
+> Three things live in one process's heap today: `InMemoryRateLimiter`, the
+> per-account sign-in back-off (`SignInBackoff`), and the revoked-session cache
+> (`RevokedSessions`). The first two would let each replica grant its own budget;
+> the third would lag a revocation made elsewhere by its ten-second live verdict.
+> None of them is a correctness problem on one instance, and every one becomes one
+> the day there are two.
 
 ### 17.2 Payments
 
@@ -7285,13 +7305,16 @@ Apple requires to revoke the token.
 | Cross-site request forgery | Same-site cookies plus a required custom header |
 | Insecure direct object reference | Ownership checked in a security layer, not in controllers |
 | Mass assignment | Explicit request DTOs; entities are never bound to input |
-| Rate limiting | Sign-in 5/15min per address; registration 5/15min per address and 3/15min per email; two-factor codes 5 per challenge and enrolment changes 10/15min per user; pledge 10/min per user; search 60/min per address, spent by the feed, its facets and search together because all three run the same query; autocomplete 300/min per address, counted apart because a suggestion is one request per keystroke. **The counter is per replica (#142):** with three instances every number here is really three times itself. Closing that needs shared storage, which the platform still does not have — the durable scheduler (#134) gave the fleet a lease table, not a key-value store. Since #587, backer disputes are 10/hour per account and media upload addresses 120/hour per account, with at most 10 outstanding |
-| **Account enumeration** | Registration answers identically whether or not the address is known. The address itself is told which of the two happened |
+| Rate limiting | Sign-in, **counting failures only** (#587): 5 failed attempts per 15min per address, and per account five free failures and then a back-off — 30s, doubling to a 15-minute ceiling, measured from the last failure, cleared by a correct password and forgotten a day after the last failure — rather than a 15-minute lockout anybody who knows the address could impose; registration 5/15min per address and 3/15min per email; two-factor codes 5 per challenge and enrolment changes 10/15min per user; pledge 10/min per user; search 60/min per address, spent by the feed, its facets and search together because all three run the same query; autocomplete 300/min per address, counted apart because a suggestion is one request per keystroke. **The counter is per replica (#142):** with three instances every number here is really three times itself. Closing that needs shared storage, which the platform still does not have — the durable scheduler (#134) gave the fleet a lease table, not a key-value store. Since #587, backer disputes are 10/hour per account and media upload addresses 120/hour per account, with at most 10 outstanding |
+| **Account enumeration** | Registration answers identically whether or not the address is known. The address itself is told which of the two happened. **The same for a password reset and an address change (#587)**: forgot-password's mail is sent from a pool of its own after the response, so a registered address no longer answers an SMTP round trip later than an unknown one; and an address change aimed at an address that already has an account answers the same 202 as any other and tells that address's owner, instead of a 409 |
 | Bot traffic | **Not built: there is no challenge on registration or comment yet** (#587). Rate limits are the whole of the control on those two surfaces — registration per address and per email, comments per account and per address (§4.9) — and a challenge remains to be chosen and built |
 | File upload | Magic-byte validation, size caps, served from a separate origin |
 | Server-side request forgery | Allowlist for outbound fetches; internal ranges blocked |
 | Supply chain | Dependency scanning and automated updates |
 | Secrets | Never in the repository; scanning on push |
+| **Request size** (#587) | Every body that is not multipart is capped at 2 MB by `RequestBodyLimitFilter` (`ideanest.request-body.max-body`), the tracking-file import at 10 MB (`max-import-body`); a declared length over the cap is a 413 before a byte is read, and a chunked body stops being read at the cap. Multipart — only the identity document — is capped by `spring.servlet.multipart` at 5 MB a file, the document rule's own figure. Tomcat's form-post ceiling is 64 KB, the size of a payment provider's callback with room to spare. Media never comes through the API: it goes to object storage on a presigned URL |
+| **Actuator** (#587) | Health and its probes are public. `/actuator/prometheus` answers only through `MetricsScrapeSecurity`'s HTTP Basic chain, which exists only when a scrape password is configured; the API chain denies every other actuator path to everybody, so without a password there is no metrics endpoint rather than one any signed-in account can read |
+| **Default profile** (#587) | None. A process that names no profile runs in the production shape — no generated signing key, a `Secure` refresh cookie, no links in the log. `local` is asked for by `bootRun` (as the default profile, in `build.gradle.kts`) and by `SPRING_PROFILES_ACTIVE=local` anywhere else |
 
 ### 17.4 Data protection
 

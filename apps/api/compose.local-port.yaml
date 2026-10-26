@@ -18,4 +18,4 @@ services:
     # so without it the container publishes 5432 *and* 5433 and the conflict is
     # still there.
     ports: !override
-      - '5433:5432'
+      - '127.0.0.1:5433:5432'

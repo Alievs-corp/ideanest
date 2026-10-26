@@ -57,7 +57,7 @@ class PrivilegedActionAuditTests extends AbstractIntegrationTest {
     // ------------------------------------------------------------------
 
     /** A registered, signed-in account: its access token and its identifier. */
-    private record Account(String accessToken, UUID id) {
+    private record Account(String accessToken, UUID id, EmailAddress email) {
     }
 
     private Account account() {
@@ -66,7 +66,10 @@ class PrivilegedActionAuditTests extends AbstractIntegrationTest {
                 "/v1/auth/register",
                 Map.of("email", email.value(), "password", PASSWORD, "name", "Test Person"),
                 String.class);
+        return signIn(email);
+    }
 
+    private Account signIn(EmailAddress email) {
         ResponseEntity<Map<String, Object>> signedIn = rest.exchange(
                 "/v1/auth/login",
                 HttpMethod.POST,
@@ -75,7 +78,7 @@ class PrivilegedActionAuditTests extends AbstractIntegrationTest {
                 new ParameterizedTypeReference<Map<String, Object>>() {});
 
         UUID id = users.findByEmailAndDeletedAtIsNull(email).orElseThrow().getId();
-        return new Account((String) signedIn.getBody().get("accessToken"), id);
+        return new Account((String) signedIn.getBody().get("accessToken"), id, email);
     }
 
     private static HttpHeaders jsonHeaders() {
@@ -182,10 +185,14 @@ class PrivilegedActionAuditTests extends AbstractIntegrationTest {
                 String.class);
         assertThat(requested.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 
+        // Signed in again: the request ended every session, the one that made it
+        // included, and since #587 that ends its access token too. Signing in is
+        // allowed during the grace period precisely so that a change of mind is
+        // possible.
         ResponseEntity<String> cancelled = rest.exchange(
                 "/v1/me/deletion",
                 HttpMethod.DELETE,
-                new HttpEntity<>(request(account.accessToken(), null)),
+                new HttpEntity<>(request(signIn(account.email()).accessToken(), null)),
                 String.class);
         assertThat(cancelled.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 

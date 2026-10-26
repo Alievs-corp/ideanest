@@ -206,6 +206,45 @@ class TokenApiTests extends AbstractIntegrationTest {
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    @Test
+    @DisplayName("the refusal after five failures is a thirty-second back-off, not a fifteen-minute lockout")
+    void signInBacksOffRatherThanLockingOut() {
+        EmailAddress email = registeredUser();
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            signIn(email, "wrong-password", true);
+        }
+        ResponseEntity<Map<String, Object>> refused = signIn(email, PASSWORD, true);
+
+        // #587. Somebody who knows an address could previously keep its owner out
+        // for a quarter of an hour at a time with five wrong guesses.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(refused.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("30");
+    }
+
+    @Test
+    @DisplayName("successful sign-ins do not count against the account's budget")
+    void successfulSignInsAreNotCounted() {
+        EmailAddress email = registeredUser();
+
+        // #587: the counter used to be spent before the password was checked, so a
+        // person signing in on a sixth device inside fifteen minutes was refused.
+        for (int signIn = 0; signIn < 8; signIn++) {
+            assertThat(signIn(email, PASSWORD, true).getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        // And a correct password clears the failures before it: four wrong, one
+        // right, four wrong again is never refused.
+        for (int attempt = 0; attempt < 4; attempt++) {
+            signIn(email, "wrong-password", true);
+        }
+        assertThat(signIn(email, PASSWORD, true).getStatusCode()).isEqualTo(HttpStatus.OK);
+        for (int attempt = 0; attempt < 4; attempt++) {
+            assertThat(signIn(email, "wrong-password", true).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+        assertThat(signIn(email, PASSWORD, true).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
     // ------------------------------------------------------------------
     // Using the access token
     // ------------------------------------------------------------------
@@ -366,8 +405,8 @@ class TokenApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("an access token issued before a sign-out keeps working until it expires")
-    void accessTokensOutliveTheirSession() {
+    @DisplayName("an access token stops working when its session is signed out")
+    void accessTokensDieWithTheirSession() {
         EmailAddress email = registeredUser();
         ResponseEntity<Map<String, Object>> signIn = signIn(email, PASSWORD, true);
         String accessToken = accessTokenOf(signIn);
@@ -381,10 +420,30 @@ class TokenApiTests extends AbstractIntegrationTest {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
-        // Asserting a limitation on purpose. A stateless token cannot be
-        // recalled, so revocation takes effect when it expires — at most
-        // fifteen minutes. Anyone who assumes sign-out is instantaneous should
-        // find this test rather than an incident.
+        // #587. This test used to assert the opposite, on purpose: the token was
+        // believed until it expired, so a sign-out took up to fifteen minutes to
+        // mean anything. The token's sid is now checked against the session.
+        ResponseEntity<String> afterSignOut =
+                rest.exchange("/v1/me", HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        assertThat(afterSignOut.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(afterSignOut.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE)).contains("invalid_token");
+    }
+
+    @Test
+    @DisplayName("signing out one session leaves the account's other sessions working")
+    void signingOutOneSessionLeavesTheOthers() {
+        EmailAddress email = registeredUser();
+        ResponseEntity<Map<String, Object>> phone = signIn(email, PASSWORD, true);
+        ResponseEntity<Map<String, Object>> laptop = signIn(email, PASSWORD, true);
+
+        rest.exchange(
+                "/v1/auth/logout",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("refreshToken", refreshTokenOf(phone)), jsonHeaders()),
+                String.class);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessTokenOf(laptop));
         assertThat(rest.exchange("/v1/me", HttpMethod.GET, new HttpEntity<>(headers), String.class)
                         .getStatusCode())
                 .isEqualTo(HttpStatus.OK);
