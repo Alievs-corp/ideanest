@@ -145,6 +145,13 @@ describe('plain HTTP to a local machine', () => {
   });
 });
 
+describe('device backups', () => {
+  // #587: Auto Backup would copy the MMKV cache to the owner's cloud and onto another phone.
+  it('are off on Android, so nothing the app keeps leaves the phone that way', () => {
+    expect(loadConfig({}).default.android?.allowBackup).toBe(false);
+  });
+});
+
 describe('over-the-air updates', () => {
   const PROJECT = '0f3c1a52-6d2e-4b7a-9c1d-2e8f4a6b7c90';
 

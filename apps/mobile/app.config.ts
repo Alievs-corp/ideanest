@@ -566,6 +566,14 @@ const config: ExpoConfig = {
 
   android: {
     package: BUNDLE_ID,
+    /**
+     * No Android backup (#587). Left at the default, Auto Backup copies the app's files —
+     * MMKV's offline cache among them — to the owner's Google Drive and restores them onto
+     * another phone, outside every control this app has over who reads them. The session and
+     * the PIN are in the keystore and never travelled; now the cache does not either. A
+     * restored install starts signed out with an empty cache, as it already started signed out.
+     */
+    allowBackup: false,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       monochromeImage: './assets/adaptive-icon-monochrome.png',
