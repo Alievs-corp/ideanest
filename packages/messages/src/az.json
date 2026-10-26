@@ -7577,7 +7577,16 @@
         "removeOnApprovalBody": "{title} moderator dəyişikliklərinizi təsdiq edənə qədər açıq qalır, sonra silinir. O vaxta qədər bunu geri qaytara bilərsiniz.",
         "removeOnApprovalConfirm": "Təsdiqlə sil",
         "newTiersHidden": "Yeni səviyyələr moderator təsdiq edənə qədər dəstəkçilərdən gizli qalır.",
-        "revisionField": "Mükafatlar"
+        "revisionField": "Mükafatlar",
+        "heldItem": {
+          "note": "Bu əşyadakı dəyişikliklər hələ açıq deyil. Dəstəkçilər təsdiqlənmiş versiyanı görür.",
+          "fields": "Yoxlama gözlənilir: {fields}",
+          "editorTitle": "Bəzi dəyişikliklər yoxlama gözləyir",
+          "editorBody": "Bu əşya dəstəkçilərin gördüyü mükafatdadır, ona görə «Yoxlama gözlənilir» ilə işarələnmiş sahələr yeni dəyərlərinizi göstərir. Moderator dəyişikliklərinizi təsdiq edənə qədər dəstəkçilər təsdiqlənmiş dəyərləri görür.",
+          "savedAnnouncement": "{name} yadda saxlanıldı. Moderator təsdiq edəndən sonra dəstəkçilər dəyişiklikləri görəcək.",
+          "revisionItemsField": "Əşyalar",
+          "revisionShippingZonesField": "Göndəriş zonaları"
+        }
       },
       "faq": {
         "nothingCached": "Oflaynsınız, suallar isə bu telefonda hələ yüklənməyib."

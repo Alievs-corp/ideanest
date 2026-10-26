@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -138,5 +138,39 @@ describe('ItemEditor', () => {
     await fireEvent.changeText(screen.getByTestId('item-sku'), 'MUG-02');
     await save();
     expect(mockSend.mock.calls).toEqual([['PATCH', '/v1/items/i-mug', { sku: 'MUG-02' }]]);
+  });
+});
+
+describe('ItemEditor on a launched campaign (#587)', () => {
+  const words = en.mobile.editor.rewards;
+  const HELD = { ...MUG, name: 'Enamel mug, blue', weightGrams: 340, revisionChangedFields: ['name', 'weightGrams'] } as Item;
+
+  it('says the marked fields wait for review, and shows the proposed values in them', async () => {
+    await show(HELD);
+    const alert = screen.getByTestId('item-editor-held');
+    expect(within(alert).getByText(words.heldItem.editorTitle)).toBeTruthy();
+    expect(within(alert).getByText(words.heldItem.editorBody)).toBeTruthy();
+    expect(screen.getByTestId('item-name').props.value).toBe('Enamel mug, blue');
+    expect(screen.getByTestId('item-weight').props.value).toBe('340');
+  });
+
+  it('marks each held field in words, and only the held ones', async () => {
+    await show(HELD);
+    expect(within(screen.getByTestId('item-name-held')).getByText(words.waitingForReview)).toBeTruthy();
+    expect(within(screen.getByTestId('item-weightGrams-held')).getByText(words.waitingForReview)).toBeTruthy();
+    for (const field of ['description', 'imageUrl', 'isDigital']) {
+      expect(screen.queryByTestId(`item-${field}-held`)).toBeNull();
+    }
+  });
+
+  it('says nothing of review for an item nothing is held for, nor for a new one', async () => {
+    await show({ ...MUG, revisionChangedFields: [] } as Item);
+    expect(screen.queryByTestId('item-editor-held')).toBeNull();
+    expect(screen.queryByText(words.waitingForReview)).toBeNull();
+  });
+
+  it('ignores a held field it has no control for, rather than naming a raw key', async () => {
+    await show({ ...MUG, revisionChangedFields: ['sku', 'colour'] } as Item);
+    expect(screen.queryByTestId('item-editor-held')).toBeNull();
   });
 });

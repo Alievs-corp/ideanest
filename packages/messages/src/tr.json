@@ -7577,7 +7577,16 @@
         "removeOnApprovalBody": "{title}, bir moderatör değişikliklerinizi onaylayana kadar herkese açık kalır, sonra kaldırılır. O zamana kadar bunu geri alabilirsiniz.",
         "removeOnApprovalConfirm": "Onayla kaldır",
         "newTiersHidden": "Yeni kademeler, bir moderatör onaylayana kadar destekçilerden gizli kalır.",
-        "revisionField": "Ödüller"
+        "revisionField": "Ödüller",
+        "heldItem": {
+          "note": "Bu üründeki değişiklikleriniz henüz herkese açık değil. Destekçiler onaylı sürümü görmeye devam eder.",
+          "fields": "İnceleme bekleniyor: {fields}",
+          "editorTitle": "Bazı değişiklikler inceleme bekliyor",
+          "editorBody": "Bu ürün destekçilerin gördüğü bir ödülde yer alıyor, bu yüzden «İnceleme bekleniyor» işaretli alanlar yeni değerlerinizi gösterir. Bir moderatör değişikliklerinizi onaylayana kadar destekçiler onaylı değerleri görür.",
+          "savedAnnouncement": "{name} kaydedildi. Destekçiler değişiklikleri bir moderatör onayladığında görecek.",
+          "revisionItemsField": "Ürünler",
+          "revisionShippingZonesField": "Gönderim bölgeleri"
+        }
       },
       "faq": {
         "nothingCached": "Çevrimdışısınız ve sorular bu telefonda henüz yüklenmedi."

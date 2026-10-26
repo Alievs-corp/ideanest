@@ -30,6 +30,23 @@ export async function listItems(projectId: string, signal?: AbortSignal): Promis
   return body as unknown as readonly Item[];
 }
 
+/** The fields of an item a launched campaign's open edit can hold for a moderator (#587); `sku` is written at once. */
+export const ITEM_HELD_FIELDS = ['name', 'description', 'imageUrl', 'weightGrams', 'isDigital'] as const;
+
+export type ItemHeldField = (typeof ITEM_HELD_FIELDS)[number];
+
+/**
+ * An item as the creator's list and a `PATCH` return it: the shared `Item` plus the fields whose
+ * values (already the proposed ones) wait for a moderator. Empty when nothing waits.
+ */
+export type EditorItem = Item & { readonly revisionChangedFields?: readonly string[] | null };
+
+/** The held fields the editor knows how to name, in the service's order. Anything else is ignored. */
+export function heldFieldsOf(item: Item): readonly ItemHeldField[] {
+  const named = (item as EditorItem).revisionChangedFields ?? [];
+  return named.filter((field): field is ItemHeldField => (ITEM_HELD_FIELDS as readonly string[]).includes(field));
+}
+
 /** Where a tier stands against the moderator: new, edited, or removed on approval (#569). */
 export type RewardPending = 'created' | 'changed' | 'deleted';
 
@@ -57,7 +74,10 @@ export async function createItem(projectId: string, input: NewItem): Promise<Ite
   return (await sendJson('POST', `/v1/projects/${id(projectId)}/items`, input)) as Item;
 }
 
-/** Merge-patch semantics: only the keys present are written. Never called with an empty patch. */
+/**
+ * Merge-patch semantics: only the keys present are written. Never called with an empty patch. On a
+ * launched campaign the answer carries the proposed values and names the held ones (`heldFieldsOf`).
+ */
 export async function patchItem(itemId: string, patch: ItemPatch): Promise<Item> {
   return (await sendJson('PATCH', `/v1/items/${id(itemId)}`, patch)) as Item;
 }
