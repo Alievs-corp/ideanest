@@ -2,6 +2,8 @@ package az.ideanest.project.domain;
 
 import az.ideanest.shared.Slugs;
 import tools.jackson.databind.JsonNode;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,6 +63,27 @@ public final class StoryDocuments {
      * pasting a link.
      */
     public static final Set<String> EMBED_PROVIDERS = Set.of("youtube", "vimeo");
+
+    /**
+     * Where each provider's videos are, by exact host (#587).
+     *
+     * <p>The provider was checked against the allow-list and the address only for its scheme,
+     * so an embed could say {@code youtube} and point anywhere — and the page renders it as a
+     * link labelled "Watch on YouTube", which is a phishing link with the platform's
+     * endorsement on it. Exact hosts rather than a suffix match, so that
+     * {@code youtube.com.example.net} is not YouTube.
+     */
+    private static final Map<String, Set<String>> EMBED_HOSTS = Map.of(
+            "youtube",
+            Set.of(
+                    "youtube.com",
+                    "www.youtube.com",
+                    "m.youtube.com",
+                    "youtu.be",
+                    "youtube-nocookie.com",
+                    "www.youtube-nocookie.com"),
+            "vimeo",
+            Set.of("vimeo.com", "www.vimeo.com", "player.vimeo.com"));
 
     /** {@code strong} and {@code em}. Contract §5; §4.6 calls it "emphasis". */
     private static final Set<String> MARKS = Set.of("strong", "em");
@@ -467,6 +490,7 @@ public final class StoryDocuments {
         }
 
         requireWebUrl(block.get("url"), path + ".url");
+        requireProviderHost(provider.stringValue(), block.get("url").stringValue(), path + ".url");
         // The iframe's accessible name. Without it a screen reader announces
         // "frame" and the reader has to enter it to discover what it is.
         requireNonBlankText(block.get("title"), path + ".title", "An embed needs a title saying what it is.");
@@ -583,6 +607,35 @@ public final class StoryDocuments {
             // inlined data payload wearing a URL's clothes.
             throw invalid(path, "That address is too long to be a link.");
         }
+    }
+
+    /**
+     * An https address on one of the provider's own hosts — see {@link #EMBED_HOSTS}.
+     *
+     * <p>Parsed with {@link URI} so that the host is the host a browser would go to: in
+     * {@code https://youtube.com@example.net/} that is {@code example.net}, and an address
+     * that does not parse, carries a port, or names no host is refused with the same sentence.
+     */
+    private static void requireProviderHost(String provider, String url, String path) {
+        URI address;
+        try {
+            address = new URI(url.strip());
+        } catch (URISyntaxException e) {
+            throw invalid(path, "That is not an address " + named(provider) + " plays from.");
+        }
+        String host = address.getHost() == null ? null : address.getHost().toLowerCase(Locale.ROOT);
+        if (!"https".equalsIgnoreCase(address.getScheme())
+                || host == null
+                || address.getRawUserInfo() != null
+                || address.getPort() != -1
+                || !EMBED_HOSTS.getOrDefault(provider, Set.of()).contains(host)) {
+            throw invalid(path, "That is not an address " + named(provider) + " plays from.");
+        }
+    }
+
+    /** The provider's own name, which is a brand and is not translated. */
+    private static String named(String provider) {
+        return "youtube".equals(provider) ? "YouTube" : "Vimeo";
     }
 
     /**
