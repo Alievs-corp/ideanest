@@ -7,6 +7,7 @@ import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentProvider;
+import az.ideanest.payment.domain.PaymentUndecidedException;
 import az.ideanest.payment.domain.PayoutCardRequest;
 import az.ideanest.payment.domain.PayoutCardSession;
 import az.ideanest.payment.domain.PayoutRequest;
@@ -29,6 +30,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,10 +78,12 @@ import tools.jackson.databind.node.ObjectNode;
  * the order id from it and asks {@code GET /orders/{orderId}} with the secret key: the event is built
  * from Payriff's own answer, and an order Payriff does not find is refused as unverifiable. A forged
  * callback can therefore cause one lookup and nothing else, and {@code ProviderWebhooks} makes it
- * before opening a transaction, so the lookup holds no database connection.
+ * before opening a transaction, so the lookup holds no database connection. Since #587 not even that:
+ * {@link #unsignedCallbackReference} names the order first, and {@code ProviderWebhooks} asks Payriff
+ * only about an order a page of ours is waiting on, through the circuit breaker.
  *
- * <p>A callback whose order is not yet decided, or a lookup Payriff could not answer, is a provider
- * unavailable rather than a delivery to record: the response is a 500 and Payriff sends it again.
+ * <p>A callback whose order is not yet decided ({@link PaymentUndecidedException}), or a lookup Payriff
+ * could not answer, is not a delivery to record: the response is a 500 and Payriff sends it again.
  * Recording it would answer 200 to the only news of a payment that nothing else goes looking for.
  *
  * <h2>Not here</h2>
@@ -204,7 +208,8 @@ public class PayriffPaymentProvider implements PaymentProvider {
                 isBlank(orderId) ? providerTransactionId : orderId,
                 text(answer, "code"),
                 lastResponseDescription(payload),
-                redacted(answer));
+                redacted(answer),
+                amountOf(payload));
     }
 
     @Override
@@ -239,20 +244,7 @@ public class PayriffPaymentProvider implements PaymentProvider {
 
     @Override
     public PaymentEvent parseWebhook(byte[] rawBody, Map<String, String> headers) {
-        JsonNode delivered;
-        try {
-            delivered = rawBody == null || rawBody.length == 0 ? null : json.readTree(rawBody);
-        } catch (JacksonException e) {
-            throw new WebhookVerificationException(NAME, "A Payriff callback is not JSON.", e);
-        }
-        if (delivered == null || !delivered.isObject()) {
-            throw new WebhookVerificationException(NAME, "A Payriff callback is not a JSON object.");
-        }
-        JsonNode payload = delivered.get("payload");
-        String orderId = firstPresent(text(payload, "orderId"), text(delivered, "orderId"));
-        if (isBlank(orderId)) {
-            throw new WebhookVerificationException(NAME, "A Payriff callback names no order.");
-        }
+        String orderId = orderNamedBy(rawBody);
 
         // The callback is unsigned: what Payriff answers about the order is the event, not the body.
         Answer answer = send(http.get().uri("/orders/{orderId}", orderId), "confirm a callback");
@@ -272,9 +264,11 @@ public class PayriffPaymentProvider implements PaymentProvider {
             case "APPROVED", "PAID" -> PaymentEventType.CHARGE_SUCCEEDED;
             case "DECLINED", "CANCELED", "EXPIRED", "FAILED" -> PaymentEventType.CHARGE_FAILED;
             case "REFUNDED", "REVERSE", "PARTIAL_REFUND" -> PaymentEventType.REFUND_SUCCEEDED;
-            // Not decided yet: recorded, this delivery would be answered 200 and never sent again.
+            // Not decided yet: recorded, this delivery would be answered 200 and never sent again. Not an
+            // outage either (#587): Payriff answered, and counting it would let anybody holding an open
+            // page's order open the circuit breaker by posting its callback.
             case "CREATED", "PENDING", "ACCEPTED", "IN_REVIEW", "REFUND_IN_PROGRESS" ->
-                throw unavailable("Payriff's callback for order %s arrived while it is still %s."
+                throw new PaymentUndecidedException(NAME, "Payriff's callback for order %s arrived while it is still %s."
                         .formatted(orderId, status));
             default -> PaymentEventType.UNRECOGNISED;
         };
@@ -282,6 +276,31 @@ public class PayriffPaymentProvider implements PaymentProvider {
         // so a redelivery of the same news is a duplicate and the order's later refund is not.
         String eventId = orderId + ":" + (status.isEmpty() ? "UNKNOWN" : status);
         return new PaymentEvent(NAME, eventId, type, orderId, amountOf(confirmed), null, redacted(answer.body()));
+    }
+
+    /** #587: the order a callback names, so {@code ProviderWebhooks} asks only about one it is waiting on. */
+    @Override
+    public Optional<String> unsignedCallbackReference(byte[] rawBody) {
+        return Optional.of(orderNamedBy(rawBody));
+    }
+
+    /** The order id a callback carries, at the top level or in its {@code payload}. */
+    private String orderNamedBy(byte[] rawBody) {
+        JsonNode delivered;
+        try {
+            delivered = rawBody == null || rawBody.length == 0 ? null : json.readTree(rawBody);
+        } catch (JacksonException e) {
+            throw new WebhookVerificationException(NAME, "A Payriff callback is not JSON.", e);
+        }
+        if (delivered == null || !delivered.isObject()) {
+            throw new WebhookVerificationException(NAME, "A Payriff callback is not a JSON object.");
+        }
+        JsonNode payload = delivered.get("payload");
+        String orderId = firstPresent(text(payload, "orderId"), text(delivered, "orderId"));
+        if (isBlank(orderId)) {
+            throw new WebhookVerificationException(NAME, "A Payriff callback names no order.");
+        }
+        return orderId;
     }
 
     @Override

@@ -24,6 +24,10 @@ public interface SubscriptionChargeRepository extends JpaRepository<Subscription
     Optional<SubscriptionCharge> lockByOrder(
             @Param("provider") ProviderName provider, @Param("reference") String reference);
 
+    /** #587: whether a plan's page under this order is in this state — for the webhook's gate, PENDING. */
+    boolean existsByProviderAndProviderTransactionIdAndStatus(
+            ProviderName provider, String providerTransactionId, SubscriptionCharge.Status status);
+
     /** The newest page still waiting for this subscription, which a second click returns to. */
     Optional<SubscriptionCharge> findFirstBySubscriptionIdAndStatusOrderByOpenedAtDesc(
             UUID subscriptionId, SubscriptionCharge.Status status);

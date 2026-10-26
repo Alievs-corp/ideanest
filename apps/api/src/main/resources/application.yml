@@ -892,6 +892,12 @@ ideanest:
       # queueing, short enough that a captured request is not a usable instruction
       # an hour later.
       tolerance: PT5M
+      # #587: POST /v1/webhooks/psp/{provider} is public, and an unsigned callback (Payriff's) costs a
+      # call to the provider. Per source address and for the endpoint as a whole, both far above what
+      # a provider sends through a backlog; a refused delivery is a 429 the provider retries.
+      per-address: ${WEBHOOK_LIMIT_PER_ADDRESS:120}
+      overall: ${WEBHOOK_LIMIT_OVERALL:600}
+      window: PT1M
 
   # SIMA Imza, and the two things that keep it switched off -- issue #428.
   #

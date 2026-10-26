@@ -14,6 +14,7 @@ import az.ideanest.payment.domain.HostedPaymentSession;
 import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentLookup;
+import az.ideanest.payment.domain.PaymentUndecidedException;
 import az.ideanest.payment.domain.PayoutCardRequest;
 import az.ideanest.payment.domain.PayoutRequest;
 import az.ideanest.payment.domain.ProviderName;
@@ -381,15 +382,38 @@ class PayriffPaymentProviderTests {
     }
 
     @Test
-    @DisplayName("a callback for an order not yet decided is unavailable, so Payriff sends it again")
+    @DisplayName("a callback for an order not yet decided is retried, and is not counted as Payriff being down")
     void anUndecidedCallbackIsRetried() {
         Wire wire = new Wire();
         wire.expect(HttpMethod.GET, "/orders/ord-1")
                 .andRespond(withSuccess(APPROVED_ORDER.replace("\"paymentStatus\":\"APPROVED\"", "\"paymentStatus\":\"PENDING\""),
                         MediaType.APPLICATION_JSON));
 
+        // #587: not ProviderUnavailableException, which the circuit breaker counts. Payriff answered.
         assertThatThrownBy(() -> wire.adapter().parseWebhook(bytes("{\"payload\":{\"orderId\":\"ord-1\"}}"), Map.of()))
-                .isInstanceOf(ProviderUnavailableException.class);
+                .isInstanceOf(PaymentUndecidedException.class)
+                .isNotInstanceOf(ProviderUnavailableException.class);
+    }
+
+    @Test
+    @DisplayName("#587: a callback names its order from the body alone, without asking Payriff anything")
+    void aCallbackNamesItsOrderWithoutAsking() {
+        Wire wire = new Wire();
+        PayriffPaymentProvider payriff = wire.adapter();
+
+        assertThat(payriff.unsignedCallbackReference(bytes("{\"payload\":{\"orderId\":\"ord-1\"}}"))).contains("ord-1");
+        assertThat(payriff.unsignedCallbackReference(bytes("{\"orderId\":\"ord-2\"}"))).contains("ord-2");
+        assertThatThrownBy(() -> payriff.unsignedCallbackReference(bytes("{\"payload\":{}}")))
+                .isInstanceOf(WebhookVerificationException.class);
+        assertThatThrownBy(() -> payriff.unsignedCallbackReference(bytes("not json")))
+                .isInstanceOf(WebhookVerificationException.class);
+        wire.verify();
+    }
+
+    @Test
+    @DisplayName("#587: a lookup says how much the order is for, so the sweep can check it")
+    void aLookupCarriesTheAmount() {
+        assertThat(lookUp("APPROVED").amount()).isEqualTo(Money.of(new BigDecimal("20.50"), "AZN"));
     }
 
     @Test

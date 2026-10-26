@@ -128,6 +128,29 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
         assertThat(paidEvents(creator)).isEqualTo(1);
     }
 
+    /**
+     * #587: an unsigned callback is confirmed with the provider only when a page waits on its order, and a
+     * plan's page is such a page as much as a pledge's is.
+     */
+    @Test
+    @DisplayName("#587: a callback for a plan's open page is confirmed with an unsigned provider and activates the plan")
+    void aPlanPageIsAwaitedByAnUnsignedProvider() {
+        Account creator = subscribed();
+        String order = order(pay(creator, UUID.randomUUID().toString()));
+        provider.confirmCallbacksByAsking();
+        try {
+            int asked = provider.callbackConfirmations();
+
+            assertThat(deliver(order, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            assertThat(provider.callbackConfirmations()).isEqualTo(asked + 1);
+            assertThat(chargeStates(creator)).containsExactly("PAID");
+            assertThat(mine(creator).get("state")).isEqualTo("ACTIVE");
+        } finally {
+            provider.verifyCallbacksBySignature();
+        }
+    }
+
     @Test
     @DisplayName("a payment reported twice, or by the callback and the sweep, is counted once")
     void aPaymentIsCountedOnce() {

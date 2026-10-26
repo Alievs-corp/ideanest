@@ -6,6 +6,7 @@ import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentProvider;
+import az.ideanest.payment.domain.PaymentUndecidedException;
 import az.ideanest.payment.domain.PayoutCardRequest;
 import az.ideanest.payment.domain.PayoutCardSession;
 import az.ideanest.payment.domain.PayoutRequest;
@@ -151,6 +152,9 @@ public class ScriptedPaymentProvider implements PaymentProvider {
     /** What {@link #lookUpPayment} answers, by provider transaction; {@code SUCCEEDED} when unscripted. */
     private final Map<String, PaymentLookup.State> lookups = new java.util.concurrent.ConcurrentHashMap<>();
 
+    /** #587: the amount {@link #lookUpPayment} reports, by provider transaction; none when unscripted. */
+    private final Map<String, Money> lookedUpAmounts = new java.util.concurrent.ConcurrentHashMap<>();
+
     public List<RefundRequest> refunds() {
         synchronized (refunds) {
             return List.copyOf(refunds);
@@ -208,6 +212,12 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         lookups.put(providerTransactionId, state);
     }
 
+    /** #587: a lookup that also says how much was paid. */
+    public void willLookUp(String providerTransactionId, PaymentLookup.State state, Money amount) {
+        lookups.put(providerTransactionId, state);
+        lookedUpAmounts.put(providerTransactionId, amount);
+    }
+
     /** What the next refunds do before their answer is lost as unreachable (#176), one per refund. */
     private final Deque<Boolean> unreachableRefunds = new ConcurrentLinkedDeque<>();
 
@@ -260,7 +270,8 @@ public class ScriptedPaymentProvider implements PaymentProvider {
                 providerTransactionId,
                 null,
                 null,
-                "{\"scripted\":true}");
+                "{\"scripted\":true}",
+                lookedUpAmounts.get(providerTransactionId));
     }
 
     /**
@@ -321,7 +332,63 @@ public class ScriptedPaymentProvider implements PaymentProvider {
      */
     @Override
     public PaymentEvent parseWebhook(byte[] rawBody, Map<String, String> headers) {
+        if (confirmsByAsking) {
+            callbackConfirmations.incrementAndGet();
+            String answer = confirmationAnswer;
+            if ("undecided".equals(answer)) {
+                throw new PaymentUndecidedException(NAME, "Scripted: the payment is still pending");
+            }
+            if ("unreachable".equals(answer)) {
+                throw new ProviderUnavailableException(NAME, "Scripted: the confirmation was not answered");
+            }
+        }
         return ScriptedWebhooks.parse(NAME, rawBody, headers);
+    }
+
+    // ------------------------------------------------------------------
+    // #587: an unsigned provider, which verifies a callback by asking
+    // ------------------------------------------------------------------
+
+    private volatile boolean confirmsByAsking;
+
+    private volatile String confirmationAnswer = "answered";
+
+    private final AtomicInteger callbackConfirmations = new AtomicInteger();
+
+    /**
+     * From now on this provider behaves as Payriff does: a callback names its transaction unsigned, and is
+     * verified by asking the provider — each ask counted in {@link #callbackConfirmations}. The signature is
+     * still checked as well, so a suite's ordinary deliveries are unaffected.
+     */
+    public void confirmCallbacksByAsking() {
+        confirmsByAsking = true;
+        confirmationAnswer = "answered";
+    }
+
+    /** The asks answer that the payment is still undecided. */
+    public void willAnswerConfirmationsUndecided() {
+        confirmationAnswer = "undecided";
+    }
+
+    /** The asks go unanswered: the provider cannot be reached. */
+    public void willLeaveConfirmationsUnanswered() {
+        confirmationAnswer = "unreachable";
+    }
+
+    /** Back to a signed provider: undoes {@link #confirmCallbacksByAsking}. */
+    public void verifyCallbacksBySignature() {
+        confirmsByAsking = false;
+        confirmationAnswer = "answered";
+    }
+
+    /** How many times a callback was confirmed by asking. */
+    public int callbackConfirmations() {
+        return callbackConfirmations.get();
+    }
+
+    @Override
+    public java.util.Optional<String> unsignedCallbackReference(byte[] rawBody) {
+        return confirmsByAsking ? java.util.Optional.of(ScriptedWebhooks.transactionNamedBy(rawBody)) : java.util.Optional.empty();
     }
 
     /** Convenience for a test that wants to assert on an amount without rebuilding one. */
