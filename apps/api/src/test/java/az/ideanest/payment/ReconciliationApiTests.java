@@ -6,6 +6,7 @@ import az.ideanest.audit.AuditAction;
 import az.ideanest.audit.AuditEntry;
 import az.ideanest.audit.AuditEntryRepository;
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.payment.domain.TransactionType;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
@@ -152,6 +153,30 @@ class ReconciliationApiTests extends AbstractIntegrationTest {
                 });
     }
 
+    /**
+     * #587, end to end: one campaign took 100.00 and another returned 25.00 it never took. The platform's
+     * escrow is 75.00, every sign is right and the transactions agree with the books — only the check per
+     * campaign sees the second one.
+     */
+    @Test
+    @DisplayName("#587: a campaign that returned more than it took is reported, though the platform's pool balances")
+    void aCampaignBelowZeroIsReported() {
+        UUID funded = postedCampaign(TransactionType.CHARGE, "100.00");
+        UUID shortOne = postedCampaign(TransactionType.REFUND, "25.00");
+
+        Map<String, Object> report = run();
+
+        assertThat(report.get("balanced")).isEqualTo(false);
+        assertThat(findings(report))
+                .singleElement()
+                .satisfies(finding -> {
+                    assertThat(finding.get("code")).isEqualTo("PLATFORM_ACCOUNT_NEGATIVE");
+                    assertThat(finding.get("account")).isEqualTo("escrow:" + shortOne);
+                    assertThat(new java.math.BigDecimal(String.valueOf(finding.get("amount")))).isEqualByComparingTo("-25.00");
+                });
+        assertThat(String.valueOf(findings(report))).doesNotContain(funded.toString());
+    }
+
     @Test
     @DisplayName("the read reports what the last run found, rather than running one of its own")
     void theReadReportsTheLastRun() {
@@ -230,6 +255,51 @@ class ReconciliationApiTests extends AbstractIntegrationTest {
                         amount,
                         "recon-" + id,
                         "recon-test-" + id);
+    }
+
+    /**
+     * A campaign with one settled transaction of this kind and its posting: a charge into escrow from the
+     * creator's claim, or a refund out of escrow to {@code refunds}.
+     */
+    private UUID postedCampaign(TransactionType type, String amount) {
+        String handle = "recon-" + SEQUENCE.incrementAndGet();
+        UUID creatorId = Campaigns.creator(dataSource, handle);
+        UUID projectId = Campaigns.seed(dataSource, creatorId, handle + "-campaign")
+                .state("FULFILLING")
+                .goal("100.00")
+                .insert();
+        UUID pledgeId = Pledges.confirmed(dataSource, projectId, handle + "-backer", amount);
+        UUID id = UUID.randomUUID();
+        jdbc().update(
+                """
+                INSERT INTO transactions (id, pledge_id, project_id, type, status, amount, currency,
+                                          provider, provider_transaction_id, attempt_number, idempotency_key)
+                VALUES (?, ?, ?, ?, 'SUCCEEDED', CAST(? AS numeric), 'AZN', 'AZERICARD', ?, 1, ?)
+                """,
+                id,
+                pledgeId,
+                projectId,
+                type.name(),
+                amount,
+                "recon-" + id,
+                "recon-test-" + id);
+        boolean charge = type == TransactionType.CHARGE;
+        jdbc().update(
+                """
+                INSERT INTO ledger_entries (transaction_id, account, direction, amount, currency, project_id)
+                VALUES (?, 'escrow', ?, CAST(? AS numeric), 'AZN', ?),
+                       (?, ?, ?, CAST(? AS numeric), 'AZN', ?)
+                """,
+                id,
+                charge ? "DEBIT" : "CREDIT",
+                amount,
+                projectId,
+                id,
+                charge ? "creator:" + creatorId : "refunds",
+                charge ? "CREDIT" : "DEBIT",
+                amount,
+                projectId);
+        return projectId;
     }
 
     /** Runs a pass and returns the report, failing loudly if the call was refused. */

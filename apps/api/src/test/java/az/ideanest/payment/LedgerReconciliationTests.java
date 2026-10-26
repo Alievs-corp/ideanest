@@ -2,16 +2,19 @@ package az.ideanest.payment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
 
 import az.ideanest.ledger.application.LedgerBalance;
 import az.ideanest.ledger.application.LedgerReader;
+import az.ideanest.ledger.application.ProjectTotal;
 import az.ideanest.payment.application.LedgerReconciliation;
 import az.ideanest.payment.application.LedgerReconciliationJob;
 import az.ideanest.payment.application.ReconciliationFinding;
 import az.ideanest.payment.application.ReconciliationReport;
 import az.ideanest.payment.application.SettledTotal;
 import az.ideanest.payment.domain.TransactionType;
+import az.ideanest.payment.infrastructure.CreatorDebtRepository;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
@@ -58,13 +61,15 @@ class LedgerReconciliationTests {
 
     private LedgerReader ledger;
     private PaymentTransactionRepository transactions;
+    private CreatorDebtRepository debts;
     private LedgerReconciliation reconciliation;
 
     @BeforeEach
     void setUp() {
         ledger = mock(LedgerReader.class);
         transactions = mock(PaymentTransactionRepository.class);
-        reconciliation = new LedgerReconciliation(ledger, transactions, Clock.fixed(NOW, ZoneOffset.UTC));
+        debts = mock(CreatorDebtRepository.class);
+        reconciliation = new LedgerReconciliation(ledger, transactions, debts, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test
@@ -154,6 +159,48 @@ class LedgerReconciliationTests {
                     assertThat(finding.otherAmount()).isNull();
                     assertThat(finding.kind()).isEqualTo(ReconciliationFinding.Kind.IMPOSSIBLE_SIGN);
                 });
+    }
+
+    /**
+     * #587: a refund on a campaign already paid out drove that campaign's escrow below zero, and the
+     * pool hid it — every other campaign's money kept the platform-wide escrow positive, so neither
+     * check two nor check three saw anything.
+     */
+    @Test
+    @DisplayName("#587: finds one campaign holding less than nothing, which the platform-wide pool hides")
+    void aCampaignBelowZeroIsFound() {
+        UUID project = UUID.fromString("0193f2a1-0000-7000-8000-000000000009");
+        booksOf(balance("escrow", "975.00"), balance("refunds", "25.00"), balance(CREATOR, "-1000.00"));
+        settled(total(TransactionType.CHARGE, "1000.00"), total(TransactionType.REFUND, "25.00"));
+        heldBelowZero(new ProjectTotal(project, AZN, new BigDecimal("-25.00")));
+
+        ReconciliationReport report = reconciliation.reconcile();
+
+        assertThat(report.findings())
+                .singleElement()
+                .satisfies(finding -> {
+                    assertThat(finding.code()).isEqualTo(ReconciliationFinding.Code.PLATFORM_ACCOUNT_NEGATIVE);
+                    assertThat(finding.account()).isEqualTo("escrow:" + project);
+                    assertThat(finding.amount()).isEqualByComparingTo("-25.00");
+                    assertThat(finding.detail()).contains(project.toString()).contains("-25.00");
+                });
+    }
+
+    /**
+     * A chargeback lost after the payout takes the money out of the campaign's escrow too — and puts it
+     * on the creator (§9.8). That shortfall is explained, and a check that fired on it every night until
+     * the debt was recovered on another campaign would be a check people learn to ignore.
+     */
+    @Test
+    @DisplayName("#587: a campaign below zero by no more than its creator owes for it is not a finding")
+    void aShortfallACreatorDebtCoversIsNotAFinding() {
+        UUID project = UUID.fromString("0193f2a1-0000-7000-8000-000000000010");
+        booksOf(balance("escrow", "975.00"), balance("refunds", "25.00"), balance(CREATOR, "-1000.00"));
+        settled(total(TransactionType.CHARGE, "1000.00"), total(TransactionType.REFUND, "25.00"));
+        heldBelowZero(new ProjectTotal(project, AZN, new BigDecimal("-25.00")));
+        when(debts.owedFor(project, AZN)).thenReturn(new BigDecimal("30.00"));
+
+        assertThat(reconciliation.reconcile().findings()).isEmpty();
     }
 
     @Test
@@ -295,6 +342,10 @@ class LedgerReconciliationTests {
 
     private void booksOf(LedgerBalance... balances) {
         when(ledger.balances()).thenReturn(List.of(balances));
+    }
+
+    private void heldBelowZero(ProjectTotal... totals) {
+        when(ledger.projectsBelowZero(anyCollection())).thenReturn(List.of(totals));
     }
 
     private void settled(SettledTotal... totals) {

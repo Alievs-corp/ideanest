@@ -1,5 +1,6 @@
 package az.ideanest.payment.domain;
 
+import az.ideanest.shared.money.Money;
 import java.util.Objects;
 
 /**
@@ -13,9 +14,11 @@ import java.util.Objects;
  * @param bankCode the bank's response code, or null
  * @param message the provider's message, or null
  * @param rawResponse the answer with the cardholder's name removed
+ * @param amount what the provider says the payment is for, or null when its answer does not say. Checked
+ *     against the page the platform opened, never credited (#587)
  */
 public record PaymentLookup(
-        State state, String providerTransactionId, String bankCode, String message, String rawResponse) {
+        State state, String providerTransactionId, String bankCode, String message, String rawResponse, Money amount) {
 
     public enum State {
         /** Registered with the provider, and not yet decided. */
@@ -33,5 +36,10 @@ public record PaymentLookup(
         if (providerTransactionId == null || providerTransactionId.isBlank()) {
             throw new IllegalArgumentException("A lookup is a lookup of a transaction");
         }
+    }
+
+    /** An answer that does not say how much. */
+    public PaymentLookup(State state, String providerTransactionId, String bankCode, String message, String rawResponse) {
+        this(state, providerTransactionId, bankCode, message, rawResponse, null);
     }
 }

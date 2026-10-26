@@ -208,9 +208,52 @@ class ChargebackRecoveryTests extends AbstractIntegrationTest {
         assertThat(transactions.hasPaidOut(second)).as("a chargeback lost now is the creator's debt").isTrue();
     }
 
+    /**
+     * #587: a staff refund after the payout came out of escrow other campaigns are owed, and nothing
+     * recovered it. §6.3 refunds nothing through the platform after payout; a chargeback the network forces
+     * is the creator's debt (above), and a refund the platform would choose is refused.
+     */
+    @Test
+    @DisplayName("#587: a refund on a campaign already paid out is refused and records nothing; a key used before replays")
+    void aRefundAfterThePayoutIsRefused() {
+        Funded funded = aFundedCampaign("refund-after-payout", "25.00");
+        Account admin = admin();
+        String before = UUID.randomUUID().toString();
+        ResponseEntity<Map<String, Object>> partial = refund(admin, before, funded.pledgeId(), "5.00");
+        assertThat(partial.getStatusCode()).isEqualTo(HttpStatus.OK);
+        paidOut(funded.projectId(), "16.25");
+
+        ResponseEntity<Map<String, Object>> refused = refund(admin, UUID.randomUUID().toString(), funded.pledgeId(), null);
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "REFUND_AFTER_PAYOUT");
+        assertThat(jdbc().queryForObject("SELECT count(*) FROM refunds WHERE pledge_id = ?", Long.class, funded.pledgeId()))
+                .as("only the refund made before the payout")
+                .isEqualTo(1L);
+        assertThat(jdbc().queryForObject("SELECT state FROM pledges WHERE id = ?", String.class, funded.pledgeId()))
+                .isEqualTo("COLLECTED");
+
+        // A retried request from before the payout still answers what it did, and sends nothing again.
+        ResponseEntity<Map<String, Object>> replayed = refund(admin, before, funded.pledgeId(), "5.00");
+        assertThat(replayed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(jdbc().queryForObject("SELECT count(*) FROM refunds WHERE pledge_id = ?", Long.class, funded.pledgeId()))
+                .isEqualTo(1L);
+    }
+
     // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
+
+    private ResponseEntity<Map<String, Object>> refund(Account admin, String key, UUID pledgeId, String amount) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("pledgeId", pledgeId.toString());
+        if (amount != null) {
+            body.put("amount", Map.of("amount", amount, "currency", "AZN"));
+        }
+        body.put("reason", "BACKER_REQUEST");
+        body.put("detail", "The backer asked for their money back.");
+        return post("/v1/admin/refunds", admin.accessToken(), key, body);
+    }
 
     private record Account(String accessToken, UUID id) {
     }

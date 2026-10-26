@@ -4,11 +4,16 @@ import az.ideanest.payment.PaymentProperties;
 import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentProvider;
+import az.ideanest.payment.domain.PaymentUndecidedException;
 import az.ideanest.payment.domain.ProviderName;
+import az.ideanest.payment.domain.ProviderUnavailableException;
+import az.ideanest.payment.domain.SubscriptionCharge;
 import az.ideanest.payment.domain.ProviderWebhookEvent;
 import az.ideanest.payment.domain.UnknownProviderException;
 import az.ideanest.payment.domain.WebhookVerificationException;
+import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.payment.infrastructure.ProviderWebhookEventRepository;
+import az.ideanest.payment.infrastructure.SubscriptionChargeRepository;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -63,6 +68,19 @@ import org.springframework.transaction.support.TransactionTemplate;
  * point the {@code exists} read answers it without doing anything. Catching it to
  * return a 200 would be answering for work another transaction has not finished.
  *
+ * <h2>An unsigned callback is asked about only if the platform is waiting on it (#587)</h2>
+ *
+ * <p>Payriff signs nothing, so its adapter verifies a callback by asking Payriff about the order it
+ * names — a call to another service for every body anybody posts. The adapter now names the order
+ * first ({@link PaymentProvider#unsignedCallbackReference}), from the body alone, and the provider is
+ * asked only when a payment page — a pledge's in {@code transactions} or a plan's in
+ * {@code subscription_charges} — is still waiting under that order. Anything else is
+ * {@link WebhookReceipt#UNEXPECTED}: nothing recorded, nobody asked, and the same 200 a delivery that
+ * was acted on gets, so the endpoint does not say which orders exist. The question the provider is
+ * asked goes through {@link ProviderCircuitBreaker}, like every other call to it: an open breaker
+ * answers 500 without asking, and the provider retries. An order that is still undecided is not counted
+ * against the breaker ({@link PaymentUndecidedException}).
+ *
  * <h2>What is deliberately not here</h2>
  *
  * <p>No handler ships. See {@link PaymentEventHandler} for why that is the finished
@@ -82,6 +100,9 @@ public class ProviderWebhooks {
     private final Duration tolerance;
     private final Clock clock;
     private final TransactionTemplate transaction;
+    private final PaymentTransactionRepository charges;
+    private final SubscriptionChargeRepository planCharges;
+    private final ProviderCircuitBreaker breaker;
 
     public ProviderWebhooks(
             PaymentProviders providers,
@@ -89,9 +110,15 @@ public class ProviderWebhooks {
             List<PaymentEventHandler> discovered,
             PaymentProperties properties,
             Clock clock,
-            PlatformTransactionManager transactions) {
+            PlatformTransactionManager transactions,
+            PaymentTransactionRepository charges,
+            SubscriptionChargeRepository planCharges,
+            ProviderCircuitBreaker breaker) {
         this.providers = providers;
         this.deliveries = deliveries;
+        this.charges = charges;
+        this.planCharges = planCharges;
+        this.breaker = breaker;
         this.tolerance = properties.webhooks().tolerance();
         this.clock = clock;
         this.transaction = new TransactionTemplate(transactions);
@@ -142,11 +169,42 @@ public class ProviderWebhooks {
         PaymentProvider provider =
                 providers.byName(name).orElseThrow(() -> new UnconfiguredProviderException(name));
 
-        PaymentEvent event = provider.parseWebhook(rawBody, headers);
+        Optional<String> named = provider.unsignedCallbackReference(rawBody);
+        if (named.isPresent() && !awaited(name, named.get())) {
+            // INFO, not WARN: Payriff also calls back about orders already settled -- a refund's news --
+            // and those are as unexpected here as a guess.
+            log.info("A callback to {} named {}, which no payment page is waiting on; nobody was asked.", name, named.get());
+            return WebhookReceipt.UNEXPECTED;
+        }
+        PaymentEvent event = named.isPresent() ? confirmed(name, provider, rawBody, headers) : provider.parseWebhook(rawBody, headers);
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         refuseReplay(event, now);
 
         return transaction.execute(status -> record(name, event, now));
+    }
+
+    /** Whether a pledge's page or a plan's page is waiting to be settled under this order. */
+    private boolean awaited(ProviderName name, String reference) {
+        return charges.awaitsSettlement(name.name(), reference)
+                || planCharges.existsByProviderAndProviderTransactionIdAndStatus(
+                        name, reference, SubscriptionCharge.Status.PENDING);
+    }
+
+    /**
+     * An unsigned callback verified by asking the provider, through the breaker. An undecided payment is an
+     * answer, and resets the breaker's count like one, before it is rethrown for the provider to retry.
+     */
+    private PaymentEvent confirmed(
+            ProviderName name, PaymentProvider provider, byte[] rawBody, Map<String, String> headers) {
+        if (!breaker.isAvailable(name)) {
+            throw new ProviderUnavailableException(name, "The circuit breaker for " + name + " is open; the callback is retried.");
+        }
+        try {
+            return breaker.call(name, () -> provider.parseWebhook(rawBody, headers));
+        } catch (PaymentUndecidedException undecided) {
+            breaker.recordAnswered(name);
+            throw undecided;
+        }
     }
 
     private WebhookReceipt record(ProviderName name, PaymentEvent event, Instant now) {

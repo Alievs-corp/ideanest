@@ -82,7 +82,7 @@ public interface PledgeRaiseRepository extends JpaRepository<PledgeRaise, UUID> 
      * was charged and what went back, and a raise landing between a refund being decided and being
      * settled would leave part of the pledge refunded and the rest standing at a total the backer no
      * longer paid. Refunds of a raise that was paid for and could not be applied are not the pledge's
-     * money and do not count.
+     * money and do not count, nor are the refunds of a second payment for the pledge (#587).
      *
      * <p>Native, because refunds and charges are the payment module's tables and this module may not
      * name their classes.
@@ -96,7 +96,9 @@ public interface PledgeRaiseRepository extends JpaRepository<PledgeRaise, UUID> 
                           LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
                          WHERE r.pledge_id = :pledgeId
                            AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable')
-                           AND rs.state IS DISTINCT FROM 'UNAPPLIED')
+                           AND rs.state IS DISTINCT FROM 'UNAPPLIED'
+                           AND NOT EXISTS (SELECT 1 FROM duplicate_charges dc
+                                            WHERE dc.charge_transaction_id = r.charge_transaction_id))
                     """,
             nativeQuery = true)
     boolean hasRefundOfPledgeMoney(@Param("pledgeId") UUID pledgeId);

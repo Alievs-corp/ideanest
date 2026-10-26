@@ -127,7 +127,8 @@ public class PledgePayments {
      * The provider says the pledge was paid for: {@code DRAFT → COLLECTED}, counted, announced.
      *
      * <p>Empty when the pledge cannot take the payment any more — already {@code COLLECTED}, which
-     * is a redelivery and nothing to do, or ended, which is a paid pledge with no places left and is
+     * the payment module has already told from a redelivery and is a second payment for one pledge
+     * that it records and refunds (#587), or ended, which is a paid pledge with no places left and is
      * logged for a refund (#40). In the caller's transaction, which is the one the charge is settled
      * and posted in.
      */
