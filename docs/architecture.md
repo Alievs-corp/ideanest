@@ -2979,7 +2979,14 @@ stateDiagram-v2
 > moderation decision the creator reads back; `audit_logs` records both
 > `project.approved` and `project.launched` under the moderator. The creator is told
 > once, by `PROJECT_APPROVED` from `project.approved` (which nothing produced before
-> #552), and never by the followers' launch notice.
+> #552), and never by the followers' launch notice. An approval that waits for its
+> launch time is `PROJECT_APPROVED_SCHEDULED` instead (#595): `project.approved`
+> carries `opensAt`, the copy says when the campaign opens rather than that it is
+> live, the email and push read it on Baku's clock, and the message opens the
+> editor's review tab like `SCHEDULED_LAUNCH_REFUSED`. The moderation queue's rows
+> carry `scheduledLaunchAt`, so the approve dialog and the notice after it name the
+> time, and the creator's own list (`GET /v1/me/projects`) carries `opensAt` on an
+> approved card, so the creator's campaign list says when it opens on the web and in the app.
 >
 > **An approval that cannot publish is refused, not taken.** A goal or a duration
 > cleared while the campaign was in review answers `409 PROJECT_NOT_LAUNCHABLE`, the

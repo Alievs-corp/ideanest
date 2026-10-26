@@ -288,6 +288,7 @@
         "loadMore": "Show more",
         "loadingMore": "Loading",
         "draftHint": "Not published yet",
+        "opensAt": "Opens on its own on {date}",
         "view": "View",
         "edit": "Edit",
         "dashboard": "Dashboard",
@@ -557,6 +558,7 @@
         "CAMPAIGN_SUCCEEDED": "{campaign} was funded at {amount}",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} closed without reaching its goal",
         "PROJECT_APPROVED": "{campaign} has been approved and published",
+        "PROJECT_APPROVED_SCHEDULED": "{campaign} was approved and opens {when}",
         "SCHEDULED_LAUNCH_REFUSED": "{campaign} did not open at its launch time: your plan does not cover it",
         "PAYMENT_COLLECTED": "A payment of {amount} for {campaign} was collected",
         "FINAL_PAYMENT_WARNING": "Final notice: a payment of {amount} for {campaign}",
@@ -591,6 +593,7 @@
         "CAMPAIGN_SUCCEEDED": "A campaign was funded at {amount}",
         "CAMPAIGN_UNSUCCESSFUL": "A campaign closed without reaching its goal",
         "PROJECT_APPROVED": "A campaign has been approved and published",
+        "PROJECT_APPROVED_SCHEDULED": "A campaign was approved and opens {when}",
         "SCHEDULED_LAUNCH_REFUSED": "A campaign did not open at its launch time: your plan does not cover it",
         "PAYMENT_COLLECTED": "A payment of {amount} for a campaign was collected",
         "FINAL_PAYMENT_WARNING": "Final notice: a payment of {amount} for a campaign",
@@ -1636,6 +1639,7 @@
           "CAMPAIGN_EXTENDED": "Campaign extended",
           "UPDATE_DUE_SOON": "Update due soon",
           "PROJECT_APPROVED": "Campaign approved",
+          "PROJECT_APPROVED_SCHEDULED": "Campaign approved, waiting for its launch time",
           "SCHEDULED_LAUNCH_REFUSED": "Scheduled launch not opened",
           "PAYMENT_COLLECTED": "Payment collected",
           "PAYMENT_FAILED": "Payment failed",
@@ -3287,7 +3291,10 @@
         "creatorGone": "Creator account closed",
         "decideHeading": "Decide this campaign",
         "decideGroup": "Decide {title}",
-        "notice": "{title} is now {state}."
+        "notice": "{title} is now {state}.",
+        "launchLabel": "Launch time",
+        "approveWaits": "The creator set a launch time. Approving will not publish the campaign now: it opens on its own on {date}.",
+        "noticeOpensAt": "{title} is approved and opens on its own on {date}."
       },
       "campaignDirectory": {
         "subject": "the campaign directory",

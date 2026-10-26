@@ -118,6 +118,8 @@ export interface DecisionDialogProps {
   readonly copy: ModerationCopy;
   /** The note's counter in the reader's language. Without it the kit's counter is English. */
   readonly counter: CharacterCountCopy;
+  /** What this decision will do that its verb does not say, such as an approval that waits (#595). */
+  readonly notice?: string | null;
 }
 
 /**
@@ -142,6 +144,7 @@ export function DecisionDialog({
   onConfirm,
   copy: moderation,
   counter,
+  notice = null,
 }: DecisionDialogProps) {
   const locale = useRouteLocale();
   const [note, setNote] = useState('');
@@ -216,6 +219,12 @@ export function DecisionDialog({
       }
     >
       {copy.body !== null && <p className="mb-4 text-sm text-on-white/72">{copy.body}</p>}
+
+      {notice !== null && (
+        <InlineAlert variant="info" className="mb-4">
+          {notice}
+        </InlineAlert>
+      )}
 
       <div>
         <Field

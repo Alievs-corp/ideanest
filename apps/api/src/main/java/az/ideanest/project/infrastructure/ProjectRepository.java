@@ -220,7 +220,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                            t.note AS note,
                            p.id AS projectId, p.title AS title, p.slug AS slug,
                            p.state AS state, p.goal_amount AS goalAmount,
-                           p.currency AS currency, p.creator_id AS creatorId
+                           p.currency AS currency, p.creator_id AS creatorId,
+                           p.scheduled_launch_at AS scheduledLaunchAt
                     FROM projects p
                     LEFT JOIN LATERAL (
                         SELECT s.id, s.created_at, s.note
@@ -253,7 +254,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                            t.note AS note,
                            p.id AS projectId, p.title AS title, p.slug AS slug,
                            p.state AS state, p.goal_amount AS goalAmount,
-                           p.currency AS currency, p.creator_id AS creatorId
+                           p.currency AS currency, p.creator_id AS creatorId,
+                           p.scheduled_launch_at AS scheduledLaunchAt
                     FROM projects p
                     LEFT JOIN LATERAL (
                         SELECT s.id, s.created_at, s.note

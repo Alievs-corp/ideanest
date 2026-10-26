@@ -302,12 +302,19 @@ public class NotificationEventListener {
             }
             case ProjectApproved.EVENT_TYPE -> {
                 ProjectApproved event = read(message, ProjectApproved.class);
+                UUID projectId = required(event.projectId(), "projectId", message);
+                // #595: approved with a launch time still to come is not live, and its creator is
+                // owed the moment it opens. An instant rather than a day: the time is part of it.
                 yield List.of(NotificationRequest.about(
                         required(event.creatorId(), "creatorId", message),
-                        NotificationType.PROJECT_APPROVED,
+                        event.opensAt() == null
+                                ? NotificationType.PROJECT_APPROVED
+                                : NotificationType.PROJECT_APPROVED_SCHEDULED,
                         PROJECT,
-                        required(event.projectId(), "projectId", message),
-                        about(event.projectId()),
+                        projectId,
+                        event.opensAt() == null
+                                ? about(projectId)
+                                : about(projectId, "opensAt", event.opensAt().toString()),
                         at(event.approvedAt(), message)));
             }
             case ScheduledLaunchRefused.EVENT_TYPE -> {

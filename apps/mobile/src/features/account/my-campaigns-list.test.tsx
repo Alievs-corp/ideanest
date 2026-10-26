@@ -99,6 +99,18 @@ describe('MyCampaignsList', () => {
     expect(screen.getByTestId('campaign-row-d')).toHaveStyle({ flexDirection: 'row' });
   });
 
+  it('says when an approved campaign opens instead of "not published yet" (#595)', async () => {
+    api.listMyProjects.mockResolvedValueOnce({
+      items: [{ ...campaign('a', 'APPROVED'), opensAt: '2026-10-27T12:00:00Z' }, campaign('d', 'DRAFT')],
+      nextCursor: null,
+    });
+    await show();
+
+    expect(screen.getByText(/^Opens on its own on .*2026/)).toBeTruthy();
+    expect(screen.getAllByText(en.account.pages.campaigns.draftHint)).toHaveLength(1);
+    expect(screen.getByRole('link', { name: /^Campaign a, Opens on its own on / })).toBeTruthy();
+  });
+
   it.each([...PUBLIC_STATES])('a %s campaign opens its public page', async (state) => {
     api.listMyProjects.mockResolvedValueOnce({ items: [campaign('p', state)], nextCursor: null });
     await show();

@@ -288,6 +288,7 @@
         "loadMore": "Daha fazla göster",
         "loadingMore": "Yükleniyor",
         "draftHint": "Henüz yayımlanmadı",
+        "opensAt": "{date} tarihinde kendiliğinden açılacak",
         "view": "Görüntüle",
         "edit": "Düzenle",
         "dashboard": "Pano",
@@ -557,6 +558,7 @@
         "CAMPAIGN_SUCCEEDED": "{campaign} kampanyası {amount} tutarıyla fonlandı",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} kampanyası hedefine ulaşamadan kapandı",
         "PROJECT_APPROVED": "{campaign} onaylandı ve yayınlandı",
+        "PROJECT_APPROVED_SCHEDULED": "{campaign} onaylandı, {when} açılacak",
         "SCHEDULED_LAUNCH_REFUSED": "{campaign} lansman saatinde açılmadı: planınız onu kapsamıyor",
         "PAYMENT_COLLECTED": "{campaign} için {amount} tutarındaki ödeme tahsil edildi",
         "FINAL_PAYMENT_WARNING": "Son uyarı: {campaign} için {amount} tutarındaki ödeme",
@@ -591,6 +593,7 @@
         "CAMPAIGN_SUCCEEDED": "Bir kampanya {amount} tutarıyla fonlandı",
         "CAMPAIGN_UNSUCCESSFUL": "Bir kampanya hedefine ulaşamadan kapandı",
         "PROJECT_APPROVED": "Bir kampanya onaylandı ve yayınlandı",
+        "PROJECT_APPROVED_SCHEDULED": "Bir kampanya onaylandı, {when} açılacak",
         "SCHEDULED_LAUNCH_REFUSED": "Bir kampanya lansman saatinde açılmadı: planınız onu kapsamıyor",
         "PAYMENT_COLLECTED": "Bir kampanya için {amount} tutarındaki ödeme tahsil edildi",
         "FINAL_PAYMENT_WARNING": "Son uyarı: bir kampanya için {amount} tutarındaki ödeme",
@@ -1636,6 +1639,7 @@
           "CAMPAIGN_EXTENDED": "Kampanya süresi uzatıldı",
           "UPDATE_DUE_SOON": "Güncelleme zamanı yaklaşıyor",
           "PROJECT_APPROVED": "Kampanya onaylandı",
+          "PROJECT_APPROVED_SCHEDULED": "Kampanya onaylandı, lansman saatini bekliyor",
           "SCHEDULED_LAUNCH_REFUSED": "Planlanan lansman gerçekleşmedi",
           "PAYMENT_COLLECTED": "Ödeme alındı",
           "PAYMENT_FAILED": "Ödeme gerçekleşmedi",
@@ -3287,7 +3291,10 @@
         "creatorGone": "Kurucunun hesabı kapatıldı",
         "decideHeading": "Bu kampanya için karar verin",
         "decideGroup": "{title} için karar ver",
-        "notice": "{title} artık {state}."
+        "notice": "{title} artık {state}.",
+        "launchLabel": "Lansman saati",
+        "approveWaits": "Kampanya sahibi bir lansman saati belirledi. Onay kampanyayı şimdi yayınlamaz: kampanya {date} tarihinde kendiliğinden açılacak.",
+        "noticeOpensAt": "{title} onaylandı ve {date} tarihinde kendiliğinden açılacak."
       },
       "campaignDirectory": {
         "subject": "kampanya dizini",

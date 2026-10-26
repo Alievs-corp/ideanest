@@ -234,6 +234,8 @@ export interface CampaignDecision {
   slug: string;
   state: ProjectState;
   title: string;
+  /** The launch time an approved campaign waits for, when it has one (#595). */
+  scheduledLaunchAt?: string | null;
 }
 
 /**
@@ -301,6 +303,18 @@ export interface QueuedSubmission {
   creatorName?: string | null;
   creatorSlug?: string | null;
   goal?: { amount: string; currency: string } | null;
+  /**
+   * The launch time its creator set (#595). Approving a campaign whose time is still to come
+   * leaves it waiting for that time rather than publishing it, and the moderator is told so.
+   */
+  scheduledLaunchAt?: string | null;
+}
+
+/** Whether a launch time is still to come, so an approval waits for it rather than publishing. */
+export function opensLater(scheduledLaunchAt: string | null | undefined, now: Date = new Date()): boolean {
+  if (scheduledLaunchAt == null) return false;
+  const at = new Date(scheduledLaunchAt).getTime();
+  return !Number.isNaN(at) && at > now.getTime();
 }
 
 export interface SubmissionQueuePage {

@@ -47,6 +47,9 @@ import java.util.UUID;
  * @param video the campaign's ready video, or null. When present a client shows
  *     {@code video.posterUrl} as the cover and plays the clip on hover or a long press;
  *     {@code coverImage} stays the uploaded cover
+ * @param opensAt when an approved campaign opens on its own (#595), and null on every other
+ *     state: a card is the creator's way to see that it is waiting rather than lost. The two
+ *     public tabs never carry an approved campaign, so this is only ever set on the owner's list
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record ProfileProjectCard(
@@ -62,7 +65,8 @@ public record ProfileProjectCard(
         Instant deadline,
         Instant launchedAt,
         CoverImageBody coverImage,
-        CardVideoBody video) {
+        CardVideoBody video,
+        Instant opensAt) {
 
     /**
      * @param campaign the projection. {@code createdAt} on it is deliberately not mapped:
@@ -83,7 +87,13 @@ public record ProfileProjectCard(
                 campaign.deadline(),
                 campaign.launchedAt(),
                 cover(campaign.cover()),
-                CardVideoBody.of(campaign.video()));
+                CardVideoBody.of(campaign.video()),
+                opensAt(campaign));
+    }
+
+    private static Instant opensAt(ProfileCampaign campaign) {
+        boolean waiting = "APPROVED".equals(campaign.state()) || "SCHEDULED".equals(campaign.state());
+        return waiting ? campaign.scheduledLaunchAt() : null;
     }
 
     /**

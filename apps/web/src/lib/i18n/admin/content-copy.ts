@@ -390,6 +390,12 @@ export interface SubmissionQueueCopy extends ConsoleChromeCopy {
   readonly decideGroup: string;
   /** Carries `{title}` and `{state}`. */
   readonly notice: string;
+  /** #595: the row's launch time, when its creator set one. */
+  readonly launchLabel: string;
+  /** #595, in the approve dialog: carries `{date}`, the launch time the approval waits for. */
+  readonly approveWaits: string;
+  /** #595, after an approval that waits: carries `{title}` and `{date}`. */
+  readonly noticeOpensAt: string;
 }
 
 /**
@@ -585,6 +591,9 @@ export function submissionQueueCopyFrom(
     decideHeading: t(at('decideHeading')),
     decideGroup: String(t.raw(at('decideGroup'))),
     notice: String(t.raw(at('notice'))),
+    launchLabel: t(at('launchLabel')),
+    approveWaits: String(t.raw(at('approveWaits'))),
+    noticeOpensAt: String(t.raw(at('noticeOpensAt'))),
   };
 }
 

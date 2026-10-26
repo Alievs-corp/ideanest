@@ -5,7 +5,8 @@ import { fillPlaceholders } from '@ideanest/messages/placeholders';
 import { CardTitle, IconButton, Meta, Sheet, Tag } from '../../components/ui';
 import { Glyphs } from '../../icons';
 import { queryKeys } from '../../api/queries';
-import { useT, type MessageKey } from '../../lib/i18n';
+import { formatDateTime, useT, type MessageKey } from '../../lib/i18n';
+import { useLocale } from '../../lib/locale';
 import { useSession } from '../../lib/use-session';
 import { spacing } from '../../theme';
 import { NavRow, RowGroup } from '../settings/settings-row';
@@ -48,6 +49,7 @@ export function useMyCampaigns(enabled: boolean) {
 export function MyCampaignsList() {
   const router = useRouter();
   const t = useT();
+  const locale = useLocale();
   const { signedIn } = useSession();
   const list = useMyCampaigns(signedIn);
   const [acting, setActing] = useState<MyCampaign | null>(null);
@@ -65,9 +67,17 @@ export function MyCampaignsList() {
       const title = campaign.title || t('mobile.campaign.untitled');
       const state = stateLabel(campaign.state);
       const draft = !isPubliclyVisible(campaign.state);
+      // #595: an approved campaign waiting for its launch time says when it opens, not "not published".
+      const hint = campaign.opensAt
+        ? fillPlaceholders(String(t.raw('account.pages.campaigns.opensAt')), {
+            date: formatDateTime(campaign.opensAt, locale),
+          })
+        : draft
+          ? t('account.pages.campaigns.draftHint')
+          : null;
       return (
         <AccountRow
-          label={[title, draft ? t('account.pages.campaigns.draftHint') : null, state]
+          label={[title, hint, state]
             .filter((part) => part !== null)
             .join(', ')}
           testID={`campaign-row-${campaign.id}`}
@@ -83,14 +93,14 @@ export function MyCampaignsList() {
           }
         >
           <CardTitle>{title}</CardTitle>
-          {draft ? <Meta>{t('account.pages.campaigns.draftHint')}</Meta> : null}
+          {hint !== null ? <Meta>{hint}</Meta> : null}
           <View style={styles.state}>
             <Tag label={state} />
           </View>
         </AccountRow>
       );
     },
-    [router, stateLabel, t],
+    [locale, router, stateLabel, t],
   );
 
   const go = (href: CampaignHref) => {

@@ -26,6 +26,9 @@ import java.util.UUID;
  *     the campaign, so the row survives its author and says so rather than throwing
  * @param goal null only for a campaign that reached a decision before §5.3 required
  *     one; nothing in {@code SUBMITTED} can have a null goal
+ * @param scheduledLaunchAt the launch time its creator set, or null. Approving a campaign whose
+ *     time is still to come leaves it waiting for that time rather than publishing it (#595), and
+ *     the moderator is told so before deciding
  */
 public record SubmittedCampaign(
         UUID cursor,
@@ -38,5 +41,6 @@ public record SubmittedCampaign(
         UUID creatorId,
         String creatorName,
         String creatorSlug,
-        Money goal) {
+        Money goal,
+        Instant scheduledLaunchAt) {
 }

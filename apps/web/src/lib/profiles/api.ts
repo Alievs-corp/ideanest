@@ -236,6 +236,11 @@ export interface ProfileProjectCard {
    * Optional so a card built by hand without one still type-checks.
    */
   readonly video?: CardVideo | null;
+  /**
+   * When an approved campaign opens on its own (#595). Only the owner's list carries it, and only
+   * for a campaign waiting for its launch time; optional so a card built by hand type-checks.
+   */
+  readonly opensAt?: string | null;
 }
 
 /**

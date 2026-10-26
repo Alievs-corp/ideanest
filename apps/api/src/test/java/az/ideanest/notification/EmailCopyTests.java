@@ -56,7 +56,9 @@ class EmailCopyTests extends AbstractIntegrationTest {
      * for the same reason. {@code sentOn} and {@code accountHint} joined with #418's {@code PAYOUT_SENT}
      * and {@code REFUND_SENT_BY_BANK}: the day the money was paid, and the masked account it went to.
      * {@code planName}, {@code price} and {@code periodEnd} joined with #450's three subscription types: the
-     * creator's plan, what it costs, and the day its period ends.
+     * creator's plan, what it costs, and the day its period ends. {@code opensAt} joined with #595's
+     * {@code PROJECT_APPROVED_SCHEDULED}: the instant an approved campaign opens, which the copy reads
+     * as Baku's wall clock.
      */
     private static final String PARAMS =
             """
@@ -76,7 +78,8 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "accountHint": "AZ21…1944",
               "planName": "Growth",
               "price": {"amount": "49.00", "currency": "AZN"},
-              "periodEnd": "2026-11-13"
+              "periodEnd": "2026-11-13",
+              "opensAt": "2026-10-27T15:23:00Z"
             }""";
 
     private static final String TITLE = "Xari Bulbul Ceramics";
@@ -108,7 +111,8 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "accountHint": "AZ21…1944",
               "planName": "Growth",
               "price": {"amount": "49.00", "currency": "AZN"},
-              "periodEnd": "2026-11-13"
+              "periodEnd": "2026-11-13",
+              "opensAt": "2026-10-27T15:23:00Z"
             }""";
 
     /** The suffix on a key that names the campaign, as {@code EmailComposer} spells it. */
@@ -278,6 +282,27 @@ class EmailCopyTests extends AbstractIntegrationTest {
                 composer.compose(named(NotificationType.SCHEDULED_LAUNCH_REFUSED), RECIPIENT, PRIMARY);
 
         assertThat(content.actionUrl()).endsWith("/projects/01890000-0000-7000-8000-000000000001/edit/review");
+    }
+
+    /**
+     * That an approval which does not publish yet says when the campaign opens (#595).
+     *
+     * <p>{@code PROJECT_APPROVED} says the campaign is live, which an approval waiting for its
+     * launch time is not. This one leads with the moment, on Baku's clock, and goes to the editor's
+     * review tab, because the campaign has no public page until then.
+     */
+    @Test
+    @DisplayName("an approval that waits for its launch time names that time and links to the editor")
+    void aScheduledApprovalNamesWhenItOpens() {
+        EmailContent content =
+                composer.compose(named(NotificationType.PROJECT_APPROVED_SCHEDULED), RECIPIENT, PRIMARY);
+
+        assertThat(content.subject()).isEqualTo(TITLE + " təsdiqləndi və 27.10.2026 19:23 tarixində açılacaq");
+        assertThat(content.paragraphs().getFirst()).contains("27.10.2026 19:23 (Bakı vaxtı)");
+        assertThat(content.actionUrl()).endsWith("/projects/01890000-0000-7000-8000-000000000001/edit/review");
+
+        EmailContent live = composer.compose(named(NotificationType.PROJECT_APPROVED), RECIPIENT, PRIMARY);
+        assertThat(String.join(" ", live.paragraphs())).doesNotContain("başlanğıc vaxtında");
     }
 
     /**

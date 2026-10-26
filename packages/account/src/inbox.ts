@@ -218,7 +218,8 @@ export function campaignOf(params: Record<string, unknown>): {
  * settings too and a refund sent by bank to the pledge; since #450 a message about the creator's own
  * plan goes to the pricing page, where it is renewed; since #589 a campaign that did not open at
  * its launch time goes to its editor's review tab, where the refusal is explained and the campaign
- * launched — it is not public, so its page is nothing its creator can act on), then the campaign's
+ * launched — it is not public, so its page is nothing its creator can act on; since #595 an approved
+ * campaign waiting for its launch time goes there too, where it says when it opens), then the campaign's
  * page, then nothing. **A row with no destination is not a link**, rather than a link to the home
  * page.
  */
@@ -235,7 +236,10 @@ export function hrefOf(
     const pledge = textOf(readParams(notification.params), 'pledgeId');
     if (pledge !== null) return `/pledges/${encodeURIComponent(pledge)}`;
   }
-  if (notification.type === 'SCHEDULED_LAUNCH_REFUSED') {
+  if (
+    notification.type === 'SCHEDULED_LAUNCH_REFUSED' ||
+    notification.type === 'PROJECT_APPROVED_SCHEDULED'
+  ) {
     const project = textOf(readParams(notification.params), 'projectId');
     if (project !== null) return `/projects/${encodeURIComponent(project)}/edit/review`;
   }
@@ -331,11 +335,28 @@ function whenFor(
     if (date !== null) return fillPlaceholders(copy.period.on, { date });
     return type === 'SUBSCRIPTION_RENEWAL_DUE' ? copy.due.unknown : copy.sent.unknown;
   }
+  if (type === 'PROJECT_APPROVED_SCHEDULED') {
+    // #595. The moment it opens, in the reader's own clock: the hour is part of it.
+    return momentOf(params, 'opensAt', locale) ?? copy.due.unknown;
+  }
   if (type === 'SUBSCRIPTION_RENEWED') {
     const date = dayOf(params, 'periodEnd', locale);
     return date === null ? copy.period.unknown : fillPlaceholders(copy.period.until, { date });
   }
   return '';
+}
+
+/** An instant from the document, as a date and a time in the reader's language and zone, or null. */
+function momentOf(params: Record<string, unknown>, key: string, locale: Locale): string | null {
+  const value = textOf(params, key);
+  const at = value === null ? null : new Date(value);
+  if (at === null || Number.isNaN(at.getTime())) return null;
+
+  return dateTimeFormat(
+    locale,
+    { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' },
+    'notification-opens',
+  ).format(at);
 }
 
 /** A `YYYY-MM-DD` day from the document, written out in the reader's language, or null. */
