@@ -36,15 +36,17 @@ describe('the content security policy', () => {
     expect(directive(policy, 'default-src')).toEqual(["'self'"]);
   });
 
-  it('loads script from this origin and the two sign-in SDKs, and from nowhere else', () => {
+  it('loads script from this origin, the two sign-in SDKs and the CDN beacon, and from nowhere else', () => {
     const sources = directive(policy, 'script-src');
 
     expect(sources).toContain("'self'");
     expect(sources).toContain('https://accounts.google.com/gsi/client');
     expect(sources).toContain('https://appleid.cdn-apple.com');
+    // Injected by the Cloudflare proxy into every page, not by this application.
+    expect(sources).toContain('https://static.cloudflareinsights.com');
     expect(sources).not.toContain('https:');
     expect(sources).not.toContain('*');
-    expect(sources.filter((source) => !source.startsWith("'"))).toHaveLength(2);
+    expect(sources.filter((source) => !source.startsWith("'"))).toHaveLength(3);
   });
 
   /*
