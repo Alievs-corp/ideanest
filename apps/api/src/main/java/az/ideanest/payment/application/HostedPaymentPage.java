@@ -13,7 +13,11 @@ import az.ideanest.pledge.application.PaymentPage;
 import az.ideanest.pledge.application.PaymentPageSession;
 import az.ideanest.pledge.application.PaymentPageUnavailableException;
 import az.ideanest.shared.payment.ReturnUrls;
+import az.ideanest.payment.PaymentProperties;
+import az.ideanest.shared.money.Money;
 import java.net.URI;
+import java.time.Clock;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -36,6 +40,12 @@ import tools.jackson.databind.node.ObjectNode;
  * <p>#436: the pending row also records the refund terms the backer read at the checkout they came
  * from ({@link RefundTerms}), and the row that settles the payment copies them, so a setting switched
  * while the backer is on the provider's page does not change what they agreed to.
+ *
+ * <p>#587: the pending row also records where the page is, so that a second request for the same draft
+ * is sent back to it ({@link #waiting}) rather than given a second order — {@code SubscriptionCheckout}'s
+ * rule for a plan's page, with the same window: a page younger than {@code hosted-charges.answered-after}
+ * for the draft's current total. After that the sweep starts asking about it, and a new page may be
+ * opened; if both are paid, {@code HostedChargeEvents} returns the second.
  */
 @Service
 public class HostedPaymentPage implements PaymentPage {
@@ -48,6 +58,8 @@ public class HostedPaymentPage implements PaymentPage {
     private final ObjectMapper json;
     private final RefundTerms terms;
     private final ProviderCircuitBreaker breaker;
+    private final PaymentProperties.HostedCharges hostedCharges;
+    private final Clock clock;
 
     public HostedPaymentPage(
             PaymentProviders providers,
@@ -55,13 +67,28 @@ public class HostedPaymentPage implements PaymentPage {
             ReturnUrls returnUrls,
             ObjectMapper json,
             RefundTerms terms,
-            ProviderCircuitBreaker breaker) {
+            ProviderCircuitBreaker breaker,
+            PaymentProperties properties,
+            Clock clock) {
         this.providers = providers;
         this.transactions = transactions;
         this.returnUrls = returnUrls;
         this.json = json;
         this.terms = terms;
         this.breaker = breaker;
+        this.hostedCharges = properties.hostedCharges();
+        this.clock = clock;
+    }
+
+    @Override
+    public Optional<PaymentPageSession> waiting(PayablePledge pledge) {
+        return transactions
+                .openPageFor(pledge.pledgeId(), clock.instant().minus(hostedCharges.answeredAfter()))
+                .filter(page -> Money.of(page.getAmount(), page.getCurrency()).equals(pledge.total()))
+                .map(page -> {
+                    log.info("Returned pledge {} to its open payment {}.", pledge.pledgeId(), page.getProviderTransactionId());
+                    return new PaymentPageSession(page.getProviderTransactionId(), URI.create(page.getPaymentUrl()));
+                });
     }
 
     @Override
@@ -102,7 +129,7 @@ public class HostedPaymentPage implements PaymentPage {
                         session.providerTransactionId(),
                         null,
                         null,
-                        opened(successUrl, errorUrl)),
+                        opened(session.redirectUrl(), successUrl, errorUrl)),
                 1,
                 idempotencyKey,
                 terms.withholdsProviderFeeOnNewCharges()));
@@ -111,12 +138,15 @@ public class HostedPaymentPage implements PaymentPage {
     }
 
     /**
-     * What the pending row stores: that the page was opened, and where the provider will send the
-     * backer back. Written through the mapper rather than concatenated, because the addresses came
-     * from the caller.
+     * What the pending row stores: that the page was opened, where it is (#587), and where the provider
+     * will send the backer back. Written through the mapper rather than concatenated, because the
+     * addresses came from the caller.
      */
-    private String opened(URI successUrl, URI errorUrl) {
+    private String opened(URI paymentUrl, URI successUrl, URI errorUrl) {
         ObjectNode node = json.createObjectNode().put("hostedPayment", true);
+        if (paymentUrl != null) {
+            node.put("paymentUrl", paymentUrl.toString());
+        }
         if (successUrl != null) {
             node.put("successUrl", successUrl.toString());
         }

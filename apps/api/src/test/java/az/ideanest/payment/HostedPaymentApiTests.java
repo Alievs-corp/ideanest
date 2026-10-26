@@ -2,8 +2,10 @@ package az.ideanest.payment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import az.ideanest.payment.application.CampaignRefundJob;
 import az.ideanest.payment.application.HostedChargeSweepJob;
 import az.ideanest.payment.application.PaymentProviderStatus;
+import az.ideanest.payment.application.PayoutGateway;
 import az.ideanest.payment.domain.HostedPaymentRequest;
 import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.shared.EmailAddress;
@@ -83,6 +85,12 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private PaymentProviderStatus providerStatus;
+
+    @Autowired
+    private CampaignRefundJob campaignRefunds;
+
+    @Autowired
+    private PayoutGateway payouts;
 
     /**
      * The deliveries this suite made. ProviderWebhookApiTests reads that table as its own, and a row
@@ -406,6 +414,280 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
     }
 
     // ------------------------------------------------------------------
+    // #587: one page per draft, and a second payment returned
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("#587: a second key while the draft's page is open is sent back to that page, and no second order opens")
+    void aSecondKeyReturnsTheOpenPage() {
+        Checkout checkout = aDraft("hosted-one-page");
+        ResponseEntity<Map<String, Object>> first = pay(checkout, UUID.randomUUID().toString());
+        int asked = provider.hostedPayments().size();
+
+        ResponseEntity<Map<String, Object>> second = pay(checkout, UUID.randomUUID().toString());
+
+        assertThat(second.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(second.getBody().get("providerTransactionId")).isEqualTo(first.getBody().get("providerTransactionId"));
+        assertThat(second.getBody().get("redirectUrl")).isEqualTo(first.getBody().get("redirectUrl"));
+        assertThat(provider.hostedPayments()).as("the provider was not asked again").hasSize(asked);
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING");
+    }
+
+    @Test
+    @DisplayName("#587: once the page is old enough for the sweep to ask after it, a new one may be opened")
+    void anOldPageIsNotReturned() {
+        Checkout checkout = aDraft("hosted-old-page");
+        Object first = pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        backdate(pendingCharge(checkout.pledgeId()), Duration.ofMinutes(20));
+
+        Object second = pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+
+        assertThat(second).isNotEqualTo(first);
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "PENDING");
+    }
+
+    /**
+     * Both pages of one draft paid. The first collects the pledge; the second was posted and dropped
+     * without a word before #587 — money taken that nothing returned. Now it is recorded, counted, kept
+     * out of the payout and returned in full by campaign-refunds, once.
+     */
+    @Test
+    @DisplayName("#587: a second payment for a collected pledge is recorded, kept out of the payout and refunded once")
+    void aSecondPaymentIsRefunded() {
+        Checkout checkout = aDraft("hosted-paid-twice");
+        String first = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        backdate(pendingCharge(checkout.pledgeId()), Duration.ofMinutes(20));
+        String second = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        double before = anomalies("duplicate");
+
+        assertThat(deliver(first, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(deliver(second, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        UUID duplicate = jdbc().queryForObject(
+                "SELECT id FROM transactions WHERE provider_transaction_id = ? AND status = 'SUCCEEDED'", UUID.class, second);
+        assertThat(jdbc().queryForList(
+                        "SELECT charge_transaction_id FROM duplicate_charges WHERE pledge_id = ?", UUID.class, checkout.pledgeId()))
+                .containsExactly(duplicate);
+        assertThat(anomalies("duplicate") - before).isEqualTo(1d);
+        assertThat(state(checkout.pledgeId())).isEqualTo("COLLECTED");
+        assertThat(totals(checkout.projectId())).as("counted once").isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+        assertThat(payouts.fundsOf(checkout.projectId(), "AZN").collected().amount())
+                .as("never the creator's")
+                .isEqualByComparingTo("25.00");
+
+        campaignRefunds.refundDue(Instant.now());
+        campaignRefunds.refundDue(Instant.now());
+        // And a redelivery of the second payment's news moves nothing either.
+        deliver(second, "charge_succeeded");
+
+        List<Map<String, Object>> refunds = jdbc().queryForList(
+                "SELECT charge_transaction_id, amount, reason, state, requested_by, full_refund FROM refunds WHERE pledge_id = ?",
+                checkout.pledgeId());
+        assertThat(refunds).singleElement().satisfies(refund -> {
+            assertThat(refund.get("charge_transaction_id")).isEqualTo(duplicate);
+            assertThat((BigDecimal) refund.get("amount")).isEqualByComparingTo("25.00");
+            assertThat(refund.get("reason")).isEqualTo("DUPLICATE_CHARGE");
+            assertThat(refund.get("state")).isEqualTo("SUCCEEDED");
+            assertThat(refund.get("requested_by")).isNull();
+            assertThat(refund.get("full_refund")).isEqualTo(false);
+        });
+        assertThat(state(checkout.pledgeId())).as("the pledge keeps the payment that collected it").isEqualTo("COLLECTED");
+        assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+        assertThat(payouts.fundsOf(checkout.projectId(), "AZN").net().amount()).isEqualByComparingTo("25.00");
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM duplicate_charges WHERE pledge_id = ?", Long.class, checkout.pledgeId()))
+                .isEqualTo(1L);
+    }
+
+    // ------------------------------------------------------------------
+    // #587: the provider's amount
+    // ------------------------------------------------------------------
+
+    @ParameterizedTest
+    @DisplayName("#587: a payment reported for another amount or currency is recorded failed and collects nothing")
+    @ValueSource(strings = {"30.00 AZN", "25.00 USD"})
+    void aDifferentAmountIsFailed(String reported) {
+        Checkout checkout = aDraft("hosted-mismatch");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        double before = anomalies("amount_mismatch");
+        String[] parts = reported.split(" ");
+
+        assertThat(deliver(transaction, "charge_succeeded", parts[0], parts[1]).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        assertThat(state(checkout.pledgeId())).isEqualTo("DRAFT");
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "FAILED");
+        assertThat(jdbc().queryForObject(
+                        "SELECT failure_code FROM transactions WHERE pledge_id = ? AND status = 'FAILED'",
+                        String.class,
+                        checkout.pledgeId()))
+                .isEqualTo("amount_mismatch");
+        assertThat(anomalies("amount_mismatch") - before).isEqualTo(1d);
+        assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM ledger_entries e JOIN transactions t ON t.id = e.transaction_id"
+                                + " WHERE t.pledge_id = ?",
+                        Long.class,
+                        checkout.pledgeId()))
+                .as("nothing posted")
+                .isZero();
+    }
+
+    @Test
+    @DisplayName("#587: the same amount, however it is written, collects")
+    void theSameAmountCollects() {
+        Checkout checkout = aDraft("hosted-amount-matches");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+
+        deliver(transaction, "charge_succeeded", "25", "AZN");
+
+        assertThat(state(checkout.pledgeId())).isEqualTo("COLLECTED");
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "SUCCEEDED");
+    }
+
+    @Test
+    @DisplayName("#587: the sweep checks the amount the provider's lookup reports, as a callback's is checked")
+    void theSweepChecksTheAmount() {
+        Checkout checkout = aDraft("hosted-swept-mismatch");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.willLookUp(transaction, PaymentLookup.State.SUCCEEDED, ScriptedPaymentProvider.azn("30.00"));
+
+        sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
+
+        assertThat(state(checkout.pledgeId())).isEqualTo("DRAFT");
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "FAILED");
+        assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    // ------------------------------------------------------------------
+    // #587: the sweep's horizon
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("#587: a page still pending when the sweep stops asking about it is reported once, and settled never")
+    void anAgedOutPageIsReportedOnce() {
+        Checkout checkout = aDraft("hosted-aged-out");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.willLookUp(transaction, PaymentLookup.State.PENDING);
+        UUID charge = pendingCharge(checkout.pledgeId());
+        // Other suites' pages ahead of this one in the queue are not this test's to report.
+        jdbc().update(
+                """
+                INSERT INTO hosted_charge_checks (transaction_id, checked_at, last_state, aged_out_at)
+                SELECT id, now(), 'UNANSWERED', now() FROM transactions
+                 WHERE type = 'CHARGE' AND status = 'PENDING' AND id <> ?
+                ON CONFLICT (transaction_id) DO UPDATE SET aged_out_at = EXCLUDED.aged_out_at
+                """,
+                charge);
+        sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
+        double before = anomalies("aged_out");
+
+        Instant aged = Instant.now().plus(Duration.ofDays(8)).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+        sweep.sweep(aged);
+        sweep.sweep(aged.plus(Duration.ofMinutes(5)));
+
+        assertThat(anomalies("aged_out") - before).isEqualTo(1d);
+        assertThat(jdbc().queryForObject(
+                        "SELECT aged_out_at FROM hosted_charge_checks WHERE transaction_id = ?", Instant.class, charge))
+                .isEqualTo(aged);
+        assertThat(lastCheck(charge)).as("what the provider last said is kept").containsExactly("PENDING");
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING");
+        assertThat(state(checkout.pledgeId())).isEqualTo("DRAFT");
+    }
+
+    // ------------------------------------------------------------------
+    // #587: an unsigned callback is asked about only when a page waits on it
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("#587: a callback naming an order nothing waits on is answered 200, recorded nowhere, and nobody is asked")
+    void anUnknownOrderIsNotConfirmed() {
+        provider.confirmCallbacksByAsking();
+        try {
+            int asked = provider.callbackConfirmations();
+            long recorded = jdbc().queryForObject("SELECT count(*) FROM provider_webhook_events", Long.class);
+
+            ResponseEntity<String> response = deliver("not-an-order-" + UUID.randomUUID(), "charge_succeeded");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(provider.callbackConfirmations()).isEqualTo(asked);
+            assertThat(jdbc().queryForObject("SELECT count(*) FROM provider_webhook_events", Long.class))
+                    .isEqualTo(recorded);
+        } finally {
+            provider.verifyCallbacksBySignature();
+        }
+    }
+
+    @Test
+    @DisplayName("#587: a callback for an open page is confirmed with the provider once; one for a settled page is not")
+    void anOpenPageIsConfirmedAndASettledOneIsNot() {
+        Checkout checkout = aDraft("hosted-confirmed");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.confirmCallbacksByAsking();
+        try {
+            int asked = provider.callbackConfirmations();
+
+            assertThat(deliver(transaction, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(provider.callbackConfirmations()).isEqualTo(asked + 1);
+            assertThat(state(checkout.pledgeId())).isEqualTo("COLLECTED");
+
+            // Settled now: the same news again is answered alike, and the provider is not asked.
+            assertThat(deliver(transaction, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(provider.callbackConfirmations()).isEqualTo(asked + 1);
+            assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "SUCCEEDED");
+        } finally {
+            provider.verifyCallbacksBySignature();
+        }
+    }
+
+    @Test
+    @DisplayName("#587: confirmations go through the circuit breaker, and an open one refuses without asking")
+    void confirmationsGoThroughTheBreaker() {
+        Checkout checkout = aDraft("hosted-confirm-breaker");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.confirmCallbacksByAsking();
+        provider.willLeaveConfirmationsUnanswered();
+        try {
+            // The test profile's threshold is two.
+            assertThat(deliver(transaction, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            assertThat(deliver(transaction, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            assertThat(azericard().available()).isFalse();
+            int asked = provider.callbackConfirmations();
+
+            ResponseEntity<String> refused = deliver(transaction, "charge_succeeded");
+
+            assertThat(refused.getStatusCode()).as("retried by the provider").isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            assertThat(provider.callbackConfirmations()).isEqualTo(asked);
+            assertThat(charges(checkout.pledgeId())).containsExactly("PENDING");
+        } finally {
+            provider.verifyCallbacksBySignature();
+        }
+    }
+
+    /**
+     * Anybody holding an open page's order — the backer, from the page's own address — can post its
+     * callback. Were "still pending" an outage, a few posts would open the breaker and refuse every
+     * backer's payment for the cooldown.
+     */
+    @Test
+    @DisplayName("#587: a payment still undecided is retried by the provider, and never opens the breaker")
+    void anUndecidedPaymentDoesNotOpenTheBreaker() {
+        Checkout checkout = aDraft("hosted-confirm-undecided");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.confirmCallbacksByAsking();
+        provider.willAnswerConfirmationsUndecided();
+        try {
+            for (int attempt = 0; attempt < 4; attempt++) {
+                assertThat(deliver(transaction, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            }
+
+            assertThat(azericard().available()).isTrue();
+            assertThat(charges(checkout.pledgeId())).containsExactly("PENDING");
+        } finally {
+            provider.verifyCallbacksBySignature();
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
 
@@ -468,9 +750,19 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
     }
 
     private ResponseEntity<String> deliver(String eventId, String transaction, String type) {
-        String body = """
+        return post("""
                 {"id":"%s","type":"%s","providerTransactionId":"%s"}"""
-                .formatted(eventId, type, transaction);
+                .formatted(eventId, type, transaction));
+    }
+
+    /** #587: a delivery that says how much was paid. */
+    private ResponseEntity<String> deliver(String transaction, String type, String amount, String currency) {
+        return post("""
+                {"id":"evt-%s","type":"%s","providerTransactionId":"%s","amount":"%s","currency":"%s"}"""
+                .formatted(UUID.randomUUID(), type, transaction, amount, currency));
+    }
+
+    private ResponseEntity<String> post(String body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         ScriptedWebhooks.headers().forEach(headers::add);
@@ -550,6 +842,23 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
 
     private double swept(String outcome) {
         return meters.get("ideanest.payment.hosted.sweep.settled").tag("outcome", outcome).counter().count();
+    }
+
+    private double anomalies(String reason) {
+        return meters.get("ideanest.payment.hosted.anomalies").tag("reason", reason).counter().count();
+    }
+
+    /** Moves a pending charge's opening back, past the window a second request is sent back to it in. */
+    private void backdate(UUID charge, Duration by) {
+        jdbc().execute("ALTER TABLE transactions DISABLE TRIGGER USER");
+        try {
+            jdbc().update(
+                    "UPDATE transactions SET created_at = created_at - CAST(? AS interval) WHERE id = ?",
+                    by.toMinutes() + " minutes",
+                    charge);
+        } finally {
+            jdbc().execute("ALTER TABLE transactions ENABLE TRIGGER USER");
+        }
     }
 
     private double attention(String reason) {

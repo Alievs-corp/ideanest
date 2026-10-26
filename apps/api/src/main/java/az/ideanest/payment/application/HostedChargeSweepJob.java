@@ -51,6 +51,11 @@ import org.springframework.transaction.support.TransactionTemplate;
  *       after it was opened. A page abandoned unpaid stays pending at some providers for ever.
  *       A provider whose {@link ProviderCircuitBreaker} is open is not asked, and counts as not
  *       answered.
+ *   <li><strong>Past {@code asked-for}, reported rather than forgotten (#587).</strong> A page still
+ *       pending when the window ends is no longer asked about — but it may be a backer who paid and
+ *       whose callback was lost, so the pass that finds it logs it at ERROR with what the provider
+ *       last said, counts it ({@link HostedChargeMetrics#agedOut}), and stamps it (V120) so it is
+ *       reported once. Nothing is settled: whether the pledge stands is a person's decision.
  *   <li><strong>Plan pages too</strong> (#449). A creator who paid for a period and was never told
  *       is the same failure, so {@code subscription_charges} is asked about on the same pass, with
  *       the same window, and settled through {@link SubscriptionChargeEvents}.
@@ -144,11 +149,45 @@ public class HostedChargeSweepJob implements ScheduledJob {
                     settled,
                     unsettled.size());
         }
+        reportAgedOut(now);
         Instant windowStart = now.minus(properties.askedFor());
         metrics.attention(
                 checks.unsettledLastAnswered(State.RETURNED, windowStart),
                 checks.unsettledLastAnswered(State.UNANSWERED, windowStart));
         return settled + sweepPlans(now);
+    }
+
+    /**
+     * #587: the pages that left the window unsettled since the last pass, each reported once.
+     *
+     * @return how many this pass reported
+     */
+    int reportAgedOut(Instant now) {
+        List<PaymentTransaction> aged =
+                transactions.agedOutHostedCharges(now.minus(properties.askedFor()), properties.perPass());
+        int reported = 0;
+        for (PaymentTransaction pending : aged) {
+            try {
+                String last = checks.lastState(pending.getId()).map(Enum::name).orElse("nothing: it was never asked");
+                log.error(
+                        "hosted-charge-sweep: payment {} for pledge {} (transaction {}) was opened at {} and is still"
+                                + " pending after {}; it is no longer asked about. The provider last said {}. A person"
+                                + " decides whether the backer paid.",
+                        pending.getProviderTransactionId(),
+                        pending.getPledgeId(),
+                        pending.getId(),
+                        pending.getCreatedAt(),
+                        properties.askedFor(),
+                        last);
+                checks.agedOut(pending.getId(), now);
+                metrics.agedOut();
+                reported++;
+            } catch (RuntimeException e) {
+                log.error("hosted-charge-sweep: could not report aged-out payment {}; the next pass tries again.",
+                        pending.getProviderTransactionId(), e);
+            }
+        }
+        return reported;
     }
 
     /** #449: the plan pages, asked about the same way. @return how many this pass settled */
@@ -270,12 +309,13 @@ public class HostedChargeSweepJob implements ScheduledJob {
         String raw = lookup.rawResponse() == null || lookup.rawResponse().isBlank()
                 ? "{\"lookup\":\"" + lookup.state() + "\"}"
                 : lookup.rawResponse();
+        // #587: the amount the provider answered with, so the settlement checks it as it checks a callback's.
         PaymentEvent answered = new PaymentEvent(
                 pending.getProvider(),
                 "sweep:" + reference + ":" + lookup.state(),
                 type,
                 reference,
-                null,
+                lookup.amount(),
                 null,
                 raw);
         Optional<String> outcome;

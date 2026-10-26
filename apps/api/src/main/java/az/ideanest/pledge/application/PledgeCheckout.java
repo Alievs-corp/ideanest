@@ -15,6 +15,13 @@ import org.springframework.stereotype.Service;
  *
  * <p>The return addresses are checked before either step (#139), so a refused address holds no draft
  * and records no agreement.
+ *
+ * <p><strong>One page per draft at a time (#587).</strong> A request under a new
+ * {@code Idempotency-Key} while a page opened for this draft is still waiting is answered with that
+ * page ({@link PaymentPage#waiting}), not a second provider order: two open orders for one pledge are
+ * two payments a backer can make. Two requests in the same instant can still both open one — nothing
+ * holds the draft across the provider call, for the reason above — and a second payment that results
+ * is returned to the backer by the payment module.
  */
 @Service
 public class PledgeCheckout {
@@ -45,6 +52,6 @@ public class PledgeCheckout {
             String idempotencyKey) {
         returnUrls.check(successUrl, errorUrl);
         PayablePledge payable = payments.prepare(pledgeId, backerId, acknowledgedVersion);
-        return page.open(payable, language, successUrl, errorUrl, idempotencyKey);
+        return page.waiting(payable).orElseGet(() -> page.open(payable, language, successUrl, errorUrl, idempotencyKey));
     }
 }

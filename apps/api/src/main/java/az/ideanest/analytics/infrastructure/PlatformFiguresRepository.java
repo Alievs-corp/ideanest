@@ -85,7 +85,9 @@ public class PlatformFiguresRepository {
                              FROM refunds r
                             WHERE r.pledge_id = p.id
                               AND r.state = 'SUCCEEDED'
-                              AND r.reason <> 'RAISE_NOT_APPLIED'), 0), 0) AS net
+                              AND r.reason <> 'RAISE_NOT_APPLIED'
+                              AND NOT EXISTS (SELECT 1 FROM duplicate_charges dc
+                                               WHERE dc.charge_transaction_id = r.charge_transaction_id)), 0), 0) AS net
                   FROM pledges p
                  WHERE p.state IN ('COLLECTED', 'FULFILLED')
                    AND p.collected_at >= :from

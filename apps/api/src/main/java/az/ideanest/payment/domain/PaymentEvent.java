@@ -26,9 +26,11 @@ import java.util.Objects;
  *     {@link PaymentEventType#UNRECOGNISED} covers everything the platform did not ask
  *     for
  * @param amount how much the event is about, when it says. Null when the event
- *     carries no amount. Never used to <em>decide</em> anything — the platform's own
+ *     carries no amount. Never the amount <em>credited</em> — the platform's own
  *     record of what was charged is {@code transactions}, and an amount taken from a
- *     webhook is an amount taken from somebody else's system
+ *     webhook is an amount taken from somebody else's system. Since #587 it is checked
+ *     against that record: a payment reported for a different amount or currency than
+ *     its page was opened for is recorded failed rather than collected
  * @param signedAt when the provider says it signed. §17.2's replay check compares it
  *     against {@code ideanest.payment.webhooks.tolerance}, and it is stored so that
  *     "how far behind were deliveries during the incident" is answerable

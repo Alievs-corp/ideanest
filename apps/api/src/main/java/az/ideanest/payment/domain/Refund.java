@@ -142,7 +142,8 @@ public class Refund {
         this.detail = Objects.requireNonNull(detail, "detail");
         this.state = RefundState.REQUESTED;
         // Null only for a refund the platform issued itself, which V76 limits to the two campaign
-        // reasons (IDN-EXT-01, #40) and V83 extends to a raise that could not be applied (#171).
+        // reasons (IDN-EXT-01, #40), V83 extends to a raise that could not be applied (#171), and V119 to
+        // a second payment for one pledge (#587).
         if (requestedBy == null && !isPlatformReason(reason)) {
             throw new IllegalArgumentException("Only a campaign refund may be issued by the platform itself");
         }
@@ -154,7 +155,8 @@ public class Refund {
     public static boolean isPlatformReason(RefundReason reason) {
         return reason == RefundReason.CAMPAIGN_FAILED
                 || reason == RefundReason.CAMPAIGN_HALTED
-                || reason == RefundReason.RAISE_NOT_APPLIED;
+                || reason == RefundReason.RAISE_NOT_APPLIED
+                || reason == RefundReason.DUPLICATE_CHARGE;
     }
 
     /**

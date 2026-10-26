@@ -1,6 +1,7 @@
 package az.ideanest.pledge.application;
 
 import java.net.URI;
+import java.util.Optional;
 
 /**
  * Opens the provider's payment page for a draft — IDN-EXT-01 (#39).
@@ -20,4 +21,15 @@ public interface PaymentPage {
      * @throws PaymentPageUnavailableException when no provider can take the payment now
      */
     PaymentPageSession open(PayablePledge pledge, String language, URI successUrl, URI errorUrl, String idempotencyKey);
+
+    /**
+     * #587: the page already opened for this draft, for its total, and still waiting for the provider —
+     * which a second payment request is sent back to rather than given a second order. Empty when there
+     * is none, or when it is old enough that the sweep is about to ask after it.
+     *
+     * <p>A default that finds nothing, so an implementation that cannot tell keeps opening pages.
+     */
+    default Optional<PaymentPageSession> waiting(PayablePledge pledge) {
+        return Optional.empty();
+    }
 }
