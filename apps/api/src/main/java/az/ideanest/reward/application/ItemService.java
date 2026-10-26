@@ -7,6 +7,7 @@ import az.ideanest.reward.domain.Item;
 import az.ideanest.reward.domain.RewardTierItem;
 import az.ideanest.reward.infrastructure.ItemRepository;
 import az.ideanest.reward.infrastructure.RewardTierItemRepository;
+import az.ideanest.shared.HttpsAddresses;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,7 +83,7 @@ public class ItemService {
 
         Item item = Item.of(projectId, requireName(draft.name()));
         item.setDescription(blankAsNull(draft.description()));
-        item.setImageUrl(blankAsNull(draft.imageUrl()));
+        item.setImageUrl(httpsOrNull(draft.imageUrl()));
         item.setSku(uniqueSku(projectId, null, draft.sku()));
         applyPhysicality(item, draft.digital(), draft.weightGrams());
 
@@ -120,7 +121,7 @@ public class ItemService {
         String name = patch.name().isPresent() ? requireName(patch.name().value()) : before.name();
         String description =
                 patch.description().isPresent() ? blankAsNull(patch.description().value()) : before.description();
-        String imageUrl = patch.imageUrl().isPresent() ? blankAsNull(patch.imageUrl().value()) : before.imageUrl();
+        String imageUrl = patch.imageUrl().isPresent() ? httpsOrNull(patch.imageUrl().value()) : before.imageUrl();
 
         boolean digital = before.digital();
         Integer weight = before.weightGrams();
@@ -225,6 +226,18 @@ public class ItemService {
      * description — and answering an autosave with a 400 for clearing a field is a
      * worse experience than storing what the creator plainly meant.
      */
+    /**
+     * An item's typed image address, https only (#587): it is rendered on the campaign page
+     * beside the cover, so it needs the cover's rule, {@link HttpsAddresses}.
+     */
+    private static String httpsOrNull(String value) {
+        String address = blankAsNull(value);
+        if (address != null && !HttpsAddresses.isHttps(address)) {
+            throw new RewardFieldRejectedException("imageUrl", "An image address has to start with https:// and hold no spaces.");
+        }
+        return address;
+    }
+
     private static String blankAsNull(String value) {
         if (value == null) {
             return null;
