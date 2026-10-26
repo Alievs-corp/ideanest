@@ -118,9 +118,24 @@ describe('bucketKey', () => {
 });
 
 describe('callerAddress', () => {
-  it('takes the first forwarded hop', () => {
+  /*
+   * #587: the first hop is the client's own writing. Traefik appends its peer last, so a
+   * caller that prepends an invented address is still counted as the hop the proxy saw.
+   */
+  it('takes the last forwarded hop, the one the proxy appended', () => {
     const headers = new Headers({ 'x-forwarded-for': '203.0.113.7, 198.51.100.1' });
-    expect(callerAddress(headers)).toBe('203.0.113.7');
+    expect(callerAddress(headers)).toBe('198.51.100.1');
+  });
+
+  it('is not moved by a client prepending its own hops', () => {
+    const honest = new Headers({ 'x-forwarded-for': '198.51.100.1' });
+    const forged = new Headers({ 'x-forwarded-for': '10.9.9.9, 203.0.113.250, 198.51.100.1' });
+    expect(callerAddress(forged)).toBe(callerAddress(honest));
+  });
+
+  it('prefers the forwarded hop to x-real-ip', () => {
+    const headers = new Headers({ 'x-forwarded-for': '198.51.100.1', 'x-real-ip': '203.0.113.9' });
+    expect(callerAddress(headers)).toBe('198.51.100.1');
   });
 
   it('falls back to x-real-ip and then to one shared bucket', () => {
