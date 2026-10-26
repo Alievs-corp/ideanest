@@ -31,8 +31,8 @@ public record RevisionReviewResponse(
         ProjectEdit live,
         ProjectEdit proposed,
         List<RevisionRewardBody> rewards,
-        List<RevisionCatalogueBody.Item> items,
-        RevisionCatalogueBody.Zones shippingZones) {
+        List<RevisionCatalogueBody.RevisionItem> items,
+        RevisionCatalogueBody.RevisionZones shippingZones) {
 
     static RevisionReviewResponse of(
             ProjectRevision revision,
@@ -40,8 +40,8 @@ public record RevisionReviewResponse(
             ProjectEdit live,
             ProjectEdit proposed,
             List<RevisionRewardBody> rewards,
-            List<RevisionCatalogueBody.Item> items,
-            RevisionCatalogueBody.Zones shippingZones) {
+            List<RevisionCatalogueBody.RevisionItem> items,
+            RevisionCatalogueBody.RevisionZones shippingZones) {
         return new RevisionReviewResponse(
                 revision.getId(),
                 revision.getProjectId(),

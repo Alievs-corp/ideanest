@@ -21,34 +21,35 @@ public final class RevisionCatalogueBody {
      * @param changedFields named as the creator's item response names them
      */
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public record Item(UUID id, List<String> changedFields, ItemWriting live, ItemWriting proposed) {
+    public record RevisionItem(
+            UUID id, List<String> changedFields, RevisionItemWriting live, RevisionItemWriting proposed) {
 
-        static Item of(ProjectRevisionService.ItemChange change) {
-            return new Item(
+        static RevisionItem of(ProjectRevisionService.ItemChange change) {
+            return new RevisionItem(
                     change.itemId(),
                     change.changedFields(),
-                    ItemWriting.of(change.live()),
-                    ItemWriting.of(change.proposed()));
+                    RevisionItemWriting.of(change.live()),
+                    RevisionItemWriting.of(change.proposed()));
         }
     }
 
     /** @param weightGrams null for a digital item, and for a physical one nobody has weighed */
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public record ItemWriting(
+    public record RevisionItemWriting(
             String name, String description, String imageUrl, Integer weightGrams, boolean isDigital) {
 
-        static ItemWriting of(CatalogueWriting.Item item) {
-            return new ItemWriting(item.name(), item.description(), item.imageUrl(), item.weightGrams(), item.digital());
+        static RevisionItemWriting of(CatalogueWriting.Item item) {
+            return new RevisionItemWriting(item.name(), item.description(), item.imageUrl(), item.weightGrams(), item.digital());
         }
     }
 
     /** The regions the campaign has, and the whole set the revision proposes instead. */
-    public record Zones(List<Zone> live, List<Zone> proposed) {
+    public record RevisionZones(List<RevisionZone> live, List<RevisionZone> proposed) {
 
-        static Zones of(ProjectRevisionService.ZoneChange change) {
-            return new Zones(
-                    change.live().stream().map(Zone::of).toList(),
-                    change.proposed().stream().map(Zone::of).toList());
+        static RevisionZones of(ProjectRevisionService.ZoneChange change) {
+            return new RevisionZones(
+                    change.live().stream().map(RevisionZone::of).toList(),
+                    change.proposed().stream().map(RevisionZone::of).toList());
         }
     }
 
@@ -56,10 +57,10 @@ public final class RevisionCatalogueBody {
      * @param id the region's identifier; a region the revision adds carries the one it will be
      *     created with
      */
-    public record Zone(UUID id, String name, List<String> countryCodes) {
+    public record RevisionZone(UUID id, String name, List<String> countryCodes) {
 
-        static Zone of(CatalogueWriting.Zone zone) {
-            return new Zone(zone.id(), zone.name(), zone.countries());
+        static RevisionZone of(CatalogueWriting.Zone zone) {
+            return new RevisionZone(zone.id(), zone.name(), zone.countries());
         }
     }
 }
