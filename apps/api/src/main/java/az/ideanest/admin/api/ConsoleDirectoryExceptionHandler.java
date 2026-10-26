@@ -1,6 +1,8 @@
 package az.ideanest.admin.api;
 
 import az.ideanest.admin.application.TooManyIdentifiersException;
+import az.ideanest.staff.api.StaffRefusals;
+import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import java.net.URI;
 import java.util.Map;
@@ -32,6 +34,12 @@ public class ConsoleDirectoryExceptionHandler {
         problem.setDetail("The administration console is read by platform staff.");
         problem.setProperty("code", "NOT_A_MODERATOR");
         return problem;
+    }
+
+    /** 403 for a member of staff holding neither authority the lookup asks for. */
+    @ExceptionHandler(InsufficientStaffCapabilityException.class)
+    public ProblemDetail handleInsufficient(InsufficientStaffCapabilityException exception) {
+        return StaffRefusals.insufficient(exception);
     }
 
     /**

@@ -6,7 +6,9 @@ import az.ideanest.audit.AuditEntryRepository;
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
+import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.StaffGrants;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Instant;
 import java.util.List;
@@ -61,6 +63,9 @@ class ConsoleDirectoryApiTests extends AbstractIntegrationTest {
     /** The single address {@code application-test.yml} lists as a moderator. */
     private static final String MODERATOR_EMAIL = "moderator@ideanest.test";
 
+    /** The note this suite's staff grants carry, so the cleanup removes exactly those. */
+    private static final String STAFF_FIXTURE_NOTE = "console directory fixture";
+
     private static Account staff;
 
     @Autowired
@@ -81,6 +86,7 @@ class ConsoleDirectoryApiTests extends AbstractIntegrationTest {
     @AfterEach
     void clearCampaigns() {
         Campaigns.clear(dataSource);
+        StaffGrants.clear(dataSource, STAFF_FIXTURE_NOTE);
     }
 
     @Test
@@ -129,7 +135,7 @@ class ConsoleDirectoryApiTests extends AbstractIntegrationTest {
         ResponseEntity<Map<String, Object>> answer = get("?account=" + creatorId, staff().accessToken());
 
         /*
-         * The whole argument for this endpoint being staff-wide and unaudited is that it
+         * The whole argument for this endpoint being unaudited is that it
          * discloses nothing a profile page does not. `GET /v1/admin/users` serves the
          * address, needs ADMINISTER_ACCOUNTS and is recorded; if an address could be
          * learned here, this endpoint would need both and would not be worth having.
@@ -224,6 +230,41 @@ class ConsoleDirectoryApiTests extends AbstractIntegrationTest {
 
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(refused.getBody()).containsEntry("code", "NOT_A_MODERATOR");
+    }
+
+    @Test
+    @DisplayName("a moderator may look identifiers up")
+    void aModeratorMayLookUp() {
+        UUID creatorId = Campaigns.creator(dataSource, handle("moderated"));
+        Account moderator = account("directory-moderator");
+        StaffGrants.grant(dataSource, moderator.id(), StaffRole.MODERATOR, STAFF_FIXTURE_NOTE);
+
+        ResponseEntity<Map<String, Object>> answer = get("?account=" + creatorId, moderator.accessToken());
+
+        assertThat(answer.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(accountsIn(answer)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("staff holding neither ADMINISTER_ACCOUNTS nor MODERATE_CONTENT are refused")
+    void staffWithoutEitherAuthorityAreRefused() {
+        String unique = handle("draft-title");
+        UUID creatorId = Campaigns.creator(dataSource, unique);
+        UUID projectId = Campaigns.seed(dataSource, creatorId, unique).title("Not public yet").insert();
+
+        for (StaffRole role : List.of(StaffRole.PARTNER, StaffRole.CURATOR, StaffRole.FINANCE)) {
+            Account member = account("directory-" + role.name().toLowerCase(java.util.Locale.ROOT));
+            StaffGrants.grant(dataSource, member.id(), role, STAFF_FIXTURE_NOTE);
+
+            ResponseEntity<Map<String, Object>> refused =
+                    get("?account=" + creatorId + "&project=" + projectId, member.accessToken());
+
+            // The lookup answers about any identifier, including a draft's title, which none of
+            // these roles' own screens would show them (#587).
+            assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+            assertThat(refused.getBody()).containsEntry("code", "INSUFFICIENT_STAFF_CAPABILITY");
+            assertThat(String.valueOf(refused.getBody())).doesNotContain("Not public yet");
+        }
     }
 
     @Test
