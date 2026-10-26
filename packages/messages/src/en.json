@@ -7565,7 +7565,16 @@
         "removeOnApprovalBody": "{title} stays public until a moderator approves your changes, then it is removed. You can undo this until then.",
         "removeOnApprovalConfirm": "Remove on approval",
         "newTiersHidden": "New tiers stay hidden from backers until a moderator approves them.",
-        "revisionField": "Rewards"
+        "revisionField": "Rewards",
+        "heldItem": {
+          "note": "Your changes to this item are not public yet. Backers still see the approved version.",
+          "fields": "Waiting for review: {fields}",
+          "editorTitle": "Some changes wait for review",
+          "editorBody": "A reward backers can see contains this item, so the fields marked “Waiting for review” show your new values. Backers still see the approved ones until a moderator approves your changes.",
+          "savedAnnouncement": "{name} was saved. Backers will see the changes once a moderator approves them.",
+          "revisionItemsField": "Items",
+          "revisionShippingZonesField": "Shipping zones"
+        }
       },
       "faq": {
         "nothingCached": "You are offline, and the questions have not been loaded on this phone yet."
