@@ -1,5 +1,6 @@
 package az.ideanest.user.application;
 
+import az.ideanest.shared.HttpsAddresses;
 import az.ideanest.user.domain.SocialLink;
 import az.ideanest.user.domain.SocialPlatform;
 import az.ideanest.user.domain.User;
@@ -93,8 +94,6 @@ public class ProfileEditing {
 
     /** {@code https://} plus at least a host. Anything shorter is not an address. */
     private static final int URL_MIN = 12;
-
-    private static final String HTTPS_PREFIX = "https://";
 
     private final UserRepository users;
     private final SocialLinkRepository socialLinks;
@@ -288,7 +287,7 @@ public class ProfileEditing {
      */
     private static String requiredHttpsUrl(String field, String value) {
         String trimmed = value == null ? "" : value.trim();
-        if (!trimmed.startsWith(HTTPS_PREFIX) || containsWhitespace(trimmed)) {
+        if (!HttpsAddresses.isHttps(trimmed)) {
             throw new ProfileFieldRejectedException(field, "A link has to start with https:// and hold no spaces.");
         }
         if (trimmed.length() < URL_MIN || trimmed.length() > URL_MAX) {
@@ -296,18 +295,5 @@ public class ProfileEditing {
                     field, "A link is between " + URL_MIN + " and " + URL_MAX + " characters.");
         }
         return trimmed;
-    }
-
-    /**
-     * A space inside a URL is either a mistake or an attempt to smuggle a second attribute
-     * through a template that forgot to quote. Neither is worth accepting.
-     */
-    private static boolean containsWhitespace(String value) {
-        for (int index = 0; index < value.length(); index++) {
-            if (Character.isWhitespace(value.charAt(index))) {
-                return true;
-            }
-        }
-        return false;
     }
 }
