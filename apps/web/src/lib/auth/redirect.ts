@@ -46,6 +46,33 @@ export const DEFAULT_SIGNED_IN_PATH = '/';
  * one more case for.
  */
 export function safeReturnPath(value: string | null | undefined): string | null {
+  const path = sameOriginPath(value);
+  if (path === null) return null;
+
+  /*
+   * A return path pointing back at a sign-in page is a loop: signing in would land on the
+   * form that has just been completed. It is not an attack, only a mistake — a link to
+   * `/sign-in` clicked while already being sent to `/sign-in` — and the answer is the same
+   * as having no value at all.
+   *
+   * The pathname is everything before the query or fragment: `sameOriginPath` rebuilt the
+   * value from a parse, so a literal `?` or `#` inside the path is already percent-encoded.
+   */
+  const pathname = path.split(/[?#]/u)[0] ?? path;
+  return isAuthenticationPath(pathname) ? null : path;
+}
+
+/**
+ * The checks {@link safeReturnPath} makes about the ORIGIN, and nothing about where in the
+ * application the path leads — the part every return address on this site needs (#587).
+ *
+ * SELF-CONTAINED ON PURPOSE: it closes over nothing in this module and uses nothing a
+ * compiler would lower to a helper, because the maintenance page writes it into an inline
+ * script with `Function.prototype.toString` (`lib/maintenance/script.ts`). The page's own
+ * "go back to `?from=`" used to check two characters; this is the same parse the sign-in
+ * redirect trusts, not a second copy of it.
+ */
+export function sameOriginPath(value: string | null | undefined): string | null {
   if (value == null) return null;
 
   const raw = value.trim();
@@ -74,15 +101,7 @@ export function safeReturnPath(value: string | null | undefined): string | null 
 
   if (parsed.origin !== 'https://ideanest.invalid') return null;
 
-  const path = `${parsed.pathname}${parsed.search}${parsed.hash}`;
-
-  /*
-   * A return path pointing back at a sign-in page is a loop: signing in would land on the
-   * form that has just been completed. It is not an attack, only a mistake — a link to
-   * `/sign-in` clicked while already being sent to `/sign-in` — and the answer is the same
-   * as having no value at all.
-   */
-  return isAuthenticationPath(parsed.pathname) ? null : path;
+  return parsed.pathname + parsed.search + parsed.hash;
 }
 
 /**
