@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
@@ -244,6 +245,19 @@ describe('the two-factor step', () => {
     expect(screen.getByLabelText(copy.twoFactor.codeLabel)).toBeTruthy();
     expect(screen.queryByLabelText(copy.fields.email)).toBeNull();
     expect(mockRouter.back).not.toHaveBeenCalled();
+  });
+
+  // #587: the second factor and a recovery code are typed here.
+  it('cannot be captured, though the form before it can', async () => {
+    const prevent = jest.mocked(usePreventScreenCapture);
+    prevent.mockClear();
+    jest.mocked(signIn).mockResolvedValueOnce(challenge());
+    await renderScreen();
+    expect(prevent).not.toHaveBeenCalled();
+
+    await fillAndSubmit();
+
+    expect(prevent).toHaveBeenCalledWith('two-factor-sign-in');
   });
 
   it('sends the code as code, then leaves', async () => {

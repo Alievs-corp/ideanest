@@ -4,6 +4,7 @@ import {
   RETURN_TO_PARAM,
   isAuthenticationPath,
   safeReturnPath,
+  sameOriginPath,
   signInHref,
 } from './redirect';
 
@@ -66,6 +67,45 @@ describe('safeReturnPath', () => {
   it('does not mistake a path that merely begins with one of those words', () => {
     expect(safeReturnPath('/sign-in-help')).toBe('/sign-in-help');
     expect(safeReturnPath('/registered-campaigns')).toBe('/registered-campaigns');
+  });
+});
+
+/*
+ * #587: the origin half on its own, for the maintenance page's inline script. Escapes are
+ * built from char codes so that what is under test is unmistakably the character itself.
+ */
+describe('sameOriginPath', () => {
+  const TAB = String.fromCharCode(9);
+  const BACKSLASH = String.fromCharCode(92);
+
+  it('keeps a path on this origin, including an authentication screen', () => {
+    expect(sameOriginPath('/az/pledges?page=2#top')).toBe('/az/pledges?page=2#top');
+    // No loop rule here: returning to a sign-in form after maintenance is where the reader was.
+    expect(sameOriginPath('/sign-in?next=%2Fsettings')).toBe('/sign-in?next=%2Fsettings');
+  });
+
+  it('refuses everything safeReturnPath refuses about the origin', () => {
+    for (const value of [
+      'https://evil.test/x',
+      '//evil.test/x',
+      `/${BACKSLASH}evil.test`,
+      `${BACKSLASH}/evil.test`,
+      'javascript:alert(1)',
+      `/${TAB}/evil.test`,
+      `/${TAB}x//evil.test`,
+      '',
+      null,
+      undefined,
+    ]) {
+      expect(sameOriginPath(value)).toBeNull();
+    }
+  });
+
+  it('closes over nothing, so it can be written into an inline script', () => {
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const emitted = new Function(`return (${sameOriginPath.toString()});`)() as typeof sameOriginPath;
+    expect(emitted('/az/discover')).toBe('/az/discover');
+    expect(emitted('//evil.test')).toBeNull();
   });
 });
 

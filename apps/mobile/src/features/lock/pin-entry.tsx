@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import { Body, Icon, PinDots, PinPad, Subheading, TONES, useSurface, type PinPadAction } from '../../components/ui';
 import { Glyphs } from '../../icons';
 import { PIN_LENGTH } from '../../lib/pin';
@@ -42,6 +43,12 @@ export function PinEntry({
   disabled = false,
   testID = 'pin-entry',
 }: PinEntryProps) {
+  /*
+   * Every PIN pad — unlocking, choosing a PIN, the identity check before changing it — is off
+   * limits to screenshots and recordings (#587). The dots hide the digits, but a recording of
+   * the pad shows which keys were pressed.
+   */
+  usePreventScreenCapture('pin-entry');
   const [value, setValue] = useState('');
   const [working, setWorking] = useState(false);
   // State lags a render behind; two completions in one batch must still submit once.
