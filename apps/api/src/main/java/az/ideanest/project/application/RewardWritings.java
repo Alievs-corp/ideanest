@@ -44,4 +44,24 @@ public interface RewardWritings {
      * approved, and releases their media once nothing else shows it.
      */
     void discardCreated(UUID projectId);
+
+    /**
+     * Every item an approved tier contains, as the public sees it now, in creation order (#587).
+     * An item no approved tier contains is not public, and an edit to it is not held.
+     */
+    Map<UUID, CatalogueWriting.Item> liveItemsOf(UUID projectId);
+
+    /** The campaign's shipping regions as they are now (#587). */
+    List<CatalogueWriting.Zone> liveZonesOf(UUID projectId);
+
+    /**
+     * Applies an approved revision's items and regions, in the caller's transaction and before
+     * its tiers, so a tier's rate for a region it proposed finds the region there (#587). An item
+     * that no longer exists is skipped. The regions are made exactly {@code zones}: a region
+     * kept by identifier is renamed and moved, a new one is created with the identifier the
+     * revision gave it, and one left out is deleted with every rate that named it.
+     *
+     * @param zones the proposed regions, or null when the revision leaves them alone
+     */
+    void publishCatalogue(UUID projectId, Map<UUID, CatalogueWriting.Item> items, List<CatalogueWriting.Zone> zones);
 }

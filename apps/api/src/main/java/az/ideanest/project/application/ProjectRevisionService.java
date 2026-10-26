@@ -14,8 +14,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -51,6 +53,11 @@ import tools.jackson.databind.ObjectMapper;
  * and {@link #touchRewards} keeps the revision naming it. {@link #publishRewards} applies the
  * lot on approval, and a refusal or a discard deletes the created rows. The tier's price and
  * its counts are not held: the price is frozen and the counts are backers'.
+ *
+ * <p><strong>And so does every change to an item a backer can see, and to the shipping regions
+ * (#587).</strong> {@link #stageItem} holds an item's proposed state, {@link #stageZones} the
+ * regions as a whole; {@link #publishCatalogue} applies both on approval, before the tiers.
+ * Nothing about either is a row until then, so a refusal or a discard has nothing to delete.
  */
 @Service
 public class ProjectRevisionService {
@@ -140,7 +147,7 @@ public class ProjectRevisionService {
         Project live = projects.findByIdForUpdate(workingCopy.getId())
                 .orElseThrow(() -> new ProjectNotFoundException(workingCopy.getId()));
         Optional<ProjectRevision> open = openAfterLock(live.getId());
-        RevisionContent proposed = RevisionContent.of(workingCopy, storyOf(workingCopy), Map.of());
+        RevisionContent proposed = RevisionContent.of(workingCopy, storyOf(workingCopy), Map.of(), Map.of(), null);
         if (open.isPresent()) {
             proposed = proposed.withRewardsOf(contentOf(open.get()));
         }
@@ -226,6 +233,126 @@ public class ProjectRevisionService {
         Optional<ProjectRevision> open = openAfterLock(projectId);
         RevisionContent liveContent = liveContent(live);
         keep(live, liveContent, open, open.map(this::contentOf).orElse(liveContent), authorId);
+    }
+
+    /**
+     * Applies an edit to one public item's proposed state in the open revision, opening one if
+     * there is none, and answers the state the item now has in it (#587). Read and kept as
+     * {@link #stageReward} does: {@code edit} is given the item as the revision holds it, or as
+     * it shows, and validates as it goes; an edit that changes nothing leaves the revision alone.
+     *
+     * @throws IllegalStateException when no approved tier contains the item, which the caller
+     *     asks first: an item the public cannot see is written directly
+     */
+    @Transactional
+    public CatalogueWriting.Item stageItem(
+            UUID projectId, UUID itemId, UUID authorId, UnaryOperator<CatalogueWriting.Item> edit) {
+        Project live = projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Optional<ProjectRevision> open = openAfterLock(projectId);
+        RevisionContent liveContent = liveContent(live);
+        RevisionContent.Item shown = liveContent.items().get(itemId);
+        if (shown == null) {
+            throw new IllegalStateException("Item " + itemId + " is not in an approved tier of project " + projectId);
+        }
+
+        RevisionContent current = open.map(this::contentOf).orElse(liveContent).heldAgainst(liveContent);
+        CatalogueWriting.Item before = CatalogueWriting.Item.of(current.items().getOrDefault(itemId, shown));
+        CatalogueWriting.Item after = edit.apply(before);
+        if (!after.equals(before)) {
+            keep(live, liveContent, open, current.withItem(itemId, after.held()), authorId);
+        }
+        return after;
+    }
+
+    /**
+     * Applies an edit to the campaign's shipping regions as a whole in the open revision, opening
+     * one if there is none, and answers the regions the revision now proposes (#587).
+     * {@code edit} is given the regions as the revision proposes them, or as they are.
+     */
+    @Transactional
+    public List<CatalogueWriting.Zone> stageZones(
+            UUID projectId, UUID authorId, UnaryOperator<List<CatalogueWriting.Zone>> edit) {
+        Project live = projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Optional<ProjectRevision> open = openAfterLock(projectId);
+        RevisionContent liveContent = liveContent(live);
+
+        RevisionContent current = open.map(this::contentOf).orElse(liveContent).heldAgainst(liveContent);
+        List<CatalogueWriting.Zone> before = zonesOf(
+                current.shippingZones() == null ? liveContent.shippingZones() : current.shippingZones());
+        List<CatalogueWriting.Zone> after = zonesOf(
+                edit.apply(before).stream().map(CatalogueWriting.Zone::held).toList());
+        if (!after.equals(before)) {
+            keep(
+                    live,
+                    liveContent,
+                    open,
+                    current.withShippingZones(after.stream().map(CatalogueWriting.Zone::held).toList()),
+                    authorId);
+        }
+        return after;
+    }
+
+    /** What the open revision proposes for the campaign's public items, by item (#587). Empty when nothing is open. */
+    @Transactional(readOnly = true)
+    public Map<UUID, CatalogueWriting.Item> heldItems(UUID projectId) {
+        Map<UUID, CatalogueWriting.Item> held = new LinkedHashMap<>();
+        revisions.findOpenByProjectId(projectId)
+                .flatMap(open -> projects.findById(projectId)
+                        .map(live -> contentOf(open).heldAgainst(liveContent(live))))
+                .ifPresent(content -> content.items()
+                        .forEach((itemId, item) -> held.put(itemId, CatalogueWriting.Item.of(item))));
+        return held;
+    }
+
+    /** The shipping regions the open revision proposes, when it proposes any (#587). */
+    @Transactional(readOnly = true)
+    public Optional<List<CatalogueWriting.Zone>> heldZones(UUID projectId) {
+        return revisions.findOpenByProjectId(projectId)
+                .flatMap(open -> projects.findById(projectId)
+                        .map(live -> contentOf(open).heldAgainst(liveContent(live))))
+                .map(RevisionContent::shippingZones)
+                .map(ProjectRevisionService::zonesOf);
+    }
+
+    /** One public item a revision changes, as the public sees it and as proposed (#587). */
+    public record ItemChange(UUID itemId, CatalogueWriting.Item live, CatalogueWriting.Item proposed, List<String> changedFields) {}
+
+    /** The shipping regions a revision proposes, beside the ones the campaign has (#587). */
+    public record ZoneChange(List<CatalogueWriting.Zone> live, List<CatalogueWriting.Zone> proposed) {}
+
+    /** Every public item a revision changes, in the order the campaign has them. */
+    public List<ItemChange> itemChanges(RevisionContent proposed, RevisionContent live) {
+        RevisionContent held = proposed.heldAgainst(live);
+        return held.changedItemsFrom(live).stream()
+                .map(itemId -> {
+                    CatalogueWriting.Item shown = CatalogueWriting.Item.of(live.items().get(itemId));
+                    CatalogueWriting.Item wanted = CatalogueWriting.Item.of(held.items().get(itemId));
+                    return new ItemChange(itemId, shown, wanted, wanted.changedFrom(shown));
+                })
+                .toList();
+    }
+
+    /** The regions a revision proposes, or empty when it leaves them alone. */
+    public Optional<ZoneChange> zoneChange(RevisionContent proposed, RevisionContent live) {
+        RevisionContent held = proposed.heldAgainst(live);
+        if (held.shippingZones() == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new ZoneChange(zonesOf(live.shippingZones()), zonesOf(held.shippingZones())));
+    }
+
+    /**
+     * Applies an approved revision's items and shipping regions. Part of approving it, and
+     * before {@link #publishRewards}, so a tier rate for a region created here finds it.
+     */
+    public void publishCatalogue(UUID projectId, RevisionContent approved, RevisionContent live) {
+        RevisionContent held = approved.heldAgainst(live);
+        Map<UUID, CatalogueWriting.Item> items = new LinkedHashMap<>();
+        held.items().forEach((itemId, item) -> items.put(itemId, CatalogueWriting.Item.of(item)));
+        List<CatalogueWriting.Zone> zones = held.shippingZones() == null ? null : zonesOf(held.shippingZones());
+        if (!items.isEmpty() || zones != null) {
+            rewardWritings.publishCatalogue(projectId, items, zones);
+        }
     }
 
     /** What the open revision holds about the campaign's tiers. {@link HeldRewards#NONE} when nothing is open. */
@@ -438,11 +565,30 @@ public class ProjectRevisionService {
                 .findFirst();
     }
 
-    /** The content a campaign shows the public now, with every approved reward tier. */
+    /**
+     * The content a campaign shows the public now, with every approved reward tier, every item
+     * one of them contains, and its shipping regions.
+     */
     public RevisionContent liveContent(Project live) {
         Map<UUID, RevisionContent.Reward> rewards = new LinkedHashMap<>();
         rewardWritings.liveTiersOf(live.getId()).forEach(tier -> rewards.put(tier.id(), tier.writing().held()));
-        return RevisionContent.of(live, storyOf(live), rewards);
+        Map<UUID, RevisionContent.Item> items = new LinkedHashMap<>();
+        rewardWritings.liveItemsOf(live.getId()).forEach((itemId, item) -> items.put(itemId, item.held()));
+        List<RevisionContent.Zone> zones =
+                rewardWritings.liveZonesOf(live.getId()).stream().map(CatalogueWriting.Zone::held).toList();
+        return RevisionContent.of(live, storyOf(live), rewards, items, zones);
+    }
+
+    /** Regions as the reward module reads them, in the order their names sort. */
+    private static List<CatalogueWriting.Zone> zonesOf(List<RevisionContent.Zone> zones) {
+        if (zones == null) {
+            return List.of();
+        }
+        return zones.stream()
+                .map(CatalogueWriting.Zone::of)
+                .sorted(Comparator.comparing((CatalogueWriting.Zone zone) -> zone.name().toLowerCase(Locale.ROOT))
+                        .thenComparing(zone -> zone.id().toString()))
+                .toList();
     }
 
     /** What a revision read against the live content holds about the tiers. */
