@@ -3,7 +3,9 @@ package az.ideanest.payment.application;
 import az.ideanest.ledger.application.LedgerAccount;
 import az.ideanest.ledger.application.LedgerBalance;
 import az.ideanest.ledger.application.LedgerReader;
+import az.ideanest.ledger.application.ProjectTotal;
 import az.ideanest.payment.domain.TransactionType;
+import az.ideanest.payment.infrastructure.CreatorDebtRepository;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -38,6 +40,17 @@ import org.springframework.transaction.annotation.Transactional;
  *       this is the only one of the three that could catch a posting the application simply
  *       never made.
  * </ol>
+ *
+ * <h2>And escrow per campaign (#587)</h2>
+ *
+ * <p>Check two reads escrow as one pool, and a pool hides a campaign that returned more than it
+ * took behind every other campaign's money — a refund on a paid-out campaign did exactly that,
+ * silently. So the second check is asked again per campaign: what the campaign holds — escrow
+ * plus {@code psp_fee} and {@code platform_expense}, check three's terms, because a full refund
+ * of a charge the provider kept a fee on leaves that campaign's escrow short by the fee for
+ * reasons that are nobody's mistake — must not be below zero, unless a creator debt answers for
+ * the difference (a chargeback lost after the payout, §9.8). Reported as
+ * {@code PLATFORM_ACCOUNT_NEGATIVE} on {@code escrow:<campaign>}.
  *
  * <h2>WHY THERE IS NO COMPARISON AGAINST A PROVIDER'S SETTLEMENT REPORT</h2>
  *
@@ -84,14 +97,20 @@ public class LedgerReconciliation {
     private static final Set<String> CREDIT_NORMAL =
             Set.of(LedgerAccount.PLATFORM_FEE.name(), LedgerAccount.TAX_PAYABLE.name());
 
+    /** What a campaign holds, in check three's terms: escrow with the fees that left it put back. */
+    private static final List<LedgerAccount> HELD =
+            List.of(LedgerAccount.ESCROW, LedgerAccount.PSP_FEE, LedgerAccount.PLATFORM_EXPENSE);
+
     private final LedgerReader ledger;
     private final PaymentTransactionRepository transactions;
+    private final CreatorDebtRepository debts;
     private final Clock clock;
 
     public LedgerReconciliation(
-            LedgerReader ledger, PaymentTransactionRepository transactions, Clock clock) {
+            LedgerReader ledger, PaymentTransactionRepository transactions, CreatorDebtRepository debts, Clock clock) {
         this.ledger = ledger;
         this.transactions = transactions;
+        this.debts = debts;
         this.clock = clock;
     }
 
@@ -104,12 +123,32 @@ public class LedgerReconciliation {
         List<ReconciliationFinding> findings = new ArrayList<>();
         findings.addAll(unbalancedCurrencies(balances));
         findings.addAll(impossibleSigns(balances));
+        findings.addAll(campaignsHoldingLessThanNothing());
         findings.addAll(disagreementsWithPayments(balances, settled));
 
         return new ReconciliationReport(
                 clock.instant().truncatedTo(ChronoUnit.MICROS),
                 balances.size(),
                 List.copyOf(findings));
+    }
+
+    /**
+     * Check two, per campaign (#587): no campaign holds less than nothing, beyond what its creator was
+     * made to owe.
+     *
+     * <p>Only the campaigns below zero are read, and the debts only for those, so the cost is one
+     * aggregate on a healthy platform.
+     */
+    private List<ReconciliationFinding> campaignsHoldingLessThanNothing() {
+        List<ReconciliationFinding> findings = new ArrayList<>();
+        for (ProjectTotal held : ledger.projectsBelowZero(HELD)) {
+            BigDecimal owed = debts.owedFor(held.projectId(), held.currency());
+            if (held.net().add(owed == null ? BigDecimal.ZERO : owed).signum() < 0) {
+                findings.add(ReconciliationFinding.campaignEscrowNegative(
+                        held.projectId(), held.currency(), held.net()));
+            }
+        }
+        return findings;
     }
 
     /** Check one: per currency, the whole ledger sums to zero. */

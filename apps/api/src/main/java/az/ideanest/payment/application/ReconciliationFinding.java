@@ -1,6 +1,8 @@
 package az.ideanest.payment.application;
 
+import az.ideanest.ledger.application.LedgerAccount;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
  * One thing the reconciliation found wrong — issues #70 and #403.
@@ -123,6 +125,26 @@ public record ReconciliationFinding(
                 null,
                 "%s is negative at %s, which is money disbursed that was never taken"
                         .formatted(account, balance.toPlainString()));
+    }
+
+    /**
+     * #587: one campaign holds less than nothing — it returned or paid out more than it took, and no
+     * creator debt answers for it. Escrow read as one pool hides this behind every other campaign.
+     *
+     * <p>{@link Code#PLATFORM_ACCOUNT_NEGATIVE}, because that is what it is: escrow below zero, for one
+     * campaign. The account is {@code escrow:<campaign>}, which the console prints as it is.
+     */
+    public static ReconciliationFinding campaignEscrowNegative(UUID projectId, String currency, BigDecimal held) {
+        String account = LedgerAccount.ESCROW.name() + ":" + projectId;
+        return new ReconciliationFinding(
+                Code.PLATFORM_ACCOUNT_NEGATIVE,
+                account,
+                currency,
+                held,
+                null,
+                ("%s holds %s with its provider and bank fees put back, which is money returned or paid out for"
+                                + " campaign %s beyond what it took, and no creator debt covers it")
+                        .formatted(account, held.toPlainString(), projectId));
     }
 
     /** The ledger and the transactions disagree about what the platform holds. */
