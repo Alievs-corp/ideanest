@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { BackHandler, Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Linking, Platform, Share, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import { Stack } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { fillNodes } from '@ideanest/messages/placeholders';
@@ -180,6 +181,7 @@ export function TwoFactorCard() {
   return (
     <SettingsCard testID="two-factor">
       <Stack.Screen options={{ gestureEnabled: !holding, headerBackVisible: !holding }} />
+      {step.kind === 'idle' ? null : <NoScreenCapture />}
       <View ref={heading} accessible accessibilityRole="header" testID="two-factor-heading">
         <Subheading>{t(headingKey(step))}</Subheading>
       </View>
@@ -301,13 +303,7 @@ export function TwoFactorCard() {
               </Text>
             ))}
           </View>
-          <CopyButton
-            text={step.codes.join('\n')}
-            label={tAll('mobile.settings.security.copyAll')}
-            accessibilityLabel={tAll('mobile.settings.security.copyCodes')}
-            copiedAnnouncement={tAll('mobile.settings.security.codesCopied')}
-            testID="two-factor-copy-codes"
-          />
+          <SaveCodesButton codes={step.codes} />
           {/* The only way off this step: there is no endpoint that shows the codes again. */}
           <Checkbox
             label={t('acknowledge')}
@@ -470,6 +466,62 @@ function EnrolmentDetails({ enrolment }: { readonly enrolment: TwoFactorEnrolmen
           testID="two-factor-copy-key"
         />
       </View>
+    </View>
+  );
+}
+
+/**
+ * Every step past idle shows or takes a secret — the password, the key and its QR code, the
+ * recovery codes, a code to turn it off — so none of them may be captured (#587). A component
+ * rather than the hook in the card, so that the settings screen around an idle card stays
+ * capturable like any other.
+ */
+function NoScreenCapture() {
+  usePreventScreenCapture('two-factor');
+  return null;
+}
+
+/**
+ * The recovery codes, handed to the share sheet rather than put on the clipboard (#587).
+ *
+ * The clipboard is the one place on a phone every app can read and some keyboards sync to the
+ * cloud, and a recovery code there outlives the screen that put it there. The share sheet sends
+ * them where the reader chooses — a password manager, a note, a file — which is what "save these
+ * somewhere safe" means. The codes stay selectable on screen for anybody who wants them by hand.
+ */
+function SaveCodesButton({ codes }: { readonly codes: readonly string[] }) {
+  const tAll = useT();
+  const [failed, setFailed] = useState(false);
+
+  async function save(): Promise<void> {
+    // Back to no alert first, so a second failure mounts it afresh and is announced again.
+    setFailed(false);
+    try {
+      await Share.share({ message: codes.join('\n') });
+    } catch {
+      setFailed(true);
+    }
+  }
+
+  return (
+    <View style={styles.group}>
+      <View style={styles.actions}>
+        <Pill
+          label={tAll('mobile.settings.security.saveCodes')}
+          accessibilityLabel={tAll('mobile.settings.security.saveCodesName')}
+          variant="outline"
+          size="sm"
+          onPress={() => void save()}
+          testID="two-factor-save-codes"
+        />
+      </View>
+      {failed ? (
+        <InlineAlert
+          variant="danger"
+          description={tAll('mobile.settings.security.saveFailed')}
+          testID="two-factor-save-codes-failed"
+        />
+      ) : null}
     </View>
   );
 }

@@ -574,6 +574,17 @@ const config: ExpoConfig = {
      * restored install starts signed out with an empty cache, as it already started signed out.
      */
     allowBackup: false,
+    /**
+     * `expo-screen-capture` (#587) is here to set `FLAG_SECURE` on the lock, the PIN pads and
+     * two-factor. Its manifest also asks for what its screenshot LISTENER needs — Android 13's
+     * `READ_MEDIA_IMAGES` and 14's `DETECT_SCREEN_CAPTURE` — and this app registers no listener.
+     * An unused photo permission is a Play Console declaration and a line in the store listing's
+     * data section for nothing, so both are taken back out of the merged manifest.
+     */
+    blockedPermissions: [
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.DETECT_SCREEN_CAPTURE',
+    ],
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       monochromeImage: './assets/adaptive-icon-monochrome.png',

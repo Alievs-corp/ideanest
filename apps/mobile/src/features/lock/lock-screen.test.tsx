@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { notificationAsync } from 'expo-haptics';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
@@ -125,6 +126,31 @@ describe('a phone without the lock', () => {
     expect(screen.queryByTestId('lock-screen')).toBeNull();
     expect(screen.getByTestId('behind')).toBeTruthy();
     expect(biometrics.__prompts()).toBe(0);
+  });
+});
+
+describe('screen capture (#587)', () => {
+  const prevent = jest.mocked(usePreventScreenCapture);
+
+  it('is refused on the lock screen and its PIN pad, each under its own key', async () => {
+    prevent.mockClear();
+    await lockedPhone();
+    biometrics.__setBiometrics({ succeeds: false });
+
+    await launch();
+
+    expect(screen.getByTestId('lock-screen')).toBeTruthy();
+    expect(prevent).toHaveBeenCalledWith('lock-screen');
+    expect(prevent).toHaveBeenCalledWith('pin-entry');
+  });
+
+  it('is left alone on a phone without the lock', async () => {
+    prevent.mockClear();
+    await storeRefreshToken('refresh-1');
+
+    await launch();
+
+    expect(prevent).not.toHaveBeenCalled();
   });
 });
 

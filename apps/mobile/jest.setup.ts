@@ -354,8 +354,18 @@ jest.mock('expo-haptics', () => ({
 }));
 
 /**
- * The clipboard — the two-factor key and recovery codes, issue #161. A spy that succeeds, so a
- * test can assert exactly what was copied.
+ * Screen-capture prevention on the lock, the PIN pads and two-factor (#587). The hook is a spy, so
+ * a test can assert which screens asked and under which key.
+ */
+jest.mock('expo-screen-capture', () => ({
+  usePreventScreenCapture: jest.fn(),
+  preventScreenCaptureAsync: jest.fn(async () => {}),
+  allowScreenCaptureAsync: jest.fn(async () => {}),
+}));
+
+/**
+ * The clipboard — the two-factor key, issue #161. A spy that succeeds, so a test can assert
+ * exactly what was copied.
  */
 jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn(async () => true),

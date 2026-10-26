@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Alert, AppState, Keyboard, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import {
   SafeAreaProvider,
   initialWindowMetrics,
@@ -185,6 +186,13 @@ export function lockScreenInsets(insets: { readonly top: number; readonly bottom
 }
 
 export function LockScreen({ phase }: { readonly phase: LockPhase }) {
+  /*
+   * No screenshot, no recording, and a blank card in Android's recent apps while the lock is up
+   * (#587): the screen asks for the PIN, and on Android `FLAG_SECURE` is also what keeps the app
+   * underneath out of the switcher's thumbnail. Keyed, so the PIN pad's own hook below and this
+   * one release only themselves.
+   */
+  usePreventScreenCapture('lock-screen');
   const t = useT('mobile.lock');
   const insets = lockScreenInsets(useSafeAreaInsets());
   return (

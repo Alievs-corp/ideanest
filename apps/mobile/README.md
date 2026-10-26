@@ -693,7 +693,12 @@ QR service), and the key with a Copy button. `canOpenURL` answers "no" for an
 undeclared scheme, so `app.config.ts` declares `otpauth` in iOS
 `LSApplicationQueriesSchemes` and in an Android `<queries>` intent. The
 recovery codes live only in component state — never MMKV, never the query
-cache. While a request is in flight or the codes are on screen, the screen
+cache — and leave it only through the share sheet ("Save the codes"), never the
+clipboard, which every app can read (#587). Every step past idle, and the
+sign-in's two-factor step, the lock screen and every PIN pad, refuse screenshots
+and recordings with `expo-screen-capture` (`FLAG_SECURE` on Android, which also
+blanks the recent-apps card). That is a native module: it reaches phones with a
+new APK, not over the air. While a request is in flight or the codes are on screen, the screen
 cannot be left: the iOS swipe and the header back are turned off and Android's
 back button is consumed, as checkout does, because a confirmation that lands
 after the reader has gone switches two-factor on with codes nobody saw.
