@@ -434,6 +434,58 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("#587: the same language and return addresses are sent back to the open page")
+    void theSameReturnIsSentBackToTheOpenPage() {
+        Checkout checkout = aDraft("hosted-same-return");
+        Map<String, Object> web = returnTo(checkout, "ru", "");
+        Object first = pay(checkout, UUID.randomUUID().toString(), web).getBody().get("providerTransactionId");
+        int asked = provider.hostedPayments().size();
+
+        Object second = pay(checkout, UUID.randomUUID().toString(), web).getBody().get("providerTransactionId");
+
+        assertThat(second).isEqualTo(first);
+        assertThat(provider.hostedPayments()).hasSize(asked);
+        assertThat(jdbc().queryForObject(
+                        "SELECT provider_response->>'language' FROM transactions WHERE pledge_id = ? AND status = 'PENDING'",
+                        String.class,
+                        checkout.pledgeId()))
+                .isEqualTo("ru");
+    }
+
+    /**
+     * The review's case. The return addresses are part of the provider's order, so the website's page
+     * sends its backer back to the website: handed to the application, it would take the backer out of
+     * the app (the app's addresses carry {@code via=app}). A page of its own, as before pages were reused.
+     */
+    @Test
+    @DisplayName("#587: another return address or language opens a page of its own, and each is sent back to its own")
+    void anotherReturnOpensItsOwnPage() {
+        Checkout checkout = aDraft("hosted-other-return");
+        Map<String, Object> web = returnTo(checkout, "ru", "");
+        Map<String, Object> app = returnTo(checkout, "ru", "&via=app");
+        Object fromWeb = pay(checkout, UUID.randomUUID().toString(), web).getBody().get("providerTransactionId");
+
+        Object fromApp = pay(checkout, UUID.randomUUID().toString(), app).getBody().get("providerTransactionId");
+
+        assertThat(fromApp).isNotEqualTo(fromWeb);
+        assertThat(provider.hostedPayments().getLast().successUrl()).hasToString((String) app.get("successUrl"));
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "PENDING");
+
+        // The website asking again finds its own page, not the newer one opened for the app.
+        assertThat(pay(checkout, UUID.randomUUID().toString(), web).getBody().get("providerTransactionId"))
+                .isEqualTo(fromWeb);
+        assertThat(pay(checkout, UUID.randomUUID().toString(), app).getBody().get("providerTransactionId"))
+                .isEqualTo(fromApp);
+
+        // Another language is another page: the provider's page answers in the one it was opened in.
+        Object inEnglish = pay(checkout, UUID.randomUUID().toString(), returnTo(checkout, "en", ""))
+                .getBody()
+                .get("providerTransactionId");
+        assertThat(inEnglish).isNotEqualTo(fromWeb).isNotEqualTo(fromApp);
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "PENDING", "PENDING");
+    }
+
+    @Test
     @DisplayName("#587: once the page is old enough for the sweep to ask after it, a new one may be opened")
     void anOldPageIsNotReturned() {
         Checkout checkout = aDraft("hosted-old-page");
@@ -734,6 +786,15 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
                 caller.accessToken(),
                 key,
                 Map.of("language", "en", "successUrl", "https://ideanest.az/en/pledges/" + pledgeId + "?payment=returned"));
+    }
+
+    /** What a client sends: its language, and the pledge page on the site, with {@code suffix} on both queries. */
+    private static Map<String, Object> returnTo(Checkout checkout, String language, String suffix) {
+        String page = "https://ideanest.az/" + language + "/pledges/" + checkout.pledgeId();
+        return Map.of(
+                "language", language,
+                "successUrl", page + "?payment=returned" + suffix,
+                "errorUrl", page + "?payment=failed" + suffix);
     }
 
     private ResponseEntity<Map<String, Object>> pay(Checkout checkout, String key, Map<String, Object> body) {

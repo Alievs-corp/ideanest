@@ -4341,7 +4341,9 @@ collecting it.
 > **One page per draft, its amount checked, a second payment returned (#587).** A request under a
 > new `Idempotency-Key` while a page opened for the draft in the last
 > `hosted-charges.answered-after` (15 minutes) is still unsettled, for the draft's current total,
-> is answered with that page (`PaymentPage.waiting`; the pending row records `paymentUrl`) rather
+> is answered with that page (`PaymentPage.waiting`; the pending row records `paymentUrl`, and the language and both return
+> addresses it was opened with, which the request must match: the provider's order carries them,
+> and the app's carry `via=app`) rather
 > than a second provider order — `SubscriptionCheckout`'s rule. Two requests in the same instant can
 > still open two, and so can a page older than the window; if both are paid, the first collects the
 > pledge and the second is posted (the money arrived), recorded in `duplicate_charges` (V119),
