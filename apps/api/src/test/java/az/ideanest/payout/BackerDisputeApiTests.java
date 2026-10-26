@@ -134,6 +134,23 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("an account asking to dispute too often is refused before anything is read")
+    void disputesAreRateLimitedPerAccount() {
+        Account caller = account("dispute-limit");
+        Backer anywhere = new Backer(caller, UUID.randomUUID());
+
+        // #587: every attempt reads a pledge, its payout and its refunds, and an upheld
+        // dispute is a refund. Ten an hour is the default, counted per account.
+        for (int attempt = 0; attempt < 10; attempt++) {
+            assertThat(dispute(anywhere).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+        ResponseEntity<Map<String, Object>> refused = dispute(anywhere);
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(refused.getHeaders().getFirst("Retry-After")).isNotBlank();
+    }
+
+    @Test
     @DisplayName("#480: the window says NOT_YET before a payout, and a stranger is not found")
     void theWindowBeforeAPayout() {
         Campaign campaign = aPaidCampaign("dispute-window-early");

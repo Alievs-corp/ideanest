@@ -466,6 +466,11 @@ ideanest:
     # IDN-EXT-01 (#41): `payout-destination-reminders`. Daily; a creator whose payout waits for their
     # VÖEN and business card is reminded on the days that are whole weeks after the hold ended.
     destination-reminder-schedule: "0 0 9 * * *"
+    # #587: POST /v1/pledges/{id}/disputes, per account. Every attempt reads a pledge, its payout
+    # and its refunds; ten an hour is far more than a backer needs.
+    dispute-rate-limit:
+      per-account: 10
+      window: PT1H
 
   subscription:
     # Creator plans, epic #448. A plan is paid by the creator for every period on the
