@@ -1191,7 +1191,8 @@
           "legal_document": "Hukuki belgeler",
           "subscription_charge": "Plan ödemeleri",
           "user": "Kullanıcı hesapları",
-          "staff_role": "Personel rolleri"
+          "staff_role": "Personel rolleri",
+          "ranking_weight": "Sıralama ağırlıkları"
         },
         "action": {
           "account": {
@@ -1348,6 +1349,18 @@
           },
           "obligation": {
             "update_resolved": "Güncelleme yükümlülüğü çözüldü"
+          },
+          "collection": {
+            "created": "Koleksiyon oluşturuldu",
+            "updated": "Koleksiyon güncellendi",
+            "published": "Koleksiyon yayımlandı",
+            "unpublished": "Koleksiyon yayından kaldırıldı",
+            "project_added": "Kampanya koleksiyona eklendi",
+            "project_removed": "Kampanya koleksiyondan çıkarıldı",
+            "reordered": "Koleksiyon sırası değişti"
+          },
+          "ranking": {
+            "weight_changed": "Sıralama ağırlığı değişti"
           }
         },
         "datesHint": "İlk gün başından, son gün sonuna kadar dahildir.",
@@ -1384,7 +1397,8 @@
           "maintenance_window": "Bakım penceresi",
           "user": "Kullanıcı hesabı",
           "collection": "Koleksiyon",
-          "staff_role": "Personel rolü"
+          "staff_role": "Personel rolü",
+          "ranking_weight": "Sıralama ağırlığı"
         }
       },
       "health": {

@@ -212,7 +212,7 @@ export async function readTrail(request: TrailRequest = {}): Promise<AuditTrailP
  * place that says which kinds exist.
  *
  * <p>Every kind `AuditAction.java` writes, in the order a reader looks for them. It held seven,
- * one of which (`collection`) nothing writes, and left out the money: payouts, refunds,
+ * one of which (`collection`) nothing wrote until #587 audited curation, and left out the money: payouts, refunds,
  * chargebacks and plan payments could not be narrowed to at all. `audit-catalogue.test.ts` reads
  * the enum and fails when a kind it writes is missing here or from the catalogue.
  */
@@ -234,6 +234,8 @@ export const AUDIT_ENTITY_TYPES: readonly string[] = Object.freeze([
   'email_template',
   'feature_flag',
   'taxonomy',
+  'collection',
+  'ranking_weight',
   'maintenance_window',
   'staff_role',
   'user',

@@ -1,5 +1,9 @@
 package az.ideanest.discovery.application;
 
+import az.ideanest.audit.AuditAction;
+import az.ideanest.audit.AuditActor;
+import az.ideanest.audit.AuditLog;
+import az.ideanest.audit.AuditOutcome;
 import az.ideanest.discovery.domain.CurationAction;
 import az.ideanest.discovery.infrastructure.CollectionRepository;
 import az.ideanest.shared.access.PlatformStaff;
@@ -42,7 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <h2>What is recorded</h2>
  *
  * <p>Every method that changes anything writes exactly one {@code curation_events}
- * row, in the same transaction as the change. That is CLAUDE.md's audit rule and it is
+ * row and one {@code audit_logs} row (#587), in the same transaction as the change. That is CLAUDE.md's audit rule and it is
  * why the repository's mutations and its {@link CollectionRepository#record} are only
  * ever called from here: a write that succeeded while its audit row was rolled back
  * would be an editorial decision with nobody's name on it.
@@ -70,11 +74,13 @@ public class CurationService {
 
     private final CollectionRepository collections;
     private final PlatformStaff moderators;
+    private final AuditLog audit;
     private final Clock clock;
 
-    public CurationService(CollectionRepository collections, PlatformStaff moderators, Clock clock) {
+    public CurationService(CollectionRepository collections, PlatformStaff moderators, AuditLog audit, Clock clock) {
         this.collections = collections;
         this.moderators = moderators;
+        this.audit = audit;
         this.clock = clock;
     }
 
@@ -114,7 +120,7 @@ public class CurationService {
             throw new CollectionSlugTakenException(slug);
         }
         UUID id = collections.insert(slug, draft, curatorId);
-        collections.record(id, null, CurationAction.COLLECTION_CREATED, curatorId, ACTOR_ROLE, null);
+        record(id, slug, null, CurationAction.COLLECTION_CREATED, curatorId, null);
         return load(slug);
     }
 
@@ -130,7 +136,7 @@ public class CurationService {
         requireDraft(draft);
         AdminCollection existing = load(slug);
         collections.replace(existing.id(), draft);
-        collections.record(existing.id(), null, CurationAction.COLLECTION_UPDATED, curatorId, ACTOR_ROLE, null);
+        record(existing.id(), slug, null, CurationAction.COLLECTION_UPDATED, curatorId, null);
         return load(slug);
     }
 
@@ -158,7 +164,7 @@ public class CurationService {
             throw new CurationRejectedException("copy", "A collection cannot be published without a title.");
         }
         collections.setPublished(existing.id(), published ? clock.instant() : null);
-        collections.record(existing.id(), null, action, curatorId, ACTOR_ROLE, note);
+        record(existing.id(), slug, null, action, curatorId, note);
         return load(slug);
     }
 
@@ -192,8 +198,7 @@ public class CurationService {
             throw new CurationRejectedException("projectId", "There is no campaign with that identifier.");
         }
         if (collections.addProject(existing.id(), projectId, curatorId)) {
-            collections.record(
-                    existing.id(), projectId, CurationAction.PROJECT_ADDED, curatorId, ACTOR_ROLE, note);
+            record(existing.id(), slug, projectId, CurationAction.PROJECT_ADDED, curatorId, note);
         }
         return load(slug);
     }
@@ -205,8 +210,7 @@ public class CurationService {
         requireNote(CurationAction.PROJECT_REMOVED, note);
         AdminCollection existing = load(slug);
         if (collections.removeProject(existing.id(), projectId)) {
-            collections.record(
-                    existing.id(), projectId, CurationAction.PROJECT_REMOVED, curatorId, ACTOR_ROLE, note);
+            record(existing.id(), slug, projectId, CurationAction.PROJECT_REMOVED, curatorId, note);
         }
         return load(slug);
     }
@@ -243,11 +247,43 @@ public class CurationService {
         }
 
         collections.reposition(existing.id(), order);
-        collections.record(existing.id(), null, CurationAction.PROJECTS_REORDERED, curatorId, ACTOR_ROLE, null);
+        record(existing.id(), slug, null, CurationAction.PROJECTS_REORDERED, curatorId, null);
         return load(slug);
     }
 
     // ---------------------------------------------------------------------------
+
+    /**
+     * Writes the decision to both records, in the caller's transaction.
+     *
+     * <p>{@code curation_events} is the collection's own history and keeps the note;
+     * {@code audit_logs} is where the console's trail and an investigation look for what staff
+     * did, and it had nothing from here until #587. The audit detail names the collection and
+     * the campaign and not the note, which is free text about somebody's campaign in the one
+     * table that can never be pruned.
+     */
+    private void record(
+            UUID collectionId, String slug, UUID projectId, CurationAction action, UUID curatorId, String note) {
+        collections.record(collectionId, projectId, action, curatorId, ACTOR_ROLE, note);
+        audit.record(
+                auditActionOf(action),
+                collectionId,
+                AuditActor.moderator(curatorId),
+                AuditOutcome.SUCCEEDED,
+                "slug=" + slug + (projectId == null ? "" : "; project=" + projectId));
+    }
+
+    private static AuditAction auditActionOf(CurationAction action) {
+        return switch (action) {
+            case COLLECTION_CREATED -> AuditAction.COLLECTION_CREATED;
+            case COLLECTION_UPDATED -> AuditAction.COLLECTION_UPDATED;
+            case COLLECTION_PUBLISHED -> AuditAction.COLLECTION_PUBLISHED;
+            case COLLECTION_UNPUBLISHED -> AuditAction.COLLECTION_UNPUBLISHED;
+            case PROJECT_ADDED -> AuditAction.COLLECTION_PROJECT_ADDED;
+            case PROJECT_REMOVED -> AuditAction.COLLECTION_PROJECT_REMOVED;
+            case PROJECTS_REORDERED -> AuditAction.COLLECTION_REORDERED;
+        };
+    }
 
     /**
      * CURATE, and not merely staff — the rail hides what a reader may not open.

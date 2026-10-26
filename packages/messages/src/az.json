@@ -1191,7 +1191,8 @@
           "legal_document": "Hüquqi sənədlər",
           "subscription_charge": "Plan ödənişləri",
           "user": "İstifadəçi hesabları",
-          "staff_role": "İşçi rolları"
+          "staff_role": "İşçi rolları",
+          "ranking_weight": "Sıralama çəkiləri"
         },
         "action": {
           "account": {
@@ -1348,6 +1349,18 @@
           },
           "obligation": {
             "update_resolved": "Yenilik öhdəliyi həll edildi"
+          },
+          "collection": {
+            "created": "Kolleksiya yaradıldı",
+            "updated": "Kolleksiya yeniləndi",
+            "published": "Kolleksiya dərc edildi",
+            "unpublished": "Kolleksiya dərcdən çıxarıldı",
+            "project_added": "Kampaniya kolleksiyaya əlavə edildi",
+            "project_removed": "Kampaniya kolleksiyadan çıxarıldı",
+            "reordered": "Kolleksiyanın sırası dəyişdi"
+          },
+          "ranking": {
+            "weight_changed": "Sıralama çəkisi dəyişdi"
           }
         },
         "datesHint": "Başlanğıc günü əvvəlindən, son günü sonuna qədər daxildir.",
@@ -1384,7 +1397,8 @@
           "maintenance_window": "Texniki xidmət pəncərəsi",
           "user": "İstifadəçi hesabı",
           "collection": "Kolleksiya",
-          "staff_role": "İşçi rolu"
+          "staff_role": "İşçi rolu",
+          "ranking_weight": "Sıralama çəkisi"
         }
       },
       "health": {
