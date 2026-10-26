@@ -11,6 +11,7 @@ import az.ideanest.community.infrastructure.BlockRepository;
 import az.ideanest.community.infrastructure.CommentRepository;
 import az.ideanest.project.application.CapabilityNotGrantedException;
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.project.application.ProjectAccess;
 import az.ideanest.project.application.ProjectNotFoundException;
 import az.ideanest.project.application.PublicProjects;
@@ -226,7 +227,8 @@ public class CommentService {
      *
      * @throws CommentNotFoundException when there is no such comment
      * @throws CommentDeletionNotPermittedException when this caller is neither the
-     *     author, nor on the campaign's team, nor platform staff
+     *     author, nor on the campaign's team, nor platform staff holding
+     *     {@code MODERATE_CONTENT}
      */
     @Transactional
     public Comment delete(UUID commentId, UUID actorId) {
@@ -234,7 +236,14 @@ public class CommentService {
 
         boolean author = comment.getAuthorId().equals(actorId);
         boolean forTheCampaign = !author && actingForTheCampaign(comment.getProjectId(), actorId);
-        boolean staff = !author && !forTheCampaign && moderators.isStaff(actorId);
+        // MODERATE_CONTENT, not "works here". This asked isStaff, which since #295 is true
+        // for every role, so a partner, a curator or the finance team could take anybody's
+        // speech off a public page: #574's mistake, and AD-09 puts comment removal in the same
+        // queue as the campaign decisions. A question rather than requireCapability, because
+        // a caller without it is refused below with the one refusal everybody else gets.
+        boolean staff = !author
+                && !forTheCampaign
+                && moderators.capabilitiesOf(actorId).contains(StaffCapability.MODERATE_CONTENT);
         if (!author && !forTheCampaign && !staff) {
             throw new CommentDeletionNotPermittedException(commentId);
         }
