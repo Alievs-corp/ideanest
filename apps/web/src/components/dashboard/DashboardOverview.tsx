@@ -145,6 +145,7 @@ export function DashboardOverview({
           skewMs={skewMs}
           nowImpl={nowImpl}
           copy={copy.clock}
+          opensAt={dashboard.opensAt ?? null}
         />
       </div>
 

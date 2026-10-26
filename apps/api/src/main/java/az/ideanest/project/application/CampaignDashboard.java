@@ -1,6 +1,7 @@
 package az.ideanest.project.application;
 
 import az.ideanest.project.domain.Project;
+import az.ideanest.project.domain.ProjectState;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -44,6 +45,8 @@ import java.util.UUID;
  *     — the same fields, and the same reason, as {@code PublicProjectPage.Outcome}: a
  *     later collection failure reduces the payout and never the outcome, so a dashboard
  *     reporting only the live total would contradict the word beside it
+ * @param opensAt the launch time an approved campaign waits for (#595), and null in every
+ *     other state
  */
 public record CampaignDashboard(
         UUID projectId,
@@ -58,7 +61,8 @@ public record CampaignDashboard(
         Instant launchedAt,
         Instant deadline,
         Instant serverTime,
-        Outcome outcome) {
+        Outcome outcome,
+        Instant opensAt) {
 
     /**
      * How precisely progress is reported.
@@ -90,7 +94,18 @@ public record CampaignDashboard(
                 project.getLaunchedAt(),
                 project.getDeadline(),
                 at,
-                Outcome.of(project));
+                Outcome.of(project),
+                opensAt(project));
+    }
+
+    /**
+     * When an approved campaign opens on its own (#595), or null. The countdown has no deadline
+     * to count to until then, and its creator is owed the moment it starts.
+     */
+    private static Instant opensAt(Project project) {
+        ProjectState state = project.getState();
+        boolean waiting = state == ProjectState.APPROVED || state == ProjectState.SCHEDULED;
+        return waiting ? project.getScheduledLaunchAt() : null;
     }
 
     /**

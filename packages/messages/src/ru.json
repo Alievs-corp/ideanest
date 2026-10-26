@@ -6851,7 +6851,8 @@
       },
       "hours": "осталось {hours} ч {minutes} мин",
       "minutes": "осталось {minutes} мин {seconds} с",
-      "seconds": "осталось {seconds} с"
+      "seconds": "осталось {seconds} с",
+      "opensAt": "Кампания откроется сама {date}. Тогда же начнётся обратный отсчёт."
     },
     "overview": {
       "loading": "Загружаем итоги кампании",

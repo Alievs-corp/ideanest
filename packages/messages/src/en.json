@@ -6851,7 +6851,8 @@
       },
       "hours": "{hours}h {minutes}m left",
       "minutes": "{minutes}m {seconds}s left",
-      "seconds": "{seconds}s left"
+      "seconds": "{seconds}s left",
+      "opensAt": "The campaign opens on its own on {date}. The countdown starts then."
     },
     "overview": {
       "loading": "Loading the campaign’s totals",

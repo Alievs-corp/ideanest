@@ -6851,7 +6851,8 @@
       },
       "hours": "{hours} saat {minutes} dəqiqə qalıb",
       "minutes": "{minutes} dəqiqə {seconds} saniyə qalıb",
-      "seconds": "{seconds} saniyə qalıb"
+      "seconds": "{seconds} saniyə qalıb",
+      "opensAt": "Kampaniya {date} tarixində özü açılacaq. Geri sayım o zaman başlayır."
     },
     "overview": {
       "loading": "Kampaniyanın cəmləri yüklənir",

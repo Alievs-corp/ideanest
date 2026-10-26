@@ -15,11 +15,20 @@ let clock = NOW;
 const now = () => clock;
 const at = (offset: number) => new Date(NOW + offset).toISOString();
 
-async function show(deadline: string | null, options: { skewMs?: number; active?: boolean } = {}) {
+async function show(
+  deadline: string | null,
+  options: { skewMs?: number; active?: boolean; opensAt?: string | null } = {},
+) {
   const view = await render(
     <MotionBudgetProvider level="full">
       <IntlProvider locale="en" messages={en}>
-        <CampaignClock deadline={deadline} skewMs={options.skewMs ?? 0} active={options.active ?? true} now={now} />
+        <CampaignClock
+          deadline={deadline}
+          skewMs={options.skewMs ?? 0}
+          active={options.active ?? true}
+          now={now}
+          opensAt={options.opensAt ?? null}
+        />
       </IntlProvider>
     </MotionBudgetProvider>,
   );
@@ -62,6 +71,12 @@ describe('CampaignClock', () => {
     await show(at(-MINUTE));
     expect(screen.getByText(en.dashboard.clock.closed)).toBeTruthy();
     expect(screen.queryByTestId('campaign-clock-urgent')).toBeNull();
+  });
+
+  it('says when an approved campaign opens instead of "no deadline yet" (#595)', async () => {
+    await show(null, { opensAt: at(DAY) });
+    expect(screen.getByTestId('campaign-clock-opens')).toHaveTextContent(/^The campaign opens on its own on .*2026/);
+    expect(screen.queryByTestId('campaign-clock-none')).toBeNull();
   });
 
   it('says there is no deadline yet rather than counting to nothing', async () => {

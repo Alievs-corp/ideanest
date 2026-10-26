@@ -10,7 +10,9 @@ import {
   tickIntervalMs,
   type CampaignClockCopy,
 } from '@ideanest/dashboard/clock';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { formatExactTime } from '../../lib/time';
 
 /**
  * "Time remaining" — the last quarter of §4.7's CD-01.
@@ -54,9 +56,11 @@ export interface CampaignClockProps {
    * language rather than a sentence.
    */
   readonly copy: CampaignClockCopy;
+  /** #595: when an approved campaign opens on its own. Said instead of "no deadline yet". */
+  readonly opensAt?: string | null;
 }
 
-export function CampaignClock({ deadline, skewMs, nowImpl, copy }: CampaignClockProps) {
+export function CampaignClock({ deadline, skewMs, nowImpl, copy, opensAt = null }: CampaignClockProps) {
   const locale = useRouteLocale();
   const now = nowImpl ?? Date.now;
   const [remaining, setRemaining] = useState<number | null>(() => remainingMs(deadline, now(), skewMs));
@@ -84,6 +88,15 @@ export function CampaignClock({ deadline, skewMs, nowImpl, copy }: CampaignClock
     // restart the timer on every render of a parent that passed an inline function.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deadline, skewMs]);
+
+  if (remaining === null && opensAt !== null) {
+    return (
+      <p className="inline-flex items-center gap-2 text-sm text-fg">
+        <Clock className="size-4" aria-hidden />
+        {fillPlaceholders(copy.opensAt, { date: formatExactTime(opensAt, locale) })}
+      </p>
+    );
+  }
 
   if (remaining === null) {
     return <p className="text-sm text-fg-64">{copy.none}</p>;

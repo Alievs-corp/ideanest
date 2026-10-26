@@ -5425,6 +5425,8 @@ export interface components {
             goalReached?: boolean;
             /** Format: date-time */
             launchedAt?: string;
+            /** Format: date-time */
+            opensAt?: string;
             outcome?: components["schemas"]["Outcome"];
             percentFunded?: number;
             /** Format: uuid */

@@ -1014,6 +1014,8 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
         assertThat(mineOf(creator))
                 .singleElement()
                 .satisfies(card -> assertThat(card).containsEntry("opensAt", at.toString()));
+        assertThat(get("/v1/projects/" + id + "/dashboard", creator.accessToken()).getBody())
+                .containsEntry("opensAt", at.toString());
 
         // Nobody signed in at the time it was given, and it opens.
         assertThat(launcher.launchDueCampaigns(at.minus(1, ChronoUnit.MINUTES))).isZero();

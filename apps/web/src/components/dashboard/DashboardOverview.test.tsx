@@ -146,6 +146,13 @@ describe('the clock', () => {
     expect(screen.queryByText('Closing soon')).not.toBeInTheDocument();
   });
 
+  it('says when an approved campaign opens instead of "no deadline yet" (#595)', async () => {
+    renderPanel(dashboard({ deadline: undefined, state: 'APPROVED', opensAt: '2026-08-25T12:00:00.000Z' }));
+
+    expect(await screen.findByText(/^The campaign opens on its own on .*2026/)).toBeInTheDocument();
+    expect(screen.queryByText(/no deadline yet/i)).not.toBeInTheDocument();
+  });
+
   it('says there is no countdown rather than showing an expired one before launch', async () => {
     renderPanel(dashboard({ deadline: undefined, state: 'DRAFT' }));
 

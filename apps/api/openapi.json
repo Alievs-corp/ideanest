@@ -13669,6 +13669,10 @@
             "type" : "string",
             "format" : "date-time"
           },
+          "opensAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "outcome" : {
             "$ref" : "#/components/schemas/Outcome"
           },
