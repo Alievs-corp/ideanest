@@ -325,7 +325,8 @@ public class ProjectTransitionService {
             log.warn("Campaign {} is due to launch and has no goal or no duration; skipping it.", projectId);
             return Optional.empty();
         }
-        if (!publishing.isEntitled(project)) {
+        Optional<String> refusal = publishing.refusalReason(project);
+        if (refusal.isPresent()) {
             // The plan again, as the creator's own launch asks it (#587): the goal stays
             // editable after approval, and a plan can lapse while a launch time waits. The
             // launch time is cleared rather than the campaign skipped, because a skipped one
@@ -333,7 +334,22 @@ public class ProjectTransitionService {
             // launch time, and would hold back every campaign behind it. Cleared, it waits in
             // APPROVED for its creator, whose own launch answers with the refusal they can act
             // on: a lower goal, or a plan.
+            //
+            // Cleared means nothing will open it on its own again, so the refusal is recorded
+            // and the creator is told, in this transaction: a campaign that silently missed the
+            // date its creator announced is the defect #389 fixed, arrived at another way.
             project.setScheduledLaunchAt(null);
+            audit.record(
+                    AuditAction.PROJECT_SCHEDULED_LAUNCH_REFUSED,
+                    projectId,
+                    AuditActor.system(),
+                    AuditOutcome.REFUSED,
+                    "launch time " + at + " cleared: " + refusal.get());
+            outbox.record(
+                    ScheduledLaunchRefusedEvent.AGGREGATE_TYPE,
+                    projectId,
+                    ScheduledLaunchRefusedEvent.EVENT_TYPE,
+                    ScheduledLaunchRefusedEvent.of(project, at, now.truncatedTo(ChronoUnit.MICROS)));
             log.warn(
                     "Campaign {} was due to launch at {} and is over its creator's plan; its launch time is cleared.",
                     projectId,

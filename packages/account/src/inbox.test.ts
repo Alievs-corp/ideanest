@@ -78,8 +78,8 @@ function notification(
 }
 
 describe('the contract', () => {
-  it('publishes 31 types', () => {
-    expect(TYPES).toHaveLength(31);
+  it('publishes 32 types', () => {
+    expect(TYPES).toHaveLength(32);
   });
 });
 

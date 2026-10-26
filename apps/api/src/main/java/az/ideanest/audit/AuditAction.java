@@ -37,6 +37,17 @@ public enum AuditAction {
      */
     PROJECT_LAUNCHED("project.launched", "project"),
 
+    /**
+     * A campaign's launch time arrived and the platform did not open it, because its creator's
+     * plan does not cover it (#587).
+     *
+     * <p>Recorded by the scheduled launch under {@link AuditActor#system()}, with the refusal in
+     * the detail, in the transaction that clears the launch time. The campaign stays approved
+     * and the creator is told; without this row the only trace of a launch that did not happen
+     * was a log line.
+     */
+    PROJECT_SCHEDULED_LAUNCH_REFUSED("project.scheduled_launch_refused", "project"),
+
     /** Moderation refused a campaign. Terminal for the campaign. */
     PROJECT_REJECTED("project.rejected", "project"),
 

@@ -16,6 +16,7 @@ import az.ideanest.notification.application.NotificationEvents.PayoutRequested;
 import az.ideanest.notification.application.NotificationEvents.ProjectLaunched;
 import az.ideanest.notification.application.NotificationEvents.RefundNeedsBankDetails;
 import az.ideanest.notification.application.NotificationEvents.RefundSentByBank;
+import az.ideanest.notification.application.NotificationEvents.ScheduledLaunchRefused;
 import az.ideanest.notification.application.NotificationEvents.SubscriptionLapsed;
 import az.ideanest.notification.application.NotificationEvents.SubscriptionPaid;
 import az.ideanest.notification.application.NotificationEvents.SubscriptionRenewalDue;
@@ -308,6 +309,21 @@ public class NotificationEventListener {
                         required(event.projectId(), "projectId", message),
                         about(event.projectId()),
                         at(event.approvedAt(), message)));
+            }
+            case ScheduledLaunchRefused.EVENT_TYPE -> {
+                ScheduledLaunchRefused event = read(message, ScheduledLaunchRefused.class);
+                UUID projectId = required(event.projectId(), "projectId", message);
+                // The creator alone: it is theirs to fix, and nobody else was promised the date by us.
+                yield List.of(NotificationRequest.about(
+                        required(event.creatorId(), "creatorId", message),
+                        NotificationType.SCHEDULED_LAUNCH_REFUSED,
+                        PROJECT,
+                        projectId,
+                        about(
+                                projectId,
+                                "scheduledFor",
+                                event.scheduledFor() == null ? null : dueDate(event.scheduledFor())),
+                        at(event.refusedAt(), message)));
             }
             case UpdateDueSoon.EVENT_TYPE -> {
                 UpdateDueSoon event = read(message, UpdateDueSoon.class);

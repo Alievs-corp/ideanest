@@ -1600,6 +1600,7 @@ The most valuable and most complex module. It begins when funding closes.
 | Reminder: project launched | ✅ | ✅ | ✅ |
 | Saved project ending soon | ✅ | ✅ | ✅ |
 | Project approved | ✅ | ✅ | ✅ |
+| Scheduled launch not opened: the plan does not cover it (#587) | ✅ | ✅ | ✅ |
 | Payout sent | ✅ | ✅ | ✅ |
 | Refund sent by bank transfer | ✅ | ✅ | ✅ |
 | Plan due for renewal | ✅ | ✅ | ✅ |
@@ -2683,7 +2684,7 @@ the first moment it stops being private.
 
 | | |
 |---|---|
-| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator |
+| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator, who is told (`SCHEDULED_LAUNCH_REFUSED`, from `project.scheduled_launch_refused`: renew or upgrade the plan, or lower the goal, then set a new launch time or launch); the refusal is audited as `project.scheduled_launch_refused` under the system actor, with the bound in the detail |
 | Contract | `shared.access.PublishingEntitlement` → `PublishingAllowance` |
 | Refusals | `SUBSCRIPTION_REQUIRED` (403), `PLAN_LIMIT_EXCEEDED` (403) |
 | Exempt | A creator holding `SUPER_ADMIN`, granted or bootstrapped: no plan and no plan limits. Other staff roles buy a plan |
