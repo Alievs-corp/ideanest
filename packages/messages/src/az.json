@@ -6192,7 +6192,11 @@
       "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Təsdiq kampaniyanı dərhal və ya təyin etdiyiniz vaxtda yayımlayır, o andan hədəf və son tarix dəyişmir. Baxış gedərkən redaktə etmək olar.",
       "done": "Hazırdır",
       "launchExplanation": "Kampaniya başladığı andan platformanın hər yerində görünür və dəstək qəbul etməyə başlayır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı yenidən qaralamaya qaytarmaq olmaz.",
-      "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz."
+      "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz.",
+      "scheduledLaunchRefused": {
+        "title": "Kampaniya başlanğıc vaxtında açılmadı",
+        "body": "{date} tarixində açılmalı olanda planınız bu kampaniyanı əhatə etmirdi, ona görə də kampaniya yayımlanmadı və başlanğıc vaxtı ləğv edildi. Kampaniya təsdiqlənmiş olaraq qalır. Planınızı yeniləyin və ya dəyişin, yaxud hədəfi planınızın əhatə etdiyi məbləğə endirin, sonra kampaniyanı burada başladın və ya yeni başlanğıc vaxtı təyin edin."
+      }
     },
     "cover": {
       "label": "Örtük şəkli",
