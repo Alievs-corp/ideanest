@@ -125,6 +125,7 @@ function clockCopyFrom(t: DashboardTranslator): CampaignClockCopy {
     hours: String(t.raw('clock.hours')),
     minutes: String(t.raw('clock.minutes')),
     seconds: String(t.raw('clock.seconds')),
+    opensAt: String(t.raw('clock.opensAt')),
   };
 }
 

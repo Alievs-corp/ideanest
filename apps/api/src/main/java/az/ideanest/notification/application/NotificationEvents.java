@@ -265,9 +265,12 @@ public final class NotificationEvents {
      * <p>Recipient: the creator. Unambiguous, and it is the notification that turns a
      * queue somebody is waiting on into something they find out about without refreshing
      * a page.
+     *
+     * <p>{@code opensAt} is the launch time a campaign approved before it waits for (#595), and
+     * null when the approval published it, which is also how an event written before #595 reads.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ProjectApproved(UUID projectId, UUID creatorId, Instant approvedAt) {
+    public record ProjectApproved(UUID projectId, UUID creatorId, Instant approvedAt, Instant opensAt) {
 
         public static final String EVENT_TYPE = "project.approved";
     }

@@ -108,6 +108,7 @@ function readProjectCard(value: unknown): ProfileProjectCard | null {
   if (id === null || title === null || slug === null || creatorSlug === null || state === null) {
     return null;
   }
+  const opensAt = text(source['opensAt']);
 
   return {
     id,
@@ -123,6 +124,8 @@ function readProjectCard(value: unknown): ProfileProjectCard | null {
     launchedAt: text(source['launchedAt']),
     coverImage: readCoverImage(source['coverImage']),
     video: readCardVideo(source['video']),
+    // Only when there is one, so a public card reads exactly as it did before #595.
+    ...(opensAt === null ? {} : { opensAt }),
   };
 }
 

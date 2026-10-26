@@ -149,7 +149,13 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
             {t('mobile.dashboard.asOf', { time: formatDateTime(new Date(receivedAt).toISOString(), locale) })}
           </Meta>
         ) : null}
-        <CampaignClock deadline={dashboard.deadline} skewMs={skewMs} active={active} now={now} />
+        <CampaignClock
+          deadline={dashboard.deadline}
+          skewMs={skewMs}
+          active={active}
+          now={now}
+          opensAt={dashboard.opensAt}
+        />
       </View>
 
       <StatRow testID="overview-stats">

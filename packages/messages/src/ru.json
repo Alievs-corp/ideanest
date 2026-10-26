@@ -288,6 +288,7 @@
         "loadMore": "Показать ещё",
         "loadingMore": "Загрузка",
         "draftHint": "Ещё не опубликована",
+        "opensAt": "Откроется сама {date}",
         "view": "Открыть",
         "edit": "Редактировать",
         "dashboard": "Панель",
@@ -557,6 +558,7 @@
         "CAMPAIGN_SUCCEEDED": "{campaign} закрылась на сумме {amount}",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} закрылась, не достигнув цели",
         "PROJECT_APPROVED": "{campaign} одобрена и опубликована",
+        "PROJECT_APPROVED_SCHEDULED": "{campaign} одобрена и откроется {when}",
         "SCHEDULED_LAUNCH_REFUSED": "{campaign} не открылась в назначенное время: тариф её не покрывает",
         "PAYMENT_COLLECTED": "Платёж на сумму {amount} за {campaign} был списан",
         "FINAL_PAYMENT_WARNING": "Последнее предупреждение: платёж на сумму {amount} за {campaign}",
@@ -591,6 +593,7 @@
         "CAMPAIGN_SUCCEEDED": "Кампания закрылась на сумме {amount}",
         "CAMPAIGN_UNSUCCESSFUL": "Кампания закрылась, не достигнув цели",
         "PROJECT_APPROVED": "Кампания одобрена и опубликована",
+        "PROJECT_APPROVED_SCHEDULED": "Кампания одобрена и откроется {when}",
         "SCHEDULED_LAUNCH_REFUSED": "Кампания не открылась в назначенное время: тариф её не покрывает",
         "PAYMENT_COLLECTED": "Платёж на сумму {amount} за кампанию был списан",
         "FINAL_PAYMENT_WARNING": "Последнее предупреждение: платёж на сумму {amount} за кампанию",
@@ -1636,6 +1639,7 @@
           "CAMPAIGN_EXTENDED": "Срок кампании продлён",
           "UPDATE_DUE_SOON": "Скоро срок обновления",
           "PROJECT_APPROVED": "Кампания одобрена",
+          "PROJECT_APPROVED_SCHEDULED": "Кампания одобрена, ждёт времени запуска",
           "SCHEDULED_LAUNCH_REFUSED": "Запланированный запуск не состоялся",
           "PAYMENT_COLLECTED": "Платёж получен",
           "PAYMENT_FAILED": "Платёж не прошёл",
@@ -3287,7 +3291,10 @@
         "creatorGone": "Аккаунт автора закрыт",
         "decideHeading": "Примите решение по кампании",
         "decideGroup": "Решение по «{title}»",
-        "notice": "«{title}» теперь {state}."
+        "notice": "«{title}» теперь {state}.",
+        "launchLabel": "Время запуска",
+        "approveWaits": "Автор назначил время запуска. Одобрение не опубликует кампанию сейчас: она откроется сама {date}.",
+        "noticeOpensAt": "{title} одобрена и откроется сама {date}."
       },
       "campaignDirectory": {
         "subject": "каталог кампаний",
@@ -6844,7 +6851,8 @@
       },
       "hours": "осталось {hours} ч {minutes} мин",
       "minutes": "осталось {minutes} мин {seconds} с",
-      "seconds": "осталось {seconds} с"
+      "seconds": "осталось {seconds} с",
+      "opensAt": "Кампания откроется сама {date}. Тогда же начнётся обратный отсчёт."
     },
     "overview": {
       "loading": "Загружаем итоги кампании",

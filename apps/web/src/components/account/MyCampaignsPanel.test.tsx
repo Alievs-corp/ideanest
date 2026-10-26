@@ -39,6 +39,7 @@ const COPY: MyCampaignsPanelCopy = {
   refused: 'The service refused the request. Try again.',
   unreachable: 'The service could not be reached. Check your connection and try again.',
   draftHint: 'Not published yet',
+  opensAt: 'Opens on its own on {date}',
   ...(() => {
     const t = translatorFor('account.pages.campaigns');
     return {
@@ -87,6 +88,25 @@ afterEach(() => {
 });
 
 describe('the campaigns on an account', () => {
+  it('says when an approved campaign opens rather than that it is not published (#595)', async () => {
+    listMock.mockResolvedValue({
+      items: [
+        { ...card('approved-id', 'Waiting thing', 'APPROVED'), opensAt: '2026-10-27T12:00:00Z' },
+        card('draft-id', 'Unfinished thing', 'DRAFT'),
+      ],
+      nextCursor: null,
+    });
+
+    render(<MyCampaignsPanel copy={COPY} />);
+
+    const waiting = await screen.findByRole('link', { name: /Waiting thing/u });
+    expect(within(waiting).getByText(/^Opens on its own on .*2026/u)).toBeInTheDocument();
+    expect(within(waiting).queryByText(COPY.draftHint)).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole('link', { name: /Unfinished thing/u })).getByText(COPY.draftHint),
+    ).toBeInTheDocument();
+  });
+
   it('sends a draft to the editor and a live campaign to its public page', async () => {
     listMock.mockResolvedValue({
       items: [card('draft-id', 'Unfinished thing', 'DRAFT'), card('live-id', 'Open thing', 'LIVE')],

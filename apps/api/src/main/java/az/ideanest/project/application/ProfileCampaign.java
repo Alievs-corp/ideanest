@@ -43,6 +43,7 @@ import java.util.UUID;
  * @param cover null for a campaign with no cover image
  * @param video the campaign's ready video, or null. A client shows its poster as the
  *     card's cover and plays it on hover or a long press
+ * @param scheduledLaunchAt the launch time its creator set, or null
  */
 public record ProfileCampaign(
         UUID id,
@@ -57,6 +58,7 @@ public record ProfileCampaign(
         Instant launchedAt,
         Instant deadline,
         Instant createdAt,
+        Instant scheduledLaunchAt,
         Cover cover,
         Video video) {
 

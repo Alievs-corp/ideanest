@@ -204,6 +204,50 @@ describe('the campaign review queue', () => {
     expect(dialog).toHaveTextContent('goes live as soon as you approve it, or at the launch time its creator set');
   });
 
+  it('names the launch time an approval waits for, before and after deciding (#595)', async () => {
+    const user = userEvent.setup();
+    const at = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+    listSubmissionsMock.mockResolvedValue(page({ submissions: [{ ...WAITING, scheduledLaunchAt: at }] }));
+    decideCampaignMock.mockResolvedValue({
+      id: PROJECT_ID,
+      slug: 'xari-bulbul-ceramics',
+      state: 'APPROVED',
+      title: 'Xari Bulbul Ceramics',
+      scheduledLaunchAt: at,
+    });
+
+    render(<SubmissionQueue copy={COPY} />);
+    await screen.findByText('Xari Bulbul Ceramics');
+    // On the row, so the moderator sees it before choosing.
+    expect(screen.getByText(COPY.launchLabel)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: COPY.moderation.campaignOutcome.approve }));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Approving will not publish the campaign now');
+
+    await user.click(within(dialog).getByRole('button', { name: COPY.moderation.decision.verb.approve.confirmLabel }));
+
+    // Not "now approved", which reads as lost: when it opens.
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        /^Xari Bulbul Ceramics is approved and opens on its own on .+\.$/u,
+      ),
+    );
+  });
+
+  it('says nothing about a launch time that has already passed, because approval publishes it', async () => {
+    const user = userEvent.setup();
+    listSubmissionsMock.mockResolvedValue(
+      page({ submissions: [{ ...WAITING, scheduledLaunchAt: '2026-01-01T09:00:00Z' }] }),
+    );
+    render(<SubmissionQueue copy={COPY} />);
+    await screen.findByText('Xari Bulbul Ceramics');
+
+    await user.click(screen.getByRole('button', { name: COPY.moderation.campaignOutcome.approve }));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).not.toHaveTextContent('Approving will not publish the campaign now');
+  });
+
   it('says why a campaign that cannot open was not approved, and what to do instead', async () => {
     const user = userEvent.setup();
     decideCampaignMock.mockRejectedValue(

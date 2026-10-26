@@ -50,7 +50,8 @@ public record DashboardResponse(
         Instant launchedAt,
         Instant deadline,
         Instant serverTime,
-        Outcome outcome) {
+        Outcome outcome,
+        Instant opensAt) {
 
     public static DashboardResponse of(CampaignDashboard dashboard) {
         return new DashboardResponse(
@@ -67,7 +68,8 @@ public record DashboardResponse(
                 dashboard.launchedAt(),
                 dashboard.deadline(),
                 dashboard.serverTime(),
-                Outcome.of(dashboard.outcome()));
+                Outcome.of(dashboard.outcome()),
+                dashboard.opensAt());
     }
 
     /**

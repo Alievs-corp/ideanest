@@ -9,7 +9,8 @@ import {
 } from '@ideanest/dashboard/clock';
 import { Body, Icon, Tag } from '../../../components/ui';
 import { Glyphs } from '../../../icons';
-import { catalogue } from '../../../lib/i18n';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
+import { catalogue, formatDateTime } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
 import { colors, font, fontSize, spacing } from '../../../theme';
 
@@ -32,9 +33,11 @@ export interface CampaignClockProps {
   readonly active: boolean;
   /** Injected by tests. */
   readonly now?: () => number;
+  /** #595: when an approved campaign opens on its own. Said instead of "no deadline yet". */
+  readonly opensAt?: string | null;
 }
 
-export function CampaignClock({ deadline, skewMs, active, now = Date.now }: CampaignClockProps) {
+export function CampaignClock({ deadline, skewMs, active, now = Date.now, opensAt = null }: CampaignClockProps) {
   const locale = useLocale();
   const copy = catalogue(locale).dashboard.clock;
   const [remaining, setRemaining] = useState<number | null>(() => remainingMs(deadline, now(), skewMs));
@@ -53,6 +56,14 @@ export function CampaignClock({ deadline, skewMs, active, now = Date.now }: Camp
     };
     // `now` is Date.now in the app and fixed per test; a new function each render must not restart it.
   }, [active, deadline, skewMs]);
+
+  if (remaining === null && opensAt) {
+    return (
+      <Body testID="campaign-clock-opens">
+        {fillPlaceholders(copy.opensAt, { date: formatDateTime(opensAt, locale) })}
+      </Body>
+    );
+  }
 
   if (remaining === null) {
     return <Body testID="campaign-clock-none">{copy.none}</Body>;

@@ -42,6 +42,8 @@ export interface CampaignClockCopy {
   readonly minutes: string;
   /** Carries `{seconds}`. */
   readonly seconds: string;
+  /** #595: carries `{date}`, when an approved campaign opens and its countdown starts. */
+  readonly opensAt: string;
 }
 
 /** Milliseconds, named so the arithmetic below reads as time rather than as digits. */

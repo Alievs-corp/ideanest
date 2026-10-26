@@ -146,7 +146,8 @@ public class CampaignSubmissionQueue {
                 // there is somebody to write to.
                 creator == null ? null : creator.name(),
                 creator == null ? null : creator.slug(),
-                row.getGoalAmount() == null ? null : Money.of(row.getGoalAmount(), row.getCurrency()));
+                row.getGoalAmount() == null ? null : Money.of(row.getGoalAmount(), row.getCurrency()),
+                row.getScheduledLaunchAt());
     }
 
     /** The page size a request gets, clamped rather than refused. */

@@ -8,11 +8,12 @@ import {
   SUBMISSION_STATES,
   decideCampaign,
   listSubmissions,
+  opensLater,
   type CampaignOutcome,
   type QueuedSubmission,
   type SubmissionState,
 } from '../../lib/moderation/api';
-import { campaignStateWord, shortId } from '../../lib/moderation/describe';
+import { campaignStateWord, formatExactTime, shortId } from '../../lib/moderation/describe';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import { formatMoney } from '../../lib/money';
@@ -198,11 +199,17 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
       // says CHANGES_REQUESTED while the row reads APPROVED is the interface lying about
       // the one thing this screen is for.
       setLoaded((previous) => previous.filter((row) => row.projectId !== submission.projectId));
+      // #595: an approval that waits for its launch time says when, or it reads as lost.
       setNotice(
-        fillPlaceholders(copy.notice, {
-          title: submission.title,
-          state: campaignStateWord(decided.state, copy.moderation, locale),
-        }),
+        decided.state === 'APPROVED' && opensLater(decided.scheduledLaunchAt)
+          ? fillPlaceholders(copy.noticeOpensAt, {
+              title: submission.title,
+              date: formatExactTime(decided.scheduledLaunchAt ?? '', locale),
+            })
+          : fillPlaceholders(copy.notice, {
+              title: submission.title,
+              state: campaignStateWord(decided.state, copy.moderation, locale),
+            }),
       );
       setPending(null);
     } catch (cause) {
@@ -344,6 +351,15 @@ export function SubmissionQueue({ copy }: SubmissionQueueProps) {
         onConfirm={(note) => void commit(note)}
         copy={copy.moderation}
         counter={copy.counter}
+        notice={
+          pending !== null &&
+          pending.outcome === 'approve' &&
+          opensLater(pending.submission.scheduledLaunchAt)
+            ? fillPlaceholders(copy.approveWaits, {
+                date: formatExactTime(pending.submission.scheduledLaunchAt ?? '', locale),
+              })
+            : null
+        }
       />
     </section>
   );
@@ -446,6 +462,16 @@ function SubmissionRow({
             {submission.goal == null ? copy.noGoal : formatMoney(submission.goal)}
           </dd>
         </div>
+        {submission.scheduledLaunchAt != null && (
+          <div className="flex gap-2">
+            <dt className="text-fg-40">{copy.launchLabel}</dt>
+            <dd className="text-fg-80">
+              <time dateTime={submission.scheduledLaunchAt}>
+                {formatExactTime(submission.scheduledLaunchAt, locale)}
+              </time>
+            </dd>
+          </div>
+        )}
         <div className="flex gap-2">
           <dt className="text-fg-40">{copy.stateLabel}</dt>
           <dd className="text-fg-80">

@@ -21,14 +21,18 @@ import java.util.UUID;
  * @param projectId which campaign, and the aggregate identifier
  * @param creatorId the recipient
  * @param approvedAt when the decision was taken
+ * @param opensAt the launch time the campaign waits for, or null when the approval published it
+ *     (#595). Absent from an event written before #595, which reads as null
  */
-public record ProjectApprovedEvent(UUID projectId, UUID creatorId, Instant approvedAt) {
+public record ProjectApprovedEvent(UUID projectId, UUID creatorId, Instant approvedAt, Instant opensAt) {
 
     public static final String AGGREGATE_TYPE = "project";
 
     public static final String EVENT_TYPE = "project.approved";
 
     static ProjectApprovedEvent of(Project project, Instant approvedAt) {
-        return new ProjectApprovedEvent(project.getId(), project.getCreatorId(), approvedAt);
+        Instant at = project.getScheduledLaunchAt();
+        Instant opensAt = at != null && at.isAfter(approvedAt) ? at : null;
+        return new ProjectApprovedEvent(project.getId(), project.getCreatorId(), approvedAt, opensAt);
     }
 }
