@@ -101,6 +101,11 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     /**
      * #587: the newest payment page opened for a pledge after {@code openedAfter} that nothing has settled
      * and that recorded where it is — the page a second payment request is sent back to.
+     *
+     * <p>Only one opened with this language and these two return addresses, absent matching absent: the
+     * provider's order carries all three, so a page opened for another surface sends its backer to the
+     * wrong place. A page recorded before the language was stored has none, and matches only a request
+     * that sends none.
      */
     @Query(
             value =
@@ -116,6 +121,9 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
                        AND t.provider_transaction_id IS NOT NULL
                        AND t.provider_response ->> 'hostedPayment' = 'true'
                        AND t.provider_response ->> 'paymentUrl' IS NOT NULL
+                       AND t.provider_response ->> 'successUrl' IS NOT DISTINCT FROM CAST(:successUrl AS text)
+                       AND t.provider_response ->> 'errorUrl' IS NOT DISTINCT FROM CAST(:errorUrl AS text)
+                       AND t.provider_response ->> 'language' IS NOT DISTINCT FROM CAST(:language AS text)
                        AND t.created_at > :openedAfter
                        AND NOT EXISTS (SELECT 1 FROM transactions s
                                         WHERE s.provider = t.provider
@@ -125,7 +133,12 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
                      LIMIT 1
                     """,
             nativeQuery = true)
-    Optional<OpenPage> openPageFor(@Param("pledgeId") UUID pledgeId, @Param("openedAfter") java.time.Instant openedAfter);
+    Optional<OpenPage> openPageFor(
+            @Param("pledgeId") UUID pledgeId,
+            @Param("openedAfter") java.time.Instant openedAfter,
+            @Param("language") String language,
+            @Param("successUrl") String successUrl,
+            @Param("errorUrl") String errorUrl);
 
     /** A payment page still waiting: its order, where it is, and what it was opened for. */
     interface OpenPage {

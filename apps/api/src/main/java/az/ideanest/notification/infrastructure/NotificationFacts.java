@@ -108,6 +108,9 @@ public class NotificationFacts {
             case CAMPAIGN_SUCCEEDED, CAMPAIGN_UNSUCCESSFUL -> facts.withAmount(money(params, "pledged"))
                     .withDetail(text(params, "backersCount"));
             case PROJECT_APPROVED -> facts;
+            // #587. The campaign and what to do are the message; the date it did not open on is
+            // the day the creator is reading it, so the copy does not repeat it.
+            case SCHEDULED_LAUNCH_REFUSED -> facts;
             // IDN-EXT-01 (#34). The new deadline is the whole of the message: backers are
             // told, not asked, so the copy leads with the date and needs nothing else.
             case CAMPAIGN_EXTENDED -> facts.withDetail(text(params, "extendedUntil"));

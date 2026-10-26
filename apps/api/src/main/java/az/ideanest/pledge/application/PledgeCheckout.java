@@ -19,7 +19,9 @@ import org.springframework.stereotype.Service;
  * <p><strong>One page per draft at a time (#587).</strong> A request under a new
  * {@code Idempotency-Key} while a page opened for this draft is still waiting is answered with that
  * page ({@link PaymentPage#waiting}), not a second provider order: two open orders for one pledge are
- * two payments a backer can make. Two requests in the same instant can still both open one — nothing
+ * two payments a backer can make. Only when it was opened with the same language and return addresses,
+ * which the provider's order carries: the application and the website are not sent to each other's
+ * page. Two requests in the same instant can still both open one — nothing
  * holds the draft across the provider call, for the reason above — and a second payment that results
  * is returned to the backer by the payment module.
  */
@@ -52,6 +54,7 @@ public class PledgeCheckout {
             String idempotencyKey) {
         returnUrls.check(successUrl, errorUrl);
         PayablePledge payable = payments.prepare(pledgeId, backerId, acknowledgedVersion);
-        return page.waiting(payable).orElseGet(() -> page.open(payable, language, successUrl, errorUrl, idempotencyKey));
+        return page.waiting(payable, language, successUrl, errorUrl)
+                .orElseGet(() -> page.open(payable, language, successUrl, errorUrl, idempotencyKey));
     }
 }

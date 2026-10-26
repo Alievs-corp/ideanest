@@ -27,6 +27,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -236,13 +237,24 @@ public class ProjectRevisionService {
     }
 
     /**
+     * Takes the campaign's row lock until the caller's transaction ends (#587), for a caller that
+     * has to ask what the public sees of the campaign's catalogue before deciding where an edit
+     * goes. A moderator's decision on the revision takes the same lock, so what the caller reads
+     * after this is not overtaken by an approval before it writes.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void lockCampaign(UUID projectId) {
+        projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+    }
+
+    /**
      * Applies an edit to one public item's proposed state in the open revision, opening one if
      * there is none, and answers the state the item now has in it (#587). Read and kept as
      * {@link #stageReward} does: {@code edit} is given the item as the revision holds it, or as
      * it shows, and validates as it goes; an edit that changes nothing leaves the revision alone.
      *
      * @throws IllegalStateException when no approved tier contains the item, which the caller
-     *     asks first: an item the public cannot see is written directly
+     *     asks first, under {@link #lockCampaign}: an item the public cannot see is written directly
      */
     @Transactional
     public CatalogueWriting.Item stageItem(

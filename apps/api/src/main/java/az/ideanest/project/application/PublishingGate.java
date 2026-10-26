@@ -98,16 +98,18 @@ public class PublishingGate {
     }
 
     /**
-     * {@link #requireEntitled} as a question, for a caller that has to skip rather than refuse.
+     * {@link #requireEntitled} as a question, for a caller that has to skip rather than refuse:
+     * why this campaign may not be published, or empty when it may.
      *
      * <p>The scheduled launch is that caller (#587). It shares one transaction with the
      * campaign it is opening, and an exception leaving this proxy would mark that transaction
      * rollback-only even if the caller caught it, which is the failure {@code RiskAssessments}
-     * documents. Nothing is thrown on this path, so nothing is marked.
+     * documents. The refusal is built and never thrown, so nothing is marked; its sentence is
+     * what the caller records — a plan code and a bound, nothing personal.
      */
     @Transactional(readOnly = true)
-    public boolean isEntitled(Project project) {
-        return refusalOf(project).isEmpty();
+    public Optional<String> refusalReason(Project project) {
+        return refusalOf(project).map(Throwable::getMessage);
     }
 
     private Optional<RuntimeException> refusalOf(Project project) {

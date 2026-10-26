@@ -1600,6 +1600,7 @@ The most valuable and most complex module. It begins when funding closes.
 | Reminder: project launched | ✅ | ✅ | ✅ |
 | Saved project ending soon | ✅ | ✅ | ✅ |
 | Project approved | ✅ | ✅ | ✅ |
+| Scheduled launch not opened: the plan does not cover it (#587) | ✅ | ✅ | ✅ |
 | Payout sent | ✅ | ✅ | ✅ |
 | Refund sent by bank transfer | ✅ | ✅ | ✅ |
 | Plan due for renewal | ✅ | ✅ | ✅ |
@@ -2683,7 +2684,7 @@ the first moment it stops being private.
 
 | | |
 |---|---|
-| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator |
+| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator, who is told (`SCHEDULED_LAUNCH_REFUSED`, from `project.scheduled_launch_refused`: renew or upgrade the plan, or lower the goal, then set a new launch time or launch); the refusal is audited as `project.scheduled_launch_refused` under the system actor, with the bound in the detail |
 | Contract | `shared.access.PublishingEntitlement` → `PublishingAllowance` |
 | Refusals | `SUBSCRIPTION_REQUIRED` (403), `PLAN_LIMIT_EXCEEDED` (403) |
 | Exempt | A creator holding `SUPER_ADMIN`, granted or bootstrapped: no plan and no plan limits. Other staff roles buy a plan |
@@ -4340,7 +4341,9 @@ collecting it.
 > **One page per draft, its amount checked, a second payment returned (#587).** A request under a
 > new `Idempotency-Key` while a page opened for the draft in the last
 > `hosted-charges.answered-after` (15 minutes) is still unsettled, for the draft's current total,
-> is answered with that page (`PaymentPage.waiting`; the pending row records `paymentUrl`) rather
+> is answered with that page (`PaymentPage.waiting`; the pending row records `paymentUrl`, and the language and both return
+> addresses it was opened with, which the request must match: the provider's order carries them,
+> and the app's carry `via=app`) rather
 > than a second provider order — `SubscriptionCheckout`'s rule. Two requests in the same instant can
 > still open two, and so can a page older than the window; if both are paid, the first collects the
 > pledge and the second is posted (the money arrived), recorded in `duplicate_charges` (V119),

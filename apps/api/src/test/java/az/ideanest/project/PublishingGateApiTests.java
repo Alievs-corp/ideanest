@@ -3,6 +3,7 @@ package az.ideanest.project;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.project.application.ProjectTransitionService;
+import az.ideanest.project.application.ScheduledLaunchRefusedEvent;
 import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.shared.EmailAddress;
@@ -76,6 +77,7 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
         // the identity tests' own cleanup.
         jdbc.update("DELETE FROM collaborator_capabilities");
         jdbc.update("DELETE FROM collaborators");
+        jdbc.update("DELETE FROM outbox_events WHERE aggregate_id IN (SELECT id FROM projects)");
         jdbc.update("DELETE FROM project_state_transitions");
         jdbc.update("DELETE FROM projects");
         jdbc.update("DELETE FROM subscriptions");
@@ -383,10 +385,24 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
         // pass's batch from now on and hold back the campaigns behind it.
         assertThat(transitions.launchScheduled(project, Instant.now())).isEmpty();
         assertThat(stateOf(project)).isEqualTo("APPROVED");
-        assertThat(new JdbcTemplate(dataSource)
-                        .queryForObject(
-                                "SELECT scheduled_launch_at FROM projects WHERE id = ?", Object.class, project))
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        assertThat(jdbc.queryForObject("SELECT scheduled_launch_at FROM projects WHERE id = ?", Object.class, project))
                 .isNull();
+
+        // Cleared, nothing opens it again, so it is not cleared silently: the refusal is on the
+        // record with the bound that refused it, and the creator is told.
+        Map<String, Object> audited = jdbc.queryForMap(
+                "SELECT actor_type, outcome, detail FROM audit_logs"
+                        + " WHERE action = 'project.scheduled_launch_refused' AND entity_id = ?",
+                project);
+        assertThat(audited).containsEntry("actor_type", "SYSTEM").containsEntry("outcome", "REFUSED");
+        assertThat((String) audited.get("detail")).contains("SCHEDULECAP").contains("10000.00");
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM outbox_events WHERE aggregate_id = ? AND event_type = ?",
+                        Long.class,
+                        project,
+                        ScheduledLaunchRefusedEvent.EVENT_TYPE))
+                .isEqualTo(1L);
     }
 
     /* ------------------------------------------------------------------

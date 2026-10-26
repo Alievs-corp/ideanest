@@ -93,6 +93,14 @@ public enum NotificationType {
     PROJECT_APPROVED(NotificationCategory.CAMPAIGN, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),
 
+    /**
+     * #587: to the creator — the campaign did not open at its launch time because their plan does
+     * not cover it, and the launch time was cleared. Every channel {@link #PROJECT_APPROVED} has: it
+     * is about the same decision, and a creator who announced a date needs to hear it that day.
+     */
+    SCHEDULED_LAUNCH_REFUSED(NotificationCategory.CAMPAIGN, NotificationChannel.EMAIL, NotificationChannel.PUSH,
+            NotificationChannel.IN_APP),
+
     /** The card was charged. */
     PAYMENT_COLLECTED(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),
