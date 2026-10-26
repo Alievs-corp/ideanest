@@ -31,6 +31,15 @@ import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js';
  * makes the record one-way and salted, so the PIN is not sitting there to be read at a glance or
  * matched across installs; that is all it is claimed to do.
  *
+ * <p><strong>#587 asked for the count to be raised</strong>, within about 150 ms on a mid-range
+ * phone, and it was not: 1,000 is already three to five times that budget, `expo-crypto` still
+ * has no PBKDF2 or HMAC to move the work native, and a native module for it would cost an
+ * attacker holding the record seconds more, not a defence. The decision recorded there is the one
+ * above: <strong>the PIN is a UI gate</strong>, and the keystore and the attempt limit are what
+ * protect it. The record keeps its iteration count and {@link checkPin} re-derives a correct
+ * entry at {@link KDF_ITERATIONS}, so a native derivation adopted later upgrades every PIN on its
+ * next unlock without asking anybody to choose a new one.
+ *
  * <h2>The attempt counter</h2>
  *
  * Also in secure storage, for the same reason as the record: a counter in MMKV is a file that can
