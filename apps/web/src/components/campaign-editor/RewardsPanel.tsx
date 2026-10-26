@@ -33,6 +33,7 @@ import {
   describeStock,
   hidePatch,
   isHiddenReward,
+  isItemHeld,
   isScheduledReward,
   itemIdsInRewards,
   movedTo,
@@ -234,14 +235,29 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
     [launched, refreshRevision],
   );
 
-  const applyItem = useCallback((saved: Item) => {
-    setItems((current) => {
-      const known = current.some((item) => item.id === saved.id);
-      return known
-        ? current.map((item) => (item.id === saved.id ? saved : item))
-        : [...current, saved];
-    });
-  }, []);
+  /*
+   * An item an approved tier contains is held like a tier (#587): the drawer
+   * closes on a save whose public value has not changed, so the reason is said
+   * here, where the creator lands: the item's marker in the list, and an
+   * announcement for a screen reader, which would otherwise hear nothing.
+   */
+  const applyItem = useCallback(
+    (saved: Item) => {
+      setItems((current) => {
+        const known = current.some((item) => item.id === saved.id);
+        return known
+          ? current.map((item) => (item.id === saved.id ? saved : item))
+          : [...current, saved];
+      });
+      if (isItemHeld(saved)) {
+        setAnnouncement(
+          fillPlaceholders(words.items.pending.heldAnnouncement, { name: saved.name }),
+        );
+      }
+      if (launched) void refreshRevision();
+    },
+    [launched, refreshRevision, words.items.pending.heldAnnouncement],
+  );
 
   /* ---------------------------------------------------------------------
    * Order

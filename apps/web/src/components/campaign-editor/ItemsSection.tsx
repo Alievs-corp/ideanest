@@ -1,6 +1,6 @@
 'use client';
 
-import { EyeOff, Plus } from 'lucide-react';
+import { EyeOff, Pencil, Plus } from 'lucide-react';
 import { EmptyState, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
 import type { Item } from '../../lib/projects/api';
 
@@ -18,9 +18,16 @@ import type { Item } from '../../lib/projects/api';
  * item can be refused for a reason that is about the REWARDS (`ITEM_IN_USE`),
  * and only the panel holds those.
  *
+ * On a launched campaign an item an approved tier contains keeps its public
+ * name, picture and weight until a moderator approves the new ones (#587). The
+ * list shows the PROPOSED values, so an item whose changes wait says so in
+ * words and with an icon; otherwise the creator would read their own edit as
+ * what backers already see.
+ *
  * MOTION: none. Creators spend hours here (docs/motion-system.md §5).
  */
 import type { ItemsSectionCopy } from '@ideanest/campaign-editor/copy';
+import { isItemHeld } from '@ideanest/campaign-editor/rewards';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface ItemsSectionProps {
@@ -114,6 +121,12 @@ export function ItemsSection({
                     <Tag>{fillPlaceholders(copy.weight, { grams: String(item.weightGrams) })}</Tag>
                   )}
                   {item.sku != null && item.sku !== '' && <Tag>{item.sku}</Tag>}
+                  {isItemHeld(item) && (
+                    <Tag>
+                      <Pencil aria-hidden="true" className="me-1 inline size-3.5" />
+                      {copy.pending.changed}
+                    </Tag>
+                  )}
                   {!inRewards.has(item.id) && (
                     <Tag variant="warning">
                       <EyeOff aria-hidden="true" className="size-3.5" />
@@ -124,6 +137,10 @@ export function ItemsSection({
 
                 {!inRewards.has(item.id) && (
                   <p className="mt-2 text-[13px] text-fg-64">{copy.notInRewardDetail}</p>
+                )}
+
+                {isItemHeld(item) && (
+                  <p className="mt-2 text-[13px] text-fg-64">{copy.pending.changedNote}</p>
                 )}
               </div>
 

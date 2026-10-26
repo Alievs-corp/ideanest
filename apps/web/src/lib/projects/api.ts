@@ -515,6 +515,14 @@ export async function createItem(
   );
 }
 
+/**
+ * Edits an item, and answers with it.
+ *
+ * On a launched campaign the change to an item an approved tier contains is held for a
+ * moderator (#587): the answer, like the list's, carries the PROPOSED values and names the held
+ * fields in `revisionChangedFields`. The SKU, and an item no approved tier contains, are written
+ * at once.
+ */
 export async function patchItem(id: string, patch: ItemPatch, signal?: AbortSignal): Promise<Item> {
   return readItem(
     await authorizedFetch(`/v1/items/${encodeURIComponent(id)}`, {
