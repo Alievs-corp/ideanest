@@ -278,6 +278,7 @@ describe('the refund console', () => {
 
   it.each([
     [new ApiError(409, { code: 'NOTHING_TO_REFUND', title: 'Nothing was collected' }), COPY.issueErrors['NOTHING_TO_REFUND']],
+    [new ApiError(409, { code: 'REFUND_AFTER_PAYOUT', title: 'Paid out' }), COPY.issueErrors['REFUND_AFTER_PAYOUT']],
     [
       new ApiError(409, { code: 'REFUND_EXCEEDS_COLLECTION', title: 'More', meta: { remaining: '12.50 AZN' } }),
       fillPlaceholders(COPY.issueErrors['REFUND_EXCEEDS_COLLECTION'] ?? '', {

@@ -2957,6 +2957,7 @@
           "REFUND_EXCEEDS_COLLECTION": "Bu məbləğ dəstəkdə qalandan çoxdur: qaytarmaq üçün yalnız {remaining} qalıb.",
           "NOTHING_TO_REFUND": "Bu dəstək üzrə qaytarılacaq heç nə yoxdur: ya ödəniş tutulmayıb, ya da hamısı artıq qaytarılıb. Dəstəyin identifikatorunu yoxlayın.",
           "IDEMPOTENCY_KEY_REUSED": "Bu forma əvvəl başqa bir qaytarma üçün göndərilib və cavabı itib. Əvvəlcə aşağıdakı siyahıda o qaytarmanın keçib-keçmədiyini yoxlayın; sonra yenidən göndərə bilərsiniz — forma yeni cəhd kimi göndəriləcək.",
+          "REFUND_AFTER_PAYOUT": "Bu kampaniyanın pulu artıq yaradıcıya köçürülüb, ona görə qaytarmanı buradan etmək olmaz: platformada bu kampaniyanın pulu qalmayıb. Qaytarmanı yaradıcı ilə razılaşdırın və ya ödəniş mübahisəsi kimi həll edin.",
           "CURRENCY_MISMATCH": "Bu dəstək {currency} ilə ödənilib, qaytarma da {currency} ilə olmalıdır.",
           "REFUND_REASON_NOT_ISSUABLE": "Bu səbəblə əməkdaş qaytarma verə bilməz.",
           "REFUND_CHARGE_DISPUTED": "Bu ödəniş üzrə açıq geri tələb var: kart şəbəkəsi pulu artıq dəstəkçiyə qaytarmaqda ola bilər. Geri tələb üzrə qərar verilənə qədər qaytarmayın."

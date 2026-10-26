@@ -2957,6 +2957,7 @@
           "REFUND_EXCEEDS_COLLECTION": "That is more than the pledge has left: only {remaining} is left to refund.",
           "NOTHING_TO_REFUND": "Nothing on this pledge can be refunded: no payment was taken, or all of it has gone back already. Check the pledge’s identifier.",
           "IDEMPOTENCY_KEY_REUSED": "This form was sent before for another refund and its answer was lost. First check in the list below whether that refund went through; then you can send again — the form will go as a new attempt.",
+          "REFUND_AFTER_PAYOUT": "This campaign has already been paid out to its creator, so the refund cannot be issued here: the platform no longer holds this campaign’s money. Settle it with the creator or as a payment dispute.",
           "CURRENCY_MISMATCH": "This pledge was paid in {currency}, so the refund must be in {currency} too.",
           "REFUND_REASON_NOT_ISSUABLE": "Staff cannot issue a refund for that reason.",
           "REFUND_CHARGE_DISPUTED": "This payment is in an open chargeback: the card network may already be returning the money to the backer. Do not refund it until the chargeback is decided."

@@ -2957,6 +2957,7 @@
           "REFUND_EXCEEDS_COLLECTION": "Bu tutar destekte kalandan fazla: iade edilebilecek yalnızca {remaining} kaldı.",
           "NOTHING_TO_REFUND": "Bu destekte iade edilecek bir şey yok: ödeme alınmadı ya da tamamı zaten iade edildi. Desteğin kimliğini kontrol edin.",
           "IDEMPOTENCY_KEY_REUSED": "Bu form daha önce başka bir iade için gönderildi ve yanıtı kayboldu. Önce aşağıdaki listede o iadenin gerçekleşip gerçekleşmediğine bakın; sonra yeniden gönderebilirsiniz — form yeni bir deneme olarak gidecek.",
+          "REFUND_AFTER_PAYOUT": "Bu kampanyanın parası yaratıcıya zaten ödendi, bu yüzden iade buradan yapılamaz: platformda bu kampanyanın parası kalmadı. İadeyi yaratıcıyla ya da ödeme itirazı olarak çözün.",
           "CURRENCY_MISMATCH": "Bu destek {currency} ile ödendi, iade de {currency} ile olmalı.",
           "REFUND_REASON_NOT_ISSUABLE": "Çalışanlar bu sebeple iade yapamaz.",
           "REFUND_CHARGE_DISPUTED": "Bu ödemede açık bir ters ibraz var: kart ağı parayı destekçiye zaten iade ediyor olabilir. Ters ibraz karara bağlanana kadar iade etmeyin."
