@@ -2554,8 +2554,9 @@ individual agreement can differ without a deployment.
 > and `proposed`). Approval applies both before the tiers, so a tier rate for a region the
 > revision deletes is dropped; nothing about either is a row until then, so refusing has nothing
 > to delete. A region proposed in a revision can be priced once it has been approved. The web
-> and mobile editors and the admin review page do not yet draw any of this: they show the two
-> new changed fields by their raw names.
+> and mobile editors mark an item whose changes wait, on its card and on each held field, and
+> say so after a save the service held (#589); neither has a shipping-region editor, so regions
+> are only named in the revision notice. The admin review page draws both (below).
 >
 > The review page draws `rewards` under the campaign's fields (#569): one card per tier
 > with a tag, an icon and a word for each of created, deleted, changed and reordered, its
