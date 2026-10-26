@@ -6,7 +6,6 @@ import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
 import az.ideanest.risk.application.RiskAssessments;
 import az.ideanest.risk.domain.RiskAssessment;
-import az.ideanest.shared.access.PlatformStaff;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
@@ -25,7 +24,11 @@ import tools.jackson.databind.ObjectMapper;
  * §4.11's AD-02 fraud signals over HTTP — issue #108. The row that said "fraud signals are
  * not built".
  *
- * <h2>Staff only, audited, and never cached</h2>
+ * <h2>Finance only, audited, and never cached</h2>
+ *
+ * <p>{@code VIEW_FINANCE}, asked by {@link RiskAssessments} on every read and on the review
+ * mark rather than here: this used to ask whether the caller was staff at all, which since
+ * #295 every role is.
  *
  * <p>The same three rules {@code AuditTrailController} and {@code PaymentLogController}
  * follow, for a reason that is sharper here: this is a list of people the platform's
@@ -54,14 +57,11 @@ public class RiskController {
     private static final int MAX_LIMIT = 200;
 
     private final RiskAssessments assessments;
-    private final PlatformStaff staff;
     private final AuditLog audit;
     private final ObjectMapper json;
 
-    public RiskController(
-            RiskAssessments assessments, PlatformStaff staff, AuditLog audit, ObjectMapper json) {
+    public RiskController(RiskAssessments assessments, AuditLog audit, ObjectMapper json) {
         this.assessments = assessments;
-        this.staff = staff;
         this.audit = audit;
         this.json = json;
     }
@@ -72,9 +72,7 @@ public class RiskController {
             @AuthenticationPrincipal Jwt accessToken, @RequestParam(required = false) Integer limit) {
 
         UUID staffId = callerOf(accessToken);
-        staff.requireStaff(staffId);
-
-        List<RiskAssessment> page = assessments.queue(clamp(limit));
+        List<RiskAssessment> page = assessments.queue(staffId, clamp(limit));
         record(staffId, "rows=%d".formatted(page.size()));
 
         return ResponseEntity.ok()
@@ -93,9 +91,7 @@ public class RiskController {
             @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID pledgeId) {
 
         UUID staffId = callerOf(accessToken);
-        staff.requireStaff(staffId);
-
-        List<RiskAssessment> history = assessments.historyOf(pledgeId);
+        List<RiskAssessment> history = assessments.historyOf(staffId, pledgeId);
         record(staffId, "pledge=set; rows=%d".formatted(history.size()));
 
         return ResponseEntity.ok()
@@ -116,8 +112,6 @@ public class RiskController {
             @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID assessmentId) {
 
         UUID staffId = callerOf(accessToken);
-        staff.requireStaff(staffId);
-
         boolean taken = assessments.markReviewed(assessmentId, staffId).isPresent();
         record(staffId, "assessment=%s; claimed=%s".formatted(assessmentId, taken));
 

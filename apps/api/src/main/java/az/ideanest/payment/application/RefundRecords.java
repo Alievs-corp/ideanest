@@ -150,11 +150,19 @@ public class RefundRecords {
      * itself; a provider refund beside it pays the backer twice. Refused with {@code REFUND_CHARGE_DISPUTED},
      * as a bank transfer already is ({@link #settleByBankTransfer}).
      *
+     * <p><strong>Not after the campaign has been paid out (#587).</strong> §6.3: nothing is refunded
+     * through the platform after payout, which is the rule {@code BackerDisputes} already applies to an
+     * upheld dispute. The creator was paid this money; a refund now would come out of escrow that other
+     * campaigns' backers are owed, with no {@code CreatorDebt} to recover it. A chargeback the network
+     * forces after payout is the one case the platform cannot refuse, and {@code DisputeService} turns
+     * that into the creator's debt. Refused with {@code REFUND_AFTER_PAYOUT}, before anything is recorded.
+     *
      * @return the parts, newest charge first; never empty
      * @throws NothingToRefundException when the pledge has no settled charge
      * @throws RefundExceedsCollectionException when this would return more than the pledge has left
      * @throws CurrencyMismatchException when {@code amount} is not in the pledge's currency
-     * @throws BankRefundRefusedException {@code REFUND_CHARGE_DISPUTED} when a charge it draws on is disputed
+     * @throws BankRefundRefusedException {@code REFUND_CHARGE_DISPUTED} when a charge it draws on is disputed,
+     *     or {@code REFUND_AFTER_PAYOUT} when the campaign has been paid out
      */
     @Transactional
     List<Refund> record(
@@ -164,6 +172,9 @@ public class RefundRecords {
         List<PaymentTransaction> charges = transactions.settledChargesOf(pledgeId);
         if (charges.isEmpty()) {
             throw new NothingToRefundException(pledgeId);
+        }
+        if (transactions.hasPaidOut(charges.getFirst().getProjectId())) {
+            throw new BankRefundRefusedException(Reason.REFUND_AFTER_PAYOUT, pledgeId);
         }
 
         String currency = charges.getFirst().getAmount().currency();
@@ -267,12 +278,12 @@ public class RefundRecords {
     /**
      * The pledge's charges in the order a refund draws on them, each with what it has left.
      *
-     * <p>A charge that paid for a raise which could not be applied is drawn on <strong>last</strong> (#174's
-     * review) — see {@link #record}. The fee a campaign's reason keeps back is the one posted with the charge,
+     * <p>A charge that paid for a raise which could not be applied, or a second payment for the pledge
+     * (#587), is drawn on <strong>last</strong> (#174's review) — see {@link #record}. The fee a campaign's reason keeps back is the one posted with the charge,
      * less what a refund not failed has already kept back of it, and comes off what the charge has left.
      */
     private List<Draw> drawsOn(UUID pledgeId, RefundReason reason, List<PaymentTransaction> charges) {
-        Set<String> owedBack = Set.copyOf(transactions.unappliedRaiseChargesOf(pledgeId));
+        Set<String> owedBack = Set.copyOf(transactions.owedBackChargesOf(pledgeId));
         List<PaymentTransaction> ordered = new ArrayList<>(charges);
         // Stable: newest first within each group, the pledge's own money before money owed back.
         ordered.sort(Comparator.comparing(charge -> owedBack.contains(charge.getId().toString())));
@@ -372,8 +383,9 @@ public class RefundRecords {
                 charge.getId(),
                 left,
                 withheld,
-                // A campaign refund is meant to return everything it owes (§9.7); a raise's, only the raise.
-                reason != RefundReason.RAISE_NOT_APPLIED,
+                // A campaign refund is meant to return everything it owes (§9.7); a raise's, only the raise, and a
+                // second payment's only that payment (#587).
+                reason != RefundReason.RAISE_NOT_APPLIED && reason != RefundReason.DUPLICATE_CHARGE,
                 reason,
                 detailOf(reason, withheld),
                 null,
@@ -392,9 +404,13 @@ public class RefundRecords {
     private static String detailOf(RefundReason reason, Money withheld) {
         String outcome = switch (reason) {
             case CAMPAIGN_FAILED -> "The campaign ended below its success threshold";
-            case RAISE_NOT_APPLIED -> null;
+            case RAISE_NOT_APPLIED, DUPLICATE_CHARGE -> null;
             default -> "The campaign was suspended or cancelled";
         };
+        if (reason == RefundReason.DUPLICATE_CHARGE) {
+            return "The backer paid for this pledge a second time, on a second payment page; the second payment is"
+                    + " returned in full.";
+        }
         if (outcome == null) {
             return "The backer paid to raise their pledge and the raise could not be applied.";
         }

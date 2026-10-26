@@ -22,5 +22,5 @@ public record InviteCollaboratorRequest(
                 @Email(message = "That is not an email address")
                 @Size(max = 254, message = "An email address may not exceed 254 characters")
                 String email,
-        @NotEmpty(message = "At least one capability is required") Set<Capability> capabilities) {
+        @NotEmpty(message = "At least one capability is required") @Size(max = 64) Set<Capability> capabilities) {
 }

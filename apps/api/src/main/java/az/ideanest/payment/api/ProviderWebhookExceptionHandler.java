@@ -1,13 +1,17 @@
 package az.ideanest.payment.api;
 
 import az.ideanest.payment.application.UnconfiguredProviderException;
+import az.ideanest.payment.domain.PaymentUndecidedException;
+import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.domain.UnknownProviderException;
 import az.ideanest.payment.domain.WebhookVerificationException;
 import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -28,11 +32,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * how wide the replay window is. So the responses are deliberately uninformative, and
  * the detail goes to the log where the operator is.
  *
- * <p><strong>Nothing here answers 5xx.</strong> An exception that is not one of these
- * three falls through to Spring's default 500 — and that is correct rather than an
- * omission: a handler that failed must produce a status the provider retries, and every
- * provider in §9.3 retries a 500. Converting an unexpected failure into a 200 would
- * discard a delivery nobody would ever send again.
+ * <p><strong>One 5xx, and the rest fall through.</strong> A delivery that could not be
+ * confirmed with the provider — it was unreachable, its circuit breaker is open, or the
+ * payment is not decided yet (#587) — is a 503: the delivery is fine and must come again
+ * later, and every provider in §9.3 retries it. The three are one body, for the reason the
+ * 400 below is one body. Any other exception falls through to Spring's default handling —
+ * and that is correct rather than an omission: a handler that failed must produce a status
+ * the provider retries, and converting an unexpected failure into a 200 would discard a
+ * delivery nobody would ever send again.
  */
 @RestControllerAdvice(assignableTypes = ProviderWebhookController.class)
 public class ProviderWebhookExceptionHandler {
@@ -96,6 +103,24 @@ public class ProviderWebhookExceptionHandler {
         problem.setDetail("The delivery could not be accepted.");
         problem.setProperty("code", "WEBHOOK_REJECTED");
         return problem;
+    }
+
+    /**
+     * 503 for a delivery the platform could not confirm with the provider yet (#587): the provider was
+     * unreachable, its circuit breaker is open, or the payment is still undecided. Logged at WARN with
+     * which, because the body says none of it.
+     */
+    @ExceptionHandler({ProviderUnavailableException.class, PaymentUndecidedException.class})
+    public ResponseEntity<ProblemDetail> handleNotYet(RuntimeException exception) {
+        log.warn("A webhook could not be confirmed yet and is left for the provider to send again: {}", exception.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setType(URI.create("https://ideanest.az/problems/webhook-not-yet"));
+        problem.setTitle("Delivery not yet accepted");
+        problem.setDetail("Send the delivery again later.");
+        problem.setProperty("code", "WEBHOOK_RETRY_LATER");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(HttpHeaders.RETRY_AFTER, "60")
+                .body(problem);
     }
 
     /** The one 404 body, shared so that the two reasons for it cannot be told apart. */

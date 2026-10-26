@@ -273,6 +273,19 @@ public final class NotificationEvents {
     }
 
     /**
+     * #587: a campaign's launch time arrived and it did not open, because its creator's plan does
+     * not cover it. The launch time has been cleared, so nothing opens it on its own again.
+     *
+     * <p>Recipient: the creator, and nobody else. It is theirs to fix — a plan, or a lower goal,
+     * and a new launch time — and their followers were never told the date by the platform.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ScheduledLaunchRefused(UUID projectId, UUID creatorId, Instant scheduledFor, Instant refusedAt) {
+
+        public static final String EVENT_TYPE = "project.scheduled_launch_refused";
+    }
+
+    /**
      * §5.5's monthly update is nearly due — issue #437.
      *
      * <p>Recipient: <strong>the creator, and nobody else.</strong> Backers are not told that

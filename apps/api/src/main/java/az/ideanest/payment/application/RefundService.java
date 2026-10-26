@@ -369,7 +369,11 @@ public class RefundService {
             log.info("Refund of charge {} waits: the circuit breaker for {} is open.", chargeId, through.get());
             return Optional.empty();
         }
-        String prefix = reason == RefundReason.RAISE_NOT_APPLIED ? "raise-refund:" : "campaign-refund:";
+        String prefix = switch (reason) {
+            case RAISE_NOT_APPLIED -> "raise-refund:";
+            case DUPLICATE_CHARGE -> "duplicate-refund:";
+            default -> "campaign-refund:";
+        };
         String key = prefix + chargeId + ":" + (refunds.countAgainstCharge(chargeId) + 1);
         return records.recordForCharge(chargeId, reason, key).map(this::send);
     }

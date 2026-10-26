@@ -1,11 +1,16 @@
 package az.ideanest.discovery.application;
 
+import az.ideanest.audit.AuditAction;
+import az.ideanest.audit.AuditActor;
+import az.ideanest.audit.AuditLog;
+import az.ideanest.audit.AuditOutcome;
 import az.ideanest.discovery.domain.RankingTerm;
 import az.ideanest.discovery.infrastructure.RankingWeightRepository;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.staff.application.NotAModeratorException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,8 +43,8 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <h2>What is recorded</h2>
  *
- * <p>Every change writes exactly one {@code ranking_weight_changes} row, in the same
- * transaction, carrying the value before as well as the value after. A change that made
+ * <p>Every change writes exactly one {@code ranking_weight_changes} row and, since #587, one
+ * {@code audit_logs} row, in the same transaction, carrying the value before as well as the value after. A change that made
  * no difference — the same weight and the same flag — writes nothing and is not an
  * error: an audit trail that records attempts rather than decisions is one nobody can
  * read, which is {@code CurationService}'s rule and the same one.
@@ -66,16 +71,19 @@ public class RankingService {
     private final RankingWeightStore store;
     private final RankingDiagnostics diagnostics;
     private final PlatformStaff moderators;
+    private final AuditLog audit;
 
     public RankingService(
             RankingWeightRepository weights,
             RankingWeightStore store,
             RankingDiagnostics diagnostics,
-            PlatformStaff moderators) {
+            PlatformStaff moderators,
+            AuditLog audit) {
         this.weights = weights;
         this.store = store;
         this.diagnostics = diagnostics;
         this.moderators = moderators;
+        this.audit = audit;
     }
 
     /**
@@ -137,6 +145,15 @@ public class RankingService {
 
         weights.update(term, weight, active, curatorId);
         weights.record(term, before, weight, active, curatorId, ACTOR_ROLE, note);
+        // And the platform's record, which the console's trail reads (#587). The note stays in
+        // ranking_weight_changes: free text does not go into the table that cannot be pruned.
+        audit.record(
+                AuditAction.RANKING_WEIGHT_CHANGED,
+                UUID.nameUUIDFromBytes(("ranking_weight:" + term.wireValue()).getBytes(StandardCharsets.UTF_8)),
+                AuditActor.moderator(curatorId),
+                AuditOutcome.SUCCEEDED,
+                "term=%s; before: weight=%s active=%s; after: weight=%s active=%s"
+                        .formatted(term.wireValue(), before.weight(), before.active(), weight, active));
         return store.refresh();
     }
 

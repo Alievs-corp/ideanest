@@ -2,8 +2,10 @@ package az.ideanest.ledger.infrastructure;
 
 import az.ideanest.ledger.application.AccountTotal;
 import az.ideanest.ledger.application.PostingHead;
+import az.ideanest.ledger.application.ProjectTotal;
 import az.ideanest.ledger.domain.LedgerEntry;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -261,4 +263,28 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, Long> 
             ORDER BY e.account, e.currency
             """)
     List<AccountTotal> balancesOfProject(@Param("projectId") UUID projectId);
+
+    /**
+     * #587: the campaigns on which these accounts, summed, hold less than nothing — per currency.
+     *
+     * <p>{@link #balances()} answers for the whole platform, where escrow is one pool and one
+     * campaign's shortfall hides behind every other campaign's money. Asked per campaign it
+     * shows the campaign that returned or paid out more than it took. Only the negative rows,
+     * because the healthy ones are every campaign the platform has ever had and nobody reads them.
+     */
+    @Query(
+            """
+            SELECT new az.ideanest.ledger.application.ProjectTotal(
+                e.projectId,
+                e.currency,
+                SUM(CASE WHEN e.direction = az.ideanest.ledger.application.EntryDirection.DEBIT
+                         THEN e.amount ELSE -e.amount END))
+            FROM LedgerEntry e
+            WHERE e.account IN :accounts AND e.projectId IS NOT NULL
+            GROUP BY e.projectId, e.currency
+            HAVING SUM(CASE WHEN e.direction = az.ideanest.ledger.application.EntryDirection.DEBIT
+                            THEN e.amount ELSE -e.amount END) < 0
+            ORDER BY e.projectId, e.currency
+            """)
+    List<ProjectTotal> projectsBelowZero(@Param("accounts") Collection<String> accounts);
 }

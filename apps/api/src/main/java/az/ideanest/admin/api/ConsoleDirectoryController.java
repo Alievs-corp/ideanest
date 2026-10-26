@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
  * What the console's identifiers are called — issue #402, over HTTP.
  *
  * <p>{@link ConsoleDirectoryService} carries the argument for why this exists at all, why
- * it needs no capability beyond being staff, and why it is the one console read that is not
+ * it asks for {@code ADMINISTER_ACCOUNTS} or {@code MODERATE_CONTENT}, and why it is the one console read that is not
  * audited. What is decided here is the shape of the request.
  *
  * <p><strong>Repeated parameters rather than a comma-separated list.</strong>

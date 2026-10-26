@@ -1101,7 +1101,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }, {
           "in" : "query",
@@ -1128,7 +1128,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }, {
           "in" : "query",
@@ -1162,7 +1162,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }, {
           "in" : "query",
@@ -1208,7 +1208,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }, {
           "in" : "query",
@@ -1246,7 +1246,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         } ],
         "requestBody" : {
@@ -1283,7 +1283,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         } ],
         "requestBody" : {
@@ -1312,7 +1312,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }, {
           "in" : "query",
@@ -11743,7 +11743,9 @@
             "type" : "array",
             "items" : {
               "type" : "string"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           }
         }
       },
@@ -12293,7 +12295,8 @@
             "items" : {
               "$ref" : "#/components/schemas/PledgeAddonBody"
             },
-            "minItems" : 1
+            "maxItems" : 200,
+            "minItems" : 0
           }
         },
         "required" : [ "addons" ]
@@ -12960,7 +12963,8 @@
               "type" : "string",
               "enum" : [ "EDIT_BASICS", "EDIT_REWARDS", "EDIT_STORY", "SUBMIT_FOR_REVIEW", "PUBLISH_UPDATES", "RESPOND_TO_COMMENTS", "MANAGE_FAQ", "VIEW_FINANCES", "MANAGE_COLLABORATORS" ]
             },
-            "minItems" : 1,
+            "maxItems" : 64,
+            "minItems" : 0,
             "uniqueItems" : true
           }
         },
@@ -13555,7 +13559,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/RewardItemBody"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           },
           "limitQuantity" : {
             "type" : "integer",
@@ -14102,7 +14108,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }
       },
@@ -14133,7 +14139,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PledgeAddonBody"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           },
           "contribution" : {
             "$ref" : "#/components/schemas/Money"
@@ -14911,7 +14919,8 @@
               "type" : "string",
               "enum" : [ "EDIT_BASICS", "EDIT_REWARDS", "EDIT_STORY", "SUBMIT_FOR_REVIEW", "PUBLISH_UPDATES", "RESPOND_TO_COMMENTS", "MANAGE_FAQ", "VIEW_FINANCES", "MANAGE_COLLABORATORS" ]
             },
-            "minItems" : 1,
+            "maxItems" : 64,
+            "minItems" : 0,
             "uniqueItems" : true
           },
           "email" : {
@@ -15032,6 +15041,12 @@
           "projectId" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "revisionChangedFields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           },
           "sku" : {
             "type" : "string"
@@ -15757,7 +15772,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "SCHEDULED_LAUNCH_REFUSED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "REFUND_SENT_BY_BANK", "SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }
       },
@@ -17061,7 +17076,9 @@
           "countries" : {
             "type" : "array",
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "maxLength" : 300,
+              "minLength" : 0
             }
           },
           "coverImage" : {
@@ -17784,7 +17801,9 @@
             "items" : {
               "type" : "string",
               "format" : "uuid"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           }
         }
       },
@@ -17797,7 +17816,8 @@
               "type" : "string",
               "format" : "uuid"
             },
-            "minItems" : 1
+            "maxItems" : 500,
+            "minItems" : 0
           }
         },
         "required" : [ "projectIds" ]
@@ -17810,7 +17830,9 @@
             "items" : {
               "type" : "string",
               "format" : "uuid"
-            }
+            },
+            "maxItems" : 500,
+            "minItems" : 0
           }
         }
       },
@@ -18059,7 +18081,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/AnswerBody"
-            }
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           },
           "pledgeId" : {
             "type" : "string",
@@ -18134,6 +18158,48 @@
           }
         }
       },
+      "RevisionItem" : {
+        "type" : "object",
+        "properties" : {
+          "changedFields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "live" : {
+            "$ref" : "#/components/schemas/RevisionItemWriting"
+          },
+          "proposed" : {
+            "$ref" : "#/components/schemas/RevisionItemWriting"
+          }
+        }
+      },
+      "RevisionItemWriting" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "imageUrl" : {
+            "type" : "string"
+          },
+          "isDigital" : {
+            "type" : "boolean"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "weightGrams" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "RevisionQueueResponse" : {
         "type" : "object",
         "properties" : {
@@ -18182,6 +18248,12 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionItem"
+            }
+          },
           "live" : {
             "$ref" : "#/components/schemas/ProjectEdit"
           },
@@ -18200,6 +18272,9 @@
             "items" : {
               "$ref" : "#/components/schemas/RevisionRewardBody"
             }
+          },
+          "shippingZones" : {
+            "$ref" : "#/components/schemas/RevisionZones"
           },
           "status" : {
             "type" : "string"
@@ -18388,6 +18463,41 @@
           },
           "zoneName" : {
             "type" : "string"
+          }
+        }
+      },
+      "RevisionZone" : {
+        "type" : "object",
+        "properties" : {
+          "countryCodes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        }
+      },
+      "RevisionZones" : {
+        "type" : "object",
+        "properties" : {
+          "live" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionZone"
+            }
+          },
+          "proposed" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionZone"
+            }
           }
         }
       },
@@ -18831,6 +18941,8 @@
               "type" : "string",
               "enum" : [ "CURATION", "HEALTH" ]
             },
+            "maxItems" : 64,
+            "minItems" : 0,
             "uniqueItems" : true
           }
         },
@@ -19136,13 +19248,17 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ShippingRuleBody"
-            }
+            },
+            "maxItems" : 300,
+            "minItems" : 0
           },
           "zoneRates" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ShippingZoneRateBody"
-            }
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           }
         }
       },
@@ -19153,7 +19269,9 @@
             "type" : "array",
             "items" : {
               "type" : "string"
-            }
+            },
+            "maxItems" : 300,
+            "minItems" : 0
           },
           "id" : {
             "type" : "string",
@@ -19167,6 +19285,9 @@
       "ShippingZoneListResponse" : {
         "type" : "object",
         "properties" : {
+          "pending" : {
+            "type" : "boolean"
+          },
           "zones" : {
             "type" : "array",
             "items" : {
@@ -19200,7 +19321,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ShippingZoneBody"
-            }
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           }
         }
       },
@@ -19790,7 +19913,9 @@
             "type" : "array",
             "items" : {
               "type" : "string"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           },
           "helpText" : {
             "type" : "string"
@@ -19828,7 +19953,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/SurveyQuestionBody"
-            }
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           },
           "respondBy" : {
             "type" : "string",
@@ -20503,7 +20630,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/Change"
-            }
+            },
+            "maxItems" : 500,
+            "minItems" : 0
           }
         },
         "required" : [ "preferences" ]

@@ -637,6 +637,29 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
+    @Test
+    @DisplayName("a typed cover image address must be https")
+    void aTypedCoverMustBeHttps() {
+        Creator creator = creator();
+        UUID id = idOf(draft(creator, "A campaign"));
+
+        // #587: a typed address was stored verbatim and rendered as the campaign's image on
+        // every card, so a script URL or a plain-http one reached every reader.
+        for (String address : java.util.List.of(
+                "javascript:alert(1)",
+                "data:image/svg+xml;base64,PHN2Zy8+",
+                "http://cdn.example.com/cover.jpg",
+                "https://cdn.example.com/a cover.jpg")) {
+            ResponseEntity<Map<String, Object>> refused = patch(
+                    "/v1/projects/" + id,
+                    creator.accessToken(),
+                    Map.of("coverImage", Map.of("url", address, "width", 1600, "height", 900)));
+
+            assertThat(refused.getStatusCode()).as(address).isEqualTo(HttpStatus.BAD_REQUEST);
+            assertThat(refused.getBody()).as(address).containsEntry("code", "PROJECT_FIELD_INVALID");
+        }
+    }
+
     // ------------------------------------------------------------------
     // Who may see and change a campaign
     // ------------------------------------------------------------------

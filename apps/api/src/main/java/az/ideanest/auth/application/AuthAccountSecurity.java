@@ -36,6 +36,7 @@ public class AuthAccountSecurity implements AccountSecurity {
     private final VerificationTokenRepository verificationTokens;
     private final PasswordHasher passwordHasher;
     private final AuditLog audit;
+    private final RevokedSessions revokedSessions;
 
     /**
      * The same trick {@code SignInService} uses. An account with no credential
@@ -50,13 +51,15 @@ public class AuthAccountSecurity implements AccountSecurity {
             SessionRepository sessions,
             VerificationTokenRepository verificationTokens,
             PasswordHasher passwordHasher,
-            AuditLog audit) {
+            AuditLog audit,
+            RevokedSessions revokedSessions) {
         this.credentials = credentials;
         this.twoFactorSecrets = twoFactorSecrets;
         this.sessions = sessions;
         this.verificationTokens = verificationTokens;
         this.passwordHasher = passwordHasher;
         this.audit = audit;
+        this.revokedSessions = revokedSessions;
         this.decoyHash = passwordHasher.hash(SecureTokens.generate());
     }
 
@@ -88,6 +91,10 @@ public class AuthAccountSecurity implements AccountSecurity {
         // wrong here. If the deletion request that triggered this fails, the
         // user should not be left signed out of a deletion that did not happen.
         int revoked = sessions.revokeAllForUser(userId, SessionRevocationReason.USER_REVOKED, at);
+        if (revoked > 0) {
+            // After this transaction commits, and not if it rolls back -- see RevokedSessions.
+            revokedSessions.revocationCommitting();
+        }
 
         // And the audit row is written the same way, in this transaction rather
         // than in one of its own — for the same reason and with the same effect. A

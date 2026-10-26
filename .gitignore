@@ -49,3 +49,6 @@ apps/mobile/certs/private-key.pem
 apps/mobile/certs/public-key.pem
 *private-key*.pem
 *.private.pem
+
+# The demo seed's shared password, generated per machine by ops/seed/run.sh (#587).
+ops/seed/.seed-password

@@ -281,6 +281,9 @@ The per-caller bucket is also **spoofable, and known to be**. A Next route
 handler cannot see the socket's peer address, so `X-Forwarded-For` is the only
 candidate, and the service refuses to trust that header for precisely the right
 reason: with no proxy in front, a client picks its own bucket by inventing one.
+Behind the proxy the bucket is the header's **last** hop (#587), the one Coolify's
+Traefik appends — a client can only write to the left of it — then `X-Real-IP`.
+That is the hop the API's `RemoteIpValve` settles on too (`ops/deploy/README.md`).
 The global limiter is what actually holds — the worst a caller rotating a
 thousand fake addresses achieves is to spend the endpoint's own budget, which is
 a denial of monitoring rather than of the product, and shows up as a flood of

@@ -112,6 +112,12 @@ export const images = {
    * storage exists every cover is on one origin, this narrows to that origin,
    * and the proxy stops existing. It is written into §13.1 as part of that
    * work rather than left here as a comment nobody is accountable for.
+   *
+   * WHERE THAT STANDS (#587). The bucket exists now, but its address is the API's runtime
+   * setting (`MEDIA_PUBLIC_BASE_URL`) and nothing in this application's build is told it, and
+   * a cover can still be an address a creator typed (`CoverImageSelection.FromUrl`). Narrowing
+   * here today would turn every such cover into a thrown server render. It narrows when
+   * `FromUrl` is retired and the web is given the media origin at build time.
    */
   remotePatterns: [{ protocol: 'https', hostname: '**' }],
 
@@ -136,6 +142,146 @@ export const images = {
    */
   dangerouslyAllowSVG: false,
 };
+
+/**
+ * The two sign-in providers' SDKs, fetched on the first click — `lib/auth/script.ts` and
+ * `components/auth/ProviderSignIn.tsx`. Google's draws its button in an iframe and loads its
+ * own stylesheet; Apple's opens a popup, which no policy here governs.
+ */
+const GOOGLE_IDENTITY = 'https://accounts.google.com';
+const APPLE_SDK_ORIGIN = 'https://appleid.cdn-apple.com';
+const APPLE_ID_ORIGIN = 'https://appleid.apple.com';
+
+/**
+ * The Content-Security-Policy every response carries — #587.
+ *
+ * <h2>`'unsafe-inline'` in `script-src`, and why neither a nonce nor a hash</h2>
+ *
+ * The issue asked for a nonce or a hash on the root layout's two inline scripts. Both were
+ * measured against this application and neither holds:
+ *
+ * - **A hash** covers a script whose text is known when the header is written. The layout's
+ *   two are, but Next itself streams the RSC payload into every page as inline
+ *   `self.__next_f.push(...)` scripts whose text is different on every page, and the
+ *   maintenance notice and page write one with the window's own months in it. Once a policy
+ *   lists any hash, a browser ignores `'unsafe-inline'` beside it — so a hash for the two
+ *   would block the framework's own scripts and the page would never hydrate.
+ * - **A nonce** has to be minted per response and written into the HTML, which Next does only
+ *   in a dynamic render, and the layout would have to read it from `next/headers` for its own
+ *   two scripts (`node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md`).
+ *   The public pages' HTML is shared through the CDN for a minute and more
+ *   (`lib/cache/publicRoutes.ts`, #127), and the layout is written to stay static (#123): a
+ *   nonce in a cached page is the same nonce for every reader of that copy and readable by
+ *   anybody who fetches it, which is no nonce. Taking the pages out of the shared cache to fix
+ *   that is a cost to every page on a small shared server that a hardening change does not get
+ *   to decide.
+ *
+ * So inline script stays allowed and **script from anywhere else does not**: `'self'` and the
+ * two providers' SDK origins only. An injection that can add `<script src>` — the commoner
+ * half — is refused, and the remaining directives hold whatever a script does.
+ *
+ * <h2>The rest, directive by directive</h2>
+ *
+ * - `default-src 'self'` — anything not named below comes from here or nowhere.
+ * - `object-src 'none'`, `base-uri 'self'` — no plugins, and no `<base>` that re-points every
+ *   relative address on the page.
+ * - `form-action 'self'` — nothing on this site posts a form anywhere else; a payment leaves
+ *   by `location.assign` (`lib/pledges/payment.ts`), which this does not govern.
+ * - `frame-ancestors 'none'` — nobody frames this site, which is what makes clickjacking a
+ *   pledge impossible. `X-Frame-Options: DENY` below says the same to older browsers.
+ * - `img-src` and `media-src` take any `https:` address: a cover can still be an address a
+ *   creator typed (`CoverImageSelection.FromUrl`), and a ready image or video is served from
+ *   the media bucket whose address only the API's runtime environment knows. `data:` is the
+ *   §13.1 blur placeholder; `blob:` is the editor's local preview and the CSV downloads.
+ * - `connect-src` takes `https:` and `wss:` for the same reason: an upload is a `PUT` to a
+ *   presigned bucket address the API issues at run time (`lib/media/upload.ts`), and §12.1's
+ *   socket is `IDEANEST_REALTIME_ORIGIN`. Narrowing it would buy nothing while `img-src` is
+ *   `https:` — an image address is already a way out for anything a script has read.
+ * - `style-src 'unsafe-inline'` — React writes `style` attributes and the motion library
+ *   animates through them. Google's button brings its own stylesheet.
+ *
+ * DEVELOPMENT adds `'unsafe-eval'`, which React's development build needs to rebuild stack
+ * traces, and `ws:` for the reload socket. A production build has neither.
+ *
+ * Exported so `src/lib/security/headers.test.ts` can assert it, for the reason `images` is.
+ *
+ * @param {{ development?: boolean }} [options]
+ * @returns {string}
+ */
+export function contentSecurityPolicy({ development = false } = {}) {
+  const directives = {
+    'default-src': ["'self'"],
+    'script-src': [
+      "'self'",
+      "'unsafe-inline'",
+      ...(development ? ["'unsafe-eval'"] : []),
+      `${GOOGLE_IDENTITY}/gsi/client`,
+      APPLE_SDK_ORIGIN,
+    ],
+    'style-src': ["'self'", "'unsafe-inline'", `${GOOGLE_IDENTITY}/gsi/style`],
+    'img-src': ["'self'", 'data:', 'blob:', 'https:'],
+    'media-src': ["'self'", 'blob:', 'https:'],
+    'font-src': ["'self'", 'data:'],
+    'connect-src': ["'self'", 'https:', 'wss:', ...(development ? ['ws:'] : [])],
+    'frame-src': ["'self'", `${GOOGLE_IDENTITY}/gsi/`, APPLE_ID_ORIGIN],
+    'worker-src': ["'self'", 'blob:'],
+    'object-src': ["'none'"],
+    'base-uri': ["'self'"],
+    'form-action': ["'self'"],
+    'frame-ancestors': ["'none'"],
+  };
+  return Object.entries(directives)
+    .map(([name, sources]) => `${name} ${sources.join(' ')}`)
+    .join('; ');
+}
+
+/**
+ * The headers every response carries — #587. Each is a default a browser should have had and
+ * does not: nothing here changes what a page renders.
+ *
+ * - **HSTS for a year, without `includeSubDomains`.** The site is only ever served over https
+ *   (Cloudflare in front, `WEB_BASE_URL` must be https — ops/deploy/README.md), so a browser
+ *   that has seen it once should never try plain http again. Subdomains are left out because
+ *   this repository does not know every host under the domain; adding them, and `preload`, is
+ *   the owner's call once that is known. A browser ignores the header on http, so `next start`
+ *   on localhost is unaffected.
+ * - **`strict-origin-when-cross-origin`** sends another site the origin and never the path or
+ *   query. The pages whose address carries a token send nothing at all — see
+ *   {@link TOKEN_PAGES}.
+ * - **`nosniff`**, so nothing served here is ever run as a type it was not labelled.
+ * - **Permissions-Policy** turns off the powerful features nothing on the site uses, for this
+ *   page and anything it frames.
+ *
+ * @param {{ development?: boolean }} [options]
+ * @returns {{ key: string, value: string }[]}
+ */
+export function securityHeaders({ development = false } = {}) {
+  return [
+    { key: 'Content-Security-Policy', value: contentSecurityPolicy({ development }) },
+    { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+    { key: 'X-Frame-Options', value: 'DENY' },
+    { key: 'X-Content-Type-Options', value: 'nosniff' },
+    { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+    {
+      key: 'Permissions-Policy',
+      value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()',
+    },
+  ];
+}
+
+/**
+ * The pages an e-mail link lands on with a single-use token in the query: `/verify-email`,
+ * `/reset-password/confirm` and `/confirm-email-change` (`AuthEmailComposer`). Under the
+ * default policy every same-origin request from one of them — each `/v1` call, each link
+ * followed, and so every access log and analytics line downstream — would carry the full
+ * address, token included, in its `Referer`. `no-referrer` sends nothing, from anywhere, so the
+ * token stays in the address bar of the device it was opened on.
+ *
+ * Each with and without the language segment: an e-mail link is `/{locale}/...`, and a bare
+ * one is redirected there by `src/proxy.ts`. `/reset-password/:rest*` also matches
+ * `/reset-password` itself.
+ */
+export const TOKEN_PAGES = ['/verify-email', '/reset-password/:rest*', '/confirm-email-change'];
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -213,6 +359,25 @@ const nextConfig = {
    */
   async rewrites() {
     return [{ source: '/v1/:path*', destination: `${apiOrigin}/v1/:path*` }];
+  },
+
+  /**
+   * #587's response headers. Written into the build's routes manifest, so they reach every
+   * response the server sends — static pages, `/_next/static`, route handlers — and not only
+   * the ones `src/proxy.ts` matches.
+   *
+   * Order matters: when two entries set the same header, the later one wins, which is how the
+   * token pages take `no-referrer` over the default above them.
+   */
+  async headers() {
+    const development = process.env.NODE_ENV === 'development';
+    return [
+      { source: '/:path*', headers: securityHeaders({ development }) },
+      ...TOKEN_PAGES.flatMap((page) => [page, `/:locale${page}`]).map((source) => ({
+        source,
+        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      })),
+    ];
   },
 };
 

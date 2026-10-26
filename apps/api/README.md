@@ -16,6 +16,13 @@ cd apps/api
 ./gradlew exportOpenApi  # rewrite openapi.json from the running application
 ```
 
+**`local` is asked for, never assumed (#587).** The service has no default
+profile: a process that names none runs in the production shape and refuses to
+start without a signing key. `bootRun` asks for `local` itself, so the commands
+above need nothing extra. Anything else that starts the application on a
+developer's machine — an IDE run configuration, `java -jar build/libs/*.jar` —
+sets `SPRING_PROFILES_ACTIVE=local` (or `--spring.profiles.active=local`).
+
 There is no wrapper to install and no Gradle to install: `./gradlew` downloads
 the distribution it is pinned to and verifies its checksum before running it.
 A JDK 21 or newer must be on the path; the build compiles against a Java 21
@@ -159,6 +166,7 @@ alerted on.
 | `ideanest_queue_waiting{queue}` / `ideanest_queue_dead{queue}` | Every queue on the platform | `QueueDepthSource` (#316) |
 | `ideanest_payment_hosted_sweep_settled_total{outcome}` | Payment pages `hosted-charge-sweep` settled because their callback never came: `collected` or `failed` | `HostedChargeMetrics` (#356) |
 | `ideanest_payment_hosted_attention{reason}` | Unsettled pages in the sweep's window whose last check needs somebody: `returned` or `unanswered`. Set by each pass | the same |
+| `ideanest_payment_hosted_anomalies_total{reason}` | Payments the platform did not expect, each also an ERROR line: `duplicate` (a second payment for a collected pledge, refunded as `DUPLICATE_CHARGE`), `amount_mismatch` (recorded failed), `aged_out` (a page still pending past the sweep's window) | the same (#587) |
 
 `PlatformMetrics` reads the same interfaces §4.11's health screen reads, on
 purpose: a dashboard that disagreed with an alert is a dashboard somebody checks

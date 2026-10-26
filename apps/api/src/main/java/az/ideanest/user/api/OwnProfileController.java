@@ -1,6 +1,7 @@
 package az.ideanest.user.api;
 
 import az.ideanest.user.application.ProfileEditing;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -90,7 +91,7 @@ public class OwnProfileController {
      */
     @PatchMapping("/v1/me/profile")
     public ResponseEntity<OwnProfileResponse> edit(
-            @AuthenticationPrincipal Jwt accessToken, @RequestBody ProfilePatchRequest request) {
+            @AuthenticationPrincipal Jwt accessToken, @Valid @RequestBody ProfilePatchRequest request) {
 
         UUID accountId = UUID.fromString(accessToken.getSubject());
         return noStore().body(OwnProfileResponse.of(profiles.apply(accountId, request.toEdit())));

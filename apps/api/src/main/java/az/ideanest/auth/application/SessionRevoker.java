@@ -36,10 +36,12 @@ public class SessionRevoker {
 
     private final SessionRepository sessions;
     private final AuditLog audit;
+    private final RevokedSessions revokedSessions;
 
-    public SessionRevoker(SessionRepository sessions, AuditLog audit) {
+    public SessionRevoker(SessionRepository sessions, AuditLog audit, RevokedSessions revokedSessions) {
         this.sessions = sessions;
         this.audit = audit;
+        this.revokedSessions = revokedSessions;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -47,6 +49,9 @@ public class SessionRevoker {
         sessions.findById(sessionId).ifPresent(session -> {
             session.revoke(reason, at);
             sessions.save(session);
+            // So that the access tokens this session issued stop working at the next
+            // request rather than when the cached verdict expires (#587).
+            revokedSessions.revocationCommitting();
             // Inside the ifPresent, so that revoking a session that is not there
             // records nothing. Nothing was withdrawn, and a row saying otherwise
             // would make a stale client look like a security event.
@@ -82,6 +87,7 @@ public class SessionRevoker {
     public int revokeAllFor(UUID userId, SessionRevocationReason reason, Instant at) {
         int revoked = sessions.revokeAllForUser(userId, reason, at);
         if (revoked > 0) {
+            revokedSessions.revocationCommitting();
             // One row for the statement rather than one per session, because one
             // statement is what happened: the whole point of doing this in a single
             // UPDATE is that there is no instant at which some are dead and some are

@@ -1,7 +1,8 @@
-import { AccessibilityInfo, BackHandler, Linking } from 'react-native';
+import { AccessibilityInfo, BackHandler, Linking, Share } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
@@ -338,16 +339,34 @@ describe('two-factor: switching it on', () => {
     set.mockRestore();
   });
 
-  it('copies all the recovery codes, under an accessible name', async () => {
+  /*
+   * #587: the clipboard is readable by every app and synced by some keyboards. The codes go to the
+   * share sheet, where the reader picks a password manager or a note, and never to the clipboard.
+   */
+  it('hands the recovery codes to the share sheet, never to the clipboard', async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
     await show();
     await enrolToCodes();
 
-    await fireEvent.press(screen.getByRole('button', { name: S.copyCodes }));
+    await fireEvent.press(screen.getByRole('button', { name: S.saveCodesName }));
     await settle();
-    expect(Clipboard.setStringAsync).toHaveBeenCalledWith(CODES.join('\n'));
-    // The pill says so; its accessible name stays what the button does.
-    expect(screen.getByText(S.copied, { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByRole('button', { name: S.copyCodes })).toBeTruthy();
+    expect(share).toHaveBeenCalledWith({ message: CODES.join('\n') });
+    expect(Clipboard.setStringAsync).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('two-factor-save-codes-failed')).toBeNull();
+    share.mockRestore();
+  });
+
+  it('says so when the share sheet could not be opened, and the codes stay on screen', async () => {
+    const share = jest.spyOn(Share, 'share').mockRejectedValue(new Error('no activity'));
+    await show();
+    await enrolToCodes();
+
+    await fireEvent.press(screen.getByRole('button', { name: S.saveCodesName }));
+    await settle();
+    expect(screen.getByTestId('two-factor-save-codes-failed')).toBeTruthy();
+    expect(screen.getByText(S.saveFailed)).toBeTruthy();
+    expect(screen.getByText(CODES[0]!)).toBeTruthy();
+    share.mockRestore();
   });
 
   it('shows the refusal and stays on the step when the code is wrong', async () => {
@@ -425,17 +444,24 @@ describe('two-factor: leaving the screen', () => {
   });
 });
 
-describe('two-factor: copying', () => {
-  it('says so, as a danger alert a screen reader hears, when the codes could not be copied', async () => {
+describe('two-factor: copying the key', () => {
+  async function toScan() {
+    await show();
+    sendJson.mockResolvedValueOnce(ENROLMENT);
+    await press('two-factor-set-up');
+    await fireEvent.changeText(screen.getByTestId('two-factor-password'), PASSWORD);
+    await press('two-factor-continue');
+  }
+
+  it('says so, as a danger alert a screen reader hears, when the key could not be copied', async () => {
     jest.mocked(Clipboard.setStringAsync).mockResolvedValueOnce(false);
     const said = jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions');
-    await show();
-    await enrolToCodes();
+    await toScan();
 
-    await fireEvent.press(screen.getByRole('button', { name: S.copyCodes }));
+    await fireEvent.press(screen.getByRole('button', { name: S.copyKey }));
     await settle();
 
-    expect(screen.getByTestId('two-factor-copy-codes-failed')).toBeTruthy();
+    expect(screen.getByTestId('two-factor-copy-key-failed')).toBeTruthy();
     expect(screen.getByText(S.copyFailed)).toBeTruthy();
     // iOS has no live regions: the danger alert speaks through an assertive announcement.
     expect(said).toHaveBeenCalledWith(S.copyFailed, { queue: false });
@@ -445,11 +471,36 @@ describe('two-factor: copying', () => {
 
   it('a thrown clipboard error is the same failure', async () => {
     jest.mocked(Clipboard.setStringAsync).mockRejectedValueOnce(new Error('denied'));
-    await show();
-    await enrolToCodes();
-    await fireEvent.press(screen.getByRole('button', { name: S.copyCodes }));
+    await toScan();
+    await fireEvent.press(screen.getByRole('button', { name: S.copyKey }));
     await settle();
-    expect(screen.getByTestId('two-factor-copy-codes-failed')).toBeTruthy();
+    expect(screen.getByTestId('two-factor-copy-key-failed')).toBeTruthy();
+  });
+});
+
+describe('two-factor: screen capture', () => {
+  const prevent = jest.mocked(usePreventScreenCapture);
+
+  it('is allowed on the idle card, which shows nothing secret', async () => {
+    await show();
+    expect(prevent).not.toHaveBeenCalled();
+  });
+
+  // #587: the password, the key, its QR code and the recovery codes are all on these steps.
+  it('is refused from the password step through the recovery codes', async () => {
+    await show();
+    sendJson.mockResolvedValueOnce(ENROLMENT).mockResolvedValueOnce({ recoveryCodes: CODES });
+
+    await press('two-factor-set-up');
+    expect(prevent).toHaveBeenLastCalledWith('two-factor');
+
+    await fireEvent.changeText(screen.getByTestId('two-factor-password'), PASSWORD);
+    await press('two-factor-continue');
+    prevent.mockClear();
+    await fireEvent.changeText(screen.getByTestId('two-factor-code'), '123456');
+    await press('two-factor-switch-on');
+    expect(screen.getByTestId('two-factor-codes')).toBeTruthy();
+    expect(prevent).toHaveBeenLastCalledWith('two-factor');
   });
 });
 

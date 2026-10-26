@@ -289,7 +289,8 @@ class CampaignVideoApiTests extends AbstractIntegrationTest {
 
         ResponseEntity<Map<String, Object>> accepted = beginRaw(creator, "video/mp4", 120L * 1024 * 1024);
         assertThat(accepted.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(accepted.getBody()).containsEntry("contentType", "video/mp4");
+        // Signed as a byte stream like every raw upload (#587); the kind came from the declaration.
+        assertThat(accepted.getBody()).containsEntry("contentType", "application/octet-stream");
         assertThat(((Number) accepted.getBody().get("maxBytes")).longValue()).isEqualTo(250L * 1024 * 1024);
 
         ResponseEntity<Map<String, Object>> refused = beginRaw(creator, "video/mp4", 300L * 1024 * 1024);

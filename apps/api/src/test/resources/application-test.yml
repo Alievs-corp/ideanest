@@ -310,6 +310,11 @@ ideanest:
       cooldown: PT1M
     webhooks:
       tolerance: PT5M
+      # #587: every request in the suite comes from 127.0.0.1 and shares one limiter, so a budget a test
+      # could exhaust is one the payment suites would exhaust for each other. ProviderWebhookRateLimitTests
+      # drives the controller directly with the real numbers.
+      per-address: 1000000
+      overall: 1000000
     refunds:
       # `-`, like every other job's schedule in this profile; CampaignRefundTests drives it.
       schedule: "-"
@@ -451,6 +456,13 @@ ideanest:
       deletion-attempts-per-account: 5
 
   auth:
+    # On the request's thread, unlike every deployed profile (#587). The suite reads
+    # the token a message carried the moment the request that sent it returns --
+    # RecordingVerificationNotifier is how a test follows a link -- and a send on
+    # another thread would make every one of those reads a race. The pool itself is
+    # exercised by VerificationNotificationListenerTests, which builds the listener
+    # with the production setting.
+    synchronous-mail: true
     rate-limit:
       # The suite shares one process and one limiter, and every test calls from
       # 127.0.0.1. A realistic per-address limit would therefore make the tests

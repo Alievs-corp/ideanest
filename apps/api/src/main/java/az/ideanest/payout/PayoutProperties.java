@@ -25,6 +25,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *     a campaign with no settled charge reports zero in. §21.2 gives nothing to convert
  *     with, so a payout in another currency is compared against a threshold that does not
  *     apply — {@code PayoutService} takes the safe branch and requires the higher count
+ * @param disputeRateLimit how often one account may ask to dispute a payment (#587)
  */
 @ConfigurationProperties(prefix = "ideanest.payout")
 public record PayoutProperties(
@@ -32,7 +33,31 @@ public record PayoutProperties(
         BigDecimal dualApprovalThreshold,
         short approvalsAboveThreshold,
         String currency,
-        String destinationReminderSchedule) {
+        String destinationReminderSchedule,
+        DisputeRateLimit disputeRateLimit) {
+
+    /**
+     * {@code POST /v1/pledges/{id}/disputes}, per account (#587).
+     *
+     * <p>Every call reads the pledge, its payout and its refunds, and an upheld dispute is a
+     * refund, so the endpoint had a cost and no bound. Per account rather than per address,
+     * for {@code DeviceController}'s reason: the caller is signed in, and an address is shared
+     * by everybody behind one NAT. Ten an hour is far more than a backer with several pledges
+     * on one failed campaign needs, and a script needs far more than that.
+     *
+     * @param perAccount how many attempts in one window; ten by default
+     * @param window an hour by default
+     */
+    public record DisputeRateLimit(int perAccount, Duration window) {
+
+        public DisputeRateLimit {
+            perAccount = perAccount == 0 ? 10 : perAccount;
+            window = window == null ? Duration.ofHours(1) : window;
+            if (perAccount < 1 || !window.isPositive()) {
+                throw new IllegalArgumentException("A dispute rate limit allows at least one attempt a positive window");
+            }
+        }
+    }
 
     private static final Duration DEFAULT_HOLD = Duration.ofDays(14);
 
@@ -47,6 +72,7 @@ public record PayoutProperties(
         dualApprovalThreshold = dualApprovalThreshold == null ? DEFAULT_THRESHOLD : dualApprovalThreshold;
         approvalsAboveThreshold = approvalsAboveThreshold == 0 ? DEFAULT_APPROVALS : approvalsAboveThreshold;
         currency = currency == null ? DEFAULT_CURRENCY : currency;
+        disputeRateLimit = disputeRateLimit == null ? new DisputeRateLimit(0, null) : disputeRateLimit;
         // IDN-EXT-01 (#41): the daily pass that reminds a creator, weekly, that their payout waits
         // for their VÖEN and business card.
         destinationReminderSchedule = destinationReminderSchedule == null || destinationReminderSchedule.isBlank()

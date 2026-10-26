@@ -159,6 +159,9 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
      *
      * <p><strong>With the provider fees refunds withheld (#436).</strong> A charge refunded net of its fee
      * is settled: the platform never received the fee, so it is not the creator's either.
+     *
+     * <p><strong>Nor the refund of a second payment for one pledge (#587)</strong>, for the raise's reason:
+     * its charge is left out of the gross too.
      */
     @Query(
             value =
@@ -169,6 +172,8 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
                      WHERE r.project_id = :projectId
                        AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable')
                        AND rs.state IS DISTINCT FROM 'UNAPPLIED'
+                       AND NOT EXISTS (SELECT 1 FROM duplicate_charges dc
+                                        WHERE dc.charge_transaction_id = r.charge_transaction_id)
                     """,
             nativeQuery = true)
     BigDecimal refundedOnProject(@Param("projectId") UUID projectId);
@@ -182,7 +187,8 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
      * reversed against its own provider transaction, and a pledge's state is not what says whether its
      * money went back — a charge whose refund failed after another charge of the same pledge was
      * refunded must still be offered. And a charge that paid for a raise which could not be applied,
-     * whatever the campaign's state: it bought nothing.
+     * whatever the campaign's state: it bought nothing. And, for the same reason, a second payment for a
+     * pledge already paid for (#587, {@code duplicate_charges}), returned in full as {@code DUPLICATE_CHARGE}.
      *
      * <p>A charge is offered while it has money left: its amount less every refund against it that has
      * not failed, each with its withheld fee — and, for a charge taken under #436's rule that a failed or
@@ -204,20 +210,25 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
                     SELECT CAST(t.id AS text) AS charge_id,
                            CAST(t.pledge_id AS text) AS pledge_id,
                            CASE WHEN rs.state = 'UNAPPLIED' THEN 'RAISE_NOT_APPLIED'
+                                WHEN dc.charge_transaction_id IS NOT NULL THEN 'DUPLICATE_CHARGE'
                                 WHEN p.state = 'UNSUCCESSFUL' THEN 'CAMPAIGN_FAILED'
                                 ELSE 'CAMPAIGN_HALTED' END AS reason
                       FROM transactions t
                       JOIN projects p ON p.id = t.project_id
                       LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
+                      LEFT JOIN duplicate_charges dc ON dc.charge_transaction_id = t.id
                      WHERE t.type = 'CHARGE'
                        AND t.status = 'SUCCEEDED'
                        AND t.pledge_id IS NOT NULL
-                       AND (rs.state = 'UNAPPLIED' OR p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED'))
+                       AND (rs.state = 'UNAPPLIED'
+                            OR dc.charge_transaction_id IS NOT NULL
+                            OR p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED'))
                        AND t.amount > (SELECT COALESCE(SUM(r.amount + r.withheld_fee), 0) FROM refunds r
                                         WHERE r.charge_transaction_id = t.id
                                           AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable'))
                                     + CASE WHEN t.provider_fee_withheld_on_refund
                                                 AND rs.state IS DISTINCT FROM 'UNAPPLIED'
+                                                AND dc.charge_transaction_id IS NULL
                                            THEN GREATEST(
                                                 (SELECT COALESCE(SUM(le.amount), 0) FROM ledger_entries le
                                                   WHERE le.transaction_id = t.id

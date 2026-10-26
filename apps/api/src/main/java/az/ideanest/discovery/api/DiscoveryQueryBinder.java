@@ -39,7 +39,33 @@ final class DiscoveryQueryBinder {
     /** Every ISO 3166-1 alpha-2 code, the vocabulary of {@code market} and of a campaign's countries. */
     private static final Set<String> COUNTRIES = Locale.getISOCountries(Locale.IsoCountryCode.PART1_ALPHA2);
 
+    /**
+     * The longest search text a query carries, in characters (#587).
+     *
+     * <p>Two hundred is several sentences, far beyond anything typed into a search box, and
+     * the text goes into a full-text parse and a trigram match on every request, where a
+     * query string of tens of kilobytes is work an anonymous caller could buy for free.
+     * Longer text is cut rather than refused: a refusal would have to echo the value, and a
+     * pasted paragraph is better answered on its first two hundred characters than not at all.
+     */
+    static final int MAX_TEXT_LENGTH = 200;
+
     private DiscoveryQueryBinder() {
+    }
+
+    /**
+     * {@code q}, cut to {@link #MAX_TEXT_LENGTH}. Never inside a surrogate pair, so an emoji
+     * on the boundary is dropped whole rather than leaving half a character to the parser.
+     */
+    static String text(String raw) {
+        if (raw == null || raw.length() <= MAX_TEXT_LENGTH) {
+            return raw;
+        }
+        int end = MAX_TEXT_LENGTH;
+        if (Character.isHighSurrogate(raw.charAt(end - 1))) {
+            end--;
+        }
+        return raw.substring(0, end);
     }
 
     /**
@@ -66,7 +92,7 @@ final class DiscoveryQueryBinder {
     static DiscoveryQuery bind(MultiValueMap<String, String> parameters, String locale) {
         DiscoveryQuery.Builder builder = DiscoveryQuery.builder()
                 .locale(locale)
-                .text(single(parameters, "q"))
+                .text(text(single(parameters, "q")))
                 .statuses(closedSet(parameters, "status", DiscoveryStatus::fromWireValue, DiscoveryStatus.wireValues()))
                 .categorySlugs(openSet(parameters, "category"))
                 .subcategorySlugs(openSet(parameters, "subcategory"))

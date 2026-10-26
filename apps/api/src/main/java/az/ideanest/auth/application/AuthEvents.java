@@ -70,4 +70,15 @@ public final class AuthEvents {
      */
     public record EmailChangeNoticeToPreviousAddress(EmailAddress previousEmail, EmailAddress newEmail, String locale) {
     }
+
+    /**
+     * Somebody asked to move their account onto an address that already has one (#587).
+     *
+     * <p>{@link RegistrationAttemptedOnExistingAccount}'s counterpart for A-12. The
+     * request is answered as though it had worked, so this message is the only signal,
+     * and it goes to the address's owner rather than to whoever named it: the owner
+     * learns somebody tried, and the person asking learns nothing.
+     */
+    public record EmailChangeAttemptedOnExistingAccount(EmailAddress email, String locale) {
+    }
 }

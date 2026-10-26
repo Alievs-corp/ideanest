@@ -151,12 +151,14 @@ public class MediaProcessingWrites {
     }
 
     /**
-     * Removes uploads that were begun and never arrived.
+     * Removes uploads that were begun and never announced.
      *
-     * @return how many were removed
+     * @return the identifiers removed, whose {@code uploads/<id>} objects the caller deletes once
+     *     this has committed: the row is gone first, so an object whose deletion fails is an
+     *     orphan costing storage, never a row pointing at nothing
      */
     @Transactional
-    public int removeAbandoned() {
+    public List<UUID> removeAbandoned() {
         Instant before = clock.instant().minus(properties.processing().abandonedAfter());
         return assets.deleteAbandoned(before);
     }

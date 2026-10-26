@@ -39,12 +39,11 @@ import org.springframework.transaction.annotation.Transactional;
  * for as long as somebody keeps refreshing, and revoked sessions on an account that can
  * sign in again is an inconvenience rather than a ban.
  *
- * <p><strong>What a ban does not do is expire an access token that has already been
- * issued.</strong> They are signed and short-lived, {@code SecurityConfiguration} does not
- * consult the database on every request, and adding a lookup there would put a query on
- * the hot path of every endpoint to close a window of minutes. The window is stated rather
- * than hidden: a suspended account is refused at sign-in and at refresh, and its current
- * access token stops working when it expires.
+ * <p><strong>A ban also ends the access tokens already issued</strong> (#587). Each one
+ * names its session in {@code sid}, and {@code SecurityConfiguration} refuses a token
+ * whose session is revoked — one cached primary-key probe per request, see
+ * {@code RevokedSessions}. So the revocation here is what stops the account's very next
+ * request, not merely its next sign-in or refresh.
  *
  * <h2>Why the search is audited</h2>
  *

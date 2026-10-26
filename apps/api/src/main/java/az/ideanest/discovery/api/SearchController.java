@@ -154,8 +154,8 @@ public class SearchController {
         limits.countSuggestion(httpRequest);
 
         String locale = Taxonomy.localeFor(acceptLanguage);
-        SuggestQuery query =
-                new SuggestQuery(text, suggestLimit(limit), locale, DiscoveryQueryBinder.market(market));
+        SuggestQuery query = new SuggestQuery(
+                DiscoveryQueryBinder.text(text), suggestLimit(limit), locale, DiscoveryQueryBinder.market(market));
 
         List<Suggestion> suggestions = search.suggest(query);
         DiscoveryResponses.Suggestions body = DiscoveryResponses.suggestions(suggestions);

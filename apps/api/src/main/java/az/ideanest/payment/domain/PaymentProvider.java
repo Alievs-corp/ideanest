@@ -1,6 +1,7 @@
 package az.ideanest.payment.domain;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * §9.4's provider abstraction (#61): one interface, one adapter per provider, so that
@@ -77,6 +78,21 @@ public interface PaymentProvider {
      *     timestamp is outside the tolerance, or the body cannot be read
      */
     PaymentEvent parseWebhook(byte[] rawBody, Map<String, String> headers);
+
+    /**
+     * #587: the provider transaction an <em>unsigned</em> callback names, read from the body alone —
+     * for an adapter whose {@link #parseWebhook} verifies a delivery by asking the provider about it.
+     *
+     * <p>Such a body is not evidence of anything, and verifying it costs a call to another service.
+     * {@code ProviderWebhooks} reads the name first and asks only about a payment the platform is
+     * actually waiting on. Empty — the default — for an adapter that checks a signature, which
+     * costs nothing to check and so needs no gate in front of it.
+     *
+     * @throws WebhookVerificationException when the body cannot be read or names nothing
+     */
+    default Optional<String> unsignedCallbackReference(byte[] rawBody) {
+        return Optional.empty();
+    }
 
     /**
      * IDN-EXT-01's payment (#38): begin a charge the backer makes on the provider's own page.

@@ -1,6 +1,7 @@
 package az.ideanest.reward.application;
 
 import az.ideanest.media.application.MediaLibrary;
+import az.ideanest.project.application.CatalogueWriting;
 import az.ideanest.project.application.HeldRewards;
 import az.ideanest.project.application.RewardWriting;
 import az.ideanest.project.application.RewardWritings;
@@ -50,6 +51,7 @@ public class RewardTierWritings implements RewardWritings {
     private final ShippingZoneRuleRepository shippingZoneRules;
     private final ShippingZoneRepository shippingZones;
     private final ItemRepository items;
+    private final ShippingZoneWrites zoneWrites;
     private final MediaLibrary media;
 
     public RewardTierWritings(
@@ -59,6 +61,7 @@ public class RewardTierWritings implements RewardWritings {
             ShippingZoneRuleRepository shippingZoneRules,
             ShippingZoneRepository shippingZones,
             ItemRepository items,
+            ShippingZoneWrites zoneWrites,
             MediaLibrary media) {
         this.rewards = rewards;
         this.compositions = compositions;
@@ -66,6 +69,7 @@ public class RewardTierWritings implements RewardWritings {
         this.shippingZoneRules = shippingZoneRules;
         this.shippingZones = shippingZones;
         this.items = items;
+        this.zoneWrites = zoneWrites;
         this.media = media;
     }
 
@@ -181,6 +185,57 @@ public class RewardTierWritings implements RewardWritings {
             release(tier.getId(), mediaOf(tier));
             rewards.delete(tier);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, CatalogueWriting.Item> liveItemsOf(UUID projectId) {
+        Map<UUID, CatalogueWriting.Item> live = new LinkedHashMap<>();
+        items.findInApprovedTiers(projectId).forEach(item -> live.put(item.getId(), writingOf(item)));
+        return live;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CatalogueWriting.Zone> liveZonesOf(UUID projectId) {
+        return zoneWrites.detailsOf(projectId).stream()
+                .map(zone -> new CatalogueWriting.Zone(zone.id(), zone.name(), zone.countryCodes()))
+                .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>An item is written as its proposed state, which {@code ItemService} checked when the
+     * creator saved it. Its stock code is not part of it: that was written at once.
+     */
+    @Override
+    @Transactional
+    public void publishCatalogue(
+            UUID projectId, Map<UUID, CatalogueWriting.Item> proposed, List<CatalogueWriting.Zone> zones) {
+        if (zones != null) {
+            zoneWrites.apply(projectId, zones);
+        }
+        for (Item item : items.findByProjectIdOrderByCreatedAtAsc(projectId)) {
+            CatalogueWriting.Item wanted = proposed.get(item.getId());
+            if (wanted != null) {
+                writeOnto(item, wanted);
+            }
+        }
+    }
+
+    /** What an item shows a backer now. */
+    static CatalogueWriting.Item writingOf(Item item) {
+        return new CatalogueWriting.Item(
+                item.getName(), item.getDescription(), item.getImageUrl(), item.isDigital(), item.getWeightGrams());
+    }
+
+    /** Writes an item's shown state, already checked, onto its row. */
+    static void writeOnto(Item item, CatalogueWriting.Item writing) {
+        item.setName(writing.name());
+        item.setDescription(writing.description());
+        item.setImageUrl(writing.imageUrl());
+        item.describePhysicality(writing.digital(), writing.weightGrams());
     }
 
     // ------------------------------------------------------------------

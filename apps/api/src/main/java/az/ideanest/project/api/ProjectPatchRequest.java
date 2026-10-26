@@ -3,6 +3,7 @@ package az.ideanest.project.api;
 import az.ideanest.project.application.ProjectPatch;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.Patched;
+import jakarta.validation.constraints.Size;
 import tools.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.List;
@@ -46,7 +47,7 @@ public record ProjectPatchRequest(
         Patched<String> risks,
         Patched<CoverImageBody> coverImage,
         Patched<UUID> videoMediaId,
-        Patched<List<String>> countries) {
+        Patched<@Size(max = 300) List<String>> countries) {
 
     public ProjectPatchRequest {
         // Absence is the neutral value, so a null component becomes absent rather

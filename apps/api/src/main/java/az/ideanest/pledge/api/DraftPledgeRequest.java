@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 public record DraftPledgeRequest(
         @NotNull(message = "A pledge names the campaign it backs") UUID projectId,
         UUID rewardTierId,
-        @Valid List<PledgeAddonBody> addons,
+        @Valid @Size(max = 200) List<PledgeAddonBody> addons,
         @NotNull(message = "A pledge is an amount somebody chose to give") Money contribution,
         String shippingCountry,
         Boolean isAnonymous,

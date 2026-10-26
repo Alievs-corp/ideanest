@@ -145,6 +145,22 @@ describe('plain HTTP to a local machine', () => {
   });
 });
 
+describe('device backups', () => {
+  // #587: Auto Backup would copy the MMKV cache to the owner's cloud and onto another phone.
+  it('are off on Android, so nothing the app keeps leaves the phone that way', () => {
+    expect(loadConfig({}).default.android?.allowBackup).toBe(false);
+  });
+});
+
+describe('screen-capture prevention', () => {
+  // #587: the module is there for FLAG_SECURE; its listener's permissions are not wanted.
+  it('does not bring the screenshot listener’s permissions with it', () => {
+    expect(loadConfig({}).default.android?.blockedPermissions).toEqual(
+      expect.arrayContaining(['android.permission.READ_MEDIA_IMAGES', 'android.permission.DETECT_SCREEN_CAPTURE']),
+    );
+  });
+});
+
 describe('over-the-air updates', () => {
   const PROJECT = '0f3c1a52-6d2e-4b7a-9c1d-2e8f4a6b7c90';
 

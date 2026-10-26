@@ -1,5 +1,7 @@
 package az.ideanest.risk.api;
 
+import az.ideanest.staff.api.StaffRefusals;
+import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
@@ -34,5 +36,14 @@ public class RiskExceptionHandler {
         problem.setDetail("Fraud signals are read by platform staff.");
         problem.setProperty("code", "NOT_A_MODERATOR");
         return problem;
+    }
+
+    /**
+     * 403 for a member of staff without {@code VIEW_FINANCE} — a curator or a partner, who
+     * work here and are still not who reads a list of suspected backers.
+     */
+    @ExceptionHandler(InsufficientStaffCapabilityException.class)
+    public ProblemDetail handleInsufficient(InsufficientStaffCapabilityException exception) {
+        return StaffRefusals.insufficient(exception);
     }
 }

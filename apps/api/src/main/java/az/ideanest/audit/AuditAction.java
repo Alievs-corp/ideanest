@@ -37,6 +37,17 @@ public enum AuditAction {
      */
     PROJECT_LAUNCHED("project.launched", "project"),
 
+    /**
+     * A campaign's launch time arrived and the platform did not open it, because its creator's
+     * plan does not cover it (#587).
+     *
+     * <p>Recorded by the scheduled launch under {@link AuditActor#system()}, with the refusal in
+     * the detail, in the transaction that clears the launch time. The campaign stays approved
+     * and the creator is told; without this row the only trace of a launch that did not happen
+     * was a log line.
+     */
+    PROJECT_SCHEDULED_LAUNCH_REFUSED("project.scheduled_launch_refused", "project"),
+
     /** Moderation refused a campaign. Terminal for the campaign. */
     PROJECT_REJECTED("project.rejected", "project"),
 
@@ -951,7 +962,47 @@ public enum AuditAction {
     MAINTENANCE_WINDOW_CHANGED("maintenance.window_changed", "maintenance_window"),
 
     /** An upcoming window was called off before it started. */
-    MAINTENANCE_WINDOW_CANCELLED("maintenance.window_cancelled", "maintenance_window");
+    MAINTENANCE_WINDOW_CANCELLED("maintenance.window_cancelled", "maintenance_window"),
+
+    // --- #587: curation and ranking ------------------------------------------------
+    //
+    // CurationService and RankingService have always written their own histories,
+    // curation_events and ranking_weight_changes, which carry the curator's note. Those
+    // stay; what was missing is the platform's one record of authority being exercised,
+    // which is the only one the console's trail reads and which carries the request's
+    // address and correlation identifiers. The entity is the collection, so a list's
+    // history is one query; the notes are not copied here, for the reason the moderation
+    // decisions give: free text about somebody's campaign in the one table with no way to
+    // remove a row.
+
+    /** AD-03: an editorial collection, badge list or open call was created, unpublished. */
+    COLLECTION_CREATED("collection.created", "collection"),
+
+    /** A collection's kind, window, badge grant, imagery or copy was replaced. */
+    COLLECTION_UPDATED("collection.updated", "collection"),
+
+    /** A collection became visible to the public. */
+    COLLECTION_PUBLISHED("collection.published", "collection"),
+
+    /** A collection stopped being visible to the public. */
+    COLLECTION_UNPUBLISHED("collection.unpublished", "collection"),
+
+    /** A campaign was curated into a collection, and badged if it badges. The detail names it. */
+    COLLECTION_PROJECT_ADDED("collection.project_added", "collection"),
+
+    /** A campaign was taken out of a collection, and un-badged with it. */
+    COLLECTION_PROJECT_REMOVED("collection.project_removed", "collection"),
+
+    /** A collection's campaigns were put in a new order. */
+    COLLECTION_REORDERED("collection.reordered", "collection"),
+
+    /**
+     * §11.2: one ranking term's weight or switch changed, which moves every campaign in every
+     * feed at once. A term is a name rather than a row with an identifier, so the entity is a
+     * UUID derived from it, as {@link #FEATURE_FLAG_CHANGED} does for a flag: two changes to
+     * one term are then one history. The detail carries the term and both values.
+     */
+    RANKING_WEIGHT_CHANGED("ranking.weight_changed", "ranking_weight");
 
 
 

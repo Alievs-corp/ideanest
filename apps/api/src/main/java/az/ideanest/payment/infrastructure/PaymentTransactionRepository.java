@@ -98,6 +98,106 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             @Param("openedBefore") java.time.Instant openedBefore,
             @Param("limit") int limit);
 
+    /**
+     * #587: the newest payment page opened for a pledge after {@code openedAfter} that nothing has settled
+     * and that recorded where it is — the page a second payment request is sent back to.
+     *
+     * <p>Only one opened with this language and these two return addresses, absent matching absent: the
+     * provider's order carries all three, so a page opened for another surface sends its backer to the
+     * wrong place. A page recorded before the language was stored has none, and matches only a request
+     * that sends none.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT t.provider_transaction_id AS providerTransactionId,
+                           t.provider_response ->> 'paymentUrl' AS paymentUrl,
+                           t.amount AS amount,
+                           t.currency AS currency
+                      FROM transactions t
+                     WHERE t.pledge_id = :pledgeId
+                       AND t.type = 'CHARGE'
+                       AND t.status = 'PENDING'
+                       AND t.provider_transaction_id IS NOT NULL
+                       AND t.provider_response ->> 'hostedPayment' = 'true'
+                       AND t.provider_response ->> 'paymentUrl' IS NOT NULL
+                       AND t.provider_response ->> 'successUrl' IS NOT DISTINCT FROM CAST(:successUrl AS text)
+                       AND t.provider_response ->> 'errorUrl' IS NOT DISTINCT FROM CAST(:errorUrl AS text)
+                       AND t.provider_response ->> 'language' IS NOT DISTINCT FROM CAST(:language AS text)
+                       AND t.created_at > :openedAfter
+                       AND NOT EXISTS (SELECT 1 FROM transactions s
+                                        WHERE s.provider = t.provider
+                                          AND s.provider_transaction_id = t.provider_transaction_id
+                                          AND s.status IN ('SUCCEEDED', 'FAILED'))
+                     ORDER BY t.created_at DESC
+                     LIMIT 1
+                    """,
+            nativeQuery = true)
+    Optional<OpenPage> openPageFor(
+            @Param("pledgeId") UUID pledgeId,
+            @Param("openedAfter") java.time.Instant openedAfter,
+            @Param("language") String language,
+            @Param("successUrl") String successUrl,
+            @Param("errorUrl") String errorUrl);
+
+    /** A payment page still waiting: its order, where it is, and what it was opened for. */
+    interface OpenPage {
+        String getProviderTransactionId();
+
+        String getPaymentUrl();
+
+        java.math.BigDecimal getAmount();
+
+        String getCurrency();
+    }
+
+    /**
+     * #587: payment pages opened at or before {@code openedBefore} — past the sweep's window — that nothing
+     * has settled and that have not been reported yet, oldest first. {@link #unsettledHostedCharges}'s rows
+     * on the far side of its window, which it stops asking about.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT t.* FROM transactions t
+                      LEFT JOIN hosted_charge_checks c ON c.transaction_id = t.id
+                     WHERE t.type = 'CHARGE'
+                       AND t.status = 'PENDING'
+                       AND t.provider_transaction_id IS NOT NULL
+                       AND t.provider_response ->> 'hostedPayment' = 'true'
+                       AND t.created_at <= :openedBefore
+                       AND c.aged_out_at IS NULL
+                       AND NOT EXISTS (SELECT 1 FROM transactions s
+                                        WHERE s.provider = t.provider
+                                          AND s.provider_transaction_id = t.provider_transaction_id
+                                          AND s.status IN ('SUCCEEDED', 'FAILED'))
+                     ORDER BY t.created_at ASC
+                     LIMIT :limit
+                    """,
+            nativeQuery = true)
+    List<PaymentTransaction> agedOutHostedCharges(
+            @Param("openedBefore") java.time.Instant openedBefore, @Param("limit") int limit);
+
+    /**
+     * #587: whether a payment page of this provider's, under this order, is still waiting to be settled —
+     * the question an unsigned callback must answer yes to before the provider is asked about it.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT EXISTS (SELECT 1 FROM transactions t
+                                    WHERE t.provider = :provider
+                                      AND t.provider_transaction_id = :reference
+                                      AND t.type = 'CHARGE'
+                                      AND t.status = 'PENDING'
+                                      AND NOT EXISTS (SELECT 1 FROM transactions s
+                                                       WHERE s.provider = t.provider
+                                                         AND s.provider_transaction_id = t.provider_transaction_id
+                                                         AND s.status IN ('SUCCEEDED', 'FAILED')))
+                    """,
+            nativeQuery = true)
+    boolean awaitsSettlement(@Param("provider") String provider, @Param("reference") String reference);
+
     /** Whether a provider transaction already has its final row — the settled index's question. */
     boolean existsByProviderAndProviderTransactionIdAndStatusIn(
             ProviderName provider, String providerTransactionId, Collection<TransactionStatus> statuses);
@@ -369,7 +469,8 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
      * <p><strong>Not a charge that paid for a raise which could not be applied (#171).</strong> That
      * money bought nothing and is owed back to the backer ({@code RAISE_NOT_APPLIED}), so it is never
      * part of what a creator is paid, whether or not its refund has gone out yet. Native because the
-     * raise is the pledge module's table.
+     * raise is the pledge module's table. <strong>Nor a second payment for one pledge (#587)</strong>,
+     * owed back as {@code DUPLICATE_CHARGE} for the same reason.
      */
     @Query(
             value =
@@ -380,17 +481,21 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
                        AND t.type = 'CHARGE'
                        AND t.status = 'SUCCEEDED'
                        AND rs.state IS DISTINCT FROM 'UNAPPLIED'
+                       AND NOT EXISTS (SELECT 1 FROM duplicate_charges dc WHERE dc.charge_transaction_id = t.id)
                      ORDER BY t.created_at ASC
                     """,
             nativeQuery = true)
     List<PaymentTransaction> settledChargesOfProject(@Param("projectId") UUID projectId);
 
     /**
-     * The charges on one pledge that paid for a raise which could not be applied — #171, #174's review.
+     * The charges on one pledge the platform owes back on its own: those that paid for a raise which
+     * could not be applied — #171, #174's review — and a second payment for a pledge already paid for
+     * (#587).
      *
-     * <p>Owed back already ({@code RAISE_NOT_APPLIED}), so a staff refund of an amount draws on them
-     * last: taking one first would leave the backer short by that much once the platform's own refund
-     * of it finds nothing left. Identifiers as text; native because the raise is the pledge module's.
+     * <p>Owed back already ({@code RAISE_NOT_APPLIED}, {@code DUPLICATE_CHARGE}), so a staff refund of an
+     * amount draws on them last: taking one first would leave the backer short by that much once the
+     * platform's own refund of it finds nothing left. Identifiers as text; native because the raise is
+     * the pledge module's.
      */
     @Query(
             value =
@@ -401,7 +506,10 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
                        AND t.type = 'CHARGE'
                        AND t.status = 'SUCCEEDED'
                        AND rs.state = 'UNAPPLIED'
+                    UNION
+                    SELECT CAST(dc.charge_transaction_id AS text) FROM duplicate_charges dc
+                     WHERE dc.pledge_id = :pledgeId
                     """,
             nativeQuery = true)
-    List<String> unappliedRaiseChargesOf(@Param("pledgeId") UUID pledgeId);
+    List<String> owedBackChargesOf(@Param("pledgeId") UUID pledgeId);
 }

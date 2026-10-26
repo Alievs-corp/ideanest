@@ -91,6 +91,24 @@ public class RewardAccess {
     }
 
     /**
+     * {@link #requireEditableItem}, with what §5.3 has frozen on the campaign, for an edit that
+     * waits for a moderator on a launched campaign (#587). Same load, same refusals.
+     */
+    public AuthorisedItem requireEditableItemWithLocks(UUID itemId, UUID accountId) {
+        Item item = items.findById(itemId).orElseThrow(() -> new ItemNotFoundException(itemId));
+        try {
+            return new AuthorisedItem(
+                    item, projects.requireEditableLocks(item.getProjectId(), accountId, ProjectCapability.EDIT_REWARDS));
+        } catch (ProjectNotFoundException e) {
+            throw new ItemNotFoundException(itemId);
+        }
+    }
+
+    /** An item the caller has been authorised for, with its campaign's locks. */
+    public record AuthorisedItem(Item item, EditLocks locks) {
+    }
+
+    /**
      * The tier, and what §5.3 has frozen on the campaign that owns it, if this
      * account may edit that campaign. Same reasoning as above.
      *

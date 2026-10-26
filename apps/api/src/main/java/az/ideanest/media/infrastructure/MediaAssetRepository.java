@@ -10,9 +10,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Media rows, by the four questions asked of them — the media pipeline design of 2026-08-30. */
 public interface MediaAssetRepository extends JpaRepository<MediaAsset, UUID> {
@@ -77,20 +77,26 @@ public interface MediaAssetRepository extends JpaRepository<MediaAsset, UUID> {
     List<MediaAsset> findVideosToProcess(@Param("staleBefore") Instant staleBefore, Limit limit);
 
     /**
-     * Uploads that were begun and never arrived.
+     * Uploads that were begun and never announced, removed, with the identifiers of what went.
      *
-     * <p>A {@code PENDING} row is somebody who closed the tab. Deleting rather than flagging,
-     * because there is nothing to keep: no object was ever written under the key, and the row
-     * records only that an address was once issued.
+     * <p>A {@code PENDING} row is somebody who closed the tab, or a client that wrote the bytes
+     * and never said so. Deleting rather than flagging, because there is nothing to keep — but
+     * the second case left an object under {@code uploads/<id>}, which this used to assume never
+     * existed (#587). The identifiers come back so the caller can delete those objects too; one
+     * statement with {@code RETURNING} rather than a read and a delete, so a row its owner
+     * completes in between is neither returned nor removed.
      *
-     * @return how many were removed
+     * @return the identifiers of the rows removed
      */
-    @Modifying
+    @Transactional
     @Query(
-            """
-            delete from MediaAsset asset
-            where asset.status = az.ideanest.media.domain.MediaStatus.PENDING
-              and asset.createdAt < :before
-            """)
-    int deleteAbandoned(@Param("before") Instant before);
+            value = "DELETE FROM media WHERE status = 'PENDING' AND created_at < :before RETURNING id",
+            nativeQuery = true)
+    List<UUID> deleteAbandoned(@Param("before") Instant before);
+
+    /**
+     * How many addresses this person was issued since {@code since} and has not announced — the
+     * outstanding ceiling {@code MediaLibrary.begin} keeps (#587).
+     */
+    long countByOwnerUserIdAndStatusAndCreatedAtAfter(UUID ownerUserId, MediaStatus status, Instant since);
 }

@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -56,6 +57,8 @@ public class ProjectRevisionModeration {
      * sees it, the second a detached copy with the revision written on it. Neither is to be
      * saved. {@code rewards} are the reward tiers it creates, deletes, moves or changes (#559, #569),
      * and {@code rewardNames} the names of the items and shipping zones their lines refer to.
+     * {@code items} are the public items it changes and {@code zones} the shipping regions it
+     * proposes, if it proposes any (#587).
      */
     public record Review(
             ProjectRevision revision,
@@ -63,7 +66,9 @@ public class ProjectRevisionModeration {
             Project proposed,
             List<String> changedFields,
             List<ProjectRevisionService.RewardChange> rewards,
-            Map<UUID, String> rewardNames) {}
+            Map<UUID, String> rewardNames,
+            List<ProjectRevisionService.ItemChange> items,
+            Optional<ProjectRevisionService.ZoneChange> zones) {}
 
     private final ProjectRevisionRepository revisions;
     private final ProjectRepository projects;
@@ -159,7 +164,9 @@ public class ProjectRevisionModeration {
                 proposed,
                 content.changedFrom(liveContent),
                 revisionService.rewardChanges(live.getId(), content, liveContent),
-                revisionService.rewardNames(live.getId()));
+                revisionService.rewardNames(live.getId()),
+                revisionService.itemChanges(content, liveContent),
+                revisionService.zoneChange(content, liveContent));
     }
 
     /** Applies the revision to the campaign. A note is optional. */
@@ -173,6 +180,9 @@ public class ProjectRevisionModeration {
         List<String> changed = content.changedFrom(liveContent);
 
         editing.applyApproved(project, content, revision.getAuthorId());
+        // The items and regions before the tiers, so a tier rate for a region this approval
+        // creates finds it, and one for a region it deletes is left out (#587).
+        revisionService.publishCatalogue(project.getId(), content, liveContent);
         List<UUID> kept = revisionService.publishRewards(project.getId(), content, liveContent);
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         revision.approve(moderatorId, now, blankAsNull(note));

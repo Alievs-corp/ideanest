@@ -5,6 +5,8 @@ import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PayoutCard;
 import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.payment.domain.WebhookVerificationException;
+import az.ideanest.shared.money.Money;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Locale;
@@ -55,6 +57,9 @@ public final class ScriptedWebhooks {
     private static final Pattern CARD_ID = Pattern.compile("\"cardId\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern CARD_MASK = Pattern.compile("\"cardMask\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern HOLDER_NAME = Pattern.compile("\"holderName\"\\s*:\\s*\"([^\"]+)\"");
+    /** #587: what the provider says was paid, when a test says. Both or neither. */
+    private static final Pattern AMOUNT = Pattern.compile("\"amount\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern CURRENCY = Pattern.compile("\"currency\"\\s*:\\s*\"([^\"]+)\"");
 
     private ScriptedWebhooks() {}
 
@@ -101,7 +106,7 @@ public final class ScriptedWebhooks {
                 id,
                 typeOf(rawType),
                 group(TRANSACTION, body),
-                null,
+                amountOf(body),
                 instantOrNull(group(SIGNED_AT, body)),
                 body,
                 card);
@@ -125,6 +130,21 @@ public final class ScriptedWebhooks {
             }
         }
         return PaymentEventType.UNRECOGNISED;
+    }
+
+    /** The order a body names, unverified: what an unsigned callback offers before anybody is asked (#587). */
+    static String transactionNamedBy(byte[] rawBody) {
+        String transaction = group(TRANSACTION, new String(rawBody, StandardCharsets.UTF_8));
+        if (transaction == null) {
+            throw new WebhookVerificationException(ProviderName.AZERICARD, "The body names no transaction");
+        }
+        return transaction;
+    }
+
+    private static Money amountOf(String body) {
+        String amount = group(AMOUNT, body);
+        String currency = group(CURRENCY, body);
+        return amount == null || currency == null ? null : Money.of(new BigDecimal(amount), currency);
     }
 
     private static Instant instantOrNull(String value) {

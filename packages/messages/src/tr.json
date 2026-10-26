@@ -557,6 +557,7 @@
         "CAMPAIGN_SUCCEEDED": "{campaign} kampanyası {amount} tutarıyla fonlandı",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} kampanyası hedefine ulaşamadan kapandı",
         "PROJECT_APPROVED": "{campaign} onaylandı ve yayınlandı",
+        "SCHEDULED_LAUNCH_REFUSED": "{campaign} lansman saatinde açılmadı: planınız onu kapsamıyor",
         "PAYMENT_COLLECTED": "{campaign} için {amount} tutarındaki ödeme tahsil edildi",
         "FINAL_PAYMENT_WARNING": "Son uyarı: {campaign} için {amount} tutarındaki ödeme",
         "PAYOUT_SENT": "{campaign} için {amount} tutarındaki ödeme {when} yapıldı",
@@ -590,6 +591,7 @@
         "CAMPAIGN_SUCCEEDED": "Bir kampanya {amount} tutarıyla fonlandı",
         "CAMPAIGN_UNSUCCESSFUL": "Bir kampanya hedefine ulaşamadan kapandı",
         "PROJECT_APPROVED": "Bir kampanya onaylandı ve yayınlandı",
+        "SCHEDULED_LAUNCH_REFUSED": "Bir kampanya lansman saatinde açılmadı: planınız onu kapsamıyor",
         "PAYMENT_COLLECTED": "Bir kampanya için {amount} tutarındaki ödeme tahsil edildi",
         "FINAL_PAYMENT_WARNING": "Son uyarı: bir kampanya için {amount} tutarındaki ödeme",
         "PAYOUT_SENT": "Bir kampanya için {amount} tutarındaki ödeme {when} yapıldı",
@@ -1191,7 +1193,8 @@
           "legal_document": "Hukuki belgeler",
           "subscription_charge": "Plan ödemeleri",
           "user": "Kullanıcı hesapları",
-          "staff_role": "Personel rolleri"
+          "staff_role": "Personel rolleri",
+          "ranking_weight": "Sıralama ağırlıkları"
         },
         "action": {
           "account": {
@@ -1269,6 +1272,7 @@
             "comment_removed": "Yorum kaldırıldı",
             "fulfilments_imported": "Teslimatlar içe aktarıldı",
             "launched": "Kampanya onayla yayınlandı",
+            "scheduled_launch_refused": "Planlanan lansman reddedildi",
             "rejected": "Kampanya reddedildi",
             "segment_messaged": "Destekçi grubuna mesaj gönderildi",
             "survey_sent": "Anket gönderildi",
@@ -1348,6 +1352,18 @@
           },
           "obligation": {
             "update_resolved": "Güncelleme yükümlülüğü çözüldü"
+          },
+          "collection": {
+            "created": "Koleksiyon oluşturuldu",
+            "updated": "Koleksiyon güncellendi",
+            "published": "Koleksiyon yayımlandı",
+            "unpublished": "Koleksiyon yayından kaldırıldı",
+            "project_added": "Kampanya koleksiyona eklendi",
+            "project_removed": "Kampanya koleksiyondan çıkarıldı",
+            "reordered": "Koleksiyon sırası değişti"
+          },
+          "ranking": {
+            "weight_changed": "Sıralama ağırlığı değişti"
           }
         },
         "datesHint": "İlk gün başından, son gün sonuna kadar dahildir.",
@@ -1384,7 +1400,8 @@
           "maintenance_window": "Bakım penceresi",
           "user": "Kullanıcı hesabı",
           "collection": "Koleksiyon",
-          "staff_role": "Personel rolü"
+          "staff_role": "Personel rolü",
+          "ranking_weight": "Sıralama ağırlığı"
         }
       },
       "health": {
@@ -1619,6 +1636,7 @@
           "CAMPAIGN_EXTENDED": "Kampanya süresi uzatıldı",
           "UPDATE_DUE_SOON": "Güncelleme zamanı yaklaşıyor",
           "PROJECT_APPROVED": "Kampanya onaylandı",
+          "SCHEDULED_LAUNCH_REFUSED": "Planlanan lansman gerçekleşmedi",
           "PAYMENT_COLLECTED": "Ödeme alındı",
           "PAYMENT_FAILED": "Ödeme gerçekleşmedi",
           "FINAL_PAYMENT_WARNING": "Son ödeme uyarısı",
@@ -2957,6 +2975,7 @@
           "REFUND_EXCEEDS_COLLECTION": "Bu tutar destekte kalandan fazla: iade edilebilecek yalnızca {remaining} kaldı.",
           "NOTHING_TO_REFUND": "Bu destekte iade edilecek bir şey yok: ödeme alınmadı ya da tamamı zaten iade edildi. Desteğin kimliğini kontrol edin.",
           "IDEMPOTENCY_KEY_REUSED": "Bu form daha önce başka bir iade için gönderildi ve yanıtı kayboldu. Önce aşağıdaki listede o iadenin gerçekleşip gerçekleşmediğine bakın; sonra yeniden gönderebilirsiniz — form yeni bir deneme olarak gidecek.",
+          "REFUND_AFTER_PAYOUT": "Bu kampanyanın parası yaratıcıya zaten ödendi, bu yüzden iade buradan yapılamaz: platformda bu kampanyanın parası kalmadı. İadeyi yaratıcıyla ya da ödeme itirazı olarak çözün.",
           "CURRENCY_MISMATCH": "Bu destek {currency} ile ödendi, iade de {currency} ile olmalı.",
           "REFUND_REASON_NOT_ISSUABLE": "Çalışanlar bu sebeple iade yapamaz.",
           "REFUND_CHARGE_DISPUTED": "Bu ödemede açık bir ters ibraz var: kart ağı parayı destekçiye zaten iade ediyor olabilir. Ters ibraz karara bağlanana kadar iade etmeyin."
@@ -7277,12 +7296,12 @@
         "qrLabel": "Doğrulayıcınız için QR kodu",
         "noAuthenticator": "Bu telefonda doğrulayıcı uygulama yok. QR kodunu başka bir cihazdan tarayın ya da anahtarı elle girin.",
         "copy": "Kopyala",
-        "copyAll": "Tümünü kopyala",
+        "saveCodes": "Kodları kaydet",
+        "saveCodesName": "Tüm kurtarma kodlarını başka bir uygulamaya kaydet",
+        "saveFailed": "Kodlar başka bir uygulamaya aktarılamadı. Metni seçip kaydedin.",
         "copyKey": "Anahtarı kopyala",
-        "copyCodes": "Tüm kurtarma kodlarını kopyala",
         "copied": "Kopyalandı",
         "keyCopied": "Anahtar panoya kopyalandı.",
-        "codesCopied": "Kurtarma kodları panoya kopyalandı.",
         "copyFailed": "Kopyalanamadı. Metni seçip kendiniz kopyalayın.",
         "appLockTitle": "Bu telefonda",
         "appLockIntro": "Kilit hesabınıza değil, bu telefona aittir: diğer cihazlarınızda hiçbir şeyi değiştirmez ve bağlantı olmadan da çalışır.",

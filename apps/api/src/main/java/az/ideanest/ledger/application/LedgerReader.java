@@ -4,6 +4,7 @@ import az.ideanest.ledger.domain.LedgerEntry;
 import az.ideanest.ledger.infrastructure.LedgerEntryRepository;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +94,16 @@ public class LedgerReader {
     @Transactional(readOnly = true)
     public List<LedgerBalance> balances() {
         return entries.balances().stream().map(LedgerBalance::of).toList();
+    }
+
+    /**
+     * The campaigns on which these accounts, summed, are below zero — #587's per-campaign escrow check.
+     *
+     * <p>Grouped by campaign and currency, and never summed across currencies, for §21.2's reason.
+     */
+    @Transactional(readOnly = true)
+    public List<ProjectTotal> projectsBelowZero(Collection<LedgerAccount> accounts) {
+        return entries.projectsBelowZero(accounts.stream().map(LedgerAccount::name).toList());
     }
 
     private List<PostingHead> headsFor(LedgerScope scope, Long before, int limit) {

@@ -235,6 +235,32 @@ describe('the maintenance page, waiting for the platform', () => {
     expect(page.location.replace).toHaveBeenCalledWith('/az/pledges?page=2');
   });
 
+  /*
+   * #587: the check used to be the first two characters, so a tab or newline after the slash
+   * — which a browser strips before resolving — made `//evil.example` look like a path. The
+   * values are built from char codes so the test cannot be read as anything else.
+   */
+  it('never follows a "from" off the site, including through a stripped control character', async () => {
+    const TAB = String.fromCharCode(9);
+    const NEWLINE = String.fromCharCode(10);
+    const BACKSLASH = String.fromCharCode(92);
+    for (const from of [
+      '//evil.example/x',
+      'https://evil.example',
+      `/${BACKSLASH}evil.example`,
+      `/${TAB}/evil.example`,
+      `/${NEWLINE}/evil.example`,
+      'javascript:alert(1)',
+    ]) {
+      const page = harness('/az/maintenance', `?from=${encodeURIComponent(from)}`);
+      page.fetchMock.mockResolvedValue(status({ state: 'operational' }));
+
+      await page.tick();
+
+      expect(page.location.replace).toHaveBeenCalledWith('/az');
+    }
+  });
+
   it('never follows a "from" off the site', async () => {
     for (const from of ['//evil.example/x', 'https://evil.example', '/\\evil.example']) {
       const page = harness('/az/maintenance', `?from=${encodeURIComponent(from)}`);
@@ -327,6 +353,22 @@ describe('a call that meets the maintenance problem', () => {
 
       expect(page.location.assign).not.toHaveBeenCalled();
     }
+  });
+
+  /*
+   * #587: the replace of `<` was written with one backslash, which the string literal turns
+   * back into `<`, so it escaped nothing. A locale can only come from this repository, so it
+   * was not reachable — but a serialiser that does not do what it says is a trap for the next
+   * option somebody adds.
+   */
+  it('cannot be closed early by a value in its options', () => {
+    const source = followMaintenanceSource({
+      type: '</script><script>alert(1)</script>',
+      locales: ['az'],
+      fallbackLocale: 'az',
+    });
+
+    expect(source).not.toContain('<');
   });
 
   it('does not send the reader to the page they are already on', async () => {

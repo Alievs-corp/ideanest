@@ -34,7 +34,7 @@ import org.junit.jupiter.api.io.TempDir;
 class FfmpegVideoTranscoderTests {
 
     private static final MediaProperties PROPERTIES =
-            new MediaProperties(null, 20L * 1024 * 1024, Duration.ofMinutes(10), 1440, 82, null, null);
+            new MediaProperties(null, 20L * 1024 * 1024, Duration.ofMinutes(10), 1440, 82, null, null, null);
 
     /** Where a phone puts the place a clip was recorded. */
     private static final String LOCATION = "+40.4093+049.8671/";

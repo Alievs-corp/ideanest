@@ -1,8 +1,10 @@
 package az.ideanest.reward.api;
 
+import az.ideanest.reward.application.ItemDetail;
 import az.ideanest.reward.domain.Item;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -20,6 +22,9 @@ import java.util.UUID;
  *     this becomes a reference to a {@code media} row when there is one
  * @param isDigital whether the item is delivered as a file. Named with its prefix
  *     because that is the JSON key the client reads and writes
+ * @param revisionChangedFields on a launched campaign, the fields of an item the public sees
+ *     whose new values wait in the campaign's revision for a moderator (#587). The other
+ *     fields of this response already show those new values. Empty when nothing waits
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record ItemResponse(
@@ -32,19 +37,26 @@ public record ItemResponse(
         boolean isDigital,
         String sku,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        List<String> revisionChangedFields) {
 
     public static ItemResponse of(Item item) {
+        return of(ItemDetail.of(item, null));
+    }
+
+    public static ItemResponse of(ItemDetail detail) {
+        Item item = detail.item();
         return new ItemResponse(
                 item.getId(),
                 item.getProjectId(),
-                item.getName(),
-                item.getDescription(),
-                item.getImageUrl(),
-                item.getWeightGrams(),
-                item.isDigital(),
+                detail.shown().name(),
+                detail.shown().description(),
+                detail.shown().imageUrl(),
+                detail.shown().weightGrams(),
+                detail.shown().digital(),
                 item.getSku(),
                 item.getCreatedAt(),
-                item.getUpdatedAt());
+                item.getUpdatedAt(),
+                detail.revisionChangedFields());
     }
 }

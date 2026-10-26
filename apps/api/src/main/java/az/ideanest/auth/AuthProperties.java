@@ -35,6 +35,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param refreshCookie how the refresh token is delivered to a browser.
  * @param logVerificationLinks whether to write verification links to the log.
  *     Local development only — see {@code application-local.yml}.
+ * @param synchronousMail whether auth mail is sent on the request's own thread.
+ *     False everywhere but the test suite, which reads what was sent the moment a
+ *     request returns. Sending on the request thread is what made a password reset
+ *     for a registered address measurably slower than one for an unknown address
+ *     (#587) — see {@code VerificationNotificationListener}. Named for the exception
+ *     so that a configuration which omits it gets the safe behaviour.
  */
 @ConfigurationProperties(prefix = "ideanest.auth")
 public record AuthProperties(
@@ -49,7 +55,8 @@ public record AuthProperties(
         TwoFactor twoFactor,
         OAuth oauth,
         RefreshCookie refreshCookie,
-        boolean logVerificationLinks) {
+        boolean logVerificationLinks,
+        boolean synchronousMail) {
 
     /**
      * Argon2id parameters.
@@ -103,11 +110,35 @@ public record AuthProperties(
      *     two-factor on or off in a window. Each attempt costs an Argon2
      *     verification, so this bounds what a stolen access token can spend as
      *     much as what it can guess
+     * @param signInsPerAddress failed sign-ins from one IP address in a window.
+     *     Failures only (#587): a correct password gives its attempt back, so an
+     *     office or a mobile carrier's shared address is not throttled for its
+     *     own successful sign-ins
+     * @param signInsPerEmail failed sign-ins against one account from one address
+     *     before that address starts to back off. Not a lockout: past this many,
+     *     each further attempt from the address has to wait {@code signInBackoff},
+     *     doubling per failure up to {@code signInBackoffCeiling}, measured from the
+     *     last failure. Other addresses are not held back by it. A completed
+     *     sign-in clears the count; a wrong two-factor code adds to it
      * @param socialSignInsPerAddress provider sign-in attempts from one IP
      *     address. Not about guessing an ID token — one cannot be guessed — but
      *     about the work each attempt costs us: a signature verification and,
      *     when the key set has rotated, a call to the provider
-     * @param window the period all three are measured over
+     * @param signInFailuresPerAccount failed sign-ins and wrong two-factor codes
+     *     against one account from every address together, inside
+     *     {@code signInFailuresPerAccountWindow}, before the account refuses every
+     *     attempt — its owner's included — until the oldest leaves the window. The
+     *     bound on guessing from many addresses; higher than one address can reach
+     *     alone, so that keeping an owner out takes many. See {@code SignInBackoff}
+     * @param signInBackoff the first wait once {@code signInsPerEmail} failures
+     *     have been spent
+     * @param signInBackoffCeiling the longest any one wait grows to
+     * @param signInFailureMemory how long an account's failures are remembered
+     *     after the last of them. Longer than the ceiling, so that waiting out
+     *     one delay does not also hand back the free attempts
+     * @param signInFailuresPerAccountWindow the period
+     *     {@code signInFailuresPerAccount} is counted over, sliding
+     * @param window the period the counted limits are measured over
      */
     public record RateLimit(
             int registrationsPerAddress,
@@ -121,7 +152,40 @@ public record AuthProperties(
             int twoFactorCodesPerChallenge,
             int twoFactorChangesPerUser,
             int socialSignInsPerAddress,
+            int signInFailuresPerAccount,
+            Duration signInBackoff,
+            Duration signInBackoffCeiling,
+            Duration signInFailureMemory,
+            Duration signInFailuresPerAccountWindow,
             Duration window) {
+
+        public RateLimit {
+            // Binding leaves an omitted duration null. A null back-off would be a
+            // NullPointerException on the first wrong password -- or, written
+            // defensively, no back-off at all, which is the failure nobody
+            // notices. AbuseProperties makes the same argument.
+            signInBackoff = signInBackoff == null ? Duration.ofSeconds(30) : signInBackoff;
+            signInBackoffCeiling = signInBackoffCeiling == null ? Duration.ofMinutes(15) : signInBackoffCeiling;
+            signInFailureMemory = signInFailureMemory == null ? Duration.ofHours(24) : signInFailureMemory;
+            // An omitted int binds as 0, which here would refuse every sign-in.
+            signInFailuresPerAccount = signInFailuresPerAccount == 0 ? 50 : signInFailuresPerAccount;
+            signInFailuresPerAccountWindow =
+                    signInFailuresPerAccountWindow == null ? Duration.ofHours(1) : signInFailuresPerAccountWindow;
+            if (signInFailuresPerAccount <= signInsPerEmail || !signInFailuresPerAccountWindow.isPositive()) {
+                // At or below one address's free failures, a single address would reach
+                // the account-wide ceiling on its own: the lockout the per-address
+                // back-off exists to prevent.
+                throw new IllegalArgumentException(
+                        "The per-account sign-in ceiling must exceed one address's free failures");
+            }
+            if (!signInBackoff.isPositive() || signInBackoffCeiling.compareTo(signInBackoff) < 0) {
+                throw new IllegalArgumentException("A sign-in back-off is positive and no longer than its ceiling");
+            }
+            if (signInFailureMemory.compareTo(signInBackoffCeiling) < 0) {
+                throw new IllegalArgumentException(
+                        "Sign-in failures must be remembered for at least the back-off ceiling");
+            }
+        }
     }
 
     /**
@@ -131,11 +195,11 @@ public record AuthProperties(
      *     token minted for staging must not be accepted in production, and this
      *     is the field that says so.
      * @param audience the {@code aud} claim. Same argument, from the other side.
-     * @param accessTokenTtl how long an access token is good for. Short, because
-     *     it is stateless: revoking a session cannot reach a token already
-     *     issued, so the window in which a revoked session still works is
-     *     exactly this value. Fifteen minutes is the documented trade between
-     *     that window and the cost of refreshing.
+     * @param accessTokenTtl how long an access token is good for. Short, though
+     *     it is no longer the window in which a revoked session still works:
+     *     since #587 a token whose session is revoked is refused at its next
+     *     request ({@code RevokedSessions}). It still bounds how long a copied
+     *     token is worth anything to whoever copied it.
      * @param refreshTokenTtl how long a refresh token — and with it a session —
      *     survives without use.
      * @param privateKeyPem RSA private key, PKCS#8 PEM, for signing. Supplied by

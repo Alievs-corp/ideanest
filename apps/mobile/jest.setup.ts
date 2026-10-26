@@ -28,6 +28,9 @@ jest.mock('react-native-mmkv', () => ({
       contains: (key: string) => entries.has(key),
       getAllKeys: () => [...entries.keys()],
       clearAll: () => entries.clear(),
+      // `lib/storage.ts` encrypts a plain store on its first launch (#587). A Map has nothing to
+      // encrypt; what is tested is that the call is made, in `storage.test.ts`.
+      encrypt: () => undefined,
     };
   },
 }));
@@ -120,6 +123,16 @@ jest.mock('expo-secure-store', () => {
   return {
     WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'whenUnlockedThisDeviceOnly',
     WHEN_PASSCODE_SET_THIS_DEVICE_ONLY: 'whenPasscodeSetThisDeviceOnly',
+    AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 'afterFirstUnlockThisDeviceOnly',
+    /** The synchronous pair, which only `lib/storage.ts` uses, for its key at module load. */
+    getItem: (key: string, options?: Record<string, unknown>) => {
+      if (readsFail) throw new Error('Keystore unavailable');
+      return items.get(at(key, options)) ?? null;
+    },
+    setItem: (key: string, value: string, options?: Record<string, unknown>) => {
+      if (writesFail) throw new Error('Keystore unavailable');
+      void items.set(at(key, options), value);
+    },
     getItemAsync: async (key: string, options?: Record<string, unknown>) => {
       reads.push({ key, options });
       if (readsFail) throw new Error('Keystore unavailable');
@@ -341,8 +354,18 @@ jest.mock('expo-haptics', () => ({
 }));
 
 /**
- * The clipboard — the two-factor key and recovery codes, issue #161. A spy that succeeds, so a
- * test can assert exactly what was copied.
+ * Screen-capture prevention on the lock, the PIN pads and two-factor (#587). The hook is a spy, so
+ * a test can assert which screens asked and under which key.
+ */
+jest.mock('expo-screen-capture', () => ({
+  usePreventScreenCapture: jest.fn(),
+  preventScreenCaptureAsync: jest.fn(async () => {}),
+  allowScreenCaptureAsync: jest.fn(async () => {}),
+}));
+
+/**
+ * The clipboard — the two-factor key, issue #161. A spy that succeeds, so a test can assert
+ * exactly what was copied.
  */
 jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn(async () => true),

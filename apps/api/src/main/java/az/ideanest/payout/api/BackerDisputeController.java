@@ -6,7 +6,10 @@ import az.ideanest.payment.application.PledgeFunds;
 import az.ideanest.payment.application.PledgeBackers;
 import az.ideanest.payout.application.BackerDisputes;
 import az.ideanest.payout.application.DisputeWindow;
+import az.ideanest.payout.PayoutProperties;
 import az.ideanest.payout.domain.BackerDispute;
+import az.ideanest.shared.ratelimit.RateLimiter;
+import az.ideanest.shared.ratelimit.RateLimits;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -38,26 +41,40 @@ public class BackerDisputeController {
     private final BackerDisputes disputes;
     private final PledgeFunds funds;
     private final PledgeBackers backers;
+    private final RateLimiter rateLimiter;
+    private final PayoutProperties properties;
 
-    public BackerDisputeController(BackerDisputes disputes, PledgeFunds funds, PledgeBackers backers) {
+    public BackerDisputeController(
+            BackerDisputes disputes,
+            PledgeFunds funds,
+            PledgeBackers backers,
+            RateLimiter rateLimiter,
+            PayoutProperties properties) {
         this.disputes = disputes;
         this.funds = funds;
         this.backers = backers;
+        this.rateLimiter = rateLimiter;
+        this.properties = properties;
     }
 
     /**
      * Disputes a payment while the creator's payout is held. Answers the dispute already open for the
      * pledge when there is one. 409 {@code DISPUTE_WINDOW_CLOSED} once the payout has been sent, or before
-     * one was requested; 409 {@code NOTHING_TO_DISPUTE} when nothing is left to refund.
+     * one was requested; 409 {@code NOTHING_TO_DISPUTE} when nothing is left to refund. 429 past
+     * {@link PayoutProperties.DisputeRateLimit}, counted per account before anything is read (#587).
      */
     @PostMapping("/v1/pledges/{pledgeId}/disputes")
     public ResponseEntity<DisputeBody> open(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID pledgeId,
             @Valid @RequestBody OpenDisputeRequest request) {
+        UUID backerId = callerOf(accessToken);
+        PayoutProperties.DisputeRateLimit limit = properties.disputeRateLimit();
+        RateLimits.enforce(rateLimiter.recordAttempt(
+                "backer-disputes:account:" + backerId, limit.perAccount(), limit.window()));
         return ResponseEntity.status(HttpStatus.CREATED)
                 .cacheControl(CacheControl.noStore())
-                .body(DisputeBody.of(disputes.open(callerOf(accessToken), pledgeId, request.reason())));
+                .body(DisputeBody.of(disputes.open(backerId, pledgeId, request.reason())));
     }
 
     /** Whether the caller may dispute their pledge now, and the dispute already open on it (#480). */

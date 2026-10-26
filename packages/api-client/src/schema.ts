@@ -5586,7 +5586,7 @@ export interface components {
             shippedSubject?: string;
             shippedSubjectNamed?: string;
             /** @enum {string} */
-            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
         };
         DraftCopy: {
             body: string;
@@ -5927,6 +5927,7 @@ export interface components {
             name?: string;
             /** Format: uuid */
             projectId?: string;
+            revisionChangedFields?: string[];
             sku?: string;
             /** Format: date-time */
             updatedAt?: string;
@@ -6210,7 +6211,7 @@ export interface components {
             subjectId?: string;
             subjectType?: string;
             /** @enum {string} */
-            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
         };
         OAuthSignInRequest: {
             deviceLabel?: string;
@@ -7091,6 +7092,21 @@ export interface components {
             reason?: string;
             status?: string;
         };
+        RevisionItem: {
+            changedFields?: string[];
+            /** Format: uuid */
+            id?: string;
+            live?: components["schemas"]["RevisionItemWriting"];
+            proposed?: components["schemas"]["RevisionItemWriting"];
+        };
+        RevisionItemWriting: {
+            description?: string;
+            imageUrl?: string;
+            isDigital?: boolean;
+            name?: string;
+            /** Format: int32 */
+            weightGrams?: number;
+        };
         RevisionQueueResponse: {
             revisions?: components["schemas"]["Entry"][];
         };
@@ -7109,12 +7125,14 @@ export interface components {
             decidedAt?: string;
             /** Format: uuid */
             id?: string;
+            items?: components["schemas"]["RevisionItem"][];
             live?: components["schemas"]["ProjectEdit"];
             /** Format: uuid */
             projectId?: string;
             proposed?: components["schemas"]["ProjectEdit"];
             reason?: string;
             rewards?: components["schemas"]["RevisionRewardBody"][];
+            shippingZones?: components["schemas"]["RevisionZones"];
             status?: string;
             /** Format: date-time */
             submittedAt?: string;
@@ -7184,6 +7202,16 @@ export interface components {
             /** Format: uuid */
             zoneId?: string;
             zoneName?: string;
+        };
+        RevisionZone: {
+            countryCodes?: string[];
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+        };
+        RevisionZones: {
+            live?: components["schemas"]["RevisionZone"][];
+            proposed?: components["schemas"]["RevisionZone"][];
         };
         RewardImageBody: {
             blurDataUrl?: string;
@@ -7470,6 +7498,7 @@ export interface components {
             name?: string;
         };
         ShippingZoneListResponse: {
+            pending?: boolean;
             zones?: components["schemas"]["ShippingZoneBody"][];
         };
         ShippingZoneRateBody: {
@@ -8370,6 +8399,8 @@ export type SchemaRespondRequest = components['schemas']['RespondRequest'];
 export type SchemaRevealedBankAccount = components['schemas']['RevealedBankAccount'];
 export type SchemaRevisionBody = components['schemas']['RevisionBody'];
 export type SchemaRevisionDecisionResponse = components['schemas']['RevisionDecisionResponse'];
+export type SchemaRevisionItem = components['schemas']['RevisionItem'];
+export type SchemaRevisionItemWriting = components['schemas']['RevisionItemWriting'];
 export type SchemaRevisionQueueResponse = components['schemas']['RevisionQueueResponse'];
 export type SchemaRevisionRejectionBody = components['schemas']['RevisionRejectionBody'];
 export type SchemaRevisionReviewResponse = components['schemas']['RevisionReviewResponse'];
@@ -8379,6 +8410,8 @@ export type SchemaRevisionRewardItem = components['schemas']['RevisionRewardItem
 export type SchemaRevisionRewardWriting = components['schemas']['RevisionRewardWriting'];
 export type SchemaRevisionShippingRule = components['schemas']['RevisionShippingRule'];
 export type SchemaRevisionShippingZoneRate = components['schemas']['RevisionShippingZoneRate'];
+export type SchemaRevisionZone = components['schemas']['RevisionZone'];
+export type SchemaRevisionZones = components['schemas']['RevisionZones'];
 export type SchemaRewardImageBody = components['schemas']['RewardImageBody'];
 export type SchemaRewardItemBody = components['schemas']['RewardItemBody'];
 export type SchemaRewardPatchRequest = components['schemas']['RewardPatchRequest'];
@@ -9254,7 +9287,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9278,7 +9311,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9306,7 +9339,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9328,7 +9361,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9351,7 +9384,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9377,7 +9410,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9403,7 +9436,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };

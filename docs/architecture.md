@@ -293,6 +293,10 @@ Marked `[W]` web, `[M]` mobile, `[A]` admin.
 > Registration writes to an already-registered address because its owner deserves
 > to know somebody is probing it; the reset form takes whatever was typed into it,
 > so mailing that would make this platform a delivery service for strangers.
+> **Nor does the time it takes (#587).** The registered branch used to send its mail
+> on the request thread, an SMTP round trip the unknown branch never waited for; auth
+> mail now leaves from a pool of its own after the response. Not through the outbox:
+> the event carries the token, and an outbox row would put a live credential in a table.
 >
 > The link is single-use, lasts **one hour** rather than the verification link's
 > twenty-four, and issuing a second one retires the first. The password policy is
@@ -317,6 +321,13 @@ Marked `[W]` web, `[M]` mobile, `[A]` admin.
 > one gets the link. The old one gets a notice with no link at all — it cannot
 > approve the change and does not need to; what it does is make an address takeover
 > visible to the person losing the account, at the address they still hold.
+>
+> **An address that already has an account is answered like any other (#587).** It
+> was a 409, which made the form a "who is registered here?" oracle for anybody signed
+> in. Now it is the same 202, the same notice to the old address and the same
+> retirement of an outstanding link, no link is sent, and the address's owner gets
+> `EMAIL_CHANGE_ON_EXISTING_ACCOUNT` instead — registration's rule. A 409 remains on
+> the confirmation only, when the address acquired an account after the request.
 >
 > **A-13 revokes every session including the caller's; A-12 revokes none.** A
 > password is changed precisely when somebody believes the old one is known, and
@@ -1507,7 +1518,7 @@ The most valuable and most complex module. It begins when funding closes.
 >
 > **§17.3 names no number for commenting, so the budget is argued rather than
 > quoted.** The table names a CAPTCHA for "bot traffic: challenge on
-> registration and comment", and this platform has none — so the limiter is the
+> registration and comment", and this platform has none (§17.3 now says so, #587) — so the limiter is the
 > whole of the defence on a public write surface. Ten comments per account and a
 > hundred per source address per five minutes, the second much looser because
 > registration is already limited per address and a tight number here refuses
@@ -1589,6 +1600,7 @@ The most valuable and most complex module. It begins when funding closes.
 | Reminder: project launched | ✅ | ✅ | ✅ |
 | Saved project ending soon | ✅ | ✅ | ✅ |
 | Project approved | ✅ | ✅ | ✅ |
+| Scheduled launch not opened: the plan does not cover it (#587) | ✅ | ✅ | ✅ |
 | Payout sent | ✅ | ✅ | ✅ |
 | Refund sent by bank transfer | ✅ | ✅ | ✅ |
 | Plan due for renewal | ✅ | ✅ | ✅ |
@@ -1683,11 +1695,11 @@ Preferences are per category and per channel, with a digest option.
 | # | Module | Capabilities |
 |---|---|---|
 | AD-01 | Project moderation | Queue, approve, reject, request changes, notes, history. **The queue was the missing half until #381**: the three outcomes shipped with #101 and nothing listed what they applied to, so the console's only route to a submitted campaign was a report somebody had filed about it — a campaign nobody complained about waited in `SUBMITTED` indefinitely, invisible here, while its creator was shown "submitted for review". `/admin/moderation/submissions` is that queue. **And the directory since #387**: both that queue and the report queue list campaigns that have DONE something, so a draft, a live campaign, or one cleared for launch and never launched was on no screen here and could be reached only through psql. `/admin/campaigns` lists §6.1 entire, newest first. **And the staff preview since #399**: both of those screens linked a campaign to its public page, which for a campaign awaiting review is a 404 by construction — a campaign in review is not public, and that is what being in review means — so approval was taken on a title, a creator's name and a goal figure. `/admin/campaigns/{id}` renders the same projection the public page is served from, without the state filter, and `/admin/moderation/{id}` now shows the reported comment or update inline with its author and its campaign |
-| AD-02 | Trust and safety | Report queue, fraud signals, suspension. Reporting and the queue are built (#102, §7.2's `content_reports`), **suspension is built (#103)**, and **fraud signals are built (#108)** — `risk_assessments`, a queue at `/v1/admin/risk/queue`, and the identity review at `/v1/admin/verifications/queue` (#105). The signals **advise and do not decide**: nothing refuses a pledge or suspends an account on a score. See §17.2 |
+| AD-02 | Trust and safety | Report queue, fraud signals, suspension. Reporting and the queue are built (#102, §7.2's `content_reports`), **suspension is built (#103)**, and **fraud signals are built (#108)** — `risk_assessments`, a queue at `/v1/admin/risk/queue` (`VIEW_FINANCE` since #587; it asked only for staff), and the identity review at `/v1/admin/verifications/queue` (#105). The signals **advise and do not decide**: nothing refuses a pledge or suspends an account on a score. See §17.2 |
 | AD-03 | Curation | Editorial badges, collections, open calls, placement. The endpoints arrived with #48; **the four screens are built (#300 to #303)** at `/admin/curation` and its three siblings |
 | AD-04 | User management | Search, inspect, ban, verification status, audited impersonation. **Search, inspect and the ban are built (#104)**, and **`/admin/staff` is built (#295)** — the role model that replaced the configured list. **The search folds like every other search since #413**: it matched on `lower()`, which leaves ə, ı, ö, ü, ğ, ş and ç alone, so this box found "Köhnə" from `köhnə` and not from `kohne` while the campaign directory beside it found both — and, matching a different expression from the one V63's indexes are built on, it read every row. It now names §11.3's `ideanest_fold`, which V64 completes with the third index the address needed. **The account page also shows what the account held and paid the platform (#23)**: every subscription with its plan, state and price, and the payments received with reversals marked. Any member of staff may read it, as with the account's pledges, and an `ACTIVE` subscription whose period has run out is drawn as expired, because `state` alone would say somebody can publish who cannot. Impersonation is not, and is the one thing in this table still waiting on a decision (#299) |
 | AD-05 | Finance | Payment log, ledger, payout queue, approvals, disputes, and whether the sum of them is right. **All of it is built**: the log and the ledger with #304 and #305, the payout queue and its dual approval with #69 and #306, and the reconciliation with #106 at `/admin/reconciliation`. That last screen is what kept "financial operations tooling" open with the other three built — #70's nightly pass answered "do the books balance" to a log line and a Prometheus gauge and to nobody who works in this console. It reports and never repairs, so there is no control on it that corrects anything. **Since #431 the queue also says why a payout is held on identity** — the standing is drawn as one of eight values rather than as "not verified", because a creator who has never been asked and one whose documents are already in the review queue are different things for an operator to do next, and a waiver (#436) is drawn as a waiver rather than as a verification. **The payment log is ordered by `created_at` since #412**, not by the primary key — AD-14's defect on the one console surface that is entirely money, and it cost more there: §9.6 permits four collection attempts, so "declined, declined, collected" read in the wrong order is a different story about the same pledge. The cursor carries the instant and the identifier that breaks its tie, and is therefore an opaque string rather than a `uuid`. **Since #396 the payout destinations have their own screen**, `/admin/payout-destinations`, which the rail offers to `VERIFY_PAYOUT_DESTINATION` rather than `VIEW_FINANCE`: confirming where money goes is Compliance's, and the person who sends it is not the person who checks the account |
-| AD-06 | Refunds | Full and partial with reason codes. **Built (#67, #307)** at `/admin/refunds`. The decision — reason code, author, state — is `refunds`; the money is a `REFUND` transaction and a ledger posting, and the two are deliberately separate tables. **Issuing asks first**: `GET /v1/admin/refunds/refundable` (`ISSUE_REFUND`) answers the pledge's currency, what "the rest" comes to net of a withheld fee, the campaign and the backer, and the console confirms before it sends. A provider refund is refused (`REFUND_CHARGE_DISPUTED`) while the charge is in an open chargeback, as a bank transfer already was, and a refund in another currency than the pledge's is `CURRENCY_MISMATCH`. **Plan payments that bought nothing are returned here too (#457)**: a card payment that arrived for a subscription that had ended is `UNAPPLIED` (§5.6), listed oldest first with the date the provider's card refund window closes (`VIEW_FINANCE`), and returned in full to the card through the provider or, once that window has closed, recorded as returned by bank transfer (`ISSUE_REFUND`, audited `subscription.payment_refunded`). A card refund is claimed under the row's lock before the provider is asked (V108), under one key for every attempt: a refusal clears the claim, and an unanswered refund keeps it, so the bank transfer is refused (`PLAN_REFUND_CARD_REFUND_UNSETTLED`) and the next card refund asks the provider whether the money already went back before it sends anything. It becomes `REFUNDED` on `subscription_charges` (V104); no receipt is reversed, because an unapplied payment never wrote one |
+| AD-06 | Refunds | Full and partial with reason codes. **Built (#67, #307)** at `/admin/refunds`. The decision — reason code, author, state — is `refunds`; the money is a `REFUND` transaction and a ledger posting, and the two are deliberately separate tables. **Issuing asks first**: `GET /v1/admin/refunds/refundable` (`ISSUE_REFUND`) answers the pledge's currency, what "the rest" comes to net of a withheld fee, the campaign and the backer, and the console confirms before it sends. A provider refund is refused (`REFUND_CHARGE_DISPUTED`) while the charge is in an open chargeback, as a bank transfer already was, and a refund in another currency than the pledge's is `CURRENCY_MISMATCH`. A refund on a campaign already paid out is refused (`REFUND_AFTER_PAYOUT`, #587): nothing is refunded through the platform after payout (§6.3), and a chargeback the network forces then is the creator's debt (§9.8). **Plan payments that bought nothing are returned here too (#457)**: a card payment that arrived for a subscription that had ended is `UNAPPLIED` (§5.6), listed oldest first with the date the provider's card refund window closes (`VIEW_FINANCE`), and returned in full to the card through the provider or, once that window has closed, recorded as returned by bank transfer (`ISSUE_REFUND`, audited `subscription.payment_refunded`). A card refund is claimed under the row's lock before the provider is asked (V108), under one key for every attempt: a refusal clears the claim, and an unanswered refund keeps it, so the bank transfer is refused (`PLAN_REFUND_CARD_REFUND_UNSETTLED`) and the next card refund asks the provider whether the money already went back before it sends anything. It becomes `REFUNDED` on `subscription_charges` (V104); no receipt is reversed, because an unapplied payment never wrote one |
 | AD-07 | Chargebacks | Notification, evidence, outcome. **Built (#68, #308)** at `/admin/disputes`. Intake is a provider webhook and no endpoint opens one; evidence is recorded here and still submitted through the provider's own console, because §9.3's interface has no upload. **An outcome is recorded once per presentment**: resolving a closed case is refused (`DISPUTE_ALREADY_RESOLVED`), because a `WON` after a `LOST` would leave the loss, the creator's debt and the suspension standing under a case that reads as won; a case the provider raises again is reopened by the webhook. A lost chargeback's `CHARGEBACK` refund row is capped at what the charge had left to refund, so the refund sums never count money as returned twice |
 | AD-08 | Taxonomy | Category and tag management with translations. **Built (#309)** at `/admin/taxonomy`. Handles are permanent — they are in the public URL of every campaign filed under them — and nothing can be retired, because `projects.category_id` references these rows |
 | AD-01a | Lapsed update obligations | §5.5's escalation queue (#437), at `GET /v1/admin/update-obligations` and `POST /v1/admin/update-obligations/{projectId}/resolve` — `MODERATE_CONTENT`, audited. **Filed under AD-01 rather than as a seventeenth module** because it is the same authority over the same subject: a campaign the platform has a concern about, decided by a person. Lapses nobody has closed, oldest first, because the campaign that has been silent longest is the one a backer is most likely to be asking about. **Resolving closes the case and not the obligation** — the clock keeps running, and a creator who lapses again is escalated again — which is why the note is required: the next moderator has to be able to tell "spoke to them" from "they had already posted". Nothing here refunds, suspends or de-ranks anything; §9.7 says the platform mediates |
@@ -1892,8 +1904,13 @@ Preferences are per category and per channel, with a digest option.
 > purpose is *which two people* — named neither of them. `GET /v1/admin/directory` takes
 > account and campaign identifiers and answers with display names and public paths.
 >
-> It is **staff-wide and needs no capability beyond that**, because every screen that holds
-> an identifier is already behind its own; and it is **the one console read that is not
+> It needs **`ADMINISTER_ACCOUNTS` or `MODERATE_CONTENT`** since #587. It was staff-wide, and
+> since it answers about any identifier rather than the ones on the caller's screen, a partner
+> or a curator could resolve every account and every draft campaign's title; the two
+> authorities that already see people and unpublished campaigns are the ones it now asks for.
+> A member of staff holding neither is refused, and their screens show the short identifiers
+> they showed before #402 (`useDirectoryNames` swallows the refusal); a super admin holds both.
+> It is **the one console read that is not
 > audited**, because it discloses nothing `GET /v1/users/{slug}` does not serve publicly and
 > is called on every render of every screen that holds identifiers — recording it would put
 > several rows per page view into the one table with no retention rule. **It hands over no
@@ -1944,9 +1961,10 @@ Preferences are per category and per channel, with a digest option.
 > (`SessionStarter`) rather than in each sign-in path, so a new path cannot forget it, and
 > it reads the row share-locked against the ban's own lock, so a sign-in racing a ban
 > either sees it or commits its session before the ban's revocation runs.
-> **An access token already issued is not revoked** — they are signed and
-> short-lived, and a database lookup in the token filter would put a query on the hot path
-> of every endpoint to close a window of minutes.
+> **An access token already issued stops at its next request** (#587). It used to be
+> left to expire, up to fifteen minutes in which a banned account could still pledge and
+> post. The ban revokes every session, and the token filter now refuses a token whose
+> `sid` names a revoked session — one cached primary-key probe, §17.1.
 >
 > **Reversible, unlike a campaign's suspension**, and `POST …/reinstate` is why the endpoint
 > list above gained a line: a campaign cannot go back to `LIVE` because its funding window
@@ -2522,6 +2540,23 @@ individual agreement can differ without a deployment.
 > the created rows and their media. A revision saved before #569 holds only a tier's four
 > writing fields; it still reads, and the rest of such a tier is taken as it is.
 >
+> **Items and shipping regions are held the same way (#587).** On a launched campaign
+> `PATCH /v1/items/{id}` on an item an approved tier contains writes the item's proposed
+> name, description, picture, weight and digital flag to the revision under `items`, keyed by
+> item; its stock code is written at once, and an item no approved tier contains is written at
+> once too, because the public has not seen it. `PUT /v1/projects/{id}/shipping-zones` writes
+> the whole proposed set to `shippingZones`; a region keeps its identifier when its folded name
+> matches one it had, and a new one gets the identifier it will be created with. The creator's
+> `GET /v1/projects/{id}/items` returns the proposed values with the held fields in
+> `revisionChangedFields`, and `GET .../shipping-zones` the proposed set with `pending: true`.
+> The revision's `changedFields` gains `items` and `shippingZones`, and a moderator's review
+> carries `items` (each with `live`, `proposed` and `changedFields`) and `shippingZones` (`live`
+> and `proposed`). Approval applies both before the tiers, so a tier rate for a region the
+> revision deletes is dropped; nothing about either is a row until then, so refusing has nothing
+> to delete. A region proposed in a revision can be priced once it has been approved. The web
+> and mobile editors and the admin review page do not yet draw any of this: they show the two
+> new changed fields by their raw names.
+>
 > The review page draws `rewards` under the campaign's fields (#569): one card per tier
 > with a tag, an icon and a word for each of created, deleted, changed and reordered, its
 > place now and as proposed, and its price. A created tier is shown whole as new, a deleted
@@ -2649,7 +2684,7 @@ the first moment it stops being private.
 
 | | |
 |---|---|
-| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate` |
+| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator, who is told (`SCHEDULED_LAUNCH_REFUSED`, from `project.scheduled_launch_refused`: renew or upgrade the plan, or lower the goal, then set a new launch time or launch); the refusal is audited as `project.scheduled_launch_refused` under the system actor, with the bound in the detail |
 | Contract | `shared.access.PublishingEntitlement` → `PublishingAllowance` |
 | Refusals | `SUBSCRIPTION_REQUIRED` (403), `PLAN_LIMIT_EXCEEDED` (403) |
 | Exempt | A creator holding `SUPER_ADMIN`, granted or bootstrapped: no plan and no plan limits. Other staff roles buy a plan |
@@ -3861,7 +3896,7 @@ by a database constraint and verified by a nightly reconciliation job.
 | `signature_sessions` | A signing session in flight (#429): what was to be signed, by whom, and what became of it. **A row rather than a handle the client holds**, and V71 names the three quiet failures of the stateless alternative -- a session identifier becomes a bearer token for somebody else's signature, the hash a resolve compares against arrives from the party with the reason to change it, and a cancellation leaves nothing, so "the citizen declined" is indistinguishable from "nothing happened". The FIN and mobile number the citizen typed are passed to the provider and **not stored**: §17.4 asks for the data the purpose needs and this purpose needs neither; the FIN that is kept is the certificate's, in `signatures`. Terminal outcomes are recorded once and a resolved session is never re-resolved, which is what stops one act of signing producing two `signatures` rows |
 | `creator_legal_subjects` | Who a creator legally is (#430): the subject kind, the legal name, the VÖEN -- a company's, or an individual entrepreneur's since #239, because §6.3 approves no payout without one -- and, for a registered entity only, the registered address and the registration number. **A fact about the account and not a record of a check**, which is the whole of #430: `identity_verifications.subject_kind` says what a reviewer was looking at when they looked, and a creator who has never been asked to verify has no row there at all while a payout still needs to know whether to withhold as a person or as a company. The VÖEN is **shape-validated and nothing more** -- ten digits, in the schema -- because a validator that appeared to confirm existence "would produce a green tick that means nothing, in front of the exact field where a green tick is relied upon"; whether the number names a real company is a human reading a `COMPANY_REGISTRATION` document in V58's queue. There is deliberately **no constraint requiring a legal entity to carry all three of its fields**: completeness is a gate's question, asked of a row rather than enforced on one, so a creator part-way through a form does not lose their work. The foreign key cascades, for the reason every reference to `users` in this schema gives twice over |
 | `campaign_legal_subjects` | The creator's legal subject as it stood when a campaign was submitted (#430). **A copy, never a reference**, and there is no foreign key back to the live row precisely so it cannot follow it: §5.6 snapshots a subscription's price, V42 freezes a retry window, and `payouts.creator_id` is denormalised because "a campaign's creator is a mutable fact and the payout was calculated for the person who held it at the time". A creator who submits as an individual and registers a company three months later has not retroactively submitted as a company, and a payout reading the live row would withhold as though they had. Keyed by the campaign: a resubmission overwrites, because that submission is the one being decided |
-| `audit_logs` | Privileged actions (#107). Append-only in PostgreSQL rather than by convention: a statement-level `BEFORE UPDATE OR DELETE OR TRUNCATE` trigger raises `restrict_violation`, chosen over a rewrite rule — which would succeed silently — and over a revoked grant, which names a role the migration does not know, does not bind the owner, and does not survive a restore. Carries the actor and, for an impersonated action, whom they acted for; the entity, the outcome, the source address and user agent, and the correlation identifiers. The write is `Propagation.MANDATORY`, so the row and the change it describes are one commit and a failed audit takes the action with it. Deliberately **not** partitioned yet: a statement trigger on a partitioned parent does not fire for a statement aimed at a partition directly, so partitioning today would weaken the guarantee the table exists for |
+| `audit_logs` | Privileged actions (#107). Append-only in PostgreSQL rather than by convention: a statement-level `BEFORE UPDATE OR DELETE OR TRUNCATE` trigger raises `restrict_violation`, chosen over a rewrite rule — which would succeed silently — and over a revoked grant, which names a role the migration does not know, does not bind the owner, and does not survive a restore. Carries the actor and, for an impersonated action, whom they acted for; the entity, the outcome, the source address and user agent, and the correlation identifiers. The write is `Propagation.MANDATORY`, so the row and the change it describes are one commit and a failed audit takes the action with it. Deliberately **not** partitioned yet: a statement trigger on a partitioned parent does not fire for a statement aimed at a partition directly, so partitioning today would weaken the guarantee the table exists for **`source_address` is the client's address as Tomcat's `RemoteIpValve` resolves it** since #585 — the right-most `X-Forwarded-For` hop outside the private-proxy ranges. V21's column comment still says "the address the container saw, never X-Forwarded-For"; that comment is stale and this row is the correction (#587), left as a note rather than a comment-only migration |
 | `fee_schedules` | Configurable rates. **Not built.** #64 collects without needing them: the collection posts escrow against the creator's account and §9.5's split happens at payout, so the first thing that has to know a rate is #69 — see §9.2's note on which of the two diagrams the platform implements |
 | `outbox_events` | Transactional outbox (#135). One row per recorded event, written by the same transaction as the business change it describes — which is the whole of the guarantee: the commit that creates the pledge is the commit that creates the event, so neither can exist without the other. Carries the stable `id` a consumer deduplicates on, an `aggregate_type`/`aggregate_id` that is the ordering key and deliberately not a foreign key (an event stays true after its aggregate is deleted, and no single reference can point at four tables), the serialised `payload` as `text` rather than `jsonb` so a consumer receives the bytes the transaction committed, a database-assigned `sequence_no` that decides dispatch order, and `PENDING → PUBLISHED` or `PENDING → DEAD` with `attempts`, `next_attempt_at`, and `last_error`. A relay claims one row at a time with `FOR UPDATE SKIP LOCKED`, so replicas divide the queue rather than double-publishing, and will not dispatch an event while an earlier `PENDING` one for the same aggregate exists. Published rows are not swept yet |
 | `idempotency_keys` | Replay protection (#52). One row per `(account_id, idempotency_key)`, carrying the operation, a SHA-256 fingerprint of the request, and the status and exact bytes of the response the first attempt answered with. The row is inserted *before* the work as a claim — the unique index is what makes two identical requests arriving at once resolve to one — and completed with the response afterwards, in the same transaction as the work. Only successes are recorded; a refusal releases the key so that a client can retry it. Swept after §17.2's 24 hours |
@@ -4303,6 +4338,24 @@ collecting it.
 > `confirm` stayed for the retired model until the web checkout moved (#44), and #45 removed it
 > together with the collection jobs.
 >
+> **One page per draft, its amount checked, a second payment returned (#587).** A request under a
+> new `Idempotency-Key` while a page opened for the draft in the last
+> `hosted-charges.answered-after` (15 minutes) is still unsettled, for the draft's current total,
+> is answered with that page (`PaymentPage.waiting`; the pending row records `paymentUrl`, and the language and both return
+> addresses it was opened with, which the request must match: the provider's order carries them,
+> and the app's carry `via=app`) rather
+> than a second provider order — `SubscriptionCheckout`'s rule. Two requests in the same instant can
+> still open two, and so can a page older than the window; if both are paid, the first collects the
+> pledge and the second is posted (the money arrived), recorded in `duplicate_charges` (V119),
+> logged at ERROR, counted (`ideanest.payment.hosted.anomalies{reason="duplicate"}`) and returned in
+> full by `campaign-refunds` as `DUPLICATE_CHARGE`, with no author, as a raise that could not be
+> applied is: it is never in a payout's gross, its refund is not in the payout's refunded figure, a
+> staff refund draws on it last, and the pledge stays `COLLECTED`. When the provider says how much
+> was paid — Payriff's callback and lookup both do — it must be the pending row's amount and
+> currency; anything else is recorded `FAILED` with `amount_mismatch`, collects and posts nothing,
+> and is logged at ERROR and counted (`reason="amount_mismatch"`, a paging alert) for a person to
+> settle with the provider. The amount credited is always the platform's own.
+>
 > **Built (#44), the checkout.** The review step's control now reads "Continue to payment"
 > (with §22.3's acknowledgement in its label when an agreement is published) and calls
 > `/payment` with the page's language and two return addresses, `/{locale}/pledges/{id}` with
@@ -4563,8 +4616,15 @@ single-file change.
 > it opens the delivery's transaction, so an unauthenticated request never holds a database
 > connection across a call to Payriff, and the adapter's client has a 5 s connect and 30 s read
 > timeout. An order Payriff answers 404 for is a verification failure (400); an order still
-> undecided, or a lookup Payriff refuses or fails, is a provider unavailable (500), so Payriff
+> undecided, or a lookup Payriff refuses or fails, is a 503 `WEBHOOK_RETRY_LATER` (#587), so Payriff
 > sends the callback again rather than the only news of a payment being recorded and dropped.
+> **Since #587 Payriff is asked only about an order a page is waiting on.** The adapter names the
+> order from the body alone (`unsignedCallbackReference`), and `ProviderWebhooks` asks Payriff only
+> when a pledge's page (`transactions`) or a plan's (`subscription_charges`) is still `PENDING`
+> under it. Any other order — settled, never ours, or guessed — is answered 200 like a delivery that
+> was acted on, records nothing and asks nobody. The question goes through `ProviderCircuitBreaker`:
+> an open breaker answers 503 without asking, and an order still undecided is an answer, not an
+> outage, so posting an open page's callback cannot open the breaker.
 > AZN, USD and EUR. Payouts refuse: Payriff's `/payout` takes a card number, name and FIN, which
 > SAQ A does not allow, and #352 decides. Configured as `primary: PAYRIFF` with
 > `ideanest.payment.payriff.{base-url,secret-key,callback-url,language}`; the callback URL must be
@@ -4595,7 +4655,12 @@ single-file change.
 > callback landing at the same moment is decided by V41's settled index. Pending or unanswered
 > pages go to the back of the queue (V95's `hosted_charge_checks`) and are asked again until seven
 > days after they opened, because an abandoned page stays pending at some providers for ever.
-> Paid and already returned is settled neither way: logged at ERROR for a person.
+> Paid and already returned is settled neither way: logged at ERROR for a person. **A page still
+> pending when its seven days end is reported, not forgotten (#587):** the pass that finds it logs
+> it at ERROR with what the provider last said, counts it
+> (`ideanest.payment.hosted.anomalies{reason="aged_out"}`, alerted) and stamps
+> `hosted_charge_checks.aged_out_at` (V120) so it is reported once. It is still settled neither
+> way; whether the backer paid is a person's question for the provider.
 >
 > **Return addresses are the site's, not the caller's (#139).** `POST /v1/pledges/{id}/payment`
 > and `POST /v1/me/payout-destination/card-registration` take a `successUrl` and an `errorUrl`
@@ -4766,6 +4831,14 @@ compares only that provider's transactions and **excludes `BANK_TRANSFER` rows**
 checked against the bank's statement by their reference instead. How staff pay and record a
 transfer is [`docs/runbooks/bank-transfers.md`](runbooks/bank-transfers.md).
 
+**Escrow is also reconciled per campaign (#587).** Read as one pool, escrow hides a campaign that
+returned or paid out more than it took behind every other campaign's money. So the sign check is
+asked again per campaign: escrow plus `psp_fee` and `platform_expense` (check three's terms — a full
+refund of a charge the provider kept a fee on leaves that campaign's escrow short by the fee, which
+is nobody's mistake) must not be below zero, unless the campaign's `creator_debts` cover the
+difference (a chargeback lost after payout). A campaign that is short is a
+`PLATFORM_ACCOUNT_NEGATIVE` finding on `escrow:<campaign>`, and pages like every finding.
+
 **The person who confirms the destination is not the person who sends to it.** V66
 decided that one issue before there was anything to confirm, and it is the same
 argument `StaffRole.FINANCE` already makes about `APPROVE_PAYOUT`, applied one step
@@ -4934,7 +5007,9 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > whatever the campaign's state). So a charge refunded in part by staff is refunded for the rest, and
 > a charge whose refund failed after the pledge's other charges went back is retried. Each is
 > refunded against its own provider transaction for what it has left, and the double-refund rules
-> above apply per charge (a requested refund counts as gone until it settles).
+> above apply per charge (a requested refund counts as gone until it settles). A second payment for
+> a pledge already paid for (#587, `duplicate_charges`) is offered the same way, whatever the
+> campaign's state, and returned in full as `DUPLICATE_CHARGE`.
 >
 > **Refunded in full is decided when a refund settles (#174's review).** Not when it is requested:
 > under the pledge's row lock, the settlement compares what the pledge was charged with what has
@@ -5099,7 +5174,10 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > paid is withheld from the creator's future payouts, and the account is blocked until the
 > amount is repaid. The rule "nothing is refunded through the platform after payout" does not
 > stop a bank chargeback; if the creator never has another payout, the loss is the platform's.
-> That risk is accepted in §5.1.
+> That risk is accepted in §5.1. A refund the platform would choose to make — a member of staff's, or
+> conceding a dispute — is refused once the campaign is paid out (`REFUND_AFTER_PAYOUT`, #587), as an
+> upheld backer dispute already was: before #587 it was sent out of escrow other campaigns are owed,
+> with no debt behind it.
 >
 > **Built (#43).** Resolving a dispute `LOST` or `CONCEDED` still posts the loss (the backer's money
 > returns from escrow). When the campaign already has a settled `PAYOUT` transaction, the amount and
@@ -5324,7 +5402,7 @@ POST   /v1/collaborators/invitations/{token}/accept
 # Pledge
 POST   /v1/pledges/draft
 GET    /v1/pledges/{id}
-POST   /v1/pledges/{id}/payment          # IDN-EXT-01 (#39): hold the draft, open the payment page; paid → COLLECTED by webhook
+POST   /v1/pledges/{id}/payment          # IDN-EXT-01 (#39): hold the draft, open the payment page; paid → COLLECTED by webhook. A second key while the draft's page is open returns that page (#587)
 PATCH  /v1/pledges/{id}
 POST   /v1/pledges/{id}/raise            # #171: raise a COLLECTED pledge while the campaign takes pledges; opens the payment page for the difference, applied by webhook
 DELETE /v1/pledges/{id}   # IDN-EXT-01 (#35): abandons an unpaid DRAFT only; PLEDGE_CANNOT_BE_CANCELLED otherwise
@@ -5599,7 +5677,8 @@ GET    /v1/admin/users/{accountId}/subscriptions # one account's subscriptions (
 > and §3.2 grants "apply an editorial badge" to moderators and admins alone; there is
 > written before #295 built the role model, when the configured list was reused
 > rather than a second directory being invented for epic #100 to find and delete. Every
-> mutation writes exactly one `curation_events` row in the same transaction, and the
+> mutation writes exactly one `curation_events` row in the same transaction (and, since
+> #587, one `audit_logs` row, `collection.*`, without the note), and the
 > four that change what the public sees — publish, unpublish, add, remove — require a
 > note, because a discretionary editorial decision's only surviving record of *why* is
 > that row. There is deliberately **no delete** (withdrawing a list is unpublishing it)
@@ -5734,10 +5813,14 @@ GET    /v1/admin/users/{accountId}/subscriptions # one account's subscriptions (
 > that cannot succeed; an unknown or undeployed provider is a **404**, the same answer
 > for both, so the endpoint publishes nothing about which providers the platform uses.
 >
-> **No rate limiting and no source allowlist here.** An unsigned body is refused before
-> anything is read, and a limiter would instead throttle a provider delivering a genuine
-> backlog after an outage. §17.2's allowlist belongs to §19.1's network: the address a
-> servlet sees is whatever proxy terminated the connection.
+> **Rate limited since #587; still no source allowlist.** This said an unsigned body is
+> refused before anything is read — but Payriff signs nothing, and its callback was verified by
+> asking Payriff, so every body anybody posted cost a call to another service. Deliveries are now
+> budgeted per source address and for the endpoint as a whole (`ideanest.payment.webhooks.per-address`,
+> 120, and `overall`, 600, a minute — far above a provider's backlog; a refusal is a 429 the
+> provider retries), and an unsigned callback is asked about only when a payment page waits on its
+> order (§9.3, Payriff). Known and unknown orders get the same 200. §17.2's allowlist belongs to
+> §19.1's network: the address a servlet sees is whatever proxy terminated the connection.
 
 ### 10.3 Conventions
 
@@ -5944,7 +6027,7 @@ still is duplicated or dropped.
 every feed at once — a larger act than any single curation decision — so
 `/v1/admin/ranking` is moderator-only, requires a stated reason, and writes an
 append-only `ranking_weight_changes` row carrying the value before as well as
-after. The read is privileged too: the weights describe how to rank highly, and a
+after, and since #587 a `ranking.weight_changed` row in `audit_logs` with both values. The read is privileged too: the weights describe how to rank highly, and a
 campaign that knew them would know what to optimise.
 
 **`showOnly=recommended` is still refused.** It is `w6` wearing a filter's
@@ -6280,7 +6363,9 @@ do. Both endpoints and the fan-out resolve a stored preference through the same
 change nothing.
 
 > **Push is real since #87.** `PushChannelSender` sends through Expo's push service
-> (`ExpoPushClient`) to every device registered at `POST /v1/me/devices`, in the
+> (`ExpoPushClient`) to every device registered at `POST /v1/me/devices` (since #587 a token
+> another account holds while signed in anywhere is refused with `409 DEVICE_TOKEN_HELD`, and
+> `DELETE` forgets only the caller's own registration), in the
 > account's language (#216). Each message is a title and one line (`PushComposer`:
 > `email.<TYPE>.subject` and `.line`) and a `data` object the application reads when
 > it is tapped (#160):
@@ -6517,6 +6602,14 @@ notice says — epic #100.
 
 Client requests a pre-signed URL, uploads directly to object storage, then
 notifies the API, which enqueues processing.
+
+**Bounded since #587.** An account may be issued 120 upload addresses an hour and hold 10
+that are still valid and unannounced (`ideanest.media.uploads`, 429 past either). Every address
+is signed for `application/octet-stream`, whatever was declared, so a raw object under
+`uploads/` is a download and never a document a browser renders (an SVG was), and for the
+declared `Content-Length`, which the store enforces: the presigner speaks only `PUT`, so a
+signed header stands in for a POST policy's `content-length-range`. The sweep that removes an
+upload never announced deletes its `uploads/<id>` object as well as its row.
 
 **Built, for campaign covers, profile pictures, story images and reward items.** `POST /v1/media/uploads` issues a presigned
 `PUT`, the browser writes to it, `POST /v1/media/{id}/complete` says the bytes
@@ -7111,11 +7204,11 @@ report, bounded by the number of tiers a campaign has rather than by its backers
 | Access token | JWT, 15 minutes, asymmetric signature |
 | Refresh token | Opaque, stored hashed, 30 days, rotating |
 | **Token theft detection** | Reuse of a rotated refresh token invalidates the whole family |
-| Access token revocation | Not possible before expiry. Verification reads no state, so revoking a session takes effect within the access token's lifetime and not sooner. That window is the reason the lifetime is fifteen minutes |
+| Access token revocation | **Checked on every request since #587.** The token's `sid` is looked up in `sessions` by primary key, and a token whose session is revoked gets the bearer-token 401 — so signing out, a password change or reset, a replayed refresh token and a ban (§4.11's AD-04) stop the token at its next request rather than when it expires. `RevokedSessions` caches the answer: a revoked session for good, a live one for ten seconds, and every revocation this instance makes clears the live answers when it commits. A second instance would not hear another's revocations, so the lag there is the ten seconds, not the fifteen minutes. A session id with no row is not treated as revoked |
 | Client requirement | Refresh must be **single-flight**. Two concurrent refreshes present the same token, which is indistinguishable from theft and signs the user out |
 | Web storage | Refresh in an httpOnly, secure, same-site cookie; access in memory, never local storage |
 | Mobile storage | Platform secure storage: Keychain Services on iOS, the Android Keystore behind `EncryptedSharedPreferences`. The access token is held in memory and never written down, exactly as on the web |
-| **Biometric unlock** | **Built (#29), reworked (#319).** An app-level gate in front of the interface (`apps/mobile/src/lib/app-lock.ts`): it asks once at a cold start and again only after more than five minutes in the background — never on navigation, never on a token refresh. One `authenticateAsync` prompt is offered automatically per locking; a refusal lands on a six-digit PIN pad, never on a second prompt. The PIN is required to turn the lock on, never leaves the phone, and is stored only as a salted PBKDF2-HMAC-SHA256 record in secure storage; five wrong PINs end the session on the phone (session, PIN, caches, unsent edits), and the counter survives the app being killed. Turning the lock off or changing the PIN needs the prompt or the current PIN. It is a **local gate and never a factor**: the service is not told the prompt happened, and §17.1's TOTP remains the only second factor. **The trade, the owner's decision:** until #319 the refresh token was written with `requireAuthentication`, so the operating system enforced the gate — and asked at every read and every rotated-token write (twice per launch on Android, again at every refresh), with no fallback when the sensor refused. The token is now the ordinary `WHEN_UNLOCKED_THIS_DEVICE_ONLY` item and the gate is the application's. Installs from before #319 are migrated with the old item's one prompt, ordered in `apps/mobile/src/lib/session.ts` so that no failure loses the session. While the gate is shut nothing gets past it: links, push taps and the maintenance screen wait for it to open, kit sheets/dialogs asked to open wait too, and a wipe keeps it shut until every cache is gone. With the lock on, leaving the app puts a curtain over it at once; the app-switcher snapshot is only covered as far as JavaScript can (iOS snapshots on `inactive`, Android needs `FLAG_SECURE`: native work, not done). Only class 3 (`BIOMETRIC_STRONG`) biometrics open it; a phone with only a weak face unlock is PIN-only. The owner may turn the fingerprint/face off for the lock in Security settings (on by default) without touching the phone's enrolments: the lock and the PIN stay, and the prompt is never shown; turning it back on needs the current PIN and only the PIN (a prompt could be passed by another enrolled finger), a new lock starts with it on, and the choice is erased with the rest of the lock. **Known gap:** a fingerprint or face enrolled after the lock was turned on is accepted — detecting enrolment changes needs a native key invalidated on enrolment, which Expo does not expose. A wall clock wound back while the phone sleeps is not caught either: `performance.now()` may stand still in sleep, and the native boot-time clock is not exposed |
+| **Biometric unlock** | **Built (#29), reworked (#319).** An app-level gate in front of the interface (`apps/mobile/src/lib/app-lock.ts`): it asks once at a cold start and again only after more than five minutes in the background — never on navigation, never on a token refresh. One `authenticateAsync` prompt is offered automatically per locking; a refusal lands on a six-digit PIN pad, never on a second prompt. The PIN is required to turn the lock on, never leaves the phone, and is stored only as a salted PBKDF2-HMAC-SHA256 record in secure storage (1,000 iterations: PBKDF2 runs in JavaScript on Hermes, and 1,000 already costs a mid-range phone about half a second; the iteration count is in the record and a correct entry re-derives at the current one. No count a phone can afford stops an offline guess at six digits, so the PIN is a **UI gate**: what protects it is the keystore it sits in and the attempt limit, #587); five wrong PINs end the session on the phone (session, PIN, caches, unsent edits), and the counter survives the app being killed. Turning the lock off or changing the PIN needs the prompt or the current PIN. It is a **local gate and never a factor**: the service is not told the prompt happened, and §17.1's TOTP remains the only second factor. **The trade, the owner's decision:** until #319 the refresh token was written with `requireAuthentication`, so the operating system enforced the gate — and asked at every read and every rotated-token write (twice per launch on Android, again at every refresh), with no fallback when the sensor refused. The token is now the ordinary `WHEN_UNLOCKED_THIS_DEVICE_ONLY` item and the gate is the application's. Installs from before #319 are migrated with the old item's one prompt, ordered in `apps/mobile/src/lib/session.ts` so that no failure loses the session. While the gate is shut nothing gets past it: links, push taps and the maintenance screen wait for it to open, kit sheets/dialogs asked to open wait too, and a wipe keeps it shut until every cache is gone. With the lock on, leaving the app puts a curtain over it at once; the app-switcher snapshot is only covered as far as JavaScript can (iOS snapshots on `inactive`, Android needs `FLAG_SECURE`). Since #587 `expo-screen-capture` sets `FLAG_SECURE` (and blocks capture on iOS) while the lock screen, any PIN pad, or a two-factor step past idle is on screen, so those are blank in screenshots, recordings and Android's recent apps; the unlocked app's own switcher snapshot is still only curtained. Only class 3 (`BIOMETRIC_STRONG`) biometrics open it; a phone with only a weak face unlock is PIN-only. The owner may turn the fingerprint/face off for the lock in Security settings (on by default) without touching the phone's enrolments: the lock and the PIN stay, and the prompt is never shown; turning it back on needs the current PIN and only the PIN (a prompt could be passed by another enrolled finger), a new lock starts with it on, and the choice is erased with the rest of the lock. **Known gap:** a fingerprint or face enrolled after the lock was turned on is accepted — detecting enrolment changes needs a native key invalidated on enrolment, which Expo does not expose. A wall clock wound back while the phone sleeps is not caught either: `performance.now()` may stand still in sleep, and the native boot-time clock is not exposed |
 | Two-factor | Time-based one-time password: RFC 6238, HMAC-SHA1, six digits, thirty-second steps, one step of skew either side. Enrolment does not enable it — a current code must be entered first, or a phone that dies mid-flow is a lockout |
 | Two-factor sign-in | A correct password returns a **single-use challenge and no session**. The second call spends the challenge with a code. A code cannot be replayed inside its own window: the accepted time step is recorded and only a strictly greater one is taken |
 | Two-factor guessing | Five code attempts per challenge; a new challenge costs the password again. This is *the* control on a six-digit secret — three codes are valid at any moment once skew is allowed |
@@ -7185,6 +7278,14 @@ Apple requires to revoke the token.
 > effective limit multiplies by the number of instances. The shared counter is
 > #142. Until then the deployment is single-instance and the limiter is honest
 > protection against a script rather than against a botnet.
+>
+> **Move it to PostgreSQL or Redis before running a second API container (#587).**
+> Three things live in one process's heap today: `InMemoryRateLimiter`, the
+> sign-in back-off and its per-account ceiling (`SignInBackoff`), and the revoked-session cache
+> (`RevokedSessions`). The first two would let each replica grant its own budget;
+> the third would lag a revocation made elsewhere by its ten-second live verdict.
+> None of them is a correctness problem on one instance, and every one becomes one
+> the day there are two.
 
 ### 17.2 Payments
 
@@ -7207,13 +7308,16 @@ Apple requires to revoke the token.
 | Cross-site request forgery | Same-site cookies plus a required custom header |
 | Insecure direct object reference | Ownership checked in a security layer, not in controllers |
 | Mass assignment | Explicit request DTOs; entities are never bound to input |
-| Rate limiting | Sign-in 5/15min per address; registration 5/15min per address and 3/15min per email; two-factor codes 5 per challenge and enrolment changes 10/15min per user; pledge 10/min per user; search 60/min per address, spent by the feed, its facets and search together because all three run the same query; autocomplete 300/min per address, counted apart because a suggestion is one request per keystroke. **The counter is per replica (#142):** with three instances every number here is really three times itself. Closing that needs shared storage, which the platform still does not have — the durable scheduler (#134) gave the fleet a lease table, not a key-value store |
-| **Account enumeration** | Registration answers identically whether or not the address is known. The address itself is told which of the two happened |
-| Bot traffic | Challenge on registration and comment |
+| Rate limiting | Sign-in, **counting failures only** (#587): 5 failed attempts per 15min per address; per account *and address*, five free failures and then a back-off — 30s, doubling to a 15-minute ceiling, measured from the last failure, cleared by a completed sign-in (with two-factor on, only once the code is accepted, never by the password alone) and forgotten a day after the last failure — so a stranger's wrong passwords hold back the stranger's address rather than the owner; a wrong two-factor code counts as a failed sign-in; and per account across every address, 50 failures in a sliding hour refuse every attempt until the oldest ages out. **That ceiling is still a lockout, the owner's included:** one address cannot reach it (about 12 failures in its first hour, 4 an hour after), but ten addresses spending their free failures close an account for an hour, and a dozen or more failing continuously keep it shut. It is the price of bounding password and code guessing from many addresses at 1,200 a day per account; registration 5/15min per address and 3/15min per email; two-factor codes 5 per challenge and enrolment changes 10/15min per user; pledge 10/min per user; search 60/min per address, spent by the feed, its facets and search together because all three run the same query; autocomplete 300/min per address, counted apart because a suggestion is one request per keystroke. **The counter is per replica (#142):** with three instances every number here is really three times itself. Closing that needs shared storage, which the platform still does not have — the durable scheduler (#134) gave the fleet a lease table, not a key-value store. Since #587, backer disputes are 10/hour per account and media upload addresses 120/hour per account, with at most 10 outstanding |
+| **Account enumeration** | Registration answers identically whether or not the address is known. The address itself is told which of the two happened. **The same for a password reset and an address change (#587)**: forgot-password's mail is sent from a pool of its own after the response, so a registered address no longer answers an SMTP round trip later than an unknown one; and an address change aimed at an address that already has an account answers the same 202 as any other and tells that address's owner, instead of a 409 |
+| Bot traffic | **Not built: there is no challenge on registration or comment yet** (#587). Rate limits are the whole of the control on those two surfaces — registration per address and per email, comments per account and per address (§4.9) — and a challenge remains to be chosen and built |
 | File upload | Magic-byte validation, size caps, served from a separate origin |
 | Server-side request forgery | Allowlist for outbound fetches; internal ranges blocked |
 | Supply chain | Dependency scanning and automated updates |
 | Secrets | Never in the repository; scanning on push |
+| **Request size** (#587) | Every body that is not multipart is capped at 2 MB by `RequestBodyLimitFilter` (`ideanest.request-body.max-body`), the tracking-file import at 10 MB (`max-import-body`); a declared length over the cap is a 413 before a byte is read, and a chunked body stops being read at the cap. Multipart — only the identity document — is capped by `spring.servlet.multipart` at 5 MB a file, the document rule's own figure. Tomcat's form-post ceiling is 64 KB, the size of a payment provider's callback with room to spare. Media never comes through the API: it goes to object storage on a presigned URL |
+| **Actuator** (#587) | Health and its probes are public. `/actuator/prometheus` answers only through `MetricsScrapeSecurity`'s HTTP Basic chain, which exists only when a scrape password is configured; the API chain denies every other actuator path to everybody, so without a password there is no metrics endpoint rather than one any signed-in account can read |
+| **Default profile** (#587) | None. A process that names no profile runs in the production shape — no generated signing key, a `Secure` refresh cookie, no links in the log. `local` is asked for by `bootRun` (as the default profile, in `build.gradle.kts`) and by `SPRING_PROFILES_ACTIVE=local` anywhere else |
 
 ### 17.4 Data protection
 

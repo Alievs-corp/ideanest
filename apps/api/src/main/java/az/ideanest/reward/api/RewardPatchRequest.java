@@ -4,6 +4,7 @@ import az.ideanest.reward.application.RewardContent;
 import az.ideanest.reward.application.RewardPatch;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.Patched;
+import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -47,7 +48,7 @@ public record RewardPatchRequest(
         Patched<Boolean> isAddon,
         Patched<Instant> availableFrom,
         Patched<Instant> availableUntil,
-        Patched<List<RewardItemBody>> items,
+        Patched<@Size(max = 200) List<RewardItemBody>> items,
         Patched<UUID> imageMediaId,
         Patched<UUID> videoMediaId) {
 

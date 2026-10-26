@@ -21,6 +21,18 @@ public interface RateLimiter {
     RateLimitDecision recordAttempt(String key, int limit, Duration window);
 
     /**
+     * Gives back the most recent attempt recorded against {@code key}.
+     *
+     * <p>For a budget that is meant to count failures, where whether an attempt
+     * failed is only known after the work it guards. Counting first and refunding
+     * a success is what keeps that budget exact under concurrency: checking first
+     * and counting afterwards lets a client fire a hundred requests at once and
+     * have every one of them pass the check before the first failure is counted.
+     * Sign-in is the caller (#587). A key with nothing recorded is left alone.
+     */
+    void refund(String key);
+
+    /**
      * The outcome, and enough of the policy behind it to tell the caller where it
      * stands.
      *

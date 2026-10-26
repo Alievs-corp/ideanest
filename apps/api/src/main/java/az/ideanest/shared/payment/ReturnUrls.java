@@ -113,10 +113,11 @@ public class ReturnUrls {
     /**
      * Whether this process looks like a deployment rather than a developer's machine or a test run.
      *
-     * <p>A profile alone cannot tell: {@code spring.profiles.default} is {@code local}, so a deployed
-     * API that sets no profile runs as "local" too. So: an explicitly active {@code local} or
-     * {@code test} profile is development. Any other explicitly active profile is a deployment. With
-     * no active profile at all (the {@code local} default), a configured payment provider
+     * <p>A profile alone cannot tell. Since #587 the jar has no default profile and {@code bootRun}
+     * supplies {@code local} as the default rather than as an active one, so "no active profile" is
+     * both a developer's {@code bootRun} and a deployment that names none. So: an explicitly active
+     * {@code local} or {@code test} profile is development. Any other explicitly active profile is a
+     * deployment. With no active profile at all, a configured payment provider
      * ({@code ideanest.payment.provider.primary}, e.g. {@code EPOINT}) is what marks a deployment —
      * nobody configures merchant keys to leave them unused.
      */

@@ -1,5 +1,6 @@
 package az.ideanest.reward.api;
 
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ import java.util.UUID;
  * list against what exists and produces a message that says which identifiers are the
  * problem, which is what a stale client needs to hear.
  */
-public record ReorderRewardsRequest(List<UUID> rewardIds) {
+public record ReorderRewardsRequest(@Size(max = 500) List<UUID> rewardIds) {
 
     public ReorderRewardsRequest {
         rewardIds = rewardIds == null ? List.of() : rewardIds;

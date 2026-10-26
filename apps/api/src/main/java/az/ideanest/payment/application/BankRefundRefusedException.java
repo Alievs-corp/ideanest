@@ -31,7 +31,12 @@ public class BankRefundRefusedException extends RuntimeException {
         /** The ticket is not one the pledge's backer raised. */
         SUPPORT_TICKET_NOT_FROM_BACKER(400, "That ticket is not from this pledge's backer"),
         /** A transfer is recorded once it has been made, not before. */
-        TRANSFER_DATE_IN_FUTURE(400, "The transfer date is in the future");
+        TRANSFER_DATE_IN_FUTURE(400, "The transfer date is in the future"),
+        /**
+         * #587: the campaign has been paid out, and nothing is refunded through the platform after payout
+         * (§6.3) — the money is the creator's, and a refund would come out of other campaigns' escrow.
+         */
+        REFUND_AFTER_PAYOUT(409, "The campaign has been paid out");
 
         private final int status;
         private final String title;

@@ -26,6 +26,15 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
             """)
     List<Session> findLiveByUser(@Param("userId") UUID userId, @Param("now") Instant now);
 
+    /** Whether {@link #findLiveByUser} would find anything, without loading it. */
+    @Query("""
+            SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Session s
+            WHERE s.userId = :userId
+              AND s.revokedAt IS NULL
+              AND s.expiresAt > :now
+            """)
+    boolean existsLiveByUser(@Param("userId") UUID userId, @Param("now") Instant now);
+
     /**
      * Revokes every live session for a user in one statement.
      *
@@ -47,6 +56,16 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
             @Param("userId") UUID userId,
             @Param("reason") SessionRevocationReason reason,
             @Param("at") Instant at);
+
+    /**
+     * Whether this session has been revoked — what {@code RevokedSessions} asks for an
+     * access token's {@code sid} (#587).
+     *
+     * <p>A primary-key lookup, so it is an index probe rather than a scan. A session
+     * that does not exist is not revoked: nothing was withdrawn, and the access token
+     * naming it was still signed by us.
+     */
+    boolean existsByIdAndRevokedAtIsNotNull(UUID id);
 
     /** Every session a user has had, newest first. Read by the data export. */
     List<Session> findByUserIdOrderByCreatedAtDesc(UUID userId);

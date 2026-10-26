@@ -55,6 +55,27 @@ Production's approval is the GitHub Environment's **required reviewers** setting
 not anything in this repository. An approval rule a pull request can edit is not
 an approval rule.
 
+**Not yet created (#587), and the owner's to create.** Until a `production`
+environment exists, `deploy.yml`'s `environment: production` creates an empty one on
+first use, with no reviewer and no branch rule. When it is created, give it
+**required reviewers** and a **deployment branch policy limited to `v*` tags**, so
+that nothing but a release tag can deploy to it.
+
+### The API has no default profile (#587)
+
+The API used to fall back to the `local` profile when none was named, so a
+deployment that set none ran with `local`'s settings: a signing key it was allowed to
+generate, a refresh cookie without `Secure`, the issuer `http://localhost:8080`,
+verification and reset links in the log, and the sandbox payment provider unless
+`PAYMENT_PROVIDER` said otherwise. It now runs in the production shape. **Before
+deploying this, check the API's environment in Coolify** has, at least,
+`TOKEN_PRIVATE_KEY_PEM` and `TOKEN_PUBLIC_KEY_PEM` (without them it refuses to
+start), `TOKEN_ISSUER` if the issuer is not `https://api.ideanest.az`,
+`PAYMENT_PROVIDER` and its keys, and `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`. A
+deployment that really did run as `local` will sign everybody's access token out
+once, because the issuer changes; refresh tokens are unaffected, so clients refresh
+and carry on. Do not set `SPRING_PROFILES_ACTIVE=local` on a deployed host.
+
 ### The hook's contract
 
 A POST with this body, and whatever the environment does with it is its own
@@ -193,6 +214,29 @@ reader, so those reads share the web container's search budget. They did before
 #578 as well, together with everybody else. Forwarding a reader's address there
 would mean reading request headers in pages that are deliberately static, so it
 is left as it is.
+
+The web's own per-address limit (`POST /api/rum`) keys on the **last**
+`X-Forwarded-For` hop, the one Traefik appended, so it settles on the same
+address the API does (#587).
+
+## The web's response headers (#587)
+
+`apps/web/next.config.mjs` sends a Content-Security-Policy, HSTS,
+`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, a Referrer-Policy
+(`no-referrer` on the pages whose address carries an e-mail token) and a
+Permissions-Policy on every response. The file explains each value, and why the
+policy allows inline script rather than carrying a nonce or a hash.
+
+Two things are the owner's to decide and are not set from this repository:
+
+- **HSTS covers the apex only**: `max-age=31536000`, no `includeSubDomains`, no
+  `preload`. Add them once every host under the domain is known to be https-only.
+  Cloudflare's own HSTS setting, if it is ever switched on, sends a second header;
+  keep the two the same.
+- **A new third-party origin needs the policy changed.** A script, frame or
+  stylesheet from a host the policy does not name is blocked in the browser and
+  shows up only as a console error. The sign-in providers are named; an analytics
+  or support widget would have to be added in the same change that adds it.
 
 ## Building the images by hand
 

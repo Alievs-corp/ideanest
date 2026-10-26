@@ -65,6 +65,9 @@ class CampaignLaunchTests extends AbstractIntegrationTest {
     void aCreator() {
         handle = "campaign-launch-" + SEQUENCE.incrementAndGet();
         creatorId = Campaigns.creator(dataSource, handle);
+        // A plan, because the scheduled launch asks for one as the creator's own launch does
+        // (#587): a campaign over its creator's plan at its launch time does not open.
+        Campaigns.subscribe(dataSource, creatorId);
     }
 
     @AfterEach
@@ -78,6 +81,7 @@ class CampaignLaunchTests extends AbstractIntegrationTest {
                         + " (SELECT id FROM projects WHERE creator_id = ?)",
                 creatorId);
         jdbc.update("DELETE FROM projects WHERE creator_id = ?", creatorId);
+        jdbc.update("DELETE FROM subscriptions WHERE account_id = ?", creatorId);
     }
 
     // ------------------------------------------------------------------

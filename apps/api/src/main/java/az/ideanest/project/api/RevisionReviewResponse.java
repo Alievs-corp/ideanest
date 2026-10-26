@@ -14,6 +14,10 @@ import java.util.UUID;
  * @param rewards the reward tiers whose writing the revision changes (#559), each as the public
  *     sees it and as proposed; empty when it changes none. {@code rewards} is then one of the
  *     changed fields
+ * @param items the items an approved tier contains that the revision changes (#587); empty when
+ *     it changes none, and {@code items} is then not a changed field
+ * @param shippingZones the shipping regions the campaign has and the set the revision proposes
+ *     (#587), or null when it leaves them alone
  */
 public record RevisionReviewResponse(
         UUID id,
@@ -26,14 +30,18 @@ public record RevisionReviewResponse(
         List<String> changedFields,
         ProjectEdit live,
         ProjectEdit proposed,
-        List<RevisionRewardBody> rewards) {
+        List<RevisionRewardBody> rewards,
+        List<RevisionCatalogueBody.RevisionItem> items,
+        RevisionCatalogueBody.RevisionZones shippingZones) {
 
     static RevisionReviewResponse of(
             ProjectRevision revision,
             List<String> changed,
             ProjectEdit live,
             ProjectEdit proposed,
-            List<RevisionRewardBody> rewards) {
+            List<RevisionRewardBody> rewards,
+            List<RevisionCatalogueBody.RevisionItem> items,
+            RevisionCatalogueBody.RevisionZones shippingZones) {
         return new RevisionReviewResponse(
                 revision.getId(),
                 revision.getProjectId(),
@@ -45,6 +53,8 @@ public record RevisionReviewResponse(
                 changed,
                 live,
                 proposed,
-                rewards);
+                rewards,
+                items,
+                shippingZones);
     }
 }

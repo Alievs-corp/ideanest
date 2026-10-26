@@ -23,10 +23,10 @@
  *
  * <h2>How it stays one tested piece of TypeScript</h2>
  *
- * {@link maintenanceScript}, {@link momentOf} and {@link writeMoment} are ordinary
- * functions, tested as such, and {@link maintenanceScriptSource} writes them out with
+ * {@link maintenanceScript}, {@link momentOf}, {@link writeMoment} and `sameOriginPath` are
+ * ordinary functions, tested as such, and {@link maintenanceScriptSource} writes them out with
  * `Function.prototype.toString` — the technique `next-themes` uses for the same reason. That
- * puts two rules on all three,
+ * puts two rules on all four,
  * and the tests hold them to it by running the emitted source rather than the function:
  * they close over nothing from this module, and they use nothing a compiler would lower to a
  * helper call.
@@ -38,6 +38,8 @@
  * than putting the platform's zone back. Nothing is added or removed — only text and the
  * `hidden` attribute change — so the tree React hydrates is the tree it rendered.
  */
+
+import { sameOriginPath } from '../auth/redirect';
 
 /** The zone the server writes times in, before the reader's own is known. */
 export const PLATFORM_TIME_ZONE = 'Asia/Baku';
@@ -141,6 +143,7 @@ export function maintenanceScript(
   options: MaintenanceScriptOptions,
   moment: typeof momentOf,
   write: typeof writeMoment,
+  sameOrigin: typeof sameOriginPath,
 ): void {
   const doc = document;
   const w = window as unknown as Record<string, unknown>;
@@ -236,10 +239,14 @@ export function maintenanceScript(
       location.reload();
       return;
     }
-    const from = new URLSearchParams(location.search).get('from');
-    const safe =
-      from !== null && from.charAt(0) === '/' && from.charAt(1) !== '/' && from.charAt(1) !== '\\';
-    location.replace(safe ? from : watch!.home);
+    /*
+     * `?from=` is in the address, so anybody can write it. It is held to the sign-in
+     * redirect's rule (#587): control characters, `//` and `/\` refused, then parsed against a
+     * dummy origin and compared. The two-character check this replaced let a tab or a newline,
+     * which a browser strips before resolving, walk `//elsewhere` straight past it.
+     */
+    const from = sameOrigin(new URLSearchParams(location.search).get('from'));
+    location.replace(from !== null ? from : watch!.home);
   }
 
   function later(ms: number): void {
@@ -276,7 +283,7 @@ export function maintenanceScript(
  */
 export function maintenanceScriptSource(options: MaintenanceScriptOptions): string {
   const json = JSON.stringify(options).replace(/</g, '\\u003c');
-  return `(${maintenanceScript.toString()})(${json},${momentOf.toString()},${writeMoment.toString()})`;
+  return `(${maintenanceScript.toString()})(${json},${momentOf.toString()},${writeMoment.toString()},${sameOriginPath.toString()})`;
 }
 
 export interface FollowOptions {
@@ -363,7 +370,14 @@ export function followMaintenanceScript(options: FollowOptions): void {
   };
 }
 
-/** {@link followMaintenanceScript}, ready for the root layout. */
+/**
+ * {@link followMaintenanceScript}, ready for the root layout.
+ *
+ * Every `<` in the options is written as the six characters `\u003c`, as
+ * {@link maintenanceScriptSource} does, so no value can close the element early. Until #587
+ * the replacement was `'\u003c'` with one backslash, which the string literal turns back into
+ * `<` — a replace that changed nothing.
+ */
 export function followMaintenanceSource(options: FollowOptions): string {
-  return `(${followMaintenanceScript.toString()})(${JSON.stringify(options).replace(/</g, '\u003c')})`;
+  return `(${followMaintenanceScript.toString()})(${JSON.stringify(options).replace(/</g, '\\u003c')})`;
 }

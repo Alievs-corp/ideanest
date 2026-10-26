@@ -329,15 +329,30 @@ public record PaymentProperties(
      *     skew and a provider's own queueing, short enough that a captured request is
      *     not a usable instruction an hour later. The signature stays valid for ever —
      *     that is what a signature is — so this window is the only thing that expires
+     * @param perAddress #587: deliveries one source address may make in {@code window}. A provider
+     *     sends from a handful of addresses, each well under this even while it delivers a backlog
+     * @param overall #587: deliveries the endpoint takes in {@code window} from everybody together —
+     *     what bounds a sender spread over many addresses. Each delivery may cost a call to the
+     *     provider, and this is the ceiling on what the endpoint can be made to spend
+     * @param window the period both budgets are counted over
      */
-    public record Webhooks(Duration tolerance) {
+    public record Webhooks(Duration tolerance, int perAddress, int overall, Duration window) {
+
+        private static final int DEFAULT_PER_ADDRESS = 120;
+
+        private static final int DEFAULT_OVERALL = 600;
 
         public static Webhooks defaults() {
-            return new Webhooks(Duration.ofMinutes(5));
+            return new Webhooks(Duration.ofMinutes(5), DEFAULT_PER_ADDRESS, DEFAULT_OVERALL, Duration.ofMinutes(1));
         }
 
         public Webhooks {
             tolerance = tolerance == null ? Duration.ofMinutes(5) : tolerance;
+            // Zero is what binding leaves for an omitted number, and a budget of zero is an endpoint no
+            // provider can reach: the default rather than "unlimited", AbuseProperties' reason.
+            perAddress = perAddress < 1 ? DEFAULT_PER_ADDRESS : perAddress;
+            overall = overall < 1 ? DEFAULT_OVERALL : overall;
+            window = window == null || !window.isPositive() ? Duration.ofMinutes(1) : window;
         }
     }
 }

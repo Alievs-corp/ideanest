@@ -35,8 +35,16 @@ public interface ObjectStore {
      *
      * <p>The URL is a credential: anybody holding it may write that key until it expires.
      * That is why the window is short and why the key is unguessable.
+     *
+     * <p><strong>The length is signed into it</strong> (#587). The store's presigner speaks
+     * {@code PUT} only, so the bound is a signed {@code Content-Length} header rather than a
+     * POST policy's {@code content-length-range}: the store refuses a body of any other size,
+     * where before a declared kilobyte could be followed by gigabytes that sat under
+     * {@code uploads/} until the sweep measured them.
+     *
+     * @param contentLength the exact size in bytes the client declared
      */
-    URI presignedPut(String key, String contentType, Duration window);
+    URI presignedPut(String key, String contentType, long contentLength, Duration window);
 
     /**
      * Fetches an object to a local file.

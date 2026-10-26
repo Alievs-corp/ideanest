@@ -63,6 +63,9 @@ public class DeviceController {
     /**
      * Registers this installation for push.
      *
+     * <p>409 when the token is registered to another account that is still signed in — see
+     * {@code PushDevices} (#587).
+     *
      * <p>201 on the first registration of a token and 200 on every later one. The
      * difference is worth carrying: a client that expected to be re-registering and is
      * told a row was created has a token it did not have before, which is the signal that
@@ -94,18 +97,21 @@ public class DeviceController {
      * that it failed, and telling it apart would confirm to whoever holds a token that the
      * token is registered.
      *
-     * <p><strong>The account is not consulted.</strong> A token identifies an installation,
-     * and the person holding the phone is the person entitled to make it stop receiving —
-     * including when they are not the account it is currently registered to, which is
-     * exactly the case {@code PushDevices} describes. What a token confers is the ability
-     * to stop delivery to itself, which is not a capability worth defending.
+     * <p><strong>Only the caller's own registration</strong> (#587). This used to delete by
+     * token alone, on the argument that whoever holds the phone may make it stop receiving.
+     * Holding a token is not holding the phone — a token can be read off a borrowed device
+     * or out of a log — and a sign-out that could remove anybody's registration let one
+     * account switch another's notifications off. Somebody signing out of a phone that is
+     * registered to somebody else has nothing of theirs to forget, and is answered 204 like
+     * everybody else.
      */
     @DeleteMapping("/v1/me/devices")
     public ResponseEntity<Void> forget(
             @AuthenticationPrincipal Jwt accessToken, @Valid @RequestBody RegisterDeviceRequest request) {
 
-        spendBudget(callerOf(accessToken));
-        devices.forget(request.token());
+        UUID userId = callerOf(accessToken);
+        spendBudget(userId);
+        devices.forget(userId, request.token());
         return ResponseEntity.noContent().build();
     }
 

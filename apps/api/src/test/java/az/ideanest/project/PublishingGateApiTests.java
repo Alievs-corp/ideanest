@@ -2,6 +2,8 @@ package az.ideanest.project;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import az.ideanest.project.application.ProjectTransitionService;
+import az.ideanest.project.application.ScheduledLaunchRefusedEvent;
 import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.shared.EmailAddress;
@@ -65,6 +67,9 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
     @Autowired
     private AccessTokenIssuer tokens;
 
+    @Autowired
+    private ProjectTransitionService transitions;
+
     @AfterEach
     void clear() {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
@@ -72,6 +77,7 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
         // the identity tests' own cleanup.
         jdbc.update("DELETE FROM collaborator_capabilities");
         jdbc.update("DELETE FROM collaborators");
+        jdbc.update("DELETE FROM outbox_events WHERE aggregate_id IN (SELECT id FROM projects)");
         jdbc.update("DELETE FROM project_state_transitions");
         jdbc.update("DELETE FROM projects");
         jdbc.update("DELETE FROM subscriptions");
@@ -318,6 +324,87 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
                 .isEqualTo("SUBSCRIPTION_REQUIRED");
     }
 
+    @Test
+    @DisplayName("the plan is asked again when a moderator approves, after the goal was raised in review")
+    void approvalAsksThePlanAgain() {
+        UUID capped = addPlan("APPROVALCAP", "5.00", null, "10000.00");
+        Account creator = account();
+        activate(creator, subscribeTo(creator, capped));
+        UUID project = completeCampaign(creator, "10000.00");
+        assertThat(post("/v1/projects/" + project + "/submit", creator.accessToken(), null)
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        // Nothing is locked in SUBMITTED, so the goal can move while a moderator reads it.
+        rest.exchange(
+                "/v1/projects/" + project,
+                HttpMethod.PATCH,
+                new HttpEntity<>(
+                        Map.of("goal", Map.of("amount", "10000.01", "currency", "AZN")),
+                        authorised(creator.accessToken())),
+                mapType());
+
+        ResponseEntity<Map<String, Object>> refused =
+                post("/v1/admin/moderation/" + project + "/approve", admin().accessToken(), null);
+
+        // #587: approving publishes, so it asks what the submission asked, and a refusal
+        // changes nothing.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(refused.getBody().get("code")).isEqualTo("PLAN_LIMIT_EXCEEDED");
+        assertThat(metaOf(refused)).containsEntry("limit", "GOAL_CEILING");
+        assertThat(stateOf(project)).isEqualTo("SUBMITTED");
+    }
+
+    @Test
+    @DisplayName("the plan is asked again when the creator launches an approved campaign")
+    void launchAsksThePlanAgain() {
+        UUID capped = addPlan("LAUNCHCAP", "5.00", null, "10000.00");
+        Account creator = account();
+        activate(creator, subscribeTo(creator, capped));
+        UUID project = approvedOverTheCeiling(creator);
+
+        ResponseEntity<Map<String, Object>> refused =
+                post("/v1/projects/" + project + "/launch", creator.accessToken(), null);
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(refused.getBody().get("code")).isEqualTo("PLAN_LIMIT_EXCEEDED");
+        assertThat(stateOf(project)).isEqualTo("APPROVED");
+    }
+
+    @Test
+    @DisplayName("a scheduled launch over the plan is not opened, and waits for its creator")
+    void aScheduledLaunchOverThePlanWaits() {
+        UUID capped = addPlan("SCHEDULECAP", "5.00", null, "10000.00");
+        Account creator = account();
+        activate(creator, subscribeTo(creator, capped));
+        UUID project = approvedOverTheCeiling(creator);
+        new JdbcTemplate(dataSource)
+                .update("UPDATE projects SET scheduled_launch_at = now() - interval '1 minute' WHERE id = ?", project);
+
+        // Not opened, and not left due either: a skipped campaign would be first in every
+        // pass's batch from now on and hold back the campaigns behind it.
+        assertThat(transitions.launchScheduled(project, Instant.now())).isEmpty();
+        assertThat(stateOf(project)).isEqualTo("APPROVED");
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        assertThat(jdbc.queryForObject("SELECT scheduled_launch_at FROM projects WHERE id = ?", Object.class, project))
+                .isNull();
+
+        // Cleared, nothing opens it again, so it is not cleared silently: the refusal is on the
+        // record with the bound that refused it, and the creator is told.
+        Map<String, Object> audited = jdbc.queryForMap(
+                "SELECT actor_type, outcome, detail FROM audit_logs"
+                        + " WHERE action = 'project.scheduled_launch_refused' AND entity_id = ?",
+                project);
+        assertThat(audited).containsEntry("actor_type", "SYSTEM").containsEntry("outcome", "REFUSED");
+        assertThat((String) audited.get("detail")).contains("SCHEDULECAP").contains("10000.00");
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM outbox_events WHERE aggregate_id = ? AND event_type = ?",
+                        Long.class,
+                        project,
+                        ScheduledLaunchRefusedEvent.EVENT_TYPE))
+                .isEqualTo(1L);
+    }
+
     /* ------------------------------------------------------------------
      * Fixtures
      * --------------------------------------------------------------- */
@@ -394,6 +481,27 @@ class PublishingGateApiTests extends AbstractIntegrationTest {
                 email,
                 (String) signedIn.getBody().get("accessToken"),
                 users.findByEmailAndDeletedAtIsNull(email).orElseThrow().getId());
+    }
+
+    /** A campaign submitted inside its plan and approved, whose goal has since gone over it. */
+    private UUID approvedOverTheCeiling(Account creator) {
+        UUID project = completeCampaign(creator, "10000.00");
+        assertThat(post("/v1/projects/" + project + "/submit", creator.accessToken(), null)
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        // Written directly: APPROVED with a launch time still to come is what an approval
+        // leaves, and the goal stays editable there.
+        new JdbcTemplate(dataSource)
+                .update(
+                        "UPDATE projects SET state = 'APPROVED', goal_amount = 10000.01,"
+                                + " scheduled_launch_at = now() + interval '1 day' WHERE id = ?",
+                        project);
+        return project;
+    }
+
+    private String stateOf(UUID project) {
+        return new JdbcTemplate(dataSource)
+                .queryForObject("SELECT state FROM projects WHERE id = ?", String.class, project);
     }
 
     /** A campaign §5.3 would accept, so that the gate is the only thing left to refuse it. */

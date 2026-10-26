@@ -73,7 +73,8 @@ public class ShippingZone {
         return zone;
     }
 
-    private static String validName(String name) {
+    /** The name a zone would be stored with, or a refusal saying why it cannot be. */
+    public static String validName(String name) {
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty() || trimmed.length() > MAX_NAME_LENGTH) {
             throw new IllegalArgumentException(

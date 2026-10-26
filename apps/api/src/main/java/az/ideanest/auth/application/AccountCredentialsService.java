@@ -5,6 +5,7 @@ import az.ideanest.audit.AuditActor;
 import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
 import az.ideanest.auth.AuthProperties;
+import az.ideanest.auth.application.AuthEvents.EmailChangeAttemptedOnExistingAccount;
 import az.ideanest.auth.application.AuthEvents.EmailChangeNoticeToPreviousAddress;
 import az.ideanest.auth.application.AuthEvents.EmailChangeRequested;
 import az.ideanest.auth.application.AuthEvents.PasswordChanged;
@@ -176,8 +177,15 @@ public class AccountCredentialsService {
      * <p>Nothing about the account changes here. Until the link in the first message is
      * followed, {@code users.email} is what it was and the old address still signs in.
      *
+     * <p><strong>An address that already has an account is answered exactly like one
+     * that does not</strong> (#587). It used to be a 409, which made this endpoint a
+     * free "is this address registered here?" oracle for anybody with an account and a
+     * list. Now the caller sees the same 202, their current address gets the same
+     * notice, an outstanding link is retired the same way — and the owner of the
+     * address they named is told, as registration tells them, instead of being sent a
+     * link that could move somebody else's account onto their address.
+     *
      * @throws IncorrectPasswordException if the current password is wrong
-     * @throws EmailAlreadyInUseException if the address already has an account
      */
     @Transactional
     public void requestEmailChange(UUID userId, String currentPassword, EmailAddress newEmail) {
@@ -192,14 +200,29 @@ public class AccountCredentialsService {
             // already on the account teaches people to click links that do nothing.
             return;
         }
-        if (users.isEmailTaken(newEmail)) {
-            throw new EmailAlreadyInUseException("That address already has an account.");
-        }
-
         // Whatever was outstanding is retired first. Two live links mean two addresses
         // this account could move to, and the one nobody wants any more is the one
-        // still sitting in a mailbox that may have been lost.
+        // still sitting in a mailbox that may have been lost. Retired for a taken
+        // address too, or the old link still working would be the oracle the 202 hides.
         emailChanges.consumeOutstanding(userId, now);
+
+        if (users.isEmailTaken(newEmail)) {
+            // Recorded for staff, who may need to see somebody walking a list of
+            // addresses through this form. The row is about the caller's account and
+            // names neither address.
+            audit.record(
+                    AuditAction.EMAIL_CHANGE_REQUESTED,
+                    userId,
+                    AuditActor.user(userId),
+                    AuditOutcome.REFUSED,
+                    "the address asked for already has an account; its owner was told");
+            // The owner's language when they still have an account to have one, and
+            // the caller's otherwise -- registration's choice for its own notice.
+            String ownersLocale = users.findByEmail(newEmail).map(UserAccount::locale).orElse(account.locale());
+            events.publishEvent(new EmailChangeAttemptedOnExistingAccount(newEmail, ownersLocale));
+            events.publishEvent(new EmailChangeNoticeToPreviousAddress(account.email(), newEmail, account.locale()));
+            return;
+        }
 
         String token = SecureTokens.generate();
         emailChanges.save(EmailChangeRequest.issue(

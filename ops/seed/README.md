@@ -65,11 +65,16 @@ database and starting over.
 
 ## Accounts
 
-**Password for every account, including all 900 generated backers:**
+**Every account, including all 900 generated backers, shares one password.**
+`run.sh` generates it the first time it runs on your machine, keeps it in
+`ops/seed/.seed-password` (git-ignored, readable only by you) and prints it when
+it finishes. Re-runs reuse it, so the accounts already seeded keep working. Set
+`SEED_PASSWORD` to choose your own instead; delete the file and drop the
+database to start over with a new one.
 
-```
-IdeaNest2026!
-```
+It is deliberately not written here. A password in the repository is a
+password on every database the seed ever reached — a staging box, a demo
+laptop, a restored backup — and the seed includes every console role.
 
 ### Console roles
 
@@ -200,11 +205,17 @@ broken image.
 
 ### Passwords
 
-`seed_password()` returns one Argon2id encoding, produced by registering a
-single account through `POST /v1/auth/register` and copying the hash out. It is
-a hash this service's own verifier accepts rather than one assembled by hand,
-and giving every account the same one means the demo is about what each role can
+`seed_password()` returns one Argon2id encoding, which `run.sh` computes with
+Node's `crypto.argon2` (Node 24.7 or later) using the service's own parameters
+(`ideanest.auth.argon2`) and hands to each `psql` session as the setting
+`seed.password_hash`. It is the encoding Spring's `Argon2PasswordEncoder` writes,
+so the service's verifier accepts it and does not rehash it on first sign-in.
+Giving every account the same one means the demo is about what each role can
 see rather than about credential handling.
 
-To change the shared password, register an account through the API, read
-`user_credentials.password_hash`, and replace the literal in `00_helpers.sql`.
+### Not production
+
+`run.sh` refuses, before it sends a statement, when `PGHOST` or the host in
+`DOCKER_HOST` names production — the same `PRODUCTION_DOMAINS` and
+`PRODUCTION_ADDRESSES` list, and the same staging exception, as
+`e2e/seed.mjs`. Keep the two lists in step.

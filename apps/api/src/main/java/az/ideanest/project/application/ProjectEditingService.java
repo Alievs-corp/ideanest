@@ -14,6 +14,7 @@ import az.ideanest.project.domain.SubmissionChecklist;
 import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.project.infrastructure.ProjectRepository;
 import az.ideanest.project.infrastructure.SubcategoryRepository;
+import az.ideanest.shared.HttpsAddresses;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.Patched;
 import az.ideanest.shared.Slugs;
@@ -236,8 +237,17 @@ public class ProjectEditingService {
             return null;
         }
         return switch (selection) {
-            case CoverImageSelection.FromUrl typed ->
-                new CoverImage(typed.url(), typed.width(), typed.height());
+            case CoverImageSelection.FromUrl typed -> {
+                // https only (#587). A typed cover was stored verbatim and rendered as the
+                // campaign's image on every card and page, so a javascript:, data: or plain
+                // http address went to every reader. The upload is the way in that should
+                // remain; this one exists for campaigns that predate it.
+                if (!HttpsAddresses.isHttps(typed.url())) {
+                    throw new ProjectFieldRejectedException(
+                            "coverImage", "A cover image address has to start with https:// and hold no spaces.");
+                }
+                yield new CoverImage(typed.url(), typed.width(), typed.height());
+            }
             case CoverImageSelection.FromUpload upload -> {
                 if (!media.claimForOwner(accountId, Set.of(upload.mediaId())).contains(upload.mediaId())) {
                     throw new ProjectFieldRejectedException(

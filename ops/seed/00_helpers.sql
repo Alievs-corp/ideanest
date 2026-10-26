@@ -6,7 +6,8 @@
 -- keys rather than generated. It exists so that a developer starting the stack
 -- for the first time sees a populated platform instead of fifteen empty rails.
 --
--- Run: ops/seed/run.sh  (or psql -f each file in order)
+-- Run: ops/seed/run.sh. Running the files by hand needs the session setting
+-- seed.password_hash first -- see seed_password() below.
 
 -- Readable, stable identifiers. `sid('project:tumar')` is the same uuid on
 -- every machine and in every file, so the parts of this seed can reference each
@@ -14,13 +15,15 @@
 CREATE OR REPLACE FUNCTION seed_id(key text) RETURNS uuid
     LANGUAGE sql IMMUTABLE AS $$ SELECT md5('ideanest-demo-seed:' || key)::uuid $$;
 
--- Argon2id encoding of the shared demo password. Produced by registering one
--- account through /v1/auth/register, so it is a hash this service's own
--- verifier accepts rather than one assembled by hand.
+-- Argon2id encoding of the shared demo password, which run.sh generates on the
+-- machine running it and hands to the session as `seed.password_hash`. Never a
+-- literal here: a password whose hash is in the repository is a password
+-- anybody can test against every database this seed ever reached.
+--
+-- current_setting without missing_ok, so a session that was not given one fails
+-- on the first account rather than seeding credentials nobody can use.
 CREATE OR REPLACE FUNCTION seed_password() RETURNS text
-    LANGUAGE sql IMMUTABLE AS $$
-    SELECT '$argon2id$v=19$m=19456,t=2,p=1$NCC7lUv9QryZ4DAJg94yrg$OC0sjlI4mCs5mxCfBDrsuF9mzm8jcKzK3a/NNDwYYQ0'
-$$;
+    LANGUAGE sql STABLE AS $$ SELECT current_setting('seed.password_hash') $$;
 
 -- Category and subcategory ids by slug, so the project rows read as taxonomy
 -- rather than as uuids.

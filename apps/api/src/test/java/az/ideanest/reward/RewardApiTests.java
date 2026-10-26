@@ -279,6 +279,15 @@ class RewardApiTests extends AbstractIntegrationTest {
         assertThat(post("/v1/projects/" + projectId + "/items", creator.accessToken(), Map.of("name", "  "))
                         .getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
+        // The image address is rendered on the campaign page, so it is https or nothing (#587).
+        for (String address : List.of("javascript:alert(1)", "http://example.com/mug.png", "https://example.com/a mug.png")) {
+            assertThat(post(
+                                    "/v1/projects/" + projectId + "/items",
+                                    creator.accessToken(),
+                                    Map.of("name", "A mug", "imageUrl", address))
+                            .getStatusCode())
+                    .isEqualTo(HttpStatus.BAD_REQUEST);
+        }
 
         post("/v1/projects/" + projectId + "/items", creator.accessToken(), Map.of("name", "A mug", "sku", "MUG-01"));
         Map<String, Object> second = item(creator, projectId, "Another mug");

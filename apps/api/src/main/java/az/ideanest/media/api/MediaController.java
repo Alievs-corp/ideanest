@@ -58,8 +58,9 @@ public class MediaController {
      * Issues an address for one file.
      *
      * <p>201, because a row now exists that did not before. A client that never uploads to
-     * the address leaves it {@code PENDING}, and the sweep removes it — see
-     * {@code MediaProcessingJob}.
+     * the address leaves it {@code PENDING}, and the sweep removes it and anything written under
+     * it — see {@code MediaProcessingJob}. 429 past {@code MediaProperties.Uploads}: too many
+     * addresses this hour, or too many still valid and unannounced (#587).
      */
     @PostMapping("/uploads")
     public ResponseEntity<MediaResponses.Upload> begin(
@@ -125,11 +126,12 @@ public class MediaController {
     /**
      * What the client says it is about to upload.
      *
-     * <p>Both fields are the client's word and are treated as such. The type is signed into
-     * the address so a leaked URL cannot be used for something else; the size is checked
-     * here so an obviously oversized request is refused before an address is issued. Neither
-     * is believed: the bytes are measured when they arrive, because a presigned address does
-     * not make a declaration binding.
+     * <p>Both fields are the client's word and are treated as such. The type decides whether
+     * this is an image or a video and nothing else: every address is signed for
+     * {@code application/octet-stream} (#587). The size is checked here so an obviously
+     * oversized request is refused before an address is issued, and signed into the address so
+     * the store refuses a body of any other length. Neither is believed about the content: the
+     * bytes are measured and identified when they arrive.
      *
      * @param contentType what the file picker reported, e.g. {@code image/jpeg}. A
      *     {@code video/*} type begins a campaign video (issue #331), with its own ceiling

@@ -1,8 +1,12 @@
 package az.ideanest.payment.api;
 
+import az.ideanest.payment.PaymentProperties;
 import az.ideanest.payment.application.ProviderWebhooks;
 import az.ideanest.payment.application.WebhookReceipt;
 import az.ideanest.shared.payment.ReturnUrls;
+import az.ideanest.shared.ratelimit.ClientAddress;
+import az.ideanest.shared.ratelimit.RateLimiter;
+import az.ideanest.shared.ratelimit.RateLimits;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -53,16 +57,24 @@ import org.springframework.web.bind.annotation.RestController;
  * {@code provider_webhook_events}, where the question is actually asked.
  *
  * <p>What is <em>not</em> a 200 is a delivery the platform failed to handle, which is a
- * 500 and a retry, and a delivery it refused, which is a 400 or a 404 and no retry. See
- * {@code ProviderWebhookExceptionHandler}.
+ * 5xx and a retry — a 503 when the provider could not confirm it yet (#587) — a delivery it
+ * refused, which is a 400 or a 404 and no retry, and one over the rate limit, a 429 and a
+ * retry. See {@code ProviderWebhookExceptionHandler}.
+ *
+ * <h2>Rate limited, per address and overall (#587)</h2>
+ *
+ * <p>This said "no rate limiting", on the argument that an unsigned body is refused before
+ * anything is read. Payriff signs nothing (#351): its adapter verifies a delivery by asking
+ * Payriff about the order, so every body cost a call to another service with a thirty-second
+ * read timeout, and anybody with the URL could spend the platform's threads on it. Two budgets
+ * now come before anything else ({@code ideanest.payment.webhooks}): one per source address,
+ * and one for the endpoint as a whole, which is what bounds a sender spread over many
+ * addresses. Both are set well above what a provider delivers even through a backlog, and a
+ * delivery refused with 429 is one the provider retries — the sweep (#353) settles a page whose
+ * callback is held up for good. {@code ProviderWebhooks} is what keeps an unknown order from
+ * costing a call at all.
  *
  * <h2>What is deliberately absent</h2>
- *
- * <p><strong>No rate limiting.</strong> Every other public endpoint has some, and this
- * one is protected by something better: an unsigned body is refused before anything is
- * read, and a valid signature cannot be produced by whoever would be flooding it. A
- * limiter here would instead throttle a provider delivering a genuine backlog after an
- * outage — exactly when the platform most needs the deliveries.
  *
  * <p><strong>No source allowlist.</strong> §17.2 lists one and it belongs to the
  * deployment's network rather than to this class: the address a Java servlet sees is
@@ -77,10 +89,15 @@ public class ProviderWebhookController {
 
     private final ProviderWebhooks webhooks;
     private final ReturnUrls returnUrls;
+    private final RateLimiter rateLimiter;
+    private final PaymentProperties.Webhooks limits;
 
-    public ProviderWebhookController(ProviderWebhooks webhooks, ReturnUrls returnUrls) {
+    public ProviderWebhookController(
+            ProviderWebhooks webhooks, ReturnUrls returnUrls, RateLimiter rateLimiter, PaymentProperties properties) {
         this.webhooks = webhooks;
         this.returnUrls = returnUrls;
+        this.rateLimiter = rateLimiter;
+        this.limits = properties.webhooks();
     }
 
     /**
@@ -139,6 +156,12 @@ public class ProviderWebhookController {
             @PathVariable("provider") String provider,
             @RequestBody(required = false) byte[] body,
             HttpServletRequest request) {
+
+        // #587: per address first, so one sender cannot spend the whole endpoint's budget, and then the
+        // endpoint's. Counted before the provider is even resolved: an unknown path costs as much to send.
+        RateLimits.enforce(rateLimiter.recordAttempt(
+                "webhook:ip:" + ClientAddress.of(request), limits.perAddress(), limits.window()));
+        RateLimits.enforce(rateLimiter.recordAttempt("webhook:all", limits.overall(), limits.window()));
 
         // An empty body is refused here rather than in the adapter, because every adapter
         // would otherwise have to refuse it separately and one of them would eventually

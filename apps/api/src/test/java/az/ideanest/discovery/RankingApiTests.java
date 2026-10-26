@@ -9,6 +9,7 @@ import az.ideanest.support.Curations;
 import az.ideanest.support.Weights;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
@@ -271,6 +272,45 @@ class RankingApiTests extends DiscoveryTestSupport {
         // stated hypothesis is unmeasurable by construction.
         assertThat(editorial).containsEntry("note", "Testing whether staff picks convert");
         assertThat((Instant) editorial.get("created_at")).isAfter(before);
+    }
+
+    @Test
+    @DisplayName("a change is also in the platform's audit trail, with both values and without the note")
+    void aChangeReachesTheAuditTrail() {
+        Account curator = moderator();
+        // The database's clock, and no margin: the rows other tests in this class wrote a
+        // moment ago are about the same term and cannot be deleted.
+        java.sql.Timestamp before = new JdbcTemplate(dataSource)
+                .queryForObject("SELECT clock_timestamp()", java.sql.Timestamp.class);
+
+        assertThat(setWeight("editorial", "0.45", true, "Testing whether staff picks convert")
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        // A term has no row identifier, so the entity is derived from its name, as a feature
+        // flag's is: two changes to one term are one history.
+        UUID term = UUID.nameUUIDFromBytes("ranking_weight:editorial".getBytes(StandardCharsets.UTF_8));
+        List<Map<String, Object>> trail = new JdbcTemplate(dataSource)
+                .queryForList(
+                        """
+                        SELECT action, entity_type, actor_id, actor_type, detail
+                          FROM audit_logs
+                         WHERE entity_id = ? AND occurred_at > ?
+                        """,
+                        term,
+                        before);
+
+        // #587: ranking_weight_changes is the term's own history, and the console's trail
+        // and an investigation read audit_logs, which had nothing from here.
+        assertThat(trail).hasSize(1);
+        Map<String, Object> row = trail.getFirst();
+        assertThat(row).containsEntry("action", "ranking.weight_changed").containsEntry("entity_type", "ranking_weight");
+        assertThat(row).containsEntry("actor_id", curator.id()).containsEntry("actor_type", "MODERATOR");
+        assertThat((String) row.get("detail"))
+                .contains("term=editorial")
+                .contains("before: weight=0.15")
+                .contains("after: weight=0.45")
+                .doesNotContain("staff picks");
     }
 
     @Test

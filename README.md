@@ -167,8 +167,9 @@ ops/seed/run.sh
 
 That writes 26 campaigns across every lifecycle state, 923 accounts — one per
 console role — and the pledges, charges, ledger postings, refunds, disputes and
-payouts behind them. Every account signs in with `IdeaNest2026!`; the role table
-is in the directory's own README.
+payouts behind them. Every account shares one password, generated on your
+machine the first time the seed runs and printed when it finishes; the role
+table is in the directory's own README.
 
 **Development only.** The accounts share one password and the payment records
 name providers that were never called. Do not point it at anything deployed.

@@ -38,7 +38,7 @@ class OidcProviderConfigurationTests {
         // verifier and left null so that this test does not silently start
         // depending on an unrelated setting.
         AuthProperties properties =
-                new AuthProperties(null, null, null, 0, 0, null, null, null, null, oauth, null, false);
+                new AuthProperties(null, null, null, 0, 0, null, null, null, null, oauth, null, false, false);
         return new JwksOidcIdentityVerifier(properties, Clock.systemUTC());
     }
 

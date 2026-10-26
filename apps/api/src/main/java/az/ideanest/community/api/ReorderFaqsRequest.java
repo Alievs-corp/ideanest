@@ -1,5 +1,6 @@
 package az.ideanest.community.api;
 
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ import java.util.UUID;
  * against what exists and produces a message naming the identifiers that are the problem,
  * which is what a stale client needs to hear.
  */
-public record ReorderFaqsRequest(List<UUID> faqIds) {
+public record ReorderFaqsRequest(@Size(max = 200) List<UUID> faqIds) {
 
     public ReorderFaqsRequest {
         faqIds = faqIds == null ? List.of() : faqIds;

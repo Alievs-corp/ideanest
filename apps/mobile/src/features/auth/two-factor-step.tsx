@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import { Field, InlineAlert, Pill, TextInput } from '../../components/ui';
 import { verifyTwoFactor } from '../../lib/auth';
 import { describeAuthFailure, type AuthFailure } from '../../lib/auth-failures';
@@ -45,6 +46,8 @@ export function TwoFactorStep({
   /** Clears the password and returns to the credentials. */
   readonly onStartOver: () => void;
 }) {
+  // The second factor is typed here, and a recovery code is single-use and permanent (#587).
+  usePreventScreenCapture('two-factor-sign-in');
   const t = useT();
   const [code, setCode] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');

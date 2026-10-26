@@ -3,6 +3,7 @@ package az.ideanest.notification.application;
 import az.ideanest.notification.domain.DevicePlatform;
 import az.ideanest.notification.domain.PushDevice;
 import az.ideanest.notification.infrastructure.PushDeviceRepository;
+import az.ideanest.shared.access.SignedInAccounts;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,6 +26,18 @@ import org.springframework.transaction.annotation.Transactional;
  * a notification is not a small disclosure — §4.10's push copy names amounts and campaign
  * titles. So a token belongs to whoever signed in most recently and to nobody else, which
  * the unique index on {@code token} is what makes expressible.
+ *
+ * <p><strong>A token moves only from an account that has signed out everywhere</strong>
+ * (#587). Moving it whenever asked meant anybody who had once read a token — off a phone they
+ * borrowed, or out of a log — could take another person's notifications away by registering
+ * it to themselves, and could stop them with a sign-out call for a token that was never
+ * theirs. Signing out on the phone forgets the registration ({@link #forget}), so the
+ * ordinary second person on a phone finds no row to take over; a row that is still there
+ * belongs to somebody who did not sign out, and while they hold a live session anywhere
+ * {@link #register} refuses. It is the account rather than the session on that phone that is
+ * asked, because a registration does not record which session made it: the cost is that a
+ * phone whose first user's sign-out never reached the service stays theirs until their other
+ * sessions end, which errs towards the person whose notifications they are.
  *
  * <p>The reverse — one person, several phones — is a real case and is supported: the
  * tokens differ, so the rows differ, and a send goes to all of them.
@@ -56,10 +69,12 @@ public class PushDevices {
     private static final int MAX_APP_VERSION = 40;
 
     private final PushDeviceRepository devices;
+    private final SignedInAccounts signedIn;
     private final Clock clock;
 
-    public PushDevices(PushDeviceRepository devices, Clock clock) {
+    public PushDevices(PushDeviceRepository devices, SignedInAccounts signedIn, Clock clock) {
         this.devices = devices;
+        this.signedIn = signedIn;
         this.clock = clock;
     }
 
@@ -73,6 +88,8 @@ public class PushDevices {
      *
      * @throws UnusableDeviceTokenException when the token is not one Expo could have
      *     issued. See the class comment for why this is refused rather than stored
+     * @throws DeviceTokenHeldException when another account holds the token and is still
+     *     signed in somewhere. See the class comment
      */
     @Transactional
     public PushDevice register(
@@ -97,6 +114,10 @@ public class PushDevices {
              * and neither belongs in a log stream (§17.4).
              */
             if (!device.getUserId().equals(userId)) {
+                if (signedIn.hasLiveSession(device.getUserId())) {
+                    log.info("Push registration {} kept: its account is still signed in.", device.getId());
+                    throw new DeviceTokenHeldException();
+                }
                 log.info("Push registration {} moved to a different account.", device.getId());
             }
             device.seen(userId, platform, name, version, now);
@@ -125,13 +146,17 @@ public class PushDevices {
      * <p>Deleting rather than marking revoked: there is nothing a kept row could be used
      * for. The next sign-in registers again, with whatever token is current then, and a
      * token that has been sitting unused is more likely to be stale than the fresh one.
+     *
+     * <p><strong>Only this account's registration.</strong> It deleted by token alone, so
+     * anybody holding a token could stop another person's notifications (#587). Somebody
+     * signing out of a phone registered to somebody else has nothing of theirs to forget.
      */
     @Transactional
-    public void forget(String token) {
+    public void forget(UUID userId, String token) {
         if (token == null || token.isBlank()) {
             return;
         }
-        devices.deleteByToken(token.trim());
+        devices.deleteByTokenAndUserId(token.trim(), userId);
     }
 
     /**
