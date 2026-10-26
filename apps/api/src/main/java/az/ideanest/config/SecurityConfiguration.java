@@ -71,6 +71,16 @@ public class SecurityConfiguration {
                         // component detail; see application.yml.
                         .requestMatchers("/actuator/health", "/actuator/health/**")
                         .permitAll()
+                        // Every other actuator path is refused on this chain,
+                        // whoever is asking (#587). /actuator/prometheus is the
+                        // one that matters: MetricsScrapeSecurity claims it
+                        // ahead of this chain only when a scrape password is
+                        // configured, and without this line a deployment that
+                        // had not configured one served its metrics to any
+                        // signed-in account through the rule at the bottom.
+                        // "No credential, no endpoint" has to hold here too.
+                        .requestMatchers("/actuator/**")
+                        .denyAll()
                         // ---- #214: is the platform open ------------------
                         // What clients poll during maintenance, so it must
                         // answer without a session: a reader cannot obtain one

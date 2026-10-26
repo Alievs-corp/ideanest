@@ -1,14 +1,26 @@
 package az.ideanest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.support.AbstractIntegrationTest;
+import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.web.FilterChainProxy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  * The health endpoint is what the load balancer and the orchestrator read to
@@ -19,6 +31,15 @@ class HealthEndpointTests extends AbstractIntegrationTest {
 
     @Autowired
     private TestRestTemplate rest;
+
+    @Autowired
+    private WebApplicationContext context;
+
+    @Autowired
+    private FilterChainProxy securityFilters;
+
+    @Autowired
+    private AccessTokenIssuer tokens;
 
     @Test
     @DisplayName("health reports UP without leaking component detail")
@@ -74,6 +95,45 @@ class HealthEndpointTests extends AbstractIntegrationTest {
         // attempts family went with the stored-card collection (#45), and its alert with it.
         assertThat(body).contains("ideanest_ledger_reconciliation_findings");
         assertThat(body).contains("ideanest_queue_waiting");
+    }
+
+    /**
+     * #587: the API's own chain refuses {@code /actuator/prometheus}, so that a deployment with
+     * no scrape credential has no metrics endpoint rather than one any account can read.
+     *
+     * <p>The suite configures a credential, so {@code MetricsScrapeSecurity} claims the path
+     * ahead of the API chain in every other test, and a request through the real filter stack
+     * never reaches the rule being asserted. This one runs the API chain alone -- exactly what
+     * an unconfigured deployment runs -- rather than starting a second context, and a second
+     * PostgreSQL container, for one property. Before the fix the signed-in account below was
+     * handed the whole scrape.
+     */
+    @Test
+    @DisplayName("without the scrape chain, a signed-in account is refused the metrics endpoint")
+    void metricsAreRefusedByTheApiChain() throws Exception {
+        MockHttpServletRequest probe = new MockHttpServletRequest("GET", "/v1/me");
+        SecurityFilterChain apiChain = securityFilters.getFilterChains().stream()
+                .filter(chain -> chain.matches(probe))
+                .findFirst()
+                .orElseThrow();
+        MockMvc apiChainOnly = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(new FilterChainProxy(apiChain))
+                .build();
+
+        String accessToken = tokens.issue(
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        new AccessTokenIssuer.AccountStanding(true, false),
+                        false,
+                        Instant.now())
+                .value();
+
+        apiChainOnly
+                .perform(get("/actuator/prometheus").header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isForbidden());
+        apiChainOnly.perform(get("/actuator/prometheus")).andExpect(status().isUnauthorized());
+        // And the container's probes still answer on the same chain.
+        apiChainOnly.perform(get("/actuator/health/liveness")).andExpect(status().isOk());
     }
 
     @Test
