@@ -150,7 +150,9 @@ describe('the audit trail', () => {
     expect(within(chips).getByRole('button', { name: COPY.entity.payout as string })).toBeInTheDocument();
     expect(within(chips).getByRole('button', { name: COPY.entity.refund as string })).toBeInTheDocument();
     expect(within(chips).getByRole('button', { name: COPY.entity.legal_document as string })).toBeInTheDocument();
-    expect(within(chips).queryByRole('button', { name: COPY.entity.collection as string })).not.toBeInTheDocument();
+    // Curation has written `collection` rows since #587, and ranking weight changes their own kind.
+    expect(within(chips).getByRole('button', { name: COPY.entity.collection as string })).toBeInTheDocument();
+    expect(within(chips).getByRole('button', { name: COPY.entity.ranking_weight as string })).toBeInTheDocument();
   });
 
   it('appends the next page, and drops a page that arrives after the question changed', async () => {
