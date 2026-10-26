@@ -8,6 +8,7 @@ import az.ideanest.reward.domain.RewardTierItem;
 import az.ideanest.reward.infrastructure.ItemRepository;
 import az.ideanest.reward.infrastructure.RewardTierItemRepository;
 import az.ideanest.shared.HttpsAddresses;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,16 +52,19 @@ public class ItemService {
     private final RewardTierItemRepository compositions;
     private final RewardAccess access;
     private final ProjectRevisionService revisions;
+    private final EntityManager entityManager;
 
     public ItemService(
             ItemRepository items,
             RewardTierItemRepository compositions,
             RewardAccess access,
-            ProjectRevisionService revisions) {
+            ProjectRevisionService revisions,
+            EntityManager entityManager) {
         this.items = items;
         this.compositions = compositions;
         this.access = access;
         this.revisions = revisions;
+        this.entityManager = entityManager;
     }
 
     /**
@@ -102,11 +106,24 @@ public class ItemService {
     public ItemDetail edit(UUID itemId, UUID accountId, ItemPatch patch) {
         RewardAccess.AuthorisedItem authorised = access.requireEditableItemWithLocks(itemId, accountId);
         Item item = authorised.item();
+        boolean held = authorised.locks().rewardWritingHeld();
+
+        if (held) {
+            // Whether the public sees this item is what a moderator's approval of the revision
+            // changes, and the approval locks the campaign. So the campaign is locked before that
+            // is asked and the row read again after, rather than both coming from before the lock:
+            // an approval landing in between sent the edit of an item it had just made public
+            // straight to the row, or the edit of one it had just taken out of every tier to
+            // stageItem, which has nothing public to stage against and answered 500. The refresh is
+            // also what keeps the stock code below from writing the row back over the approval.
+            revisions.lockCampaign(item.getProjectId());
+            entityManager.refresh(item);
+        }
 
         // The stock code is the creator's own bookkeeping, and is written at once either way.
         patch.sku().ifPresent(sku -> item.setSku(uniqueSku(item.getProjectId(), itemId, sku)));
 
-        if (authorised.locks().rewardWritingHeld() && items.isInAnApprovedTier(itemId)) {
+        if (held && items.isInAnApprovedTier(itemId)) {
             CatalogueWriting.Item staged =
                     revisions.stageItem(item.getProjectId(), itemId, accountId, before -> applied(before, patch));
             return ItemDetail.of(item, staged);
