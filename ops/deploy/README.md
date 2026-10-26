@@ -194,6 +194,29 @@ reader, so those reads share the web container's search budget. They did before
 would mean reading request headers in pages that are deliberately static, so it
 is left as it is.
 
+The web's own per-address limit (`POST /api/rum`) keys on the **last**
+`X-Forwarded-For` hop, the one Traefik appended, so it settles on the same
+address the API does (#587).
+
+## The web's response headers (#587)
+
+`apps/web/next.config.mjs` sends a Content-Security-Policy, HSTS,
+`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, a Referrer-Policy
+(`no-referrer` on the pages whose address carries an e-mail token) and a
+Permissions-Policy on every response. The file explains each value, and why the
+policy allows inline script rather than carrying a nonce or a hash.
+
+Two things are the owner's to decide and are not set from this repository:
+
+- **HSTS covers the apex only**: `max-age=31536000`, no `includeSubDomains`, no
+  `preload`. Add them once every host under the domain is known to be https-only.
+  Cloudflare's own HSTS setting, if it is ever switched on, sends a second header;
+  keep the two the same.
+- **A new third-party origin needs the policy changed.** A script, frame or
+  stylesheet from a host the policy does not name is blocked in the browser and
+  shows up only as a console error. The sign-in providers are named; an analytics
+  or support widget would have to be added in the same change that adds it.
+
 ## Building the images by hand
 
 ```bash
