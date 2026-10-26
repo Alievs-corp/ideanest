@@ -13,6 +13,8 @@ import {
 import { ApiError } from '../../lib/api/problem';
 import type { CampaignControlsCopy } from '../../lib/i18n/campaign-controls-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { dateTimeFormat } from '../../lib/i18n/formats';
+import { DEFAULT_LOCALE, isLocale } from '../../lib/i18n/locale';
 import { extendProject, withdrawProject } from '../../lib/projects/api';
 import type { ProjectState } from '../../lib/projects/api';
 
@@ -166,21 +168,25 @@ export function CampaignControls({
       {mode === 'idle' && notice === null && (
         <div className="mt-5 flex flex-col gap-5">
           {canExtend && window !== null && (
-            <div className="flex flex-wrap items-end gap-3">
-              <Field label={copy.extendLabel} hint={fillPlaceholders(copy.extendHint, { latest })}>
-                <TextInput
-                  type="date"
-                  value={day}
-                  min={window.firstDay}
-                  max={window.latestDay}
-                  onChange={(event) => setDay(event.currentTarget.value)}
-                />
-              </Field>
-              <Pill variant="outline" onClick={() => start('confirm-extend')}>
-                <CalendarPlus className="size-4" aria-hidden />
-                {copy.extend}
-              </Pill>
-            </div>
+            // The action shares the input's row inside the field, so it lines up with the input
+            // rather than with the input and its hint together.
+            <Field label={copy.extendLabel} hint={fillPlaceholders(copy.extendHint, { latest })}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="min-w-0 sm:max-w-md sm:flex-1">
+                  <TextInput
+                    type="date"
+                    value={day}
+                    min={window.firstDay}
+                    max={window.latestDay}
+                    onChange={(event) => setDay(event.currentTarget.value)}
+                  />
+                </div>
+                <Pill variant="outline" className="self-start sm:self-auto" onClick={() => start('confirm-extend')}>
+                  <CalendarPlus className="size-4" aria-hidden />
+                  {copy.extend}
+                </Pill>
+              </div>
+            </Field>
           )}
 
           {canWithdraw && (
@@ -250,12 +256,19 @@ function Confirmation({
   );
 }
 
+/**
+ * A calendar day in the reader's language. Through the shared formatter, not `Intl` directly:
+ * browsers ship no Azerbaijani month names, and a bare `Intl.DateTimeFormat('az')` printed
+ * "2027 M01 14".
+ */
 function formatDay(day: string, locale: string): string {
-  try {
-    return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
-  } catch {
-    return day;
-  }
+  const at = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(at.getTime())) return day;
+  return dateTimeFormat(
+    isLocale(locale) ? locale : DEFAULT_LOCALE,
+    { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' },
+    'extend-day',
+  ).format(at);
 }
 
 /** The service's reason, in words. A refusal without one is the generic failure, not a guess. */

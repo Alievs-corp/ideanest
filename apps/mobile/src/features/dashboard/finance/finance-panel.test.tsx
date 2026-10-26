@@ -238,7 +238,10 @@ describe('FinancePanel summary', () => {
 
     expect(within(screen.getByTestId('finance-unbalanced')).getByText(en.dashboard.finance.unbalancedTitle)).toBeTruthy();
     expect(
-      screen.getByLabelText(`${en.dashboard.finance.account} creator:abc, ${en.dashboard.finance.balance} -10,000.00 AZN`),
+      // The creator's own account in words (#597), not the identifier after the prefix.
+      screen.getByLabelText(
+        `${en.dashboard.finance.account} ${en.dashboard.finance.accounts.creator}, ${en.dashboard.finance.balance} -10,000.00 AZN`,
+      ),
     ).toBeTruthy();
   });
 });

@@ -5,6 +5,7 @@ import { formatExactTime } from '../../lib/time';
 import { formatMoney } from '../../lib/money';
 import type { Backer } from '@ideanest/dashboard/backers';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { regionNames } from '../../lib/i18n/formats';
 import type { BackerTableCopy } from '../../lib/i18n/dashboard-copy';
 
 /**
@@ -50,36 +51,45 @@ export function BackerTable({ backers, label, copy }: BackerTableProps) {
       role="region"
       aria-label={label}
       tabIndex={0}
-      className="mt-6 overflow-x-auto rounded-[14px] border border-fg/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+      className="mt-6 overflow-x-auto rounded-[14px] border border-fg/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
     >
-      <table className="w-full min-w-[720px] border-collapse text-sm">
+      {/*
+        Below `sm` each row lays out as a card: a 720px table on a phone is a table read through
+        a keyhole. The explicit roles keep it a table for a screen reader whichever display the
+        rows have, since a table whose rows are not `display: table-row` loses them in Chrome.
+      */}
+      <table role="table" className="w-full border-collapse text-sm max-sm:block sm:min-w-[720px]">
         <caption className="sr-only">{label}</caption>
-        <thead>
-          <tr className="border-b border-fg/8 text-left text-fg-64">
-            <th scope="col" className="px-4 py-3 font-medium">
+        <thead role="rowgroup" className="max-sm:sr-only">
+          <tr role="row" className="border-b border-fg/8 text-left text-fg-64">
+            <th scope="col" role="columnheader" className="px-4 py-3 font-medium">
               {copy.backer}
             </th>
-            <th scope="col" className="px-4 py-3 font-medium">
+            <th scope="col" role="columnheader" className="px-4 py-3 font-medium">
               {copy.reward}
             </th>
-            <th scope="col" className="px-4 py-3 text-right font-medium">
+            <th scope="col" role="columnheader" className="px-4 py-3 text-right font-medium">
               {copy.pledged}
             </th>
-            <th scope="col" className="px-4 py-3 font-medium">
+            <th scope="col" role="columnheader" className="px-4 py-3 font-medium">
               {copy.state}
             </th>
-            <th scope="col" className="px-4 py-3 font-medium">
+            <th scope="col" role="columnheader" className="px-4 py-3 font-medium">
               {copy.destination}
             </th>
-            <th scope="col" className="px-4 py-3 font-medium">
+            <th scope="col" role="columnheader" className="px-4 py-3 font-medium">
               {copy.backed}
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup" className="max-sm:block">
           {backers.map((backer) => (
-            <tr key={backer.pledgeId} className="border-b border-fg/6 last:border-0 hover:bg-[--surface-3]">
-              <th scope="row" className="px-4 py-3 text-left font-normal">
+            <tr
+              key={backer.pledgeId}
+              role="row"
+              className="border-b border-fg/6 last:border-0 hover:bg-surface-3 max-sm:grid max-sm:grid-cols-2 max-sm:gap-x-4 max-sm:gap-y-1.5 max-sm:p-4"
+            >
+              <th scope="row" role="rowheader" className="px-4 py-3 text-left font-normal max-sm:col-span-2 max-sm:p-0">
                 <span className="block text-fg">{backer.name}</span>
                 <span className="block text-fg-64">{backer.email}</span>
                 {backer.anonymous ? (
@@ -89,16 +99,22 @@ export function BackerTable({ backers, label, copy }: BackerTableProps) {
                   </span>
                 ) : null}
               </th>
-              <td className="px-4 py-3 text-fg-64">
+              <td role="cell" className="px-4 py-3 text-fg-64 max-sm:col-span-2 max-sm:p-0">
                 {/* A pledge that took no reward is §4.5's PL-02 — support, which is a
                     thing a backer chose and not a blank cell. */}
                 {backer.rewardTitle ??
                   (backer.rewardTierId === undefined ? copy.noReward : copy.removedTier)}
               </td>
-              <td className="px-4 py-3 text-right tabular-nums text-fg">{formatMoney(backer.amount)}</td>
-              <td className="px-4 py-3 text-fg-64">{copy.states[backer.state]}</td>
-              <td className="px-4 py-3 text-fg-64">{backer.country ?? '—'}</td>
-              <td className="px-4 py-3 text-fg-64">
+              <td role="cell" className="px-4 py-3 text-right tabular-nums whitespace-nowrap text-fg max-sm:p-0 max-sm:text-left max-sm:font-medium">
+                {formatMoney(backer.amount)}
+              </td>
+              <td role="cell" className="px-4 py-3 text-fg-64 max-sm:p-0 max-sm:text-right">
+                {copy.states[backer.state]}
+              </td>
+              <td role="cell" className="px-4 py-3 text-fg-64 max-sm:p-0">
+                {backer.country == null ? '—' : (regionNames(locale)?.of(backer.country) ?? backer.country)}
+              </td>
+              <td role="cell" className="px-4 py-3 text-fg-64 max-sm:p-0 max-sm:text-right">
                 <time dateTime={backer.backedAt}>{formatExactTime(backer.backedAt, locale)}</time>
               </td>
             </tr>
