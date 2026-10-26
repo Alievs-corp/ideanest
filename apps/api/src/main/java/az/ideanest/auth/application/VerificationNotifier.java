@@ -56,4 +56,13 @@ public interface VerificationNotifier {
      * account.
      */
     void sendEmailChangeNotice(EmailAddress previousEmail, EmailAddress newEmail, String locale);
+
+    /**
+     * Sent to an address somebody asked to move another account onto (#587).
+     *
+     * <p>The address-change form answers identically whether or not the address is
+     * taken, so — as with {@link #sendRegistrationAttemptOnExistingAccount} — this is
+     * the only signal, and it goes to the owner rather than to whoever typed it.
+     */
+    void sendEmailChangeAttemptOnExistingAccount(EmailAddress email, String locale);
 }

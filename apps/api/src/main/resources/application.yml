@@ -1253,6 +1253,13 @@ ideanest:
     # read logs, and that set is always larger than it looks. On in local only.
     log-verification-links: false
 
+    # #587: auth mail leaves on a pool of its own, after the request has been
+    # answered. On the request's thread a password reset for a registered address
+    # took an SMTP round trip longer than one for an unknown address, which
+    # answered "is this address registered?" for anyone with a stopwatch. True only
+    # in the test profile. See VerificationNotificationListener.
+    synchronous-mail: false
+
     argon2:
       # OWASP's recommendation: 19 MiB, two iterations, one lane. Memory is the
       # parameter that makes a GPU no better at this than a CPU. Raising these

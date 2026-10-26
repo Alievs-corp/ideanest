@@ -169,6 +169,9 @@ public class CredentialController {
      * account has changed yet. {@code users.email} moves when the new address
      * follows its link, and until then the old address still signs in, still
      * receives, and still resets.
+     *
+     * <p>The same 202 when the address already has an account (#587), so that this
+     * form cannot be used to ask whether one does. Its owner is told instead.
      */
     @PostMapping("/change-email")
     public ResponseEntity<Void> changeEmail(

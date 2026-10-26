@@ -39,6 +39,7 @@ public class RecordingVerificationNotifier implements VerificationNotifier {
     private final List<EmailAddress> passwordChangeNotices = new CopyOnWriteArrayList<>();
     private final List<SentEmailChange> emailChanges = new CopyOnWriteArrayList<>();
     private final List<SentEmailChangeNotice> emailChangeNotices = new CopyOnWriteArrayList<>();
+    private final List<EmailAddress> emailChangeAttempts = new CopyOnWriteArrayList<>();
 
     @Override
     public void sendEmailVerification(EmailAddress email, String token, String locale) {
@@ -68,6 +69,11 @@ public class RecordingVerificationNotifier implements VerificationNotifier {
     @Override
     public void sendEmailChangeNotice(EmailAddress previousEmail, EmailAddress newEmail, String locale) {
         emailChangeNotices.add(new SentEmailChangeNotice(previousEmail, newEmail, locale));
+    }
+
+    @Override
+    public void sendEmailChangeAttemptOnExistingAccount(EmailAddress email, String locale) {
+        emailChangeAttempts.add(email);
     }
 
     /** The most recent token sent to an address, if any. */
@@ -116,7 +122,13 @@ public class RecordingVerificationNotifier implements VerificationNotifier {
                 .count();
     }
 
+    /** Notices that somebody tried to move another account onto this address (#587). */
+    public long emailChangeAttemptsSentTo(EmailAddress email) {
+        return emailChangeAttempts.stream().filter(email::equals).count();
+    }
+
     public void clear() {
+        emailChangeAttempts.clear();
         verifications.clear();
         existingAccountWarnings.clear();
         passwordResets.clear();

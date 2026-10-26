@@ -201,16 +201,14 @@ public class AuthExceptionHandler {
     }
 
     /**
-     * §4.1's A-12: the address asked for already has an account.
+     * §4.1's A-12: the address being confirmed has acquired an account since the change
+     * was asked for.
      *
      * <p>409 rather than 400: the request was well formed and what it conflicts with is
      * the state of the world, which retrying identically will not change.
      *
-     * <p><strong>Saying so is not registration's enumeration oracle.</strong> The caller
-     * is signed in, the endpoint is rate limited per account, and every accepted request
-     * mails the address they named. {@link EmailAlreadyInUseException} carries the whole
-     * argument; the short version is that a change which silently did nothing would
-     * leave somebody waiting for a confirmation that is never coming.
+     * <p>Raised by the confirmation only. Asking for a taken address is answered like
+     * any other request (#587); {@link EmailAlreadyInUseException} says why.
      */
     @ExceptionHandler(EmailAlreadyInUseException.class)
     public ResponseEntity<ProblemDetail> handleEmailInUse(EmailAlreadyInUseException exception) {

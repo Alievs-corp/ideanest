@@ -35,6 +35,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param refreshCookie how the refresh token is delivered to a browser.
  * @param logVerificationLinks whether to write verification links to the log.
  *     Local development only — see {@code application-local.yml}.
+ * @param synchronousMail whether auth mail is sent on the request's own thread.
+ *     False everywhere but the test suite, which reads what was sent the moment a
+ *     request returns. Sending on the request thread is what made a password reset
+ *     for a registered address measurably slower than one for an unknown address
+ *     (#587) — see {@code VerificationNotificationListener}. Named for the exception
+ *     so that a configuration which omits it gets the safe behaviour.
  */
 @ConfigurationProperties(prefix = "ideanest.auth")
 public record AuthProperties(
@@ -49,7 +55,8 @@ public record AuthProperties(
         TwoFactor twoFactor,
         OAuth oauth,
         RefreshCookie refreshCookie,
-        boolean logVerificationLinks) {
+        boolean logVerificationLinks,
+        boolean synchronousMail) {
 
     /**
      * Argon2id parameters.

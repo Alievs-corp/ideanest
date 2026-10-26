@@ -57,7 +57,7 @@ class SignInBackoffTests {
                 5, 3, 20, 5, 3, 10, 5, 5, 5, 10, 20,
                 Duration.ofSeconds(30), Duration.ofMinutes(15), Duration.ofHours(24),
                 Duration.ofMinutes(15));
-        return new AuthProperties(null, null, null, 12, 256, null, limits, null, null, null, null, false);
+        return new AuthProperties(null, null, null, 12, 256, null, limits, null, null, null, null, false, false);
     }
 
     private void fail(int times) {
