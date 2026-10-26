@@ -132,6 +132,17 @@ describe('RevisionNotice', () => {
     expect(screen.getByLabelText(WORDS.submit)).toBeTruthy();
   });
 
+  it('names held items and shipping zones in words, not as the raw field names (#587)', async () => {
+    await show(project({ revision: { ...DRAFT.revision!, changedFields: ['items', 'shippingZones'] } }));
+    // The shared copy's words win once it names these sections; until then the app's own do.
+    const shared = WORDS.fields as Record<string, string | undefined>;
+    const own = en.mobile.editor.rewards.heldItem;
+    const items = shared.items ?? own.revisionItemsField;
+    const zones = shared.shippingZones ?? own.revisionShippingZonesField;
+    expect(screen.getByTestId('revision-changed')).toHaveTextContent(`${WORDS.changedHeading}: ${items}, ${zones}`);
+    expect(screen.getByLabelText(WORDS.submit)).toBeTruthy();
+  });
+
   it('says a pending edit is with a moderator, and still lets it be sent back to nothing', async () => {
     await show(PENDING);
     expect(screen.getByText(WORDS.pendingTitle)).toBeTruthy();
