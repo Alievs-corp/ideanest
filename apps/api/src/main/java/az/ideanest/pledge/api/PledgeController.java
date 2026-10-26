@@ -231,7 +231,7 @@ public class PledgeController {
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID id,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
-            @RequestBody RaisePledgeRequest request) {
+            @Valid @RequestBody RaisePledgeRequest request) {
 
         UUID backerId = callerOf(accessToken);
         enforcePledgeRateLimit(backerId);
@@ -256,7 +256,7 @@ public class PledgeController {
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID id,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
-            @RequestBody PatchPledgeRequest request) {
+            @Valid @RequestBody PatchPledgeRequest request) {
 
         UUID backerId = callerOf(accessToken);
         enforcePledgeRateLimit(backerId);

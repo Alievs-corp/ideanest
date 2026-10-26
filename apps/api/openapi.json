@@ -11743,7 +11743,9 @@
             "type" : "array",
             "items" : {
               "type" : "string"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           }
         }
       },
@@ -12293,7 +12295,8 @@
             "items" : {
               "$ref" : "#/components/schemas/PledgeAddonBody"
             },
-            "minItems" : 1
+            "maxItems" : 200,
+            "minItems" : 0
           }
         },
         "required" : [ "addons" ]
@@ -12960,7 +12963,8 @@
               "type" : "string",
               "enum" : [ "EDIT_BASICS", "EDIT_REWARDS", "EDIT_STORY", "SUBMIT_FOR_REVIEW", "PUBLISH_UPDATES", "RESPOND_TO_COMMENTS", "MANAGE_FAQ", "VIEW_FINANCES", "MANAGE_COLLABORATORS" ]
             },
-            "minItems" : 1,
+            "maxItems" : 64,
+            "minItems" : 0,
             "uniqueItems" : true
           }
         },
@@ -13555,7 +13559,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/RewardItemBody"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           },
           "limitQuantity" : {
             "type" : "integer",
@@ -14133,7 +14139,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PledgeAddonBody"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           },
           "contribution" : {
             "$ref" : "#/components/schemas/Money"
@@ -14911,7 +14919,8 @@
               "type" : "string",
               "enum" : [ "EDIT_BASICS", "EDIT_REWARDS", "EDIT_STORY", "SUBMIT_FOR_REVIEW", "PUBLISH_UPDATES", "RESPOND_TO_COMMENTS", "MANAGE_FAQ", "VIEW_FINANCES", "MANAGE_COLLABORATORS" ]
             },
-            "minItems" : 1,
+            "maxItems" : 64,
+            "minItems" : 0,
             "uniqueItems" : true
           },
           "email" : {
@@ -15032,6 +15041,12 @@
           "projectId" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "revisionChangedFields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           },
           "sku" : {
             "type" : "string"
@@ -17061,7 +17076,9 @@
           "countries" : {
             "type" : "array",
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "maxLength" : 300,
+              "minLength" : 0
             }
           },
           "coverImage" : {
@@ -17784,7 +17801,9 @@
             "items" : {
               "type" : "string",
               "format" : "uuid"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           }
         }
       },
@@ -17797,7 +17816,8 @@
               "type" : "string",
               "format" : "uuid"
             },
-            "minItems" : 1
+            "maxItems" : 500,
+            "minItems" : 0
           }
         },
         "required" : [ "projectIds" ]
@@ -17810,7 +17830,9 @@
             "items" : {
               "type" : "string",
               "format" : "uuid"
-            }
+            },
+            "maxItems" : 500,
+            "minItems" : 0
           }
         }
       },
@@ -18059,7 +18081,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/AnswerBody"
-            }
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           },
           "pledgeId" : {
             "type" : "string",
@@ -18134,6 +18158,48 @@
           }
         }
       },
+      "RevisionItem" : {
+        "type" : "object",
+        "properties" : {
+          "changedFields" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "live" : {
+            "$ref" : "#/components/schemas/RevisionItemWriting"
+          },
+          "proposed" : {
+            "$ref" : "#/components/schemas/RevisionItemWriting"
+          }
+        }
+      },
+      "RevisionItemWriting" : {
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "imageUrl" : {
+            "type" : "string"
+          },
+          "isDigital" : {
+            "type" : "boolean"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "weightGrams" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "RevisionQueueResponse" : {
         "type" : "object",
         "properties" : {
@@ -18182,6 +18248,12 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionItem"
+            }
+          },
           "live" : {
             "$ref" : "#/components/schemas/ProjectEdit"
           },
@@ -18200,6 +18272,9 @@
             "items" : {
               "$ref" : "#/components/schemas/RevisionRewardBody"
             }
+          },
+          "shippingZones" : {
+            "$ref" : "#/components/schemas/RevisionZones"
           },
           "status" : {
             "type" : "string"
@@ -18388,6 +18463,41 @@
           },
           "zoneName" : {
             "type" : "string"
+          }
+        }
+      },
+      "RevisionZone" : {
+        "type" : "object",
+        "properties" : {
+          "countryCodes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        }
+      },
+      "RevisionZones" : {
+        "type" : "object",
+        "properties" : {
+          "live" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionZone"
+            }
+          },
+          "proposed" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RevisionZone"
+            }
           }
         }
       },
@@ -18831,6 +18941,8 @@
               "type" : "string",
               "enum" : [ "CURATION", "HEALTH" ]
             },
+            "maxItems" : 64,
+            "minItems" : 0,
             "uniqueItems" : true
           }
         },
@@ -19136,13 +19248,17 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ShippingRuleBody"
-            }
+            },
+            "maxItems" : 300,
+            "minItems" : 0
           },
           "zoneRates" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ShippingZoneRateBody"
-            }
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           }
         }
       },
@@ -19153,7 +19269,9 @@
             "type" : "array",
             "items" : {
               "type" : "string"
-            }
+            },
+            "maxItems" : 300,
+            "minItems" : 0
           },
           "id" : {
             "type" : "string",
@@ -19167,6 +19285,9 @@
       "ShippingZoneListResponse" : {
         "type" : "object",
         "properties" : {
+          "pending" : {
+            "type" : "boolean"
+          },
           "zones" : {
             "type" : "array",
             "items" : {
@@ -19200,7 +19321,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ShippingZoneBody"
-            }
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           }
         }
       },
@@ -19790,7 +19913,9 @@
             "type" : "array",
             "items" : {
               "type" : "string"
-            }
+            },
+            "maxItems" : 200,
+            "minItems" : 0
           },
           "helpText" : {
             "type" : "string"
@@ -19828,7 +19953,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/SurveyQuestionBody"
-            }
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           },
           "respondBy" : {
             "type" : "string",
@@ -20503,7 +20630,9 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/Change"
-            }
+            },
+            "maxItems" : 500,
+            "minItems" : 0
           }
         },
         "required" : [ "preferences" ]

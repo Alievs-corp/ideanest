@@ -9,6 +9,7 @@ import az.ideanest.project.domain.StoryDocuments;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -130,8 +131,8 @@ class StoryDocumentsTests {
         @Test
         @DisplayName("both embed providers on the allow-list are accepted")
         void bothProvidersAreAccepted() {
-            accepted("{\"type\": \"embed\", \"provider\": \"youtube\", \"url\": \"https://y.com/a\", \"title\": \"A\"}");
-            accepted("{\"type\": \"embed\", \"provider\": \"vimeo\", \"url\": \"https://v.com/a\", \"title\": \"A\"}");
+            accepted("{\"type\": \"embed\", \"provider\": \"youtube\", \"url\": \"https://youtu.be/a\", \"title\": \"A\"}");
+            accepted("{\"type\": \"embed\", \"provider\": \"vimeo\", \"url\": \"https://vimeo.com/1\", \"title\": \"A\"}");
         }
 
         @Test
@@ -336,10 +337,34 @@ class StoryDocumentsTests {
         }
 
         @Test
+        @DisplayName("an embed's address is on its provider's own hosts, over https")
+        void theAddressIsTheProviders() {
+            // #587: the page renders an embed as a link labelled "Watch on YouTube", so an
+            // embed that said youtube and pointed anywhere was a phishing link in the
+            // platform's own words.
+            for (String url : List.of(
+                    "https://example.net/watch?v=x",
+                    "https://youtube.com.example.net/watch?v=x",
+                    "https://youtube.com@example.net/watch?v=x",
+                    "https://vimeo.com/1",
+                    "http://www.youtube.com/watch?v=x",
+                    "https://www.youtube.com:8443/watch?v=x")) {
+                StoryDocumentInvalidException refused = refusal(withBlock(
+                        "{\"type\": \"embed\", \"provider\": \"youtube\", \"url\": \"" + url + "\", \"title\": \"A\"}"));
+
+                assertThat(refused.path()).as(url).isEqualTo("blocks[0].url");
+            }
+            accepted("{\"type\": \"embed\", \"provider\": \"youtube\", \"url\": "
+                    + "\"https://www.youtube.com/watch?v=x\", \"title\": \"A\"}");
+            accepted("{\"type\": \"embed\", \"provider\": \"vimeo\", \"url\": "
+                    + "\"https://player.vimeo.com/video/1\", \"title\": \"A\"}");
+        }
+
+        @Test
         @DisplayName("an embed needs a title, which is the frame's accessible name")
         void theTitleIsRequired() {
             assertThat(refusal(withBlock(
-                                    "{\"type\": \"embed\", \"provider\": \"vimeo\", \"url\": \"https://v.com/a\"}"))
+                                    "{\"type\": \"embed\", \"provider\": \"vimeo\", \"url\": \"https://vimeo.com/1\"}"))
                             .path())
                     .isEqualTo("blocks[0].title");
         }
@@ -700,7 +725,7 @@ class StoryDocumentsTests {
                     {"version": 1, "blocks": [
                       {"type": "image", "url": "https://a.example/b.jpg", "width": 4, "height": 3,
                        "alt": "A long and careful description of the prototype in its case"},
-                      {"type": "embed", "provider": "youtube", "url": "https://y.com/a",
+                      {"type": "embed", "provider": "youtube", "url": "https://youtu.be/a",
                        "title": "An equally long title for the demonstration video"}
                     ]}
                     """);

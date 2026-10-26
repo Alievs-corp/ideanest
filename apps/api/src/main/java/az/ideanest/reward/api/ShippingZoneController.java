@@ -1,6 +1,7 @@
 package az.ideanest.reward.api;
 
 import az.ideanest.reward.application.ShippingZoneService;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -74,7 +75,7 @@ public class ShippingZoneController {
     public ResponseEntity<ShippingZoneListResponse> replace(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID projectId,
-            @RequestBody ShippingZonesRequest request) {
+            @Valid @RequestBody ShippingZonesRequest request) {
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())

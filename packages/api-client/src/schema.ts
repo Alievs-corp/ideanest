@@ -5927,6 +5927,7 @@ export interface components {
             name?: string;
             /** Format: uuid */
             projectId?: string;
+            revisionChangedFields?: string[];
             sku?: string;
             /** Format: date-time */
             updatedAt?: string;
@@ -7091,6 +7092,21 @@ export interface components {
             reason?: string;
             status?: string;
         };
+        RevisionItem: {
+            changedFields?: string[];
+            /** Format: uuid */
+            id?: string;
+            live?: components["schemas"]["RevisionItemWriting"];
+            proposed?: components["schemas"]["RevisionItemWriting"];
+        };
+        RevisionItemWriting: {
+            description?: string;
+            imageUrl?: string;
+            isDigital?: boolean;
+            name?: string;
+            /** Format: int32 */
+            weightGrams?: number;
+        };
         RevisionQueueResponse: {
             revisions?: components["schemas"]["Entry"][];
         };
@@ -7109,12 +7125,14 @@ export interface components {
             decidedAt?: string;
             /** Format: uuid */
             id?: string;
+            items?: components["schemas"]["RevisionItem"][];
             live?: components["schemas"]["ProjectEdit"];
             /** Format: uuid */
             projectId?: string;
             proposed?: components["schemas"]["ProjectEdit"];
             reason?: string;
             rewards?: components["schemas"]["RevisionRewardBody"][];
+            shippingZones?: components["schemas"]["RevisionZones"];
             status?: string;
             /** Format: date-time */
             submittedAt?: string;
@@ -7184,6 +7202,16 @@ export interface components {
             /** Format: uuid */
             zoneId?: string;
             zoneName?: string;
+        };
+        RevisionZone: {
+            countryCodes?: string[];
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+        };
+        RevisionZones: {
+            live?: components["schemas"]["RevisionZone"][];
+            proposed?: components["schemas"]["RevisionZone"][];
         };
         RewardImageBody: {
             blurDataUrl?: string;
@@ -7470,6 +7498,7 @@ export interface components {
             name?: string;
         };
         ShippingZoneListResponse: {
+            pending?: boolean;
             zones?: components["schemas"]["ShippingZoneBody"][];
         };
         ShippingZoneRateBody: {
@@ -8370,6 +8399,8 @@ export type SchemaRespondRequest = components['schemas']['RespondRequest'];
 export type SchemaRevealedBankAccount = components['schemas']['RevealedBankAccount'];
 export type SchemaRevisionBody = components['schemas']['RevisionBody'];
 export type SchemaRevisionDecisionResponse = components['schemas']['RevisionDecisionResponse'];
+export type SchemaRevisionItem = components['schemas']['RevisionItem'];
+export type SchemaRevisionItemWriting = components['schemas']['RevisionItemWriting'];
 export type SchemaRevisionQueueResponse = components['schemas']['RevisionQueueResponse'];
 export type SchemaRevisionRejectionBody = components['schemas']['RevisionRejectionBody'];
 export type SchemaRevisionReviewResponse = components['schemas']['RevisionReviewResponse'];
@@ -8379,6 +8410,8 @@ export type SchemaRevisionRewardItem = components['schemas']['RevisionRewardItem
 export type SchemaRevisionRewardWriting = components['schemas']['RevisionRewardWriting'];
 export type SchemaRevisionShippingRule = components['schemas']['RevisionShippingRule'];
 export type SchemaRevisionShippingZoneRate = components['schemas']['RevisionShippingZoneRate'];
+export type SchemaRevisionZone = components['schemas']['RevisionZone'];
+export type SchemaRevisionZones = components['schemas']['RevisionZones'];
 export type SchemaRewardImageBody = components['schemas']['RewardImageBody'];
 export type SchemaRewardItemBody = components['schemas']['RewardItemBody'];
 export type SchemaRewardPatchRequest = components['schemas']['RewardPatchRequest'];

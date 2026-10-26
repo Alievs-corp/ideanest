@@ -3,6 +3,7 @@ package az.ideanest.user.api;
 import az.ideanest.shared.Patched;
 import az.ideanest.user.application.ProfileEdit;
 import az.ideanest.user.application.ProfileSocialLink;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -41,7 +42,7 @@ public record ProfilePatchRequest(
         Patched<String> avatarUrl,
         Patched<String> websiteUrl,
         Patched<String> locationSlug,
-        Patched<List<SocialLinkBody>> socialLinks) {
+        Patched<@Size(max = 50) List<SocialLinkBody>> socialLinks) {
 
     public ProfilePatchRequest {
         // Absence is the neutral value, so a null component becomes absent rather than

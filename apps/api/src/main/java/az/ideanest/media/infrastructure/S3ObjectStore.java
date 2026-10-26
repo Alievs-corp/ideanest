@@ -96,7 +96,7 @@ public class S3ObjectStore implements ObjectStore {
     }
 
     @Override
-    public URI presignedPut(String key, String contentType, Duration window) {
+    public URI presignedPut(String key, String contentType, long contentLength, Duration window) {
         try {
             PutObjectRequest put = PutObjectRequest.builder()
                     .bucket(storage.bucket())
@@ -108,6 +108,13 @@ public class S3ObjectStore implements ObjectStore {
                      * bound on what the address may be used for.
                      */
                     .contentType(contentType)
+                    /*
+                     * Signed too (#587), as a header the presigner includes in the
+                     * signature: the store refuses a body whose length is not this one, which
+                     * is the bound a presigned PUT can carry in place of a POST policy's
+                     * content-length-range.
+                     */
+                    .contentLength(contentLength)
                     .build();
 
             PutObjectPresignRequest request = PutObjectPresignRequest.builder()

@@ -269,6 +269,9 @@ public class ProjectTransitionService {
         // them to fill in a field that was not the problem.
         requireEdge(project.getState(), ProjectState.LIVE);
         requireLaunchable(project);
+        // The plan again (#587): the goal stays editable after approval, so the ceiling the
+        // campaign was submitted and approved under is not a promise about what opens.
+        publishing.requireEntitled(project);
 
         return open(project, access.roleOf(project, accountId), accountId, null);
     }
@@ -320,6 +323,21 @@ public class ProjectTransitionService {
             // stops launching everybody else's campaigns, and because the row would be
             // retried, and would fail, every minute for as long as it existed.
             log.warn("Campaign {} is due to launch and has no goal or no duration; skipping it.", projectId);
+            return Optional.empty();
+        }
+        if (!publishing.isEntitled(project)) {
+            // The plan again, as the creator's own launch asks it (#587): the goal stays
+            // editable after approval, and a plan can lapse while a launch time waits. The
+            // launch time is cleared rather than the campaign skipped, because a skipped one
+            // is due again on the next pass, every minute, at the head of a batch ordered by
+            // launch time, and would hold back every campaign behind it. Cleared, it waits in
+            // APPROVED for its creator, whose own launch answers with the refusal they can act
+            // on: a lower goal, or a plan.
+            project.setScheduledLaunchAt(null);
+            log.warn(
+                    "Campaign {} was due to launch at {} and is over its creator's plan; its launch time is cleared.",
+                    projectId,
+                    at);
             return Optional.empty();
         }
 
@@ -765,6 +783,11 @@ public class ProjectTransitionService {
         Project project = access.requireModeratable(projectId, moderatorId);
         requireEdge(project.getState(), ProjectState.APPROVED);
         requireLaunchable(project);
+        // The plan again (#587). It was checked when the campaign was submitted, and nothing
+        // is locked in SUBMITTED: the goal can be raised and other campaigns submitted while
+        // this one waits, so an approval that publishes has to ask what the submission asked.
+        // Before anything is written, so a refusal changes nothing.
+        publishing.requireEntitled(project);
 
         Project approved = moderate(project, ProjectState.APPROVED, AuditAction.PROJECT_APPROVED, moderatorId, note);
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);

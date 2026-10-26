@@ -222,6 +222,51 @@ class CurationApiTests extends DiscoveryTestSupport {
     }
 
     @Test
+    @DisplayName("every mutation is also in the platform's audit trail, without the note")
+    void everyMutationReachesTheAuditTrail() {
+        Account curator = moderator();
+
+        createCollection(curator, "trail-picks", body("STAFF_SELECTION", true));
+        addProject(curator, "trail-picks", campaign, "Strongest games campaign this month");
+        publish(curator, "trail-picks");
+        assertThat(send(curator, new Request(
+                                HttpMethod.PUT,
+                                "/v1/admin/collections/trail-picks/projects/order",
+                                Map.of("projectIds", List.of(campaign.toString()))))
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        UUID collectionId = new JdbcTemplate(dataSource)
+                .queryForObject("SELECT id FROM collections WHERE slug = ?", UUID.class, "trail-picks");
+        List<Map<String, Object>> trail = new JdbcTemplate(dataSource)
+                .queryForList(
+                        """
+                        SELECT action, entity_type, actor_id, actor_type, detail
+                          FROM audit_logs
+                         WHERE entity_id = ?
+                         ORDER BY occurred_at ASC, action ASC
+                        """,
+                        collectionId);
+
+        // #587: curation_events is the collection's own history, and the console's trail and
+        // an investigation read audit_logs, which had nothing from curation at all.
+        assertThat(trail.stream().map(row -> row.get("action")).toList())
+                .containsExactly(
+                        "collection.created",
+                        "collection.project_added",
+                        "collection.published",
+                        "collection.reordered");
+        for (Map<String, Object> row : trail) {
+            assertThat(row.get("entity_type")).isEqualTo("collection");
+            assertThat(row.get("actor_id")).isEqualTo(curator.id());
+            assertThat(row.get("actor_type")).isEqualTo("MODERATOR");
+            assertThat((String) row.get("detail")).contains("slug=trail-picks");
+            assertThat((String) row.get("detail")).doesNotContain("Strongest");
+        }
+        assertThat((String) trail.get(1).get("detail")).contains("project=" + campaign);
+    }
+
+    @Test
     @DisplayName("an action that changes nothing is not recorded as a decision")
     void noOpsAreNotAudited() {
         Account curator = moderator();

@@ -1,5 +1,7 @@
 package az.ideanest.pledgemanager.api;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +25,7 @@ import java.util.UUID;
  *     refused rather than resolved by order, because either resolution is a guess about
  *     what somebody meant to manufacture
  */
-public record RespondRequest(UUID pledgeId, List<AnswerBody> answers) {
+public record RespondRequest(UUID pledgeId, @Size(max = 100) List<@Valid AnswerBody> answers) {
 
     public RespondRequest {
         answers = answers == null ? List.of() : List.copyOf(answers);

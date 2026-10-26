@@ -6,6 +6,7 @@ import az.ideanest.notification.domain.NotificationCategory;
 import az.ideanest.notification.domain.NotificationChannel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -36,7 +37,7 @@ import java.util.List;
  */
 public record UpdateNotificationPreferencesRequest(
         @NotNull(message = "A request carries some list of preferences, possibly empty")
-                List<@Valid @NotNull Change> preferences) {
+                @Size(max = 500) List<@Valid @NotNull Change> preferences) {
 
     /**
      * One switch being set.

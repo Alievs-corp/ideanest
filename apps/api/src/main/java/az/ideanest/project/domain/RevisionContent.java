@@ -24,6 +24,11 @@ import tools.jackson.databind.JsonNode;
  * <p>The goal, duration, launch time and reward prices are not here. They are frozen at
  * launch ({@link ProjectEditLocks}) and never need a reviewer.
  *
+ * <p><strong>Items and shipping regions are held the way tiers are (#587).</strong> An item's
+ * name, picture and weight are what a backer reads in a tier and what a quote charges for, and
+ * a region's destinations decide who may pledge and at what shipping price, so on a launched
+ * campaign they wait here too: the items a revision changes, and the regions as a whole set.
+ *
  * <p><strong>The reward tiers are the exception to "all of it" (#559, #569).</strong> A
  * revision holds what the creator changed about the campaign's tiers and nothing about the
  * others: the whole proposed state of each tier it changes, the tiers it deletes, the tiers it
@@ -40,6 +45,12 @@ import tools.jackson.databind.JsonNode;
  *     Empty in the live content
  * @param rewardOrder the order the creator gave the tiers, created ones included, or null
  *     when they have not reordered them
+ * @param items the campaign's items, by item (#587): in a revision, the proposed state of the
+ *     items it changes; in the live content, every item an approved tier contains, which is
+ *     every item the public can see. Absent from revisions written before #587
+ * @param shippingZones the campaign's shipping regions as a whole (#587): in a revision, the
+ *     proposed set, or null when it leaves them as they are; in the live content, the set
+ *     the campaign has
  */
 public record RevisionContent(
         String title,
@@ -54,7 +65,9 @@ public record RevisionContent(
         Map<UUID, Reward> rewards,
         List<UUID> deletedRewards,
         List<UUID> createdRewards,
-        List<UUID> rewardOrder) {
+        List<UUID> rewardOrder,
+        Map<UUID, Item> items,
+        List<Zone> shippingZones) {
 
     public static final String TITLE = "title";
     public static final String BLURB = "blurb";
@@ -65,6 +78,29 @@ public record RevisionContent(
     public static final String VIDEO = "videoMediaId";
     public static final String COUNTRIES = "countries";
     public static final String REWARDS = "rewards";
+    public static final String ITEMS = "items";
+    public static final String SHIPPING_ZONES = "shippingZones";
+
+    /**
+     * What a backer is shown and charged for about an item (#587): its writing, and the two
+     * facts a shipping quote reads, whether it ships at all and what it weighs. Not its stock
+     * code, which is the creator's own bookkeeping and nobody else reads.
+     */
+    public record Item(String name, String description, String imageUrl, boolean digital, Integer weightGrams) {}
+
+    /**
+     * One shipping region (#587): the identifier a tier's rates name it by, its name, and the
+     * destinations it covers, sorted so that two sets of the same regions compare equal.
+     *
+     * @param id the region's row, or the identifier a region proposed in a revision will be
+     *     created with when it is approved
+     */
+    public record Zone(UUID id, String name, List<String> countries) {
+
+        public Zone {
+            countries = countries == null ? List.of() : countries.stream().sorted().toList();
+        }
+    }
 
     /**
      * What a backer reads and is promised on a reward tier: its writing, and since #569 the
@@ -122,10 +158,48 @@ public record RevisionContent(
         deletedRewards = deletedRewards == null ? List.of() : List.copyOf(deletedRewards);
         createdRewards = createdRewards == null ? List.of() : List.copyOf(createdRewards);
         rewardOrder = rewardOrder == null ? null : List.copyOf(rewardOrder);
+        items = items == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(items));
+        shippingZones = shippingZones == null
+                ? null
+                : shippingZones.stream().sorted(Comparator.comparing(zone -> zone.id().toString())).toList();
     }
 
-    /** The content a campaign shows now, with every approved tier. */
-    public static RevisionContent of(Project project, JsonNode story, Map<UUID, Reward> rewards) {
+    /** The content as it was before #587 held items and shipping regions: neither of them. */
+    public RevisionContent(
+            String title,
+            String blurb,
+            UUID categoryId,
+            UUID subcategoryId,
+            JsonNode story,
+            String risks,
+            CoverImage coverImage,
+            UUID videoMediaId,
+            List<String> countries,
+            Map<UUID, Reward> rewards,
+            List<UUID> deletedRewards,
+            List<UUID> createdRewards,
+            List<UUID> rewardOrder) {
+        this(
+                title,
+                blurb,
+                categoryId,
+                subcategoryId,
+                story,
+                risks,
+                coverImage,
+                videoMediaId,
+                countries,
+                rewards,
+                deletedRewards,
+                createdRewards,
+                rewardOrder,
+                null,
+                null);
+    }
+
+    /** The content a campaign shows now, with every approved tier, public item and region. */
+    public static RevisionContent of(
+            Project project, JsonNode story, Map<UUID, Reward> rewards, Map<UUID, Item> items, List<Zone> zones) {
         return new RevisionContent(
                 project.getTitle(),
                 project.getBlurb(),
@@ -139,7 +213,9 @@ public record RevisionContent(
                 rewards,
                 null,
                 null,
-                null);
+                null,
+                items,
+                zones);
     }
 
     /** This content with one tier's proposed state replaced. */
@@ -165,12 +241,49 @@ public record RevisionContent(
                 rewards,
                 deleted,
                 created,
-                order);
+                order,
+                items,
+                shippingZones);
     }
 
-    /** This campaign's writing, with what {@code other} holds about the tiers. */
+    /**
+     * This campaign's writing, with what {@code other} holds about the tiers, the items and the
+     * shipping regions.
+     */
     public RevisionContent withRewardsOf(RevisionContent other) {
-        return withRewardChanges(other.rewards, other.deletedRewards, other.createdRewards, other.rewardOrder);
+        return withRewardChanges(other.rewards, other.deletedRewards, other.createdRewards, other.rewardOrder)
+                .withCatalogue(other.items, other.shippingZones);
+    }
+
+    /** This content with one item's proposed state replaced (#587). */
+    public RevisionContent withItem(UUID itemId, Item item) {
+        Map<UUID, Item> changed = new LinkedHashMap<>(items);
+        changed.put(itemId, item);
+        return withCatalogue(changed, shippingZones);
+    }
+
+    /** This content proposing these shipping regions, or none when {@code zones} is null (#587). */
+    public RevisionContent withShippingZones(List<Zone> zones) {
+        return withCatalogue(items, zones);
+    }
+
+    private RevisionContent withCatalogue(Map<UUID, Item> items, List<Zone> zones) {
+        return new RevisionContent(
+                title,
+                blurb,
+                categoryId,
+                subcategoryId,
+                story,
+                risks,
+                coverImage,
+                videoMediaId,
+                countries,
+                rewards,
+                deletedRewards,
+                createdRewards,
+                rewardOrder,
+                items,
+                zones);
     }
 
     /** This content naming these as the tiers created while it was open. */
@@ -190,7 +303,31 @@ public record RevisionContent(
             held.put(rewardId, rewards.get(rewardId).over(live.rewards.get(rewardId)));
         }
         List<UUID> order = !createdRewards.isEmpty() || reordersFrom(live) ? rewardOrder : null;
-        return withRewardChanges(held, deletedRewardsFrom(live), createdRewards, order);
+        Map<UUID, Item> heldItems = new LinkedHashMap<>();
+        for (UUID itemId : changedItemsFrom(live)) {
+            heldItems.put(itemId, items.get(itemId));
+        }
+        return withRewardChanges(held, deletedRewardsFrom(live), createdRewards, order)
+                .withCatalogue(heldItems, changesZonesFrom(live) ? shippingZones : null);
+    }
+
+    /**
+     * The items, among those {@code live} shows, whose proposed state this content changes, in
+     * {@code live}'s order (#587). An item the public no longer sees, because no approved tier
+     * contains it any more or it was deleted, is not among them.
+     */
+    public List<UUID> changedItemsFrom(RevisionContent live) {
+        return live.items.entrySet().stream()
+                .filter(entry -> items.containsKey(entry.getKey())
+                        && !items.get(entry.getKey()).equals(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    /** Whether this content proposes shipping regions other than {@code live}'s (#587). */
+    public boolean changesZonesFrom(RevisionContent live) {
+        List<Zone> shown = live.shippingZones == null ? List.of() : live.shippingZones;
+        return shippingZones != null && !shippingZones.equals(shown);
     }
 
     /**
@@ -298,6 +435,12 @@ public record RevisionContent(
                 || !createdRewards.isEmpty()
                 || reordersFrom(other)) {
             changed.add(REWARDS);
+        }
+        if (!changedItemsFrom(other).isEmpty()) {
+            changed.add(ITEMS);
+        }
+        if (changesZonesFrom(other)) {
+            changed.add(SHIPPING_ZONES);
         }
         return List.copyOf(changed);
     }

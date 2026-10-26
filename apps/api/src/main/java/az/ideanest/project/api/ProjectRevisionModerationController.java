@@ -49,7 +49,9 @@ public class ProjectRevisionModerationController {
                 review.changedFields(),
                 responses.of(review.live()),
                 responses.of(review.proposed()),
-                responses.rewardsOf(review.rewards(), review.rewardNames()));
+                responses.rewardsOf(review.rewards(), review.rewardNames()),
+                review.items().stream().map(RevisionCatalogueBody.RevisionItem::of).toList(),
+                review.zones().map(RevisionCatalogueBody.RevisionZones::of).orElse(null));
     }
 
     /** Publishes the edit. The note is optional. */

@@ -1191,7 +1191,8 @@
           "legal_document": "Legal documents",
           "subscription_charge": "Plan payments",
           "user": "User accounts",
-          "staff_role": "Staff roles"
+          "staff_role": "Staff roles",
+          "ranking_weight": "Ranking weights"
         },
         "action": {
           "account": {
@@ -1348,6 +1349,18 @@
           },
           "obligation": {
             "update_resolved": "Update obligation resolved"
+          },
+          "collection": {
+            "created": "Collection created",
+            "updated": "Collection updated",
+            "published": "Collection published",
+            "unpublished": "Collection unpublished",
+            "project_added": "Campaign added to collection",
+            "project_removed": "Campaign removed from collection",
+            "reordered": "Collection reordered"
+          },
+          "ranking": {
+            "weight_changed": "Ranking weight changed"
           }
         },
         "datesHint": "The first day counts from its start and the last to its end.",
@@ -1384,7 +1397,8 @@
           "maintenance_window": "Maintenance window",
           "user": "User account",
           "collection": "Collection",
-          "staff_role": "Staff role"
+          "staff_role": "Staff role",
+          "ranking_weight": "Ranking weight"
         }
       },
       "health": {

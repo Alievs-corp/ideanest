@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /** Items, by the campaign they belong to. */
 public interface ItemRepository extends JpaRepository<Item, UUID> {
@@ -18,6 +20,34 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
      * they lose their place in.
      */
     List<Item> findByProjectIdOrderByCreatedAtAsc(UUID projectId);
+
+    /**
+     * The items of one campaign that an approved tier contains, oldest first (#587): the items
+     * the public sees, and so the ones a change to which waits for a moderator on a launched
+     * campaign.
+     */
+    @Query(
+            """
+            SELECT i FROM Item i
+             WHERE i.projectId = :projectId
+               AND EXISTS (SELECT 1 FROM RewardTierItem c, RewardTier t
+                            WHERE c.id.itemId = i.id
+                              AND t.id = c.id.rewardTierId
+                              AND t.approved = true)
+             ORDER BY i.createdAt ASC
+            """)
+    List<Item> findInApprovedTiers(@Param("projectId") UUID projectId);
+
+    /** Whether an approved tier contains this item, which makes it public (#587). */
+    @Query(
+            """
+            SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END
+              FROM RewardTierItem c, RewardTier t
+             WHERE c.id.itemId = :itemId
+               AND t.id = c.id.rewardTierId
+               AND t.approved = true
+            """)
+    boolean isInAnApprovedTier(@Param("itemId") UUID itemId);
 
     /**
      * The subset of these identifiers that belongs to this campaign.

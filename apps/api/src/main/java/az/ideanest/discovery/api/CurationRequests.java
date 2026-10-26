@@ -7,6 +7,7 @@ import az.ideanest.discovery.domain.ProjectCard;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,7 +51,7 @@ public final class CurationRequests {
             Boolean grantsBadge,
             Integer sortOrder,
             CoverBody cover,
-            @NotEmpty Map<String, CopyBody> copy) {
+            @NotEmpty @Size(max = 20) Map<String, CopyBody> copy) {
 
         /** @throws CurationRejectedException when the kind is not one of the three */
         public CollectionDraft toDraft() {
@@ -98,6 +99,6 @@ public final class CurationRequests {
     }
 
     /** @param projectIds every campaign in the collection, exactly once, in the new order */
-    public record ReorderProjects(@NotEmpty List<UUID> projectIds) {
+    public record ReorderProjects(@NotEmpty @Size(max = 500) List<UUID> projectIds) {
     }
 }

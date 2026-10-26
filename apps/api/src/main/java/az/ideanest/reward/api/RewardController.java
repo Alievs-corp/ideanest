@@ -79,7 +79,7 @@ public class RewardController {
      */
     @PatchMapping("/v1/rewards/{id}")
     public RewardResponse edit(
-            @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id, @RequestBody RewardPatchRequest request) {
+            @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id, @Valid @RequestBody RewardPatchRequest request) {
 
         return RewardResponse.of(rewards.edit(id, callerOf(accessToken), request.toPatch()));
     }
@@ -139,7 +139,7 @@ public class RewardController {
     public List<RewardResponse> reorder(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID projectId,
-            @RequestBody ReorderRewardsRequest request) {
+            @Valid @RequestBody ReorderRewardsRequest request) {
 
         return responses(rewards.reorder(projectId, callerOf(accessToken), request.rewardIds()));
     }
@@ -159,7 +159,7 @@ public class RewardController {
     public RewardResponse replaceShippingRules(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID id,
-            @RequestBody ShippingRulesRequest request) {
+            @Valid @RequestBody ShippingRulesRequest request) {
 
         return RewardResponse.of(rewards.replaceShippingRules(
                 id, callerOf(accessToken), request.toRates(), request.toZoneRates()));

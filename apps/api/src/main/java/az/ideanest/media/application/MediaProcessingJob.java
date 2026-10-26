@@ -98,9 +98,19 @@ public class MediaProcessingJob implements ScheduledJob {
             return;
         }
 
-        int removed = writes.removeAbandoned();
-        if (removed > 0) {
-            log.info("Removed {} upload(s) that were begun and never completed", removed);
+        List<UUID> removed = writes.removeAbandoned();
+        if (!removed.isEmpty()) {
+            log.info("Removed {} upload(s) that were begun and never completed", removed.size());
+        }
+        for (UUID abandoned : removed) {
+            // The bytes may have arrived even though the client never said so (#587): an
+            // address used and never announced left its object behind for good. Deleting an
+            // absent key is a success, so the ordinary case costs one request.
+            try {
+                store.delete(MediaLibrary.rawKeyOf(abandoned));
+            } catch (RuntimeException problem) {
+                log.warn("The abandoned upload {} could not be deleted from storage", abandoned, problem);
+            }
         }
 
         List<MediaAsset> waiting =

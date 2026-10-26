@@ -5,6 +5,7 @@ import az.ideanest.notification.application.InboxQueryInvalidException;
 import az.ideanest.notification.application.NotificationNotFoundException;
 import az.ideanest.notification.application.PreferenceContendedException;
 import az.ideanest.notification.application.PreferenceNotChangeableException;
+import az.ideanest.notification.application.DeviceTokenHeldException;
 import az.ideanest.notification.application.UnknownDevicePlatformException;
 import az.ideanest.notification.application.UnusableDeviceTokenException;
 import java.net.URI;
@@ -163,6 +164,23 @@ public class NotificationExceptionHandler {
         problem.setTitle("That is not a push token");
         problem.setDetail(exception.getMessage());
         problem.setProperty("code", "UNUSABLE_DEVICE_TOKEN");
+        problem.setProperty("field", "token");
+        return problem;
+    }
+
+    /**
+     * 409 for a push token another account holds and is still signed in to (#587).
+     *
+     * <p>Names neither the token nor the account, for the reason above. A client registering
+     * a phone it was just handed can only wait for the first person to sign out.
+     */
+    @ExceptionHandler(DeviceTokenHeldException.class)
+    public ProblemDetail handleDeviceTokenHeld(DeviceTokenHeldException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/device-token-held"));
+        problem.setTitle("Registered to somebody else");
+        problem.setDetail(exception.getMessage());
+        problem.setProperty("code", "DEVICE_TOKEN_HELD");
         problem.setProperty("field", "token");
         return problem;
     }

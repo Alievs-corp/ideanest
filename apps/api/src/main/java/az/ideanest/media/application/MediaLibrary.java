@@ -6,6 +6,9 @@ import az.ideanest.media.domain.MediaFailureReason;
 import az.ideanest.media.domain.MediaKind;
 import az.ideanest.media.domain.MediaStatus;
 import az.ideanest.media.infrastructure.MediaAssetRepository;
+import az.ideanest.shared.ratelimit.RateLimitExceededException;
+import az.ideanest.shared.ratelimit.RateLimiter;
+import az.ideanest.shared.ratelimit.RateLimits;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
@@ -48,10 +51,29 @@ public class MediaLibrary {
     /** Where the derived image lives. This is the half a browser fetches. */
     private static final String DERIVED_PREFIX = "media/";
 
+    /**
+     * What every presigned address is signed for, whatever was declared (#587).
+     *
+     * <p>It signed the declared type when it was an image or video type, and the raw object is
+     * stored with whatever type it was written with, under the same bucket the public base URL
+     * serves. An {@code image/svg+xml} declaration therefore put a document a browser runs
+     * scripts in at a public address for as long as the sweep took, and the store's own
+     * {@code Content-Type} made it render. Signed as a byte stream, a raw upload is something a
+     * browser downloads rather than renders, whatever it contains and whatever the bucket's
+     * read policy is — which this repository cannot see and so should not depend on. Nothing
+     * reads the stored type: the kind was decided from the declaration above, and the sweep
+     * decides the real type from the bytes and writes the derived object with it.
+     *
+     * <p>The client sends the type it is given verbatim on the {@code PUT}, as it always has;
+     * see {@link MediaUpload#contentType}.
+     */
+    private static final String SIGNED_TYPE = "application/octet-stream";
+
     private final MediaAssetRepository assets;
     private final MediaProcessingWrites writes;
     private final ObjectStore store;
     private final VideoTranscoder videoTranscoder;
+    private final RateLimiter rateLimiter;
     private final MediaProperties properties;
     private final Clock clock;
 
@@ -60,12 +82,14 @@ public class MediaLibrary {
             MediaProcessingWrites writes,
             ObjectStore store,
             VideoTranscoder videoTranscoder,
+            RateLimiter rateLimiter,
             MediaProperties properties,
             Clock clock) {
         this.assets = assets;
         this.writes = writes;
         this.store = store;
         this.videoTranscoder = videoTranscoder;
+        this.rateLimiter = rateLimiter;
         this.properties = properties;
         this.clock = clock;
     }
@@ -85,6 +109,9 @@ public class MediaLibrary {
      * @throws UploadsUnavailableException when this deployment has no storage configured, or
      *     a video was declared and this deployment cannot transcode one
      * @throws MediaFailedException when the declared size is over the ceiling
+     * @throws RateLimitExceededException when this person has been issued too many addresses
+     *     this hour, or holds too many that are still valid and unannounced — see
+     *     {@link MediaProperties.Uploads}
      */
     @Transactional
     public MediaUpload begin(UUID ownerUserId, String declaredContentType, long declaredBytes) {
@@ -106,12 +133,23 @@ public class MediaLibrary {
         }
 
         Instant now = clock.instant();
+        MediaProperties.Uploads limits = properties.uploads();
+        // The outstanding ceiling first, so a client holding ten live addresses is told to
+        // finish them without spending its hourly budget on the refusal.
+        long outstanding = assets.countByOwnerUserIdAndStatusAndCreatedAtAfter(
+                ownerUserId, MediaStatus.PENDING, now.minus(properties.uploadWindow()));
+        if (outstanding >= limits.maxOutstanding()) {
+            throw new RateLimitExceededException(properties.uploadWindow());
+        }
+        RateLimits.enforce(rateLimiter.recordAttempt(
+                "media-uploads:account:" + ownerUserId, limits.perAccount(), limits.window()));
+
         MediaAsset asset = assets.save(MediaAsset.awaitingUpload(ownerUserId, kind, now));
 
-        String signedType = normalisedType(declaredContentType);
-        URI address = store.presignedPut(rawKeyOf(asset.getId()), signedType, properties.uploadWindow());
+        URI address =
+                store.presignedPut(rawKeyOf(asset.getId()), SIGNED_TYPE, declaredBytes, properties.uploadWindow());
 
-        return new MediaUpload(asset.getId(), address, signedType, now.plus(properties.uploadWindow()), ceiling);
+        return new MediaUpload(asset.getId(), address, SIGNED_TYPE, now.plus(properties.uploadWindow()), ceiling);
     }
 
     /**
@@ -339,35 +377,13 @@ public class MediaLibrary {
     }
 
     /**
-     * What the presigned address is signed for.
-     *
-     * <p>Signing for the type the client declared, and then deciding the real type from the
-     * bytes, is not a contradiction: the signature binds what the browser may send so that a
-     * leaked address cannot be used to upload something else, and the magic-byte check is what
-     * decides whether we keep it. Anything unrecognised is signed as
-     * {@code application/octet-stream} rather than refused here, because the honest refusal
-     * happens where the content is.
-     */
-    private static String normalisedType(String declared) {
-        if (declared == null || declared.isBlank()) {
-            return "application/octet-stream";
-        }
-        String trimmed = declared.trim();
-        if (!trimmed.startsWith("image/") && !trimmed.startsWith("video/")) {
-            return "application/octet-stream";
-        }
-        return trimmed;
-    }
-
-    /**
      * What {@link #begin} tells the browser.
      *
      * @param contentType <strong>the type the address was signed for</strong>, which the
      *     client must send verbatim on the {@code PUT}. Returned rather than left for the
-     *     client to reproduce because {@link #normalisedType} rewrites anything that is not
-     *     an image type, and a client that sent its own value instead would have every
-     *     upload refused by the store as a signature mismatch — a failure that looks like a
-     *     credentials problem and is not
+     *     client to reproduce because {@link #SIGNED_TYPE} replaces every declared type, and a
+     *     client that sent its own value instead would have every upload refused by the store
+     *     as a signature mismatch — a failure that looks like a credentials problem and is not
      */
     public record MediaUpload(UUID mediaId, URI uploadUrl, String contentType, Instant expiresAt, long maxBytes) {}
 

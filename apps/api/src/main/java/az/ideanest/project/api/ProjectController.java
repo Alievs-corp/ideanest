@@ -104,7 +104,7 @@ public class ProjectController {
     public ProjectEdit edit(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID id,
-            @RequestBody ProjectPatchRequest request) {
+            @Valid @RequestBody ProjectPatchRequest request) {
 
         return responses.of(editing.edit(id, callerOf(accessToken), request.toPatch()));
     }

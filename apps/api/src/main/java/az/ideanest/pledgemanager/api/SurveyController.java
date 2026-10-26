@@ -2,6 +2,7 @@ package az.ideanest.pledgemanager.api;
 
 import az.ideanest.pledgemanager.application.SurveyResponseService;
 import az.ideanest.pledgemanager.application.SurveyService;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -66,7 +67,7 @@ public class SurveyController {
     public ResponseEntity<SurveyResponseBody> create(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID projectId,
-            @RequestBody SurveyRequest request) {
+            @Valid @RequestBody SurveyRequest request) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .cacheControl(CacheControl.noStore())
@@ -95,7 +96,7 @@ public class SurveyController {
     public ResponseEntity<SurveyResponseBody> update(
             @AuthenticationPrincipal Jwt accessToken,
             @PathVariable UUID surveyId,
-            @RequestBody SurveyRequest request) {
+            @Valid @RequestBody SurveyRequest request) {
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())

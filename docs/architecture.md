@@ -1507,7 +1507,7 @@ The most valuable and most complex module. It begins when funding closes.
 >
 > **§17.3 names no number for commenting, so the budget is argued rather than
 > quoted.** The table names a CAPTCHA for "bot traffic: challenge on
-> registration and comment", and this platform has none — so the limiter is the
+> registration and comment", and this platform has none (§17.3 now says so, #587) — so the limiter is the
 > whole of the defence on a public write surface. Ten comments per account and a
 > hundred per source address per five minutes, the second much looser because
 > registration is already limited per address and a tight number here refuses
@@ -1683,7 +1683,7 @@ Preferences are per category and per channel, with a digest option.
 | # | Module | Capabilities |
 |---|---|---|
 | AD-01 | Project moderation | Queue, approve, reject, request changes, notes, history. **The queue was the missing half until #381**: the three outcomes shipped with #101 and nothing listed what they applied to, so the console's only route to a submitted campaign was a report somebody had filed about it — a campaign nobody complained about waited in `SUBMITTED` indefinitely, invisible here, while its creator was shown "submitted for review". `/admin/moderation/submissions` is that queue. **And the directory since #387**: both that queue and the report queue list campaigns that have DONE something, so a draft, a live campaign, or one cleared for launch and never launched was on no screen here and could be reached only through psql. `/admin/campaigns` lists §6.1 entire, newest first. **And the staff preview since #399**: both of those screens linked a campaign to its public page, which for a campaign awaiting review is a 404 by construction — a campaign in review is not public, and that is what being in review means — so approval was taken on a title, a creator's name and a goal figure. `/admin/campaigns/{id}` renders the same projection the public page is served from, without the state filter, and `/admin/moderation/{id}` now shows the reported comment or update inline with its author and its campaign |
-| AD-02 | Trust and safety | Report queue, fraud signals, suspension. Reporting and the queue are built (#102, §7.2's `content_reports`), **suspension is built (#103)**, and **fraud signals are built (#108)** — `risk_assessments`, a queue at `/v1/admin/risk/queue`, and the identity review at `/v1/admin/verifications/queue` (#105). The signals **advise and do not decide**: nothing refuses a pledge or suspends an account on a score. See §17.2 |
+| AD-02 | Trust and safety | Report queue, fraud signals, suspension. Reporting and the queue are built (#102, §7.2's `content_reports`), **suspension is built (#103)**, and **fraud signals are built (#108)** — `risk_assessments`, a queue at `/v1/admin/risk/queue` (`VIEW_FINANCE` since #587; it asked only for staff), and the identity review at `/v1/admin/verifications/queue` (#105). The signals **advise and do not decide**: nothing refuses a pledge or suspends an account on a score. See §17.2 |
 | AD-03 | Curation | Editorial badges, collections, open calls, placement. The endpoints arrived with #48; **the four screens are built (#300 to #303)** at `/admin/curation` and its three siblings |
 | AD-04 | User management | Search, inspect, ban, verification status, audited impersonation. **Search, inspect and the ban are built (#104)**, and **`/admin/staff` is built (#295)** — the role model that replaced the configured list. **The search folds like every other search since #413**: it matched on `lower()`, which leaves ə, ı, ö, ü, ğ, ş and ç alone, so this box found "Köhnə" from `köhnə` and not from `kohne` while the campaign directory beside it found both — and, matching a different expression from the one V63's indexes are built on, it read every row. It now names §11.3's `ideanest_fold`, which V64 completes with the third index the address needed. **The account page also shows what the account held and paid the platform (#23)**: every subscription with its plan, state and price, and the payments received with reversals marked. Any member of staff may read it, as with the account's pledges, and an `ACTIVE` subscription whose period has run out is drawn as expired, because `state` alone would say somebody can publish who cannot. Impersonation is not, and is the one thing in this table still waiting on a decision (#299) |
 | AD-05 | Finance | Payment log, ledger, payout queue, approvals, disputes, and whether the sum of them is right. **All of it is built**: the log and the ledger with #304 and #305, the payout queue and its dual approval with #69 and #306, and the reconciliation with #106 at `/admin/reconciliation`. That last screen is what kept "financial operations tooling" open with the other three built — #70's nightly pass answered "do the books balance" to a log line and a Prometheus gauge and to nobody who works in this console. It reports and never repairs, so there is no control on it that corrects anything. **Since #431 the queue also says why a payout is held on identity** — the standing is drawn as one of eight values rather than as "not verified", because a creator who has never been asked and one whose documents are already in the review queue are different things for an operator to do next, and a waiver (#436) is drawn as a waiver rather than as a verification. **The payment log is ordered by `created_at` since #412**, not by the primary key — AD-14's defect on the one console surface that is entirely money, and it cost more there: §9.6 permits four collection attempts, so "declined, declined, collected" read in the wrong order is a different story about the same pledge. The cursor carries the instant and the identifier that breaks its tie, and is therefore an opaque string rather than a `uuid`. **Since #396 the payout destinations have their own screen**, `/admin/payout-destinations`, which the rail offers to `VERIFY_PAYOUT_DESTINATION` rather than `VIEW_FINANCE`: confirming where money goes is Compliance's, and the person who sends it is not the person who checks the account |
@@ -1892,8 +1892,13 @@ Preferences are per category and per channel, with a digest option.
 > purpose is *which two people* — named neither of them. `GET /v1/admin/directory` takes
 > account and campaign identifiers and answers with display names and public paths.
 >
-> It is **staff-wide and needs no capability beyond that**, because every screen that holds
-> an identifier is already behind its own; and it is **the one console read that is not
+> It needs **`ADMINISTER_ACCOUNTS` or `MODERATE_CONTENT`** since #587. It was staff-wide, and
+> since it answers about any identifier rather than the ones on the caller's screen, a partner
+> or a curator could resolve every account and every draft campaign's title; the two
+> authorities that already see people and unpublished campaigns are the ones it now asks for.
+> A member of staff holding neither is refused, and their screens show the short identifiers
+> they showed before #402 (`useDirectoryNames` swallows the refusal); a super admin holds both.
+> It is **the one console read that is not
 > audited**, because it discloses nothing `GET /v1/users/{slug}` does not serve publicly and
 > is called on every render of every screen that holds identifiers — recording it would put
 > several rows per page view into the one table with no retention rule. **It hands over no
@@ -2522,6 +2527,23 @@ individual agreement can differ without a deployment.
 > the created rows and their media. A revision saved before #569 holds only a tier's four
 > writing fields; it still reads, and the rest of such a tier is taken as it is.
 >
+> **Items and shipping regions are held the same way (#587).** On a launched campaign
+> `PATCH /v1/items/{id}` on an item an approved tier contains writes the item's proposed
+> name, description, picture, weight and digital flag to the revision under `items`, keyed by
+> item; its stock code is written at once, and an item no approved tier contains is written at
+> once too, because the public has not seen it. `PUT /v1/projects/{id}/shipping-zones` writes
+> the whole proposed set to `shippingZones`; a region keeps its identifier when its folded name
+> matches one it had, and a new one gets the identifier it will be created with. The creator's
+> `GET /v1/projects/{id}/items` returns the proposed values with the held fields in
+> `revisionChangedFields`, and `GET .../shipping-zones` the proposed set with `pending: true`.
+> The revision's `changedFields` gains `items` and `shippingZones`, and a moderator's review
+> carries `items` (each with `live`, `proposed` and `changedFields`) and `shippingZones` (`live`
+> and `proposed`). Approval applies both before the tiers, so a tier rate for a region the
+> revision deletes is dropped; nothing about either is a row until then, so refusing has nothing
+> to delete. A region proposed in a revision can be priced once it has been approved. The web
+> and mobile editors and the admin review page do not yet draw any of this: they show the two
+> new changed fields by their raw names.
+>
 > The review page draws `rewards` under the campaign's fields (#569): one card per tier
 > with a tag, an icon and a word for each of created, deleted, changed and reordered, its
 > place now and as proposed, and its price. A created tier is shown whole as new, a deleted
@@ -2649,7 +2671,7 @@ the first moment it stops being private.
 
 | | |
 |---|---|
-| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate` |
+| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator |
 | Contract | `shared.access.PublishingEntitlement` → `PublishingAllowance` |
 | Refusals | `SUBSCRIPTION_REQUIRED` (403), `PLAN_LIMIT_EXCEEDED` (403) |
 | Exempt | A creator holding `SUPER_ADMIN`, granted or bootstrapped: no plan and no plan limits. Other staff roles buy a plan |
@@ -5640,7 +5662,8 @@ GET    /v1/admin/users/{accountId}/subscriptions # one account's subscriptions (
 > and §3.2 grants "apply an editorial badge" to moderators and admins alone; there is
 > written before #295 built the role model, when the configured list was reused
 > rather than a second directory being invented for epic #100 to find and delete. Every
-> mutation writes exactly one `curation_events` row in the same transaction, and the
+> mutation writes exactly one `curation_events` row in the same transaction (and, since
+> #587, one `audit_logs` row, `collection.*`, without the note), and the
 > four that change what the public sees — publish, unpublish, add, remove — require a
 > note, because a discretionary editorial decision's only surviving record of *why* is
 > that row. There is deliberately **no delete** (withdrawing a list is unpublishing it)
@@ -5989,7 +6012,7 @@ still is duplicated or dropped.
 every feed at once — a larger act than any single curation decision — so
 `/v1/admin/ranking` is moderator-only, requires a stated reason, and writes an
 append-only `ranking_weight_changes` row carrying the value before as well as
-after. The read is privileged too: the weights describe how to rank highly, and a
+after, and since #587 a `ranking.weight_changed` row in `audit_logs` with both values. The read is privileged too: the weights describe how to rank highly, and a
 campaign that knew them would know what to optimise.
 
 **`showOnly=recommended` is still refused.** It is `w6` wearing a filter's
@@ -6325,7 +6348,9 @@ do. Both endpoints and the fan-out resolve a stored preference through the same
 change nothing.
 
 > **Push is real since #87.** `PushChannelSender` sends through Expo's push service
-> (`ExpoPushClient`) to every device registered at `POST /v1/me/devices`, in the
+> (`ExpoPushClient`) to every device registered at `POST /v1/me/devices` (since #587 a token
+> another account holds while signed in anywhere is refused with `409 DEVICE_TOKEN_HELD`, and
+> `DELETE` forgets only the caller's own registration), in the
 > account's language (#216). Each message is a title and one line (`PushComposer`:
 > `email.<TYPE>.subject` and `.line`) and a `data` object the application reads when
 > it is tapped (#160):
@@ -6562,6 +6587,14 @@ notice says — epic #100.
 
 Client requests a pre-signed URL, uploads directly to object storage, then
 notifies the API, which enqueues processing.
+
+**Bounded since #587.** An account may be issued 120 upload addresses an hour and hold 10
+that are still valid and unannounced (`ideanest.media.uploads`, 429 past either). Every address
+is signed for `application/octet-stream`, whatever was declared, so a raw object under
+`uploads/` is a download and never a document a browser renders (an SVG was), and for the
+declared `Content-Length`, which the store enforces: the presigner speaks only `PUT`, so a
+signed header stands in for a POST policy's `content-length-range`. The sweep that removes an
+upload never announced deletes its `uploads/<id>` object as well as its row.
 
 **Built, for campaign covers, profile pictures, story images and reward items.** `POST /v1/media/uploads` issues a presigned
 `PUT`, the browser writes to it, `POST /v1/media/{id}/complete` says the bytes
@@ -7252,9 +7285,9 @@ Apple requires to revoke the token.
 | Cross-site request forgery | Same-site cookies plus a required custom header |
 | Insecure direct object reference | Ownership checked in a security layer, not in controllers |
 | Mass assignment | Explicit request DTOs; entities are never bound to input |
-| Rate limiting | Sign-in 5/15min per address; registration 5/15min per address and 3/15min per email; two-factor codes 5 per challenge and enrolment changes 10/15min per user; pledge 10/min per user; search 60/min per address, spent by the feed, its facets and search together because all three run the same query; autocomplete 300/min per address, counted apart because a suggestion is one request per keystroke. **The counter is per replica (#142):** with three instances every number here is really three times itself. Closing that needs shared storage, which the platform still does not have — the durable scheduler (#134) gave the fleet a lease table, not a key-value store |
+| Rate limiting | Sign-in 5/15min per address; registration 5/15min per address and 3/15min per email; two-factor codes 5 per challenge and enrolment changes 10/15min per user; pledge 10/min per user; search 60/min per address, spent by the feed, its facets and search together because all three run the same query; autocomplete 300/min per address, counted apart because a suggestion is one request per keystroke. **The counter is per replica (#142):** with three instances every number here is really three times itself. Closing that needs shared storage, which the platform still does not have — the durable scheduler (#134) gave the fleet a lease table, not a key-value store. Since #587, backer disputes are 10/hour per account and media upload addresses 120/hour per account, with at most 10 outstanding |
 | **Account enumeration** | Registration answers identically whether or not the address is known. The address itself is told which of the two happened |
-| Bot traffic | Challenge on registration and comment |
+| Bot traffic | **Not built: there is no challenge on registration or comment yet** (#587). Rate limits are the whole of the control on those two surfaces — registration per address and per email, comments per account and per address (§4.9) — and a challenge remains to be chosen and built |
 | File upload | Magic-byte validation, size caps, served from a separate origin |
 | Server-side request forgery | Allowlist for outbound fetches; internal ranges blocked |
 | Supply chain | Dependency scanning and automated updates |

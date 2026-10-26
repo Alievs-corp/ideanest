@@ -36,6 +36,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param jpegQuality the quality of a re-encoded photograph, 1–100
  * @param processing the sweep that turns an uploaded object into a servable one
  * @param video what a campaign video may be, and what it is turned into — issue #331
+ * @param uploads how many addresses one person may be issued — #587
  */
 @ConfigurationProperties(prefix = "ideanest.media")
 public record MediaProperties(
@@ -45,7 +46,8 @@ public record MediaProperties(
         int longestEdge,
         int jpegQuality,
         Processing processing,
-        Video video) {
+        Video video,
+        Uploads uploads) {
 
     /** §13.1's "20MB images". */
     private static final long DEFAULT_MAX_UPLOAD_BYTES = 20L * 1024 * 1024;
@@ -74,6 +76,7 @@ public record MediaProperties(
         jpegQuality = jpegQuality == 0 ? DEFAULT_JPEG_QUALITY : jpegQuality;
         processing = processing == null ? Processing.defaults() : processing;
         video = video == null ? Video.defaults() : video;
+        uploads = uploads == null ? new Uploads(0, null, 0) : uploads;
 
         if (maxUploadBytes <= 0) {
             throw new IllegalArgumentException("An upload ceiling is a positive number of bytes");
@@ -323,6 +326,35 @@ public record MediaProperties(
             }
             if (!abandonedAfter.isPositive()) {
                 throw new IllegalArgumentException("An abandoned upload is given up on after some time");
+            }
+        }
+    }
+
+    /**
+     * How many upload addresses one person may be issued — #587.
+     *
+     * <p>{@code POST /v1/media/uploads} inserted a row and signed an address for anybody
+     * signed in, as often as they asked, and each row stayed for {@link Processing#abandonedAfter}.
+     * Two bounds, because they stop different things: the rate stops a loop from filling the
+     * table, and the outstanding ceiling stops one account holding a stack of live write
+     * credentials to the bucket at once.
+     *
+     * @param perAccount addresses one account may be issued in {@code window}. A hundred and
+     *     twenty an hour is a campaign with a long illustrated story built in one sitting,
+     *     with retries, and not a script
+     * @param window the rate's period
+     * @param maxOutstanding addresses one account may hold that are still valid and not yet
+     *     announced. Counted over {@link MediaProperties#uploadWindow}, after which an address
+     *     is useless, so a client that lost a few uploads is not locked out for hours
+     */
+    public record Uploads(int perAccount, Duration window, int maxOutstanding) {
+
+        public Uploads {
+            perAccount = perAccount == 0 ? 120 : perAccount;
+            window = window == null ? Duration.ofHours(1) : window;
+            maxOutstanding = maxOutstanding == 0 ? 10 : maxOutstanding;
+            if (perAccount < 1 || maxOutstanding < 1 || !window.isPositive()) {
+                throw new IllegalArgumentException("An account may begin at least one upload in a positive window");
             }
         }
     }

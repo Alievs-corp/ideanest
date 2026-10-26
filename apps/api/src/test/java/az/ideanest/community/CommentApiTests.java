@@ -5,9 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import az.ideanest.audit.AuditEntry;
 import az.ideanest.audit.AuditEntryRepository;
 import az.ideanest.shared.EmailAddress;
+import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.Pledges;
+import az.ideanest.support.StaffGrants;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +54,9 @@ class CommentApiTests extends AbstractIntegrationTest {
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
     private static final String PASSWORD = "a-long-enough-password";
 
+    /** The note this suite's staff grants carry, so the cleanup removes exactly those. */
+    private static final String STAFF_FIXTURE_NOTE = "comment moderation fixture";
+
     @Autowired
     private TestRestTemplate rest;
 
@@ -86,6 +91,7 @@ class CommentApiTests extends AbstractIntegrationTest {
         pledgesMade.clear();
         jdbc.update("DELETE FROM project_state_transitions");
         jdbc.update("DELETE FROM projects");
+        StaffGrants.clear(dataSource, STAFF_FIXTURE_NOTE);
     }
 
     // ------------------------------------------------------------------
@@ -603,6 +609,45 @@ class CommentApiTests extends AbstractIntegrationTest {
         assertThat(rows).hasSize(1);
         assertThat(rows.getFirst().getActorId()).isEqualTo(creator.id());
         assertThat(rows.getFirst().getDetail()).contains(root.toString()).contains(backer.id().toString());
+    }
+
+    @Test
+    @DisplayName("a moderator can remove a comment, and the removal is audited under them")
+    void aModeratorCanRemoveAComment() {
+        Account creator = account("creator");
+        Account backer = account("backer");
+        Account moderator = account("moderator");
+        StaffGrants.grant(dataSource, moderator.id(), StaffRole.MODERATOR, STAFF_FIXTURE_NOTE);
+        UUID project = liveCampaign(creator);
+        UUID root = idOf(post(project, backer, "Buy cheap watches at example.com"));
+
+        assertThat(delete(root, moderator).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        List<AuditEntry> rows = auditEntries.findAll().stream()
+                .filter(entry -> project.equals(entry.getEntityId()))
+                .filter(entry -> "project.comment_removed".equals(entry.getAction()))
+                .toList();
+        assertThat(rows).hasSize(1);
+        assertThat(rows.getFirst().getActorId()).isEqualTo(moderator.id());
+        assertThat(rows.getFirst().getDetail()).contains("by=moderator");
+    }
+
+    @Test
+    @DisplayName("a member of staff without MODERATE_CONTENT cannot remove somebody else's comment")
+    void staffWithoutModerationCannotRemoveAComment() {
+        Account creator = account("creator");
+        Account backer = account("backer");
+        Account curator = account("curator");
+        StaffGrants.grant(dataSource, curator.id(), StaffRole.CURATOR, STAFF_FIXTURE_NOTE);
+        UUID project = liveCampaign(creator);
+        UUID root = idOf(post(project, backer, "Will this ship to Baku?"));
+
+        ResponseEntity<Map<String, Object>> refused = delete(root, curator);
+
+        // #295 made every role "staff". A curator arranges the front page; taking a backer's
+        // words off it is a moderator's decision, the same line #574 drew for campaigns.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(refused.getBody().get("code")).isEqualTo("COMMENT_DELETION_NOT_PERMITTED");
     }
 
     @Test

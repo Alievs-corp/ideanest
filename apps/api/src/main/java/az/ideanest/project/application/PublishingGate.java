@@ -6,6 +6,7 @@ import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.PublishingAllowance;
 import az.ideanest.shared.access.PublishingEntitlement;
 import java.math.BigDecimal;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -80,37 +81,63 @@ public class PublishingGate {
      * creator with no plan is not also told their goal is too big for the plan they do not
      * have.
      *
+     * <p><strong>Asked again when the campaign is approved and when it opens</strong> (#587),
+     * not only at submission. Nothing is locked between submitting and launching — the goal
+     * stays editable, the creator may submit other campaigns, a plan may lapse — so a check
+     * made once at submission let a campaign go live over the ceiling it was submitted under.
+     *
      * @throws SubscriptionRequiredException when the creator holds no entitlement
      * @throws PlanLimitExceededException when they hold one and it does not stretch to this
      */
     @Transactional(readOnly = true)
     public void requireEntitled(Project project) {
+        Optional<RuntimeException> refusal = refusalOf(project);
+        if (refusal.isPresent()) {
+            throw refusal.get();
+        }
+    }
+
+    /**
+     * {@link #requireEntitled} as a question, for a caller that has to skip rather than refuse.
+     *
+     * <p>The scheduled launch is that caller (#587). It shares one transaction with the
+     * campaign it is opening, and an exception leaving this proxy would mark that transaction
+     * rollback-only even if the caller caught it, which is the failure {@code RiskAssessments}
+     * documents. Nothing is thrown on this path, so nothing is marked.
+     */
+    @Transactional(readOnly = true)
+    public boolean isEntitled(Project project) {
+        return refusalOf(project).isEmpty();
+    }
+
+    private Optional<RuntimeException> refusalOf(Project project) {
         if (staff.isSuperAdmin(project.getCreatorId())) {
-            return;
+            return Optional.empty();
         }
 
         PublishingAllowance allowance = entitlement.allowanceOf(project.getCreatorId());
 
         if (!allowance.subscribed()) {
             log.info(
-                    "Campaign {} refused submission: creator {} holds no subscription",
+                    "Campaign {} refused publishing: creator {} holds no subscription",
                     project.getId(),
                     project.getCreatorId());
-            throw new SubscriptionRequiredException(project.getId());
+            return Optional.of(new SubscriptionRequiredException(project.getId()));
         }
 
         // Excluding this campaign, which is already counted when a rejected one is being
         // resubmitted -- and would then refuse every creator on a one-campaign plan.
         long held = projects.countInPlatformHands(project.getCreatorId(), project.getId());
         if (!allowance.permitsAnother(held)) {
-            throw PlanLimitExceededException.tooManyCampaigns(
-                    project.getId(), allowance.planCode(), allowance.maxActiveCampaigns(), held);
+            return Optional.of(PlanLimitExceededException.tooManyCampaigns(
+                    project.getId(), allowance.planCode(), allowance.maxActiveCampaigns(), held));
         }
 
         BigDecimal goal = project.getGoalAmount();
         if (!allowance.permitsGoal(goal, project.getCurrency())) {
-            throw PlanLimitExceededException.goalTooLarge(
-                    project.getId(), allowance.planCode(), allowance.goalCeiling(), goal, project.getCurrency());
+            return Optional.of(PlanLimitExceededException.goalTooLarge(
+                    project.getId(), allowance.planCode(), allowance.goalCeiling(), goal, project.getCurrency()));
         }
+        return Optional.empty();
     }
 }

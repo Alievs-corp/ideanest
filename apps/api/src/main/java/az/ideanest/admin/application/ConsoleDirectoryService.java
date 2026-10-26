@@ -1,6 +1,7 @@
 package az.ideanest.admin.application;
 
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.shared.project.ProjectSummaries;
 import az.ideanest.shared.project.ProjectSummary;
 import az.ideanest.user.application.UserAccount;
@@ -33,13 +34,23 @@ import org.springframework.transaction.annotation.Transactional;
  * {@link ProjectSummaries#summariesOf} exists because the notification module had exactly
  * this problem with campaign titles.
  *
- * <h2>Staff, and no capability beyond that</h2>
+ * <h2>{@code ADMINISTER_ACCOUNTS} or {@code MODERATE_CONTENT}</h2>
  *
- * <p>Every screen that needs a name is already behind its own capability, and this adds
- * nothing to what those screens are allowed to know. Requiring, say, {@code VIEW_FINANCE}
- * here would mean the payout queue could name its signers and the ledger could not, for no
- * reason anybody could state — and requiring {@code ADMINISTER_ACCOUNTS} would put the
- * account directory's authority in front of a member of finance reading their own queue.
+ * <p>It asked only whether the caller was staff, which since #295 every role is, and it
+ * answers about <em>any</em> identifier, not the ones on the caller's screen: a partner, whose
+ * one capability is a statistics page, could resolve every account on the platform and the
+ * title of every campaign still in draft or in review, which nothing else shows them. The two
+ * authorities that already see people and unpublished campaigns by their work are the account
+ * directory's and the moderation queues', so either one opens this (#587).
+ *
+ * <p><strong>What that costs, deliberately.</strong> A member of staff holding neither — a
+ * finance-only, compliance-only, curator or partner account — is refused, and every screen
+ * that asks degrades to the short identifiers it rendered before #402, because
+ * {@code useDirectoryNames} swallows a refusal by design. A super admin, who holds both, still
+ * sees names everywhere, including on the payout approvals #402 was about. Naming a role's
+ * own rows without naming everybody's would need each screen to say which identifiers it
+ * holds and the service to check them against that screen's capability, which is a change to
+ * every caller; failing closed until then is the safe direction.
  *
  * <h2>It is not audited, and that is a considered exception</h2>
  *
@@ -112,12 +123,14 @@ public class ConsoleDirectoryService {
      * @param projectIds the campaigns, likewise
      * @throws az.ideanest.staff.application.NotAModeratorException for a caller who is not
      *     platform staff
+     * @throws az.ideanest.staff.application.InsufficientStaffCapabilityException for a member
+     *     of staff holding neither {@code ADMINISTER_ACCOUNTS} nor {@code MODERATE_CONTENT}
      * @throws TooManyIdentifiersException when the two lists together are over
      *     {@link #MAX_IDENTIFIERS}
      */
     @Transactional(readOnly = true)
     public ConsoleDirectory lookUp(UUID staffId, Collection<UUID> accountIds, Collection<UUID> projectIds) {
-        staff.requireStaff(staffId);
+        requireReader(staffId);
 
         int asked = size(accountIds) + size(projectIds);
         if (asked > MAX_IDENTIFIERS) {
@@ -137,6 +150,18 @@ public class ConsoleDirectoryService {
                 .toList();
 
         return new ConsoleDirectory(named, titled);
+    }
+
+    /**
+     * {@code ADMINISTER_ACCOUNTS}, or else {@code MODERATE_CONTENT} — the shape
+     * {@code CampaignDirectory} uses for "either of two". A stranger is still told they do not
+     * work here, and a colleague holding neither is told the capability they lack.
+     */
+    private void requireReader(UUID staffId) {
+        if (staff.capabilitiesOf(staffId).contains(StaffCapability.ADMINISTER_ACCOUNTS)) {
+            return;
+        }
+        staff.requireCapability(staffId, StaffCapability.MODERATE_CONTENT);
     }
 
     private static NamedProject titled(ProjectSummary summary) {

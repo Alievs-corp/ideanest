@@ -3,6 +3,7 @@ package az.ideanest.pledge.api;
 import az.ideanest.pledge.application.DraftPledge;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -19,7 +20,7 @@ import java.util.List;
  * decide what to do with.
  */
 public record BuyAddonsRequest(
-        @NotEmpty(message = "A purchase names at least one add-on") @Valid List<PledgeAddonBody> addons) {
+        @NotEmpty(message = "A purchase names at least one add-on") @Size(max = 200) @Valid List<PledgeAddonBody> addons) {
 
     /** What the pledge manager takes. The same conversion the checkout uses. */
     public List<DraftPledge.AddonSelection> selections() {

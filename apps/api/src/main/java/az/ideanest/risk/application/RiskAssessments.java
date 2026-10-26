@@ -5,6 +5,8 @@ import az.ideanest.risk.domain.RiskAssessment;
 import az.ideanest.risk.domain.RiskDecision;
 import az.ideanest.risk.infrastructure.RiskAssessmentRepository;
 import az.ideanest.risk.infrastructure.RiskFacts;
+import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -57,6 +59,18 @@ import tools.jackson.databind.ObjectMapper;
  * that share it, which is exactly the argument {@code NotificationRecipients} makes about
  * integrity errors.
  *
+ * <h2>The reads are finance's, and they are guarded here</h2>
+ *
+ * <p>{@link #queue}, {@link #historyOf} and {@link #markReviewed} ask for
+ * {@link StaffCapability#VIEW_FINANCE} themselves rather than trusting the controller to. The
+ * controller asked {@code requireStaff}, which since #295 is true for every role, so a partner
+ * or a curator could read the list of backers the platform suspects; and a guard that lives
+ * only in a controller is one the next caller forgets. {@code VIEW_FINANCE} rather than a new
+ * capability because the queue's job is §9.5's gap between a flagged pledge and a charge: the
+ * people who act on it are the ones who read the payment log and issue the refund, and a
+ * sixth finance capability nobody holds without the other five would be a grant-screen row
+ * with no decision behind it.
+ *
  * <p><strong>The listener catching is not enough, and finding that out is what this
  * paragraph is for.</strong> A {@code @Transactional} method that joins the caller's
  * transaction marks it rollback-only on the way out, so the caller catching the exception
@@ -76,6 +90,7 @@ public class RiskAssessments {
     private final AddressGeography geography;
     private final RiskAssessmentRepository assessments;
     private final RiskProperties properties;
+    private final PlatformStaff staff;
     private final ObjectMapper json;
     private final Clock clock;
 
@@ -85,6 +100,7 @@ public class RiskAssessments {
             AddressGeography geography,
             RiskAssessmentRepository assessments,
             RiskProperties properties,
+            PlatformStaff staff,
             ObjectMapper json,
             Clock clock) {
         this.facts = facts;
@@ -92,6 +108,7 @@ public class RiskAssessments {
         this.geography = geography;
         this.assessments = assessments;
         this.properties = properties;
+        this.staff = staff;
         this.json = json;
         this.clock = clock;
     }
@@ -151,13 +168,20 @@ public class RiskAssessments {
 
     /** §4.11's AD-02 queue: what needs looking at, worst first. */
     @Transactional(readOnly = true)
-    public List<RiskAssessment> queue(int limit) {
+    public List<RiskAssessment> queue(UUID staffId, int limit) {
+        staff.requireCapability(staffId, StaffCapability.VIEW_FINANCE);
         return assessments.queue(PageRequest.ofSize(limit));
     }
 
-    /** Everything ever noticed about one pledge, newest first. */
+    /**
+     * Everything ever noticed about one pledge, newest first.
+     *
+     * <p>The capability is asked before the pledge is looked up, so a caller who may not read
+     * the queue learns nothing about which pledges were assessed.
+     */
     @Transactional(readOnly = true)
-    public List<RiskAssessment> historyOf(UUID pledgeId) {
+    public List<RiskAssessment> historyOf(UUID staffId, UUID pledgeId) {
+        staff.requireCapability(staffId, StaffCapability.VIEW_FINANCE);
         return assessments.findBySubjectTypeAndSubjectIdOrderByAssessedAtDesc(RiskAssessment.PLEDGE, pledgeId);
     }
 
@@ -171,6 +195,7 @@ public class RiskAssessments {
      */
     @Transactional
     public Optional<RiskAssessment> markReviewed(UUID assessmentId, UUID staffId) {
+        staff.requireCapability(staffId, StaffCapability.VIEW_FINANCE);
         return assessments.findByIdAndReviewedAtIsNull(assessmentId).map(assessment -> {
             assessment.reviewedBy(staffId, clock.instant());
             return assessment;

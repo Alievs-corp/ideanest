@@ -83,8 +83,8 @@ public class LocalObjectStore implements ObjectStore {
     }
 
     @Override
-    public URI presignedPut(String key, String contentType, Duration window) {
-        return URI.create("https://storage.test/" + key + "?signed=1&type=" + contentType);
+    public URI presignedPut(String key, String contentType, long contentLength, Duration window) {
+        return URI.create("https://storage.test/" + key + "?signed=1&type=" + contentType + "&length=" + contentLength);
     }
 
     @Override

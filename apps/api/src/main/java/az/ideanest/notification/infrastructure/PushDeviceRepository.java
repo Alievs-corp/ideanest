@@ -42,6 +42,14 @@ public interface PushDeviceRepository extends JpaRepository<PushDevice, UUID> {
     long deleteByToken(String token);
 
     /**
+     * Forgets one installation, if it is registered to this account (#587).
+     *
+     * <p>What sign-out calls. {@link #deleteByToken} stays for the push service's own
+     * {@code DeviceNotRegistered}, which is about the token and nobody's request.
+     */
+    long deleteByTokenAndUserId(String token, UUID userId);
+
+    /**
      * The retention sweep — §17.4.
      *
      * <p>A registration nobody has refreshed is an address nobody has confirmed. Deleting
