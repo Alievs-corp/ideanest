@@ -6235,7 +6235,11 @@
       "moderatorNote": "A moderator reads the campaign and either approves it, asks for changes, or refuses it. Approval publishes it straight away, or at the launch time you set, and its goal and deadline are fixed from then. You can keep editing while it is in review.",
       "done": "Done",
       "launchExplanation": "The campaign appears everywhere on the platform and starts taking pledges the moment it launches. Its goal and its deadline freeze from that point, and a live campaign cannot be taken back to a draft.",
-      "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft."
+      "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft.",
+      "scheduledLaunchRefused": {
+        "title": "This campaign did not open at its launch time",
+        "body": "Your plan did not cover this campaign when it was due to open on {date}, so it was not published and its launch time was cleared. It is still approved. Renew or change your plan, or lower the goal to one your plan covers, then launch it here or set a new launch time."
+      }
     },
     "cover": {
       "label": "Cover image",

@@ -21,6 +21,11 @@ export function reviewFailureMessage(cause: unknown, words: ReviewPanelCopy): st
     if (cause.problem?.code === 'PLAN_LIMIT_EXCEEDED') {
       return cause.problem?.detail ?? words.planDoesNotCover;
     }
+    /*
+     * No plan, met where it is not navigated away from: a launch (#589). The service's sentence is
+     * about sending a campaign for review, which is not what was pressed. A submit never gets here.
+     */
+    if (cause.problem?.code === 'SUBSCRIPTION_REQUIRED') return words.planDoesNotCover;
     // Not "you do not have access": it is their own campaign, and the answer is the agreement.
     const asked = creatorAgreementRefusalOf(cause.problem?.code, cause.problem?.meta);
     if (asked !== null) return asked.requires === 'SIGNATURE' ? words.agreementSignature : words.agreementRequired;
@@ -45,6 +50,28 @@ export interface SubmitRefusal {
  */
 export function needsSubscription(cause: unknown): boolean {
   return cause instanceof ApiError && cause.problem?.code === 'SUBSCRIPTION_REQUIRED';
+}
+
+/** A refused launch, as something to render under the confirmation. */
+export interface LaunchRefusal {
+  readonly message: string;
+  /** The plan refused it — there is none, or it does not stretch this far: the plans are offered. */
+  readonly plans: boolean;
+}
+
+/**
+ * A launch is refused for the plan without leaving the tab, unlike a submit (#589): the creator is
+ * at the irreversible step with the confirmation open, a lapsed plan and a goal over the plan's
+ * ceiling read the same to them, and the pricing screen's `from=submit` explains a submission. So
+ * both plan codes say the plan does not cover the campaign and offer the plans beside it.
+ */
+export function launchRefusal(cause: unknown, words: ReviewPanelCopy): LaunchRefusal {
+  return {
+    message: reviewFailureMessage(cause, words),
+    plans:
+      cause instanceof ApiError &&
+      (cause.problem?.code === 'SUBSCRIPTION_REQUIRED' || cause.problem?.code === 'PLAN_LIMIT_EXCEEDED'),
+  };
 }
 
 /**

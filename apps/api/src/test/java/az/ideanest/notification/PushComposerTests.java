@@ -155,6 +155,32 @@ class PushComposerTests {
     }
 
     @Test
+    @DisplayName("sends a campaign that did not open at its launch time to its editor's review tab (#589)")
+    void aRefusedScheduledLaunchOpensTheEditor() {
+        // The campaign is approved and not public, so its page is nothing its creator can act on.
+        // The review tab says why it did not open and launches it; the app parses the same path.
+        PushComposer.PushContent content = composer.compose(
+                message(NotificationType.SCHEDULED_LAUNCH_REFUSED, """
+                        {"projectId":"11111111-1111-1111-1111-111111111111","projectTitle":"Solar Lamp",\
+                        "creatorSlug":"aysel","projectSlug":"solar-lamp","scheduledFor":"2026-11-01"}"""),
+                null,
+                "",
+                ENGLISH);
+
+        assertThat(content.url()).isEqualTo("ideanest://projects/11111111-1111-1111-1111-111111111111/edit/review");
+
+        // A document with no identifier has no editor to name, and keeps the campaign's page.
+        PushComposer.PushContent unnamed = composer.compose(
+                message(NotificationType.SCHEDULED_LAUNCH_REFUSED, """
+                        {"creatorSlug":"aysel","projectSlug":"solar-lamp"}"""),
+                null,
+                "",
+                ENGLISH);
+
+        assertThat(unnamed.url()).isEqualTo("ideanest://projects/aysel/solar-lamp");
+    }
+
+    @Test
     @DisplayName("links a new sign-in to the session list, as the web inbox does")
     void aNewSignInLinksToTheSessions() {
         // The web's hrefOf sends NEW_DEVICE_SIGN_IN to /settings/sessions. It used to be the

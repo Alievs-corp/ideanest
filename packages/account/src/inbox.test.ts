@@ -153,6 +153,23 @@ describe('hrefOf', () => {
       expect(hrefOf(notification({ type, category: 'PAYMENTS', params: {} }))).toBe('/pricing');
     }
   });
+
+  it('sends a campaign that did not open at its launch time to its editor’s review tab, as the email does (#589)', () => {
+    // Approved and not public: the page the slugs name is not one its creator can act on.
+    expect(hrefOf(notification({ type: 'SCHEDULED_LAUNCH_REFUSED', category: 'CAMPAIGN' }))).toBe(
+      '/projects/01890000-0000-7000-8000-000000000001/edit/review',
+    );
+    // A document with no identifier names no editor, and keeps the campaign's page.
+    expect(
+      hrefOf(
+        notification({
+          type: 'SCHEDULED_LAUNCH_REFUSED',
+          category: 'CAMPAIGN',
+          params: { creatorSlug: 'aysel-studio', projectSlug: 'xari-bulbul-ceramics' },
+        }),
+      ),
+    ).toBe('/projects/aysel-studio/xari-bulbul-ceramics');
+  });
 });
 
 describe('isAboutAPlan', () => {

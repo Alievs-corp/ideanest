@@ -2005,6 +2005,12 @@ export interface ReviewPanelCopy {
    * opens on its own (#552). Carries `{date}`.
    */
   readonly opensAt: string;
+  /**
+   * Why an approved campaign has no launch time any more: the clock refused to open it at that
+   * time because the plan did not cover it, and cleared it (#589). `body` carries `{date}`, the
+   * moment of the refusal.
+   */
+  readonly scheduledLaunchRefused: { readonly title: string; readonly body: string };
   /** The language whose plural rule picks the outstanding-items form. */
   readonly locale: Locale;
 }
@@ -2071,6 +2077,10 @@ export function reviewPanelCopyFrom(
     unreachable: at('unreachable'),
     stateNote: record(REVIEW_NOTED_STATES, (state) => at(`stateNote.${state}`)),
     opensAt: tpl('opensAt'),
+    scheduledLaunchRefused: {
+      title: at('scheduledLaunchRefused.title'),
+      body: tpl('scheduledLaunchRefused.body'),
+    },
     locale,
   };
 }

@@ -46,6 +46,15 @@ describe('where a tapped push goes (#160)', () => {
   });
 });
 
+describe('a campaign that did not open at its launch time (#589)', () => {
+  it('opens the campaign’s editor at its review tab, which the service now names', () => {
+    const id = '01890000-0000-7000-8000-000000000001';
+    expect(
+      pushTapOf({ url: `ideanest://projects/${id}/edit/review`, type: 'SCHEDULED_LAUNCH_REFUSED' }, HOST),
+    ).toEqual({ destination: { pathname: `/campaigns/${id}/edit/review` }, web: null, notificationId: null });
+  });
+});
+
 describe('a message about the creator’s plan (#452)', () => {
   it('opens the pricing page on the website for each of the three types, whatever the url says', () => {
     for (const type of ['SUBSCRIPTION_RENEWAL_DUE', 'SUBSCRIPTION_LAPSED', 'SUBSCRIPTION_RENEWED']) {

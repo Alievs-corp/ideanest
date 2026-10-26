@@ -6235,7 +6235,11 @@
       "moderatorNote": "Bir moderatör kampanyayı okur ve ya onaylar, ya değişiklik ister, ya da reddeder. Onay kampanyayı hemen ya da belirlediğiniz lansman saatinde yayınlar, o andan itibaren hedefi ve bitiş tarihi değişmez. İnceleme sürerken düzenlemeye devam edebilirsiniz.",
       "done": "Tamamlandı",
       "launchExplanation": "Kampanya başlatıldığı anda platformun her yerinde görünür ve destek almaya başlar. O andan itibaren hedefi ve bitiş tarihi değişmez, yayındaki bir kampanya taslağa geri alınamaz.",
-      "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz."
+      "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz.",
+      "scheduledLaunchRefused": {
+        "title": "Bu kampanya lansman saatinde açılmadı",
+        "body": "Kampanya {date} tarihinde açılacağı sırada planınız onu kapsamıyordu, bu yüzden yayınlanmadı ve lansman saati kaldırıldı. Kampanya onaylı olarak kalıyor. Planınızı yenileyin ya da değiştirin veya hedefi planınızın kapsadığı bir tutara düşürün, ardından kampanyayı buradan başlatın ya da yeni bir lansman saati belirleyin."
+      }
     },
     "cover": {
       "label": "Kapak görseli",

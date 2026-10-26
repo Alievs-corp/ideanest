@@ -420,6 +420,83 @@ describe('ReviewPanel', () => {
     expect(screen.getByTestId('review-launch')).toBeTruthy();
   });
 
+  /*
+   * #589. A launch refused for want of a plan said "You do not have access to this campaign" to its
+   * own creator. Unlike a submit it stays on the tab, with the confirmation and the reason.
+   */
+  it('says the plan does not cover the campaign when a launch meets no plan, and offers the plans', async () => {
+    mockProject = async () => project({ state: 'APPROVED' });
+    mockChecklist = async () => ({ ...READY, state: 'APPROVED' });
+    mockSend.mockRejectedValue(
+      new ApiError(403, {
+        status: 403,
+        code: 'SUBSCRIPTION_REQUIRED',
+        detail: 'Building a campaign is free. Sending one for review needs an active plan.',
+      }),
+    );
+    await show();
+    await fireEvent.press(screen.getByTestId('review-launch'));
+    await fireEvent.press(screen.getByTestId('review-launch-now'));
+    await settle();
+
+    const failed = screen.getByTestId('review-launch-failed');
+    expect(failed).toHaveTextContent(words.planDoesNotCover, { exact: false });
+    expect(failed).not.toHaveTextContent(words.noAccess, { exact: false });
+    expect(failed).not.toHaveTextContent('Sending one for review', { exact: false });
+    expect(screen.getByTestId('review-launch-confirm')).toBeTruthy();
+    expect(mockRouter.push).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByTestId('review-launch-plans'));
+    expect(mockRouter.push).toHaveBeenCalledWith('/pricing');
+  });
+
+  it('offers the plans beside a plan bound that refused a launch, and not beside any other refusal', async () => {
+    mockProject = async () => project({ state: 'APPROVED' });
+    mockChecklist = async () => ({ ...READY, state: 'APPROVED' });
+    mockSend.mockRejectedValueOnce(
+      new ApiError(403, { status: 403, code: 'PLAN_LIMIT_EXCEEDED', detail: 'Your plan allows goals up to 10000.00 AZN.' }),
+    );
+    await show();
+    await fireEvent.press(screen.getByTestId('review-launch'));
+    await fireEvent.press(screen.getByTestId('review-launch-now'));
+    await settle();
+    expect(screen.getByTestId('review-launch-failed')).toHaveTextContent('Your plan allows goals up to 10000.00 AZN.', {
+      exact: false,
+    });
+    expect(screen.getByTestId('review-launch-plans')).toBeTruthy();
+
+    mockSend.mockRejectedValueOnce(
+      new ApiError(409, { status: 409, code: 'PROJECT_NOT_LAUNCHABLE', detail: 'This campaign has no goal.' }),
+    );
+    await fireEvent.press(screen.getByTestId('review-launch-now'));
+    await settle();
+    expect(screen.getByTestId('review-launch-failed')).toHaveTextContent('This campaign has no goal.', { exact: false });
+    expect(screen.queryByTestId('review-launch-plans')).toBeNull();
+  });
+
+  it('says why the launch time is gone after the clock refused it, and offers the plans (#589)', async () => {
+    mockProject = async () =>
+      project({ state: 'APPROVED', scheduledLaunchAt: null, scheduledLaunchRefusedAt: '2026-11-01T09:00:00Z' });
+    mockChecklist = async () => ({ ...READY, state: 'APPROVED' });
+    await show();
+
+    const refused = screen.getByTestId('review-launch-refused');
+    expect(refused).toHaveTextContent(words.scheduledLaunchRefused.title, { exact: false });
+    expect(refused).toHaveTextContent(/Your plan did not cover this campaign when it was due to open on .*2026/);
+    // And the way to open it is still on the tab.
+    expect(screen.getByTestId('review-launch')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('review-launch-refused-plans'));
+    expect(mockRouter.push).toHaveBeenCalledWith('/pricing');
+  });
+
+  it('says nothing of the kind about a campaign the clock never refused', async () => {
+    mockProject = async () => project({ state: 'APPROVED', scheduledLaunchAt: null });
+    mockChecklist = async () => ({ ...READY, state: 'APPROVED' });
+    await show();
+    expect(screen.queryByTestId('review-launch-refused')).toBeNull();
+  });
+
   it('draws no Launch for a campaign that opens on its own at its launch time (#552)', async () => {
     mockProject = async () => project({ state: 'APPROVED', scheduledLaunchAt: '2099-01-01T09:00:00Z' });
     mockChecklist = async () => ({ ...READY, state: 'APPROVED' });

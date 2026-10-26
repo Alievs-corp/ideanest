@@ -1,5 +1,5 @@
 import { RETURN_GRACE_MS, claimReturnRoute } from './auth-session-links';
-import { NOT_FOUND, incomingLink, listenForLinks, shareUrlFor, type LinkSource } from './links';
+import { NOT_FOUND, inboxRouteOf, incomingLink, listenForLinks, shareUrlFor, type LinkSource } from './links';
 
 /*
  * The parser and the claimed-route table are `@ideanest/links`, tested there over every row in
@@ -208,6 +208,26 @@ describe('Expo Router’s own link handling', () => {
       expect(redirectSystemPath({ path, initial: true })).toBeNull();
       expect(redirectSystemPath({ path, initial: false })).toBeNull();
     }
+  });
+});
+
+describe('inboxRouteOf (#589)', () => {
+  const id = '01890000-0000-7000-8000-000000000001';
+
+  it('reads a path keyed by a campaign id as the route the app keeps it under', () => {
+    expect(inboxRouteOf(`/projects/${id}/edit/review`, HOST)).toBe(`/campaigns/${id}/edit/review`);
+  });
+
+  it('leaves the paths the app shares with the web as they are', () => {
+    expect(inboxRouteOf('/projects/aysel/solar-lamp', HOST)).toBe('/projects/aysel/solar-lamp');
+    expect(inboxRouteOf('/settings/sessions', HOST)).toBe('/settings/sessions');
+    expect(inboxRouteOf('/settings/payout', HOST)).toBe('/settings/payout');
+    expect(inboxRouteOf(`/pledges/${id}`, HOST)).toBe(`/pledges/${id}`);
+  });
+
+  it('pushes a path the parser does not answer as it was, rather than the not-found screen', () => {
+    expect(inboxRouteOf(`/projects/${id}`, HOST)).toBe(`/projects/${id}`);
+    expect(inboxRouteOf('/somewhere/new', HOST)).toBe('/somewhere/new');
   });
 });
 
