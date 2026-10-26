@@ -1687,7 +1687,7 @@ Preferences are per category and per channel, with a digest option.
 | AD-03 | Curation | Editorial badges, collections, open calls, placement. The endpoints arrived with #48; **the four screens are built (#300 to #303)** at `/admin/curation` and its three siblings |
 | AD-04 | User management | Search, inspect, ban, verification status, audited impersonation. **Search, inspect and the ban are built (#104)**, and **`/admin/staff` is built (#295)** — the role model that replaced the configured list. **The search folds like every other search since #413**: it matched on `lower()`, which leaves ə, ı, ö, ü, ğ, ş and ç alone, so this box found "Köhnə" from `köhnə` and not from `kohne` while the campaign directory beside it found both — and, matching a different expression from the one V63's indexes are built on, it read every row. It now names §11.3's `ideanest_fold`, which V64 completes with the third index the address needed. **The account page also shows what the account held and paid the platform (#23)**: every subscription with its plan, state and price, and the payments received with reversals marked. Any member of staff may read it, as with the account's pledges, and an `ACTIVE` subscription whose period has run out is drawn as expired, because `state` alone would say somebody can publish who cannot. Impersonation is not, and is the one thing in this table still waiting on a decision (#299) |
 | AD-05 | Finance | Payment log, ledger, payout queue, approvals, disputes, and whether the sum of them is right. **All of it is built**: the log and the ledger with #304 and #305, the payout queue and its dual approval with #69 and #306, and the reconciliation with #106 at `/admin/reconciliation`. That last screen is what kept "financial operations tooling" open with the other three built — #70's nightly pass answered "do the books balance" to a log line and a Prometheus gauge and to nobody who works in this console. It reports and never repairs, so there is no control on it that corrects anything. **Since #431 the queue also says why a payout is held on identity** — the standing is drawn as one of eight values rather than as "not verified", because a creator who has never been asked and one whose documents are already in the review queue are different things for an operator to do next, and a waiver (#436) is drawn as a waiver rather than as a verification. **The payment log is ordered by `created_at` since #412**, not by the primary key — AD-14's defect on the one console surface that is entirely money, and it cost more there: §9.6 permits four collection attempts, so "declined, declined, collected" read in the wrong order is a different story about the same pledge. The cursor carries the instant and the identifier that breaks its tie, and is therefore an opaque string rather than a `uuid`. **Since #396 the payout destinations have their own screen**, `/admin/payout-destinations`, which the rail offers to `VERIFY_PAYOUT_DESTINATION` rather than `VIEW_FINANCE`: confirming where money goes is Compliance's, and the person who sends it is not the person who checks the account |
-| AD-06 | Refunds | Full and partial with reason codes. **Built (#67, #307)** at `/admin/refunds`. The decision — reason code, author, state — is `refunds`; the money is a `REFUND` transaction and a ledger posting, and the two are deliberately separate tables. **Issuing asks first**: `GET /v1/admin/refunds/refundable` (`ISSUE_REFUND`) answers the pledge's currency, what "the rest" comes to net of a withheld fee, the campaign and the backer, and the console confirms before it sends. A provider refund is refused (`REFUND_CHARGE_DISPUTED`) while the charge is in an open chargeback, as a bank transfer already was, and a refund in another currency than the pledge's is `CURRENCY_MISMATCH`. **Plan payments that bought nothing are returned here too (#457)**: a card payment that arrived for a subscription that had ended is `UNAPPLIED` (§5.6), listed oldest first with the date the provider's card refund window closes (`VIEW_FINANCE`), and returned in full to the card through the provider or, once that window has closed, recorded as returned by bank transfer (`ISSUE_REFUND`, audited `subscription.payment_refunded`). A card refund is claimed under the row's lock before the provider is asked (V108), under one key for every attempt: a refusal clears the claim, and an unanswered refund keeps it, so the bank transfer is refused (`PLAN_REFUND_CARD_REFUND_UNSETTLED`) and the next card refund asks the provider whether the money already went back before it sends anything. It becomes `REFUNDED` on `subscription_charges` (V104); no receipt is reversed, because an unapplied payment never wrote one |
+| AD-06 | Refunds | Full and partial with reason codes. **Built (#67, #307)** at `/admin/refunds`. The decision — reason code, author, state — is `refunds`; the money is a `REFUND` transaction and a ledger posting, and the two are deliberately separate tables. **Issuing asks first**: `GET /v1/admin/refunds/refundable` (`ISSUE_REFUND`) answers the pledge's currency, what "the rest" comes to net of a withheld fee, the campaign and the backer, and the console confirms before it sends. A provider refund is refused (`REFUND_CHARGE_DISPUTED`) while the charge is in an open chargeback, as a bank transfer already was, and a refund in another currency than the pledge's is `CURRENCY_MISMATCH`. A refund on a campaign already paid out is refused (`REFUND_AFTER_PAYOUT`, #587): nothing is refunded through the platform after payout (§6.3), and a chargeback the network forces then is the creator's debt (§9.8). **Plan payments that bought nothing are returned here too (#457)**: a card payment that arrived for a subscription that had ended is `UNAPPLIED` (§5.6), listed oldest first with the date the provider's card refund window closes (`VIEW_FINANCE`), and returned in full to the card through the provider or, once that window has closed, recorded as returned by bank transfer (`ISSUE_REFUND`, audited `subscription.payment_refunded`). A card refund is claimed under the row's lock before the provider is asked (V108), under one key for every attempt: a refusal clears the claim, and an unanswered refund keeps it, so the bank transfer is refused (`PLAN_REFUND_CARD_REFUND_UNSETTLED`) and the next card refund asks the provider whether the money already went back before it sends anything. It becomes `REFUNDED` on `subscription_charges` (V104); no receipt is reversed, because an unapplied payment never wrote one |
 | AD-07 | Chargebacks | Notification, evidence, outcome. **Built (#68, #308)** at `/admin/disputes`. Intake is a provider webhook and no endpoint opens one; evidence is recorded here and still submitted through the provider's own console, because §9.3's interface has no upload. **An outcome is recorded once per presentment**: resolving a closed case is refused (`DISPUTE_ALREADY_RESOLVED`), because a `WON` after a `LOST` would leave the loss, the creator's debt and the suspension standing under a case that reads as won; a case the provider raises again is reopened by the webhook. A lost chargeback's `CHARGEBACK` refund row is capped at what the charge had left to refund, so the refund sums never count money as returned twice |
 | AD-08 | Taxonomy | Category and tag management with translations. **Built (#309)** at `/admin/taxonomy`. Handles are permanent — they are in the public URL of every campaign filed under them — and nothing can be retired, because `projects.category_id` references these rows |
 | AD-01a | Lapsed update obligations | §5.5's escalation queue (#437), at `GET /v1/admin/update-obligations` and `POST /v1/admin/update-obligations/{projectId}/resolve` — `MODERATE_CONTENT`, audited. **Filed under AD-01 rather than as a seventeenth module** because it is the same authority over the same subject: a campaign the platform has a concern about, decided by a person. Lapses nobody has closed, oldest first, because the campaign that has been silent longest is the one a backer is most likely to be asking about. **Resolving closes the case and not the obligation** — the clock keeps running, and a creator who lapses again is escalated again — which is why the note is required: the next moderator has to be able to tell "spoke to them" from "they had already posted". Nothing here refunds, suspends or de-ranks anything; §9.7 says the platform mediates |
@@ -4303,6 +4303,22 @@ collecting it.
 > `confirm` stayed for the retired model until the web checkout moved (#44), and #45 removed it
 > together with the collection jobs.
 >
+> **One page per draft, its amount checked, a second payment returned (#587).** A request under a
+> new `Idempotency-Key` while a page opened for the draft in the last
+> `hosted-charges.answered-after` (15 minutes) is still unsettled, for the draft's current total,
+> is answered with that page (`PaymentPage.waiting`; the pending row records `paymentUrl`) rather
+> than a second provider order — `SubscriptionCheckout`'s rule. Two requests in the same instant can
+> still open two, and so can a page older than the window; if both are paid, the first collects the
+> pledge and the second is posted (the money arrived), recorded in `duplicate_charges` (V119),
+> logged at ERROR, counted (`ideanest.payment.hosted.anomalies{reason="duplicate"}`) and returned in
+> full by `campaign-refunds` as `DUPLICATE_CHARGE`, with no author, as a raise that could not be
+> applied is: it is never in a payout's gross, its refund is not in the payout's refunded figure, a
+> staff refund draws on it last, and the pledge stays `COLLECTED`. When the provider says how much
+> was paid — Payriff's callback and lookup both do — it must be the pending row's amount and
+> currency; anything else is recorded `FAILED` with `amount_mismatch`, collects and posts nothing,
+> and is logged at ERROR and counted (`reason="amount_mismatch"`, a paging alert) for a person to
+> settle with the provider. The amount credited is always the platform's own.
+>
 > **Built (#44), the checkout.** The review step's control now reads "Continue to payment"
 > (with §22.3's acknowledgement in its label when an agreement is published) and calls
 > `/payment` with the page's language and two return addresses, `/{locale}/pledges/{id}` with
@@ -4563,8 +4579,15 @@ single-file change.
 > it opens the delivery's transaction, so an unauthenticated request never holds a database
 > connection across a call to Payriff, and the adapter's client has a 5 s connect and 30 s read
 > timeout. An order Payriff answers 404 for is a verification failure (400); an order still
-> undecided, or a lookup Payriff refuses or fails, is a provider unavailable (500), so Payriff
+> undecided, or a lookup Payriff refuses or fails, is a 503 `WEBHOOK_RETRY_LATER` (#587), so Payriff
 > sends the callback again rather than the only news of a payment being recorded and dropped.
+> **Since #587 Payriff is asked only about an order a page is waiting on.** The adapter names the
+> order from the body alone (`unsignedCallbackReference`), and `ProviderWebhooks` asks Payriff only
+> when a pledge's page (`transactions`) or a plan's (`subscription_charges`) is still `PENDING`
+> under it. Any other order — settled, never ours, or guessed — is answered 200 like a delivery that
+> was acted on, records nothing and asks nobody. The question goes through `ProviderCircuitBreaker`:
+> an open breaker answers 503 without asking, and an order still undecided is an answer, not an
+> outage, so posting an open page's callback cannot open the breaker.
 > AZN, USD and EUR. Payouts refuse: Payriff's `/payout` takes a card number, name and FIN, which
 > SAQ A does not allow, and #352 decides. Configured as `primary: PAYRIFF` with
 > `ideanest.payment.payriff.{base-url,secret-key,callback-url,language}`; the callback URL must be
@@ -4595,7 +4618,12 @@ single-file change.
 > callback landing at the same moment is decided by V41's settled index. Pending or unanswered
 > pages go to the back of the queue (V95's `hosted_charge_checks`) and are asked again until seven
 > days after they opened, because an abandoned page stays pending at some providers for ever.
-> Paid and already returned is settled neither way: logged at ERROR for a person.
+> Paid and already returned is settled neither way: logged at ERROR for a person. **A page still
+> pending when its seven days end is reported, not forgotten (#587):** the pass that finds it logs
+> it at ERROR with what the provider last said, counts it
+> (`ideanest.payment.hosted.anomalies{reason="aged_out"}`, alerted) and stamps
+> `hosted_charge_checks.aged_out_at` (V120) so it is reported once. It is still settled neither
+> way; whether the backer paid is a person's question for the provider.
 >
 > **Return addresses are the site's, not the caller's (#139).** `POST /v1/pledges/{id}/payment`
 > and `POST /v1/me/payout-destination/card-registration` take a `successUrl` and an `errorUrl`
@@ -4766,6 +4794,14 @@ compares only that provider's transactions and **excludes `BANK_TRANSFER` rows**
 checked against the bank's statement by their reference instead. How staff pay and record a
 transfer is [`docs/runbooks/bank-transfers.md`](runbooks/bank-transfers.md).
 
+**Escrow is also reconciled per campaign (#587).** Read as one pool, escrow hides a campaign that
+returned or paid out more than it took behind every other campaign's money. So the sign check is
+asked again per campaign: escrow plus `psp_fee` and `platform_expense` (check three's terms — a full
+refund of a charge the provider kept a fee on leaves that campaign's escrow short by the fee, which
+is nobody's mistake) must not be below zero, unless the campaign's `creator_debts` cover the
+difference (a chargeback lost after payout). A campaign that is short is a
+`PLATFORM_ACCOUNT_NEGATIVE` finding on `escrow:<campaign>`, and pages like every finding.
+
 **The person who confirms the destination is not the person who sends to it.** V66
 decided that one issue before there was anything to confirm, and it is the same
 argument `StaffRole.FINANCE` already makes about `APPROVE_PAYOUT`, applied one step
@@ -4934,7 +4970,9 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > whatever the campaign's state). So a charge refunded in part by staff is refunded for the rest, and
 > a charge whose refund failed after the pledge's other charges went back is retried. Each is
 > refunded against its own provider transaction for what it has left, and the double-refund rules
-> above apply per charge (a requested refund counts as gone until it settles).
+> above apply per charge (a requested refund counts as gone until it settles). A second payment for
+> a pledge already paid for (#587, `duplicate_charges`) is offered the same way, whatever the
+> campaign's state, and returned in full as `DUPLICATE_CHARGE`.
 >
 > **Refunded in full is decided when a refund settles (#174's review).** Not when it is requested:
 > under the pledge's row lock, the settlement compares what the pledge was charged with what has
@@ -5099,7 +5137,10 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > paid is withheld from the creator's future payouts, and the account is blocked until the
 > amount is repaid. The rule "nothing is refunded through the platform after payout" does not
 > stop a bank chargeback; if the creator never has another payout, the loss is the platform's.
-> That risk is accepted in §5.1.
+> That risk is accepted in §5.1. A refund the platform would choose to make — a member of staff's, or
+> conceding a dispute — is refused once the campaign is paid out (`REFUND_AFTER_PAYOUT`, #587), as an
+> upheld backer dispute already was: before #587 it was sent out of escrow other campaigns are owed,
+> with no debt behind it.
 >
 > **Built (#43).** Resolving a dispute `LOST` or `CONCEDED` still posts the loss (the backer's money
 > returns from escrow). When the campaign already has a settled `PAYOUT` transaction, the amount and
@@ -5324,7 +5365,7 @@ POST   /v1/collaborators/invitations/{token}/accept
 # Pledge
 POST   /v1/pledges/draft
 GET    /v1/pledges/{id}
-POST   /v1/pledges/{id}/payment          # IDN-EXT-01 (#39): hold the draft, open the payment page; paid → COLLECTED by webhook
+POST   /v1/pledges/{id}/payment          # IDN-EXT-01 (#39): hold the draft, open the payment page; paid → COLLECTED by webhook. A second key while the draft's page is open returns that page (#587)
 PATCH  /v1/pledges/{id}
 POST   /v1/pledges/{id}/raise            # #171: raise a COLLECTED pledge while the campaign takes pledges; opens the payment page for the difference, applied by webhook
 DELETE /v1/pledges/{id}   # IDN-EXT-01 (#35): abandons an unpaid DRAFT only; PLEDGE_CANNOT_BE_CANCELLED otherwise
@@ -5734,10 +5775,14 @@ GET    /v1/admin/users/{accountId}/subscriptions # one account's subscriptions (
 > that cannot succeed; an unknown or undeployed provider is a **404**, the same answer
 > for both, so the endpoint publishes nothing about which providers the platform uses.
 >
-> **No rate limiting and no source allowlist here.** An unsigned body is refused before
-> anything is read, and a limiter would instead throttle a provider delivering a genuine
-> backlog after an outage. §17.2's allowlist belongs to §19.1's network: the address a
-> servlet sees is whatever proxy terminated the connection.
+> **Rate limited since #587; still no source allowlist.** This said an unsigned body is
+> refused before anything is read — but Payriff signs nothing, and its callback was verified by
+> asking Payriff, so every body anybody posted cost a call to another service. Deliveries are now
+> budgeted per source address and for the endpoint as a whole (`ideanest.payment.webhooks.per-address`,
+> 120, and `overall`, 600, a minute — far above a provider's backlog; a refusal is a 429 the
+> provider retries), and an unsigned callback is asked about only when a payment page waits on its
+> order (§9.3, Payriff). Known and unknown orders get the same 200. §17.2's allowlist belongs to
+> §19.1's network: the address a servlet sees is whatever proxy terminated the connection.
 
 ### 10.3 Conventions
 

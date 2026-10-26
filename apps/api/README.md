@@ -159,6 +159,7 @@ alerted on.
 | `ideanest_queue_waiting{queue}` / `ideanest_queue_dead{queue}` | Every queue on the platform | `QueueDepthSource` (#316) |
 | `ideanest_payment_hosted_sweep_settled_total{outcome}` | Payment pages `hosted-charge-sweep` settled because their callback never came: `collected` or `failed` | `HostedChargeMetrics` (#356) |
 | `ideanest_payment_hosted_attention{reason}` | Unsettled pages in the sweep's window whose last check needs somebody: `returned` or `unanswered`. Set by each pass | the same |
+| `ideanest_payment_hosted_anomalies_total{reason}` | Payments the platform did not expect, each also an ERROR line: `duplicate` (a second payment for a collected pledge, refunded as `DUPLICATE_CHARGE`), `amount_mismatch` (recorded failed), `aged_out` (a page still pending past the sweep's window) | the same (#587) |
 
 `PlatformMetrics` reads the same interfaces §4.11's health screen reads, on
 purpose: a dashboard that disagreed with an alert is a dashboard somebody checks

@@ -139,6 +139,53 @@ groups:
             provider for an hour. Search the log for "hosted-charge-sweep" to see which
             provider, and whether it is unreachable or has no adapter configured.
 
+      # #587: payments the platform did not expect. Each is one event, logged at ERROR with the
+      # pledge and the transaction, so the alert fires at the first and clears a day later by
+      # itself -- the log is where the case is worked, not the gauge.
+      #
+      # A second payment for a pledge already collected: campaign-refunds returns it on its own
+      # (DUPLICATE_CHARGE), and the alert is here because a second page was opened that should
+      # not have been.
+      - alert: HostedPaymentDuplicate
+        expr: sum(increase(ideanest_payment_hosted_anomalies_total{reason="duplicate"}[1d])) > 0
+        for: 0m
+        labels:
+          severity: ticket
+        annotations:
+          summary: A pledge was paid for twice
+          description: >-
+            {{ $value | humanize }} second payment(s) for an already collected pledge in the last
+            day. Each is refunded by campaign-refunds as DUPLICATE_CHARGE; search the log for
+            "a second time" to check the refund went out.
+
+      # The provider reported a different amount or currency than the page was opened for. The
+      # payment is recorded failed and nothing is collected, but the provider may hold money the
+      # platform does not: a person settles it with the provider.
+      - alert: HostedPaymentAmountMismatch
+        expr: sum(increase(ideanest_payment_hosted_anomalies_total{reason="amount_mismatch"}[1d])) > 0
+        for: 0m
+        labels:
+          severity: page
+        annotations:
+          summary: A payment was reported for the wrong amount
+          description: >-
+            {{ $value | humanize }} payment(s) in the last day were reported by the provider for an
+            amount or currency other than their page. Search the log for "was reported paid as".
+
+      # A page still pending when the sweep stops asking about it (asked-for, seven days). It is
+      # no longer looked at, and it may be a backer who paid and whose callback was lost.
+      - alert: HostedPaymentAgedOut
+        expr: sum(increase(ideanest_payment_hosted_anomalies_total{reason="aged_out"}[1d])) > 0
+        for: 0m
+        labels:
+          severity: ticket
+        annotations:
+          summary: A payment page aged out unsettled
+          description: >-
+            {{ $value | humanize }} payment page(s) left the hosted-charge sweep's window still
+            pending in the last day. Search the log for "is no longer asked about" for the pledge
+            and transaction, and ask the provider what became of each.
+
   - name: ideanest-queues
     interval: 1m
     rules:
