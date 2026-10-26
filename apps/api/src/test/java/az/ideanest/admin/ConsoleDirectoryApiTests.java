@@ -246,13 +246,31 @@ class ConsoleDirectoryApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("staff holding neither ADMINISTER_ACCOUNTS nor MODERATE_CONTENT are refused")
+    @DisplayName("finance and compliance staff may look identifiers up")
+    void financeAndComplianceMayLookUp() {
+        UUID creatorId = Campaigns.creator(dataSource, handle("paid-out"));
+
+        for (StaffRole role : List.of(StaffRole.FINANCE, StaffRole.COMPLIANCE)) {
+            Account member = account("directory-" + role.name().toLowerCase(java.util.Locale.ROOT));
+            StaffGrants.grant(dataSource, member.id(), role, STAFF_FIXTURE_NOTE);
+
+            ResponseEntity<Map<String, Object>> answer = get("?account=" + creatorId, member.accessToken());
+
+            // The payment log and the payout queue already name these people, bank details
+            // beside them; a directory that refused would only cost the screen its names.
+            assertThat(answer.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(accountsIn(answer)).hasSize(1);
+        }
+    }
+
+    @Test
+    @DisplayName("staff whose work names nobody are refused")
     void staffWithoutEitherAuthorityAreRefused() {
         String unique = handle("draft-title");
         UUID creatorId = Campaigns.creator(dataSource, unique);
         UUID projectId = Campaigns.seed(dataSource, creatorId, unique).title("Not public yet").insert();
 
-        for (StaffRole role : List.of(StaffRole.PARTNER, StaffRole.CURATOR, StaffRole.FINANCE)) {
+        for (StaffRole role : List.of(StaffRole.PARTNER, StaffRole.CURATOR)) {
             Account member = account("directory-" + role.name().toLowerCase(java.util.Locale.ROOT));
             StaffGrants.grant(dataSource, member.id(), role, STAFF_FIXTURE_NOTE);
 

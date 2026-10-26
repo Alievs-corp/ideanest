@@ -34,20 +34,19 @@ import org.springframework.transaction.annotation.Transactional;
  * {@link ProjectSummaries#summariesOf} exists because the notification module had exactly
  * this problem with campaign titles.
  *
- * <h2>{@code ADMINISTER_ACCOUNTS} or {@code MODERATE_CONTENT}</h2>
+ * <h2>Only roles that already see people by their work</h2>
  *
  * <p>It asked only whether the caller was staff, which since #295 every role is, and it
  * answers about <em>any</em> identifier, not the ones on the caller's screen: a partner, whose
  * one capability is a statistics page, could resolve every account on the platform and the
- * title of every campaign still in draft or in review, which nothing else shows them. The two
- * authorities that already see people and unpublished campaigns by their work are the account
- * directory's and the moderation queues', so either one opens this (#587).
+ * title of every campaign still in draft or in review, which nothing else shows them. The
+ * authorities that already see people and campaigns by their work open it (#587): the account
+ * directory's, the moderation queues', finance's (the payment log names every backer and the
+ * payout queue every creator, with bank details beside them) and identity review's.
  *
- * <p><strong>What that costs, deliberately.</strong> A member of staff holding neither — a
- * finance-only, compliance-only, curator or partner account — is refused, and every screen
- * that asks degrades to the short identifiers it rendered before #402, because
- * {@code useDirectoryNames} swallows a refusal by design. A super admin, who holds both, still
- * sees names everywhere, including on the payout approvals #402 was about. Naming a role's
+ * <p><strong>What that costs, deliberately.</strong> A curator or partner account is
+ * refused, and every screen that asks degrades to the short identifiers it rendered before
+ * #402, because {@code useDirectoryNames} swallows a refusal by design. Naming a role's
  * own rows without naming everybody's would need each screen to say which identifiers it
  * holds and the service to check them against that screen's capability, which is a change to
  * every caller; failing closed until then is the safe direction.
@@ -105,6 +104,13 @@ public class ConsoleDirectoryService {
      */
     public static final int MAX_IDENTIFIERS = 100;
 
+    /** The capabilities whose holders already see people and campaigns by name. */
+    static final Set<StaffCapability> READERS = Set.of(
+            StaffCapability.ADMINISTER_ACCOUNTS,
+            StaffCapability.MODERATE_CONTENT,
+            StaffCapability.VIEW_FINANCE,
+            StaffCapability.REVIEW_IDENTITY_VERIFICATION);
+
     private final PlatformStaff staff;
     private final UserAccounts accounts;
     private final ProjectSummaries projects;
@@ -124,7 +130,7 @@ public class ConsoleDirectoryService {
      * @throws az.ideanest.staff.application.NotAModeratorException for a caller who is not
      *     platform staff
      * @throws az.ideanest.staff.application.InsufficientStaffCapabilityException for a member
-     *     of staff holding neither {@code ADMINISTER_ACCOUNTS} nor {@code MODERATE_CONTENT}
+     *     of staff holding none of {@link #READERS}
      * @throws TooManyIdentifiersException when the two lists together are over
      *     {@link #MAX_IDENTIFIERS}
      */
@@ -153,12 +159,13 @@ public class ConsoleDirectoryService {
     }
 
     /**
-     * {@code ADMINISTER_ACCOUNTS}, or else {@code MODERATE_CONTENT} — the shape
-     * {@code CampaignDirectory} uses for "either of two". A stranger is still told they do not
-     * work here, and a colleague holding neither is told the capability they lack.
+     * Any one of {@link #READERS} — the shape {@code CampaignDirectory} uses for "either of
+     * two". A stranger is still told they do not work here, and a colleague holding none is
+     * told the capability they lack.
      */
     private void requireReader(UUID staffId) {
-        if (staff.capabilitiesOf(staffId).contains(StaffCapability.ADMINISTER_ACCOUNTS)) {
+        Set<StaffCapability> held = staff.capabilitiesOf(staffId);
+        if (READERS.stream().anyMatch(held::contains)) {
             return;
         }
         staff.requireCapability(staffId, StaffCapability.MODERATE_CONTENT);
