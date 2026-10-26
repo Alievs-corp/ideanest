@@ -36,9 +36,15 @@ export interface RevisionComparisonProps {
   readonly categories: readonly Category[] | null;
   readonly locale: Locale;
   readonly copy: RevisionReviewCopy;
-  /** The reward tiers are drawn beside this, so an edit that changes only them is not "no changes". */
-  readonly hasRewards?: boolean;
+  /**
+   * The reward tiers, items and shipping zones are drawn beside this, so an edit that changes
+   * only them is not "no changes".
+   */
+  readonly drawnBeside?: boolean;
 }
+
+/** The fields drawn by a section of their own beside the comparison, not as a pair of panes in it. */
+const DRAWN_BESIDE: readonly RevisionField[] = ['rewards', 'items', 'shippingZones'];
 
 export const REMOVED_CLASS = 'bg-danger/12 text-fg line-through decoration-danger decoration-2';
 export const ADDED_CLASS = 'bg-success/12 text-fg underline decoration-success decoration-2 underline-offset-2';
@@ -52,11 +58,11 @@ export function RevisionComparison({
   categories,
   locale,
   copy,
-  hasRewards = false,
+  drawnBeside = false,
 }: RevisionComparisonProps) {
-  const fields = REVISION_FIELDS.filter((field) => field !== 'rewards' && changedFields.includes(field));
+  const fields = REVISION_FIELDS.filter((field) => !DRAWN_BESIDE.includes(field) && changedFields.includes(field));
 
-  if (fields.length === 0) return hasRewards ? null : <p className="mt-4 text-sm text-fg-64">{copy.noChanges}</p>;
+  if (fields.length === 0) return drawnBeside ? null : <p className="mt-4 text-sm text-fg-64">{copy.noChanges}</p>;
 
   return (
     <div className="mt-4 space-y-8">
@@ -96,7 +102,7 @@ export function Pane({
   );
 }
 
-type Side = 'live' | 'proposed';
+export type Side = 'live' | 'proposed';
 
 function renderSide(
   side: Side,
@@ -125,6 +131,8 @@ function renderSide(
     case 'countries':
       return <CountriesSide side={side} live={live} proposed={proposed} locale={locale} copy={copy} />;
     case 'rewards':
+    case 'items':
+    case 'shippingZones':
       return null;
   }
 }
@@ -278,9 +286,27 @@ function CountriesSide({
   readonly locale: Locale;
   readonly copy: RevisionReviewCopy;
 }) {
-  const before = [...(live.countries ?? [])].sort();
-  const after = [...(proposed.countries ?? [])].sort();
-  const parts = diffSequences(before, after).filter((part) =>
+  return <CountryList side={side} before={live.countries} after={proposed.countries} locale={locale} copy={copy} />;
+}
+
+/**
+ * Countries by name in the reader's language: the ones that go struck through on the live side,
+ * the ones that come underlined on the proposed. A shipping zone's countries are read the same way.
+ */
+export function CountryList({
+  side,
+  before,
+  after,
+  locale,
+  copy,
+}: {
+  readonly side: Side;
+  readonly before: readonly string[] | null | undefined;
+  readonly after: readonly string[] | null | undefined;
+  readonly locale: Locale;
+  readonly copy: RevisionReviewCopy;
+}) {
+  const parts = diffSequences([...(before ?? [])].sort(), [...(after ?? [])].sort()).filter((part) =>
     side === 'live' ? part.kind !== 'added' : part.kind !== 'removed',
   );
 
