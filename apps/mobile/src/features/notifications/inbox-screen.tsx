@@ -22,6 +22,7 @@ import {
   type InboxNotification,
 } from '@ideanest/account/inbox';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
+import { siteUrl } from '../../api/config';
 import { CardEntry, useRowEntryGate } from '../../components/campaign-column';
 import {
   Body,
@@ -46,6 +47,7 @@ import {
 } from '../../components/ui';
 import { useOnline } from '../../lib/connectivity';
 import { signInHrefFor } from '../../lib/guard';
+import { inboxRouteOf } from '../../lib/links';
 import { useT, type Translate } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { useSession } from '../../lib/use-session';
@@ -178,7 +180,9 @@ export function InboxScreen() {
         // A browser that will not open (another session is already up) leaves the reader here.
         WebBrowser.openBrowserAsync(webPageUrl(locale, href)).catch(() => undefined);
       } else {
-        router.push(href as Href);
+        // The web's path, read as this application's route: a refused launch's editor is under
+        // `campaigns/` here (#589).
+        router.push(inboxRouteOf(href, new URL(siteUrl()).host) as Href);
       }
       if (isUnread(notification) && online) void markRead(notification.id).catch(() => undefined);
     },

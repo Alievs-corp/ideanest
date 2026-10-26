@@ -216,8 +216,11 @@ export function campaignOf(params: Record<string, unknown>): {
  * waiting for the backer's bank account, which goes to their pledge, and since #411 the reminder
  * to enter an IBAN, which goes to the payout settings; since #418 a paid payout goes to the payout
  * settings too and a refund sent by bank to the pledge; since #450 a message about the creator's own
- * plan goes to the pricing page, where it is renewed), then the campaign's page,
- * then nothing. **A row with no destination is not a link**, rather than a link to the home page.
+ * plan goes to the pricing page, where it is renewed; since #589 a campaign that did not open at
+ * its launch time goes to its editor's review tab, where the refusal is explained and the campaign
+ * launched — it is not public, so its page is nothing its creator can act on), then the campaign's
+ * page, then nothing. **A row with no destination is not a link**, rather than a link to the home
+ * page.
  */
 export function hrefOf(
   notification: Pick<InboxNotification, 'type' | 'params'>,
@@ -231,6 +234,10 @@ export function hrefOf(
   if (notification.type === 'REFUND_NEEDS_BANK_DETAILS' || notification.type === 'REFUND_SENT_BY_BANK') {
     const pledge = textOf(readParams(notification.params), 'pledgeId');
     if (pledge !== null) return `/pledges/${encodeURIComponent(pledge)}`;
+  }
+  if (notification.type === 'SCHEDULED_LAUNCH_REFUSED') {
+    const project = textOf(readParams(notification.params), 'projectId');
+    if (project !== null) return `/projects/${encodeURIComponent(project)}/edit/review`;
   }
   return campaignHref;
 }
