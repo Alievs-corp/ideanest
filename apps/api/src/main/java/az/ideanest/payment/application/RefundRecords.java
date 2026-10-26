@@ -150,11 +150,19 @@ public class RefundRecords {
      * itself; a provider refund beside it pays the backer twice. Refused with {@code REFUND_CHARGE_DISPUTED},
      * as a bank transfer already is ({@link #settleByBankTransfer}).
      *
+     * <p><strong>Not after the campaign has been paid out (#587).</strong> §6.3: nothing is refunded
+     * through the platform after payout, which is the rule {@code BackerDisputes} already applies to an
+     * upheld dispute. The creator was paid this money; a refund now would come out of escrow that other
+     * campaigns' backers are owed, with no {@code CreatorDebt} to recover it. A chargeback the network
+     * forces after payout is the one case the platform cannot refuse, and {@code DisputeService} turns
+     * that into the creator's debt. Refused with {@code REFUND_AFTER_PAYOUT}, before anything is recorded.
+     *
      * @return the parts, newest charge first; never empty
      * @throws NothingToRefundException when the pledge has no settled charge
      * @throws RefundExceedsCollectionException when this would return more than the pledge has left
      * @throws CurrencyMismatchException when {@code amount} is not in the pledge's currency
-     * @throws BankRefundRefusedException {@code REFUND_CHARGE_DISPUTED} when a charge it draws on is disputed
+     * @throws BankRefundRefusedException {@code REFUND_CHARGE_DISPUTED} when a charge it draws on is disputed,
+     *     or {@code REFUND_AFTER_PAYOUT} when the campaign has been paid out
      */
     @Transactional
     List<Refund> record(
@@ -164,6 +172,9 @@ public class RefundRecords {
         List<PaymentTransaction> charges = transactions.settledChargesOf(pledgeId);
         if (charges.isEmpty()) {
             throw new NothingToRefundException(pledgeId);
+        }
+        if (transactions.hasPaidOut(charges.getFirst().getProjectId())) {
+            throw new BankRefundRefusedException(Reason.REFUND_AFTER_PAYOUT, pledgeId);
         }
 
         String currency = charges.getFirst().getAmount().currency();
