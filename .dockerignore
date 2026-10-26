@@ -25,6 +25,16 @@ packages/*/dist
 apps/api/config
 hesablar.txt
 
+# Environment files, at any depth. `apps/web/Dockerfile` copies the whole context
+# into its build stage, and Next.js reads `.env`, `.env.local` and
+# `.env.production` during `next build` -- so a developer's local file would not
+# only travel to the daemon, it would be compiled into the image, and every
+# `NEXT_PUBLIC_` value in it shipped to every browser. Nothing in the build needs
+# one: the image is configured by its environment at run time, and the values the
+# build does need are passed as build arguments.
+.env*
+**/.env*
+
 # Storybook's build, the Playwright cache, coverage. None of it runs in a
 # container.
 packages/ui/storybook-static
