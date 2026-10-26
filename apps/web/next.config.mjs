@@ -112,6 +112,12 @@ export const images = {
    * storage exists every cover is on one origin, this narrows to that origin,
    * and the proxy stops existing. It is written into §13.1 as part of that
    * work rather than left here as a comment nobody is accountable for.
+   *
+   * WHERE THAT STANDS (#587). The bucket exists now, but its address is the API's runtime
+   * setting (`MEDIA_PUBLIC_BASE_URL`) and nothing in this application's build is told it, and
+   * a cover can still be an address a creator typed (`CoverImageSelection.FromUrl`). Narrowing
+   * here today would turn every such cover into a thrown server render. It narrows when
+   * `FromUrl` is retired and the web is given the media origin at build time.
    */
   remotePatterns: [{ protocol: 'https', hostname: '**' }],
 
