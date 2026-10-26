@@ -49,7 +49,8 @@ import java.util.UUID;
  *     {@code coverImage} stays the uploaded cover
  * @param opensAt when an approved campaign opens on its own (#595), and null on every other
  *     state: a card is the creator's way to see that it is waiting rather than lost. The two
- *     public tabs never carry an approved campaign, so this is only ever set on the owner's list
+ *     public tabs never carry an approved campaign, so this is only ever set on the owner's list;
+ *     absent rather than null, unlike the rest, so every other card keeps the shape it had
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record ProfileProjectCard(
@@ -66,7 +67,7 @@ public record ProfileProjectCard(
         Instant launchedAt,
         CoverImageBody coverImage,
         CardVideoBody video,
-        Instant opensAt) {
+        @JsonInclude(JsonInclude.Include.NON_NULL) Instant opensAt) {
 
     /**
      * @param campaign the projection. {@code createdAt} on it is deliberately not mapped:
