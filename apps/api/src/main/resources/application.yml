@@ -1313,9 +1313,9 @@ ideanest:
     token:
       issuer: ${TOKEN_ISSUER:https://api.ideanest.az}
       audience: ${TOKEN_AUDIENCE:ideanest}
-      # Short, because an access token is stateless: revoking a session cannot
-      # reach one already issued, so this value is exactly the window in which a
-      # revoked session still works.
+      # Short. Not because revoking a session cannot reach a token already issued
+      # -- since #587 it does, at the token's next request (RevokedSessions) -- but
+      # because it bounds what a copied token is worth to whoever copied it.
       access-token-ttl: PT15M
       # Absolute, and not extended by use. A session is thirty days and then the
       # user signs in again.

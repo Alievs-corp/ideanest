@@ -48,6 +48,16 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
             @Param("reason") SessionRevocationReason reason,
             @Param("at") Instant at);
 
+    /**
+     * Whether this session has been revoked — what {@code RevokedSessions} asks for an
+     * access token's {@code sid} (#587).
+     *
+     * <p>A primary-key lookup, so it is an index probe rather than a scan. A session
+     * that does not exist is not revoked: nothing was withdrawn, and the access token
+     * naming it was still signed by us.
+     */
+    boolean existsByIdAndRevokedAtIsNotNull(UUID id);
+
     /** Every session a user has had, newest first. Read by the data export. */
     List<Session> findByUserIdOrderByCreatedAtDesc(UUID userId);
 

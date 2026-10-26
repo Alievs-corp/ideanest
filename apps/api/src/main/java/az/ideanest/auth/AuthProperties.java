@@ -166,11 +166,11 @@ public record AuthProperties(
      *     token minted for staging must not be accepted in production, and this
      *     is the field that says so.
      * @param audience the {@code aud} claim. Same argument, from the other side.
-     * @param accessTokenTtl how long an access token is good for. Short, because
-     *     it is stateless: revoking a session cannot reach a token already
-     *     issued, so the window in which a revoked session still works is
-     *     exactly this value. Fifteen minutes is the documented trade between
-     *     that window and the cost of refreshing.
+     * @param accessTokenTtl how long an access token is good for. Short, though
+     *     it is no longer the window in which a revoked session still works:
+     *     since #587 a token whose session is revoked is refused at its next
+     *     request ({@code RevokedSessions}). It still bounds how long a copied
+     *     token is worth anything to whoever copied it.
      * @param refreshTokenTtl how long a refresh token — and with it a session —
      *     survives without use.
      * @param privateKeyPem RSA private key, PKCS#8 PEM, for signing. Supplied by

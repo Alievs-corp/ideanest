@@ -1,17 +1,23 @@
 package az.ideanest.config;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.auth.application.RevokedSessions;
 import az.ideanest.platform.api.MaintenanceFilter;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
@@ -64,7 +70,8 @@ public class SecurityConfiguration {
                     + "-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/)[^/]+/[^/]+$";
 
     @Bean
-    public SecurityFilterChain apiSecurity(HttpSecurity http, MaintenanceFilter maintenance) throws Exception {
+    public SecurityFilterChain apiSecurity(
+            HttpSecurity http, MaintenanceFilter maintenance, RevokedSessions revokedSessions) throws Exception {
         return http.authorizeHttpRequests(requests -> requests
                         // The platform reads these to decide whether this
                         // instance takes traffic. They carry a status and no
@@ -685,12 +692,14 @@ public class SecurityConfiguration {
                         // deletion grace period must not be able to do.
                         .anyRequest()
                         .hasAuthority(ACCOUNT_ACTIVE))
-                // Every other request authenticates with a bearer JWT we signed.
-                // Stateless by construction: no lookup, which is also why
-                // revoking a session cannot reach an access token already
-                // issued. That window is the token's lifetime, and it is why
-                // the lifetime is fifteen minutes.
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(accountStanding())))
+                // Every other request authenticates with a bearer JWT we signed,
+                // and whose session has not been revoked since (#587) -- see
+                // sessionStillOpen. The signature and expiry need no lookup; the
+                // revocation is one cached primary-key probe, which is what lets
+                // a suspension or a sign-out stop a token at its next request
+                // instead of when it expires.
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(
+                        jwt -> jwt.jwtAuthenticationConverter(sessionStillOpen(revokedSessions, accountStanding()))))
                 // #214's maintenance gate: after the bearer token has been
                 // read, so it can let a staff token through, and before
                 // authorization, so an anonymous request during a window gets
@@ -733,13 +742,45 @@ public class SecurityConfiguration {
      * rather than by choice. So it keeps exactly the three permissions listed
      * above and loses the rest, without any endpoint having to remember.
      *
-     * <p>Read from the token rather than from the database, because the
-     * alternative is a query on every authenticated request and the point of
-     * this filter chain is that there is not one. The cost is that a token
-     * minted before the deletion keeps working until it expires — the same
-     * fifteen-minute window that already applies to revoking a session, bounded
-     * by the same value, for the same reason.
+     * <p>Read from the token rather than from the database. A token minted before
+     * the deletion request does not get here: the request ends every session the
+     * account had, and {@link #sessionStillOpen} refuses their tokens, so the
+     * account signs in again and receives a token that carries the claim.
      */
+    /**
+     * Refuses a token whose session has been revoked, then hands it on (#587).
+     *
+     * <p>Signing out, a password change or reset, a replayed refresh token, and a
+     * suspension (§4.11's AD-04) all revoke the session, and until this check each of
+     * them left the access token it had issued working for up to fifteen minutes —
+     * which for a ban meant fifteen more minutes of pledging and posting.
+     *
+     * <p>An authentication failure rather than an authorisation one, so the answer is
+     * the bearer-token 401 with {@code WWW-Authenticate}: the credential is no longer
+     * good, and a client that refreshes and fails is a client that signs in again,
+     * which is the correct end of every one of those cases.
+     */
+    private static Converter<Jwt, AbstractAuthenticationToken> sessionStillOpen(
+            RevokedSessions revokedSessions, JwtAuthenticationConverter standing) {
+        return token -> {
+            String sessionId = token.getClaimAsString("sid");
+            if (sessionId != null && revokedSessions.isRevoked(sessionIdOf(sessionId))) {
+                throw new InvalidBearerTokenException("This session has ended. Sign in again.");
+            }
+            return standing.convert(token);
+        };
+    }
+
+    private static UUID sessionIdOf(String claim) {
+        try {
+            return UUID.fromString(claim);
+        } catch (IllegalArgumentException malformed) {
+            // Only we sign these, and we only ever write a UUID here. A token that
+            // says otherwise is not one to guess about.
+            throw new InvalidBearerTokenException("This token names no session.");
+        }
+    }
+
     private static JwtAuthenticationConverter accountStanding() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(token -> {

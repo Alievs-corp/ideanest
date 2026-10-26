@@ -208,11 +208,11 @@ class CredentialApiTests extends AbstractIntegrationTest {
         forgot(account.email());
         reset(notifier.resetTokenSentTo(account.email()).orElseThrow(), NEW_PASSWORD);
 
-        // The access token itself is stateless and lives out its fifteen minutes; what
-        // must be dead is the session behind it, so the refresh cookie cannot mint
-        // another. A reset is asked for precisely when the old password is believed to
-        // be known.
+        // The session behind it is dead, so the refresh cookie cannot mint another --
+        // and since #587 neither does the access token it already issued keep working.
+        // A reset is asked for precisely when the old password is believed to be known.
         assertThat(refresh(account.refreshToken()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(me(accessToken).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(notifier.passwordChangeNoticesSentTo(account.email())).isEqualTo(1);
     }
 

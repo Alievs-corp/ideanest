@@ -405,8 +405,8 @@ class TokenApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("an access token issued before a sign-out keeps working until it expires")
-    void accessTokensOutliveTheirSession() {
+    @DisplayName("an access token stops working when its session is signed out")
+    void accessTokensDieWithTheirSession() {
         EmailAddress email = registeredUser();
         ResponseEntity<Map<String, Object>> signIn = signIn(email, PASSWORD, true);
         String accessToken = accessTokenOf(signIn);
@@ -420,10 +420,30 @@ class TokenApiTests extends AbstractIntegrationTest {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
-        // Asserting a limitation on purpose. A stateless token cannot be
-        // recalled, so revocation takes effect when it expires — at most
-        // fifteen minutes. Anyone who assumes sign-out is instantaneous should
-        // find this test rather than an incident.
+        // #587. This test used to assert the opposite, on purpose: the token was
+        // believed until it expired, so a sign-out took up to fifteen minutes to
+        // mean anything. The token's sid is now checked against the session.
+        ResponseEntity<String> afterSignOut =
+                rest.exchange("/v1/me", HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        assertThat(afterSignOut.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(afterSignOut.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE)).contains("invalid_token");
+    }
+
+    @Test
+    @DisplayName("signing out one session leaves the account's other sessions working")
+    void signingOutOneSessionLeavesTheOthers() {
+        EmailAddress email = registeredUser();
+        ResponseEntity<Map<String, Object>> phone = signIn(email, PASSWORD, true);
+        ResponseEntity<Map<String, Object>> laptop = signIn(email, PASSWORD, true);
+
+        rest.exchange(
+                "/v1/auth/logout",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("refreshToken", refreshTokenOf(phone)), jsonHeaders()),
+                String.class);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessTokenOf(laptop));
         assertThat(rest.exchange("/v1/me", HttpMethod.GET, new HttpEntity<>(headers), String.class)
                         .getStatusCode())
                 .isEqualTo(HttpStatus.OK);
