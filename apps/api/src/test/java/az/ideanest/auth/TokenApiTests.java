@@ -206,6 +206,45 @@ class TokenApiTests extends AbstractIntegrationTest {
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    @Test
+    @DisplayName("the refusal after five failures is a thirty-second back-off, not a fifteen-minute lockout")
+    void signInBacksOffRatherThanLockingOut() {
+        EmailAddress email = registeredUser();
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            signIn(email, "wrong-password", true);
+        }
+        ResponseEntity<Map<String, Object>> refused = signIn(email, PASSWORD, true);
+
+        // #587. Somebody who knows an address could previously keep its owner out
+        // for a quarter of an hour at a time with five wrong guesses.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(refused.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("30");
+    }
+
+    @Test
+    @DisplayName("successful sign-ins do not count against the account's budget")
+    void successfulSignInsAreNotCounted() {
+        EmailAddress email = registeredUser();
+
+        // #587: the counter used to be spent before the password was checked, so a
+        // person signing in on a sixth device inside fifteen minutes was refused.
+        for (int signIn = 0; signIn < 8; signIn++) {
+            assertThat(signIn(email, PASSWORD, true).getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        // And a correct password clears the failures before it: four wrong, one
+        // right, four wrong again is never refused.
+        for (int attempt = 0; attempt < 4; attempt++) {
+            signIn(email, "wrong-password", true);
+        }
+        assertThat(signIn(email, PASSWORD, true).getStatusCode()).isEqualTo(HttpStatus.OK);
+        for (int attempt = 0; attempt < 4; attempt++) {
+            assertThat(signIn(email, "wrong-password", true).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+        assertThat(signIn(email, PASSWORD, true).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
     // ------------------------------------------------------------------
     // Using the access token
     // ------------------------------------------------------------------

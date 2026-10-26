@@ -171,4 +171,21 @@ class InMemoryRateLimiterTests {
         // back in as the original attempts aged out, which rewards persistence.
         assertThat(limiter.recordAttempt("ip:1.2.3.4", 5, WINDOW).allowed()).isFalse();
     }
+
+    @Test
+    @DisplayName("a refunded attempt is given back, and refunding nothing changes nothing")
+    void refundGivesTheLatestAttemptBack() {
+        InMemoryRateLimiter limiter = new InMemoryRateLimiter(new MovableClock(START));
+
+        // #587's sign-in: counted before the password is checked, given back when it
+        // was right. Five successes in a row must leave the budget untouched.
+        for (int attempt = 0; attempt < 5; attempt++) {
+            assertThat(limiter.recordAttempt("ip:1.2.3.4", 3, WINDOW).allowed()).isTrue();
+            limiter.refund("ip:1.2.3.4");
+        }
+        assertThat(limiter.recordAttempt("ip:1.2.3.4", 3, WINDOW).remaining()).isEqualTo(2);
+
+        limiter.refund("ip:never-seen");
+        assertThat(limiter.recordAttempt("ip:never-seen", 3, WINDOW).remaining()).isEqualTo(2);
+    }
 }

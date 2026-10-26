@@ -103,11 +103,26 @@ public record AuthProperties(
      *     two-factor on or off in a window. Each attempt costs an Argon2
      *     verification, so this bounds what a stolen access token can spend as
      *     much as what it can guess
+     * @param signInsPerAddress failed sign-ins from one IP address in a window.
+     *     Failures only (#587): a correct password gives its attempt back, so an
+     *     office or a mobile carrier's shared address is not throttled for its
+     *     own successful sign-ins
+     * @param signInsPerEmail failed sign-ins against one account before it starts
+     *     to back off. Not a lockout: past this many, each further attempt has to
+     *     wait {@code signInBackoff}, doubling per failure up to
+     *     {@code signInBackoffCeiling}, measured from the last failure. A correct
+     *     password clears the count
      * @param socialSignInsPerAddress provider sign-in attempts from one IP
      *     address. Not about guessing an ID token — one cannot be guessed — but
      *     about the work each attempt costs us: a signature verification and,
      *     when the key set has rotated, a call to the provider
-     * @param window the period all three are measured over
+     * @param signInBackoff the first wait once {@code signInsPerEmail} failures
+     *     have been spent
+     * @param signInBackoffCeiling the longest any one wait grows to
+     * @param signInFailureMemory how long an account's failures are remembered
+     *     after the last of them. Longer than the ceiling, so that waiting out
+     *     one delay does not also hand back the free attempts
+     * @param window the period the counted limits are measured over
      */
     public record RateLimit(
             int registrationsPerAddress,
@@ -121,7 +136,27 @@ public record AuthProperties(
             int twoFactorCodesPerChallenge,
             int twoFactorChangesPerUser,
             int socialSignInsPerAddress,
+            Duration signInBackoff,
+            Duration signInBackoffCeiling,
+            Duration signInFailureMemory,
             Duration window) {
+
+        public RateLimit {
+            // Binding leaves an omitted duration null. A null back-off would be a
+            // NullPointerException on the first wrong password -- or, written
+            // defensively, no back-off at all, which is the failure nobody
+            // notices. AbuseProperties makes the same argument.
+            signInBackoff = signInBackoff == null ? Duration.ofSeconds(30) : signInBackoff;
+            signInBackoffCeiling = signInBackoffCeiling == null ? Duration.ofMinutes(15) : signInBackoffCeiling;
+            signInFailureMemory = signInFailureMemory == null ? Duration.ofHours(24) : signInFailureMemory;
+            if (!signInBackoff.isPositive() || signInBackoffCeiling.compareTo(signInBackoff) < 0) {
+                throw new IllegalArgumentException("A sign-in back-off is positive and no longer than its ceiling");
+            }
+            if (signInFailureMemory.compareTo(signInBackoffCeiling) < 0) {
+                throw new IllegalArgumentException(
+                        "Sign-in failures must be remembered for at least the back-off ceiling");
+            }
+        }
     }
 
     /**

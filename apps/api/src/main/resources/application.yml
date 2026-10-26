@@ -1286,6 +1286,15 @@ ideanest:
       # §17.3: five sign-in attempts per address per fifteen minutes.
       sign-ins-per-address: 5
       sign-ins-per-email: 5
+      # #587: FAILURES ONLY, AND PER ACCOUNT A BACK-OFF RATHER THAN A LOCKOUT.
+      # A correct password gives its attempt back on both budgets. Past the five
+      # free failures an account makes each further attempt wait, from the last
+      # failure: 30s, 1m, 2m, 4m, 8m, then 15m each. Failures are forgotten a day
+      # after the last one -- longer than the ceiling, so waiting out one delay
+      # does not also hand back the free five. See SignInBackoff.
+      sign-in-backoff: PT30S
+      sign-in-backoff-ceiling: PT15M
+      sign-in-failure-memory: PT24H
       # The control that makes a six-digit code safe. Three codes are valid at
       # any moment once a step of clock skew either side is allowed, so five
       # attempts is fifteen chances in a million per challenge -- and a new

@@ -84,6 +84,17 @@ public class InMemoryRateLimiter implements RateLimiter {
         }
     }
 
+    @Override
+    public void refund(String key) {
+        Deque<Instant> timestamps = attempts.get(key);
+        if (timestamps == null) {
+            return;
+        }
+        synchronized (timestamps) {
+            timestamps.pollLast();
+        }
+    }
+
     private void evictExpired(Instant windowStart) {
         attempts.entrySet().removeIf(entry -> {
             Deque<Instant> timestamps = entry.getValue();
