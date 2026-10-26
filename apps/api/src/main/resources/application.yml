@@ -1,8 +1,14 @@
 spring:
   application:
     name: ideanest-api
-  profiles:
-    default: local
+  # NO DEFAULT PROFILE -- #587. This used to say `profiles.default: local`, which
+  # made the insecure profile the one a process fell back to: a deployment that
+  # set no profile ran with an ephemeral signing key allowed, a refresh cookie
+  # without Secure, every verification and reset link written to the log, and
+  # health details on show. Now a process that names no profile gets the
+  # production shape, and `local` is something a developer asks for: `bootRun`
+  # asks for it (build.gradle.kts), and anything else -- an IDE run
+  # configuration, `java -jar` on a laptop -- sets SPRING_PROFILES_ACTIVE=local.
   mvc:
     problemdetails:
       # RFC 9457 responses for framework-raised errors, so the shape of an error
