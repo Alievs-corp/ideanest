@@ -58,6 +58,43 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     boolean isVideoInAStory(@Param("mediaId") UUID mediaId);
 
     /**
+     * Whether anything at all still shows the upload: a campaign's cover or video, a story or a
+     * version of one, a reward tier, or any of those places in an open revision (#568). Asked
+     * before an upload that a revision stopped naming is deleted - replaced inside the draft,
+     * or left behind when the revision was refused or thrown away. One question rather than a
+     * question per place, because the owner may have attached the upload anywhere.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT EXISTS (
+                               SELECT 1 FROM projects
+                                WHERE cover_media_id = :mediaId OR video_media_id = :mediaId
+                                   OR story @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
+                        OR EXISTS (SELECT 1 FROM project_story_versions WHERE document @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
+                        OR EXISTS (SELECT 1 FROM reward_tiers WHERE image_media_id = :mediaId OR video_media_id = :mediaId)
+                        OR EXISTS (
+                               SELECT 1
+                                 FROM project_revisions revision
+                                WHERE revision.status IN ('DRAFT', 'PENDING')
+                                  AND (revision.content -> 'coverImage' ->> 'mediaId' = CAST(:mediaId AS text)
+                                       OR revision.content ->> 'videoMediaId' = CAST(:mediaId AS text)
+                                       OR revision.content -> 'story' @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text)))))))
+                        OR EXISTS (
+                               SELECT 1
+                                 FROM project_revisions revision
+                                CROSS JOIN LATERAL jsonb_each(
+                                      CASE WHEN jsonb_typeof(revision.content -> 'rewards') = 'object'
+                                           THEN revision.content -> 'rewards'
+                                           ELSE CAST('{}' AS jsonb) END) AS proposed(tier_id, tier)
+                                WHERE revision.status IN ('DRAFT', 'PENDING')
+                                  AND (proposed.tier ->> 'imageMediaId' = CAST(:mediaId AS text)
+                                       OR proposed.tier ->> 'videoMediaId' = CAST(:mediaId AS text)))
+                    """,
+            nativeQuery = true)
+    boolean isMediaInUse(@Param("mediaId") UUID mediaId);
+
+    /**
      * Whether this creator already has a campaign under this slug.
      *
      * <p>Scoped to the creator because the unique index is: the public URL is

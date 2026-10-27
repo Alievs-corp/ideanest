@@ -125,6 +125,9 @@ public class NotificationFacts {
             // #587. The campaign and what to do are the message; the date it did not open on is
             // the day the creator is reading it, so the copy does not repeat it.
             case SCHEDULED_LAUNCH_REFUSED -> facts;
+            // #568. The news is the message; a refusal also carries the moderator's reason.
+            case CAMPAIGN_EDIT_APPROVED -> facts;
+            case CAMPAIGN_EDIT_REJECTED -> facts.withDetail(text(params, "reason"));
             // IDN-EXT-01 (#34). The new deadline is the whole of the message: backers are
             // told, not asked, so the copy leads with the date and needs nothing else.
             case CAMPAIGN_EXTENDED -> facts.withDetail(text(params, "extendedUntil"));
@@ -267,7 +270,8 @@ public class NotificationFacts {
             return PRICING;
         }
         if (type == NotificationType.SCHEDULED_LAUNCH_REFUSED
-                || type == NotificationType.PROJECT_APPROVED_SCHEDULED) {
+                || type == NotificationType.PROJECT_APPROVED_SCHEDULED
+                || type == NotificationType.CAMPAIGN_EDIT_REJECTED) {
             UUID projectId = uuid(params);
             if (projectId != null) {
                 return "/projects/" + projectId + "/edit/review";

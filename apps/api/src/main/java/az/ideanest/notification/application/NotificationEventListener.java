@@ -8,6 +8,7 @@ import az.ideanest.notification.application.NotificationEvents.GoalReached;
 import az.ideanest.notification.application.NotificationEvents.PaymentFailed;
 import az.ideanest.notification.application.NotificationEvents.PledgeConfirmed;
 import az.ideanest.notification.application.NotificationEvents.PledgeEdited;
+import az.ideanest.notification.application.NotificationEvents.CampaignEditDecided;
 import az.ideanest.notification.application.NotificationEvents.ProjectApproved;
 import az.ideanest.notification.application.NotificationEvents.CampaignExtended;
 import az.ideanest.notification.application.NotificationEvents.PayoutDetailsNeeded;
@@ -316,6 +317,33 @@ public class NotificationEventListener {
                                 ? about(projectId)
                                 : about(projectId, "opensAt", event.opensAt().toString()),
                         at(event.approvedAt(), message)));
+            }
+            case CampaignEditDecided.EVENT_TYPE -> {
+                CampaignEditDecided event = read(message, CampaignEditDecided.class);
+                UUID projectId = required(event.projectId(), "projectId", message);
+                UUID creatorId = required(event.creatorId(), "creatorId", message);
+                String outcome = required(event.outcome(), "outcome", message);
+                // #568. The creator alone. A refusal carries the moderator's reason, which is
+                // the whole of what the creator can act on; an approval needs nothing but the news.
+                if ("APPROVED".equals(outcome)) {
+                    yield List.of(NotificationRequest.about(
+                            creatorId,
+                            NotificationType.CAMPAIGN_EDIT_APPROVED,
+                            PROJECT,
+                            projectId,
+                            about(projectId),
+                            at(event.decidedAt(), message)));
+                }
+                if ("REJECTED".equals(outcome)) {
+                    yield List.of(NotificationRequest.about(
+                            creatorId,
+                            NotificationType.CAMPAIGN_EDIT_REJECTED,
+                            PROJECT,
+                            projectId,
+                            about(projectId, "reason", event.note() == null ? "" : event.note()),
+                            at(event.decidedAt(), message)));
+                }
+                yield List.of();
             }
             case ScheduledLaunchRefused.EVENT_TYPE -> {
                 ScheduledLaunchRefused event = read(message, ScheduledLaunchRefused.class);

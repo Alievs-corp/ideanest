@@ -276,6 +276,21 @@ public final class NotificationEvents {
     }
 
     /**
+     * #568: a moderator approved or refused an edit to a launched campaign. {@code outcome} is
+     * {@code APPROVED} or {@code REJECTED}; {@code note} is the moderator's reason for a refusal and
+     * an optional note on an approval.
+     *
+     * <p>Recipient: the creator, and nobody else. Backers see an approved edit on the campaign page
+     * itself, and a refused one changed nothing they can see.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record CampaignEditDecided(
+            UUID projectId, UUID creatorId, UUID revisionId, String outcome, String note, Instant decidedAt) {
+
+        public static final String EVENT_TYPE = "project.revision_decided";
+    }
+
+    /**
      * #587: a campaign's launch time arrived and it did not open, because its creator's plan does
      * not cover it. The launch time has been cleared, so nothing opens it on its own again.
      *

@@ -6,12 +6,14 @@ import { errorFrom } from '../api/problem';
  * What the review of an edit to a launched campaign asks the service — issue #560, part of
  * epic #557.
  *
- * <h2>Why these are the console's own types</h2>
+ * <h2>The queue row is the generated `RevisionQueueEntry`, narrowed</h2>
  *
- * The generated schema names the queue's row `Entry`, a name three unrelated schemas share, so
- * `RevisionQueueResponse` is typed as a list of survey answers. The row is read here as what
- * the controller sends instead, and `live` and `proposed` are the creator-side `ProjectEdit`
- * on both sides of the comparison: the same shape, so a field is compared with its own kind.
+ * The service used to name the row `Entry`, which a survey type shares, so the generated
+ * `RevisionQueueResponse` was a list of survey answers (#568). It is `RevisionQueueEntry` now;
+ * `QueuedRevision` is that shape with the fields the controller always sends made required, and
+ * the assertion below fails the typecheck if the two drift apart. `live` and `proposed` are the
+ * creator-side `ProjectEdit` on both sides of the comparison: the same shape, so a field is
+ * compared with its own kind.
  *
  * <h2>The decisions are not optimistic</h2>
  *
@@ -54,6 +56,13 @@ export interface QueuedRevision {
   readonly changedFields: readonly string[];
   readonly submittedAt: string;
 }
+
+type WireQueuedRevision = components['schemas']['RevisionQueueEntry'];
+
+/** Fails the typecheck if a field of `QueuedRevision` is not in the generated row, or vice versa. */
+type SameKeys<A, B> = [keyof A] extends [keyof B] ? ([keyof B] extends [keyof A] ? true : false) : false;
+const queuedRevisionMatchesTheSchema: SameKeys<QueuedRevision, WireQueuedRevision> = true;
+void queuedRevisionMatchesTheSchema;
 
 export interface RevisionQueue {
   readonly revisions: readonly QueuedRevision[];
@@ -197,8 +206,8 @@ export async function listRevisionQueue(options: {
   });
   if (!response.ok) throw await errorFrom(response);
 
-  const body = (await response.json()) as { revisions?: readonly QueuedRevision[] | null };
-  return { revisions: body.revisions ?? [] };
+  const body = (await response.json()) as { revisions?: readonly WireQueuedRevision[] | null };
+  return { revisions: (body.revisions ?? []) as readonly QueuedRevision[] };
 }
 
 export async function readRevisionReview(id: string, signal?: AbortSignal): Promise<RevisionReview> {

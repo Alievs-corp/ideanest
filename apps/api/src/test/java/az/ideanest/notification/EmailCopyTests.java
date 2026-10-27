@@ -285,6 +285,31 @@ class EmailCopyTests extends AbstractIntegrationTest {
     }
 
     /**
+     * That a refused campaign edit gives the moderator's reason and goes to the editor (#568).
+     *
+     * <p>The reason is the one thing the creator can act on, and the editor is where they act.
+     * An approved edit goes to the public page instead, which now shows it.
+     */
+    @Test
+    @DisplayName("a refused campaign edit carries the reason and links to the editor; an approved one to the campaign")
+    void aRefusedEditCarriesTheReason() {
+        String params = "{\"projectId\":\"01890000-0000-7000-8000-000000000001\",\"projectTitle\":\"" + TITLE
+                + "\",\"creatorSlug\":\"aysel-studio\",\"projectSlug\":\"xari-bulbul-ceramics\""
+                + ",\"reason\":\"The title names a brand you do not own.\"}";
+        EmailContent refused =
+                composer.compose(message(NotificationType.CAMPAIGN_EDIT_REJECTED, params), RECIPIENT, PRIMARY);
+
+        assertThat(refused.subject()).contains(TITLE);
+        assertThat(String.join(" ", refused.paragraphs())).contains("The title names a brand you do not own.");
+        assertThat(refused.actionUrl()).endsWith("/projects/01890000-0000-7000-8000-000000000001/edit/review");
+
+        EmailContent approved =
+                composer.compose(message(NotificationType.CAMPAIGN_EDIT_APPROVED, params), RECIPIENT, PRIMARY);
+        assertThat(approved.subject()).contains(TITLE);
+        assertThat(approved.actionUrl()).endsWith("/projects/aysel-studio/xari-bulbul-ceramics");
+    }
+
+    /**
      * That an approval which does not publish yet says when the campaign opens (#595).
      *
      * <p>{@code PROJECT_APPROVED} says the campaign is live, which an approval waiting for its

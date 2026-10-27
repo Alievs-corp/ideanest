@@ -102,6 +102,21 @@ public enum NotificationType {
             NotificationChannel.PUSH, NotificationChannel.IN_APP),
 
     /**
+     * #568: to the creator - a moderator approved the changes they sent for a launched campaign,
+     * and the campaign page shows them now. Every channel {@link #PROJECT_APPROVED} has: it is the
+     * same kind of decision about the same campaign.
+     */
+    CAMPAIGN_EDIT_APPROVED(NotificationCategory.CAMPAIGN, NotificationChannel.EMAIL,
+            NotificationChannel.PUSH, NotificationChannel.IN_APP),
+
+    /**
+     * #568: to the creator - a moderator refused the changes they sent for a launched campaign,
+     * with a reason. The campaign page is unchanged; the reason is what the creator acts on.
+     */
+    CAMPAIGN_EDIT_REJECTED(NotificationCategory.CAMPAIGN, NotificationChannel.EMAIL,
+            NotificationChannel.PUSH, NotificationChannel.IN_APP),
+
+    /**
      * #587: to the creator — the campaign did not open at its launch time because their plan does
      * not cover it, and the launch time was cleared. Every channel {@link #PROJECT_APPROVED} has: it
      * is about the same decision, and a creator who announced a date needs to hear it that day.

@@ -1,5 +1,6 @@
 package az.ideanest.project.application;
 
+import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.domain.Capability;
 import az.ideanest.project.domain.Project;
 import az.ideanest.project.domain.ProjectEditLocks;
@@ -16,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -76,6 +78,7 @@ public class ProjectRevisionService {
     private final ProjectRepository projects;
     private final ProjectAccess access;
     private final RewardWritings rewardWritings;
+    private final MediaLibrary media;
     private final EntityManager entityManager;
     private final Clock clock;
 
@@ -84,12 +87,14 @@ public class ProjectRevisionService {
             ProjectRepository projects,
             ProjectAccess access,
             RewardWritings rewardWritings,
+            MediaLibrary media,
             EntityManager entityManager,
             Clock clock) {
         this.revisions = revisions;
         this.projects = projects;
         this.access = access;
         this.rewardWritings = rewardWritings;
+        this.media = media;
         this.entityManager = entityManager;
         this.clock = clock;
     }
@@ -505,6 +510,7 @@ public class ProjectRevisionService {
                 .map(RewardWritings.Tier::id)
                 .toList();
         RevisionContent held = proposed.withCreatedRewards(created).heldAgainst(liveContent);
+        Set<UUID> named = open.map(this::contentOf).map(ProjectRevisionService::mediaOf).orElseGet(Set::of);
         if (held.changedFrom(liveContent).isEmpty()) {
             open.ifPresent(revision -> {
                 if (revision.getStatus() == RevisionStatus.DRAFT) {
@@ -513,6 +519,7 @@ public class ProjectRevisionService {
                     revision.withdraw();
                 }
             });
+            releaseMedia(named);
             return;
         }
 
@@ -522,6 +529,46 @@ public class ProjectRevisionService {
         } else {
             revisions.save(ProjectRevision.draft(live.getId(), content, authorId));
         }
+        Set<UUID> dropped = new LinkedHashSet<>(named);
+        dropped.removeAll(mediaOf(held));
+        releaseMedia(dropped);
+    }
+
+    /**
+     * Deletes the uploads a closed revision named that nothing shows any more (#568): a cover,
+     * campaign video or reward picture or clip proposed in a revision that was refused or thrown
+     * away. Called after the revision has left DRAFT and PENDING, so its own content no longer
+     * counts as a use. What it proposed and the campaign already showed stays, because the
+     * campaign's own row still names it.
+     */
+    public void releaseMediaOf(ProjectRevision closed) {
+        releaseMedia(mediaOf(contentOf(closed)));
+    }
+
+    /**
+     * Deletes, once the transaction commits, each of these uploads that nothing shows any more.
+     * The check is a native query, which flushes this transaction's revision write first, so a
+     * revision that has just stopped naming an upload no longer counts as showing it.
+     */
+    private void releaseMedia(Set<UUID> candidates) {
+        candidates.stream().filter(mediaId -> !projects.isMediaInUse(mediaId)).forEach(media::discardAfterCommit);
+    }
+
+    /** The uploads a revision names: the cover, the campaign video, and each tier's picture and clip. */
+    private static Set<UUID> mediaOf(RevisionContent content) {
+        Set<UUID> named = new LinkedHashSet<>();
+        if (content.coverImage() != null) {
+            named.add(content.coverImage().mediaId());
+        }
+        named.add(content.videoMediaId());
+        if (content.rewards() != null) {
+            content.rewards().values().forEach(reward -> {
+                named.add(reward.imageMediaId());
+                named.add(reward.videoMediaId());
+            });
+        }
+        named.remove(null);
+        return named;
     }
 
     /** Sends the open draft to the moderators. */
@@ -551,6 +598,7 @@ public class ProjectRevisionService {
                 .orElseThrow(() -> new RevisionNotAvailableException(RevisionNotAvailableException.Reason.NO_OPEN_REVISION));
         open.withdraw();
         discardRewards(projectId);
+        releaseMediaOf(open);
     }
 
     /** The open revision, described against what the campaign shows now. */

@@ -283,6 +283,10 @@ describe('the console front page', () => {
 
     expect(screen.getByRole('link', { name: COPY.modulesLink })).toHaveAttribute('href', expect.stringContaining('/admin/modules'));
     expect(screen.getByRole('link', { name: COPY.link.moderation })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.link.revisions })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/admin/moderation/revisions'),
+    );
     expect(screen.getByRole('link', { name: COPY.link.campaigns })).toBeInTheDocument();
   });
 
