@@ -43,7 +43,7 @@ describe('the console drawer', () => {
 
     const button = screen.getByRole('button', { name: COPY.openMenu });
     expect(button).toHaveAttribute('aria-expanded', 'false');
-    expect(button).toHaveClass('lg:hidden');
+    expect(button).toHaveClass('xl:hidden');
     // Not mounted while closed, so its links are not tab stops for anybody who never opens it.
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.queryByRole('link')).toBeNull();

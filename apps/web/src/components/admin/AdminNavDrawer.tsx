@@ -26,6 +26,12 @@ import { ConsoleReader } from './ConsoleReader';
  * carries a name and four roles, and a sentence wrapped over three lines is a header taller
  * than the screen's own title.
  *
+ * <h2>The breakpoint is `xl`, not the site's `lg`</h2>
+ *
+ * <p>Between 1024px and 1280px — a tablet held sideways, a small laptop — a permanent 15rem rail
+ * left the screen beside it too narrow for a ledger table, and the reader could not put it
+ * away. The drawer covers that range too; the rail is for screens wide enough to keep it.
+ *
  * <h2>Why it is not the kit's `Drawer`, and not the site's `MobileNavDrawer`</h2>
  *
  * <p>`Drawer` animates, and docs/motion-system.md §5 gives the console none. `MobileNavDrawer`
@@ -75,13 +81,13 @@ export function AdminNavDrawer({ copy }: AdminNavDrawerProps) {
         aria-label={copy.openMenu}
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className={`${ROUND_BUTTON} lg:hidden`}
+        className={`${ROUND_BUTTON} xl:hidden`}
       >
         <Menu aria-hidden="true" className="size-[18px]" />
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
+        <div className="fixed inset-0 z-[60] xl:hidden">
           {/* Duplicated by the close button and by Escape, so it is never the only way out. */}
           <div aria-hidden="true" onClick={close} className="absolute inset-0 bg-black/60" />
 
