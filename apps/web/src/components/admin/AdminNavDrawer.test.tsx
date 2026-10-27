@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ROLE_CAPABILITIES, type StaffMembership } from '../../lib/admin/staff';
 import { adminShellCopyFrom } from '../../lib/i18n/admin-copy';
@@ -81,5 +81,26 @@ describe('the console drawer', () => {
     fireEvent.click(screen.getByRole('button', { name: COPY.closeMenu }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(button);
+  });
+
+  it('closes when the window widens to the rail, so the page is not left scroll-locked', () => {
+    const listeners: Array<() => void> = [];
+    const query = {
+      matches: false,
+      addEventListener: (_: string, listener: () => void) => listeners.push(listener),
+      removeEventListener: vi.fn(),
+    };
+    vi.stubGlobal('matchMedia', () => query);
+    try {
+      renderDrawer();
+      fireEvent.click(screen.getByRole('button', { name: COPY.openMenu }));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      query.matches = true;
+      act(() => listeners.forEach((listener) => listener()));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
