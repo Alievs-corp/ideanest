@@ -308,6 +308,81 @@ class RewardRevisionApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("a picture replaced inside the draft is deleted, and the live one is kept (#568)")
+    void aPictureReplacedInTheDraftIsDeleted() {
+        String creator = signIn();
+        UUID projectId = draft(creator);
+        UUID live = uploadImage(creator);
+        Map<String, Object> body = tier("Poster");
+        body.put("imageMediaId", live.toString());
+        UUID rewardId = idOf(create(projectId, creator, body).getBody());
+        Campaigns.launch(dataSource, projectId);
+
+        UUID proposed = uploadImage(creator);
+        patch(rewardId, creator, Map.of("imageMediaId", proposed.toString()));
+        UUID instead = uploadImage(creator);
+        patch(rewardId, creator, Map.of("imageMediaId", instead.toString()));
+
+        assertThat(store.has("media/" + proposed + ".jpg")).as("named by nothing any more").isFalse();
+        assertThat(store.has("media/" + instead + ".jpg")).isTrue();
+        assertThat(store.has("media/" + live + ".jpg")).as("the public still sees it").isTrue();
+    }
+
+    @Test
+    @DisplayName("a refused or discarded revision's proposed picture is deleted, and the live one is kept (#568)")
+    void aClosedRevisionsPictureIsDeleted() {
+        String creator = signIn();
+        UUID projectId = draft(creator);
+        UUID live = uploadImage(creator);
+        Map<String, Object> body = tier("Poster");
+        body.put("imageMediaId", live.toString());
+        UUID rewardId = idOf(create(projectId, creator, body).getBody());
+        Campaigns.launch(dataSource, projectId);
+
+        UUID refused = uploadImage(creator);
+        patch(rewardId, creator, Map.of("imageMediaId", refused.toString()));
+        post("/v1/projects/" + projectId + "/revision/submit", creator, null);
+        post(
+                "/v1/admin/moderation/revisions/" + openRevisionId(projectId) + "/reject",
+                moderator(),
+                Map.of("note", "The picture shows a different product."));
+
+        assertThat(store.has("media/" + refused + ".jpg")).isFalse();
+        assertThat(store.has("media/" + live + ".jpg")).isTrue();
+
+        UUID discarded = uploadImage(creator);
+        patch(rewardId, creator, Map.of("imageMediaId", discarded.toString()));
+        assertThat(send(HttpMethod.DELETE, "/v1/projects/" + projectId + "/revision", creator, null).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        assertThat(store.has("media/" + discarded + ".jpg")).isFalse();
+        assertThat(store.has("media/" + live + ".jpg")).isTrue();
+    }
+
+    @Test
+    @DisplayName("deleting a draft tier keeps a picture another tier's waiting edit names (#568)")
+    void aPictureAWaitingEditNamesIsKept() {
+        String creator = signIn();
+        UUID projectId = draft(creator);
+        UUID approvedTier = idOf(create(projectId, creator, tier("Mug")).getBody());
+        Campaigns.launch(dataSource, projectId);
+
+        UUID shared = uploadImage(creator);
+        Map<String, Object> body = tier("Poster");
+        body.put("imageMediaId", shared.toString());
+        UUID draftTier = idOf(create(projectId, creator, body).getBody());
+        assertThat(patch(approvedTier, creator, Map.of("imageMediaId", shared.toString())).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        assertThat(send(HttpMethod.DELETE, "/v1/rewards/" + draftTier, creator, null).getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+
+        assertThat(store.has("media/" + shared + ".jpg"))
+                .as("the open revision proposes it for the mug")
+                .isTrue();
+    }
+
+    @Test
     @DisplayName("a tier on a campaign that has not launched is still edited in place")
     void aDraftTierIsEditedInPlace() {
         String creator = signIn();

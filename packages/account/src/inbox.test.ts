@@ -79,8 +79,8 @@ function notification(
 }
 
 describe('the contract', () => {
-  it('publishes 33 types', () => {
-    expect(TYPES).toHaveLength(33);
+  it('publishes 35 types', () => {
+    expect(TYPES).toHaveLength(35);
   });
 });
 
@@ -170,6 +170,17 @@ describe('hrefOf', () => {
         }),
       ),
     ).toBe('/projects/aysel-studio/xari-bulbul-ceramics');
+  });
+
+  it('sends a refused campaign edit to the editor’s review tab and an approved one to the campaign (#568)', () => {
+    // Refused: the reason and the way to send it again are in the editor.
+    expect(hrefOf(notification({ type: 'CAMPAIGN_EDIT_REJECTED', category: 'CAMPAIGN' }))).toBe(
+      '/projects/01890000-0000-7000-8000-000000000001/edit/review',
+    );
+    // Approved: the news is the public page, which shows the changes now.
+    expect(hrefOf(notification({ type: 'CAMPAIGN_EDIT_APPROVED', category: 'CAMPAIGN' }))).toBe(
+      '/projects/aysel-studio/xari-bulbul-ceramics',
+    );
   });
 });
 

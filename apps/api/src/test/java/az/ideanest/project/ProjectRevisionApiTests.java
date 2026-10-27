@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.shared.EmailAddress;
+import az.ideanest.shared.outbox.OutboxRelay;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.user.infrastructure.UserRepository;
@@ -55,6 +56,9 @@ class ProjectRevisionApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private AccessTokenIssuer tokens;
+
+    @Autowired
+    private OutboxRelay relay;
 
     @AfterEach
     void clearProjects() {
@@ -329,6 +333,58 @@ class ProjectRevisionApiTests extends AbstractIntegrationTest {
         patch("/v1/projects/" + id, creator.accessToken(), Map.of("title", "Honest title"));
         assertThat(get("/v1/projects/" + id + "/edit", creator.accessToken()).getBody().get("rejectedRevision"))
                 .isNull();
+    }
+
+    @Test
+    @DisplayName("the creator is told when an edit is approved, and on every channel (#568)")
+    void theCreatorIsToldOfAnApproval() {
+        Creator creator = creator();
+        Creator moderator = moderator();
+        UUID id = liveCampaign(creator, moderator, "Told");
+        submittedEdit(creator, id, "Told again");
+        post("/v1/admin/moderation/revisions/" + openRevisionId(id) + "/approve", moderator.accessToken(), null);
+
+        relay.run();
+
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        assertThat(jdbc.queryForList(
+                        "SELECT DISTINCT recipient_id FROM notifications WHERE type = 'CAMPAIGN_EDIT_APPROVED'",
+                        UUID.class))
+                .containsExactly(creator.id());
+        // EMAIL, PUSH and IN_APP, as NotificationType.CAMPAIGN_EDIT_APPROVED declares.
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM notifications WHERE type = 'CAMPAIGN_EDIT_APPROVED'", Long.class))
+                .isEqualTo(3L);
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM notifications WHERE type = 'CAMPAIGN_EDIT_REJECTED'", Long.class))
+                .isZero();
+    }
+
+    @Test
+    @DisplayName("the creator is told when an edit is refused, with the moderator's reason (#568)")
+    void theCreatorIsToldOfARefusalAndWhy() {
+        Creator creator = creator();
+        Creator moderator = moderator();
+        UUID id = liveCampaign(creator, moderator, "Refused");
+        submittedEdit(creator, id, "Refused again");
+        post(
+                "/v1/admin/moderation/revisions/" + openRevisionId(id) + "/reject",
+                moderator.accessToken(),
+                Map.of("note", "The new title names a brand you do not own."));
+
+        relay.run();
+
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        assertThat(jdbc.queryForList(
+                        "SELECT DISTINCT recipient_id FROM notifications WHERE type = 'CAMPAIGN_EDIT_REJECTED'",
+                        UUID.class))
+                .containsExactly(creator.id());
+        assertThat(jdbc.queryForObject(
+                        "SELECT params::text FROM notifications WHERE type = 'CAMPAIGN_EDIT_REJECTED' LIMIT 1",
+                        String.class))
+                .contains(id.toString())
+                .contains("projectTitle")
+                .contains("The new title names a brand you do not own.");
     }
 
     @Test

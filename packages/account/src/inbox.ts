@@ -238,7 +238,8 @@ export function hrefOf(
   }
   if (
     notification.type === 'SCHEDULED_LAUNCH_REFUSED' ||
-    notification.type === 'PROJECT_APPROVED_SCHEDULED'
+    notification.type === 'PROJECT_APPROVED_SCHEDULED' ||
+    notification.type === 'CAMPAIGN_EDIT_REJECTED'
   ) {
     const project = textOf(readParams(notification.params), 'projectId');
     if (project !== null) return `/projects/${encodeURIComponent(project)}/edit/review`;

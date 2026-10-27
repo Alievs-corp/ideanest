@@ -2477,6 +2477,16 @@ individual agreement can differ without a deployment.
 > replaced video is released, because neither can happen while the campaign is not
 > changing.
 >
+> The creator is told of the decision (#568): `project.revision_decided` becomes
+> `CAMPAIGN_EDIT_APPROVED` or `CAMPAIGN_EDIT_REJECTED` on email, push and the inbox. A
+> refusal carries the moderator's reason and opens the editor's review tab; an approval
+> opens the public page, which shows the changes. An upload a revision stops naming is
+> deleted once nothing else shows it - replaced inside the draft, or left in a revision
+> that was refused or thrown away - and the reward module's `isMediaShownElsewhere`
+> counts what an open revision proposes as a use, so deleting a draft tier cannot remove
+> a picture another tier's waiting edit names. The queue row is `RevisionQueueEntry`
+> in the contract, rather than `Entry`, which a survey type shares.
+>
 > The console screens are `/admin/moderation/revisions` (the queue, beside the submission
 > queue) and `/admin/moderation/revisions/{id}` (#560): the live campaign beside the
 > proposal for exactly the fields the service names as changed, with a word diff for the
