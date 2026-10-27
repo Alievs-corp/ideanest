@@ -204,7 +204,9 @@
       "settings": "Parametrlər"
     },
     "nav": {
-      "label": "Hesab"
+      "label": "Hesab",
+      "open": "Hesab menyusunu aç",
+      "close": "Hesab menyusunu bağla"
     },
     "links": {
       "pledges": {
