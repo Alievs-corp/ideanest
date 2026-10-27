@@ -121,27 +121,32 @@ describe('AccountNav', () => {
   });
 
   /**
-   * #177. Below the breakpoint the list is a scroll container, and the ring (four pixels outside
-   * the link: `theme.css`'s unlayered `:focus-visible` rule) was clipped on the first link's
-   * left and the last link's right. The list pads its sides and gives them back there, and
-   * resets above the breakpoint, where the rail's own `lg:-mx-1 lg:px-1` makes the room.
+   * The rail is the wide-screen layout only; below `xl` `AccountNavDrawer` draws the entries.
+   * It is its own scroll container (#349) and pads for the focus ring it would otherwise clip.
    */
-  it('keeps room for the focus ring on the phone row', () => {
+  it('is a scrolling rail at xl and nothing below it', () => {
     renderNav();
 
     const nav = screen.getByRole('navigation', { name: NAV_LABELS.en });
-    const row = nav.querySelector('ul') as HTMLElement;
-    expect(row).toHaveClass('overflow-x-auto');
-    expect(row).toHaveClass('px-1');
-    expect(row).toHaveClass('-mx-1');
-    expect(row).toHaveClass('pb-2');
-    expect(row).toHaveClass('lg:px-0');
-    expect(row).toHaveClass('lg:mx-0');
-    expect(nav.className).toContain('lg:px-1');
-    expect(nav.className).toContain('lg:-mx-1');
+    expect(nav).toHaveClass('hidden');
+    expect(nav).toHaveClass('xl:block');
+    expect(nav.className).toContain('xl:overflow-y-auto');
+    expect(nav.className).toContain('xl:overscroll-contain');
+    expect(nav.className).toContain('xl:px-1');
+    expect(nav.className).toContain('xl:-mx-1');
     for (const link of within(nav).getAllByRole('link')) {
       expect(link).toHaveClass('focus-visible:outline-offset-2');
     }
+  });
+
+  it('draws the same entries as a plain list inside the drawer', () => {
+    render(<AccountNav label={NAV_LABELS.en} groups={groupsFor('en')} layout="drawer" />);
+
+    const nav = screen.getByRole('navigation', { name: NAV_LABELS.en });
+    expect(nav).not.toHaveClass('hidden');
+    expect(within(nav).getAllByRole('link').map((anchor) => anchor.getAttribute('href'))).toEqual(
+      ACCOUNT_LINKS.map((link) => `/en${link.href}`),
+    );
   });
 
   it('takes its words from the catalogue, in English', () => {

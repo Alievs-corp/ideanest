@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { SiteShell } from '../shell/SiteShell';
 import { ACCOUNT_GROUPS } from '../../lib/account/navigation';
 import { AccountNav, type AccountNavGroup } from './AccountNav';
+import { AccountNavDrawer } from './AccountNavDrawer';
 
 /**
  * The frame every account screen renders inside — §4.2 and §4.13 WS-01, issue #275.
@@ -94,8 +95,14 @@ export async function AccountArea({ children }: AccountAreaProps) {
   return (
     <SiteShell>
       <div lang={locale} className="mx-auto w-full max-w-[1120px] px-5 py-10 sm:px-6 sm:py-14">
-        <div className="flex flex-col gap-10 lg:flex-row lg:gap-14">
-          <div className="lg:w-[15rem] lg:shrink-0">
+        <div className="flex flex-col gap-6 xl:flex-row xl:gap-14">
+          <AccountNavDrawer
+            label={t('nav.label')}
+            openLabel={t('nav.open')}
+            closeLabel={t('nav.close')}
+            groups={groups}
+          />
+          <div className="hidden xl:block xl:w-[15rem] xl:shrink-0">
             <AccountNav label={t('nav.label')} groups={groups} />
           </div>
           {/*

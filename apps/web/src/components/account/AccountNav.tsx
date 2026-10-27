@@ -28,7 +28,7 @@ import { isCurrentAccountLink } from '../../lib/account/navigation';
  * on controls**. A navigation that animated between entries would be animating on every
  * screen in the area, on a surface whose whole job is to be worked in.
  *
- * <h2>It scrolls on its own axis on both, and the reason differs</h2>
+ * <h2>The rail scrolls on its own axis</h2>
  *
  * On a wide viewport the rail is sticky, so a rail taller than the screen used to have a
  * bottom nobody could reach: the page scrolled, the content on the right moved, and the rail
@@ -37,12 +37,14 @@ import { isCurrentAccountLink } from '../../lib/account/navigation';
  * The class list below argues each part, including the padding that keeps the focus ring from
  * being clipped by the container that fixed the first problem.
  *
- * <h2>It scrolls sideways on a phone, rather than collapsing</h2>
+ * <h2>Two layouts, one list — the rail and the drawer</h2>
  *
- * Below the breakpoint the two groups become one horizontally scrolling row. A drawer would
- * be a second off-canvas panel in an application that already has one (WS-03) and would hide
- * the thirteen destinations behind a control, on the screens where somebody arrived
- * specifically to reach one of them.
+ * Below `xl` this used to be one horizontally scrolling row above the content. A phone showed
+ * the first group and the edge of the second, nothing said there were more, and a tablet kept
+ * a row it could not put away. It now matches the admin console: the rail is `hidden` below
+ * `xl`, and `AccountNavDrawer` draws the same entries as a vertical list behind a menu button
+ * above the content. `layout` is the only difference, so the two cannot disagree about what
+ * exists or which entry is current.
  *
  * <h2>The words arrive as props, already translated — §21.1, issue #324</h2>
  *
@@ -81,92 +83,99 @@ export interface AccountNavGroup {
 }
 
 export interface AccountNavProps {
-  /** The landmark's accessible name, already in the reader's language. */
+  /** The landmark's name, from `account.nav.label`. */
   readonly label: string;
   readonly groups: readonly AccountNavGroup[];
+  /** `rail` beside the content at `xl` and nothing below it; `drawer` inside `AccountNavDrawer`. */
+  readonly layout?: 'rail' | 'drawer';
 }
 
-export function AccountNav({ label, groups }: AccountNavProps) {
+export function AccountNav({ label, groups, layout = 'rail' }: AccountNavProps) {
   const pathname = usePathname();
+
+  if (layout === 'drawer') {
+    return (
+      <nav aria-label={label}>
+        <ul className="flex list-none flex-col gap-6">
+          {groups.map((group) => (
+            <li key={group.heading}>
+              <h2 className="px-3 text-[11px] font-medium tracking-[0.08em] text-fg-40 uppercase">
+                {group.heading}
+              </h2>
+              <ul className="mt-1.5 flex list-none flex-col gap-0.5">
+                {group.links.map((link) => (
+                  <li key={link.href}>
+                    <NavLink link={link} current={isCurrentAccountLink(link.href, pathname)} />
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    );
+  }
 
   return (
     <nav
       aria-label={label}
       className={[
-        'lg:sticky lg:top-24',
+        /* Nothing below `xl`: the menu button above the content reaches the same entries. */
+        'hidden xl:sticky xl:top-24 xl:block',
         /*
           THE RAIL SCROLLS ON ITS OWN Y AXIS — #349. `sticky` pins it below the header and
-          keeps it there while the page moves, which is the point of it; the consequence,
-          until this, was that a rail taller than the viewport had a bottom nobody could
-          reach. Scrolling the page moved the content on the right and left the rail exactly
-          where it was. Thirteen destinations at 150% zoom, or a laptop at 768px of height,
-          is enough for the last group to be unreachable.
-
-          `100dvh` and not `100vh`: the dynamic unit is the one that tracks a collapsing
-          browser toolbar, and `vh` here would size the rail to a viewport the reader does
-          not have. `8rem` is the `top-24` above it (6rem) plus 2rem so the last entry does
-          not sit flush against the bottom edge.
-
-          `overscroll-contain` is the half that makes it independent rather than merely
-          scrollable: without it, reaching the end of the rail hands the wheel to the page
-          and the reader scrolls the article they were not looking at.
+          keeps it there while the page moves; without its own scroll a rail taller than the
+          viewport had a bottom nobody could reach. `100dvh` tracks a collapsing browser
+          toolbar, and `8rem` is the `top-24` above it plus 2rem. `overscroll-contain` keeps
+          the end of the rail from handing the wheel to the page.
         */
-        'lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto lg:overscroll-contain',
+        'xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto xl:overscroll-contain',
         /*
-          Room for the focus ring, which a scroll container would otherwise clip. The links
-          take `outline-2 outline-offset-2` — four pixels outside their own box — and
-          docs/ui-kit.md §9.3 requires that ring to be visible on every interactive element.
-          The negative margin gives the padding back, so nothing moves.
+          Room for the focus ring, which the scroll container would otherwise clip
+          (docs/ui-kit.md §9.3). The negative margin gives the padding back, so nothing moves.
         */
-        'lg:-mx-1 lg:px-1',
+        'xl:-mx-1 xl:px-1',
       ].join(' ')}
     >
       {/*
-        `-mx-1 px-1`, below the breakpoint only: the same room for the ring on the phone row
-        (#177). There the list itself is the scroll container, and without it the first
-        link's ring was cut off on the left and the last link's on the right. `pb-2` already
-        clears the bottom and the group headings sit above the top. Above the breakpoint the
-        list stops scrolling and the rail's own `lg:-mx-1 lg:px-1` takes over, so it resets.
-
-        `onFocus`: a link Tab lands on while it is half off the row's edge is scrolled fully
-        into view, which Chromium does not do by itself (#181, `revealFocusedItem` in
-        `@ideanest/ui`). Above the breakpoint the same call keeps the focused link inside the
-        rail's own vertical scroll.
+        `onFocus`: a link Tab lands on near the rail's bottom edge is scrolled fully into view
+        inside the rail's own scroll (#181, `revealFocusedItem` in `@ideanest/ui`).
       */}
-      <ul
-        className="-mx-1 flex list-none gap-x-6 gap-y-8 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-1"
-        onFocus={revealFocusedItem}
-      >
+      <ul className="flex list-none flex-col gap-8 pb-1" onFocus={revealFocusedItem}>
         {groups.map((group) => (
-          <li key={group.heading} className="min-w-max lg:min-w-0">
+          <li key={group.heading}>
             <h2 className="px-3 text-xs font-medium tracking-[0.08em] text-fg-40 uppercase">
               {group.heading}
             </h2>
-            <ul className="mt-2 flex list-none gap-1 lg:flex-col">
-              {group.links.map((link) => {
-                const current = isCurrentAccountLink(link.href, pathname);
-                return (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      aria-current={current ? 'page' : undefined}
-                      className={[
-                        'block rounded-lg border-l-2 px-3 py-2 text-[15px] transition-colors duration-150 ease-in-out',
-                        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
-                        current
-                          ? 'border-[var(--lime-ink)] bg-surface-2 text-fg'
-                          : 'border-transparent text-fg-64 hover:bg-surface-2 hover:text-fg',
-                      ].join(' ')}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                );
-              })}
+            <ul className="mt-2 flex list-none flex-col gap-1">
+              {group.links.map((link) => (
+                <li key={link.href}>
+                  <NavLink link={link} current={isCurrentAccountLink(link.href, pathname)} />
+                </li>
+              ))}
             </ul>
           </li>
         ))}
       </ul>
     </nav>
+  );
+}
+
+/** One entry. The current one is white on `--surface-2` with a lime rule down its leading edge. */
+function NavLink({ link, current }: { readonly link: AccountNavLink; readonly current: boolean }) {
+  return (
+    <Link
+      href={link.href}
+      aria-current={current ? 'page' : undefined}
+      className={[
+        'block rounded-lg border-l-2 px-3 py-2 text-[15px] transition-colors duration-150 ease-in-out',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+        current
+          ? 'border-[var(--lime-ink)] bg-surface-2 text-fg'
+          : 'border-transparent text-fg-64 hover:bg-surface-2 hover:text-fg',
+      ].join(' ')}
+    >
+      {link.label}
+    </Link>
   );
 }

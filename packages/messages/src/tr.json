@@ -204,7 +204,9 @@
       "settings": "Ayarlar"
     },
     "nav": {
-      "label": "Hesap"
+      "label": "Hesap",
+      "open": "Hesap menüsünü aç",
+      "close": "Hesap menüsünü kapat"
     },
     "links": {
       "pledges": {

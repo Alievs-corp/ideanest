@@ -204,7 +204,9 @@
       "settings": "Settings"
     },
     "nav": {
-      "label": "Account"
+      "label": "Account",
+      "open": "Open account menu",
+      "close": "Close account menu"
     },
     "links": {
       "pledges": {

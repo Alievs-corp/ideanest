@@ -74,6 +74,18 @@ export function AdminNavDrawer({ copy }: AdminNavDrawerProps) {
     setOpen(false);
   }, [pathname]);
 
+  /* At `xl` the panel is hidden by CSS, and an open one would leave the page scroll-locked. */
+  useEffect(() => {
+    if (!open || typeof window.matchMedia !== 'function') return;
+    const wide = window.matchMedia('(min-width: 80rem)');
+    const closeWhenWide = () => {
+      if (wide.matches) setOpen(false);
+    };
+    closeWhenWide();
+    wide.addEventListener('change', closeWhenWide);
+    return () => wide.removeEventListener('change', closeWhenWide);
+  }, [open]);
+
   return (
     <>
       <button
