@@ -32,6 +32,9 @@ export const CAMPAIGN_GRID =
  * `HOME_SPLIT_GRID` is the right half of the first band: two columns from `sm` and still two
  * at `lg`, where the band gives it half the width beside the popular campaigns. Its rows are
  * equal from `lg`, as the two popular cards' are, so the two halves end their rows on one line.
+ * `HOME_SPLIT_GRID_SPARSE` is the same half when it has too few campaigns to fill its rows: equal
+ * rows would stretch one or two cards to the popular half's whole height, so each row keeps its
+ * card's own height and the rows gather at the top.
  *
  * `HOME_RAIL` turns a grid into a row from `lg`: one line of cards that scrolls sideways under
  * the section's arrows, three across at `lg` and four at `xl` — the same widths
@@ -42,6 +45,8 @@ export const CAMPAIGN_GRID =
  * negative margins give the same room back, so the row sits where a grid would.
  */
 export const HOME_SPLIT_GRID = 'grid w-full list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:auto-rows-fr';
+
+export const HOME_SPLIT_GRID_SPARSE = 'grid w-full list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:content-start';
 
 export const HOME_RAIL =
   'grid w-full list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:-mt-2 lg:-mb-10 lg:flex lg:snap-x lg:snap-mandatory lg:overflow-x-auto lg:pt-2 lg:pb-10 lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden';
