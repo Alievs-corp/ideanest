@@ -171,6 +171,16 @@ export default async function HomePage() {
   );
 
   /*
+   * THE SPLIT NEEDS CAMPAIGNS TO FILL IT. Its right half is three rows as tall together as the
+   * two popular cards, so one or two closing campaigns left after the popular ones are taken
+   * out stretch to that whole height — a card that is mostly empty colour. Until all three
+   * rows have a campaign, the ending-soon campaigns get the ordinary full-width grid instead,
+   * and the popular ones, which are then few enough to appear in it or in the launched rail
+   * below, give up their half.
+   */
+  const splitBand = featured.length > 0 && splitIds.size > SPLIT_SIZE - 2;
+
+  /*
    * The pages a creator reads before starting, in each page's own words: the title and the
    * description its `<meta>` already carries, so this band cannot promise what the page does
    * not say.
@@ -253,7 +263,7 @@ export default async function HomePage() {
           <HeroScene caption={t('hero.sceneCaption')} />
         </section>
 
-        {closing.length > 0 && featured.length > 0 && (
+        {closing.length > 0 && splitBand && (
           /*
             ONE BAND, TWO PARTS — from `lg`. The two halves share their rows through
             `subgrid`, so the popular cards and the grid beside them start on the same line
@@ -325,7 +335,7 @@ export default async function HomePage() {
           </div>
         )}
 
-        {closing.length > 0 && featured.length === 0 && (
+        {closing.length > 0 && !splitBand && (
           <HomeSection
             heading={t('closing.heading')}
             standfirst={t('closing.standfirst')}
