@@ -28,7 +28,7 @@ describe('EditorShell', () => {
     expect(nav).toBeInTheDocument();
 
     for (const tab of EDITOR_TABS) {
-      expect(screen.getByText(EDITOR_COPY.tabs[tab.key])).toBeInTheDocument();
+      expect(within(nav).getByText(EDITOR_COPY.tabs[tab.key])).toBeInTheDocument();
     }
   });
 
@@ -78,6 +78,13 @@ describe('EditorShell', () => {
   it('keeps every section reachable by keyboard, in order', async () => {
     const user = userEvent.setup();
     renderShell();
+
+    /*
+     * jsdom draws no stylesheet, so the phone's menu button (`md:hidden`) is in the order here
+     * as well as the row (`hidden md:block`); a browser shows one of the two. It comes first.
+     */
+    await user.tab();
+    expect(document.activeElement).toHaveAccessibleName(`${EDITOR_COPY.sectionsOpen}: Basics`);
 
     /*
      * Derived from EDITOR_TABS rather than written out, because which sections
