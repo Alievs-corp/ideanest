@@ -1248,13 +1248,25 @@ exist — twenty routes shipped with no shared header and no footer.
 └─────────────────────────────────────────────────┘
 ```
 
-**The header never takes a surface; the nav pill does.** `TopBar` is
+**From `md` up the header never takes a surface; the nav pill does.** `TopBar` is
 `bg-transparent` and stays that way at every scroll position — what changes is
 the pill in the middle of it, which narrows to `445px` and picks up
 `--white-surface` with `--text-on-white`. That is §2.5's rule applied to
 navigation: white is what floats above the system, and a collapsed bar is
 floating over content that is scrolling underneath it. A header that took
 `--surface-2` instead would read as a second page ground stacked on the first.
+
+**Below `md` the header takes the page ground once it collapses.** The pill is
+hidden there (its links are in the drawer), and with it went the only thing that
+took a surface: what was left was a wordmark and three buttons over text scrolling
+through them, the wordmark printed across a heading. So on a phone the collapsed
+bar draws `--surface-1`, full width, with a `--divider` rule under it, and content
+goes under it rather than through it. `--surface-1` and not `--surface-2` for the
+reason above: it is the same ground the page is on, so it does not read as a second
+panel. It fades in with `opacity` on the pill's 300ms curve, the bar's height does
+not change, and nothing transforms the header, because the drawer's fixed panel is
+inside it. `TopBar` takes the breakpoint from its consumer (`groundClassName`), as
+it takes the pill's (`navClassName`).
 
 **Chrome does not compete with content.** §7.10 already states the rule for the
 navigation rail — a lime icon, not a lime fill — and it holds here for the same
@@ -1270,7 +1282,9 @@ stop, not a destination.
 
 | Element | Surface | Text |
 |---|---|---|
-| Header wrapper, any state | transparent | inherited |
+| Header wrapper, at rest | transparent | inherited |
+| Header wrapper, collapsed, `md` and wider | transparent | inherited |
+| Header wrapper, collapsed, below `md` | `--surface-1`, `--divider` rule below | inherited |
 | Nav pill, at rest | transparent, transparent border | `--text-primary` |
 | Nav pill, collapsed | `--white-surface`, `--radius-full`, `--border` | `--text-on-white` |
 | Header primary action | `--lime-500` | `--text-on-lime` |
