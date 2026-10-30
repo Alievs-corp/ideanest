@@ -255,7 +255,9 @@ function PrelaunchForm({
   }, [openFailure, failure, pending]);
 
   const errors: BasicsErrors = {
-    ...validateBasics(draft, basics.validation),
+    ...validateBasics(draft, basics.validation, {
+      savedLaunchAt: draftFromProject(project).scheduledLaunchAt,
+    }),
     ...basicsServerErrors(failure, basics),
   };
   /*

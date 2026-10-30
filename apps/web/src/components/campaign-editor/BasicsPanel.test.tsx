@@ -544,6 +544,25 @@ describe('BasicsPanel', () => {
 
       expect(screen.getByText('Choose a date and time in the future.')).toBeInTheDocument();
     });
+
+    it('says nothing about a launched campaign’s launch time until the creator changes it', async () => {
+      const user = await openBasics({
+        state: 'LIVE',
+        scheduledLaunchAt: '2020-01-01T10:00:00.000Z',
+        launchedAt: '2020-01-01T10:00:00.000Z',
+      });
+      const launch = screen.getByLabelText('Scheduled launch');
+
+      // It passed when the campaign opened: history, not a fault.
+      expect(screen.queryByText('Choose a date and time in the future.')).not.toBeInTheDocument();
+
+      await user.clear(launch);
+      await user.type(launch, '2020-02-01T10:00');
+      await tick(DEBOUNCE);
+
+      // A past moment the creator has just chosen is still refused.
+      expect(screen.getByText('Choose a date and time in the future.')).toBeInTheDocument();
+    });
   });
 
   describe('the goal', () => {

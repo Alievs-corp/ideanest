@@ -160,6 +160,31 @@ describe('validateBasics', () => {
         validateBasics(draft({ scheduledLaunchAt: future }), BASICS_COPY.validation, { now: NOW }).scheduledLaunchAt,
       ).toBeUndefined();
     });
+
+    /*
+     * A launched campaign's launch time passed when it opened. Calling it an error under the
+     * field tells a creator something is wrong with a campaign that is running fine.
+     */
+    it('says nothing about a past launch time the creator has not touched', () => {
+      const opened = toDateTimeLocal('2026-08-01T09:00:00.000Z');
+      expect(
+        validateBasics(draft({ scheduledLaunchAt: opened }), BASICS_COPY.validation, {
+          now: NOW,
+          savedLaunchAt: opened,
+        }).scheduledLaunchAt,
+      ).toBeUndefined();
+    });
+
+    it('still refuses a past moment the creator has just chosen instead', () => {
+      const opened = toDateTimeLocal('2026-08-01T09:00:00.000Z');
+      const chosen = toDateTimeLocal('2026-08-10T09:00:00.000Z');
+      expect(
+        validateBasics(draft({ scheduledLaunchAt: chosen }), BASICS_COPY.validation, {
+          now: NOW,
+          savedLaunchAt: opened,
+        }).scheduledLaunchAt,
+      ).toBe('Choose a date and time in the future.');
+    });
   });
 
   describe('cover image', () => {

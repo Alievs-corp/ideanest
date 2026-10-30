@@ -231,6 +231,15 @@ const WHOLE_DAYS = /^\d+$/;
 export interface ValidationContext {
   /** Injected so the "already in the past" boundary is testable. */
   now?: Date;
+  /**
+   * The launch time the server holds, as the form would show it (`draftFromProject`).
+   *
+   * A launch time in the past is only wrong when the creator has just chosen it. One the
+   * creator has not touched is history: a launched campaign's time passed when it opened,
+   * and saying "that is in the past" under it reads as a fault on a campaign that is fine.
+   * Nothing is sent for an untouched field, so nothing is lost by staying quiet about it.
+   */
+  savedLaunchAt?: string;
 }
 
 /**
@@ -300,7 +309,10 @@ export function validateBasics(
     const instant = fromDateTimeLocal(draft.scheduledLaunchAt);
     if (instant === null) {
       errors.scheduledLaunchAt = copy.launchNotADate;
-    } else if (new Date(instant).getTime() <= now.getTime()) {
+    } else if (
+      new Date(instant).getTime() <= now.getTime() &&
+      draft.scheduledLaunchAt !== context.savedLaunchAt
+    ) {
       errors.scheduledLaunchAt = copy.launchInPast;
     }
   }

@@ -259,7 +259,9 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
   }
 
   const errors: BasicsErrors = {
-    ...validateBasics(draft, basics.validation),
+    ...validateBasics(draft, basics.validation, {
+      savedLaunchAt: draftFromProject(project).scheduledLaunchAt,
+    }),
     ...serverErrors(failure, basics),
   };
   const selected = categories?.find((category) => category.id === draft.categoryId) ?? null;

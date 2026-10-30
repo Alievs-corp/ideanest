@@ -184,7 +184,10 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
   }
 
   const failure = autosave.failure;
-  const errors: BasicsErrors = { ...validateBasics(draft, basics.validation), ...basicsServerErrors(failure, basics) };
+  const errors: BasicsErrors = {
+    ...validateBasics(draft, basics.validation, { savedLaunchAt: draftFromProject(project).scheduledLaunchAt }),
+    ...basicsServerErrors(failure, basics),
+  };
   const selected = categories?.find((category) => category.id === draft.categoryId) ?? null;
   const subcategories = selected?.subcategories ?? [];
 
