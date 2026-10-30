@@ -265,7 +265,10 @@ export function PrelaunchPanel({
     );
   }
 
-  const errors: BasicsErrors = { ...validateBasics(draft, validation), ...serverErrors(autosave.failure) };
+  const errors: BasicsErrors = {
+    ...validateBasics(draft, validation, { savedLaunchAt: draftFromProject(project).scheduledLaunchAt }),
+    ...serverErrors(autosave.failure),
+  };
   const canOpen = project.state === 'DRAFT';
   const closed = !canOpen && !collecting;
 
