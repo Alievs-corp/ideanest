@@ -112,14 +112,17 @@ describe('the static half of the accessibility rules', () => {
   });
 
   /**
-   * Pinned, so a sixth backdrop is something somebody looks at rather than a count that grew.
+   * Pinned, so a seventh backdrop is something somebody looks at rather than a count that grew.
    * The fourth is the console's drawer below the breakpoint and the fifth is the account
    * area's, which mirrors it; both close on Escape and on their own close button like the site's.
+   * The sixth is the campaign editor's section list below `md` (#614), the account drawer's
+   * contract again: Escape, its close button and choosing a section all close it too.
    */
-  it('has exactly the five modal backdrops as its exception', () => {
+  it('has exactly the six modal backdrops as its exception', () => {
     expect(clickHandlers.map((handler) => handler.file).sort()).toEqual([
       join('components', 'account', 'AccountNavDrawer.tsx'),
       join('components', 'admin', 'AdminNavDrawer.tsx'),
+      join('components', 'campaign-editor', 'EditorSectionsMenu.tsx'),
       join('components', 'moderation', 'ReportControl.tsx'),
       join('components', 'shell', 'MobileNavDrawer.tsx'),
       join('components', 'shell', 'WhatsAppLauncher.tsx'),

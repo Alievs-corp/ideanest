@@ -5470,6 +5470,8 @@
     "eyebrow": "Campaign editor",
     "loadingTitle": "Loading",
     "sectionsLabel": "Campaign sections",
+    "sectionsOpen": "Open campaign sections",
+    "sectionsClose": "Close campaign sections",
     "dashboard": "Dashboard",
     "soon": "soon",
     "notAvailable": ", not available yet",

@@ -5470,6 +5470,8 @@
     "eyebrow": "Редактор кампании",
     "loadingTitle": "Загрузка",
     "sectionsLabel": "Разделы кампании",
+    "sectionsOpen": "Открыть разделы кампании",
+    "sectionsClose": "Закрыть разделы кампании",
     "dashboard": "Панель",
     "soon": "скоро",
     "notAvailable": ", раздел ещё не доступен",
