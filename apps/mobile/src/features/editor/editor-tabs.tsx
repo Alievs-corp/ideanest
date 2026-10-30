@@ -1,20 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { useRef, useState } from 'react';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { EDITOR_TABS, type EditorTabKey } from '@ideanest/campaign-editor/tabs';
-import { TONES, useFocusRing } from '../../components/ui';
+import { Icon, Sheet, SelectOptionRow, haptics, useFocusRing, usePressScale } from '../../components/ui';
+import { Glyphs } from '../../icons';
 import { colors, font, fontSize, radius, size, spacing } from '../../theme';
 
 /**
- * Basics · Rewards · Story · FAQ · Pre-launch · Review — the web `EditorShell`'s section row, in
+ * Basics · Rewards · Story · FAQ · Pre-launch · Review — the editor's sections, in
  * `@ideanest/campaign-editor/tabs` order (#162).
  *
- * <p>A row of pills that scrolls sideways, like the dashboard's. Each pill is drawn 34pt tall, the
- * web's height, inside a 44pt pressable so the thumb's target is the platform minimum. The chosen
- * one is white with near-black words and a heavier weight (never lime: a section is not urgent);
- * the others are `surface2` with `white/64`. `tab` roles with `selected`, in a `tablist`, and the
- * chosen pill is scrolled into view whenever it changes.
+ * <p>ONE PILL AND A SHEET, NOT A ROW (#616). The six pills did not fit a phone in any language and
+ * scrolled sideways: some sections were cut mid-word and the rest were off the edge with nothing
+ * saying they were there, Review among them — the one that says whether the campaign can be
+ * submitted. The web made the same change below `md` (#614).
  *
- * <p>No press animation: the editor's motion budget is the save indicator only.
+ * <p>The pill names the section being edited and its place in the list ("Story 3/6"), so the sheet
+ * only has to be opened to move. The sheet is the kit's white `Sheet` with the `Select`'s option
+ * rows, so "pick one of these" looks one way across the app: each row at least 44pt, announced as
+ * a radio with its checked state, the current one on `whiteMuted` with a Bold `TickCircle`.
+ * Choosing closes the sheet at once and hands the section to `onSelect`; focus returns to the pill.
+ *
+ * <p>Motion is the kit's: `PressableScale`'s press and the sheet's own rise, both of which honour
+ * reduced motion.
  */
 
 /** Where a tab lives in the app: `campaigns/[id]/edit/{tab}`. The shared `editorTabHref` is the web's. */
@@ -29,130 +37,108 @@ export function editorTabOf(pathname: string): EditorTabKey {
 }
 
 const GUTTER = spacing[5];
-const PILL_HEIGHT = 34;
 
 export function EditorTabs({
   active,
   labels,
   sectionsLabel,
+  openLabel,
   onSelect,
 }: {
   readonly active: EditorTabKey;
   readonly labels: Readonly<Record<EditorTabKey, string>>;
-  /** Names the row for assistive technology (`campaignEditor.sectionsLabel`). */
+  /** The sheet's title and the list's name (`campaignEditor.sectionsLabel`). */
   readonly sectionsLabel: string;
+  /** The pill's spoken action, before the section's name (`campaignEditor.sectionsOpen`). */
+  readonly openLabel: string;
   readonly onSelect: (tab: EditorTabKey) => void;
 }) {
-  const scroller = useRef<ScrollView>(null);
-  const [width, setWidth] = useState(0);
-  const [frames, setFrames] = useState<Partial<Record<EditorTabKey, { x: number; w: number }>>>({});
-
-  const frame = frames[active];
-  useEffect(() => {
-    if (frame === undefined || width === 0) return;
-    scroller.current?.scrollTo({ x: Math.max(0, frame.x + frame.w / 2 - width / 2), animated: false });
-  }, [frame, width]);
-
-  return (
-    <ScrollView
-      ref={scroller}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
-      accessibilityRole="tablist"
-      accessibilityLabel={sectionsLabel}
-      style={styles.bar}
-      contentContainerStyle={styles.row}
-      testID="editor-tabs"
-    >
-      {EDITOR_TABS.map((tab) => (
-        <TabPill
-          key={tab.key}
-          label={labels[tab.key]}
-          current={tab.key === active}
-          onPress={() => {
-            if (tab.key !== active) onSelect(tab.key);
-          }}
-          onLayout={(event: LayoutChangeEvent) => {
-            const { x, width: w } = event.nativeEvent.layout;
-            setFrames((prev) =>
-              prev[tab.key]?.x === x && prev[tab.key]?.w === w ? prev : { ...prev, [tab.key]: { x, w } },
-            );
-          }}
-          testID={`editor-tab-${tab.key}`}
-        />
-      ))}
-    </ScrollView>
-  );
-}
-
-function TabPill({
-  label,
-  current,
-  onPress,
-  onLayout,
-  testID,
-}: {
-  readonly label: string;
-  readonly current: boolean;
-  readonly onPress: () => void;
-  readonly onLayout: (event: LayoutChangeEvent) => void;
-  readonly testID: string;
-}) {
+  const [open, setOpen] = useState(false);
+  const trigger = useRef<View>(null);
+  const press = usePressScale();
   const { ring, onFocus, onBlur } = useFocusRing();
+  const position = EDITOR_TABS.findIndex((tab) => tab.key === active) + 1;
+
   return (
-    <Pressable
-      accessibilityRole="tab"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: current }}
-      onPress={onPress}
-      onLayout={onLayout}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      style={styles.target}
-      testID={testID}
-    >
-      {({ pressed }) => (
-        <View
-          style={[
+    <View style={styles.bar} testID="editor-tabs">
+      <Animated.View style={press.style}>
+        <Pressable
+          ref={trigger}
+          accessibilityRole="button"
+          accessibilityLabel={`${openLabel}: ${labels[active]}`}
+          accessibilityState={{ expanded: open }}
+          onPressIn={press.onPressIn}
+          onPressOut={press.onPressOut}
+          onPress={() => {
+            // A keyboard left up by the tab's last field would cover the sheet's rows.
+            Keyboard.dismiss();
+            setOpen(true);
+          }}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          style={({ pressed }) => [
             styles.pill,
-            {
-              backgroundColor: current ? colors.inverse : pressed ? colors.surface3 : colors.surface2,
-              borderColor: current ? colors.inverse : colors.border,
-            },
+            { backgroundColor: pressed ? colors.surface3 : colors.surface2, borderColor: colors.border },
             ring,
           ]}
+          testID="editor-sections-open"
         >
+          <Text numberOfLines={1} style={[styles.label, { color: colors.textPrimary }]}>
+            {labels[active]}
+          </Text>
+          {/* A glance, not a sentence: the name already said which section this is. */}
           <Text
-            style={[
-              styles.label,
-              current ? styles.labelCurrent : styles.labelOther,
-              { color: current ? colors.onInverse : TONES.dark.secondary },
-            ]}
+            style={[styles.count, { color: colors.textTertiary }]}
             accessibilityElementsHidden
             importantForAccessibility="no"
           >
-            {label}
+            {`${position}/${EDITOR_TABS.length}`}
           </Text>
+          <Icon icon={Glyphs.ArrowDown2} size={16} color={colors.textTertiary} />
+        </Pressable>
+      </Animated.View>
+
+      <Sheet
+        visible={open}
+        onClose={() => setOpen(false)}
+        title={sectionsLabel}
+        returnFocusTo={trigger}
+        testID="editor-sections-sheet"
+      >
+        <View accessibilityRole="radiogroup" accessibilityLabel={sectionsLabel} style={styles.options}>
+          {EDITOR_TABS.map((tab) => (
+            <SelectOptionRow
+              key={tab.key}
+              option={{ value: tab.key, label: labels[tab.key] }}
+              selected={tab.key === active}
+              onChoose={() => {
+                setOpen(false);
+                if (tab.key === active) return;
+                haptics.selectReward();
+                onSelect(tab.key);
+              }}
+              testID={`editor-tab-${tab.key}`}
+            />
+          ))}
         </View>
-      )}
-    </Pressable>
+      </Sheet>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: { flexGrow: 0, backgroundColor: colors.surface1 },
-  row: { gap: spacing[2], paddingVertical: spacing[1], paddingHorizontal: GUTTER },
-  // The thumb's target: 44pt tall, the drawn pill centred in it.
-  target: { minHeight: size.touchTarget, justifyContent: 'center' },
+  bar: { backgroundColor: colors.surface1, paddingHorizontal: GUTTER, paddingVertical: spacing[1] },
   pill: {
-    minHeight: PILL_HEIGHT,
-    justifyContent: 'center',
-    paddingHorizontal: spacing[4],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    minHeight: size.touchTarget,
+    paddingLeft: spacing[5],
+    paddingRight: spacing[4],
     borderRadius: radius.full,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  label: { fontSize: fontSize.caption },
-  labelCurrent: { ...font.semibold },
-  labelOther: { ...font.medium },
+  label: { flex: 1, ...font.medium, fontSize: fontSize.row },
+  count: { ...font.regular, fontSize: fontSize.caption, fontVariant: ['tabular-nums'] },
+  options: { gap: spacing[1] },
 });

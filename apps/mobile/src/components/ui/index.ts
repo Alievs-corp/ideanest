@@ -164,7 +164,7 @@ export {
 export { PasswordInput, type PasswordInputProps } from './password-input';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './radio';
 export { SearchField, type SearchFieldProps, type SearchSuggestion } from './search-field';
-export { Select, type SelectOption, type SelectProps } from './select';
+export { Select, SelectOptionRow, type SelectOption, type SelectProps } from './select';
 export { Switch, type SwitchProps } from './switch';
 export { TextInput, type TextInputProps, type TextInputSize } from './text-input';
 export { Textarea, type TextareaProps } from './textarea';

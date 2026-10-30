@@ -81,6 +81,7 @@ function Frame() {
         active={active}
         labels={copy.tabs}
         sectionsLabel={copy.sectionsLabel}
+        openLabel={copy.sectionsOpen}
         onSelect={(tab) => {
           // What was typed on this tab goes before the next one opens.
           autosave.flush();
