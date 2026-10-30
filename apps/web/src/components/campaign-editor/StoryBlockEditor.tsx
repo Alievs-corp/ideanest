@@ -125,9 +125,13 @@ export interface StoryBlockEditorProps {
   disabled?: boolean;
   /** Per-block messages from the server, keyed by the index the path named. */
   serverProblems?: ReadonlyMap<number, string>;
+  /** What the whole story still lacks, said under the blocks — the minimum length. */
+  shortfall?: string;
   onChange: (document: StoryDocument) => void;
   /** Called when a field loses focus, so the tab can flush its autosave. */
   onFlush?: () => void;
+  /** Called when focus leaves the editor altogether, not when it moves between its fields. */
+  onLeave?: () => void;
 }
 
 export function StoryBlockEditor({
@@ -137,8 +141,10 @@ export function StoryBlockEditor({
   document,
   disabled = false,
   serverProblems,
+  shortfall,
   onChange,
   onFlush,
+  onLeave,
 }: StoryBlockEditorProps) {
   const blocks = document.blocks;
   const total = blocks.length;
@@ -152,6 +158,7 @@ export function StoryBlockEditor({
    * user presses the button and hears nothing at all.
    */
   const [announcement, setAnnouncement] = useState('');
+  const shortfallId = useId();
 
   function put(next: readonly StoryBlock[], said: string): void {
     onChange({ version: document.version, blocks: next });
@@ -203,7 +210,16 @@ export function StoryBlockEditor({
   }
 
   return (
-    <section aria-labelledby="story-blocks-heading" className="flex flex-col gap-4">
+    <section
+      aria-labelledby="story-blocks-heading"
+      aria-describedby={shortfall === undefined ? undefined : shortfallId}
+      className="flex flex-col gap-4"
+      onBlur={(event) => {
+        const next = event.relatedTarget;
+        if (next instanceof Node && event.currentTarget.contains(next)) return;
+        onLeave?.();
+      }}
+    >
       <h2 id="story-blocks-heading" className="text-lg font-semibold text-fg">
         {copy.heading}
       </h2>
@@ -243,6 +259,17 @@ export function StoryBlockEditor({
             />
           ))}
         </ol>
+      )}
+
+      {shortfall !== undefined && (
+        /*
+          Under the blocks, where the writing is, in the same shape a field's error has
+          (`Field`): the icon carries it for somebody who cannot tell red from the rest.
+        */
+        <p id={shortfallId} className="flex items-start gap-1.5 text-[13px] text-danger">
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+          <span>{shortfall}</span>
+        </p>
       )}
 
       <div className="rounded-lg border border-fg/8 bg-surface-2 p-4">

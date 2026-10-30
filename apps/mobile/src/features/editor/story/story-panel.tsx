@@ -16,6 +16,7 @@ import {
   RISKS_MIN_CHARACTERS,
   STORY_MIN_CHARACTERS,
   characterCount,
+  editableStory,
   emptyStory,
   headingAnchors,
   insertBlock,
@@ -37,6 +38,7 @@ import {
   CharacterCount,
   Eyebrow,
   Field,
+  FieldError,
   InlineAlert,
   Pill,
   Skeleton,
@@ -157,6 +159,18 @@ function serverErrors(failure: SaveFailure | null): { story?: string; risks?: st
   return mapped;
 }
 
+/** What a field short of its submission minimum says under itself, or nothing until it has been visited. */
+function shortfall(
+  visited: boolean,
+  count: number,
+  min: number,
+  template: string,
+  locale: Parameters<typeof formatCount>[1],
+): string | undefined {
+  if (!visited || count >= min) return undefined;
+  return fillPlaceholders(template, { min: formatCount(min, locale), remaining: formatCount(min - count, locale) });
+}
+
 /** The document to edit, or `null` when this build cannot read the one stored. */
 function documentOf(project: ProjectEdit): StoryDocument | null {
   return project.story == null ? emptyStory() : readStoryDocument(project.story);
@@ -242,7 +256,8 @@ function StoryForm({
           server,
         };
       }
-      return { draft: withKeys(server), base: serverPrint, holding: false, changedElsewhere: false, server };
+      // An empty story opens on one paragraph to type into; what the service holds stays the base.
+      return { draft: withKeys(editableStory(server)), base: serverPrint, holding: false, changedElsewhere: false, server };
     },
     [store, projectId, withKeys],
   );
@@ -250,6 +265,15 @@ function StoryForm({
   const [initial] = useState(() => seedFrom(seed));
   const [draft, setDraftState] = useState<Draft | null>(initial.draft);
   const [risks, setRisks] = useState(seed.risks ?? '');
+  /**
+   * Whether a field short of its submission minimum says so under it yet: not on a fresh draft,
+   * where unwritten is not wrong, but from the first time the creator leaves it, or at once when
+   * what they wrote before is there and short. Once said it stays, counting down as they type.
+   */
+  const [storyVisited, setStoryVisited] = useState(
+    () => initial.draft !== null && storyCharacterCount(initial.draft.document) > 0,
+  );
+  const [risksVisited, setRisksVisited] = useState(() => characterCount(seed.risks ?? '') > 0);
   const [changedElsewhere, setChangedElsewhere] = useState(initial.changedElsewhere);
   const serverDocument = useRef(initial.server);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -376,9 +400,10 @@ function StoryForm({
       return;
     }
     lastComplete.current = document;
+    const editable = editableStory(document);
     // The same story read again keeps its cards, so a foreground refetch does not close the keyboard.
-    if (storyFingerprint(current.document) === storyFingerprint(document)) return;
-    setDraft(withKeys(document));
+    if (storyFingerprint(current.document) === storyFingerprint(editable)) return;
+    setDraft(withKeys(editable));
   }, [editor.revision, problemsOf, seedFrom, setDraft, withKeys]);
 
   /* -------------------------------------------------------------------------------------------
@@ -499,7 +524,10 @@ function StoryForm({
         );
         setFocusHead({ key: keys[Math.min(index, keys.length - 1)] ?? null });
       },
-      flush: () => autosaveRef.current.flush(),
+      flush: () => {
+        setStoryVisited(true);
+        autosaveRef.current.flush();
+      },
       takenAnchors: (key) => {
         const current = draftRef.current;
         if (current === null) return [];
@@ -546,6 +574,8 @@ function StoryForm({
   }, [document, draft, problemsOf, rejectedKey, fieldErrors.story]);
 
   const storyCharacters = useMemo(() => (document === null ? 0 : storyCharacterCount(document)), [document]);
+  const storyShortfall = shortfall(storyVisited, storyCharacters, STORY_MIN_CHARACTERS, story.storyTooShort, locale);
+  const risksShortfall = shortfall(risksVisited, characterCount(risks), RISKS_MIN_CHARACTERS, story.risksTooShort, locale);
   const anchors = useMemo(() => (document === null ? [] : headingAnchors(document)), [document]);
   const held = document !== null && problemsOf(document).size > 0;
 
@@ -583,7 +613,7 @@ function StoryForm({
     eraseHeld();
     lastComplete.current = server;
     setChangedElsewhere(false);
-    setDraft(withKeys(server));
+    setDraft(withKeys(editableStory(server)));
   }
 
   function keepThisVersion(): void {
@@ -760,6 +790,9 @@ function StoryForm({
                     );
                   })
                 )}
+                {storyShortfall === undefined ? null : (
+                  <FieldError message={storyShortfall} testID="story-shortfall" />
+                )}
               </View>
 
               <View style={styles.card} testID="story-add">
@@ -792,7 +825,7 @@ function StoryForm({
                   label={story.risks}
                   required
                   hint={fillPlaceholders(story.risksHint, { min: String(RISKS_MIN_CHARACTERS) })}
-                  error={fieldErrors.risks}
+                  error={fieldErrors.risks ?? risksShortfall}
                 >
                   <Textarea
                     value={risks}
@@ -803,6 +836,7 @@ function StoryForm({
                     onFocus={() => scrolling.value.reveal(risksBox.current)}
                     onBlur={() => {
                       scrolling.value.release(risksBox.current);
+                      setRisksVisited(true);
                       autosave.flush();
                     }}
                     testID="story-risks"

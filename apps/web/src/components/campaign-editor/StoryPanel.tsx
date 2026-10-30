@@ -16,11 +16,12 @@ import {
   RISKS_MIN_CHARACTERS,
   STORY_MIN_CHARACTERS,
   characterCount,
-  emptyStory,
+  editableStory,
   headingAnchors,
   readStoryDocument,
   rejectedBlockIndex,
   storyCharacterCount,
+  starterStory,
   storyProblems,
   type StoryDocument,
 } from '@ideanest/campaign-editor/story';
@@ -32,6 +33,7 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { INTL_LOCALE } from '../../lib/i18n/formats';
 import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
+import { Revealed } from './Revealed';
 import { RevisionNotice } from './RevisionNotice';
 import { SaveStatus } from './SaveStatus';
 import { StoryBlockEditor } from './StoryBlockEditor';
@@ -85,6 +87,26 @@ import { useProjectEdit } from './useProjectEdit';
 
 const LOADING_ROWS = [0, 1, 2];
 
+/**
+ * What a field short of its submission minimum says under itself, or nothing.
+ *
+ * The numbers are the reader's own digit grouping, as the counter above the story is.
+ * Nothing until `visited` — see the state of that name in the panel.
+ */
+function shortfall(
+  visited: boolean,
+  count: number,
+  min: number,
+  template: string,
+  locale: StoryPanelCopy['locale'],
+): string | undefined {
+  if (!visited || count >= min) return undefined;
+  return fillPlaceholders(template, {
+    min: min.toLocaleString(INTL_LOCALE[locale]),
+    remaining: (min - count).toLocaleString(INTL_LOCALE[locale]),
+  });
+}
+
 /** Maps the server's `errors` map onto this tab's two fields. */
 function serverErrors(failure: SaveFailure | null): { story?: string; risks?: string } {
   if (failure === null) return {};
@@ -124,6 +146,17 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
   const [risks, setRisks] = useState('');
   const [unreadable, setUnreadable] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  /**
+   * Whether a field short of its submission minimum says so under it yet.
+   *
+   * Not on a fresh draft — a story nobody has started is work not yet done, and the
+   * checklist reports that as progress. From the moment the creator leaves the field,
+   * or straight away when what they wrote before is already there and short, because
+   * then the minimum is the thing worth knowing. Once said it stays, counting down as
+   * they type, rather than vanishing on focus and coming back on blur.
+   */
+  const [storyVisited, setStoryVisited] = useState(false);
+  const [risksVisited, setRisksVisited] = useState(false);
 
   const autosave = useAutosave<ProjectPatch, ProjectEdit>({
     send: (patch) => patchProject(projectId, patch),
@@ -134,9 +167,12 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
   useEffect(() => {
     if (project === null || document !== null || unreadable) return;
 
+    const seededRisks = project.risks ?? '';
+    setRisksVisited(characterCount(seededRisks) > 0);
+
     if (project.story == null) {
-      setDocument(emptyStory());
-      setRisks(project.risks ?? '');
+      setDocument(starterStory());
+      setRisks(seededRisks);
       return;
     }
 
@@ -148,8 +184,9 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
       setUnreadable(true);
       return;
     }
-    setDocument(read);
-    setRisks(project.risks ?? '');
+    setDocument(editableStory(read));
+    setStoryVisited(storyCharacterCount(read) > 0);
+    setRisks(seededRisks);
   }, [project, document, unreadable]);
 
   const problems = useMemo(
@@ -258,6 +295,8 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
   const storyCharacters = storyCharacterCount(document);
   const riskCharacters = characterCount(risks);
   const anchors = headingAnchors(document);
+  const storyShortfall = shortfall(storyVisited, storyCharacters, STORY_MIN_CHARACTERS, story.storyTooShort, story.locale);
+  const risksShortfall = shortfall(risksVisited, riskCharacters, RISKS_MIN_CHARACTERS, story.risksTooShort, story.locale);
 
   return (
     <EditorShell
@@ -271,13 +310,15 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
     >
       <div className="flex flex-col gap-8">
         {failure !== null && (
-          <InlineAlert variant="danger" title={story.notSavedTitle}>
-            <p>{failure.message}</p>
-            <p className="mt-2 text-fg-64">{story.notSavedDetail}</p>
-            <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
-              {copy.tryAgain}
-            </Pill>
-          </InlineAlert>
+          <Revealed revealKey={failure.message}>
+            <InlineAlert variant="danger" title={story.notSavedTitle}>
+              <p>{failure.message}</p>
+              <p className="mt-2 text-fg-64">{story.notSavedDetail}</p>
+              <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
+                {copy.tryAgain}
+              </Pill>
+            </InlineAlert>
+          </Revealed>
         )}
 
         {blockProblems.size > 0 && (
@@ -369,15 +410,17 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
           toolbar={story.toolbar}
           document={document}
           serverProblems={blockProblems}
+          shortfall={storyShortfall}
           onChange={changeDocument}
           onFlush={autosave.flush}
+          onLeave={() => setStoryVisited(true)}
         />
 
         <Field
           label={story.risks}
           required
           hint={fillPlaceholders(story.risksHint, { min: String(RISKS_MIN_CHARACTERS) })}
-          error={fieldErrors.risks}
+          error={fieldErrors.risks ?? risksShortfall}
         >
           {/*
             No `maxLength` and no minimum enforced here. §5.3 makes this a SUBMISSION
@@ -390,7 +433,10 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
             value={risks}
             placeholder={story.risksPlaceholder}
             onChange={(event) => changeRisks(event.target.value)}
-            onBlur={autosave.flush}
+            onBlur={() => {
+              setRisksVisited(true);
+              autosave.flush();
+            }}
           />
           <CharacterCount
             copy={story.characterCount}
@@ -417,12 +463,12 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
             at the document they asked to discard while the server holds the one they
             asked for.
           */
-          const read = restored.story == null ? emptyStory() : readStoryDocument(restored.story);
-          if (read === null) {
+          const read = restored.story == null ? null : readStoryDocument(restored.story);
+          if (restored.story != null && read === null) {
             setUnreadable(true);
             return;
           }
-          setDocument(read);
+          setDocument(editableStory(read));
         }}
       />
     </EditorShell>

@@ -489,6 +489,23 @@ describe('BasicsPanel', () => {
       expect(sent()).not.toContainEqual({ blurb: `${'a'.repeat(134)}bc` });
     });
 
+    it('says a summary is needed once the creator leaves it empty, and not before', async () => {
+      const user = await openBasics({ blurb: '' });
+      const needed = 'A project needs a summary. It is the line backers read under the title.';
+
+      // A fresh draft is work not yet done, not a mistake.
+      expect(screen.queryByText(needed)).not.toBeInTheDocument();
+
+      await user.click(summaryField());
+      await user.tab();
+
+      expect(screen.getByText(needed)).toBeInTheDocument();
+      expect(summaryField()).toHaveAccessibleDescription(expect.stringContaining(needed));
+
+      await user.type(summaryField(), 'Pocket-sized.');
+      expect(screen.queryByText(needed)).not.toBeInTheDocument();
+    });
+
     it('counts what is left, without a cap that swallows a paste', async () => {
       await openBasics({ title: 'a'.repeat(45) });
 

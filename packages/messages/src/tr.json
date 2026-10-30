@@ -5547,6 +5547,7 @@
       "validation": {
         "titleRequired": "Bir projenin başlığı olmalı.",
         "titleTooLong": "Başlık en fazla {max} karakter olur. {over} karakter çıkarın.",
+        "summaryRequired": "Bir projenin özeti olmalı. Destekçiler onu başlığın altında okur.",
         "summaryTooLong": "Özet en fazla {max} karakter olur. {over} karakter çıkarın.",
         "subcategoryWithoutCategory": "Önce bir kategori seçin.",
         "currencyUnsupported": "Platformun tahsil edebileceği bir para birimi seçin.",
@@ -5938,7 +5939,9 @@
         "risks": "Riskler ve zorluklar",
         "risksHint": "Ne ters gidebilir ve bu konuda ne yapacaksınız. En az {min} karakter; incelemeye göndermeden önce zorunludur.",
         "risksPlaceholder": "Genellikle üç şey olur: üretim, kargo ve zamanlama. Nelerin çözüldüğünü, nelerin çözülmediğini yazın.",
+        "risksTooShort": "İncelemeye göndermek için riskler ve zorluklar en az {min} karakter olmalı. {remaining} karakter daha ekleyin.",
         "charactersNeeded": "Göndermek için gereken {min} karakterden {count} tanesi",
+        "storyTooShort": "İncelemeye göndermek için hikâyede en az {min} karakter olmalı. {remaining} karakter daha ekleyin.",
         "incomplete": {
           "one": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
           "few": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",

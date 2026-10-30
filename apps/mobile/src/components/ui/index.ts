@@ -154,7 +154,7 @@ export {
  * Switch, FilePicker, SearchField ------------------------------------------------------------- */
 export { CharacterCount, type CharacterCountProps } from './character-count';
 export { Checkbox, type CheckboxProps } from './checkbox';
-export { Field, useFieldControl, type FieldProps } from './field';
+export { Field, FieldError, useFieldControl, type FieldProps } from './field';
 export {
   FilePicker,
   type FilePickerMessages,

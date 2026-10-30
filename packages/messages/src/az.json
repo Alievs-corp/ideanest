@@ -5547,6 +5547,7 @@
       "validation": {
         "titleRequired": "Layihənin başlığı olmalıdır.",
         "titleTooLong": "Başlıq ən çox {max} simvol olur. {over} simvol azaldın.",
+        "summaryRequired": "Layihənin qısa təsviri olmalıdır. Dəstəkçilər onu başlığın altında oxuyur.",
         "summaryTooLong": "Qısa təsvir ən çox {max} simvol olur. {over} simvol azaldın.",
         "subcategoryWithoutCategory": "Əvvəlcə kateqoriya seçin.",
         "currencyUnsupported": "Platformanın qəbul edə biləcəyi valyutanı seçin.",
@@ -5938,7 +5939,9 @@
         "risks": "Risklər və çətinliklər",
         "risksHint": "Nə səhv gedə bilər və siz bununla nə edəcəksiniz. Ən azı {min} simvol; baxışa göndərməzdən əvvəl mütləqdir.",
         "risksPlaceholder": "Adətən üç şey olur: istehsal, çatdırılma və vaxt. Nəyin artıq həll olunduğunu, nəyin isə yox, yazın.",
+        "risksTooShort": "Baxışa göndərmək üçün risklər və çətinliklər ən azı {min} simvol olmalıdır. Daha {remaining} simvol əlavə edin.",
         "charactersNeeded": "Baxışa göndərmək üçün lazım olan {min} simvoldan {count} yazılıb",
+        "storyTooShort": "Baxışa göndərmək üçün hekayədə ən azı {min} simvol olmalıdır. Daha {remaining} simvol əlavə edin.",
         "incomplete": {
           "one": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
           "few": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
