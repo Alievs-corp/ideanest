@@ -55,6 +55,19 @@ export interface TopBarProps extends ComponentPropsWithoutRef<'header'> {
    * is a class rather than a breakpoint this component picks.
    */
   navClassName?: string;
+  /**
+   * Where the bar has no pill to float, the classes that show its collapsed GROUND: the page's own
+   * `--surface-1`, full width, with a `--divider`-weight rule under it.
+   *
+   * On a phone the web app hides the pill (`navClassName`), and with it the only thing that took a
+   * surface. What was left was a wordmark and three buttons over text scrolling underneath them,
+   * the wordmark printed across a heading. Below the width the pill disappears at, the bar takes
+   * the page ground once it collapses — the same ground, so it does not read as a second panel —
+   * and the content goes under it rather than through it. The consumer names that width, as it
+   * names the pill's, because only it knows where its pill stops being drawn: `"md:hidden"`.
+   * Absent, the bar has no ground at any width, as before.
+   */
+  groundClassName?: string;
   /** Right slot — actions. */
   actions?: ReactNode;
   /** Scroll offset in pixels at which the collapsed state engages. */
@@ -87,6 +100,7 @@ export function TopBar({
   logo,
   nav,
   navClassName,
+  groundClassName,
   actions,
   threshold = 24,
   forceScrolled,
@@ -177,6 +191,24 @@ export function TopBar({
       className={cn('sticky top-0 z-50 w-full bg-transparent', className)}
       {...props}
     >
+      {groundClassName !== undefined && (
+        /*
+          A layer of its own that fades with `opacity`, the pill surface's technique and curve, so
+          the bar's box never changes and nothing below it moves. Behind the row (`-z-10` inside the
+          header's own stacking context), and no transform on it or the header: the drawer's fixed
+          panel is a descendant.
+        */
+        <span
+          aria-hidden="true"
+          data-top-bar-ground=""
+          className={cn(
+            'pointer-events-none absolute inset-0 -z-10 border-b border-fg/6 bg-surface-1',
+            'transition-opacity duration-300 ease-in-out motion-reduce:transition-none',
+            scrolled ? 'opacity-100' : 'opacity-0',
+            groundClassName,
+          )}
+        />
+      )}
       <div
         ref={rowRef}
         className={cn(
