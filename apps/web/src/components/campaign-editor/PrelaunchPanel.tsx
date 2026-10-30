@@ -44,6 +44,7 @@ import type {
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralForm } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
+import { Revealed } from './Revealed';
 import { RevisionNotice } from './RevisionNotice';
 import { SaveStatus } from './SaveStatus';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
@@ -280,13 +281,15 @@ export function PrelaunchPanel({
     >
       <div className="flex flex-col gap-7">
         {autosave.failure !== null && (
-          <InlineAlert variant="danger" title={words.notSavedTitle}>
-            <p>{autosave.failure.message}</p>
-            <p className="mt-2 text-fg-64">{words.notSavedDetail}</p>
-            <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
-              {copy.tryAgain}
-            </Pill>
-          </InlineAlert>
+          <Revealed revealKey={autosave.failure.message}>
+            <InlineAlert variant="danger" title={words.notSavedTitle}>
+              <p>{autosave.failure.message}</p>
+              <p className="mt-2 text-fg-64">{words.notSavedDetail}</p>
+              <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
+                {copy.tryAgain}
+              </Pill>
+            </InlineAlert>
+          </Revealed>
         )}
 
         {/* ---------------------------------------------------------------
@@ -308,9 +311,11 @@ export function PrelaunchPanel({
               {words.notOpenIrreversible}
             </p>
             {openFailure !== null && (
-              <InlineAlert variant="danger" title={words.openFailedTitle} className="mt-4">
-                {openFailure.message}
-              </InlineAlert>
+              <Revealed revealKey={openFailure.message} className="mt-4">
+                <InlineAlert variant="danger" title={words.openFailedTitle}>
+                  {openFailure.message}
+                </InlineAlert>
+              </Revealed>
             )}
             <Pill className="mt-4" onClick={() => setConfirming(true)}>
               {words.open}

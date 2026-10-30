@@ -2,7 +2,7 @@
 
 import { Link, useRouter } from '../../i18n/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CircleAlert, CircleCheck, Info } from 'lucide-react';
+import { ArrowRight, CircleAlert, CircleCheck, Info } from 'lucide-react';
 import { Checkbox, InlineAlert, Pill, ProgressBar, Skeleton, SkeletonGroup } from '@ideanest/ui';
 import { creatorAgreementRefusalOf, type PendingAgreement } from '@ideanest/legal/agreements';
 import { legalPath } from '@ideanest/legal/documents';
@@ -33,6 +33,7 @@ import type {
   ReviewPanelCopy,
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { Revealed } from './Revealed';
 import { pluralise } from '../../lib/i18n/plurals';
 import { dateTimeFormat } from '../../lib/i18n/formats';
 import type { Locale } from '../../lib/i18n/locale';
@@ -603,19 +604,21 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
             </h2>
 
             {launchError !== null && (
-              <InlineAlert variant="danger" title={words.notLaunchedTitle}>
-                <p>{launchError.message}</p>
-                {launchError.plans && (
-                  <p className="mt-3">
-                    <Link href="/pricing" className="text-fg underline underline-offset-4">
-                      {words.seeOtherPlans}
-                    </Link>
-                  </p>
-                )}
-                <Pill variant="ghost" size="sm" className="mt-3" onClick={reloadAll}>
-                  {words.checkAgain}
-                </Pill>
-              </InlineAlert>
+              <Revealed revealKey={launchError.message}>
+                <InlineAlert variant="danger" title={words.notLaunchedTitle}>
+                  <p>{launchError.message}</p>
+                  {launchError.plans && (
+                    <p className="mt-3">
+                      <Link href="/pricing" className="text-fg underline underline-offset-4">
+                        {words.seeOtherPlans}
+                      </Link>
+                    </p>
+                  )}
+                  <Pill variant="ghost" size="sm" className="mt-3" onClick={reloadAll}>
+                    {words.checkAgain}
+                  </Pill>
+                </InlineAlert>
+              </Revealed>
             )}
 
             {/*
@@ -786,7 +789,7 @@ function ChecklistRow({
       : words.recommendedNotDone;
 
   return (
-    <li className="flex items-start gap-3 rounded-lg border border-fg/8 bg-surface-2 p-3">
+    <li className="flex items-start gap-3 rounded-lg border border-fg/8 bg-surface-2 p-4">
       {item.satisfied ? (
         <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" />
       ) : tone === 'blocking' ? (
@@ -795,30 +798,42 @@ function ChecklistRow({
         <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-info" />
       )}
 
+      {/*
+        One column, the link under the words rather than beside them. Beside them, the
+        link kept its full width and the label got what was left: on a phone that was a
+        word a line, a column of single words down a card that was mostly empty. Under
+        them, the label has the row's whole width at every size.
+      */}
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] text-fg">
+        {/*
+          A finished row steps back so the unfinished ones are what the eye lands on.
+          The icon and the spoken status still say which is which; the weight only
+          orders them.
+        */}
+        <p className={item.satisfied ? 'text-[15px] text-fg-64' : 'text-[15px] font-medium text-fg'}>
           {item.label}
           <span className="sr-only">, {status}</span>
         </p>
         {!item.satisfied && item.detail != null && (
-          <p className="mt-1 text-[13px] text-fg-64">{item.detail}</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-fg-64">{item.detail}</p>
+        )}
+
+        {href !== null && isChecklistSection(item.section) && (
+          /*
+            The link is what makes the row actionable. Its accessible name names the
+            requirement as well as the section, because "Fix in Basics" repeated four
+            times is four indistinguishable links in a screen reader's list.
+          */
+          <Link
+            href={href}
+            className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full bg-surface-3 px-3 py-1.5 text-[13px] font-medium text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4"
+          >
+            <span className="min-w-0">{fillPlaceholders(words.fixIn, { section: tabs[item.section] })}</span>
+            <ArrowRight aria-hidden="true" className="size-3.5 shrink-0" />
+            <span className="sr-only">: {item.label}</span>
+          </Link>
         )}
       </div>
-
-      {href !== null && isChecklistSection(item.section) && (
-        /*
-          The link is what makes the row actionable. Its accessible name names the
-          requirement as well as the section, because "Fix in Basics" repeated four
-          times is four indistinguishable links in a screen reader's list.
-        */
-        <Link
-          href={href}
-          className="shrink-0 rounded-full bg-surface-3 px-3 py-1 text-[13px] text-fg transition-colors duration-150 ease-in-out hover:bg-surface-4"
-        >
-          {fillPlaceholders(words.fixIn, { section: tabs[item.section] })}
-          <span className="sr-only">: {item.label}</span>
-        </Link>
-      )}
     </li>
   );
 }

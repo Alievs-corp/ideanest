@@ -46,6 +46,7 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { EditorShell } from './EditorShell';
+import { Revealed } from './Revealed';
 import { RevisionNotice } from './RevisionNotice';
 import { SaveStatus } from './SaveStatus';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
@@ -150,6 +151,12 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
 
   const [categories, setCategories] = useState<readonly Category[] | null>(null);
   const [categoriesUnavailable, setCategoriesUnavailable] = useState(false);
+  /**
+   * Whether the creator has been in the summary and left it. An empty summary on a new
+   * draft is work not yet done, which the checklist reports; one the creator walked out
+   * of empty is worth saying under the field, where it is fixed.
+   */
+  const [summaryLeft, setSummaryLeft] = useState(false);
 
   const autosave = useAutosave<ProjectPatch, ProjectEdit>({
     send: (patch) => patchProject(projectId, patch),
@@ -278,13 +285,15 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
       */}
       <form className="flex flex-col gap-7" onSubmit={(event) => event.preventDefault()}>
         {failure !== null && (
-          <InlineAlert variant="danger" title={basics.notSavedTitle}>
-            <p>{failure.message}</p>
-            <p className="mt-2 text-fg-64">{basics.notSavedDetail}</p>
-            <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
-              {copy.tryAgain}
-            </Pill>
-          </InlineAlert>
+          <Revealed revealKey={failure.message}>
+            <InlineAlert variant="danger" title={basics.notSavedTitle}>
+              <p>{failure.message}</p>
+              <p className="mt-2 text-fg-64">{basics.notSavedDetail}</p>
+              <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
+                {copy.tryAgain}
+              </Pill>
+            </InlineAlert>
+          </Revealed>
         )}
 
         <Field
@@ -315,14 +324,21 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
 
         <Field
           label={basics.summary}
+          required
           hint={fillPlaceholders(basics.summaryHint, { max: String(BLURB_MAX_CHARACTERS) })}
-          error={errors.blurb}
+          error={
+            errors.blurb ??
+            (summaryLeft && draft.blurb.trim() === '' ? basics.validation.summaryRequired : undefined)
+          }
         >
           <Textarea
             rows={3}
             value={draft.blurb}
             onChange={(event) => change('blurb', { ...draft, blurb: event.target.value })}
-            onBlur={autosave.flush}
+            onBlur={() => {
+              setSummaryLeft(true);
+              autosave.flush();
+            }}
           />
           <CharacterCount
             count={characterCount(draft.blurb)}

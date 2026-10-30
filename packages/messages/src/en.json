@@ -5547,6 +5547,7 @@
       "validation": {
         "titleRequired": "A project needs a title.",
         "titleTooLong": "A title is {max} characters or fewer. Remove {over}.",
+        "summaryRequired": "A project needs a summary. It is the line backers read under the title.",
         "summaryTooLong": "A summary is {max} characters or fewer. Remove {over}.",
         "subcategoryWithoutCategory": "Choose a category first.",
         "currencyUnsupported": "Choose a currency the platform can collect in.",
@@ -5938,7 +5939,9 @@
         "risks": "Risks and challenges",
         "risksHint": "What could go wrong, and what you will do about it. At least {min} characters, and required before you can submit.",
         "risksPlaceholder": "Manufacturing, shipping, and timing are the usual three. Say what is already settled and what is not.",
+        "risksTooShort": "Risks and challenges need at least {min} characters before you can submit. Add {remaining} more.",
         "charactersNeeded": "{count} of {min} characters needed to submit",
+        "storyTooShort": "The story needs at least {min} characters before you can submit. Add {remaining} more.",
         "incomplete": {
           "one": "{count} block is incomplete. The message beside it says what is missing, and saving resumes as soon as it is filled in.",
           "few": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.",

@@ -399,6 +399,11 @@ export interface BasicsValidationCopy {
   readonly titleRequired: string;
   /** Carries `{max}` and `{over}`. */
   readonly titleTooLong: string;
+  /**
+   * Shown only once the creator has left the summary empty, never on a fresh draft:
+   * `validateBasics` does not report what is merely missing, the tab does after a blur.
+   */
+  readonly summaryRequired: string;
   /** Carries `{max}` and `{over}`. */
   readonly summaryTooLong: string;
   readonly subcategoryWithoutCategory: string;
@@ -471,6 +476,7 @@ export function basicsValidationCopyFrom(t: CampaignEditorTranslator): BasicsVal
   return {
     titleRequired: t('basics.validation.titleRequired'),
     titleTooLong: template(t, 'basics.validation.titleTooLong'),
+    summaryRequired: t('basics.validation.summaryRequired'),
     summaryTooLong: template(t, 'basics.validation.summaryTooLong'),
     subcategoryWithoutCategory: t('basics.validation.subcategoryWithoutCategory'),
     currencyUnsupported: t('basics.validation.currencyUnsupported'),
@@ -1461,8 +1467,12 @@ export interface StoryPanelCopy {
   /** Carries `{min}`. */
   readonly risksHint: string;
   readonly risksPlaceholder: string;
+  /** Carries `{min}` and `{remaining}`. Under the field, once the creator has left it short. */
+  readonly risksTooShort: string;
   /** Carries `{count}` and `{min}`. */
   readonly charactersNeeded: string;
+  /** Carries `{min}` and `{remaining}`. Under the story, once the creator has left it short. */
+  readonly storyTooShort: string;
   readonly blocks: StoryBlocksCopy;
   readonly history: StoryHistoryCopy;
   readonly toolbar: StoryToolbarCopy;
@@ -1612,7 +1622,9 @@ export function storyPanelCopyFrom(
     risks: at('panel.risks'),
     risksHint: tpl('panel.risksHint'),
     risksPlaceholder: at('panel.risksPlaceholder'),
+    risksTooShort: tpl('panel.risksTooShort'),
     charactersNeeded: tpl('panel.charactersNeeded'),
+    storyTooShort: tpl('panel.storyTooShort'),
     blocks: {
       heading: at('blocks.heading'),
       add: at('blocks.add'),
