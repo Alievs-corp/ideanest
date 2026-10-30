@@ -135,11 +135,16 @@ describe('EditorFrame', () => {
 
     expect(screen.getByTestId('header-title')).toHaveTextContent('Solar Lamp');
     expect(screen.getByTestId('editor-state')).toHaveTextContent(en.campaignEditor.state.DRAFT);
-    const row = screen.getByTestId('editor-tabs');
-    expect(row.props.accessibilityRole).toBe('tablist');
-    expect(row.props.accessibilityLabel).toBe(en.campaignEditor.sectionsLabel);
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual([
+    /*
+     * One pill naming the section and its place (#616): six pills scrolled sideways on a phone
+     * and hid the rest of the list. The sheet it opens lists every section, in order.
+     */
+    const open = screen.getByTestId('editor-sections-open');
+    expect(open.props.accessibilityLabel).toBe(`${en.campaignEditor.sectionsOpen}: ${en.campaignEditor.tabs.basics}`);
+    expect(open).toHaveTextContent(new RegExp(`1/6`));
+    await fireEvent.press(open);
+    const sections = screen.getAllByRole('radio');
+    expect(sections.map((section) => section.props.accessibilityLabel)).toEqual([
       en.campaignEditor.tabs.basics,
       en.campaignEditor.tabs.rewards,
       en.campaignEditor.tabs.story,
@@ -147,25 +152,34 @@ describe('EditorFrame', () => {
       en.campaignEditor.tabs.prelaunch,
       en.campaignEditor.tabs.review,
     ]);
-    expect(screen.getByRole('tab', { name: en.campaignEditor.tabs.basics, selected: true })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: en.campaignEditor.tabs.story, selected: false })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: en.campaignEditor.tabs.basics, checked: true })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: en.campaignEditor.tabs.story, checked: false })).toBeTruthy();
   });
 
-  it('replaces the route between tabs, so Back leaves the editor', async () => {
+  it('replaces the route between sections, so Back leaves the editor', async () => {
     mockGet.mockResolvedValueOnce(project());
     await show();
 
-    await fireEvent.press(screen.getByRole('tab', { name: en.campaignEditor.tabs.rewards }));
+    await fireEvent.press(screen.getByTestId('editor-sections-open'));
+    await fireEvent.press(screen.getByRole('radio', { name: en.campaignEditor.tabs.rewards }));
     expect(mockRouter.replace).toHaveBeenCalledWith({ pathname: '/campaigns/[id]/edit/rewards', params: { id: 'p1' } });
     expect(mockRouter.push).not.toHaveBeenCalled();
   });
 
-  it('gives every tab a 44pt target', async () => {
+  it('does not navigate when the section already shown is chosen', async () => {
     mockGet.mockResolvedValueOnce(project());
     await show();
-    for (const tab of screen.getAllByRole('tab')) {
-      expect(tab.props.style).toMatchObject({ minHeight: 44 });
-    }
+
+    await fireEvent.press(screen.getByTestId('editor-sections-open'));
+    await fireEvent.press(screen.getByRole('radio', { name: en.campaignEditor.tabs.basics }));
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('gives the pill a 44pt target', async () => {
+    mockGet.mockResolvedValueOnce(project());
+    await show();
+    const style = screen.getByTestId('editor-sections-open').props.style;
+    expect(Array.isArray(style) ? Object.assign({}, ...style.flat()) : style).toMatchObject({ minHeight: 44 });
   });
 
   it.each([
