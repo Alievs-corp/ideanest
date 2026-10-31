@@ -7098,6 +7098,7 @@
     "extend": "Son tarihi uzat",
     "extendLabel": "Yeni son tarih",
     "extendHint": "En geç {latest}. Destekçilere yeni tarih bildirilir; onlara sorulmaz.",
+    "extendOpensOn": "Son tarihi {date} tarihinden itibaren uzatabilirsiniz: uzatma ilk son tarihten yedi gün önce açılır.",
     "extendConfirmTitle": "Kampanya {date} tarihine kadar uzatılsın mı?",
     "extendConfirmBody": "Yalnızca bir kez uzatabilirsiniz ve yeni son tarih bir daha değiştirilemez. Her destekçiye bildirim gönderilir.",
     "extendNow": "Bu tarihe kadar uzat",

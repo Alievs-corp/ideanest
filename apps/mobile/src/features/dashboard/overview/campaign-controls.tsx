@@ -86,6 +86,11 @@ export interface CampaignControlsProps {
   readonly reread: () => Promise<OverviewRead | null>;
   /** The campaign's state as words ("Live"). */
   readonly stateLabel: (state: string) => string;
+  /**
+   * The current instant in epoch milliseconds, already corrected by the skew measured against
+   * the dashboard's `serverTime` — what decides whether the extension window is open (#619).
+   */
+  readonly now?: () => number;
   readonly extend?: typeof extendCampaign;
   readonly withdraw?: typeof withdrawCampaign;
 }
@@ -97,6 +102,7 @@ export function CampaignControls({
   stale = false,
   reread,
   stateLabel,
+  now = Date.now,
   extend = extendCampaign,
   withdraw = withdrawCampaign,
 }: CampaignControlsProps) {
@@ -114,7 +120,7 @@ export function CampaignControls({
 
   const state = dashboard.state ?? '';
   const window = extensionWindow(dashboard.deadline);
-  const offer = controlsOffer(state, dashboard.percentFunded, dashboard.deadline);
+  const offer = controlsOffer(state, dashboard.percentFunded, dashboard.deadline, now());
   const latest = window === null ? '' : dayLabel(window.latestDay, locale);
   const chosen = day === '' ? '' : dayLabel(day, locale);
 
@@ -305,6 +311,12 @@ export function CampaignControls({
                   testID="campaign-extend"
                 />
               </View>
+            ) : null}
+
+            {offer.extendOpensAt !== null ? (
+              <Body testID="campaign-extend-opens">
+                {t('extendOpensOn', { date: dayLabel(offer.extendOpensAt.slice(0, 10), locale) })}
+              </Body>
             ) : null}
 
             {offer.canWithdraw ? (

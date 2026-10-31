@@ -220,6 +220,8 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
         stale={query.isError}
         reread={reread}
         stateLabel={stateLabel}
+        // The device's clock as the service's: `skewMs` is how far ahead the device is.
+        now={() => (now ?? Date.now)() - skewMs}
       />
 
       {outcome === undefined ? null : (

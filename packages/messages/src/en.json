@@ -7098,6 +7098,7 @@
     "extend": "Extend the deadline",
     "extendLabel": "New deadline",
     "extendHint": "No later than {latest}. Backers are told the new date; they are not asked.",
+    "extendOpensOn": "You can extend from {date}: extension opens seven days before the first deadline.",
     "extendConfirmTitle": "Extend this campaign to {date}?",
     "extendConfirmBody": "You can extend only once, and the new deadline cannot be moved again. Every backer is notified.",
     "extendNow": "Extend to this date",

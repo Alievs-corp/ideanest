@@ -9,11 +9,15 @@ import { CampaignControls } from './CampaignControls';
 
 const COPY = campaignControlsCopyFrom(translatorFor('dashboardControls'));
 const DEADLINE = '2026-09-19T12:00:00.000Z';
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Four days before the deadline: inside the window the service accepts an extension in. */
+const IN_WINDOW = Date.parse(DEADLINE) - 4 * DAY_MS;
 
 function renderControls(
   overrides: {
     state?: ProjectState;
     percentFunded?: number;
+    now?: number;
     extend?: (id: string, until: string) => Promise<ProjectEdit>;
     withdraw?: (id: string) => Promise<ProjectEdit>;
   } = {},
@@ -30,6 +34,7 @@ function renderControls(
       copy={COPY}
       locale="en"
       onChanged={onChanged}
+      now={() => overrides.now ?? IN_WINDOW}
       extend={extend}
       withdraw={withdraw}
     />,
@@ -71,6 +76,30 @@ describe('withdrawing', () => {
 });
 
 describe('extending', () => {
+  it('names the day the window opens instead of offering a field the service would refuse (#619)', () => {
+    // Twenty-five days before the deadline, at 60%: the case that used to be refused on confirm.
+    renderControls({ percentFunded: 60, now: Date.parse(DEADLINE) - 25 * DAY_MS });
+
+    expect(screen.queryByLabelText('New deadline')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Extend the deadline' })).not.toBeInTheDocument();
+    expect(screen.getByText(/You can extend from/)).toHaveTextContent(
+      /^You can extend from 12\W+September\W+2026: extension opens seven days before the first deadline\.$/,
+    );
+  });
+
+  it('offers the field from exactly seven days before the deadline', () => {
+    renderControls({ percentFunded: 60, now: Date.parse(DEADLINE) - 7 * DAY_MS });
+
+    expect(screen.getByLabelText('New deadline')).toBeInTheDocument();
+    expect(screen.queryByText(/You can extend from/)).not.toBeInTheDocument();
+  });
+
+  it('names no opening day below 50%', () => {
+    renderControls({ percentFunded: 40, now: Date.parse(DEADLINE) - 25 * DAY_MS });
+
+    expect(screen.queryByText(/You can extend from/)).not.toBeInTheDocument();
+  });
+
   it('sends the chosen day at the deadline’s own time, after asking', async () => {
     const { user, extend, onChanged } = renderControls({ percentFunded: 60 });
 

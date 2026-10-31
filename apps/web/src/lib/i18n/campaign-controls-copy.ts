@@ -11,6 +11,7 @@ export interface CampaignControlsCopy {
   readonly extend: string;
   readonly extendLabel: string;
   readonly extendHint: string;
+  readonly extendOpensOn: string;
   readonly extendConfirmTitle: string;
   readonly extendConfirmBody: string;
   readonly extendNow: string;
@@ -43,6 +44,7 @@ const KEYS = [
   'extend',
   'extendLabel',
   'extendHint',
+  'extendOpensOn',
   'extendConfirmTitle',
   'extendConfirmBody',
   'extendNow',
