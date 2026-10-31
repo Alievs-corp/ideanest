@@ -27,8 +27,9 @@ import type { ProjectState } from '../../lib/projects/api';
  * successful. **Extend**, once, while the campaign still takes pledges and has raised at least
  * 50%, to a date no later than sixty days after the first deadline. Those are the rules the
  * controls are drawn from, but the service is what applies them: the window around the first
- * deadline is not something this panel can see, so a refusal comes back with a reason and is
- * worded here rather than guessed at beforehand.
+ * deadline is drawn from the deadline and the current time (#619): before it opens the panel names
+ * the day it does instead of offering a field the service would refuse, and any refusal still
+ * comes back with a reason and is worded here rather than guessed at beforehand.
  *
  * <h2>Asked inline, not in a dialog</h2>
  *
@@ -57,6 +58,11 @@ export interface CampaignControlsProps {
   readonly locale: string;
   /** Called after a change the service accepted, so the figures above are read again. */
   readonly onChanged: () => void;
+  /**
+   * The current instant in epoch milliseconds, already corrected by the skew measured against
+   * the dashboard's `serverTime` — what decides whether the extension window is open.
+   */
+  readonly now?: () => number;
   readonly extend?: typeof extendProject;
   readonly withdraw?: typeof withdrawProject;
 }
@@ -69,6 +75,7 @@ export function CampaignControls({
   copy,
   locale,
   onChanged,
+  now = Date.now,
   extend = extendProject,
   withdraw = withdrawProject,
 }: CampaignControlsProps) {
@@ -79,7 +86,12 @@ export function CampaignControls({
   const [day, setDay] = useState('');
 
   const window = extensionWindow(deadline);
-  const { shown, canExtend, canWithdraw, belowThreshold } = controlsOffer(state, percentFunded, deadline);
+  const { shown, canExtend, canWithdraw, belowThreshold, extendOpensAt } = controlsOffer(
+    state,
+    percentFunded,
+    deadline,
+    now(),
+  );
 
   if (!shown && notice === null) return null;
 
@@ -187,6 +199,12 @@ export function CampaignControls({
                 </Pill>
               </div>
             </Field>
+          )}
+
+          {extendOpensAt !== null && (
+            <p className="text-sm text-fg-64">
+              {fillPlaceholders(copy.extendOpensOn, { date: formatDay(extendOpensAt.slice(0, 10), locale) })}
+            </p>
           )}
 
           {canWithdraw && (

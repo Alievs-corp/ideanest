@@ -211,6 +211,8 @@ export function DashboardOverview({
           copy={controls.copy}
           locale={controls.locale}
           onChanged={() => setAttempt((n) => n + 1)}
+          // The device's clock as the service's: `skewMs` is how far ahead the device is.
+          now={() => now() - skewMs}
         />
       )}
 
