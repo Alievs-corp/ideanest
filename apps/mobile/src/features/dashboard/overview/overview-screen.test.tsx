@@ -45,7 +45,8 @@ jest.setTimeout(30_000);
 
 const api = jest.mocked(overviewApi);
 const actualApi = jest.requireActual<typeof overviewApi>('./api');
-const NOW = Date.parse('2026-09-10T12:00:00.000Z');
+// Four days before the deadline below: inside the window the service accepts an extension in.
+const NOW = Date.parse('2026-09-15T12:00:00.000Z');
 const now = () => NOW;
 const C = en.dashboardControls;
 const O = en.dashboard.overview;
@@ -66,7 +67,7 @@ function dashboard(extra: Partial<CampaignDashboard> = {}): CampaignDashboard {
     percentFunded: 87.5,
     goalReached: false,
     deadline: '2026-09-19T12:00:00.000Z',
-    serverTime: '2026-09-10T12:00:00.000Z',
+    serverTime: '2026-09-15T12:00:00.000Z',
     ...extra,
   };
 }
@@ -176,7 +177,7 @@ describe.each(['full', 'none'] as const)('the figures, motion %s', (motion) => {
     await show({ motion });
 
     expect(screen.getByTestId('overview-title')).toHaveTextContent('Solar Lamp');
-    expect(screen.getByText('9 days left')).toBeTruthy();
+    expect(screen.getByText('4 days left')).toBeTruthy();
     expect(screen.getByRole('text', { name: '875.00 AZN' })).toBeTruthy();
     expect(screen.getByText('12')).toBeTruthy();
     expect(screen.getByRole('text', { name: '1,000.00 AZN' })).toBeTruthy();
@@ -315,6 +316,31 @@ describe('which controls are offered', () => {
 });
 
 describe('extending', () => {
+  it('names the day the window opens instead of offering a field the service would refuse (#619)', async () => {
+    // Twenty-five days before the deadline, at 60%: the case that used to be refused on confirm.
+    api.readOverview.mockResolvedValueOnce(read({ percentFunded: 60, deadline: '2026-10-10T12:00:00.000Z' }));
+    await show();
+
+    expect(screen.queryByTestId('campaign-deadline')).toBeNull();
+    expect(screen.queryByRole('button', { name: C.extend })).toBeNull();
+    expect(screen.getByTestId('campaign-extend-opens')).toHaveTextContent(
+      C.extendOpensOn.replace('{date}', dayWords('2026-10-03')),
+    );
+  });
+
+  it('opens the window on the service’s clock, not the device’s', async () => {
+    // The deadline is eleven days off by the device, four by the service: the device is a week behind.
+    api.readOverview.mockResolvedValueOnce({
+      dashboard: dashboard({ percentFunded: 60, deadline: '2026-09-26T12:00:00.000Z', serverTime: '2026-09-22T12:00:00.000Z' }),
+      skewMs: NOW - Date.parse('2026-09-22T12:00:00.000Z'),
+      receivedAt: NOW,
+    });
+    await show();
+
+    expect(screen.getByRole('button', { name: C.extend })).toBeTruthy();
+    expect(screen.queryByTestId('campaign-extend-opens')).toBeNull();
+  });
+
   it('limits the picker to the window, asks inline, and sends the day at the deadline’s time', async () => {
     const focus = jest.spyOn(AccessibilityInfo, 'sendAccessibilityEvent');
     api.readOverview.mockResolvedValueOnce(read({ percentFunded: 60 }));
