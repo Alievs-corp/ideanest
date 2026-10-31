@@ -233,6 +233,43 @@ class CampaignDashboardApiTests extends AbstractIntegrationTest {
     }
 
     /**
+     * #618: the clock of an extended campaign counts to the extension's end.
+     *
+     * <p>{@code deadline} stays the first one, because the extension window and its sixty-day
+     * limit are measured from it and the dashboard's controls read it. The end is beside it, so
+     * a creator who extended to December is not told "two days left" — or "closed" once the first
+     * deadline has passed and the campaign is still taking pledges.
+     */
+    @Test
+    @DisplayName("an extended campaign carries where it now ends beside its first deadline")
+    void anExtendedCampaignCarriesItsNewEnd() {
+        Instant deadline = Instant.now().minus(Duration.ofDays(2)).truncatedTo(ChronoUnit.MICROS);
+        Instant extendedUntil = deadline.plus(Duration.ofDays(30));
+        UUID projectId = Campaigns.seed(dataSource, creatorId, handle)
+                .state("EXTENDED")
+                .goal("1000.00")
+                .pledged("600.00")
+                .launchedAt(deadline.minus(Duration.ofDays(30)))
+                .deadline(deadline)
+                .extendedUntil(extendedUntil)
+                .insert();
+
+        Map<String, Object> body = get(projectId, creatorToken).getBody();
+
+        assertThat(body).isNotNull();
+        assertThat(Instant.parse((String) body.get("deadline")))
+                .as("the first deadline, which the extension window is measured from")
+                .isEqualTo(deadline);
+        assertThat(Instant.parse((String) body.get("extendedUntil"))).isEqualTo(extendedUntil);
+    }
+
+    @Test
+    @DisplayName("a campaign that was never extended has no extension end")
+    void anUnextendedCampaignHasNoExtensionEnd() {
+        assertThat(get(liveCampaign(), creatorToken).getBody()).doesNotContainKey("extendedUntil");
+    }
+
+    /**
      * #63's rule, on this screen.
      *
      * <p>The outcome is what the campaign raised at the deadline. A later collection

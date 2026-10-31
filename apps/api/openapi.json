@@ -13659,6 +13659,10 @@
             "type" : "string",
             "format" : "date-time"
           },
+          "extendedUntil" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "goal" : {
             "$ref" : "#/components/schemas/Money"
           },
@@ -17032,6 +17036,10 @@
             "$ref" : "#/components/schemas/Creator"
           },
           "deadline" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "extendedUntil" : {
             "type" : "string",
             "format" : "date-time"
           },

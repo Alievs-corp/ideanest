@@ -5421,6 +5421,8 @@ export interface components {
             currency?: string;
             /** Format: date-time */
             deadline?: string;
+            /** Format: date-time */
+            extendedUntil?: string;
             goal?: components["schemas"]["Money"];
             goalReached?: boolean;
             /** Format: date-time */
@@ -6695,6 +6697,8 @@ export interface components {
             creator?: components["schemas"]["Creator"];
             /** Format: date-time */
             deadline?: string;
+            /** Format: date-time */
+            extendedUntil?: string;
             goal?: components["schemas"]["Money"];
             /** Format: uuid */
             id?: string;

@@ -34,6 +34,9 @@ import java.util.UUID;
  *     the difference between an interface saying "act now" and one saying "you did it".
  *     CLAUDE.md §2 is emphatic that those are different colours and mean opposite things
  * @param outcome null until the deadline has been decided
+ * @param extendedUntil where an extended campaign now ends, absent until it is extended
+ *     (#618). {@link #deadline()} stays the first deadline, which the extension window is
+ *     measured from; a clock counts to this one while the campaign is {@code EXTENDED}
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record DashboardResponse(
@@ -51,7 +54,8 @@ public record DashboardResponse(
         Instant deadline,
         Instant serverTime,
         Outcome outcome,
-        Instant opensAt) {
+        Instant opensAt,
+        Instant extendedUntil) {
 
     public static DashboardResponse of(CampaignDashboard dashboard) {
         return new DashboardResponse(
@@ -69,7 +73,8 @@ public record DashboardResponse(
                 dashboard.deadline(),
                 dashboard.serverTime(),
                 Outcome.of(dashboard.outcome()),
-                dashboard.opensAt());
+                dashboard.opensAt(),
+                dashboard.extendedUntil());
     }
 
     /**
