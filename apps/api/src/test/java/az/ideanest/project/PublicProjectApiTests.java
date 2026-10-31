@@ -254,6 +254,43 @@ class PublicProjectApiTests extends AbstractIntegrationTest {
     }
 
     /**
+     * #618: the date a backer is promised is the extension's end.
+     *
+     * <p>The page says a campaign succeeds if it reaches 80% by a date. Once it is extended that
+     * date is the extension's end — the one every backer was just emailed — and a page printing
+     * the first deadline beside an "Extended" badge gives one promise two dates.
+     */
+    @Test
+    @DisplayName("an extended campaign carries where it now ends beside its first deadline")
+    void anExtendedCampaignCarriesItsNewEnd() {
+        Instant deadline = Instant.now().minus(Duration.ofDays(2)).truncatedTo(ChronoUnit.MICROS);
+        Instant extendedUntil = deadline.plus(Duration.ofDays(30));
+        Campaigns.seed(dataSource, creatorId, "extended")
+                .state("EXTENDED")
+                .goal("10000.00")
+                .pledged("6000.00")
+                .launchedAt(deadline.minus(Duration.ofDays(30)))
+                .deadline(deadline)
+                .extendedUntil(extendedUntil)
+                .insert();
+
+        Map<String, Object> body = get(handle, "extended").getBody();
+
+        assertThat(body).isNotNull();
+        assertThat(body.get("state")).isEqualTo("EXTENDED");
+        assertThat(Instant.parse((String) body.get("deadline"))).isEqualTo(deadline);
+        assertThat(Instant.parse((String) body.get("extendedUntil"))).isEqualTo(extendedUntil);
+    }
+
+    @Test
+    @DisplayName("a campaign that was never extended has no extension end")
+    void anUnextendedCampaignHasNoExtensionEnd() {
+        live("never-extended");
+
+        assertThat(get(handle, "never-extended").getBody()).doesNotContainKey("extendedUntil");
+    }
+
+    /**
      * The page reports what decided the campaign, not what has since been collected.
      *
      * <p>V29's whole argument, on the surface it was written for: {@code pledged} keeps

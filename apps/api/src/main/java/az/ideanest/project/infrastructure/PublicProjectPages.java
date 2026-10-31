@@ -72,7 +72,7 @@ public class PublicProjectPages {
             """
             SELECT p.id, p.slug, p.state, p.title, p.blurb, p.risks, p.story::text AS story,
                    p.currency, p.goal_amount, p.pledged_amount, p.backers_count,
-                   p.launched_at, p.deadline,
+                   p.launched_at, p.deadline, p.extended_until,
                    p.finalized_at, p.outcome_goal_amount, p.outcome_pledged_amount,
                    p.outcome_backers_count,
                    p.cover_image_url, p.cover_image_width, p.cover_image_height,
@@ -220,6 +220,7 @@ public class PublicProjectPages {
                 row.getInt("backers_count"),
                 instantOf(row, "launched_at"),
                 instantOf(row, "deadline"),
+                instantOf(row, "extended_until"),
                 row.getString("story"),
                 row.getString("risks"),
                 outcome(row, currency));

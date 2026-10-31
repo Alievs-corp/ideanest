@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import { pluralise } from '@ideanest/messages/plurals';
+import { fundingEndsAt } from '@ideanest/campaign/days-left';
 import { formatMoney } from '@ideanest/money';
 import {
   Body,
@@ -149,8 +150,9 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
             {t('mobile.dashboard.asOf', { time: formatDateTime(new Date(receivedAt).toISOString(), locale) })}
           </Meta>
         ) : null}
+        {/* The extension's end once extended (#618); the controls below keep the first deadline. */}
         <CampaignClock
-          deadline={dashboard.deadline}
+          deadline={fundingEndsAt(dashboard.state ?? '', dashboard.deadline, dashboard.extendedUntil)}
           skewMs={skewMs}
           active={active}
           now={now}

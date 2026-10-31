@@ -53,6 +53,7 @@ import type { Locale } from '../i18n/locale';
 export {
   countdownIntervalMs,
   countdownLabel,
+  fundingEndsAt,
   remainingUntil,
   type CountdownUnits,
   type Remaining,

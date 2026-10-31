@@ -118,10 +118,11 @@ export async function CampaignTrustBlock({ campaign }: CampaignTrustBlockProps) 
    * the server cannot know it and why the first render must match the HTML anyway. A reader
    * with no JavaScript keeps this string, which is a real instant with its zone named.
    */
-  const serverDeadline =
-    campaign.deadline === null ? null : formatInstant(campaign.deadline, SERVER_TIME_ZONE, locale);
-  const deadline =
-    campaign.deadline === null || serverDeadline === null ? null : deadlineTag(campaign.deadline, serverDeadline);
+  // The extension's end once the campaign is extended (#618): the date this block promises is
+  // the one every backer was emailed, not the first deadline it replaced.
+  const endsAt = campaign.fundingEndsAt;
+  const serverDeadline = endsAt === null ? null : formatInstant(endsAt, SERVER_TIME_ZONE, locale);
+  const deadline = endsAt === null || serverDeadline === null ? null : deadlineTag(endsAt, serverDeadline);
 
   return (
     <section

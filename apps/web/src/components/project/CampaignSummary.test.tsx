@@ -555,6 +555,17 @@ describe('accessibility', () => {
   });
 });
 
+describe('an extended campaign (#618)', () => {
+  it('counts down to the end of its extension, not its first deadline', async () => {
+    await renderSummary(
+      campaign({ state: 'EXTENDED', deadline: '2026-08-10T12:00:00Z', extendedUntil: '2026-09-18T12:00:00Z' }),
+    );
+
+    expect(screen.getByText(/30 days left/)).toBeInTheDocument();
+    expect(screen.queryByText('Last day')).not.toBeInTheDocument();
+  });
+});
+
 describe('IDN-EXT-01 on the campaign header (#44)', () => {
   it('states the 80% rule beside the funding figures', async () => {
     await renderSummary(campaign());

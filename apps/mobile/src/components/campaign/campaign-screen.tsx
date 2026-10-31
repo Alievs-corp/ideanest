@@ -14,6 +14,7 @@ import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-route
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '@ideanest/api-client';
 import { formatMoney } from '@ideanest/money';
+import { fundingEndsAt } from '@ideanest/campaign/days-left';
 import { acceptsPledges } from '@ideanest/campaign/pledgeable';
 import { counterChannel, realtimeUrl } from '@ideanest/campaign/realtime';
 import {
@@ -134,7 +135,12 @@ export function CampaignScreen({ creatorSlug, projectSlug, now }: CampaignScreen
    * campaign is LIVE, so days left, the chip and every Back control follow the time rather than
    * the moment the screen opened.
    */
-  const clock = useCampaignClock(query.data?.deadline, query.data?.state === 'LIVE', now);
+  // An extended campaign counts to the extension's end and is still running (#618).
+  const clock = useCampaignClock(
+    fundingEndsAt(query.data?.state ?? '', query.data?.deadline, query.data?.extendedUntil),
+    query.data?.state === 'LIVE' || query.data?.state === 'EXTENDED',
+    now,
+  );
   const campaign = useMemo(
     () => readCampaignPage(query.data, creatorSlug, clock),
     [query.data, creatorSlug, clock],
@@ -440,9 +446,9 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
           </FadeUp>
         )}
 
-        {campaign.deadline !== null && showsDaysLeft(campaign, now) ? (
+        {campaign.fundingEndsAt !== null && showsDaysLeft(campaign, now) ? (
           <FadeUp index={3}>
-            <CampaignCountdown deadline={campaign.deadline} active={active} />
+            <CampaignCountdown deadline={campaign.fundingEndsAt} active={active} />
           </FadeUp>
         ) : null}
 

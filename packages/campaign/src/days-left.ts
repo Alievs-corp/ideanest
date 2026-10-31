@@ -35,3 +35,26 @@ export function daysLeftOf(deadline: string | null, now: Date): number | null {
   const millis = closesAt - now.getTime();
   return millis <= 0 ? 0 : Math.floor(millis / MILLIS_PER_DAY);
 }
+
+/**
+ * The instant a campaign stops taking pledges, as far as a reader is told — #618.
+ *
+ * The extension's end while the campaign is `EXTENDED`, and the deadline otherwise. The
+ * service keeps `deadline` as the *first* deadline once a campaign is extended, because the
+ * extension window and its sixty-day limit are measured from it; every clock, every days-left
+ * figure and the trust block's date count to this instead. A page that printed the first
+ * deadline beside an "Extended" badge would give a backer two dates for one promise.
+ *
+ * An `EXTENDED` campaign with no `extendedUntil` (a response from before #618) falls back to
+ * the deadline rather than to nothing, which is what every surface showed before.
+ */
+export function fundingEndsAt(
+  state: string,
+  deadline: string | null | undefined,
+  extendedUntil: string | null | undefined,
+): string | null {
+  if (state === 'EXTENDED' && typeof extendedUntil === 'string' && extendedUntil !== '') {
+    return extendedUntil;
+  }
+  return deadline ?? null;
+}

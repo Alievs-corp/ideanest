@@ -2,6 +2,10 @@ import type { Locale } from '@ideanest/messages/locale';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
 import { pluralise, type PluralForms } from '@ideanest/messages/plurals';
 
+// #618: defined beside `daysLeftOf`, which has no imports, so a client bundle that needs only
+// this rule does not carry the countdown's message helpers with it.
+export { fundingEndsAt } from './days-left';
+
 /**
  * §4.4's live countdown and the campaign's days left — the arithmetic, for both clients.
  *
