@@ -7,8 +7,7 @@ import type { PublicRewardTier } from '../seo/structured-data/product';
 import type { ProjectState } from './api';
 import { readStoryDocument, type StoryDocument } from '@ideanest/campaign/story';
 import { RENDERABLE_STATES } from '@ideanest/campaign/states';
-import { daysLeftOf } from '@ideanest/campaign/days-left';
-import { fundingEndsAt } from '@ideanest/campaign/deadline';
+import { daysLeftOf, fundingEndsAt } from '@ideanest/campaign/days-left';
 import {
   readRewardDetails,
   readRewardMedia,

@@ -14,7 +14,7 @@ import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-route
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '@ideanest/api-client';
 import { formatMoney } from '@ideanest/money';
-import { fundingEndsAt } from '@ideanest/campaign/deadline';
+import { fundingEndsAt } from '@ideanest/campaign/days-left';
 import { acceptsPledges } from '@ideanest/campaign/pledgeable';
 import { counterChannel, realtimeUrl } from '@ideanest/campaign/realtime';
 import {

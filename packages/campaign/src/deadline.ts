@@ -2,6 +2,10 @@ import type { Locale } from '@ideanest/messages/locale';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
 import { pluralise, type PluralForms } from '@ideanest/messages/plurals';
 
+// #618: defined beside `daysLeftOf`, which has no imports, so a client bundle that needs only
+// this rule does not carry the countdown's message helpers with it.
+export { fundingEndsAt } from './days-left';
+
 /**
  * §4.4's live countdown and the campaign's days left — the arithmetic, for both clients.
  *
@@ -29,29 +33,6 @@ import { pluralise, type PluralForms } from '@ideanest/messages/plurals';
  * path (`@ideanest/messages/hermes`) that the web must never bundle. The arithmetic is the
  * part with one right answer, so it is the part that is shared.
  */
-
-/**
- * The instant a campaign stops taking pledges, as far as a reader is told — #618.
- *
- * The extension's end while the campaign is `EXTENDED`, and the deadline otherwise. The
- * service keeps `deadline` as the *first* deadline once a campaign is extended, because the
- * extension window and its sixty-day limit are measured from it; every clock, every days-left
- * figure and the trust block's date count to this instead. A page that printed the first
- * deadline beside an "Extended" badge would give a backer two dates for one promise.
- *
- * An `EXTENDED` campaign with no `extendedUntil` (a response from before #618) falls back to
- * the deadline rather than to nothing, which is what every surface showed before.
- */
-export function fundingEndsAt(
-  state: string,
-  deadline: string | null | undefined,
-  extendedUntil: string | null | undefined,
-): string | null {
-  if (state === 'EXTENDED' && typeof extendedUntil === 'string' && extendedUntil !== '') {
-    return extendedUntil;
-  }
-  return deadline ?? null;
-}
 
 const MILLIS_PER_SECOND = 1_000;
 const SECONDS_PER_MINUTE = 60;

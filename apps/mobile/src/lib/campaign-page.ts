@@ -1,8 +1,7 @@
 import type Decimal from 'decimal.js';
 import type { Money } from '@ideanest/money';
 import { completionOf } from '@ideanest/campaign/completion';
-import { daysLeftOf } from '@ideanest/campaign/days-left';
-import { fundingEndsAt } from '@ideanest/campaign/deadline';
+import { daysLeftOf, fundingEndsAt } from '@ideanest/campaign/days-left';
 import { isRenderableState, type ProjectState } from '@ideanest/campaign/states';
 import { readStoryDocument, type StoryDocument } from '@ideanest/campaign/story';
 import {

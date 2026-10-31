@@ -6,7 +6,7 @@ import { InlineAlert, ProgressBar, Skeleton, SkeletonGroup, StatBlock, StatRow }
 import { ApiError } from '../../lib/api/problem';
 import { getDashboard, type CampaignDashboard } from '../../lib/dashboard/api';
 import { clockSkewMs } from '@ideanest/dashboard/clock';
-import { fundingEndsAt } from '@ideanest/campaign/deadline';
+import { fundingEndsAt } from '@ideanest/campaign/days-left';
 import { formatMoney } from '../../lib/money';
 import { CampaignClock } from './CampaignClock';
 import { CampaignControls } from './CampaignControls';

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import { pluralise } from '@ideanest/messages/plurals';
-import { fundingEndsAt } from '@ideanest/campaign/deadline';
+import { fundingEndsAt } from '@ideanest/campaign/days-left';
 import { formatMoney } from '@ideanest/money';
 import {
   Body,
