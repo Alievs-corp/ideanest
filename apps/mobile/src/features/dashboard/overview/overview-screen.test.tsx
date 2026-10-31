@@ -567,3 +567,14 @@ describe('pull to refresh', () => {
     expect(api.readOverview).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('an extended campaign (#618)', () => {
+  it('counts the clock to the end of the extension, not the first deadline', async () => {
+    api.readOverview.mockResolvedValueOnce(
+      read({ state: 'EXTENDED', deadline: '2026-09-08T12:00:00.000Z', extendedUntil: '2026-09-19T12:00:00.000Z' }),
+    );
+    await show({ motion: 'none' });
+
+    expect(screen.getByText('9 days left')).toBeTruthy();
+  });
+});

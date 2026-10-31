@@ -205,9 +205,10 @@ const CASES: readonly [string, ProjectPage, Expectation][] = [
     { tag: C.state.LIVE, chip: 'Last day', back: true, countdown: true, remind: false, trust: 'open', outcome: null },
   ],
   [
+    // Past its first deadline and counting to the extension's end (#618).
     'EXTENDED',
-    page('EXTENDED'),
-    { tag: C.state.EXTENDED, chip: null, back: true, countdown: false, remind: false, trust: 'open', outcome: null },
+    page('EXTENDED', { deadline: PAST, extendedUntil: new Date(NOW.getTime() + 20 * DAY).toISOString() }),
+    { tag: C.state.EXTENDED, chip: null, back: true, countdown: true, remind: false, trust: 'open', outcome: null },
   ],
   [
     'CLOSING_WINDOW',
