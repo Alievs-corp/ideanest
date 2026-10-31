@@ -549,6 +549,22 @@ describe('the trust block', () => {
     expect(time).toHaveAttribute('datetime', '2026-08-29T12:00:00Z');
   });
 
+  /**
+   * #618: the date a backer is promised is the one they were emailed when the campaign was
+   * extended. The first deadline beside an "Extended" badge gives one promise two dates.
+   */
+  it('names the end of the extension once the campaign is extended', async () => {
+    const { container } = render(
+      await resolveServerTree(
+        <CampaignTrustBlock
+          campaign={campaign({ state: 'EXTENDED', deadline: '2026-08-10T12:00:00Z', extendedUntil: '2026-09-18T12:00:00Z' })}
+        />,
+      ),
+    );
+
+    expect(container.querySelector('time')).toHaveAttribute('datetime', '2026-09-18T12:00:00Z');
+  });
+
   it('uses the past tense for a campaign that has closed', async () => {
     render(
       await resolveServerTree(

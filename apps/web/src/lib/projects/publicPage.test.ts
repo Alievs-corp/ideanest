@@ -200,6 +200,26 @@ describe('the countdown', () => {
     expect(page?.daysLeft).toBe(0);
   });
 
+  it('counts an extended campaign to the end of its extension (#618)', () => {
+    const page = readCampaignPage(
+      response({ state: 'EXTENDED', deadline: '2026-08-10T12:00:00Z', extendedUntil: '2026-09-18T12:00:00Z' }),
+      'ayan',
+      NOW,
+    );
+
+    expect(page?.deadline).toBe('2026-08-10T12:00:00Z');
+    expect(page?.extendedUntil).toBe('2026-09-18T12:00:00Z');
+    expect(page?.fundingEndsAt).toBe('2026-09-18T12:00:00Z');
+    expect(page?.daysLeft).toBe(30);
+  });
+
+  it('counts a live campaign to its deadline even when the response names no extension', () => {
+    const page = readCampaignPage(response(), 'ayan', NOW);
+
+    expect(page?.extendedUntil).toBeNull();
+    expect(page?.fundingEndsAt).toBe('2026-08-29T12:00:00Z');
+  });
+
   it('is null when there is no deadline to count to', () => {
     const page = readCampaignPage(response({ deadline: undefined }), 'ayan', NOW);
 

@@ -157,7 +157,9 @@ export async function CampaignSummary({
    * zero, so a campaign that closed a fortnight ago reports the same number as one closing
    * tonight; "Last day" on the former is a lie, and lime would make it a loud one.
    */
-  const showDays = campaign.daysLeft !== null && campaign.state === 'LIVE';
+  // EXTENDED too (#618): an extended campaign is still taking pledges, and its days count to the
+  // extension's end, which `daysLeft` and `fundingEndsAt` already are.
+  const showDays = campaign.daysLeft !== null && (campaign.state === 'LIVE' || campaign.state === 'EXTENDED');
   const urgent = showDays && campaign.daysLeft !== null && campaign.daysLeft <= URGENT_DAYS;
 
   /*
@@ -173,7 +175,7 @@ export async function CampaignSummary({
    * former would be the loud lie `showDays` already exists to prevent.
    */
   const remaining =
-    showDays && campaign.deadline !== null ? remainingUntil(campaign.deadline, now) : null;
+    showDays && campaign.fundingEndsAt !== null ? remainingUntil(campaign.fundingEndsAt, now) : null;
   const countdown =
     remaining === null
       ? null
@@ -310,8 +312,8 @@ export async function CampaignSummary({
           computed from the same `deadline`, so they cannot drift — `lib/projects/deadline.ts`
           states that as the invariant.
         */}
-        {campaign.deadline !== null && countdown !== null && (
-          <CampaignCountdown copy={clock} deadline={campaign.deadline} initialLabel={countdown} />
+        {campaign.fundingEndsAt !== null && countdown !== null && (
+          <CampaignCountdown copy={clock} deadline={campaign.fundingEndsAt} initialLabel={countdown} />
         )}
 
         {/*

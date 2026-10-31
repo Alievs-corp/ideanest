@@ -8,6 +8,7 @@ import type { ProjectState } from './api';
 import { readStoryDocument, type StoryDocument } from '@ideanest/campaign/story';
 import { RENDERABLE_STATES } from '@ideanest/campaign/states';
 import { daysLeftOf } from '@ideanest/campaign/days-left';
+import { fundingEndsAt } from '@ideanest/campaign/deadline';
 import {
   readRewardDetails,
   readRewardMedia,
@@ -111,14 +112,23 @@ export interface CampaignPage {
   readonly pledged: Money;
   readonly backersCount: number;
   readonly launchedAt: string | null;
+  /** The first deadline. It does not move when the campaign is extended — see `fundingEndsAt`. */
   readonly deadline: string | null;
+  /** Where an extended campaign now ends (#618), or `null` until it is extended. */
+  readonly extendedUntil: string | null;
+  /**
+   * When the campaign stops taking pledges as far as a reader is told: the extension's end
+   * while `EXTENDED`, the deadline otherwise (#618). The countdown, `daysLeft` and the trust
+   * block's date all count to this.
+   */
+  readonly fundingEndsAt: string | null;
   /** The creator's document, validated by the same reader the editor uses. */
   readonly story: StoryDocument | null;
   readonly risks: string | null;
   readonly outcome: CampaignOutcome | null;
   /** `pledged / goal`, to two places, or `null` when there is no goal to be a share of. */
   readonly completionPercent: Decimal | null;
-  /** Whole days until the deadline, floored at zero, or `null` when there is no deadline. */
+  /** Whole days until `fundingEndsAt`, floored at zero, or `null` when there is none. */
   readonly daysLeft: number | null;
 }
 
@@ -198,6 +208,8 @@ export function readCampaignFields(
 
   const goal = readMoney(response.goal);
   const deadline = typeof response.deadline === 'string' ? response.deadline : null;
+  const extendedUntil = typeof response.extendedUntil === 'string' ? response.extendedUntil : null;
+  const endsAt = fundingEndsAt(state, deadline, extendedUntil);
 
   return {
     id,
@@ -216,11 +228,13 @@ export function readCampaignFields(
     backersCount: typeof response.backersCount === 'number' ? response.backersCount : 0,
     launchedAt: typeof response.launchedAt === 'string' ? response.launchedAt : null,
     deadline,
+    extendedUntil,
+    fundingEndsAt: endsAt,
     story: readStoryDocument(response.story),
     risks: text(response.risks),
     outcome: readOutcome(response.outcome),
     completionPercent: completionOf(pledged, goal),
-    daysLeft: daysLeftOf(deadline, now),
+    daysLeft: daysLeftOf(endsAt, now),
   };
 }
 

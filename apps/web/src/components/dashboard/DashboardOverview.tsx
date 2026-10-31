@@ -6,6 +6,7 @@ import { InlineAlert, ProgressBar, Skeleton, SkeletonGroup, StatBlock, StatRow }
 import { ApiError } from '../../lib/api/problem';
 import { getDashboard, type CampaignDashboard } from '../../lib/dashboard/api';
 import { clockSkewMs } from '@ideanest/dashboard/clock';
+import { fundingEndsAt } from '@ideanest/campaign/deadline';
 import { formatMoney } from '../../lib/money';
 import { CampaignClock } from './CampaignClock';
 import { CampaignControls } from './CampaignControls';
@@ -140,8 +141,9 @@ export function DashboardOverview({
       </h1>
 
       <div className="mt-6">
+        {/* The extension's end once extended (#618); the controls below keep the first deadline. */}
         <CampaignClock
-          deadline={dashboard.deadline ?? null}
+          deadline={fundingEndsAt(dashboard.state, dashboard.deadline, dashboard.extendedUntil)}
           skewMs={skewMs}
           nowImpl={nowImpl}
           copy={copy.clock}

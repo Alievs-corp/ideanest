@@ -303,7 +303,7 @@ export default async function CampaignPage({
         nodes={projectPageGraph({
           preview: previewOf(campaign),
           path,
-          deadline: campaign.deadline,
+          deadline: campaign.fundingEndsAt,
           tiers,
           faqs: faqs ?? [],
           ...(await graphContext()),
