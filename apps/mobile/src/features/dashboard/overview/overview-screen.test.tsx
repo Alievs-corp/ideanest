@@ -597,7 +597,7 @@ describe('pull to refresh', () => {
 describe('an extended campaign (#618)', () => {
   it('counts the clock to the end of the extension, not the first deadline', async () => {
     api.readOverview.mockResolvedValueOnce(
-      read({ state: 'EXTENDED', deadline: '2026-09-08T12:00:00.000Z', extendedUntil: '2026-09-19T12:00:00.000Z' }),
+      read({ state: 'EXTENDED', deadline: '2026-09-13T12:00:00.000Z', extendedUntil: '2026-09-24T12:00:00.000Z' }),
     );
     await show({ motion: 'none' });
 
