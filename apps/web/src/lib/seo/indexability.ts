@@ -50,8 +50,8 @@ export const PROJECT_STATE_INDEXABILITY: Readonly<Record<ProjectState, Indexabil
 
   /* Public, and deliberately not indexed.
    *
-   * PRELAUNCH is a teaser. `GET /v1/projects/{id}/prelaunch` is `permitAll` and
-   * discovery lists it as "upcoming", so it is not a secret — but the campaign
+   * PRELAUNCH is a teaser. `GET /v1/projects/{id}/prelaunch` is `permitAll`, so
+   * it is not a secret, though discovery does not list it — but the campaign
    * has taken the `DRAFT → PRELAUNCH` edge without passing moderation (§6.1),
    * the page carries a title, a cover and a follower count and nothing else
    * (§10.2), and it lives at an id-based URL that stops existing the moment the

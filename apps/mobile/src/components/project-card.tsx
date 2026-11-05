@@ -112,7 +112,6 @@ interface BadgeSpec {
  * matches the tag below.
  */
 const BADGES: Record<DiscoveryStatus, BadgeSpec> = {
-  upcoming: { icon: Glyphs.Calendar, variant: 'default' },
   live: { icon: Glyphs.RecordCircle, variant: 'info' },
   extended: { icon: Glyphs.CalendarAdd, variant: 'default' },
   successful: { icon: Glyphs.TickCircle, variant: 'success' },

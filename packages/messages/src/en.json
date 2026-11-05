@@ -4618,7 +4618,6 @@
     },
     "card": {
       "badges": {
-        "upcoming": "Upcoming",
         "live": "Live",
         "extended": "Extended",
         "closing_soon": "Closing soon",
@@ -4636,7 +4635,6 @@
     },
     "filters": {
       "status": {
-        "upcoming": "Upcoming",
         "live": "Live",
         "extended": "Extended",
         "successful": "Successful"

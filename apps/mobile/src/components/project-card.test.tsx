@@ -62,7 +62,6 @@ afterAll(async () => {
 
 describe('the status badge', () => {
   it.each([
-    ['upcoming', 'Upcoming'],
     ['live', 'Live'],
     ['extended', 'Extended'],
     ['successful', 'Successful'],
@@ -170,12 +169,12 @@ describe('days left', () => {
   });
 
   it('is shown on a closed card that still reports days, as the web does', async () => {
-    await renderCard({ ...LIVE, state: 'UPCOMING', badge: 'upcoming', daysLeft: 5 });
+    await renderCard({ ...LIVE, state: 'UPCOMING', badge: 'live', daysLeft: 5 });
     expect(screen.getByText('5 days left')).toBeTruthy();
   });
 
   it('uses the singular at one, in English', async () => {
-    await renderCard({ ...LIVE, state: 'UPCOMING', badge: 'upcoming', daysLeft: 1 });
+    await renderCard({ ...LIVE, state: 'UPCOMING', badge: 'live', daysLeft: 1 });
     expect(screen.getByText('1 day left')).toBeTruthy();
   });
 });
@@ -186,7 +185,7 @@ describe('not open for pledges yet', () => {
     ['empty', ''],
     ['unparseable', 'eighty'],
   ])('replaces the funding block when the completion is %s', async (_case, completionPercent) => {
-    await renderCard({ ...LIVE, completionPercent, state: 'PRELAUNCH', badge: 'upcoming' });
+    await renderCard({ ...LIVE, completionPercent, state: 'PRELAUNCH', badge: undefined });
     expect(screen.getByText('Not open for pledges yet')).toBeTruthy();
     expect(screen.queryByText(/funded/)).toBeNull();
     expect(screen.queryByText('Succeeds at 80% of the goal')).toBeNull();

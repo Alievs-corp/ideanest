@@ -2,7 +2,6 @@ import Decimal from 'decimal.js';
 import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
 import {
-  CalendarClock,
   CalendarPlus,
   CircleCheck,
   CircleDot,
@@ -95,7 +94,6 @@ const URGENT_DAYS = 2;
  * `live`); it is here because the record is keyed by every status, and it matches the tag below.
  */
 const BADGES: Record<DiscoveryStatus, ReactNode> = {
-  upcoming: <CalendarClock className="size-2.5 max-sm:size-3 lg:size-3" />,
   live: <CircleDot className="size-2.5 max-sm:size-3 lg:size-3 text-info" />,
   extended: <CalendarPlus className="size-2.5 max-sm:size-3 lg:size-3" />,
   successful: <CircleCheck className="size-2.5 max-sm:size-3 lg:size-3 text-success" />,
