@@ -4618,7 +4618,6 @@
     },
     "card": {
       "badges": {
-        "upcoming": "Gözlənilir",
         "live": "Aktiv",
         "extended": "Uzadılıb",
         "closing_soon": "Tezliklə bağlanır",
@@ -4636,7 +4635,6 @@
     },
     "filters": {
       "status": {
-        "upcoming": "Gözlənilir",
         "live": "Aktiv",
         "extended": "Uzadılmış",
         "successful": "Uğurlu"

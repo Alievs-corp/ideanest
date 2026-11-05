@@ -48,10 +48,10 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
      *   <tr><td>golf</td><td>FULFILLING</td><td>games/tabletop</td><td>1000</td><td>3000</td><td>300</td><td>6</td><td>-50d</td><td>-5d</td><td>—</td></tr>
      * </table>
      *
-     * <p>{@code foxtrot} earns its place by having no goal, no launch, and no deadline.
-     * It is the row that finds a sort which forgot {@code NULLS LAST}, a completion
-     * band that treats "no goal" as zero percent, and a card that cannot be built
-     * without a cover image.
+     * <p>{@code foxtrot} is a pre-launch teaser: the creator opened its page from a draft
+     * and no moderator has reviewed it. It is in the fixture so that every assertion
+     * about what the feed returns is also an assertion that it never returns foxtrot —
+     * the catalogue lists only what moderation has cleared.
      */
     @BeforeEach
     void seedTheFixture() {
@@ -136,21 +136,21 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("the feed defaults to newest, with the campaigns that never launched last")
+    @DisplayName("the feed defaults to newest")
     void theDefaultSortIsNewest() {
         // Documented on DiscoverySort.NEWEST, and chosen because it is the only order
         // that is meaningful with no filter: ending-soon opens an unfiltered feed on
         // whatever finished longest ago.
         assertThat(slugs(feed("?limit=100")))
-                .containsExactly("charlie", "bravo", "alpha", "delta", "golf", "echo", "foxtrot");
+                .containsExactly("charlie", "bravo", "alpha", "delta", "golf", "echo");
         assertThat(slugs(feed("?limit=100&sort=newest"))).isEqualTo(slugs(feed("?limit=100")));
     }
 
     @Test
-    @DisplayName("ending soon runs from the closest deadline, with no deadline last")
+    @DisplayName("ending soon runs from the closest deadline")
     void endingSoonOrdersByDeadline() {
         assertThat(slugs(feed("?limit=100&sort=ending_soon")))
-                .containsExactly("golf", "echo", "delta", "bravo", "charlie", "alpha", "foxtrot");
+                .containsExactly("golf", "echo", "delta", "bravo", "charlie", "alpha");
     }
 
     @Test
@@ -160,14 +160,14 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
         // amount, and a campaign that raised 37,500 raised more than one that raised
         // 3,000 however modest its goal was.
         assertThat(slugs(feed("?limit=100&sort=most_funded")))
-                .containsExactly("echo", "delta", "golf", "charlie", "bravo", "alpha", "foxtrot");
+                .containsExactly("echo", "delta", "golf", "charlie", "bravo", "alpha");
     }
 
     @Test
     @DisplayName("most backed orders by the number of backers")
     void mostBackedOrdersByBackers() {
         assertThat(slugs(feed("?limit=100&sort=most_backed")))
-                .containsExactly("golf", "echo", "delta", "charlie", "bravo", "alpha", "foxtrot");
+                .containsExactly("golf", "echo", "delta", "charlie", "bravo", "alpha");
     }
 
     @Test
@@ -179,8 +179,6 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
         // Eight times the money and thirteen times the age: the decay is what makes
         // this a velocity approximation rather than a second most-funded.
         assertThat(order).containsSubsequence("charlie", "delta");
-        // And a campaign that never launched has no velocity at all.
-        assertThat(order).endsWith("foxtrot");
     }
 
     @Test
@@ -194,7 +192,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
         List<String> first = slugs(feed("?limit=100&sort=most_backed"));
         assertThat(slugs(feed("?limit=100&sort=most_backed"))).isEqualTo(first);
         assertThat(slugs(feed("?limit=100&sort=most_backed"))).isEqualTo(first);
-        assertThat(first).hasSize(7);
+        assertThat(first).hasSize(6);
     }
 
     // -----------------------------------------------------------------------
@@ -202,24 +200,25 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("the status filter groups internal states into the five words a backer uses")
+    @DisplayName("the status filter groups internal states into the words a backer uses")
     void theStatusFilterMapsGroupings() {
         assertThat(slugs(feed("?limit=100&status=live"))).containsExactlyInAnyOrder("alpha", "bravo", "charlie");
-        assertThat(slugs(feed("?limit=100&status=upcoming"))).containsExactly("foxtrot");
         // A campaign delivering its rewards reached its goal, so it is successful.
         assertThat(slugs(feed("?limit=100&status=successful"))).containsExactlyInAnyOrder("delta", "golf");
         // Several statuses are OR'd: a campaign is in one state, so AND would return
         // nothing.
-        assertThat(slugs(feed("?limit=100&status=upcoming,successful")))
-                .containsExactlyInAnyOrder("foxtrot", "delta", "golf");
+        assertThat(slugs(feed("?limit=100&status=live,successful")))
+                .containsExactlyInAnyOrder("alpha", "bravo", "charlie", "delta", "golf");
     }
 
     @Test
     @DisplayName("the category filter takes slugs, and several of them are OR'd")
     void theCategoryFilterTakesSlugs() {
         assertThat(slugs(feed("?limit=100&category=games"))).containsExactlyInAnyOrder("alpha", "bravo", "golf");
-        assertThat(slugs(feed("?limit=100&category=games,comics")))
-                .containsExactlyInAnyOrder("alpha", "bravo", "golf", "foxtrot");
+        assertThat(slugs(feed("?limit=100&category=games,art")))
+                .containsExactlyInAnyOrder("alpha", "bravo", "golf", "charlie");
+        // foxtrot is filed under comics and is not listed, so its category is empty.
+        assertThat(slugs(feed("?limit=100&category=comics"))).isEmpty();
     }
 
     @Test
@@ -254,12 +253,10 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
         assertThat(slugs(feed("?limit=100&completion=75_to_100"))).containsExactly("echo");
         assertThat(slugs(feed("?limit=100&completion=over_100"))).containsExactlyInAnyOrder("delta", "golf");
 
-        // Every band at once is every campaign that has a goal — and foxtrot, which
-        // has none, is in no band rather than in the first one. A percentage of
-        // nothing is undefined, not zero.
+        // Every band at once is every listed campaign: each has a goal, and each is in
+        // exactly one band.
         assertThat(slugs(feed("?limit=100&completion=under_25,25_to_50,50_to_75,75_to_100,over_100")))
-                .hasSize(6)
-                .doesNotContain("foxtrot");
+                .hasSize(6);
     }
 
     @Test
@@ -268,7 +265,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
         assertThat(slugs(feed("?limit=100&goalBand=1000_to_5000")))
                 .containsExactlyInAnyOrder("alpha", "bravo", "golf");
         assertThat(slugs(feed("?limit=100&goalBand=over_50000"))).containsExactly("echo");
-        assertThat(slugs(feed("?limit=100&raisedBand=under_1000"))).containsExactlyInAnyOrder("alpha", "bravo", "foxtrot");
+        assertThat(slugs(feed("?limit=100&raisedBand=under_1000"))).containsExactlyInAnyOrder("alpha", "bravo");
 
         // The custom range is inclusive at both ends, unlike the bands. A person
         // typing "from 2500 to 20000" into two boxes means both numbers included.
@@ -284,7 +281,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     @Test
     @DisplayName("a status and a category compose")
     void statusAndCategoryCompose() {
-        // golf is in games and is not live; foxtrot is upcoming and is not in games.
+        // golf is in games and is not live.
         assertThat(slugs(feed("?limit=100&status=live&category=games"))).containsExactlyInAnyOrder("alpha", "bravo");
     }
 
@@ -339,7 +336,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
                     .hasSize(new LinkedHashSet<>(seen).size());
             assertThat(seen)
                     .withFailMessage("sort=%s lost a campaign: %s", sort, seen)
-                    .containsExactlyInAnyOrder("alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf");
+                    .containsExactlyInAnyOrder("alpha", "bravo", "charlie", "delta", "echo", "golf");
             // And the paged order is the unpaged order, or the cursor is resuming
             // from somewhere the sort did not put it.
             assertThat(seen).isEqualTo(slugs(feed("?limit=100&sort=" + sort)));
@@ -349,16 +346,14 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     @Test
     @DisplayName("the last page says so by carrying no cursor, not by being short")
     void theEndOfTheFeedIsSignalledByAnAbsentCursor() {
-        // Seven campaigns at three per page: 3, 3, 1. The third page is short *and*
-        // has no cursor; the second is full and does. A client that stopped on a short
+        // Six listed campaigns at four per page: 4, 2. The second page is short *and*
+        // has no cursor; the first is full and does. A client that stopped on a short
         // page would truncate a feed whose last page happened to be full.
-        Map<String, Object> first = feed("?limit=3");
+        Map<String, Object> first = feed("?limit=4");
         assertThat(nextCursor(first)).isNotNull();
-        Map<String, Object> second = feed("?limit=3&cursor=" + nextCursor(first));
-        assertThat(nextCursor(second)).isNotNull();
-        Map<String, Object> third = feed("?limit=3&cursor=" + nextCursor(second));
-        assertThat(items(third)).hasSize(1);
-        assertThat(nextCursor(third)).isNull();
+        Map<String, Object> second = feed("?limit=4&cursor=" + nextCursor(first));
+        assertThat(items(second)).hasSize(2);
+        assertThat(nextCursor(second)).isNull();
     }
 
     @Test
@@ -425,7 +420,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
         // Nothing from page one comes back.
         assertThat(rest).doesNotContain("echo", "delta");
         // Nothing that stayed put is lost.
-        assertThat(rest).contains("golf", "charlie", "bravo", "foxtrot");
+        assertThat(rest).contains("golf", "charlie", "bravo");
         assertThat(rest).hasSize(new LinkedHashSet<>(rest).size());
         // alpha is legitimately absent: it moved above the point the scroll had
         // already passed. A keyset cursor shows a row that moves once or not at all,
@@ -554,7 +549,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
         // nothing.
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).containsEntry("code", "DISCOVERY_VALUE_UNKNOWN");
-        assertThat(response.getBody().get("meta").toString()).contains("live", "successful", "upcoming");
+        assertThat(response.getBody().get("meta").toString()).contains("live", "extended", "successful");
 
         assertThat(get("/v1/discover?sort=cheapest", new HttpHeaders()).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
@@ -581,7 +576,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     @Test
     @DisplayName("an oversized page is clamped rather than refused")
     void theLimitIsClamped() {
-        assertThat(items(feed("?limit=100000"))).hasSize(7);
+        assertThat(items(feed("?limit=100000"))).hasSize(6);
         assertThat(items(feed("?limit=0"))).hasSize(1);
     }
 
@@ -627,7 +622,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
                 .deadline(now.minus(9, ChronoUnit.DAYS))
                 .insert();
 
-        assertThat(slugs(feed("?limit=100"))).doesNotContain("india").hasSize(7);
+        assertThat(slugs(feed("?limit=100"))).doesNotContain("india").hasSize(6);
         assertThat(slugs(search("?limit=100&q={q}", "india"))).doesNotContain("india");
         // Late pledge and unsuccessful are no longer filter words, so asking for them is a
         // 400 like any other unknown word rather than a filter that quietly matches nothing.
@@ -706,16 +701,17 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     }
 
     @Test
-    @DisplayName("a campaign with no goal, no deadline, and no image still renders as a card")
-    void aPrelaunchCardOmitsWhatItDoesNotHave() {
-        Map<String, Object> card = items(feed("?status=upcoming")).getFirst();
-
-        assertThat(card.get("slug")).isEqualTo("foxtrot");
-        assertThat(card.get("badge")).isEqualTo("upcoming");
-        // Absent rather than null: the service omits null properties, and a client
-        // must not try to tell the two apart.
-        assertThat(card).doesNotContainKeys("goal", "completionPercent", "daysLeft", "image", "deadline");
-        assertThat(card.get("pledged")).isEqualTo(Map.of("amount", "0.00", "currency", "AZN"));
+    @DisplayName("a pre-launch teaser nobody has reviewed is not listed, and its old filter word is refused")
+    void aPrelaunchTeaserIsNotListed() {
+        // A creator opens a pre-launch page from a draft in one click, before submitting
+        // anything to moderation. Listing it put an unreviewed campaign among the live
+        // ones; the catalogue lists only what moderation has cleared.
+        assertThat(slugs(feed("?limit=100"))).doesNotContain("foxtrot");
+        assertThat(slugs(search("?limit=100&q={q}", "foxtrot"))).doesNotContain("foxtrot");
+        // "upcoming" named PRELAUNCH alone, so it went with it: a 400 like any other
+        // unknown word, rather than a filter that quietly matches nothing.
+        assertThat(get("/v1/discover?status=upcoming", new HttpHeaders()).getStatusCode().value())
+                .isEqualTo(400);
     }
 
     @Test

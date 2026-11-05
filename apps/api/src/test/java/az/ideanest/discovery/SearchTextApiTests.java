@@ -29,8 +29,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * work with. <strong>{@code robot}</strong> appears in a title, a blurb, and a
  * story, in three different campaigns — so it is the word that tests the weights.
  *
- * <p>Two campaigns are in states the public may never see and both mention both
- * words. They are the reason this suite exists at all: a text predicate is a
+ * <p>Three campaigns are in states the catalogue may never list — a draft, a suspended
+ * campaign and a pre-launch teaser nobody has reviewed — and all three mention
+ * {@code layihə}. They are the reason this suite exists at all: a text predicate is a
  * second way into the table, and a second way into the table is a second place to
  * forget the visibility clause.
  */
@@ -38,7 +39,7 @@ class SearchTextApiTests extends DiscoveryTestSupport {
 
     /** Every campaign the public may see and that mentions "layihə". */
     private static final List<String> MATCHES_LAYIHE =
-            List.of("alpha", "bravo", "charlie", "delta", "echo", "foxtrot");
+            List.of("alpha", "bravo", "charlie", "delta", "echo");
 
     private Instant now;
 
@@ -114,7 +115,7 @@ class SearchTextApiTests extends DiscoveryTestSupport {
                 .insert();
         Campaigns.seed(dataSource, creator, "foxtrot")
                 .state("PRELAUNCH")
-                .title("Çörək sobası")
+                .title("Çörək dükanı")
                 .blurb("Ev çörəyi")
                 .story("Bu layihə soba qurur")
                 .category("comics")
@@ -126,7 +127,7 @@ class SearchTextApiTests extends DiscoveryTestSupport {
         // would pass whatever the implementation did.
         Campaigns.seed(dataSource, creator, "golf")
                 .state("LIVE")
-                .title("Bağ evi")
+                .title("Çörək sobası")
                 .blurb("Yay üçün kiçik ev")
                 .story("Burada heç bir uyğun söz yoxdur")
                 .subcategory("games", "tabletop")
@@ -243,8 +244,11 @@ class SearchTextApiTests extends DiscoveryTestSupport {
         // "Çörək sobası" with one letter dropped, typed without diacritics. Both tiers
         // go through ideanest_fold, so the fold is not something the exact tier has
         // and the fallback lacks.
-        assertThat(slugs(search("?q={q}&limit=100", "corek"))).contains("foxtrot");
-        assertThat(slugs(search("?q={q}&limit=100", "corak"))).contains("foxtrot");
+        assertThat(slugs(search("?q={q}&limit=100", "corek"))).contains("golf");
+        assertThat(slugs(search("?q={q}&limit=100", "corak"))).contains("golf");
+        // foxtrot says "Çörək" too, and is a pre-launch teaser: neither tier lists it.
+        assertThat(slugs(search("?q={q}&limit=100", "corek"))).doesNotContain("foxtrot");
+        assertThat(slugs(search("?q={q}&limit=100", "corak"))).doesNotContain("foxtrot");
     }
 
     @Test
@@ -315,8 +319,6 @@ class SearchTextApiTests extends DiscoveryTestSupport {
                 .containsExactly("alpha");
         assertThat(slugs(search("?q={q}&status=live&limit=100", "layihe")))
                 .containsExactlyInAnyOrder("alpha", "bravo", "charlie");
-        assertThat(slugs(search("?q={q}&status=upcoming&limit=100", "layihe")))
-                .containsExactly("foxtrot");
         assertThat(slugs(search("?q={q}&tag=handmade&limit=100", "layihe")))
                 .containsExactlyInAnyOrder("alpha", "bravo");
         assertThat(slugs(search("?q={q}&tag=handmade,ceramics&limit=100", "layihe")))
@@ -353,11 +355,11 @@ class SearchTextApiTests extends DiscoveryTestSupport {
         }
 
         assertThat(slugs(search("?q={q}&limit=100&sort=newest", "layihe")))
-                .containsExactly("charlie", "bravo", "alpha", "delta", "echo", "foxtrot");
+                .containsExactly("charlie", "bravo", "alpha", "delta", "echo");
         assertThat(slugs(search("?q={q}&limit=100&sort=most_funded", "layihe")))
-                .containsExactly("echo", "delta", "charlie", "bravo", "alpha", "foxtrot");
+                .containsExactly("echo", "delta", "charlie", "bravo", "alpha");
         assertThat(slugs(search("?q={q}&limit=100&sort=most_backed", "layihe")))
-                .containsExactly("echo", "delta", "charlie", "bravo", "alpha", "foxtrot");
+                .containsExactly("echo", "delta", "charlie", "bravo", "alpha");
     }
 
     @Test

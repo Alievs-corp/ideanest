@@ -89,7 +89,7 @@ describe('parseFilters', () => {
 describe('toSearchParams', () => {
   it('round trips a filter set', () => {
     const original = parseFilters(
-      params('status=live,upcoming&category=games&tag=a,b&goalMin=100&sort=ending_soon'),
+      params('status=live,successful&category=games&tag=a,b&goalMin=100&sort=ending_soon'),
     );
 
     expect(parseFilters(toSearchParams(original))).toEqual(original);
@@ -115,7 +115,7 @@ describe('toSearchParams', () => {
   it('keys a filter set by everything that decides the results', () => {
     const a = parseFilters(params('status=live&sort=newest'));
     const b = parseFilters(params('status=live'));
-    const c = parseFilters(params('status=upcoming'));
+    const c = parseFilters(params('status=successful'));
 
     expect(filterKey(a)).toBe(filterKey(b));
     expect(filterKey(a)).not.toBe(filterKey(c));
@@ -266,11 +266,11 @@ describe('activeFilters', () => {
 
 describe('removeFilter', () => {
   it('removes exactly the one named, from every dimension', () => {
-    const filters = parseFilters(params('status=live,upcoming&tag=a,b&goalBand=under_1000'));
+    const filters = parseFilters(params('status=live,successful&tag=a,b&goalBand=under_1000'));
     const active = activeFilters(filters, VOCABULARY);
 
     const withoutLive = removeFilter(filters, active.find((f) => f.value === 'live')!);
-    expect(withoutLive.statuses).toEqual(['upcoming']);
+    expect(withoutLive.statuses).toEqual(['successful']);
     expect(withoutLive.tags).toEqual(['a', 'b']);
 
     const withoutTag = removeFilter(filters, active.find((f) => f.value === 'a')!);

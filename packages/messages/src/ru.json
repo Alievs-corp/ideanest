@@ -4618,7 +4618,6 @@
     },
     "card": {
       "badges": {
-        "upcoming": "Скоро",
         "live": "Идёт сбор",
         "extended": "Продлена",
         "closing_soon": "Скоро закроется",
@@ -4636,7 +4635,6 @@
     },
     "filters": {
       "status": {
-        "upcoming": "Скоро",
         "live": "Идёт сбор",
         "extended": "Продлённые",
         "successful": "Успешна"

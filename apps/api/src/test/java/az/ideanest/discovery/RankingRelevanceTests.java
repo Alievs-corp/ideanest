@@ -470,11 +470,10 @@ class RankingRelevanceTests extends DiscoveryTestSupport {
     @DisplayName("no goal, no pledge, no launch, and a campaign far past its goal all score sanely")
     void boundaryArithmeticNeverDividesByZeroOrTopsTheFeed() {
         UUID creator = Campaigns.creator(dataSource, "ranking-creator");
-        // PRELAUNCH is publicly visible and has neither a goal nor a launch instant, so
-        // it is the row on which both the completion divisor and the recency age are
-        // absent at once. A NULL propagating through the sum would make the whole score
-        // NULL, and NULLs sort FIRST under DESC in PostgreSQL — so getting this wrong
-        // puts every unlaunched teaser on the platform at the top of the feed.
+        // PRELAUNCH has neither a goal nor a launch instant, so it is the row on which
+        // both the completion divisor and the recency age are absent at once. A NULL
+        // score sorts FIRST under DESC in PostgreSQL. It is not listed at all — nobody
+        // has reviewed it — so whatever its score, it must not reach the feed.
         Campaigns.seed(dataSource, creator, "no-goal-no-launch")
                 .state("PRELAUNCH")
                 .category("games")
@@ -484,24 +483,23 @@ class RankingRelevanceTests extends DiscoveryTestSupport {
 
         // Under the seeded weights, which is the configuration a deployment starts on.
         List<String> defaults = slugs(feed("?limit=100&sort=relevance"));
-        assertThat(defaults).hasSize(9);
+        assertThat(defaults).hasSize(8);
         assertThat(defaults).doesNotHaveDuplicates();
-        assertThat(defaults.get(0)).isNotEqualTo("no-goal-no-launch");
+        assertThat(defaults).doesNotContain("no-goal-no-launch");
 
         // And with each edge's own term alone, where a division by zero or a NaN would
         // have nothing else to hide behind.
         only("completion");
         List<String> byCompletion = slugs(feed("?limit=100&sort=relevance"));
         assertThat(byCompletion).startsWith("far-past-goal");
-        assertThat(byCompletion).hasSize(9);
-        // A campaign that has not asked for anything has not got 100% of the way to it.
-        assertThat(byCompletion.indexOf("no-goal-no-launch")).isGreaterThan(byCompletion.indexOf("nearly-funded"));
+        assertThat(byCompletion).hasSize(8);
+        assertThat(byCompletion).doesNotContain("no-goal-no-launch");
         assertThat(byCompletion.indexOf("zero-pledged")).isGreaterThan(byCompletion.indexOf("nearly-funded"));
 
         only("recency");
         List<String> byRecency = slugs(feed("?limit=100&sort=relevance"));
         assertThat(byRecency).startsWith("just-launched");
-        assertThat(byRecency).hasSize(9);
+        assertThat(byRecency).hasSize(8);
         assertThat(byRecency).doesNotHaveDuplicates();
 
         // The exact amounts are still exact: a completion computed through a double

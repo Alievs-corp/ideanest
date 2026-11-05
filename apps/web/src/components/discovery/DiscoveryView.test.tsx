@@ -163,7 +163,6 @@ function card(slug: string, overrides: Partial<ProjectCardData> = {}): ProjectCa
  */
 const FACETS: DiscoveryFacets = {
   status: [
-    { value: 'upcoming', count: 4 },
     { value: 'live', count: 12 },
     { value: 'extended', count: 0 },
     { value: 'successful', count: 7 },
@@ -868,15 +867,15 @@ describe('the rail as a structure', () => {
   it('is operable end to end with the keyboard', async () => {
     const user = await open();
 
-    const upcoming = screen.getByRole('checkbox', { name: 'Upcoming' });
-    upcoming.focus();
-    expect(upcoming).toHaveFocus();
+    const successful = screen.getByRole('checkbox', { name: 'Successful' });
+    successful.focus();
+    expect(successful).toHaveFocus();
 
     // Space toggles a real checkbox. Nothing here is a click handler on a div.
     await user.keyboard(' ');
-    expect(upcoming).toBeChecked();
+    expect(successful).toBeChecked();
     await applyFilters(user);
-    await waitFor(() => expect(search().get('status')).toBe('upcoming'));
+    await waitFor(() => expect(search().get('status')).toBe('successful'));
 
 
   });

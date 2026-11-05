@@ -12775,7 +12775,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "extended" | "successful")[];
+                status?: ("live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */
@@ -12842,7 +12842,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "extended" | "successful")[];
+                status?: ("live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */
@@ -16097,7 +16097,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "extended" | "successful")[];
+                status?: ("live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */

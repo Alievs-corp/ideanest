@@ -61,14 +61,25 @@ class DiscoveryStatusTests {
     }
 
     @Test
-    @DisplayName("IDN-EXT-01: an unsuccessful campaign is public but not listed, and nothing else differs")
+    @DisplayName("IDN-EXT-01: an unsuccessful campaign is public but not listed")
     void unsuccessfulIsPublicButNotListed() {
         // Hidden from the catalogue and search only: its page and rewards still resolve.
         assertThat(DiscoveryStatus.PUBLIC_STATES).contains("UNSUCCESSFUL");
         assertThat(DiscoveryStatus.LISTED_STATES).doesNotContain("UNSUCCESSFUL");
         Set<String> difference = new LinkedHashSet<>(DiscoveryStatus.PUBLIC_STATES);
         difference.removeAll(DiscoveryStatus.LISTED_STATES);
-        assertThat(difference).containsExactly("UNSUCCESSFUL");
+        assertThat(difference).containsExactlyInAnyOrder("UNSUCCESSFUL", "PRELAUNCH");
+    }
+
+    @Test
+    @DisplayName("a pre-launch teaser is public by link but never listed, because nobody has reviewed it")
+    void prelaunchIsPublicButNotListed() {
+        // DRAFT -> PRELAUNCH takes no moderation, so the catalogue lists only what a
+        // moderator has cleared and the teaser stays reachable by the link its creator
+        // shares.
+        assertThat(DiscoveryStatus.PUBLIC_STATES).contains("PRELAUNCH");
+        assertThat(DiscoveryStatus.LISTED_STATES).doesNotContain("PRELAUNCH");
+        assertThat(DiscoveryStatus.badgeFor("PRELAUNCH")).isEmpty();
     }
 
     @Test
@@ -88,9 +99,9 @@ class DiscoveryStatusTests {
     }
 
     @Test
-    @DisplayName("IDN-EXT-01: the filter words are upcoming, live, extended and successful")
+    @DisplayName("the filter words are live, extended and successful")
     void theFilterWords() {
-        assertThat(DiscoveryStatus.wireValues()).containsExactly("upcoming", "live", "extended", "successful");
+        assertThat(DiscoveryStatus.wireValues()).containsExactly("live", "extended", "successful");
         assertThat(DiscoveryStatus.EXTENDED.states()).containsExactly("EXTENDED");
     }
 

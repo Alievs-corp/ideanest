@@ -29,18 +29,6 @@ import java.util.stream.Collectors;
 public enum DiscoveryStatus {
 
     /**
-     * "It has not opened yet, but I can follow it."
-     *
-     * <p>Only {@code PRELAUNCH}. {@code APPROVED} and {@code SCHEDULED} are also
-     * campaigns that have not opened, and both are deliberately excluded: neither
-     * has a public page, and listing one would announce a launch date the creator
-     * has not announced. A campaign becomes discoverable as upcoming by taking the
-     * {@code DRAFT → PRELAUNCH} edge, which is an act, not a side effect of
-     * moderation clearing it.
-     */
-    UPCOMING("upcoming", "PRELAUNCH"),
-
-    /**
      * "I can back it right now, and the clock is running."
      *
      * <p>{@code LIVE}, and since IDN-EXT-01 the seven days after its first deadline and its
@@ -110,14 +98,22 @@ public enum DiscoveryStatus {
     /**
      * The states the catalogue and search list a campaign in — IDN-EXT-01 (#37).
      *
-     * <p>{@link #PUBLIC_STATES} without {@code UNSUCCESSFUL}. A campaign that ended without
-     * succeeding is hidden from browsing and from search <em>only</em>: its page, its rewards
-     * and its updates still resolve by link and from a backer's account, which is why
-     * {@code PUBLIC_STATES} keeps it. Every read in this module that returns, suggests or
+     * <p>{@link #PUBLIC_STATES} without {@code UNSUCCESSFUL} and {@code PRELAUNCH}. A campaign
+     * that ended without succeeding is hidden from browsing and from search <em>only</em>: its
+     * page, its rewards and its updates still resolve by link and from a backer's account, which
+     * is why {@code PUBLIC_STATES} keeps it. Every read in this module that returns, suggests or
      * counts campaigns applies this set, before any caller filter.
+     *
+     * <p><strong>{@code PRELAUNCH} is out because nobody has reviewed it.</strong> A creator
+     * reaches it from {@code DRAFT} in one click, before submitting, so a catalogue that listed
+     * it published whatever a draft said, under the platform's name and among the live
+     * campaigns. The catalogue lists only what moderation has cleared. The teaser page itself
+     * stays public by link, which is what the creator shares; that is why
+     * {@code PUBLIC_STATES} keeps it. The {@code upcoming} filter word went with it, since it
+     * named only this state.
      */
     public static final Set<String> LISTED_STATES = PUBLIC_STATES.stream()
-            .filter(state -> !"UNSUCCESSFUL".equals(state))
+            .filter(state -> !"UNSUCCESSFUL".equals(state) && !"PRELAUNCH".equals(state))
             .collect(Collectors.toUnmodifiableSet());
 
     /**
@@ -136,7 +132,7 @@ public enum DiscoveryStatus {
      * <p>{@link #EXTENDED} is not a badge: an extended campaign badges as {@code live}, and
      * the card carries {@code extended} beside it.
      */
-    private static final List<DiscoveryStatus> BADGE_ORDER = List.of(UPCOMING, LIVE, SUCCESSFUL);
+    private static final List<DiscoveryStatus> BADGE_ORDER = List.of(LIVE, SUCCESSFUL);
 
     private static final Map<String, DiscoveryStatus> BY_WIRE_VALUE = byWireValue();
 

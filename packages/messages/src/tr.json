@@ -4618,7 +4618,6 @@
     },
     "card": {
       "badges": {
-        "upcoming": "Yakında",
         "live": "Etkin",
         "extended": "Uzatıldı",
         "closing_soon": "Yakında kapanıyor",
@@ -4636,7 +4635,6 @@
     },
     "filters": {
       "status": {
-        "upcoming": "Yakında",
         "live": "Etkin",
         "extended": "Uzatılmış",
         "successful": "Başarılı"

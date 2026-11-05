@@ -498,7 +498,7 @@ and each entry needs a translation per supported locale.
 
 | Filter | Values |
 |---|---|
-| Status | Upcoming, live, extended, successful (IDN-EXT-01, #37) |
+| Status | Live, extended, successful (IDN-EXT-01, #37; *upcoming* withdrawn) |
 | Category | 15 primary plus subcategories, each with a live count |
 | Location | Country, city, or proximity |
 | Goal amount | Bands plus a custom range |
@@ -551,6 +551,12 @@ and each entry needs a translation per supported locale.
 > `DiscoveryStatus.PUBLIC_STATES` — its page and rewards resolve — and is not in
 > `LISTED_STATES`, which every feed, search, suggestion, facet, explanation and collection
 > read applies. The description of the five words above is the pre-IDN-EXT-01 design.
+>
+> **Only moderated campaigns are listed.** `PRELAUNCH` is reached from `DRAFT` without
+> moderation, so it is not in `LISTED_STATES` either: a pre-launch teaser is public by the
+> link its creator shares and never appears in the catalogue, search, suggestions, facets,
+> collections or the sitemap. *Upcoming*, which named `PRELAUNCH` alone, is no longer a
+> filter value or a badge, and `?status=upcoming` is refused like any unknown word.
 >
 > **Bands are closed below and open above** — `[lower, upper)` — so that the five
 > partition the line rather than overlapping at four boundaries. A campaign at

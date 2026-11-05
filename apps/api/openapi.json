@@ -5756,7 +5756,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "upcoming", "live", "extended", "successful" ]
+              "enum" : [ "live", "extended", "successful" ]
             }
           }
         }, {
@@ -5999,7 +5999,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "upcoming", "live", "extended", "successful" ]
+              "enum" : [ "live", "extended", "successful" ]
             }
           }
         }, {
@@ -10400,7 +10400,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "upcoming", "live", "extended", "successful" ]
+              "enum" : [ "live", "extended", "successful" ]
             }
           }
         }, {

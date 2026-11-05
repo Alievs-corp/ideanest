@@ -177,7 +177,7 @@ class DiscoveryFacetsApiTests extends DiscoveryTestSupport {
         String filters = "?category=comics";
         Map<String, Object> facets = facets(filters);
 
-        for (String status : List.of("upcoming", "live", "extended", "successful")) {
+        for (String status : List.of("live", "extended", "successful")) {
             assertThat(count(facets, "status", status))
                     .withFailMessage("the '%s' facet disagrees with the feed", status)
                     .isEqualTo(items(feed(filters + "&status=" + status + "&limit=100")).size());
@@ -192,13 +192,14 @@ class DiscoveryFacetsApiTests extends DiscoveryTestSupport {
         // A control that disappears when its count reaches zero is a control that
         // moves under the reader's cursor. §4.3 also asks for a live count on every
         // category, which means on all fifteen.
-        // Four status words since IDN-EXT-01 (#37): upcoming, live, extended, successful.
-        assertThat(counts(facets, "status")).hasSize(4);
+        // Three status words: live, extended and successful. "upcoming" went with
+        // PRELAUNCH, which the catalogue no longer lists.
+        assertThat(counts(facets, "status")).hasSize(3);
         assertThat(counts(facets, "completion")).hasSize(5);
         assertThat(counts(facets, "goalAmount")).hasSize(5);
         assertThat(counts(facets, "amountRaised")).hasSize(5);
         assertThat(counts(facets, "categories")).hasSize(15);
-        assertThat(count(facets, "status", "upcoming")).isZero();
+        assertThat(count(facets, "status", "extended")).isZero();
     }
 
     @Test

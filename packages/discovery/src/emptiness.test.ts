@@ -14,7 +14,6 @@ function facets(overrides: Partial<DiscoveryFacets> = {}): DiscoveryFacets {
   return {
     status: [
       { value: 'live', count: 3 },
-      { value: 'upcoming', count: 0 },
       { value: 'extended', count: 0 },
       { value: 'successful', count: 1 },
     ],
@@ -48,9 +47,9 @@ describe('blameFor', () => {
   });
 
   it('names several when several are individually impossible', () => {
-    const blamed = blameFor(active('status=upcoming&category=art'), facets());
+    const blamed = blameFor(active('status=extended&category=art'), facets());
 
-    expect(blamed.map((f) => f.label)).toEqual(['Upcoming', 'Art']);
+    expect(blamed.map((f) => f.label)).toEqual(['Extended', 'Art']);
   });
 
   it('names all of them when no single one is impossible', () => {
