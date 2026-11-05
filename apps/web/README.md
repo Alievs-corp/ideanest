@@ -213,7 +213,7 @@ gave up a `<main>` of its own for the same reason the two screens above did.
 **The site shell carries a floating WhatsApp control**
 (`components/shell/WhatsAppLauncher.tsx`). It opens a dialog asking for a first
 name, a last name and a message, and hands all three to WhatsApp as a `wa.me`
-deep link on `+421 952 480 349`.
+deep link on `+994 99 790 77 74`.
 
 **Nothing is sent from this application.** The link opens WhatsApp with the
 message written and waiting, and the visitor presses send there, so it arrives
