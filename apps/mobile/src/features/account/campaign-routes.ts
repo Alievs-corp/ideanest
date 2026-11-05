@@ -8,7 +8,7 @@
 
 /** §6.1's public states: a campaign in one of these has a page a backer could open. */
 export const PUBLIC_STATES: ReadonlySet<string> = new Set([
-  'PRELAUNCH',
+  // Not PRELAUNCH: opened from a draft without moderation, it is hidden like a draft.
   'LIVE',
   'CANCELED',
   'SUCCESSFUL',
@@ -22,13 +22,9 @@ export const PUBLIC_STATES: ReadonlySet<string> = new Set([
 
 /**
  * The states with a dashboard worth opening — the web's `LAUNCHED_STATES` (#141): every public
- * state but `PRELAUNCH`, which has no backers yet, plus `SUSPENDED`, whose creator still owes
- * what the dashboard lists.
+ * state, plus `SUSPENDED`, whose creator still owes what the dashboard lists.
  */
-const LAUNCHED_STATES: ReadonlySet<string> = new Set([
-  ...[...PUBLIC_STATES].filter((state) => state !== 'PRELAUNCH'),
-  'SUSPENDED',
-]);
+const LAUNCHED_STATES: ReadonlySet<string> = new Set([...PUBLIC_STATES, 'SUSPENDED']);
 
 export function isPubliclyVisible(state: string): boolean {
   return PUBLIC_STATES.has(state);

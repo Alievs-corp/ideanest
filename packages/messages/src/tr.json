@@ -6164,11 +6164,8 @@
     "prelaunch": {
       "loadingLabel": "Kampanya yükleniyor",
       "notSavedTitle": "Bu değişiklik kaydedilmedi",
-      "notOpenHeading": "Lansman öncesi sayfa henüz açık değil",
-      "notOpenBody": "Açtığınızda aşağıdaki başlık, özet ve kapak görseli paylaşabileceğiniz bir bağlantıda herkese açık olur ve insanlar kampanya başladığında haber verilmesini isteyebilir. Kampanyayla ilgili başka hiçbir şey açılmaz ve parayla ilgisi yoktur.",
-      "notOpenIrreversible": "Geri kapatılamaz — kampanya buradan yalnızca ileri gider: önce incelemeye, sonra lansmana.",
-      "openFailedTitle": "Sayfa açılmadı",
-      "open": "Lansman öncesi sayfayı aç",
+      "pendingHeading": "Lansman öncesi sayfa onaydan sonra açılır",
+      "pendingBody": "Moderasyon kampanyayı onayladığında bu sayfa herkese açık olur: insanlar onu takip edebilir ve kampanya açıldığında haber alır. O zamana kadar sizden başka kimse göremez.",
       "openHeading": "Lansman öncesi sayfa açık",
       "followersFailed": "Bekleyen kişi sayısı yüklenemedi.",
       "waiting": {
@@ -6189,13 +6186,7 @@
       "title": "Başlık",
       "titleHint": "Lansman öncesi sayfadaki ve keşfet akışındaki ad. En fazla {max} karakter.",
       "summary": "Özet",
-      "summaryHint": "Bir iki cümle. Takip etmeye karar vermeden önce insan tam olarak bunu okur. En fazla {max} karakter.",
-      "confirmTitle": "Lansman öncesi sayfa açılsın mı?",
-      "confirmBody": "Başlık, özet ve kapak görseli herkesin açabileceği bir bağlantıda herkese açık olur. Bu geri alınamaz.",
-      "cancel": "İptal",
-      "opening": "Açılıyor",
-      "confirmOpen": "Sayfayı aç",
-      "confirmDetail": "Ödülleriniz, hikâyeniz veya fonlama hedefiniz hakkında hiçbir şey yayımlanmaz ve kampanya incelenip başlatılana kadar para kabul etmez."
+      "summaryHint": "Bir iki cümle. Takip etmeye karar vermeden önce insan tam olarak bunu okur. En fazla {max} karakter."
     },
     "review": {
       "loadFailedTitle": "Bu kampanya yüklenemedi",
@@ -7684,8 +7675,7 @@
         "copyFailed": "Bağlantı kopyalanamadı. Seçip kendiniz kopyalamak için yukarıdaki bağlantıya basılı tutun.",
         "share": "Paylaş",
         "shareLabel": "Lansman öncesi bağlantıyı paylaş",
-        "shareFailed": "Paylaşım menüsü açılamadı. Tekrar deneyin.",
-        "fixFirst": "Önce başlığı, özeti veya kapağı düzeltin. Sayfa ekrandakini değil, en son kaydedileni yayımlar."
+        "shareFailed": "Paylaşım menüsü açılamadı. Tekrar deneyin."
       }
     },
     "native": {

@@ -34,8 +34,9 @@ describe('myCampaignHref', () => {
   });
 
   it('agrees with the web on which states are public and which have launched', () => {
-    expect(PUBLIC_STATES.size).toBe(10);
-    expect(isPubliclyVisible('PRELAUNCH')).toBe(true);
+    expect(PUBLIC_STATES.size).toBe(9);
+    // Reached from a draft without moderation, so hidden like one.
+    expect(isPubliclyVisible('PRELAUNCH')).toBe(false);
     expect(hasLaunched('PRELAUNCH')).toBe(false);
     expect(hasLaunched('SUSPENDED')).toBe(true);
     expect(hasLaunched('DRAFT')).toBe(false);

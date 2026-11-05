@@ -1862,13 +1862,12 @@ export interface PrelaunchPanelCopy {
   readonly notSavedTitle: string;
   /** The basics tab's sentence: both autosave, and say the same thing when that fails. */
   readonly notSavedDetail: string;
-  /** Under the confirmation: what opening the page does not publish. */
-  readonly confirmDetail: string;
-  readonly notOpenHeading: string;
-  readonly notOpenBody: string;
-  readonly notOpenIrreversible: string;
-  readonly openFailedTitle: string;
-  readonly open: string;
+  /**
+   * Before approval: the page goes public only once moderation has approved the campaign, so a
+   * creator cannot publish an unreviewed campaign by opening it.
+   */
+  readonly pendingHeading: string;
+  readonly pendingBody: string;
   readonly openHeading: string;
   readonly followersFailed: string;
   /**
@@ -1894,11 +1893,6 @@ export interface PrelaunchPanelCopy {
   readonly summary: string;
   /** Carries `{max}`. */
   readonly summaryHint: string;
-  readonly confirmTitle: string;
-  readonly confirmBody: string;
-  readonly cancel: string;
-  readonly opening: string;
-  readonly confirmOpen: string;
   readonly characterCount: CharacterCountCopy;
   readonly locale: Locale;
 }
@@ -1915,12 +1909,8 @@ export function prelaunchPanelCopyFrom(
     loadingLabel: at('loadingLabel'),
     notSavedTitle: at('notSavedTitle'),
     notSavedDetail: t('basics.notSavedDetail'),
-    confirmDetail: at('confirmDetail'),
-    notOpenHeading: at('notOpenHeading'),
-    notOpenBody: at('notOpenBody'),
-    notOpenIrreversible: at('notOpenIrreversible'),
-    openFailedTitle: at('openFailedTitle'),
-    open: at('open'),
+    pendingHeading: at('pendingHeading'),
+    pendingBody: at('pendingBody'),
     openHeading: at('openHeading'),
     followersFailed: at('followersFailed'),
     waiting: t.raw('prelaunch.waiting') as AppPluralForms,
@@ -1937,11 +1927,6 @@ export function prelaunchPanelCopyFrom(
     titleHint: tpl('titleHint'),
     summary: at('summary'),
     summaryHint: tpl('summaryHint'),
-    confirmTitle: at('confirmTitle'),
-    confirmBody: at('confirmBody'),
-    cancel: at('cancel'),
-    opening: at('opening'),
-    confirmOpen: at('confirmOpen'),
     characterCount: counter,
     locale,
   };

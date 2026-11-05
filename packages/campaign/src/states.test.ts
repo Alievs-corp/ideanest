@@ -7,10 +7,9 @@ import { RENDERABLE_STATES, isRenderableState } from './states';
  * draft never reaches either.
  */
 describe('RENDERABLE_STATES', () => {
-  it('is the ten public states', () => {
+  it('is the nine public states', () => {
     expect([...RENDERABLE_STATES].sort()).toEqual(
       [
-        'PRELAUNCH',
         'LIVE',
         'CANCELED',
         'SUCCESSFUL',
@@ -24,7 +23,8 @@ describe('RENDERABLE_STATES', () => {
     );
   });
 
-  it.each(['DRAFT', 'SUBMITTED', 'CHANGES_REQUESTED', 'REJECTED', 'APPROVED', 'SCHEDULED', 'SUSPENDED'])(
+  // PRELAUNCH is reached from a draft without moderation, so it is hidden like one.
+  it.each(['DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED', 'REJECTED', 'APPROVED', 'SCHEDULED', 'SUSPENDED'])(
     'has no page for %s',
     (state) => {
       expect(isRenderableState(state)).toBe(false);

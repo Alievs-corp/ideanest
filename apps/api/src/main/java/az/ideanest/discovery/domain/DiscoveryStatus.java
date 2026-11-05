@@ -61,16 +61,19 @@ public enum DiscoveryStatus {
     SUCCESSFUL("successful", "SUCCESSFUL", "WITHDRAWN", "FULFILLING", "COMPLETED");
 
     /**
-     * The nine states a campaign may be listed in, whatever was asked for.
+     * The states a campaign's page may be public in, whatever was asked for.
      *
-     * <p>Applied to every query before any caller filter is. The seven that are
-     * absent are absent for three different reasons and all of them matter:
+     * <p>Applied to every query before any caller filter is. The eight that are
+     * absent are absent for four different reasons and all of them matter:
      *
      * <ul>
      *   <li>{@code DRAFT}, {@code SUBMITTED}, {@code CHANGES_REQUESTED} and
      *       {@code APPROVED} are work in progress. Listing one publishes what
      *       somebody is preparing, and in the case of {@code SUBMITTED} it would
      *       also publish the length of the moderation queue.
+     *   <li>{@code PRELAUNCH} was reached from a draft without moderation (#626).
+     *       Showing it published a campaign nobody had reviewed, so it is hidden
+     *       everywhere, and nothing enters it any more.
      *   <li>{@code SCHEDULED} is cleared and dated but not announced. The
      *       creator decides when a launch date becomes public.
      *   <li>{@code REJECTED} and {@code SUSPENDED} are moderation outcomes. A
@@ -91,40 +94,33 @@ public enum DiscoveryStatus {
      * {@code PublicProjects} answer for as well.
      */
     public static final Set<String> PUBLIC_STATES = Set.of(
-            "PRELAUNCH", "LIVE", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "FULFILLING", "COMPLETED",
+            "LIVE", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "FULFILLING", "COMPLETED",
             // IDN-EXT-01 (#32): still taking pledges, and closed by withdrawal.
             "CLOSING_WINDOW", "EXTENDED", "WITHDRAWN");
 
     /**
      * The states the catalogue and search list a campaign in — IDN-EXT-01 (#37).
      *
-     * <p>{@link #PUBLIC_STATES} without {@code UNSUCCESSFUL} and {@code PRELAUNCH}. A campaign
-     * that ended without succeeding is hidden from browsing and from search <em>only</em>: its
-     * page, its rewards and its updates still resolve by link and from a backer's account, which
-     * is why {@code PUBLIC_STATES} keeps it. Every read in this module that returns, suggests or
+     * <p>{@link #PUBLIC_STATES} without {@code UNSUCCESSFUL}. A campaign that ended without
+     * succeeding is hidden from browsing and from search <em>only</em>: its page, its rewards
+     * and its updates still resolve by link and from a backer's account, which is why
+     * {@code PUBLIC_STATES} keeps it. Every read in this module that returns, suggests or
      * counts campaigns applies this set, before any caller filter.
-     *
-     * <p><strong>{@code PRELAUNCH} is out because nobody has reviewed it.</strong> A creator
-     * reaches it from {@code DRAFT} in one click, before submitting, so a catalogue that listed
-     * it published whatever a draft said, under the platform's name and among the live
-     * campaigns. The catalogue lists only what moderation has cleared. The teaser page itself
-     * stays public by link, which is what the creator shares; that is why
-     * {@code PUBLIC_STATES} keeps it. The {@code upcoming} filter word went with it, since it
-     * named only this state.
      */
     public static final Set<String> LISTED_STATES = PUBLIC_STATES.stream()
-            .filter(state -> !"UNSUCCESSFUL".equals(state) && !"PRELAUNCH".equals(state))
+            .filter(state -> !"UNSUCCESSFUL".equals(state))
             .collect(Collectors.toUnmodifiableSet());
 
     /**
-     * The seven that must never be returned by anything in this module.
+     * The eight that must never be returned by anything in this module.
      *
      * <p>Stated as its own set rather than derived, so that the test which checks
      * the partition is checking two independent statements against §6.1 rather than
      * one statement against itself.
      */
     public static final Set<String> HIDDEN_STATES = Set.of(
-            "DRAFT", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "SUSPENDED");
+            "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED",
+            "SUSPENDED");
 
     /**
      * Which grouping a card's badge shows, for a state that is in more than one.

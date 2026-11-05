@@ -12,7 +12,7 @@ import type { ProjectState } from '../projects/api';
  * The table below is derived from `docs/architecture.md` §6.1 — the seventeen
  * project states — and from §4.3, which says which of them discovery may return.
  * The service states the same split independently in
- * `az.ideanest.discovery.domain.DiscoveryStatus`: ten `PUBLIC_STATES` and seven
+ * `az.ideanest.discovery.domain.DiscoveryStatus`: nine `PUBLIC_STATES` and eight
  * `HIDDEN_STATES`. Nothing here is guessed, and nothing here is a copy of the
  * transition table; it is a copy of the visibility rule only.
  *
@@ -37,10 +37,13 @@ export type Indexability =
  * of the seventeen names, in `lib/projects/api.ts`.
  */
 export const PROJECT_STATE_INDEXABILITY: Readonly<Record<ProjectState, Indexability>> = {
-  /* The seven discovery never returns under any filter or sort (§4.3). The
+  /* The eight discovery never returns under any filter or sort (§4.3). The
    * public project page does not exist for them, so an indexed URL would be a
-   * 404 at best and somebody's unfinished work at worst. */
+   * 404 at best and somebody's unfinished work at worst. PRELAUNCH is among
+   * them: a creator reached it from a draft without moderation, so it is hidden
+   * like the draft it was. */
   DRAFT: 'NOT_PUBLIC',
+  PRELAUNCH: 'NOT_PUBLIC',
   SUBMITTED: 'NOT_PUBLIC',
   CHANGES_REQUESTED: 'NOT_PUBLIC',
   REJECTED: 'NOT_PUBLIC',
@@ -50,20 +53,11 @@ export const PROJECT_STATE_INDEXABILITY: Readonly<Record<ProjectState, Indexabil
 
   /* Public, and deliberately not indexed.
    *
-   * PRELAUNCH is a teaser. `GET /v1/projects/{id}/prelaunch` is `permitAll`, so
-   * it is not a secret, though discovery does not list it — but the campaign
-   * has taken the `DRAFT → PRELAUNCH` edge without passing moderation (§6.1),
-   * the page carries a title, a cover and a follower count and nothing else
-   * (§10.2), and it lives at an id-based URL that stops existing the moment the
-   * campaign opens. Indexing an unmoderated, short-lived page is how §5.4's
-   * prohibited content becomes a search result.
-   *
    * CANCELED is a campaign the creator withdrew. Its page stays reachable for
    * the backers who have the link — §4.3 keeps it publicly visible on purpose —
    * but it belongs to no discovery grouping and there is nothing left to back.
    * A permanent search result for a withdrawn campaign is a dead end that
    * outranks the live campaigns beside it. */
-  PRELAUNCH: 'PUBLIC_NOT_INDEXABLE',
   CANCELED: 'PUBLIC_NOT_INDEXABLE',
 
   /* Public, moderated, and stable. The canonical project page of §4.4 exists
@@ -86,7 +80,7 @@ function statesWith(answer: Indexability): readonly ProjectState[] {
   );
 }
 
-/** The seven states that must never appear on any public surface (§4.3). */
+/** The eight states that must never appear on any public surface (§4.3). */
 export const HIDDEN_PROJECT_STATES: readonly ProjectState[] = statesWith('NOT_PUBLIC');
 
 /** The states whose project page belongs in the sitemap. */

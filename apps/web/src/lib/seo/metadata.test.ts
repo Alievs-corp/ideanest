@@ -442,7 +442,8 @@ describe('projectSocialDescription', () => {
 describe('isPubliclyVisible', () => {
   /** Every state with a surface a visitor holding no session can reach. */
   const PUBLIC: readonly ProjectState[] = [
-    'PRELAUNCH',
+    // The pre-launch page, public once moderation has cleared the campaign.
+    'APPROVED',
     'SCHEDULED',
     'LIVE',
     'CLOSING_WINDOW',
@@ -459,7 +460,8 @@ describe('isPubliclyVisible', () => {
     'SUBMITTED',
     'CHANGES_REQUESTED',
     'REJECTED',
-    'APPROVED',
+    // Reached from a draft without moderation, so hidden like one.
+    'PRELAUNCH',
     'SUSPENDED',
     'CANCELED',
   ];
@@ -535,7 +537,7 @@ describe('projectPageMetadata', () => {
       {
         id: '0193f2a1',
         slug: 'quba-kilims',
-        state: 'PRELAUNCH',
+        state: 'SCHEDULED',
         title: 'Quba kilims',
         blurb: 'Handwoven rugs, dyed with plants.',
         coverImage: null,
@@ -569,7 +571,7 @@ describe('projectPageMetadata', () => {
       {
         id: '0193f2a1',
         slug: 'quba-kilims',
-        state: 'PRELAUNCH',
+        state: 'SCHEDULED',
         title: 'Quba kilims',
         blurb: null,
         coverImage: null,

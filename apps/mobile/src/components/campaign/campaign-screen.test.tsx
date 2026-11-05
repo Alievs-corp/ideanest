@@ -190,11 +190,6 @@ interface Expectation {
 
 const CASES: readonly [string, ProjectPage, Expectation][] = [
   [
-    'PRELAUNCH',
-    page('PRELAUNCH'),
-    { tag: C.state.PRELAUNCH, chip: null, back: false, countdown: false, remind: true, trust: 'open', outcome: null },
-  ],
-  [
     'LIVE with three days left',
     page('LIVE'),
     { tag: C.state.LIVE, chip: null, back: true, countdown: true, remind: false, trust: 'open', outcome: null },
@@ -636,8 +631,9 @@ describe('when the page is not a page', () => {
     expect(mockRouter.replace).toHaveBeenCalledWith('/discover');
   });
 
-  it('shows not-found for a state without a public page', async () => {
-    routes.page = () => json(page('DRAFT'));
+  // PRELAUNCH is reached from a draft without moderation, so it is hidden like one.
+  it.each(['DRAFT', 'PRELAUNCH'] as const)('shows not-found for %s, which has no public page', async (state) => {
+    routes.page = () => json(page(state));
     await show();
     expect(screen.getByTestId('campaign-not-found')).toBeTruthy();
     // Nothing else is asked about a campaign that is not public.
@@ -664,18 +660,15 @@ describe('when the page is not a page', () => {
     expect(screen.queryByTestId('campaign-screen')).toBeNull();
   });
 
-  it('shows the cached page offline with the notice, and disables Save and Remind with the reason', async () => {
+  it('shows the cached page offline with the notice, and disables Save with the reason', async () => {
     routes.page = () => Promise.reject(new TypeError('Network request failed'));
     await act(async () => setOnline(false));
-    await show({ cached: page('PRELAUNCH') });
+    await show({ cached: page('LIVE') });
     expect(screen.getByTestId('campaign-stale')).toBeTruthy();
     expect(screen.getByText(en.mobile.campaign.stale)).toBeTruthy();
 
     const save = screen.getByTestId('action-save');
     expect(save.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
-    expect(screen.getByTestId('action-remind').props.accessibilityState).toEqual(
-      expect.objectContaining({ disabled: true }),
-    );
     expect(textOf(screen.getByTestId('actions-notice'))).toBe(en.mobile.campaign.actionsOffline);
   });
 });

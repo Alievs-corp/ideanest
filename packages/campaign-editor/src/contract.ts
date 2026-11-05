@@ -376,7 +376,7 @@ export interface StoryVersionDetail extends StoryVersionSummary {
 export interface PrelaunchPage {
   id: string;
   slug: string;
-  /** `PRELAUNCH` or `SCHEDULED`; the endpoint 404s for every other state. */
+  /** `APPROVED` or `SCHEDULED`: cleared and not yet live. The endpoint 404s for every other state. */
   state: ProjectState;
   title: string;
   blurb?: string | null;

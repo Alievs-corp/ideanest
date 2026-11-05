@@ -158,7 +158,7 @@ describe('the campaigns on an account', () => {
     expect(actions.getByRole('link', { name: COPY.dashboard })).toBeInTheDocument();
   });
 
-  it('offers no dashboard before launch: drafts and pre-launch pages keep one link', async () => {
+  it('offers no dashboard before launch, and sends an unmoderated pre-launch campaign to the editor', async () => {
     listMock.mockResolvedValue({
       items: [card('draft-id', 'Unfinished thing', 'DRAFT'), card('soon-id', 'Coming thing', 'PRELAUNCH')],
       nextCursor: null,
@@ -167,9 +167,11 @@ describe('the campaigns on an account', () => {
     render(<MyCampaignsPanel copy={COPY} />);
 
     await waitFor(() => expect(screen.getByRole('link', { name: /Unfinished thing/u })).toBeInTheDocument());
+    // Opened from a draft without moderation, it has no public page any more: the editor is the
+    // only address that exists.
     expect(screen.getByRole('link', { name: /Coming thing/u })).toHaveAttribute(
       'href',
-      expect.stringContaining('/projects/aysel/slug-soon-id'),
+      expect.stringContaining('/projects/soon-id/edit/basics'),
     );
     expect(screen.queryByRole('link', { name: COPY.dashboard })).not.toBeInTheDocument();
   });

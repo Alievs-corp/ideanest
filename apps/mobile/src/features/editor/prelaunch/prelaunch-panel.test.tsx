@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AccessibilityInfo, Share } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -15,9 +15,13 @@ import { EditorProvider } from '../editor-context';
 import { COPIED_MS, PrelaunchPanel } from './prelaunch-panel';
 
 /**
- * The Pre-launch tab (#162): the three states of the page, the opening (confirmed, after the
- * autosave has settled), the follower count from the public read, the link's Copy and Share, the
- * shared autosave for title and summary, offline, and the accessible names.
+ * The Pre-launch tab (#162): the three states of the page — waiting for approval, open, closed —
+ * the follower count from the public read, the link's Copy and Share, the shared autosave for title
+ * and summary, offline, and the accessible names.
+ *
+ * The page is public only once moderation has approved the campaign. A creator used to open it
+ * from a draft, which published a campaign nobody had reviewed, so before approval the tab offers
+ * nothing to open and reads nothing from the public endpoint.
  */
 
 jest.mock('../../../lib/use-session', () => ({
@@ -25,9 +29,14 @@ jest.mock('../../../lib/use-session', () => ({
 }));
 let mockProject: () => Promise<unknown> = async () => ({});
 let mockPage: () => Promise<unknown> = async () => ({});
+let mockPageReads = 0;
 jest.mock('../../../api/client', () => ({
   api: () => ({
-    get: (path: string) => (path === '/v1/projects/{id}/prelaunch' ? mockPage() : mockProject()),
+    get: (path: string) => {
+      if (path !== '/v1/projects/{id}/prelaunch') return mockProject();
+      mockPageReads += 1;
+      return mockPage();
+    },
   }),
   sendJson: (...args: unknown[]) => mockSend(...args),
   traceIdOfError: () => null,
@@ -89,14 +98,13 @@ async function show({ cached }: { cached?: ProjectEdit } = {}) {
   return client;
 }
 
-const calls = () => mockSend.mock.calls.map((call) => `${String(call[0])} ${String(call[1])}`);
-
 beforeEach(() => {
   jest.clearAllMocks();
   mockSend.mockReset();
   mockSend.mockImplementation(async () => project());
   mockProject = async () => project();
   mockPage = async () => ({ followerCount: 12 });
+  mockPageReads = 0;
   setOnline(true);
   jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
   jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions').mockImplementation(() => {});
@@ -110,81 +118,33 @@ describe('PrelaunchPanel', () => {
     expect(screen.getByTestId('prelaunch-loading').props.accessibilityLabel).toBe(words.loadingLabel);
   });
 
-  it('explains a draft page and does not open it without a confirmation', async () => {
-    await show();
-    expect(screen.getByText(words.notOpenHeading)).toBeTruthy();
-    expect(screen.getByText(words.notOpenBody)).toBeTruthy();
-    expect(screen.getByText(words.notOpenIrreversible)).toBeTruthy();
+  it.each(['DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED'] as const)(
+    'says the page of a %s campaign opens after approval, and offers nothing to open',
+    async (state) => {
+      mockProject = async () => project({ state });
+      await show();
+      expect(screen.getByTestId('prelaunch-pending')).toBeTruthy();
+      expect(screen.getByText(words.pendingHeading)).toBeTruthy();
+      expect(screen.getByText(words.pendingBody)).toBeTruthy();
+      // No control, no link to a page that would 404, and no read of a page that is not public.
+      expect(screen.queryByTestId('prelaunch-open')).toBeNull();
+      expect(screen.queryByTestId('prelaunch-open-card')).toBeNull();
+      expect(mockPageReads).toBe(0);
+    },
+  );
 
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    expect(screen.getByText(words.confirmTitle)).toBeTruthy();
-    expect(screen.getByText(words.confirmDetail)).toBeTruthy();
-    expect(calls()).toEqual([]);
-
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-cancel'));
-    await settle();
-    expect(calls()).toEqual([]);
-  });
-
-  it('sends what was typed first, then opens the page, and shows it open', async () => {
-    mockSend.mockImplementation(async (_method: string, path: string, body?: { title?: string }) =>
-      path.endsWith('/prelaunch') ? project({ state: 'PRELAUNCH', title: 'Solar Lamp Mini' }) : project(body),
-    );
-    await show();
-    await fireEvent.changeText(screen.getByTestId('prelaunch-title'), 'Solar Lamp Mini');
-
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-
-    expect(calls()).toEqual(['PATCH /v1/projects/p1', 'POST /v1/projects/p1/prelaunch']);
-    expect(mockSend.mock.calls[0]?.[2]).toEqual({ title: 'Solar Lamp Mini' });
-    expect(screen.getByText(words.openHeading)).toBeTruthy();
-    expect(screen.queryByTestId('prelaunch-draft')).toBeNull();
-    expect(screen.getByTestId('prelaunch-waiting')).toHaveTextContent('12 people are waiting for this campaign.');
-  });
-
-  it('does not open the page over a change the server refused', async () => {
-    mockSend.mockImplementation(async (method: string) => {
-      if (method === 'PATCH') throw new ApiError(422, { status: 422, detail: 'That title is taken.' });
-      return project({ state: 'PRELAUNCH' });
-    });
-    await show();
-    await fireEvent.changeText(screen.getByTestId('prelaunch-title'), 'Taken');
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-
-    expect(calls()).toEqual(['PATCH /v1/projects/p1']);
-    expect(screen.getByTestId('prelaunch-not-saved')).toBeTruthy();
-    expect(screen.getByTestId('prelaunch-open-failed')).toHaveTextContent('That title is taken.', { exact: false });
-  });
-
-  it('says so in the draft card when opening is refused', async () => {
-    mockSend.mockImplementation(async () => {
-      throw new ApiError(409, { status: 409, detail: 'The campaign has moved on.' });
-    });
-    await show();
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-
-    expect(screen.getByText(words.openFailedTitle)).toBeTruthy();
-    expect(screen.getByText('The campaign has moved on.')).toBeTruthy();
-    expect(screen.getByTestId('prelaunch-open')).toBeTruthy();
-  });
-
-  it('counts the people waiting on an open page, and the link is the site address', async () => {
-    mockProject = async () => project({ state: 'PRELAUNCH' });
-    mockPage = async () => ({ followerCount: 1 });
-    await show();
-    expect(screen.getByTestId('prelaunch-waiting')).toHaveTextContent('1 person is waiting for this campaign.');
-    expect(screen.getByTestId('prelaunch-link')).toHaveTextContent(LINK);
-  });
+  it.each(['APPROVED', 'SCHEDULED'] as const)(
+    'counts the people waiting on the page of a %s campaign, and the link is the site address',
+    async (state) => {
+      mockProject = async () => project({ state });
+      mockPage = async () => ({ followerCount: 1 });
+      await show();
+      expect(screen.getByText(words.openHeading)).toBeTruthy();
+      expect(screen.getByTestId('prelaunch-waiting')).toHaveTextContent('1 person is waiting for this campaign.');
+      expect(screen.getByTestId('prelaunch-link')).toHaveTextContent(LINK);
+      expect(screen.queryByTestId('prelaunch-pending')).toBeNull();
+    },
+  );
 
   it('says the count could not be loaded rather than drawing a zero', async () => {
     mockProject = async () => project({ state: 'SCHEDULED' });
@@ -197,7 +157,7 @@ describe('PrelaunchPanel', () => {
   });
 
   it('copies the link, says "Copied" for a moment and announces it', async () => {
-    mockProject = async () => project({ state: 'PRELAUNCH' });
+    mockProject = async () => project({ state: 'APPROVED' });
     await show();
     const copy = screen.getByTestId('prelaunch-copy');
     expect(copy.props.accessibilityLabel).toBe(mobile.copyLabel);
@@ -226,7 +186,7 @@ describe('PrelaunchPanel', () => {
   });
 
   it('tells the creator when the clipboard refused the link', async () => {
-    mockProject = async () => project({ state: 'PRELAUNCH' });
+    mockProject = async () => project({ state: 'APPROVED' });
     jest.mocked(Clipboard.setStringAsync).mockResolvedValueOnce(false);
     await show();
     await fireEvent.press(screen.getByTestId('prelaunch-copy'));
@@ -235,7 +195,7 @@ describe('PrelaunchPanel', () => {
   });
 
   it('opens the share sheet with the same address', async () => {
-    mockProject = async () => project({ state: 'PRELAUNCH' });
+    mockProject = async () => project({ state: 'APPROVED' });
     const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
     await show();
     expect(screen.getByTestId('prelaunch-share').props.accessibilityLabel).toBe(mobile.shareLabel);
@@ -245,12 +205,13 @@ describe('PrelaunchPanel', () => {
     expect(JSON.stringify(share.mock.calls[0]?.[0])).toContain(LINK);
   });
 
-  it('says the page has closed once the campaign has moved past it', async () => {
-    mockProject = async () => project({ state: 'LIVE' });
+  it.each(['LIVE', 'REJECTED'] as const)('says the page has closed for a %s campaign', async (state) => {
+    mockProject = async () => project({ state });
     await show();
     expect(screen.getByTestId('prelaunch-closed')).toBeTruthy();
     expect(screen.getByText(words.closedTitle)).toBeTruthy();
-    expect(screen.queryByTestId('prelaunch-open')).toBeNull();
+    expect(screen.queryByTestId('prelaunch-pending')).toBeNull();
+    expect(screen.queryByTestId('prelaunch-open-card')).toBeNull();
   });
 
   it('edits the title and summary on the shared autosave, one field per patch', async () => {
@@ -261,12 +222,11 @@ describe('PrelaunchPanel', () => {
     expect(mockSend.mock.calls.map((call) => call[2])).toEqual([{ blurb: 'A small lamp.' }]);
   });
 
-  it('is read-only offline: no field, no opening', async () => {
+  it('is read-only offline', async () => {
     await show();
     await act(async () => setOnline(false));
     await settle();
     expect(screen.getByTestId('prelaunch-title').props.editable).toBe(false);
-    expect(screen.getByTestId('prelaunch-open').props.accessibilityState).toMatchObject({ disabled: true });
   });
 
   it('online, never builds the form from a cached copy: it waits for the service', async () => {
@@ -292,36 +252,6 @@ describe('PrelaunchPanel', () => {
     expect(screen.getByTestId('prelaunch-summary').props.value).toBe('Changed elsewhere');
   });
 
-  it('will not open while a field the phone refused would leave older text published', async () => {
-    mockSend.mockImplementation(async (_method: string, path: string) =>
-      path.endsWith('/prelaunch') ? project({ state: 'PRELAUNCH' }) : project(),
-    );
-    await show();
-    // An empty title is refused here and never sent: the server still holds "Solar Lamp".
-    await fireEvent.changeText(screen.getByTestId('prelaunch-title'), '');
-    await fireEvent(screen.getByTestId('prelaunch-title'), 'blur');
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-
-    expect(screen.getByTestId('prelaunch-fix-first')).toHaveTextContent(mobile.fixFirst);
-    expect(screen.getByTestId('prelaunch-confirm-open').props.accessibilityState).toMatchObject({ disabled: true });
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-    expect(calls()).toEqual([]);
-
-    // Fixed and saved: the page may open.
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-cancel'));
-    await fireEvent.changeText(screen.getByTestId('prelaunch-title'), 'Solar Lamp Mini');
-    await fireEvent(screen.getByTestId('prelaunch-title'), 'blur');
-    await settle();
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    expect(screen.queryByTestId('prelaunch-fix-first')).toBeNull();
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-    expect(calls()).toEqual(['PATCH /v1/projects/p1', 'POST /v1/projects/p1/prelaunch']);
-  });
-
   it('re-seeds from a newer read but keeps a field that exists only on this phone', async () => {
     const client = await show();
     await fireEvent.changeText(screen.getByTestId('prelaunch-title'), '');
@@ -334,93 +264,6 @@ describe('PrelaunchPanel', () => {
     expect(screen.getByTestId('prelaunch-summary').props.value).toBe('Changed elsewhere');
   });
 
-  it('sends a change that failed earlier again, and opens once it lands', async () => {
-    let failNext = true;
-    mockSend.mockImplementation(async (method: string, path: string, body?: Partial<ProjectEdit>) => {
-      if (method === 'PATCH' && failNext) {
-        failNext = false;
-        throw new TypeError('Network request failed');
-      }
-      return path.endsWith('/prelaunch') ? project({ state: 'PRELAUNCH' }) : project(body);
-    });
-    await show();
-    await fireEvent.changeText(screen.getByTestId('prelaunch-summary'), 'A small lamp.');
-    await fireEvent(screen.getByTestId('prelaunch-summary'), 'blur');
-    await settle();
-    expect(screen.getByTestId('prelaunch-not-saved')).toBeTruthy();
-
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-    expect(calls()).toEqual(['PATCH /v1/projects/p1', 'PATCH /v1/projects/p1', 'POST /v1/projects/p1/prelaunch']);
-    expect(screen.getByTestId('prelaunch-open-card')).toBeTruthy();
-  });
-
-  it('clears "not opened" once the change that stopped it is saved', async () => {
-    let fail = true;
-    mockSend.mockImplementation(async (_method: string, _path: string, body?: Partial<ProjectEdit>) => {
-      if (fail) throw new ApiError(500, { status: 500, detail: 'Try later.' });
-      return project(body);
-    });
-    await show();
-    await fireEvent.changeText(screen.getByTestId('prelaunch-summary'), 'A small lamp.');
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-    expect(screen.getByTestId('prelaunch-open-failed')).toBeTruthy();
-
-    fail = false;
-    await fireEvent.press(screen.getByTestId('prelaunch-retry'));
-    await settle();
-    expect(screen.queryByTestId('prelaunch-open-failed')).toBeNull();
-    expect(screen.queryByTestId('prelaunch-not-saved')).toBeNull();
-  });
-
-  it('lets Cancel stop waiting for an answer, and still shows the page open if it arrives', async () => {
-    let answer: (value: ProjectEdit) => void = () => {};
-    mockSend.mockImplementation(() => new Promise((resolve) => (answer = resolve)));
-    await show();
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-    expect(screen.getByTestId('prelaunch-confirm-open').props.accessibilityState).toMatchObject({ busy: true });
-
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-cancel'));
-    await settle();
-    expect(screen.queryByText(words.confirmTitle)).toBeNull();
-    expect(screen.getByTestId('prelaunch-open').props.accessibilityState).toMatchObject({ disabled: false });
-
-    await act(async () => answer(project({ state: 'PRELAUNCH' })));
-    await settle();
-    expect(screen.getByTestId('prelaunch-open-card')).toBeTruthy();
-  });
-
-  it('moves focus to the open card and says so once the page has opened', async () => {
-    mockSend.mockImplementation(async () => project({ state: 'PRELAUNCH' }));
-    await show();
-    await fireEvent.press(screen.getByTestId('prelaunch-open'));
-    await settle();
-    jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mockClear();
-    await fireEvent.press(screen.getByTestId('prelaunch-confirm-open'));
-    await settle();
-    const focusedIds = () =>
-      jest
-        .mocked(AccessibilityInfo.sendAccessibilityEvent)
-        .mock.calls.filter((call) => call[1] === 'focus')
-        .map((call) => (call[0] as { props?: { testID?: unknown } } | null)?.props?.testID);
-    // After the dialog has gone (its exit, then the focus delay), focus lands on the open card.
-    await waitFor(() => expect(focusedIds()).toContain('prelaunch-open-heading'), { timeout: 3000 });
-    expect(focusedIds()).not.toContain('prelaunch-open');
-    const said = [
-      ...jest.mocked(AccessibilityInfo.announceForAccessibilityWithOptions).mock.calls.map((call) => call[0]),
-      ...jest.mocked(AccessibilityInfo.announceForAccessibility).mock.calls.map((call) => call[0]),
-    ];
-    expect(said).toContain(words.openHeading);
-  });
-
   it('says the count could not be loaded offline instead of a skeleton that never ends', async () => {
     setOnline(false);
     mockProject = async () => {
@@ -429,7 +272,7 @@ describe('PrelaunchPanel', () => {
     mockPage = async () => {
       throw new TypeError('Network request failed');
     };
-    await show({ cached: project({ state: 'PRELAUNCH' }) });
+    await show({ cached: project({ state: 'SCHEDULED' }) });
     expect(screen.getByTestId('prelaunch-followers-failed')).toHaveTextContent(words.followersFailed);
   });
 });

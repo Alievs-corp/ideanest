@@ -52,10 +52,10 @@ describe('the state table', () => {
     }
   });
 
-  it('marks the seven states discovery never returns as not public', () => {
+  it('marks the eight states discovery never returns as not public', () => {
     // The service states the same set independently — DiscoveryStatus.HIDDEN_STATES.
     expect([...HIDDEN_PROJECT_STATES].sort()).toEqual(
-      ['APPROVED', 'CHANGES_REQUESTED', 'DRAFT', 'REJECTED', 'SCHEDULED', 'SUBMITTED', 'SUSPENDED'],
+      ['APPROVED', 'CHANGES_REQUESTED', 'DRAFT', 'PRELAUNCH', 'REJECTED', 'SCHEDULED', 'SUBMITTED', 'SUSPENDED'],
     );
 
     for (const state of HIDDEN_PROJECT_STATES) {
@@ -91,8 +91,8 @@ describe('isIndexableProjectState', () => {
     expect(isIndexableProjectState('CANCELED')).toBe(false);
   });
 
-  it('refuses a pre-launch campaign, which is a teaser and has not been moderated', () => {
-    expect(projectStateIndexability('PRELAUNCH')).toBe('PUBLIC_NOT_INDEXABLE');
+  it('hides a pre-launch campaign, which a creator opened from a draft without moderation', () => {
+    expect(projectStateIndexability('PRELAUNCH')).toBe('NOT_PUBLIC');
     expect(isIndexableProjectState('PRELAUNCH')).toBe(false);
   });
 

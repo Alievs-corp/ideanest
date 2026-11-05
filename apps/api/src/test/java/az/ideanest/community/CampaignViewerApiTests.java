@@ -2,13 +2,11 @@ package az.ideanest.community;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.Pledges;
 import az.ideanest.user.infrastructure.UserRepository;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,9 +54,6 @@ class CampaignViewerApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private UserRepository users;
-
-    @Autowired
-    private CategoryRepository categories;
 
     @Autowired
     private DataSource dataSource;
@@ -134,11 +129,14 @@ class CampaignViewerApiTests extends AbstractIntegrationTest {
     void remindedFollowsTheWrites() {
         Account creator = account("remind-creator");
         Account reader = account("remind-reader");
-        UUID project = prelaunching(creator);
+        UUID project = approved(creator);
 
         ResponseEntity<Map<String, Object>> registered =
                 exchange("/v1/projects/" + project + "/remind", HttpMethod.POST, reader.accessToken(), null);
         assertThat(registered.getStatusCode()).isEqualTo(HttpStatus.OK);
+        // The viewer belongs to the public campaign page, which an approved campaign does not
+        // have yet; the reminder is read back once it has opened.
+        Campaigns.launch(dataSource, project);
         assertThat(viewer(project, reader).getBody()).containsEntry("reminded", true);
 
         exchange("/v1/projects/" + project + "/remind", HttpMethod.DELETE, reader.accessToken(), null);
@@ -156,9 +154,10 @@ class CampaignViewerApiTests extends AbstractIntegrationTest {
     void anAddressReminderIsNotTheAccounts() {
         Account creator = account("address-creator");
         Account reader = account("address-reader");
-        UUID project = prelaunching(creator);
+        UUID project = approved(creator);
 
         exchange("/v1/projects/" + project + "/remind", HttpMethod.POST, null, Map.of("email", reader.email()));
+        Campaigns.launch(dataSource, project);
 
         assertThat(viewer(project, reader).getBody()).containsEntry("reminded", false);
     }
@@ -290,18 +289,15 @@ class CampaignViewerApiTests extends AbstractIntegrationTest {
         return project;
     }
 
-    /** A campaign with an open pre-launch page, reached the way a creator reaches it. */
-    private UUID prelaunching(Account creator) {
+    /**
+     * A campaign moderation has approved and that has not opened, which is where a
+     * pre-launch page collects reminders since #626. Set directly: the route there is
+     * submission and approval, which {@code PrelaunchApiTests} walks, and this suite is
+     * about what the viewer reports, not how a campaign gets approved.
+     */
+    private UUID approved(Account creator) {
         UUID project = draft(creator);
-        exchange(
-                "/v1/projects/" + project,
-                HttpMethod.PATCH,
-                creator.accessToken(),
-                new LinkedHashMap<>(Campaigns.completeBasics(categories)));
-
-        ResponseEntity<Map<String, Object>> opened =
-                exchange("/v1/projects/" + project + "/prelaunch", HttpMethod.POST, creator.accessToken(), null);
-        assertThat(opened.getBody()).containsEntry("state", "PRELAUNCH");
+        new JdbcTemplate(dataSource).update("UPDATE projects SET state = 'APPROVED' WHERE id = ?", project);
         return project;
     }
 

@@ -881,7 +881,7 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
                         // What the client can offer instead, so it does not have to
                         // reload and guess which of its buttons still works.
                         "allowed",
-                        List.of("PRELAUNCH", "SUBMITTED")));
+                        List.of("SUBMITTED")));
 
         // Nothing happened. A refused transition must not leave a state change or an
         // audit row behind.
