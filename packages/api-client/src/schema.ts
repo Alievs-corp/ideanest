@@ -3597,7 +3597,7 @@ export interface paths {
         };
         get: operations["prelaunchPage"];
         put?: never;
-        post: operations["projectOpenPrelaunch"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -14707,28 +14707,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PrelaunchPageResponse"];
-                };
-            };
-        };
-    };
-    projectOpenPrelaunch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectEdit"];
                 };
             };
         };

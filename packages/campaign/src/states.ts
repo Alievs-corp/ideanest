@@ -66,7 +66,8 @@ export type ProjectState =
  * not-found screen, distinct from a network failure (#155).
  */
 export const RENDERABLE_STATES: readonly ProjectState[] = [
-  'PRELAUNCH',
+  // Not PRELAUNCH: a creator reached it from a draft without moderation, so it has no public
+  // page any more — it is hidden like the draft it was.
   'LIVE',
   'CANCELED',
   'SUCCESSFUL',

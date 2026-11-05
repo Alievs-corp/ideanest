@@ -32,7 +32,8 @@ import { readProjectCardPage } from '../profiles/wire';
  * client at all.
  */
 const PUBLIC_STATES: ReadonlySet<string> = new Set([
-  'PRELAUNCH',
+  // Not PRELAUNCH: opened from a draft without moderation, it is hidden like a draft, so its
+  // row goes to the editor.
   'LIVE',
   'CANCELED',
   'SUCCESSFUL',
@@ -69,14 +70,10 @@ export function myCampaignHref(card: ProfileProjectCard): string {
 /**
  * The states in which a campaign has opened, and so has a dashboard worth opening — #141.
  *
- * <p>Every public state but `PRELAUNCH`, which has no backers, no money and no survey to
- * send yet, plus `SUSPENDED`: a campaign moderation paused still owes its backers, and its
- * creator needs the screens that say what is owed more than anyone.
+ * <p>Every public state, plus `SUSPENDED`: a campaign moderation paused still owes its
+ * backers, and its creator needs the screens that say what is owed more than anyone.
  */
-const LAUNCHED_STATES: ReadonlySet<string> = new Set([
-  ...[...PUBLIC_STATES].filter((state) => state !== 'PRELAUNCH'),
-  'SUSPENDED',
-]);
+const LAUNCHED_STATES: ReadonlySet<string> = new Set([...PUBLIC_STATES, 'SUSPENDED']);
 
 /** Whether a campaign in `state` has launched, and so gets a link to its dashboard. */
 export function hasLaunched(state: string): boolean {

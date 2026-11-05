@@ -302,15 +302,16 @@ public class SecurityConfiguration {
                         // it exists to collect have not registered — that is what
                         // makes it a pre-launch page rather than a second editor
                         // screen. What may be read is not decided here: the
-                        // handler serves it only for a campaign in PRELAUNCH or
-                        // SCHEDULED and answers 404 for everything else,
-                        // including a draft, so that this endpoint cannot be used
-                        // to enumerate what other people are preparing.
+                        // handler serves it only for a campaign moderation has
+                        // cleared and that has not opened — APPROVED or
+                        // SCHEDULED — and answers 404 for everything else,
+                        // including a draft and, since #626, PRELAUNCH, so that
+                        // this endpoint cannot be used to enumerate what other
+                        // people are preparing.
                         //
                         // GET and nothing else, deliberately, for the reason the
-                        // categories rule gives: POST on this exact path is the
-                        // creator's DRAFT -> PRELAUNCH transition, and it falls
-                        // through to the rule at the bottom.
+                        // categories rule gives: any other method on this path
+                        // falls through to the rule at the bottom.
                         .requestMatchers(HttpMethod.GET, "/v1/projects/*/prelaunch")
                         .permitAll()
                         // ---- #119: the public campaign page ---------------

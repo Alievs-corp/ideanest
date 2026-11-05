@@ -106,7 +106,10 @@ export interface CampaignPage {
   readonly subcategory: CampaignTaxon | null;
   readonly coverImage: { readonly url: string; readonly width: number; readonly height: number } | null;
   readonly video: CampaignPageVideo | null;
-  /** Absent on a pre-launch page — the one public state a campaign reaches before §5.3. */
+  /**
+   * Absent before §5.3 asks for one. No renderable state lacks it since PRELAUNCH stopped being
+   * public, but the page does not assume so.
+   */
   readonly goal: Money | null;
   readonly pledged: Money;
   readonly backersCount: number;

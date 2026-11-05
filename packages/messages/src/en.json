@@ -6164,11 +6164,8 @@
     "prelaunch": {
       "loadingLabel": "Loading this campaign",
       "notSavedTitle": "This change was not saved",
-      "notOpenHeading": "The pre-launch page is not open yet",
-      "notOpenBody": "Opening it publishes the title, summary, and cover image below at a link you can share, and lets people ask to be told the moment the campaign opens. Nothing else about the campaign becomes public, and no money is involved.",
-      "notOpenIrreversible": "It cannot be closed again — the campaign moves forward from here, to review and then to launch.",
-      "openFailedTitle": "The page was not opened",
-      "open": "Open the pre-launch page",
+      "pendingHeading": "The pre-launch page opens after approval",
+      "pendingBody": "Once moderation approves the campaign, this page goes public: people can follow it and are told when the campaign opens. Until then nobody else can see it.",
       "openHeading": "The pre-launch page is open",
       "followersFailed": "The number of people waiting could not be loaded.",
       "waiting": {
@@ -6189,13 +6186,7 @@
       "title": "Title",
       "titleHint": "The name on the pre-launch page and on the discovery grid. {max} characters or fewer.",
       "summary": "Summary",
-      "summaryHint": "One or two sentences. This is what somebody reads before deciding to follow. {max} characters or fewer.",
-      "confirmTitle": "Open the pre-launch page?",
-      "confirmBody": "The title, summary, and cover image become public at a link anyone can open. This cannot be undone.",
-      "cancel": "Cancel",
-      "opening": "Opening",
-      "confirmOpen": "Open the page",
-      "confirmDetail": "Nothing about your rewards, story, or funding goal is published, and the campaign does not take money until it is reviewed and launched."
+      "summaryHint": "One or two sentences. This is what somebody reads before deciding to follow. {max} characters or fewer."
     },
     "review": {
       "loadFailedTitle": "This campaign could not be loaded",
@@ -7684,8 +7675,7 @@
         "copyFailed": "The link could not be copied. Press and hold the link above to select it and copy it yourself.",
         "share": "Share",
         "shareLabel": "Share the pre-launch link",
-        "shareFailed": "The share sheet could not be opened. Try again.",
-        "fixFirst": "Fix the title, summary or cover first. The page would publish what was last saved, not what is on screen."
+        "shareFailed": "The share sheet could not be opened. Try again."
       }
     },
     "native": {

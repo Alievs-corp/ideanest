@@ -6164,11 +6164,8 @@
     "prelaunch": {
       "loadingLabel": "Kampaniya yüklənir",
       "notSavedTitle": "Dəyişiklik yadda saxlanılmadı",
-      "notOpenHeading": "Başlanğıcdan əvvəlki səhifə hələ açıq deyil",
-      "notOpenBody": "Onu açanda aşağıdakı başlıq, qısa təsvir və örtük şəkli paylaşa biləcəyiniz bir linkdə ictimai olur, insanlar isə kampaniya başlayanda xəbər verilməsini istəyə bilir. Kampaniya haqqında başqa heç nə açılmır və pulla bağlı deyil.",
-      "notOpenIrreversible": "Geri bağlamaq olmaz — kampaniya buradan yalnız irəli gedir: baxışa, sonra isə başlanğıca.",
-      "openFailedTitle": "Səhifə açılmadı",
-      "open": "Başlanğıcdan əvvəlki səhifəni aç",
+      "pendingHeading": "Başlanğıcdan əvvəlki səhifə təsdiqdən sonra açılır",
+      "pendingBody": "Moderasiya kampaniyanı təsdiqləyəndə bu səhifə ictimai olur: insanlar onu izləyə bilir və kampaniya açılanda xəbər alır. O vaxta qədər onu sizdən başqa heç kim görmür.",
       "openHeading": "Başlanğıcdan əvvəlki səhifə açıqdır",
       "followersFailed": "Gözləyənlərin sayını yükləmək olmadı.",
       "waiting": {
@@ -6189,13 +6186,7 @@
       "title": "Başlıq",
       "titleHint": "Başlanğıc səhifəsindəki və layihələr lentindəki ad. Ən çox {max} simvol.",
       "summary": "Qısa təsvir",
-      "summaryHint": "Bir-iki cümlə. İzləməyə qərar verməzdən əvvəl insan məhz bunu oxuyur. Ən çox {max} simvol.",
-      "confirmTitle": "Başlanğıcdan əvvəlki səhifə açılsın?",
-      "confirmBody": "Başlıq, qısa təsvir və örtük şəkli hər kəsin aça biləcəyi bir linkdə ictimai olur. Bunu geri qaytarmaq olmaz.",
-      "cancel": "Ləğv et",
-      "opening": "Açılır",
-      "confirmOpen": "Səhifəni aç",
-      "confirmDetail": "Mükafatlarınız, hekayəniz və maliyyə hədəfiniz haqqında heç nə dərc olunmur. Kampaniya yoxlanılıb başladılana qədər pul qəbul etmir."
+      "summaryHint": "Bir-iki cümlə. İzləməyə qərar verməzdən əvvəl insan məhz bunu oxuyur. Ən çox {max} simvol."
     },
     "review": {
       "loadFailedTitle": "Kampaniyanı yükləmək olmadı",
@@ -7684,8 +7675,7 @@
         "copyFailed": "Linki kopyalamaq alınmadı. Yuxarıdakı linkə basıb saxlayın, onu seçib özünüz kopyalayın.",
         "share": "Paylaş",
         "shareLabel": "Başlanğıcdan əvvəlki linki paylaş",
-        "shareFailed": "Paylaşma pəncərəsini açmaq alınmadı. Yenidən cəhd edin.",
-        "fixFirst": "Əvvəlcə başlığı, qısa təsviri və ya örtük şəklini düzəldin. Səhifə ekrandakını deyil, son saxlanılanı dərc edərdi."
+        "shareFailed": "Paylaşma pəncərəsini açmaq alınmadı. Yenidən cəhd edin."
       }
     },
     "native": {

@@ -48,7 +48,7 @@ class DiscoveryStatusTests {
     }
 
     @Test
-    @DisplayName("the seven states a campaign may never be listed in are exactly these")
+    @DisplayName("the eight states a campaign may never be listed in are exactly these")
     void theHiddenStatesAreNamedOutLoud() {
         // Written as a literal rather than derived, so that moving a state from one
         // side to the other has to be done here, deliberately, by somebody who read
@@ -57,7 +57,14 @@ class DiscoveryStatusTests {
         // endpoint has.
         assertThat(DiscoveryStatus.HIDDEN_STATES)
                 .containsExactlyInAnyOrder(
-                        "DRAFT", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "SUSPENDED");
+                        "DRAFT",
+                        "PRELAUNCH",
+                        "SUBMITTED",
+                        "CHANGES_REQUESTED",
+                        "REJECTED",
+                        "APPROVED",
+                        "SCHEDULED",
+                        "SUSPENDED");
     }
 
     @Test
@@ -68,17 +75,16 @@ class DiscoveryStatusTests {
         assertThat(DiscoveryStatus.LISTED_STATES).doesNotContain("UNSUCCESSFUL");
         Set<String> difference = new LinkedHashSet<>(DiscoveryStatus.PUBLIC_STATES);
         difference.removeAll(DiscoveryStatus.LISTED_STATES);
-        assertThat(difference).containsExactlyInAnyOrder("UNSUCCESSFUL", "PRELAUNCH");
+        assertThat(difference).containsExactly("UNSUCCESSFUL");
     }
 
     @Test
-    @DisplayName("a pre-launch teaser is public by link but never listed, because nobody has reviewed it")
-    void prelaunchIsPublicButNotListed() {
-        // DRAFT -> PRELAUNCH takes no moderation, so the catalogue lists only what a
-        // moderator has cleared and the teaser stays reachable by the link its creator
-        // shares.
-        assertThat(DiscoveryStatus.PUBLIC_STATES).contains("PRELAUNCH");
-        assertThat(DiscoveryStatus.LISTED_STATES).doesNotContain("PRELAUNCH");
+    @DisplayName("#626: a pre-launch campaign is hidden everywhere, because nobody has reviewed it")
+    void prelaunchIsHidden() {
+        // A creator reached PRELAUNCH from a draft without moderation, so the only
+        // campaigns the public sees are ones a moderator has cleared.
+        assertThat(DiscoveryStatus.HIDDEN_STATES).contains("PRELAUNCH");
+        assertThat(DiscoveryStatus.PUBLIC_STATES).doesNotContain("PRELAUNCH");
         assertThat(DiscoveryStatus.badgeFor("PRELAUNCH")).isEmpty();
     }
 

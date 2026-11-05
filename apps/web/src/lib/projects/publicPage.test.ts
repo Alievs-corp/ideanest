@@ -97,19 +97,16 @@ describe('readCampaignPage', () => {
     expect(readCampaignPage(response(overrides as Partial<ProjectPageResponse>), 'ayan', NOW)).toBeNull();
   });
 
-  it('renders a pre-launch campaign that has no goal yet', () => {
+  it('renders nothing for a pre-launch campaign, which nobody has reviewed', () => {
+    // A creator reached PRELAUNCH from a draft without moderation, so it is hidden like the
+    // draft it was — even if a response for one ever arrived.
     const page = readCampaignPage(
       response({ state: 'PRELAUNCH', goal: undefined, deadline: undefined }),
       'ayan',
       NOW,
     );
 
-    expect(page).not.toBeNull();
-    expect(page?.goal).toBeNull();
-    // A percentage of nothing is undefined rather than zero: "0% of goal" would tell a
-    // reader a campaign had raised none of a goal it has not set.
-    expect(page?.completionPercent).toBeNull();
-    expect(page?.daysLeft).toBeNull();
+    expect(page).toBeNull();
   });
 
   it('drops a cover image whose dimensions are missing', () => {
@@ -269,12 +266,12 @@ describe('the frozen outcome', () => {
  * campaign page.
  */
 describe('which states have a page and which may be described', () => {
-  it('differ on exactly CANCELED and SCHEDULED', () => {
+  it('differ on exactly CANCELED, and the two states of the pre-launch page', () => {
     const describable = PROJECT_STATES.filter((state) => isPubliclyVisible(state));
     const renderable = [...RENDERABLE_STATES];
 
     expect(renderable.filter((state) => !describable.includes(state))).toEqual(['CANCELED']);
-    expect(describable.filter((state) => !renderable.includes(state))).toEqual(['SCHEDULED']);
+    expect(describable.filter((state) => !renderable.includes(state))).toEqual(['APPROVED', 'SCHEDULED']);
   });
 });
 

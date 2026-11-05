@@ -288,10 +288,11 @@ export function projectSocialDescription(project: {
  * defaulted to decides whether the mistake is an unindexed campaign or a
  * published draft, and neither is a decision to leave to a fallthrough.
  *
- *   - `PRELAUNCH` and `SCHEDULED` are the pre-launch page, which is public by
- *     design — `GET /v1/projects/{id}/prelaunch` 404s for every other state.
- *   - `APPROVED` is not: a campaign that passed review but has not launched has
- *     no public address.
+ *   - `APPROVED` and `SCHEDULED` are the pre-launch page, which is public once
+ *     moderation has cleared the campaign — `GET /v1/projects/{id}/prelaunch`
+ *     404s for every other state.
+ *   - `PRELAUNCH` is not: a creator reached it from a draft without moderation,
+ *     so it is hidden like the draft it was.
  *   - `SUSPENDED` and `CANCELED` are not, even though a page may still answer
  *     for them. Neither should be presented as a campaign to back, and a social
  *     card is exactly that presentation.
@@ -303,11 +304,11 @@ export function projectSocialDescription(project: {
  */
 const PUBLICLY_VISIBLE: Record<ProjectState, boolean> = {
   DRAFT: false,
-  PRELAUNCH: true,
+  PRELAUNCH: false,
   SUBMITTED: false,
   CHANGES_REQUESTED: false,
   REJECTED: false,
-  APPROVED: false,
+  APPROVED: true,
   SCHEDULED: true,
   LIVE: true,
   CLOSING_WINDOW: true,

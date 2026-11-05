@@ -552,11 +552,12 @@ and each entry needs a translation per supported locale.
 > `LISTED_STATES`, which every feed, search, suggestion, facet, explanation and collection
 > read applies. The description of the five words above is the pre-IDN-EXT-01 design.
 >
-> **Only moderated campaigns are listed.** `PRELAUNCH` is reached from `DRAFT` without
-> moderation, so it is not in `LISTED_STATES` either: a pre-launch teaser is public by the
-> link its creator shares and never appears in the catalogue, search, suggestions, facets,
-> collections or the sitemap. *Upcoming*, which named `PRELAUNCH` alone, is no longer a
-> filter value or a badge, and `?status=upcoming` is refused like any unknown word.
+> **Only moderated campaigns are public (#626).** `PRELAUNCH` was reached from `DRAFT`
+> without moderation, so it is in neither `PUBLIC_STATES` nor `LISTED_STATES`: no feed,
+> search, suggestion, facet, collection, sitemap, campaign page or profile list shows it.
+> *Upcoming*, which named `PRELAUNCH` alone, is no longer a filter value or a badge, and
+> `?status=upcoming` is refused like any unknown word. The pre-launch page now opens on
+> approval — see §6.1.
 >
 > **Bands are closed below and open above** — `[lower, upper)` — so that the five
 > partition the line rather than overlapping at four boundaries. A campaign at
@@ -2912,9 +2913,8 @@ subscription's snapshot; the plan's name is the catalogue's, as the pricing page
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT
-    DRAFT --> PRELAUNCH
     DRAFT --> SUBMITTED
-    PRELAUNCH --> SUBMITTED
+    PRELAUNCH --> SUBMITTED: legacy rows only, #626
     SUBMITTED --> CHANGES_REQUESTED
     CHANGES_REQUESTED --> SUBMITTED
     SUBMITTED --> REJECTED
@@ -5729,17 +5729,15 @@ GET    /v1/admin/users/{accountId}/subscriptions # one account's subscriptions (
 > reaches the client as a `500`, and one enforced in a service reaches it as a
 > `400` naming the field.
 >
-> **`/v1/projects/{id}/prelaunch` is two endpoints on one path**, and the method
-> is the whole difference. `POST` is the creator's `DRAFT → PRELAUNCH` transition
-> — not listed in this section before #39 built it, for the reason
-> `POST /v1/admin/moderation/{id}/request-changes` was not either: §6.1 has had
-> the edge since the state machine was written and no endpoint performed it. It
-> belongs to the campaign's creator alone, because opening the page publishes the
-> campaign and there is no edge back. `GET` is the page itself, public, and served
-> only for a campaign in `PRELAUNCH` or `SCHEDULED`; every other state answers
-> `404`, including a draft that exists, so the endpoint cannot be used to find out
-> what somebody is preparing. The filter chain permits the `GET` and only the
-> `GET`.
+> **`GET /v1/projects/{id}/prelaunch` is the pre-launch page**, public, and served
+> only for a campaign moderation has cleared that has not opened — `APPROVED` or
+> `SCHEDULED`; every other state answers `404`, including a draft that exists, so
+> the endpoint cannot be used to find out what somebody is preparing. The filter
+> chain permits the `GET` and only the `GET`. Until #626 a `POST` on the same path
+> was the creator's `DRAFT → PRELAUNCH` transition, which published a campaign no
+> moderator had read; the edge and the endpoint are gone, the page opens on
+> approval, and a campaign still in `PRELAUNCH` is a `404` that can still be
+> submitted.
 >
 > **That projection is not the public project page.** It carries the title,
 > summary, cover image, scheduled launch, and follower count — what a pre-launch

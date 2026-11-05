@@ -30,6 +30,13 @@ public enum ProjectState {
      * A public teaser page collecting followers before the campaign exists in
      * any fundable form.
      *
+     * <p><strong>Retired as an entry point by #626.</strong> A creator opened it
+     * from a draft without moderation, which published a campaign nobody had
+     * reviewed. {@code DRAFT → PRELAUNCH} is gone, the state is hidden from every
+     * public read, and the pre-launch page opens on approval instead. The value
+     * stays because rows and history carry it, and such a campaign can still be
+     * submitted.
+     *
      * <p><strong>Not reversible</strong>, contrary to what this comment said
      * before #39 built it. §6.1 has no {@code PRELAUNCH → DRAFT} edge and
      * {@link ProjectStateMachine} never had one; adding it would be a change to

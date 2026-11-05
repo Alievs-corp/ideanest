@@ -129,25 +129,6 @@ public class ProjectController {
     }
 
     /**
-     * Opens the campaign's pre-launch page, so it can start collecting followers.
-     *
-     * <p>{@code POST}, and the same path the public {@code GET} reads — the two
-     * live in different controllers because one requires a bearer token and the
-     * other must not. Spring routes on the method, and the filter chain permits
-     * only the {@code GET}: see {@code SecurityConfiguration}, which draws the same
-     * line for {@code /v1/categories}.
-     *
-     * <p>There is no endpoint that closes the page again. §6.1 has no
-     * {@code PRELAUNCH → DRAFT} edge, and adding one would mean a page people have
-     * already followed can disappear; a creator who wants to stop is one submission
-     * or one cancellation away, both of which are recorded.
-     */
-    @PostMapping("/{id}/prelaunch")
-    public ProjectEdit openPrelaunch(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
-        return responses.of(transitions.openPrelaunch(id, callerOf(accessToken)));
-    }
-
-    /**
      * What §5.3 still wants before this campaign can be submitted, and what
      * moderation last said about it.
      *

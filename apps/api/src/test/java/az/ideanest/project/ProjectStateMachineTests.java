@@ -48,7 +48,7 @@ class ProjectStateMachineTests {
      */
     private static final String SPECIFICATION =
             """
-            DRAFT             -> PRELAUNCH, SUBMITTED
+            DRAFT             -> SUBMITTED
             PRELAUNCH         -> SUBMITTED
             SUBMITTED         -> CHANGES_REQUESTED, REJECTED, APPROVED
             CHANGES_REQUESTED -> SUBMITTED

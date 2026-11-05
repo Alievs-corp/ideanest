@@ -8450,31 +8450,6 @@
           }
         },
         "tags" : [ "prelaunch-controller" ]
-      },
-      "post" : {
-        "operationId" : "projectOpenPrelaunch",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ProjectEdit"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "project-controller" ]
       }
     },
     "/v1/projects/{id}/remind" : {
