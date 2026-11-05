@@ -22,13 +22,13 @@
 export const SUPPORT_EMAIL = 'alievsteams@gmail.com';
 
 /** The support line, E.164: what a `tel:` link dials. */
-export const SUPPORT_PHONE = '+994517003500';
+export const SUPPORT_PHONE = '+994997907774';
 
 /** The company that operates the platform, as the privacy policy names it. */
 export const OPERATOR_NAME = 'Alievs Space MMC';
 
 /**
- * The support line as a reader reads it: `+994 51 700 35 00`.
+ * The support line as a reader reads it: `+994 99 790 77 74`.
  *
  * Built from `SUPPORT_PHONE` rather than written twice, so the number dialled and the number
  * shown cannot drift apart. Azerbaijani numbers group as country, operator, then 3-2-2; any

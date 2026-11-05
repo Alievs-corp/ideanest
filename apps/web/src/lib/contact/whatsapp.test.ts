@@ -20,7 +20,7 @@ describe('the WhatsApp enquiry link', () => {
   it('carries the number as digits, which is the only form wa.me reads', () => {
     /* A `+`, a space or a dash here resolves to a conversation with nobody. */
     expect(WHATSAPP_CONTACT_NUMBER).toMatch(/^\d{8,15}$/u);
-    expect(WHATSAPP_CONTACT_NUMBER).toBe('421952480349');
+    expect(WHATSAPP_CONTACT_NUMBER).toBe('994997907774');
   });
 
   it('points at that number', () => {
