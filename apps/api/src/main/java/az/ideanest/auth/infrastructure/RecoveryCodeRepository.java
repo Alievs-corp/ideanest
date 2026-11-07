@@ -38,7 +38,8 @@ public interface RecoveryCodeRepository extends JpaRepository<RecoveryCode, UUID
     /**
      * Removes every code a user has.
      *
-     * <p>Used when two-factor is switched off and when a fresh set is issued.
+     * <p>Used when two-factor is switched off, when a fresh set is issued, and
+     * when the account is anonymised ({@code AuthAccountSecurity.forget}, #645).
      * Deleted rather than marked spent: unlike a refresh token there is no theft
      * signal in keeping them, and a row that could still match a code somebody
      * wrote down years ago is a liability rather than a record.

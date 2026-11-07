@@ -2,10 +2,24 @@ package az.ideanest.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import az.ideanest.auth.domain.EmailChangeRequest;
+import az.ideanest.auth.domain.IdentityProvider;
+import az.ideanest.auth.domain.ProviderIdentity;
+import az.ideanest.auth.domain.RecoveryCode;
+import az.ideanest.auth.domain.Totp;
+import az.ideanest.auth.domain.TwoFactorChallenge;
+import az.ideanest.auth.domain.TwoFactorSecret;
+import az.ideanest.auth.infrastructure.EmailChangeRequestRepository;
+import az.ideanest.auth.infrastructure.ProviderIdentityRepository;
+import az.ideanest.auth.infrastructure.RecoveryCodeRepository;
 import az.ideanest.auth.infrastructure.RefreshTokenRepository;
 import az.ideanest.auth.infrastructure.SessionRepository;
+import az.ideanest.auth.infrastructure.TwoFactorChallengeRepository;
+import az.ideanest.auth.infrastructure.TwoFactorSecretRepository;
 import az.ideanest.auth.infrastructure.UserCredentialRepository;
 import az.ideanest.auth.infrastructure.VerificationTokenRepository;
+import az.ideanest.notification.domain.DevicePlatform;
+import az.ideanest.notification.domain.PushDevice;
 import az.ideanest.notification.infrastructure.PushDeviceRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
@@ -14,6 +28,7 @@ import az.ideanest.user.application.AccountAnonymiser;
 import az.ideanest.user.application.AccountDeletionService;
 import az.ideanest.user.domain.User;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -83,6 +98,23 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
     @Autowired
     private PushDeviceRepository pushDevices;
 
+    @Autowired
+    private TwoFactorSecretRepository twoFactorSecrets;
+
+    @Autowired
+    private RecoveryCodeRepository recoveryCodes;
+
+    @Autowired
+    private TwoFactorChallengeRepository twoFactorChallenges;
+
+    @Autowired
+    private ProviderIdentityRepository providerIdentities;
+
+    @Autowired
+    private EmailChangeRequestRepository emailChanges;
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
@@ -137,6 +169,58 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
 
     private UUID userId(EmailAddress email) {
         return users.findByEmailAndDeletedAtIsNull(email).orElseThrow().getId();
+    }
+
+    private static byte[] randomBytes(int length) {
+        byte[] bytes = new byte[length];
+        RANDOM.nextBytes(bytes);
+        return bytes;
+    }
+
+    /**
+     * The identifiers of one account's rows in each table #645 is about.
+     *
+     * <p>Written through the repositories rather than through enrolment, social sign-in and
+     * the address-change endpoint: each of those has its own suite, and what is under test here
+     * is only whether anonymisation reaches the rows, however they got there.
+     */
+    private record SignInData(UUID twoFactor, UUID recoveryCode, UUID challenge, UUID providerLink, UUID emailChange) {
+    }
+
+    private SignInData signInDataFor(UUID userId) {
+        Instant now = Instant.now();
+        TwoFactorSecret enrolment = TwoFactorSecret.enrol(userId, randomBytes(Totp.SECRET_BYTES));
+        enrolment.confirm(now, 1L);
+        twoFactorSecrets.save(enrolment);
+        RecoveryCode code =
+                recoveryCodes.save(RecoveryCode.issue(userId, randomBytes(RecoveryCode.HASH_LENGTH), now));
+        TwoFactorChallenge challenge = twoFactorChallenges.save(TwoFactorChallenge.issue(
+                        userId, randomBytes(TwoFactorChallenge.HASH_LENGTH), now, now.plus(Duration.ofMinutes(5)))
+                .describedAs("Pixel 8", "IdeyaNest/1.0", "203.0.113.7"));
+        ProviderIdentity link = providerIdentities.save(ProviderIdentity.link(
+                userId, IdentityProvider.GOOGLE, "google-subject-" + SEQUENCE.incrementAndGet(), now));
+        EmailChangeRequest change = emailChanges.save(EmailChangeRequest.issue(
+                userId,
+                EmailAddress.of("moving" + SEQUENCE.incrementAndGet() + "@example.com"),
+                randomBytes(32),
+                now.plus(Duration.ofDays(1))));
+        return new SignInData(userId, code.getId(), challenge.getId(), link.getId(), change.getId());
+    }
+
+    private void assertGone(SignInData rows) {
+        assertThat(twoFactorSecrets.existsById(rows.twoFactor())).isFalse();
+        assertThat(recoveryCodes.existsById(rows.recoveryCode())).isFalse();
+        assertThat(twoFactorChallenges.existsById(rows.challenge())).isFalse();
+        assertThat(providerIdentities.existsById(rows.providerLink())).isFalse();
+        assertThat(emailChanges.existsById(rows.emailChange())).isFalse();
+    }
+
+    private void assertKept(SignInData rows) {
+        assertThat(twoFactorSecrets.existsById(rows.twoFactor())).isTrue();
+        assertThat(recoveryCodes.existsById(rows.recoveryCode())).isTrue();
+        assertThat(twoFactorChallenges.existsById(rows.challenge())).isTrue();
+        assertThat(providerIdentities.existsById(rows.providerLink())).isTrue();
+        assertThat(emailChanges.existsById(rows.emailChange())).isTrue();
     }
 
     private User row(UUID userId) {
@@ -270,6 +354,45 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
         // row is never deleted -- so without the anonymiser asking, these would wait out the
         // 180-day retention sweep under an identifier whose person asked to be forgotten.
         EmailAddress email = registeredUser();
+        signIn(email);
+        EmailAddress bystander = registeredUser();
+        String bystanderPhone = pushToken();
+        assertThat(registerDevice(accessToken(signIn(bystander)), bystanderPhone, "ios").getStatusCode())
+                .isEqualTo(HttpStatus.CREATED);
+
+        UUID userId = userId(email);
+        UUID bystanderId = userId(bystander);
+        deletions.request(userId, PASSWORD);
+
+        // The request deletes them now (#645), and a closing account cannot register again, so
+        // these are what an account closed before #645 still has: written in directly, because
+        // no endpoint can put them there any more.
+        String phone = pushToken();
+        String tablet = pushToken();
+        pushDevices.save(PushDevice.register(userId, phone, DevicePlatform.IOS, null, null, Instant.now()));
+        pushDevices.save(PushDevice.register(userId, tablet, DevicePlatform.ANDROID, null, null, Instant.now()));
+
+        assertThat(anonymiser.anonymise(userId, nowPlus(WITHIN_THE_GRACE_PERIOD))).isFalse();
+        assertThat(pushDevices.findByUserId(userId)).hasSize(2);
+
+        assertThat(anonymiser.anonymise(userId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+
+        assertThat(pushDevices.findByUserId(userId)).isEmpty();
+        assertThat(pushDevices.findByToken(phone)).isEmpty();
+        assertThat(pushDevices.findByToken(tablet)).isEmpty();
+        // Deleted by account, not by anything wider.
+        assertThat(pushDevices.findByUserId(bystanderId))
+                .singleElement()
+                .satisfies(device -> assertThat(device.getToken()).isEqualTo(bystanderPhone));
+    }
+
+    @Test
+    @DisplayName("requesting deletion deletes the account's push registrations at once, and nobody else's")
+    void requestingDeletionForgetsPushRegistrationsAtOnce() {
+        // #645. The sessions end when deletion is requested; without this the registrations
+        // stayed for the thirty days of the grace period, and a notification addressed to the
+        // closing account kept reaching a phone it may no longer control.
+        EmailAddress email = registeredUser();
         String accessToken = accessToken(signIn(email));
         String phone = pushToken();
         String tablet = pushToken();
@@ -284,22 +407,53 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
 
         UUID userId = userId(email);
         UUID bystanderId = userId(bystander);
-        deletions.request(userId, PASSWORD);
-
-        // Inside the grace period nothing is touched, these included: the account can still
-        // come back, and a cancellation restores it whole.
-        assertThat(anonymiser.anonymise(userId, nowPlus(WITHIN_THE_GRACE_PERIOD))).isFalse();
-        assertThat(pushDevices.findByUserId(userId)).hasSize(2);
-
-        assertThat(anonymiser.anonymise(userId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+        assertThat(deletions.request(userId, PASSWORD)).isPresent();
 
         assertThat(pushDevices.findByUserId(userId)).isEmpty();
         assertThat(pushDevices.findByToken(phone)).isEmpty();
         assertThat(pushDevices.findByToken(tablet)).isEmpty();
-        // Deleted by account, not by anything wider.
         assertThat(pushDevices.findByUserId(bystanderId))
                 .singleElement()
                 .satisfies(device -> assertThat(device.getToken()).isEqualTo(bystanderPhone));
+
+        // Nor can they come back inside the grace period: signing in is the way back, but the
+        // token it issues carries the deletion claim, and registering a device is not one of
+        // the three things a closing account may do.
+        assertThat(registerDevice(accessToken(signIn(email)), phone, "ios").getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(pushDevices.findByUserId(userId)).isEmpty();
+
+        // A cancellation does not restore them; the application's next signed-in launch does,
+        // with a token issued after the cancellation.
+        deletions.cancel(userId);
+        assertThat(registerDevice(accessToken(signIn(email)), phone, "ios").getStatusCode())
+                .isEqualTo(HttpStatus.CREATED);
+        assertThat(pushDevices.findByUserId(userId)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("anonymisation deletes the second factor, provider links and address changes, and nobody else's")
+    void signInDataGoesWithTheIdentity() {
+        // #645. Each of these tables cascades from users, and the cascade never fires: a TOTP
+        // secret and recovery codes are credentials for an account nobody can sign in to, a
+        // challenge carries a device, user agent and IP address, a provider link is the
+        // person's identifier at Google or Apple, and an address change is a capability plus
+        // an address.
+        EmailAddress email = closingAccount();
+        UUID userId = userId(email);
+        SignInData closing = signInDataFor(userId);
+        SignInData bystander = signInDataFor(userId(registeredUser()));
+
+        // Inside the grace period nothing is touched: a cancellation restores the account
+        // whole, second factor and Google sign-in included.
+        assertThat(anonymiser.anonymise(userId, nowPlus(WITHIN_THE_GRACE_PERIOD))).isFalse();
+        assertKept(closing);
+
+        assertThat(anonymiser.anonymise(userId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+
+        assertGone(closing);
+        // Deleted by account, not by anything wider.
+        assertKept(bystander);
     }
 
     @Test
