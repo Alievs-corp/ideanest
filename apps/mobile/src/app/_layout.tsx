@@ -12,6 +12,7 @@ import { OfflineAnnouncer, WithOfflineBanner } from '../components/offline-banne
 import { SheetHost } from '../components/ui/sheet';
 import { SharedTransitionHost } from '../components/ui/shared-transition';
 import { sweepAccountExports } from '../lib/account-export-files';
+import { watchVisits } from '../features/audience/beacons';
 import { startConnectivity } from '../lib/connectivity';
 import { listenForLinks, type Destination } from '../lib/links';
 import { currentLocale } from '../lib/locale';
@@ -172,6 +173,9 @@ export default function RootLayout() {
 
   // The app lock's clock and its migration (`lib/app-lock.ts`, #319).
   useEffect(() => startAppLock(), []);
+
+  // An audience VISIT on launch and on each return from the background (`features/audience`, #636).
+  useEffect(() => watchVisits(), []);
 
   /*
    * The theme (docs/ui-kit.md §11). The native root view is painted the dark canvas by the build, so

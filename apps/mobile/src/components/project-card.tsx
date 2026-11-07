@@ -10,6 +10,9 @@ import { campaignAccent, hashAccent } from '@ideanest/discovery/category-look';
 import { formatMoney } from '@ideanest/money';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import type { Card } from '../api/queries';
+import { recordClick } from '../features/audience/beacons';
+import type { AudienceSurface } from '../features/audience/send';
+import { ViewCountChip } from '../features/audience/view-count-chip';
 import { pluralCategory, useT } from '../lib/i18n';
 import { useLocale } from '../lib/locale';
 import { useHoldPreview } from '../lib/media/hold-preview';
@@ -148,11 +151,16 @@ export interface ProjectCardProps {
   readonly priority?: boolean;
   /** Cover height against 2:1; every card but the home's popular ones is 17.7% taller. */
   readonly coverScale?: number;
+  /**
+   * The list the card is drawn in, for the CLICK its press counts (#636): the creator's dashboard
+   * says where their campaign was opened from. `OTHER` when the list does not say.
+   */
+  readonly surface?: AudienceSurface;
 }
 
 const COVER_SCALE = 1.177;
 
-export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }: ProjectCardProps) {
+export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE, surface = 'OTHER' }: ProjectCardProps) {
   const t = useT();
   const locale = useLocale();
   const ring = useFocusRing();
@@ -197,6 +205,11 @@ export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }
     count: String(backers),
   });
 
+  // Every day's unique viewers, added up; the chip on the cover and nothing at all at zero.
+  const views = typeof card.viewCount === 'number' && card.viewCount > 0 ? Math.floor(card.viewCount) : 0;
+  const viewsLabel =
+    views === 0 ? null : t(`common.card.views.${pluralCategory(locale, views)}`, { count: String(views) });
+
   const tagged = status !== null || card.extended === true || card.closingSoon === true || urgent;
 
   /** What the card prints, in reading order, for the one element a screen reader stops on. */
@@ -207,6 +220,7 @@ export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }
     urgent ? daysLabel : null,
     completion === null ? t('discovery.card.notOpen') : t('common.card.funded', { percent }),
     backersLabel,
+    viewsLabel,
     !urgent && showDays ? daysLabel : null,
   ].filter((fact): fact is string => fact !== null && fact !== '');
 
@@ -229,7 +243,10 @@ export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }
         accessibilityHint={previewable ? t('mobile.preview.cardHint') : undefined}
         onFocus={ring.onFocus}
         onBlur={ring.onBlur}
-        onPress={shared.launch}
+        onPress={() => {
+          shared.launch();
+          recordClick(card.id, surface);
+        }}
         onLongPress={previewable ? preview.start : undefined}
         onPressOut={previewable ? preview.stop : undefined}
         contentStyle={[styles.target, ring.ring]}
@@ -257,6 +274,8 @@ export function ProjectCard({ card, priority = false, coverScale = COVER_SCALE }
             {media.video === null ? null : (
               <HoldPreviewVideo url={media.video.url} playing={preview.playing} testID="campaign-card-preview" />
             )}
+            {/* Above the picture and the held preview; it fades with the cover during a flight. */}
+            <ViewCountChip count={views} />
           </MediaFrame>
           </Animated.View>
 

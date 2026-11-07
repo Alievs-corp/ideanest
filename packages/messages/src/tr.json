@@ -7803,6 +7803,24 @@
     "preview": {
       "cardHint": "Videoyu önizlemek için basılı tutun",
       "rewardHint": "Videoyu oynatmak için basılı tutun"
+    },
+    "audience": {
+      "heading": "Kitle",
+      "intro": "Kampanya sayfasını kaç kişinin gördüğü ve kaç kişinin bir listeden açtığı. Herkes günde bir kez sayılır, Bakü saatiyle.",
+      "loading": "Kitle verileri yükleniyor",
+      "notGranted": "Bu kampanyadaki ortak çalışan izniniz kitle verilerini kapsamıyor.",
+      "unavailable": "Kitle verileri yüklenemedi. Sorun kampanyanızda değil, hizmette — birazdan tekrar deneyin.",
+      "allTimeViews": "Toplam görüntülenme",
+      "chartSummary": "{label}, {from} – {to}: toplam {total}. En yüksek: {peak}, {when}.",
+      "chartEmpty": "{label}, {from} – {to}: henüz yok.",
+      "countriesLabel": "Ülkelere göre görüntülenme",
+      "countriesEmpty": "Bu dönemde kampanyayı kimse görüntülemedi.",
+      "surfacesHeading": "Nereden açıldı",
+      "surfacesLabel": "Listelere göre tıklamalar",
+      "surfacesEmpty": "Bu dönemde kampanyayı kimse bir listeden açmadı.",
+      "showFigures": "Rakamları göster",
+      "hideFigures": "Rakamları gizle",
+      "figuresLabel": "Zamana göre görüntülenme ve tıklamalar"
     }
   },
   "blocking": {

@@ -161,7 +161,7 @@ function SearchScreen() {
         <Meta tone="secondary" style={styles.count}>
           {hasMore ? t('countMore', { count: cards.length }) : t('count', { count: cards.length })}
         </Meta>
-        <CampaignColumn cards={cards} priority={3} />
+        <CampaignColumn cards={cards} priority={3} surface="SEARCH" />
         <View style={styles.centred}>
           <Pill
             label={hasMore ? t('moreInFeed') : t('refineInFeed')}

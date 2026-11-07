@@ -5,6 +5,7 @@ import { fillPlaceholders } from '@ideanest/messages/placeholders';
 import { CardTitle, InlineAlert, Meta, Pill } from '../../components/ui';
 import { Glyphs } from '../../icons';
 import { queryKeys } from '../../api/queries';
+import { recordClick } from '../audience/beacons';
 import { unsaveCampaign } from '../../lib/campaign-actions';
 import { useOnline } from '../../lib/connectivity';
 import { useT } from '../../lib/i18n';
@@ -85,12 +86,13 @@ export function SavedList() {
         <AccountRow
           label={`${title}, ${meta}`}
           testID={`saved-row-${campaign.projectId}`}
-          onPress={() =>
+          onPress={() => {
             router.push({
               pathname: '/projects/[creatorSlug]/[projectSlug]',
               params: { creatorSlug: campaign.creatorSlug, projectSlug: campaign.projectSlug },
-            })
-          }
+            });
+            recordClick(campaign.projectId, 'SAVED');
+          }}
           trailingPlacement="below"
           trailing={
             <Pill

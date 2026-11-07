@@ -48,6 +48,7 @@ const card = (overrides: Partial<ProfileProjectCard> = {}): ProfileProjectCard =
   goal: { amount: '1000.00', currency: 'AZN' },
   pledged: { amount: '795.00', currency: 'AZN' },
   backersCount: 12,
+  viewCount: 0,
   coverUrl: null,
   video: null,
   ...overrides,
@@ -56,6 +57,20 @@ const card = (overrides: Partial<ProfileProjectCard> = {}): ProfileProjectCard =
 const S = en.profile.card.states;
 
 describe('ProfileCampaignCard', () => {
+  it('draws no eye chip and says nothing of views at zero (#636)', async () => {
+    await show(<ProfileCampaignCard card={card()} funding="shown" onOpen={jest.fn()} />);
+    expect(screen.queryByTestId('view-count-chip', { includeHiddenElements: true })).toBeNull();
+    expect(String(screen.getByTestId('profile-card-p1').props.accessibilityValue.text)).not.toMatch(/view/);
+  });
+
+  it('draws the eye chip on the cover, compact, and reads the full count in its value (#636)', async () => {
+    await show(<ProfileCampaignCard card={card({ viewCount: 2400 })} funding="withheld" onOpen={jest.fn()} />);
+    const chip = screen.getByTestId('view-count-chip', { includeHiddenElements: true });
+    expect(chip.props.accessibilityElementsHidden).toBe(true);
+    expect(screen.getByText('2.4k', { includeHiddenElements: true })).toBeTruthy();
+    expect(String(screen.getByTestId('profile-card-p1').props.accessibilityValue.text)).toContain('2400 views');
+  });
+
   it.each(Object.keys(S) as (keyof typeof S)[])('names the %s state from the catalogue', async (state) => {
     await show(<ProfileCampaignCard card={card({ state })} funding="shown" onOpen={jest.fn()} />);
     expect(screen.getByTestId('profile-card-state')).toHaveTextContent(S[state], { exact: false });

@@ -1,8 +1,9 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { FadeInDown } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import type { Card } from '../api/queries';
+import { sendAudienceEvent } from '../features/audience/send';
 import { setLocale } from '../lib/locale';
 import { staggerDelay } from '../theme';
 import { CampaignColumn, CampaignColumnSkeleton } from './campaign-column';
@@ -58,6 +59,12 @@ async function renderIn(ui: React.ReactElement) {
 }
 
 describe('CampaignColumn', () => {
+  it('tells every card which list it is in, for the audience CLICK (#636)', async () => {
+    await renderIn(<CampaignColumn cards={cards(2)} surface="HOME" />);
+    await fireEvent.press(screen.getAllByRole('link')[1]!);
+    expect(sendAudienceEvent).toHaveBeenCalledWith({ kind: 'CLICK', projectId: 'c-1', surface: 'HOME' });
+  });
+
   it('draws every card as one link, in order', async () => {
     await renderIn(<CampaignColumn cards={cards(4)} />);
     expect(screen.getAllByRole('link').map((link) => link.props.accessibilityLabel)).toEqual([

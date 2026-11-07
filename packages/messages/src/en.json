@@ -7803,6 +7803,24 @@
     "preview": {
       "cardHint": "Press and hold to preview the video",
       "rewardHint": "Press and hold to play the video"
+    },
+    "audience": {
+      "heading": "Audience",
+      "intro": "How many people saw this campaign's page, and how many opened it from a list. Each person counts once a day, in Baku time.",
+      "loading": "Loading the audience figures",
+      "notGranted": "Your collaborator grant on this campaign does not include the audience figures.",
+      "unavailable": "The audience figures could not be loaded. It is the service rather than your campaign — try again shortly.",
+      "allTimeViews": "All-time views",
+      "chartSummary": "{label}, {from} to {to}: {total} in all. Highest: {peak}, {when}.",
+      "chartEmpty": "{label}, {from} to {to}: none yet.",
+      "countriesLabel": "Views by country",
+      "countriesEmpty": "Nobody viewed this campaign in this period.",
+      "surfacesHeading": "Opened from",
+      "surfacesLabel": "Clicks by list",
+      "surfacesEmpty": "Nobody opened this campaign from a list in this period.",
+      "showFigures": "Show the figures",
+      "hideFigures": "Hide the figures",
+      "figuresLabel": "Views and clicks over time"
     }
   },
   "blocking": {

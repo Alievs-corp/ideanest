@@ -7803,6 +7803,24 @@
     "preview": {
       "cardHint": "Videoya baxmaq üçün basıb saxlayın",
       "rewardHint": "Videonu oynatmaq üçün basıb saxlayın"
+    },
+    "audience": {
+      "heading": "Auditoriya",
+      "intro": "Bu kampaniyanın səhifəsini neçə nəfər görüb və neçə nəfər onu siyahıdan açıb. Hər adam gündə bir dəfə sayılır, Bakı vaxtı ilə.",
+      "loading": "Auditoriya göstəriciləri yüklənir",
+      "notGranted": "Bu kampaniyada sizə verilən əməkdaş icazəsinə auditoriya göstəriciləri daxil deyil.",
+      "unavailable": "Auditoriya göstəriciləri yüklənmədi. Problem kampaniyanızda yox, xidmətdədir — bir az sonra yenidən cəhd edin.",
+      "allTimeViews": "Ümumi baxış",
+      "chartSummary": "{label}, {from} – {to}: cəmi {total}. Ən çox: {peak}, {when}.",
+      "chartEmpty": "{label}, {from} – {to}: hələ yoxdur.",
+      "countriesLabel": "Ölkələr üzrə baxışlar",
+      "countriesEmpty": "Bu dövrdə kampaniyaya heç kim baxmayıb.",
+      "surfacesHeading": "Haradan açılıb",
+      "surfacesLabel": "Siyahılar üzrə kliklər",
+      "surfacesEmpty": "Bu dövrdə kampaniyanı heç kim siyahıdan açmayıb.",
+      "showFigures": "Rəqəmləri göstər",
+      "hideFigures": "Rəqəmləri gizlət",
+      "figuresLabel": "Zamana görə baxış və kliklər"
     }
   },
   "blocking": {
