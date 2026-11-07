@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Standing instructions, by the two questions asked of them.
@@ -34,4 +37,12 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
     /** The one instruction a change replaces, if it exists. */
     Optional<NotificationPreference> findByUserIdAndCategoryAndChannel(
             UUID userId, NotificationCategory category, NotificationChannel channel);
+
+    /**
+     * Everything an account has said — its anonymisation (#647). Bulk, and without
+     * {@code clearAutomatically}, for {@link NotificationRepository#deleteByRecipientId}'s reason.
+     */
+    @Modifying
+    @Query("delete from NotificationPreference preference where preference.userId = :userId")
+    int deleteByUserId(@Param("userId") UUID userId);
 }

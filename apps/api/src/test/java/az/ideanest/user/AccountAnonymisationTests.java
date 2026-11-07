@@ -18,19 +18,34 @@ import az.ideanest.auth.infrastructure.TwoFactorChallengeRepository;
 import az.ideanest.auth.infrastructure.TwoFactorSecretRepository;
 import az.ideanest.auth.infrastructure.UserCredentialRepository;
 import az.ideanest.auth.infrastructure.VerificationTokenRepository;
+import az.ideanest.media.application.MediaLibrary;
+import az.ideanest.media.application.MediaProcessingJob;
+import az.ideanest.media.infrastructure.MediaAssetRepository;
+import az.ideanest.notification.domain.DeliveryMode;
 import az.ideanest.notification.domain.DevicePlatform;
+import az.ideanest.notification.domain.Notification;
+import az.ideanest.notification.domain.NotificationCategory;
+import az.ideanest.notification.domain.NotificationChannel;
+import az.ideanest.notification.domain.NotificationPreference;
+import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.notification.domain.PushDevice;
+import az.ideanest.notification.infrastructure.NotificationPreferenceRepository;
+import az.ideanest.notification.infrastructure.NotificationRepository;
 import az.ideanest.notification.infrastructure.PushDeviceRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
+import az.ideanest.support.LocalObjectStore;
+import az.ideanest.support.ScriptedImageTranscoder;
 import az.ideanest.user.application.AccountAnonymisationJob;
 import az.ideanest.user.application.AccountAnonymiser;
 import az.ideanest.user.application.AccountDeletionService;
 import az.ideanest.user.domain.User;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -113,7 +128,28 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
     @Autowired
     private EmailChangeRequestRepository emailChanges;
 
+    @Autowired
+    private NotificationRepository notifications;
+
+    @Autowired
+    private NotificationPreferenceRepository notificationPreferences;
+
+    @Autowired
+    private LocalObjectStore objectStore;
+
+    @Autowired
+    private ScriptedImageTranscoder transcoder;
+
+    @Autowired
+    private MediaProcessingJob mediaProcessing;
+
+    @Autowired
+    private MediaAssetRepository mediaAssets;
+
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    /** A JPEG signature and some filler. The scripted transcoder copies rather than reads. */
+    private static final byte[] PHOTO = "\u00ff\u00d8\u00ffa photograph".getBytes(StandardCharsets.ISO_8859_1);
 
     // ------------------------------------------------------------------
     // Fixtures
@@ -225,6 +261,106 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
 
     private User row(UUID userId) {
         return users.findById(userId).orElseThrow();
+    }
+
+    /** An inbox row, a held email and a preference: the three shapes #647 deletes. */
+    private record NotificationData(UUID inbox, UUID heldEmail, UUID preference) {
+    }
+
+    private NotificationData notificationsFor(UUID userId) {
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+        UUID event = UUID.randomUUID();
+        Notification inbox = notifications.save(Notification.pending(
+                userId, NotificationType.PLEDGE_CONFIRMED, NotificationChannel.IN_APP, event,
+                "project", UUID.randomUUID(), "{}", now, now));
+        Notification held = notifications.save(Notification.held(
+                userId, NotificationType.PLEDGE_CONFIRMED, NotificationChannel.EMAIL, event,
+                "project", UUID.randomUUID(), "{}", now, now));
+        NotificationPreference preference = notificationPreferences.save(NotificationPreference.of(
+                userId, NotificationCategory.PLEDGES, NotificationChannel.EMAIL, DeliveryMode.DIGEST, now));
+        return new NotificationData(inbox.getId(), held.getId(), preference.getId());
+    }
+
+    private void assertGone(NotificationData rows) {
+        assertThat(notifications.existsById(rows.inbox())).isFalse();
+        assertThat(notifications.existsById(rows.heldEmail())).isFalse();
+        assertThat(notificationPreferences.existsById(rows.preference())).isFalse();
+    }
+
+    private void assertKept(NotificationData rows) {
+        assertThat(notifications.existsById(rows.inbox())).isTrue();
+        assertThat(notifications.existsById(rows.heldEmail())).isTrue();
+        assertThat(notificationPreferences.existsById(rows.preference())).isTrue();
+    }
+
+    /** An upload that has been through the whole pipeline: its identifier and its public address. */
+    private record Upload(UUID mediaId, String url) {
+
+        /** The object behind the address, as the store keys it. */
+        String key() {
+            return url.substring("https://cdn.test/".length());
+        }
+    }
+
+    /** Begins, uploads, completes and sweeps: what a browser does, in one call. */
+    private Upload upload(String accessToken) {
+        transcoder.reset();
+        ResponseEntity<Map<String, Object>> issued = exchange(
+                "/v1/media/uploads",
+                HttpMethod.POST,
+                accessToken,
+                Map.of("contentType", "image/jpeg", "byteSize", PHOTO.length));
+        assertThat(issued.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        UUID mediaId = UUID.fromString((String) issued.getBody().get("mediaId"));
+        objectStore.put(MediaLibrary.rawKeyOf(mediaId), PHOTO);
+        exchange("/v1/media/" + mediaId + "/complete", HttpMethod.POST, accessToken, null);
+        mediaProcessing.run();
+
+        Map<String, Object> ready = exchange("/v1/media/" + mediaId, HttpMethod.GET, accessToken, null).getBody();
+        assertThat(ready).containsEntry("status", "READY");
+        Upload upload = new Upload(mediaId, (String) ready.get("url"));
+        assertThat(objectStore.has(upload.key())).isTrue();
+        return upload;
+    }
+
+    /** Saves an address as the profile picture, the way both clients do after an upload. */
+    private void useAsAvatar(String accessToken, String url) {
+        assertThat(exchange("/v1/me/profile", HttpMethod.PATCH, accessToken, Map.of("avatarUrl", url))
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+    }
+
+    /** A draft campaign with this upload as its cover. */
+    private void useAsCover(String accessToken, UUID mediaId) {
+        ResponseEntity<Map<String, Object>> created =
+                exchange("/v1/projects", HttpMethod.POST, accessToken, Map.of("title", "A campaign that stays"));
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(exchange(
+                                "/v1/projects/" + created.getBody().get("id"),
+                                HttpMethod.PATCH,
+                                accessToken,
+                                Map.of("coverImage", Map.of("mediaId", mediaId.toString())))
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+    }
+
+    private void assertGone(Upload upload) {
+        assertThat(objectStore.has(upload.key())).isFalse();
+        assertThat(mediaAssets.existsById(upload.mediaId())).isFalse();
+    }
+
+    private void assertKept(Upload upload) {
+        assertThat(objectStore.has(upload.key())).isTrue();
+        assertThat(mediaAssets.existsById(upload.mediaId())).isTrue();
+    }
+
+    private ResponseEntity<Map<String, Object>> exchange(
+            String path, HttpMethod method, String accessToken, Object body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken);
+        return rest.exchange(
+                path, method, new HttpEntity<>(body, headers), new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
     private static Instant nowPlus(Duration duration) {
@@ -454,6 +590,112 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
         assertGone(closing);
         // Deleted by account, not by anything wider.
         assertKept(bystander);
+    }
+
+    @Test
+    @DisplayName("anonymisation deletes the account's notifications and preferences, and nobody else's")
+    void notificationsGoWithTheIdentity() {
+        // #647. notifications and notification_preferences cascade from users, and the cascade
+        // never fires. An inbox quotes what this person backed and was told; it is not anonymous.
+        EmailAddress email = closingAccount();
+        UUID userId = userId(email);
+        NotificationData closing = notificationsFor(userId);
+        NotificationData bystander = notificationsFor(userId(registeredUser()));
+
+        // Inside the grace period nothing is touched: a cancellation gives the inbox back whole.
+        assertThat(anonymiser.anonymise(userId, nowPlus(WITHIN_THE_GRACE_PERIOD))).isFalse();
+        assertKept(closing);
+
+        assertThat(anonymiser.anonymise(userId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+
+        assertGone(closing);
+        assertThat(notificationPreferences.findByUserId(userId)).isEmpty();
+        // Deleted by account, not by anything wider.
+        assertKept(bystander);
+    }
+
+    @Test
+    @DisplayName("anonymisation deletes the uploaded avatar file, and no campaign media or anybody else's upload")
+    void theAvatarFileGoesWithTheIdentity() {
+        // #647. Clearing avatar_url unlinked the picture from the profile and left the photograph
+        // itself at its public address, with a media row naming this account as its owner.
+        EmailAddress email = registeredUser();
+        String accessToken = accessToken(signIn(email));
+        Upload avatar = upload(accessToken);
+        useAsAvatar(accessToken, avatar.url());
+        Upload cover = upload(accessToken);
+        useAsCover(accessToken, cover.mediaId());
+        Upload unattached = upload(accessToken);
+
+        EmailAddress bystander = registeredUser();
+        String bystanderToken = accessToken(signIn(bystander));
+        Upload bystanderAvatar = upload(bystanderToken);
+        useAsAvatar(bystanderToken, bystanderAvatar.url());
+
+        UUID userId = userId(email);
+        assertThat(deletions.request(userId, PASSWORD)).isPresent();
+
+        // The grace period keeps the picture: a cancellation brings the profile back with it.
+        assertThat(anonymiser.anonymise(userId, nowPlus(WITHIN_THE_GRACE_PERIOD))).isFalse();
+        assertKept(avatar);
+
+        assertThat(anonymiser.anonymise(userId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+
+        // The object and its row, after the commit that anonymised the account.
+        assertThat(row(userId).getAvatarUrl()).isNull();
+        assertGone(avatar);
+        // Only the avatar. A campaign outlives its creator's account, and the cover is campaign
+        // media; an upload the account never used as its avatar is not recognisable as one.
+        assertKept(cover);
+        assertKept(unattached);
+        assertKept(bystanderAvatar);
+    }
+
+    @Test
+    @DisplayName("an avatar upload that a campaign also shows is kept")
+    void anAvatarACampaignAlsoShowsIsKept() {
+        EmailAddress email = registeredUser();
+        String accessToken = accessToken(signIn(email));
+        Upload both = upload(accessToken);
+        useAsCover(accessToken, both.mediaId());
+        useAsAvatar(accessToken, both.url());
+
+        UUID userId = userId(email);
+        deletions.request(userId, PASSWORD);
+        assertThat(anonymiser.anonymise(userId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+
+        // The profile lets go of it; the campaign, which is not being deleted, does not.
+        assertThat(row(userId).getAvatarUrl()).isNull();
+        assertKept(both);
+    }
+
+    @Test
+    @DisplayName("an avatar whose file is already gone, or that was never uploaded here, does not stop anonymisation")
+    void aMissingOrForeignAvatarDoesNotStopAnonymisation() {
+        EmailAddress email = registeredUser();
+        String accessToken = accessToken(signIn(email));
+        Upload avatar = upload(accessToken);
+        useAsAvatar(accessToken, avatar.url());
+        // Gone from the store already: deleted by hand, or by a run that crashed after its
+        // commit. Deleting an absent object is a success, not a failure to retry.
+        objectStore.delete(avatar.key());
+
+        EmailAddress elsewhere = registeredUser();
+        // A picture hosted somewhere else entirely, which the profile has always accepted.
+        useAsAvatar(accessToken(signIn(elsewhere)), "https://pictures.example.com/me.jpg");
+
+        UUID userId = userId(email);
+        UUID elsewhereId = userId(elsewhere);
+        deletions.request(userId, PASSWORD);
+        deletions.request(elsewhereId, PASSWORD);
+
+        assertThat(anonymiser.anonymise(userId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+        assertThat(anonymiser.anonymise(elsewhereId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+
+        assertThat(row(userId).isAnonymised()).isTrue();
+        assertThat(mediaAssets.existsById(avatar.mediaId())).isFalse();
+        assertThat(row(elsewhereId).isAnonymised()).isTrue();
+        assertThat(row(elsewhereId).getAvatarUrl()).isNull();
     }
 
     @Test
