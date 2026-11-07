@@ -3,6 +3,7 @@ import { ProjectCard } from '../discovery/ProjectCard';
 import { CAMPAIGN_GRID } from './campaign-grid-layout';
 import type { ProjectCardCopy } from '../../lib/i18n/card-copy';
 import type { Locale } from '../../lib/i18n/locale';
+import type { AudienceSurface } from '../../lib/audience/beacon';
 
 /**
  * A grid of campaigns, server-rendered — the body of the home page, the category landing
@@ -57,6 +58,8 @@ export interface CampaignGridProps {
   readonly coverClassName?: string;
   /** Passed to every card's text below the cover. */
   readonly bodyClassName?: string;
+  /** Which listing this is, for the cards' click count (#634). Every caller names its own. */
+  readonly surface: AudienceSurface;
 }
 
 export function CampaignGrid({
@@ -70,6 +73,7 @@ export function CampaignGrid({
   id,
   coverClassName,
   bodyClassName,
+  surface,
 }: CampaignGridProps) {
   return (
     <ul id={id} aria-label={label} className={layout}>
@@ -80,6 +84,7 @@ export function CampaignGrid({
             priority={index < priorityCount}
             copy={cardCopy}
             locale={locale}
+            surface={surface}
             {...(coverClassName === undefined ? {} : { coverClassName })}
             {...(bodyClassName === undefined ? {} : { bodyClassName })}
           />

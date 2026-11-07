@@ -311,6 +311,7 @@ export default async function HomePage() {
                 other one fetched early: on a phone it is the first campaign under the hero.
               */}
               <CampaignGrid
+                surface="HOME"
                 campaigns={closing}
                 priorityCount={2}
                 label={t('closing.gridLabel')}
@@ -338,6 +339,7 @@ export default async function HomePage() {
             seeAll={t('seeAll')}
           >
             <CampaignGrid
+              surface="HOME"
               campaigns={closing}
               priorityCount={1}
               label={t('closing.gridLabel')}
@@ -370,6 +372,7 @@ export default async function HomePage() {
               second wall of twelve straight after the first.
             */}
             <CampaignGrid
+              surface="HOME"
               id={LAUNCHED_RAIL}
               campaigns={launched}
               label={t('launched.gridLabel')}
