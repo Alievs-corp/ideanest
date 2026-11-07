@@ -7,6 +7,7 @@ import { pluralCategory, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { useHoldPreview } from '../../lib/media/hold-preview';
 import { HoldPreviewVideo } from '../../components/hold-preview-video';
+import { ViewCountChip } from '../audience/view-count-chip';
 import { font, fontSize, lineHeight, radius, size, spacing } from '../../theme';
 import {
   Body,
@@ -126,6 +127,9 @@ export const ProfileCampaignCard = memo(function ProfileCampaignCard({
     completion === null ? null : pledged,
     completion === null ? null : goal,
     backers,
+    card.viewCount > 0
+      ? t(`common.card.views.${pluralCategory(locale, card.viewCount)}`, { count: String(card.viewCount) })
+      : null,
   ].filter((fact): fact is string => fact !== null && fact !== '');
 
   return (
@@ -162,6 +166,7 @@ export const ProfileCampaignCard = memo(function ProfileCampaignCard({
         {card.video === null ? null : (
           <HoldPreviewVideo url={card.video.url} playing={preview.playing} testID="profile-card-preview" />
         )}
+        <ViewCountChip count={card.viewCount} />
       </MediaFrame>
 
       <View style={styles.tag}>

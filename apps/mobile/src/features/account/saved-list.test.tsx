@@ -8,6 +8,7 @@ import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { queryKeys } from '../../api/queries';
 import { MotionBudgetProvider } from '../../components/ui';
+import { sendAudienceEvent } from '../audience/send';
 import { unsaveCampaign } from '../../lib/campaign-actions';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
@@ -143,6 +144,8 @@ describe('SavedList', () => {
       pathname: '/projects/[creatorSlug]/[projectSlug]',
       params: { creatorSlug: 'aysel', projectSlug: 'slug-a' },
     });
+    // An audience CLICK from the Saved list (#636).
+    expect(sendAudienceEvent).toHaveBeenCalledWith({ kind: 'CLICK', projectId: 'a', surface: 'SAVED' });
   });
 
   it('names each Remove button after its campaign', async () => {

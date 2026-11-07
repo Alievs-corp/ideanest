@@ -3,6 +3,7 @@ import { FlashList } from '@shopify/flash-list';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import type { Card } from '../api/queries';
+import type { AudienceSurface } from '../features/audience/send';
 import { colors, size, spacing } from '../theme';
 import { CardEntry, cardKey, useEntryGate } from './campaign-column';
 import { ProjectCard } from './project-card';
@@ -53,6 +54,8 @@ export interface CampaignListProps {
   /** Rendered after the last card — "Show more", the end of the feed, a next-page error. */
   readonly footer?: React.ReactElement;
   readonly testID?: string;
+  /** Which list this is, for the audience CLICK each card's press counts (#636). */
+  readonly surface?: AudienceSurface;
 }
 
 const styles = StyleSheet.create({
@@ -73,6 +76,7 @@ export function CampaignList({
   empty,
   footer,
   testID,
+  surface,
 }: CampaignListProps) {
   const gate = useEntryGate(cards);
   const bottomInset = useContext(SafeAreaInsetsContext)?.bottom ?? 0;
@@ -84,11 +88,11 @@ export function CampaignList({
       const key = cardKey(item);
       return (
         <CardEntry gate={gate} entryKey={key} index={index}>
-          <ProjectCard card={item} priority={index < PRIORITY_COVERS} />
+          <ProjectCard card={item} priority={index < PRIORITY_COVERS} {...(surface === undefined ? {} : { surface })} />
         </CardEntry>
       );
     },
-    [gate],
+    [gate, surface],
   );
 
   return (

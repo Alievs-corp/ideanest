@@ -8,6 +8,7 @@ import { queryKeys } from '../../api/queries';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
 import { shouldPersistQuery } from '../../lib/offline';
+import { sendAudienceEvent } from '../audience/send';
 import { rememberAccessToken, storeRefreshToken, useFlagStore } from '../../lib/session';
 import { memoryStore } from '../../lib/storage';
 import { ProfileScreen } from './profile-screen';
@@ -262,6 +263,8 @@ describe('the screen', () => {
       pathname: '/projects/[creatorSlug]/[projectSlug]',
       params: { creatorSlug: 'aysel', projectSlug: 'campaign-c1' },
     });
+    // An audience CLICK from the profile's list (#636).
+    expect(sendAudienceEvent).toHaveBeenCalledWith({ kind: 'CLICK', projectId: 'c1', surface: 'PROFILE' });
   });
 
   it('keeps the profile root out of the persisted cache', () => {
