@@ -19,6 +19,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
@@ -46,6 +48,9 @@ public class SecurityConfiguration {
      * closed account carry on.
      */
     private static final String ACCOUNT_ACTIVE = "ACCOUNT_ACTIVE";
+
+    /** #633's beacon, the one path on which a bearer token is not read at all. */
+    static final String AUDIENCE_EVENTS = "/v1/audience/events";
 
     /**
      * §10.2's {@code /v1/projects/{creatorSlug}/{projectSlug}}, and nothing that merely
@@ -568,6 +573,17 @@ public class SecurityConfiguration {
                         // it a pledge.
                         .requestMatchers(HttpMethod.POST, "/v1/projects/*/referral-visits")
                         .permitAll()
+                        // #633's audience beacon: a page was shown, a campaign opened, a
+                        // card clicked. Unauthenticated for the referral visit's reason and
+                        // more so -- the people it counts are mostly not signed in, and an
+                        // account must not change who somebody is counted as -- so no token
+                        // is even read on it; see bearerTokens(). Bounded per source address
+                        // in the handler, and it reveals nothing: every well-formed event
+                        // answers 204, counted or not. POST only; the reports are under
+                        // /v1/admin/** and /v1/projects/*/audience and fall through to the
+                        // rules that require a token.
+                        .requestMatchers(HttpMethod.POST, AUDIENCE_EVENTS)
+                        .permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/v1/projects/*/remind")
                         .permitAll()
                         // §10.2's webhook endpoint (#66). The sender is a payment
@@ -699,8 +715,8 @@ public class SecurityConfiguration {
                 // revocation is one cached primary-key probe, which is what lets
                 // a suspension or a sign-out stop a token at its next request
                 // instead of when it expires.
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(
-                        jwt -> jwt.jwtAuthenticationConverter(sessionStillOpen(revokedSessions, accountStanding()))))
+                .oauth2ResourceServer(oauth2 -> oauth2.bearerTokenResolver(bearerTokens())
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(sessionStillOpen(revokedSessions, accountStanding()))))
                 // #214's maintenance gate: after the bearer token has been
                 // read, so it can let a staff token through, and before
                 // authorization, so an anonymous request during a window gets
@@ -791,5 +807,23 @@ public class SecurityConfiguration {
             return authorities;
         });
         return converter;
+    }
+
+    /**
+     * Where a request's bearer token is read from: the {@code Authorization} header, as
+     * Spring's default does -- except on {@link #AUDIENCE_EVENTS}.
+     *
+     * <p>A permitted path still authenticates a token that is presented, and a token that
+     * has expired or been revoked is a 401 before the handler runs. For the audience beacon
+     * that would be wrong twice over: a signed-in reader whose access token lapsed between
+     * two pages would silently stop being counted, and the count does not depend on the
+     * account anyway -- the visitor key is the same day-salted hash for everybody. So on
+     * that one path no token is resolved, and the request is anonymous whatever it carries.
+     */
+    static BearerTokenResolver bearerTokens() {
+        DefaultBearerTokenResolver header = new DefaultBearerTokenResolver();
+        return request -> HttpMethod.POST.matches(request.getMethod()) && AUDIENCE_EVENTS.equals(request.getRequestURI())
+                ? null
+                : header.resolve(request);
     }
 }

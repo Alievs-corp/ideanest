@@ -411,4 +411,24 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             ORDER BY p.deadline ASC
             """)
     List<UUID> findDueForAutomaticWithdrawal(@Param("endedBefore") Instant endedBefore, Pageable page);
+
+    /**
+     * #633: what state a campaign is in, without loading it. The audience capture endpoint asks
+     * this for every campaign event it receives, so it is one column rather than an entity.
+     */
+    @Query("SELECT p.state FROM Project p WHERE p.id = :id")
+    Optional<az.ideanest.project.domain.ProjectState> findStateById(@Param("id") UUID id);
+
+    /**
+     * #633: one more daily viewer — see {@code CampaignViews}. An addition inside the statement,
+     * so concurrent first views cannot lose each other's increments, and V125's trigger leaves
+     * {@code updated_at} alone because only this statement changes the column.
+     */
+    @Modifying
+    @Query(value = "UPDATE projects SET view_count = view_count + 1 WHERE id = :id", nativeQuery = true)
+    int addView(@Param("id") UUID id);
+
+    /** #633: daily viewers summed, all time; empty for a campaign that does not exist. */
+    @Query(value = "SELECT view_count FROM projects WHERE id = :id", nativeQuery = true)
+    Optional<Long> findViewCountById(@Param("id") UUID id);
 }

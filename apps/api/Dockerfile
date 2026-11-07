@@ -71,6 +71,40 @@ RUN groupadd --system ideanest && useradd --system --gid ideanest --home /app id
 WORKDIR /app
 COPY --from=build --chown=ideanest:ideanest /build/build/libs/*.jar app.jar
 
+# Audience analytics' country lookup (#633): DB-IP's free "IP to Country Lite"
+# database, CC BY 4.0 -- the attribution belongs on the site's legal page. Read from
+# the path `ideanest.analytics.audience.geoip-database` names, which defaults to
+# this one.
+#
+# AFTER the jar, on purpose. Docker caches a RUN by its text, so a download in a
+# layer of its own would be cached for ever and the database would never move past
+# the month of the first build. Below the jar it re-runs on every build that ships
+# new code, which is every deployment, and fetches the current month's release.
+#
+# The current month first, then the previous one: DB-IP publishes early in the
+# month, and a build on the 1st may come before it. And if neither downloads, the
+# build still succeeds. The API treats a missing database as "country unknown" and
+# starts anyway (DbIpCountryLookup), and a deploy that failed because a free
+# download was briefly unavailable would trade every request for one statistic.
+RUN set -eu; \
+    mkdir -p /opt/geoip; \
+    this_month="$(date -u +%Y-%m)"; \
+    last_month="$(date -u -d "$(date -u +%Y-%m-01) -1 month" +%Y-%m)"; \
+    for month in "$this_month" "$last_month"; do \
+      if curl -fsSL --retry 2 --max-time 120 -o /tmp/dbip.mmdb.gz \
+           "https://download.db-ip.com/free/dbip-country-lite-${month}.mmdb.gz" \
+         && gunzip -c /tmp/dbip.mmdb.gz > /opt/geoip/dbip-country-lite.mmdb.tmp; then \
+        mv /opt/geoip/dbip-country-lite.mmdb.tmp /opt/geoip/dbip-country-lite.mmdb; \
+        echo "GeoIP: DB-IP Country Lite ${month}"; \
+        break; \
+      fi; \
+      rm -f /opt/geoip/dbip-country-lite.mmdb.tmp; \
+    done; \
+    rm -f /tmp/dbip.mmdb.gz; \
+    [ -f /opt/geoip/dbip-country-lite.mmdb ] \
+      || echo "GeoIP: no DB-IP database could be downloaded; countries come from CF-IPCountry only"; \
+    chmod -R a+rX /opt/geoip
+
 USER ideanest
 
 EXPOSE 8080

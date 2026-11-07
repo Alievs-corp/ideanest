@@ -40,6 +40,7 @@ import java.util.UUID;
  *     §10.2's public campaign page is {@code /projects/{creatorSlug}/{projectSlug}} and one
  *     slug alone addresses nothing. Null only when the creator row could not be joined,
  *     which {@link ProfileCampaigns#ofAnyState} explains and the two public reads exclude
+ * @param viewCount {@code projects.view_count}: daily unique viewers summed, all time (#633)
  * @param cover null for a campaign with no cover image
  * @param video the campaign's ready video, or null. A client shows its poster as the
  *     card's cover and plays it on hover or a long press
@@ -55,6 +56,7 @@ public record ProfileCampaign(
         Money goal,
         Money pledged,
         int backersCount,
+        long viewCount,
         Instant launchedAt,
         Instant deadline,
         Instant createdAt,

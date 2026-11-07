@@ -95,14 +95,16 @@ describe('the role editor on the staff screen', () => {
     expect(screen.queryByRole('checkbox', { name: box(COPY.capability.ADMINISTER_STAFF) })).toBeNull();
     // The pages, in the rail's own words.
     expect(screen.getAllByText(new RegExp(COPY.editor.links['/admin/curation/badges'] ?? '')).length).toBeGreaterThan(0);
-    // A super admin's own list of twenty-one capabilities is not drawn; the editor replaces it.
+    // A super admin's own list of twenty-two capabilities is not drawn; the editor replaces it.
     expect(screen.queryByRole('heading', { name: COPY.myHeading })).toBeNull();
   });
 
   it('saves the role on screen with exactly what is ticked, and says so', async () => {
     const user = userEvent.setup();
     vi.mocked(readMembership).mockResolvedValue(member(['SUPER_ADMIN']));
-    vi.mocked(changeRoleCapabilities).mockResolvedValue(set('CURATOR', ['CURATE', 'VIEW_AUDIT', 'VIEW_HEALTH']));
+    vi.mocked(changeRoleCapabilities).mockResolvedValue(
+      set('CURATOR', ['CURATE', 'VIEW_AUDIT', 'VIEW_AUDIENCE', 'VIEW_HEALTH']),
+    );
     render(<StaffRoles copy={COPY} />);
 
     await user.click(await screen.findByRole('button', { name: COPY.role.CURATOR }));
@@ -113,7 +115,12 @@ describe('the role editor on the staff screen', () => {
     expect(screen.getByText(COPY.editor.unsaved)).toBeInTheDocument();
     await user.click(save);
 
-    expect(changeRoleCapabilities).toHaveBeenCalledWith('CURATOR', ['CURATE', 'VIEW_AUDIT', 'VIEW_HEALTH']);
+    expect(changeRoleCapabilities).toHaveBeenCalledWith('CURATOR', [
+      'CURATE',
+      'VIEW_AUDIT',
+      'VIEW_AUDIENCE',
+      'VIEW_HEALTH',
+    ]);
     expect(
       await screen.findByText(fillPlaceholders(COPY.editor.saved, { role: COPY.role.CURATOR })),
     ).toBeInTheDocument();

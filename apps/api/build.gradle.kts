@@ -130,6 +130,13 @@ dependencies {
     // without giving up index locality the way v4 does. Java has no built-in.
     implementation("com.github.f4b6a3:uuid-creator:6.1.1")
 
+    // Audience analytics (#633): which country a visitor is in, from DB-IP's free
+    // "IP to Country Lite" database (CC BY 4.0, no account), which the Dockerfile
+    // downloads. MaxMind's reader is the reference decoder for the format, Apache 2.0,
+    // with no runtime dependencies of its own -- and only the reader, not `geoip2`,
+    // whose model classes describe fields a country lookup never reads.
+    implementation("com.maxmind.db:maxmind-db:4.2.0")
+
     // §13.1's object storage -- the media pipeline design of 2026-08-30.
     //
     // The S3 protocol rather than one vendor's own: R2, MinIO and S3 itself all speak

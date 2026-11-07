@@ -13,7 +13,13 @@
         "many": "{count} destekçi",
         "other": "{count} destekçi"
       },
-      "rule": "Hedefin %80'inde başarılı"
+      "rule": "Hedefin %80'inde başarılı",
+      "views": {
+        "one": "{count} görüntülenme",
+        "few": "{count} görüntülenme",
+        "many": "{count} görüntülenme",
+        "other": "{count} görüntülenme"
+      }
     },
     "saving": "Kaydediliyor…",
     "tryAgain": "Tekrar deneyin",
@@ -43,6 +49,38 @@
         "few": "{count} karakter fazla",
         "many": "{count} karakter fazla",
         "other": "{count} karakter fazla"
+      }
+    },
+    "audience": {
+      "period": {
+        "day": "Günlük",
+        "week": "Haftalık",
+        "month": "Aylık",
+        "year": "Yıllık"
+      },
+      "periodLabel": "Dönem",
+      "views": "Görüntülenme",
+      "clicks": "Tıklama",
+      "visitors": "Ziyaretçi",
+      "pageViews": "Sayfa görüntüleme",
+      "countries": "Ülkeler",
+      "platforms": "Platformlar",
+      "unknownCountry": "Bilinmiyor",
+      "dailySumNote": "Ziyaretçiler her gün ayrı sayılır ve toplanır; iki farklı günde gelen biri iki kez sayılır.",
+      "platform": {
+        "WEB": "Web",
+        "IOS": "iOS",
+        "ANDROID": "Android"
+      },
+      "surface": {
+        "HOME": "Ana sayfa",
+        "DISCOVER": "Keşfet",
+        "SEARCH": "Arama",
+        "CATEGORY": "Kategori",
+        "COLLECTION": "Koleksiyon",
+        "PROFILE": "Profil",
+        "SAVED": "Kaydedilenler",
+        "OTHER": "Diğer"
       }
     }
   },
@@ -2350,7 +2388,8 @@
           "READ_BANK_DETAILS": "Yaratıcının IBAN'ını tam olarak açmak — doğrulamak ya da ödeme yapmak için",
           "GRANT_COMPLIANCE_OVERRIDE": "Bir hesap için uyum gereğini sınırlı bir süreyle kaldırmak",
           "ADMINISTER_STAFF": "Rol vermek ve geri almak",
-          "VIEW_PARTNER_STATISTICS": "Finansal istatistikleri ortak olarak okumak: yalnızca toplamlar, anlaşılan paya göre"
+          "VIEW_PARTNER_STATISTICS": "Finansal istatistikleri ortak olarak okumak: yalnızca toplamlar, anlaşılan paya göre",
+          "VIEW_AUDIENCE": "Kitle rakamlarını okumak: ziyaretçiler, sayfa görüntülemeleri, kampanya görüntülemeleri ve tıklamalar"
         },
         "picker": {
           "subject": "hesap dizinini",

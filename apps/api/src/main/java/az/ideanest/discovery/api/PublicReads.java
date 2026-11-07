@@ -101,6 +101,7 @@ final class PublicReads {
                 card.pledged().currency(),
                 card.completionPercent(),
                 String.valueOf(card.backersCount()),
+                String.valueOf(card.viewCount()),
                 String.valueOf(card.daysLeft()),
                 String.valueOf(card.launchedAt()),
                 String.valueOf(card.deadline()));

@@ -35,7 +35,7 @@ import { errorFrom } from '../api/problem';
 /**
  * What a member of staff may do, as the service names them.
  *
- * The same nineteen as `shared.access.StaffCapability`, in the service's own order, and
+ * The same twenty-two as `shared.access.StaffCapability`, in the service's own order, and
  * deliberately a union of string literals rather than an enum: they are compared against
  * strings that arrive over the wire, and `@ideanest/api-client` generates exactly this shape
  * from `openapi.json`.
@@ -69,7 +69,9 @@ export type StaffCapability =
   | 'READ_BANK_DETAILS'
   | 'GRANT_COMPLIANCE_OVERRIDE'
   | 'ADMINISTER_STAFF'
-  | 'VIEW_PARTNER_STATISTICS';
+  | 'VIEW_PARTNER_STATISTICS'
+  /** #633: the audience figures — visitors, page views, campaign views and clicks. */
+  | 'VIEW_AUDIENCE';
 
 /**
  * The six kinds of staff account.
@@ -261,6 +263,7 @@ export const STAFF_CAPABILITIES: readonly StaffCapability[] = Object.freeze([
   'GRANT_COMPLIANCE_OVERRIDE',
   'ADMINISTER_STAFF',
   'VIEW_PARTNER_STATISTICS',
+  'VIEW_AUDIENCE',
 ]);
 
 /**
@@ -273,7 +276,7 @@ export const STAFF_CAPABILITIES: readonly StaffCapability[] = Object.freeze([
 export const ROLE_CAPABILITIES: Readonly<Record<StaffRole, readonly StaffCapability[]>> =
   Object.freeze({
     MODERATOR: ['MODERATE_CONTENT', 'ADMINISTER_ACCOUNTS', 'HANDLE_SUPPORT', 'VIEW_AUDIT'],
-    CURATOR: ['CURATE', 'VIEW_AUDIT'],
+    CURATOR: ['CURATE', 'VIEW_AUDIT', 'VIEW_AUDIENCE'],
     FINANCE: [
       'VIEW_FINANCE',
       'ISSUE_REFUND',
@@ -281,6 +284,7 @@ export const ROLE_CAPABILITIES: Readonly<Record<StaffRole, readonly StaffCapabil
       'HANDLE_SUPPORT',
       'READ_BANK_DETAILS',
       'VIEW_AUDIT',
+      'VIEW_AUDIENCE',
     ],
     /*
      * §22's own role, and narrow on purpose. It holds neither MODERATE_CONTENT nor

@@ -36,6 +36,13 @@
  * being true while #95 was open. {@code application.PledgeConfirmed} still carries the
  * older note in its own header; that file belongs to #238.
  *
+ * <p><strong>Audience figures (#633).</strong> How many people visit the site, open a
+ * campaign and click its card, per Baku day: {@code application.AudienceEventService}
+ * counts, {@code application.AudienceReports} reads, V124's header has the privacy
+ * argument. A person is a day-salted HMAC of address and agent and nothing is stored that
+ * outlives its day; {@code projects.view_count} is written through the project module's
+ * {@code CampaignViews}, because the column is that module's.
+ *
  * <p>The rest of §4.7 is not built and is not stubbed here: the device split, the
  * conversion rate, the per-tier sales, the geography. <strong>CD-09, new versus
  * returning backers, is the one worth naming</strong>, because it looks like it belongs
