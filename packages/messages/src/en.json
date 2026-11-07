@@ -7156,6 +7156,42 @@
         "many": "Sent to {count} backers.",
         "other": "Sent to {count} backers."
       }
+    },
+    "audience": {
+      "heading": "Audience",
+      "intro": "How many people opened this campaign, how many followed its card from a listing, and where they are.",
+      "loading": "Loading the audience figures",
+      "notGranted": "Your collaborator grant on this campaign does not include the audience figures.",
+      "unavailable": "The audience figures could not be loaded. It is the service rather than your campaign — try again shortly.",
+      "empty": "Nobody opened this campaign or clicked its card in this period.",
+      "allTimeViews": "All-time views",
+      "seriesHour": "Views and clicks by hour, {day}",
+      "seriesDay": "Views and clicks by day, {from} to {to}",
+      "seriesMonth": "Views and clicks by month, {from} to {to}",
+      "peak": "Most views: {when}, {count}",
+      "showTable": "Show the figures",
+      "tableLabel": "Views and clicks by period",
+      "hour": "Hour",
+      "day": "Day",
+      "month": "Month",
+      "zoneNote": "Hours and days are Baku time.",
+      "countriesLabel": "Views and clicks by country",
+      "surfacesHeading": "Where the clicks came from",
+      "surfacesLabel": "Clicks by listing",
+      "surfacesEmpty": "Nobody followed this campaign's card from a listing in this period.",
+      "clickNote": "A click is somebody following this campaign's card from a listing — the home page, discovery, search, a category, a collection, a profile or a saved list — on the site or in the app.",
+      "viewsCount": {
+        "one": "{count} view",
+        "few": "{count} views",
+        "many": "{count} views",
+        "other": "{count} views"
+      },
+      "clicksCount": {
+        "one": "{count} click",
+        "few": "{count} clicks",
+        "many": "{count} clicks",
+        "other": "{count} clicks"
+      }
     }
   },
   "dashboardControls": {

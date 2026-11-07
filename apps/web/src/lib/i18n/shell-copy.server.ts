@@ -29,6 +29,7 @@ import {
   type DashboardNavCopy,
   type DashboardOverviewCopy,
   type FinanceCopy,
+  type AudienceCopy,
   type FundingChartsCopy,
   type SurveyBuilderCopy,
   backerReportCopyFrom,
@@ -37,6 +38,7 @@ import {
   dashboardOverviewCopyFrom,
   financeCopyFrom,
   fundingChartsCopyFrom,
+  audienceCopyFrom,
   surveyBuilderCopyFrom,
 } from './dashboard-copy';
 import {
@@ -503,6 +505,12 @@ export async function dashboardOverviewCopy(): Promise<DashboardOverviewCopy> {
 /** CD-02, CD-07 and CD-08: the funding trend, the reward mix, and where the backers are. */
 export async function fundingChartsCopy(): Promise<FundingChartsCopy> {
   return fundingChartsCopyFrom(await getTranslations('dashboard'));
+}
+
+/** #634: the audience section under the charts — views, clicks, countries and listings. */
+export async function audienceCopy(): Promise<AudienceCopy> {
+  const [t, common] = await Promise.all([getTranslations('dashboard'), getTranslations('common')]);
+  return audienceCopyFrom(t, common);
 }
 
 /** CD-10 and CD-11: the backer report, its saved segments, its table and its export. */

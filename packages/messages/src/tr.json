@@ -7156,6 +7156,42 @@
         "many": "{count} destekçiye gönderildi.",
         "other": "{count} destekçiye gönderildi."
       }
+    },
+    "audience": {
+      "heading": "Kitle",
+      "intro": "Bu kampanyayı kaç kişinin açtığı, kaçının bir listedeki kartına tıklayıp geldiği ve nerede oldukları.",
+      "loading": "Kitle verileri yükleniyor",
+      "notGranted": "Bu kampanyadaki ortak çalışan yetkiniz kitle verilerini kapsamıyor.",
+      "unavailable": "Kitle verileri yüklenemedi. Sorun kampanyanızda değil, hizmette — birazdan tekrar deneyin.",
+      "empty": "Bu dönemde kimse bu kampanyayı açmadı ya da kartına tıklamadı.",
+      "allTimeViews": "Tüm zamanların görüntülenmesi",
+      "seriesHour": "Saatlere göre görüntülenme ve tıklamalar, {day}",
+      "seriesDay": "Günlere göre görüntülenme ve tıklamalar, {from} – {to}",
+      "seriesMonth": "Aylara göre görüntülenme ve tıklamalar, {from} – {to}",
+      "peak": "En çok görüntülenme: {when}, {count}",
+      "showTable": "Rakamları göster",
+      "tableLabel": "Dönemlere göre görüntülenme ve tıklamalar",
+      "hour": "Saat",
+      "day": "Gün",
+      "month": "Ay",
+      "zoneNote": "Saatler ve günler Bakü saatine göredir.",
+      "countriesLabel": "Ülkelere göre görüntülenme ve tıklamalar",
+      "surfacesHeading": "Tıklamalar nereden geldi",
+      "surfacesLabel": "Listelere göre tıklamalar",
+      "surfacesEmpty": "Bu dönemde kimse bu kampanyanın kartına bir listeden tıklamadı.",
+      "clickNote": "Tıklama, birinin bu kampanyanın kartına bir listeden — ana sayfa, keşfet, arama, kategori, koleksiyon, profil ya da kaydedilenler — sitede veya uygulamada tıklayıp gelmesidir.",
+      "viewsCount": {
+        "one": "{count} görüntülenme",
+        "few": "{count} görüntülenme",
+        "many": "{count} görüntülenme",
+        "other": "{count} görüntülenme"
+      },
+      "clicksCount": {
+        "one": "{count} tıklama",
+        "few": "{count} tıklama",
+        "many": "{count} tıklama",
+        "other": "{count} tıklama"
+      }
     }
   },
   "dashboardControls": {

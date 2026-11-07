@@ -7156,6 +7156,42 @@
         "many": "{count} dəstəkçiyə göndərildi.",
         "other": "{count} dəstəkçiyə göndərildi."
       }
+    },
+    "audience": {
+      "heading": "Auditoriya",
+      "intro": "Bu kampaniyanı neçə nəfərin açdığı, neçəsinin siyahıdakı kartına klikləyib keçdiyi və onların harada olduğu.",
+      "loading": "Auditoriya göstəriciləri yüklənir",
+      "notGranted": "Bu kampaniya üzrə əməkdaşlıq səlahiyyətiniz auditoriya göstəricilərini əhatə etmir.",
+      "unavailable": "Auditoriya göstəriciləri yüklənə bilmədi. Səbəb kampaniyanız deyil, xidmətdir — bir azdan yenidən cəhd edin.",
+      "empty": "Bu dövrdə bu kampaniyanı heç kim açmayıb və kartına klikləməyib.",
+      "allTimeViews": "Bütün dövr üzrə baxış",
+      "seriesHour": "Saatlar üzrə baxış və kliklər, {day}",
+      "seriesDay": "Günlər üzrə baxış və kliklər, {from} — {to}",
+      "seriesMonth": "Aylar üzrə baxış və kliklər, {from} — {to}",
+      "peak": "Ən çox baxış: {when}, {count}",
+      "showTable": "Rəqəmləri göstər",
+      "tableLabel": "Dövrlər üzrə baxış və kliklər",
+      "hour": "Saat",
+      "day": "Gün",
+      "month": "Ay",
+      "zoneNote": "Saat və günlər Bakı vaxtı ilədir.",
+      "countriesLabel": "Ölkələr üzrə baxış və kliklər",
+      "surfacesHeading": "Kliklər haradan gəlib",
+      "surfacesLabel": "Siyahılar üzrə kliklər",
+      "surfacesEmpty": "Bu dövrdə heç kim bu kampaniyanın kartına siyahıdan klikləməyib.",
+      "clickNote": "Klik — kimsə bu kampaniyanın kartına siyahıdan (ana səhifə, kəşf, axtarış, kateqoriya, kolleksiya, profil və ya saxlanılanlar) saytda və ya tətbiqdə klikləyib keçəndə sayılır.",
+      "viewsCount": {
+        "one": "{count} baxış",
+        "few": "{count} baxış",
+        "many": "{count} baxış",
+        "other": "{count} baxış"
+      },
+      "clicksCount": {
+        "one": "{count} klik",
+        "few": "{count} klik",
+        "many": "{count} klik",
+        "other": "{count} klik"
+      }
     }
   },
   "dashboardControls": {

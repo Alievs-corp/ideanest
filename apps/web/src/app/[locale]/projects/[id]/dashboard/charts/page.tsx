@@ -1,5 +1,6 @@
+import { AudiencePanel } from '../../../../../../components/dashboard/AudiencePanel';
 import { FundingCharts } from '../../../../../../components/dashboard/FundingCharts';
-import { fundingChartsCopy } from '../../../../../../lib/i18n/shell-copy.server';
+import { audienceCopy, fundingChartsCopy } from '../../../../../../lib/i18n/shell-copy.server';
 
 /**
  * The dashboard's charts panel — §4.7's CD-02, CD-07 and CD-08, issue 96.
@@ -19,7 +20,16 @@ export default async function FundingChartsPage({
 }) {
   // Words, not data: both charts are drawn by a client island, so the route resolves their
   // sentences and hands them down — `lib/i18n/dashboard-copy.ts` carries the reasoning.
-  const [{ id }, copy] = await Promise.all([params, fundingChartsCopy()]);
+  const [{ id }, copy, audience] = await Promise.all([params, fundingChartsCopy(), audienceCopy()]);
 
-  return <FundingCharts projectId={id} copy={copy} />;
+  /*
+   * #634's audience section is its own read with its own failures, under the funding ones: a
+   * refused or slow audience read must not take the charts above it down, and the reverse.
+   */
+  return (
+    <>
+      <FundingCharts projectId={id} copy={copy} />
+      <AudiencePanel projectId={id} copy={audience} />
+    </>
+  );
 }
