@@ -469,6 +469,19 @@ ideanest:
       # than an hourly schedule plus the scheduler's backoff, and comfortably
       # less than a working day.
       stale-after: PT6H
+    # #633's audience figures. The rest (the event budget per address) is defaulted
+    # in AudienceAnalyticsProperties.
+    audience:
+      # DB-IP's "IP to Country Lite", which the Dockerfile downloads to this path at
+      # build time. Optional: a missing or unreadable file is one WARN at start-up
+      # and every country the CF-IPCountry header does not give is "unknown" (ZZ).
+      # It never stops the API from starting.
+      geoip-database: ${AUDIENCE_GEOIP_DATABASE:/opt/geoip/dbip-country-lite.mmdb}
+      # `audience-cleanup`: deletes the day salts and first-of-the-day markers of
+      # every day before yesterday (Asia/Baku). Hourly, at twenty past. This is what
+      # makes a visitor key unrecoverable once its day has passed, so it is not a
+      # job to switch off.
+      cleanup-schedule: "0 20 * * * *"
 
   staff:
     # The first administrator, by verified address, comma separated. #295 moved

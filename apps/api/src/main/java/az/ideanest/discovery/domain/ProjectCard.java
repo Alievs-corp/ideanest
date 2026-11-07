@@ -38,6 +38,8 @@ import java.util.UUID;
  * @param pledged never null; the column defaults to zero
  * @param completionPercent null when there is no goal to be a percentage of
  * @param backersCount never null
+ * @param viewCount daily unique viewers summed, all time ({@code projects.view_count}, #633);
+ *     zero until somebody has opened the campaign
  * @param daysLeft null when there is no deadline; zero once the deadline has passed
  * @param badge which of §4.3's five words describes this campaign, or null for a
  *     state no word covers — {@code CANCELED}
@@ -62,6 +64,7 @@ public record ProjectCard(
         Money pledged,
         BigDecimal completionPercent,
         int backersCount,
+        long viewCount,
         Integer daysLeft,
         DiscoveryStatus badge,
         String state,

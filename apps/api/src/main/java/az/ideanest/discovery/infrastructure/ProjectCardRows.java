@@ -36,7 +36,7 @@ final class ProjectCardRows {
     static final String COLUMNS =
             """
             p.id, p.slug, p.title, p.state, p.currency,
-            p.goal_amount, p.pledged_amount, p.backers_count,
+            p.goal_amount, p.pledged_amount, p.backers_count, p.view_count,
             p.launched_at, p.deadline, p.extended_until,
             p.cover_image_url, p.cover_image_width, p.cover_image_height,
             vm.storage_key AS video_storage_key, vm.poster_storage_key AS video_poster_storage_key,
@@ -108,6 +108,7 @@ final class ProjectCardRows {
                 Money.of(pledgedAmount, currency),
                 ProjectCard.completionPercent(pledgedAmount, goalAmount),
                 resultSet.getInt("backers_count"),
+                resultSet.getLong("view_count"),
                 // An extended campaign counts down to its extension's end, which is when it
                 // stops taking pledges; `deadline` stays the first one (V74).
                 ProjectCard.daysLeft("EXTENDED".equals(state) && extendedUntil != null ? extendedUntil : deadline, asOf),

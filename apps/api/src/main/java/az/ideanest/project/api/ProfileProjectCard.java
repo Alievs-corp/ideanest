@@ -42,6 +42,7 @@ import java.util.UUID;
  * @param pledged what the campaign has raised now, which on a closed campaign keeps moving
  *     as collections fail. The frozen outcome that does not is on the campaign page, and a
  *     card is not where somebody reads a final result
+ * @param viewCount daily unique viewers summed, all time (#633), as the discovery card has it
  * @param creatorSlug null only when the campaign's creator row could not be joined. The two
  *     public tabs exclude those rows rather than serving a half-built link
  * @param video the campaign's ready video, or null. When present a client shows
@@ -63,6 +64,7 @@ public record ProfileProjectCard(
         Money goal,
         Money pledged,
         int backersCount,
+        long viewCount,
         Instant deadline,
         Instant launchedAt,
         CoverImageBody coverImage,
@@ -85,6 +87,7 @@ public record ProfileProjectCard(
                 campaign.goal(),
                 campaign.pledged(),
                 campaign.backersCount(),
+                campaign.viewCount(),
                 campaign.deadline(),
                 campaign.launchedAt(),
                 cover(campaign.cover()),

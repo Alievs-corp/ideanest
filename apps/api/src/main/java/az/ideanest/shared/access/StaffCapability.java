@@ -259,5 +259,18 @@ public enum StaffCapability {
      * multiplied by their percentage. That decision is made on the server from the account's
      * roles and profile, never from anything the client sends.
      */
-    VIEW_PARTNER_STATISTICS
+    VIEW_PARTNER_STATISTICS,
+
+    /**
+     * Read the audience figures: visitors, page views, and campaign views and clicks, across
+     * the platform and per campaign. #633, part of #632.
+     *
+     * <p><strong>Its own capability rather than {@link #VIEW_FINANCE}</strong>, because these
+     * are counts of people reading the site, not money. A curator deciding what goes on the
+     * front page needs to know which campaigns people open and should not have to be trusted
+     * with the ledger to find out; the figures are aggregates with no personal data, so the
+     * capability is safe to give widely. Held by default by {@code SUPER_ADMIN},
+     * {@code FINANCE} and {@code CURATOR}, and adjustable on every adjustable role (V114).
+     */
+    VIEW_AUDIENCE
 }

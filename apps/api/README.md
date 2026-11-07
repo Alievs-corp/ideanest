@@ -585,6 +585,49 @@ is a cache that is empty at any interesting traffic level.
 
 ---
 
+## Audience analytics (#633)
+
+How many people visit the site, open a campaign and click a campaign card, per
+Asia/Baku day. `az.ideanest.analytics`, V124 and V125.
+
+| Endpoint | Who | What |
+|---|---|---|
+| `POST /v1/audience/events` | anybody, no token read | `VISIT`, `VIEW` or `CLICK`; always `204` for a well-formed event |
+| `GET /v1/projects/{id}/audience?period=` | `VIEW_FINANCES` on the campaign | one campaign; `private, no-store` |
+| `GET /v1/admin/audience?period=` | `VIEW_AUDIENCE` | the platform; audited as `analytics.read` |
+| `GET /v1/admin/audience/projects/{id}?period=` | `VIEW_AUDIENCE` | one campaign, any state; audited |
+
+`period` is `day` (24 hours of today), `week` (7 days), `month` (30 days) or
+`year` (12 calendar months), each including today and drawn in Asia/Baku, and
+every bucket is in the series whether or not anything happened in it.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `AUDIENCE_GEOIP_DATABASE` | `/opt/geoip/dbip-country-lite.mmdb` | DB-IP's country database; the image downloads it there |
+
+**No cookie and no stored address.** A visitor is
+`HMAC-SHA256(day salt, address "|" user agent)`, where the address is
+`CF-Connecting-IP` when the request came through Cloudflare and the container's
+resolved address otherwise. The salt is random per Baku day and
+`audience-cleanup` deletes it, with the day's first-of-the-day markers, once the
+day and one more have passed. Neither the address nor the agent is written
+anywhere. A multi-day "visitors" figure is daily visitors summed, and every
+screen says so.
+
+**What counts.** A `VISIT` adds a page view every time and a visitor once a day; a
+`VIEW` or `CLICK` counts once per visitor, campaign and day, and a first `VIEW`
+also adds one to `projects.view_count`, the number on the cards. A bot's user
+agent, and a campaign outside `PublicProjects.VISIBLE`, write nothing and get
+the same `204`.
+
+**Country** is `CF-IPCountry` when it names one (not `XX`, not `T1`), else a
+lookup in DB-IP's "IP to Country Lite" (CC BY 4.0; the attribution belongs on the
+legal page), else `ZZ`. The database is optional: missing or unreadable is one
+WARN at start-up and every lookup answering unknown, never a failed start. The
+test suite runs without one.
+
+---
+
 ## Email
 
 `NotificationChannel.EMAIL` has a transport since #86 (§12.3). The parts worth
@@ -778,7 +821,7 @@ az.ideanest
 ├── notification      email, push, in-app, preferences
 ├── media             uploads, validation, transcoding state
 ├── moderation        reports, review queues, suspension
-├── analytics         campaign metric aggregation
+├── analytics         campaign metric aggregation, audience figures
 ├── risk              §17.2's fraud signals: velocity, account age, address familiarity
 ├── verification      §22.1's identity documents: capture, restricted access, retention
 ├── admin             internal operations tooling
@@ -1181,7 +1224,7 @@ other way would be a cycle. The dependency is inverted instead.
 | §4.7's CD-16 financial summary. Gross, fees, tax and net cannot be stated: there is no `ledger_entries`, no `transactions`, and no processing fee to subtract until a provider is chosen. A "net payout" computed from the 5% platform fee alone would be a number a creator would plan around and would be wrong by the processing fee | [#99](https://github.com/ismetcahangirov/ideanest/issues/99), [#62](https://github.com/ismetcahangirov/ideanest/issues/62), [#60](https://github.com/ismetcahangirov/ideanest/issues/60) |
 | Job queue and scheduler | [#134](https://github.com/ismetcahangirov/ideanest/issues/134) |
 | A comparison of the fraud score against a real chargeback rate, and therefore any decision made on it. `RiskAssessments` **advises and never blocks**: a false-positive rate nobody has measured is not one a platform should refuse pledges on, and the rate is unmeasurable until a provider is chosen. The score is written for every confirmed pledge and read by staff | [#60](https://github.com/ismetcahangirov/ideanest/issues/60) |
-| An IP-to-country source, and with it §17.2's geography-mismatch signal. `UnresolvedAddressGeography` is named for what it is and reports the signal **unavailable** on every assessment rather than clearing it — a low score with an unavailable signal is a different statement from a low score without one | no issue yet |
+| §17.2's geography-mismatch signal. An IP-to-country source exists since #633 (`DbIpCountryLookup`, in `analytics`, optional at run time) and the risk module does not read it yet. `UnresolvedAddressGeography` is named for what it is and reports the signal **unavailable** on every assessment rather than clearing it — a low score with an unavailable signal is a different statement from a low score without one | no issue yet |
 | Any gate on identity verification. #105 built the capture, the restricted access and the retention limit; **who has to verify** is §22.1's legal question and `ideanest.verification.required` is off | [#71](https://github.com/ismetcahangirov/ideanest/issues/71) |
 | Object storage for identity documents. They are AES-256-GCM ciphertext in `identity_documents`, which is affordable because they are small, few per creator, and destroyed within days — see V58. When §13.1's ingestion lands they move | [#139](https://github.com/ismetcahangirov/ideanest/issues/139) |
 | A Redis relay behind §12.1's socket (#91). A broadcast reaches the sessions the receiving process holds, so on N replicas a reader is told about roughly one event in N. That is a degraded live counter rather than a wrong page -- the server-rendered numbers are correct and refresh on navigation, and nothing on the platform reads state from that module. The follow-up is one class: a publish to Redis instead of a loop, and a subscriber that calls the loop | [#139](https://github.com/ismetcahangirov/ideanest/issues/139) |

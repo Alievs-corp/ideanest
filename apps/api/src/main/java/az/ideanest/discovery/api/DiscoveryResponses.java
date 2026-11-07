@@ -42,6 +42,8 @@ public final class DiscoveryResponses {
      *     two money values and is carried the way money is carried (§10.3): a JSON
      *     number here would be parsed into an IEEE 754 double by every mainstream
      *     client, at the one number a backer reads as "did it make it"
+     * @param viewCount how many people have opened the campaign: daily unique viewers summed,
+     *     all time (#633). Clients show it on the cover and hide it at zero
      * @param daysLeft absent when there is no deadline; zero once it has passed
      * @param badge one of §4.3's five status words, or absent for a state none of them
      *     covers — a cancelled campaign
@@ -68,6 +70,7 @@ public final class DiscoveryResponses {
             Money pledged,
             String completionPercent,
             int backersCount,
+            long viewCount,
             Integer daysLeft,
             String badge,
             String state,
@@ -181,6 +184,7 @@ public final class DiscoveryResponses {
                 card.pledged(),
                 card.completionPercent() == null ? null : card.completionPercent().toPlainString(),
                 card.backersCount(),
+                card.viewCount(),
                 card.daysLeft(),
                 badge == null ? null : badge.wireValue(),
                 card.state(),

@@ -88,6 +88,12 @@ ideanest:
       # The production window. Late arrival is a rule this suite asserts, and a
       # shortened window here would assert a different one.
       re-rollup-window: PT72H
+    audience:
+      # #633. No GeoIP database in the suite, which is the "missing file" case the
+      # feature promises to survive: every lookup is unknown unless a test sends
+      # CF-IPCountry. And the cleanup is driven directly, like every job here.
+      geoip-database: ""
+      cleanup-schedule: "-"
 
   signature:
     provider:
