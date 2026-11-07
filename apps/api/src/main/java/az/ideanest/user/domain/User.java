@@ -195,6 +195,22 @@ public class User {
                 Objects.requireNonNull(profileVisibility, "Profile visibility is PUBLIC or PRIVATE, never absent");
     }
 
+    /**
+     * Whether a stranger may see this account's profile: its owner chose {@link ProfileVisibility#PUBLIC}
+     * and has not asked for the account to be deleted (#647).
+     *
+     * <p><strong>Derived, not stored.</strong> A deletion request withdraws the page at once rather
+     * than thirty days later at anonymisation, and it does so without touching
+     * {@code profile_visibility}. Writing {@code PRIVATE} there would need the previous value kept
+     * somewhere for a cancellation to put back; reading the request instead leaves the owner's own
+     * setting alone, so a cancellation, which clears the request, restores exactly the page the
+     * owner had, {@code PRIVATE} included, with nothing to restore. Anonymisation still writes
+     * {@code PRIVATE}, for the reason {@link #anonymise} gives.
+     */
+    public boolean isProfilePublic() {
+        return profileVisibility == ProfileVisibility.PUBLIC && deletionRequestedAt == null;
+    }
+
     public boolean isDeleted() {
         return deletedAt != null;
     }
@@ -268,6 +284,8 @@ public class User {
         this.email = EmailAddress.of("deleted-" + marker + "@anonymised.invalid");
         this.name = ANONYMOUS_NAME;
         this.slug = "deleted-" + marker;
+        // The address only. The uploaded file behind it is deleted by AccountAnonymiser,
+        // after the commit (#647).
         this.avatarUrl = null;
         this.bio = null;
         // #276's three. The links are rows rather than columns and are deleted by

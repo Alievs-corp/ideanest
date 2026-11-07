@@ -6,7 +6,9 @@ package az.ideanest.user.application;
  * <p><strong>Three different facts, one exception, on purpose.</strong> A slug nobody
  * holds, a slug that belonged to an account §17.4 has anonymised, and a slug whose owner
  * set {@link az.ideanest.user.domain.ProfileVisibility#PRIVATE} all reach here and all
- * come back as the same 404 with the same body.
+ * come back as the same 404 with the same body. Since #647 a slug whose owner has asked for
+ * the account to be deleted, and is inside the grace period, answers exactly as a private
+ * one does, for the reason the first pair below gives.
  *
  * <p>Telling them apart is the whole failure this type exists to prevent, and each pair
  * fails differently:
