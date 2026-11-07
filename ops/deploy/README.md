@@ -235,8 +235,11 @@ Two things are the owner's to decide and are not set from this repository:
   keep the two the same.
 - **A new third-party origin needs the policy changed.** A script, frame or
   stylesheet from a host the policy does not name is blocked in the browser and
-  shows up only as a console error. The sign-in providers are named; an analytics
-  or support widget would have to be added in the same change that adds it.
+  shows up only as a console error. The sign-in providers are named, and so is
+  Cloudflare Web Analytics (`static.cloudflareinsights.com`), whose beacon the
+  proxy injects into every page; switching on any other Cloudflare feature that
+  injects a script (Rocket Loader, Zaraz, email obfuscation) needs the same.
+  Another analytics or support widget is added in the change that adds it.
 
 ## Building the images by hand
 

@@ -153,6 +153,14 @@ const APPLE_SDK_ORIGIN = 'https://appleid.cdn-apple.com';
 const APPLE_ID_ORIGIN = 'https://appleid.apple.com';
 
 /**
+ * Cloudflare Web Analytics. The proxy in front of the site injects this beacon into every
+ * HTML response (it is not in this application's source), and it reports to
+ * `cloudflareinsights.com`, which `connect-src`'s `https:` already allows. Without it here the
+ * policy blocked the beacon in production and the site's analytics went dark.
+ */
+const CLOUDFLARE_INSIGHTS = 'https://static.cloudflareinsights.com';
+
+/**
  * The Content-Security-Policy every response carries — #587.
  *
  * <h2>`'unsafe-inline'` in `script-src`, and why neither a nonce nor a hash</h2>
@@ -176,8 +184,8 @@ const APPLE_ID_ORIGIN = 'https://appleid.apple.com';
  *   that is a cost to every page on a small shared server that a hardening change does not get
  *   to decide.
  *
- * So inline script stays allowed and **script from anywhere else does not**: `'self'` and the
- * two providers' SDK origins only. An injection that can add `<script src>` — the commoner
+ * So inline script stays allowed and **script from anywhere else does not**: `'self'`, the
+ * two providers' SDK origins and the Cloudflare analytics beacon only. An injection that can add `<script src>` — the commoner
  * half — is refused, and the remaining directives hold whatever a script does.
  *
  * <h2>The rest, directive by directive</h2>
@@ -217,6 +225,7 @@ export function contentSecurityPolicy({ development = false } = {}) {
       ...(development ? ["'unsafe-eval'"] : []),
       `${GOOGLE_IDENTITY}/gsi/client`,
       APPLE_SDK_ORIGIN,
+      CLOUDFLARE_INSIGHTS,
     ],
     'style-src': ["'self'", "'unsafe-inline'", `${GOOGLE_IDENTITY}/gsi/style`],
     'img-src': ["'self'", 'data:', 'blob:', 'https:'],
