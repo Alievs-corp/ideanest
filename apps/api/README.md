@@ -1171,6 +1171,13 @@ either: the mobile app registers its token again on its next signed-in launch
 it and the new one carries no `deletion_pending` claim), or on a foreground once
 the token in memory has been refreshed.
 
+**The public profile goes at the request, too** (#647). `User.isProfilePublic` is
+`PUBLIC` *and* no deletion requested, and `PublicProfiles` asks it for the page,
+both archives and comment author names, so a closing account answers the same
+404 as a private one. Nothing writes `profile_visibility` for this: a
+cancellation clears the request and the owner's own setting, `PRIVATE` included,
+is simply what applies again.
+
 **After the grace period the account is anonymised, not deleted.** The row
 survives with its identifier and its foreign keys intact, because "pledge #123
 was made by user X" has to stay true after X leaves. The email, name, slug,
@@ -1179,9 +1186,21 @@ factor (TOTP secret, recovery codes, sign-in challenges), every Google and Apple
 link, every pending address change, and every verification token are deleted
 (#645); the sessions keep their timings and lose their IP addresses and user
 agents. Push registrations are deleted again (#643), which reaches an account
-closed before the request started deleting them. Each of these tables cascades
-from `users`, and that cascade never fires because the row is never deleted, so
-anonymisation has to delete them itself.
+closed before the request started deleting them. Notifications and notification
+preferences are deleted too (#647). Each of these tables cascades from `users`,
+and that cascade never fires because the row is never deleted, so anonymisation
+has to delete them itself. The modules that own them are reached through ports
+in `user.application`: `AccountSecurity` (`auth`), `AccountPushRegistrations` and
+`AccountNotifications` (`notification`), and `AccountAvatarFiles` (`media`).
+
+The uploaded avatar picture goes as well (#647): `media.AvatarUploads` finds the
+`media` row behind `avatar_url` (the account's own upload, served at exactly
+that address, and not used by a campaign or reward, which `media` asks through
+its `MediaUsage` port, answered by `project`) and deletes the row and its
+objects after the anonymisation commits, through
+`MediaLibrary.discardAfterCommit`. A rollback therefore never loses the picture
+of an account that still exists, and an object that is already gone is not an
+error. Other uploads of the account, campaign media above all, are not touched.
 
 **The address is released by anonymisation** and not before. Holding it in
 reserve permanently would mean retaining the address — or a hash of it, which

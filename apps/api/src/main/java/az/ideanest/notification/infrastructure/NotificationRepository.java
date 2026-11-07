@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -241,4 +242,17 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
                AND inbox.channel = az.ideanest.notification.domain.NotificationChannel.IN_APP
             """)
     Optional<UUID> inboxIdOf(@Param("id") UUID id);
+
+    /**
+     * Every notification addressed to an account, on every channel and in every state — its
+     * anonymisation (#647).
+     *
+     * <p>A bulk statement, for {@code PushDeviceRepository.deleteByUserId}'s reason: it runs in
+     * the middle of {@code AccountAnonymiser}'s transaction, and {@code clearAutomatically} stays
+     * off so that the account being overwritten is not detached. {@code email_deliveries} rows
+     * written for these notifications go with them, through V30's {@code ON DELETE CASCADE}.
+     */
+    @Modifying
+    @Query("delete from Notification notification where notification.recipientId = :recipientId")
+    int deleteByRecipientId(@Param("recipientId") UUID recipientId);
 }

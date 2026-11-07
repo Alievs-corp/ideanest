@@ -103,8 +103,8 @@ public class PublicProfiles {
      *     than rejected — it reaches here only from a path that did not match, and a 400
      *     would distinguish a malformed request from a missing profile for no benefit
      * @throws ProfileNotFoundException for a slug nobody holds, for one whose account
-     *     §17.4 has anonymised, and for one whose owner chose {@link ProfileVisibility#PRIVATE}
-     *     — identically, on purpose
+     *     §17.4 has anonymised, for one whose owner has asked for it to be deleted (#647), and
+     *     for one whose owner chose {@link ProfileVisibility#PRIVATE} — identically, on purpose
      */
     @Transactional(readOnly = true)
     public PublicProfile requireVisible(String slug) {
@@ -117,7 +117,9 @@ public class PublicProfiles {
         // stamps deleted_at at the same moment it overwrites the name.
         User account = users.findBySlugAndDeletedAtIsNull(slug).orElseThrow(() -> new ProfileNotFoundException(slug));
 
-        if (account.getProfileVisibility() != ProfileVisibility.PUBLIC) {
+        // PUBLIC, and no deletion requested (#647): a closing account's page is withdrawn when
+        // the deletion is asked for, not thirty days later. See User.isProfilePublic.
+        if (!account.isProfilePublic()) {
             throw new ProfileNotFoundException(slug);
         }
         return new PublicProfile(
@@ -137,8 +139,9 @@ public class PublicProfiles {
      * comments on a campaign page.
      *
      * <p><strong>The same rule as {@link #requireVisible}, applied to a batch.</strong> An
-     * account that chose {@link ProfileVisibility#PRIVATE}, and one §17.4 has anonymised,
-     * is simply absent from the answer, and the caller draws no name for it. A comment is
+     * account that chose {@link ProfileVisibility#PRIVATE}, one whose deletion has been
+     * requested (#647), and one §17.4 has anonymised, is simply absent from the answer, and
+     * the caller draws no name for it. A comment is
      * a public page too, and a private profile whose name still appeared under every
      * comment its owner wrote would be a setting honoured on one surface out of two —
      * the failure this class exists to prevent.
@@ -154,7 +157,7 @@ public class PublicProfiles {
         }
         Map<UUID, PublicName> names = new LinkedHashMap<>();
         for (User account : users.findAllByIdInAndDeletedAtIsNull(accountIds)) {
-            if (account.getProfileVisibility() == ProfileVisibility.PUBLIC) {
+            if (account.isProfilePublic()) {
                 names.put(account.getId(), new PublicName(account.getName(), account.getAvatarUrl()));
             }
         }

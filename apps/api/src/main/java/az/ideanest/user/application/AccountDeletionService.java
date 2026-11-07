@@ -34,6 +34,13 @@ import org.springframework.transaction.annotation.Transactional;
  * request from a token issued to an account in this state. A closing account
  * that could still pledge would be making commitments it has already said it
  * will not be around to honour.
+ *
+ * <p><strong>What strangers see during the grace period</strong> (#647): no profile. The
+ * public page, its two archives and the name beside its comments go when the deletion is
+ * requested, as if the owner had chosen {@code PRIVATE}, and come back on cancellation as
+ * whatever the owner had chosen. Nothing here writes that: {@code User.isProfilePublic}
+ * reads the request itself, so there is no previous setting to store or to restore.
+ * Campaigns the account created stay as they are, as they do for a private profile.
  */
 @Service
 public class AccountDeletionService {

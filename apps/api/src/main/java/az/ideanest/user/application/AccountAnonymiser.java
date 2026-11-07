@@ -25,7 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
  * social link, the proof that the address was verified, the password credential,
  * the second factor (its secret, recovery codes and sign-in challenges), every
  * Google and Apple link, every pending address change, every unspent verification
- * link, every push registration, and the device label, user agent, and IP address
+ * link, every push registration, every notification and notification preference, the
+ * uploaded avatar picture itself, and the device label, user agent, and IP address
  * of every session. Everything from the credential on lives in {@code auth} and goes
  * through {@link AccountSecurity#forget} (#645).
  *
@@ -34,6 +35,14 @@ import org.springframework.transaction.annotation.Transactional;
  * fires. They belong to {@code notification}, which depends on this module, so they
  * are reached through {@link AccountPushRegistrations} the way the credentials are
  * reached through {@link AccountSecurity}.
+ *
+ * <p><strong>The inbox and the avatar picture go the same way</strong> (#647):
+ * {@link AccountNotifications} for {@code notification}'s two other tables, and
+ * {@link AccountAvatarFiles} for {@code media}'s file. Clearing {@code avatar_url} unlinks the
+ * picture from the profile; it does not delete a photograph of somebody who asked to be
+ * forgotten, and the address still served it. The file is deleted after this transaction
+ * commits, never inside it: an object store does not roll back, and a failed anonymisation
+ * has to leave a still-existing account with its picture.
  *
  * <p><strong>#276's four go with the rest of the profile, and §17.4 is not
  * satisfied without them.</strong> A row whose name reads "Deleted account" and
@@ -68,16 +77,22 @@ public class AccountAnonymiser {
     private final SocialLinkRepository socialLinks;
     private final AccountSecurity security;
     private final AccountPushRegistrations pushRegistrations;
+    private final AccountNotifications notifications;
+    private final AccountAvatarFiles avatarFiles;
 
     public AccountAnonymiser(
             UserRepository users,
             SocialLinkRepository socialLinks,
             AccountSecurity security,
-            AccountPushRegistrations pushRegistrations) {
+            AccountPushRegistrations pushRegistrations,
+            AccountNotifications notifications,
+            AccountAvatarFiles avatarFiles) {
         this.users = users;
         this.socialLinks = socialLinks;
         this.security = security;
         this.pushRegistrations = pushRegistrations;
+        this.notifications = notifications;
+        this.avatarFiles = avatarFiles;
     }
 
     /**
@@ -96,6 +111,9 @@ public class AccountAnonymiser {
         return users.findByIdForUpdate(userId)
                 .filter(user -> user.isAnonymisationDue(now))
                 .map(user -> {
+                    // Read before anonymise() clears it: the address is the only thing that
+                    // leads to the uploaded file (#647).
+                    String avatarUrl = user.getAvatarUrl();
                     user.anonymise(now);
                     // Written before the credentials are destroyed, and the
                     // order is not cosmetic: the statements behind forget() are
@@ -115,6 +133,13 @@ public class AccountAnonymiser {
                     // account cannot register again -- but an account closed before that change
                     // still has its rows, and this is what reaches them.
                     pushRegistrations.forgetAll(userId);
+                    // Bulk and repeatable as well (#647). Not at the request: the inbox and the
+                    // switches are the account's own, and a cancellation gives them back whole.
+                    notifications.forgetAll(userId);
+                    // Found now, deleted after the commit -- see the class comment. A crash
+                    // between the commit and the deletion leaves an orphaned file and a log line,
+                    // not a retry: the next run finds the account already anonymised.
+                    avatarFiles.forgetAfterCommit(userId, avatarUrl);
                     security.forget(userId);
                     log.info("Account {} anonymised.", userId);
                     return true;

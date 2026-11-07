@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
+import az.ideanest.user.application.PublicProfiles;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -72,6 +74,9 @@ class PublicProfileApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private DataSource dataSource;
+
+    @Autowired
+    private PublicProfiles publicProfiles;
 
     private JdbcTemplate jdbc;
 
@@ -267,6 +272,58 @@ class PublicProfileApiTests extends AbstractIntegrationTest {
     }
 
     // -----------------------------------------------------------------------
+    // A closing account (#647)
+    // -----------------------------------------------------------------------
+
+    @Test
+    @DisplayName("requesting deletion withdraws the profile at once, and cancelling brings it back")
+    void requestingDeletionWithdrawsTheProfileAtOnce() {
+        Account owner = registered("closing");
+        assertThat(profile(owner.slug()).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(archive(owner.slug(), "projects").getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(archive(owner.slug(), "backed").getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(publicProfiles.publicNames(List.of(owner.id()))).containsKey(owner.id());
+
+        assertThat(requestDeletion(owner).getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+
+        // Not thirty days later at anonymisation: from the request, the page, both archives and
+        // the name beside the account's comments answer exactly as a private profile's do.
+        ResponseEntity<String> hidden = profile(owner.slug());
+        ResponseEntity<String> absent = profile("nobody-is-called-this-" + SEQUENCE.incrementAndGet());
+        assertThat(hidden.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(withoutInstance(hidden)).isEqualTo(withoutInstance(absent));
+        assertThat(archive(owner.slug(), "projects").getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(archive(owner.slug(), "backed").getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(publicProfiles.publicNames(List.of(owner.id()))).doesNotContainKey(owner.id());
+        // The owner's own setting is not what changed, which is why there is nothing to restore.
+        assertThat(visibilityColumn(owner)).isEqualTo("PUBLIC");
+
+        assertThat(cancelDeletion(owner).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        assertThat(profile(owner.slug()).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(archive(owner.slug(), "projects").getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(archive(owner.slug(), "backed").getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(publicProfiles.publicNames(List.of(owner.id()))).containsKey(owner.id());
+    }
+
+    @Test
+    @DisplayName("cancelling a deletion leaves a private profile private")
+    void cancellingADeletionLeavesAPrivateProfilePrivate() {
+        Account owner = registered("private-closing");
+        assertThat(setVisibility(owner, "PRIVATE").getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        assertThat(requestDeletion(owner).getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(profile(owner.slug()).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(cancelDeletion(owner).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        // What the owner had before is what they have after: a cancellation is not a reason to
+        // publish a page somebody chose to withdraw.
+        assertThat(visibilityColumn(owner)).isEqualTo("PRIVATE");
+        assertThat(profile(owner.slug()).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(publicProfiles.publicNames(List.of(owner.id()))).doesNotContainKey(owner.id());
+    }
+
+    // -----------------------------------------------------------------------
     // Fixtures
     // -----------------------------------------------------------------------
 
@@ -314,6 +371,41 @@ class PublicProfileApiTests extends AbstractIntegrationTest {
     /** Deliberately without a bearer token. This endpoint has no caller to establish. */
     private ResponseEntity<String> profile(String slug) {
         return rest.getForEntity("/v1/users/" + slug, String.class);
+    }
+
+    /** One of the profile's two archives: {@code projects} or {@code backed}. */
+    private ResponseEntity<String> archive(String slug, String which) {
+        return rest.getForEntity("/v1/users/" + slug + "/" + which, String.class);
+    }
+
+    private String visibilityColumn(Account owner) {
+        return jdbc().queryForObject("SELECT profile_visibility FROM users WHERE id = ?", String.class, owner.id());
+    }
+
+    private ResponseEntity<String> requestDeletion(Account owner) {
+        return rest.exchange(
+                "/v1/me/deletion",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("password", PASSWORD), bearer(owner.accessToken())),
+                String.class);
+    }
+
+    /**
+     * Withdraws the request with a fresh sign-in: the request ended every session, the one
+     * that made it included, and signing in again is the way back.
+     */
+    private ResponseEntity<String> cancelDeletion(Account owner) {
+        String email = jdbc().queryForObject("SELECT email FROM users WHERE id = ?", String.class, owner.id());
+        Map<String, Object> signedIn = parse(rest.exchange(
+                "/v1/auth/login",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("email", email, "password", PASSWORD, "tokenDelivery", "body"), jsonHeaders()),
+                String.class));
+        return rest.exchange(
+                "/v1/me/deletion",
+                HttpMethod.DELETE,
+                new HttpEntity<>(bearer((String) signedIn.get("accessToken"))),
+                String.class);
     }
 
     private ResponseEntity<String> setVisibility(Account owner, String visibility) {
