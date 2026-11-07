@@ -41,4 +41,14 @@ describe('the localised routing configuration', () => {
      */
     expect(routing.localeDetection).toBe(false);
   });
+
+  it('never sets next-intl’s own locale cookie', () => {
+    /*
+     * `NEXT_LOCALE` would be written on a reader's first page in a language their browser
+     * does not prefer, without their asking, and nothing reads it: the proxy's redirect reads
+     * `ideanest_locale`. A cookie that is neither chosen nor needed is one the site would have
+     * to ask consent for.
+     */
+    expect(routing.localeCookie).toBe(false);
+  });
 });
