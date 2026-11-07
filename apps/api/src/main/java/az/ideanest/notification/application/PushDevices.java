@@ -4,6 +4,7 @@ import az.ideanest.notification.domain.DevicePlatform;
 import az.ideanest.notification.domain.PushDevice;
 import az.ideanest.notification.infrastructure.PushDeviceRepository;
 import az.ideanest.shared.access.SignedInAccounts;
+import az.ideanest.user.application.AccountPushRegistrations;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -42,6 +43,9 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>The reverse — one person, several phones — is a real case and is supported: the
  * tokens differ, so the rows differ, and a send goes to all of them.
  *
+ * <p>It also answers {@code user}'s {@link AccountPushRegistrations}, so that an anonymised
+ * account's registrations go with its identity ({@link #forgetAll}).
+ *
  * <h2>The token is validated here as well as in the schema</h2>
  *
  * <p>Expo refuses a whole batch containing one malformed token. A single bad row would
@@ -51,7 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
  * mistake caught with a 400, and the other is anything that reaches the table another way.
  */
 @Service
-public class PushDevices {
+public class PushDevices implements AccountPushRegistrations {
 
     private static final Logger log = LoggerFactory.getLogger(PushDevices.class);
 
@@ -157,6 +161,28 @@ public class PushDevices {
             return;
         }
         devices.deleteByTokenAndUserId(token.trim(), userId);
+    }
+
+    /**
+     * Forgets every installation the account has — §17.4's anonymisation (#643).
+     *
+     * <p>Called by {@code AccountAnonymiser}, and this joins its transaction: the registrations
+     * go if and only if the account's identity goes with them. Signing out deletes one row and
+     * the retention sweep deletes old ones, but an account closed on a phone that still has the
+     * application has a row neither would reach for half a year, and the cascade on
+     * {@code user_id} cannot help because the {@code users} row is never deleted.
+     *
+     * <p>No token and no account in the log line, for {@link #register}'s reason; the count is
+     * enough to tell that it happened.
+     */
+    @Override
+    @Transactional
+    public int forgetAll(UUID userId) {
+        int removed = devices.deleteByUserId(userId);
+        if (removed > 0) {
+            log.info("Forgot {} push registrations of an anonymised account.", removed);
+        }
+        return removed;
     }
 
     /**

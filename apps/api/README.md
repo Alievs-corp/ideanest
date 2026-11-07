@@ -1170,7 +1170,10 @@ survives with its identifier and its foreign keys intact, because "pledge #123
 was made by user X" has to stay true after X leaves. The email, name, slug,
 avatar, and biography are overwritten; the password credential and every
 verification token are deleted; the sessions keep their timings and lose their
-IP addresses and user agents.
+IP addresses and user agents. Every push registration is deleted too (#643):
+`push_devices` cascades from `users`, and that cascade never fires because the
+row is never deleted, so without this a closed account's tokens would wait out the
+180-day retention sweep.
 
 **The address is released by anonymisation** and not before. Holding it in
 reserve permanently would mean retaining the address — or a hash of it, which
@@ -1196,6 +1199,8 @@ account".
 account needs a password check, session revocation, and credential destruction,
 all of which live in `auth` — but `auth` already depends on `user`, so a call the
 other way would be a cycle. The dependency is inverted instead.
+`AccountPushRegistrations` is the same arrangement with `notification`, which
+owns `push_devices` and already depends on `user` to look recipients up.
 
 ---
 
