@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Registered installations, by the four questions asked of them — issue #87.
@@ -48,6 +49,19 @@ public interface PushDeviceRepository extends JpaRepository<PushDevice, UUID> {
      * {@code DeviceNotRegistered}, which is about the token and nobody's request.
      */
     long deleteByTokenAndUserId(String token, UUID userId);
+
+    /**
+     * Forgets every installation an account has — its anonymisation (#643).
+     *
+     * <p>A bulk statement rather than a derived delete, for {@code SocialLinkRepository}'s
+     * reason: it runs in the middle of {@code AccountAnonymiser}'s transaction, and a statement
+     * that executes when it is called keeps that transaction's order the order it reads in.
+     * {@code clearAutomatically} stays off for the same reason it does there — clearing would
+     * detach the account the anonymiser is midway through overwriting.
+     */
+    @Modifying
+    @Query("delete from PushDevice device where device.userId = :userId")
+    int deleteByUserId(@Param("userId") UUID userId);
 
     /**
      * The retention sweep — §17.4.

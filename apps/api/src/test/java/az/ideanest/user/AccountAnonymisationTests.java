@@ -6,6 +6,7 @@ import az.ideanest.auth.infrastructure.RefreshTokenRepository;
 import az.ideanest.auth.infrastructure.SessionRepository;
 import az.ideanest.auth.infrastructure.UserCredentialRepository;
 import az.ideanest.auth.infrastructure.VerificationTokenRepository;
+import az.ideanest.notification.infrastructure.PushDeviceRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.user.application.AccountAnonymisationJob;
@@ -79,6 +80,9 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
     @Autowired
     private VerificationTokenRepository verificationTokens;
 
+    @Autowired
+    private PushDeviceRepository pushDevices;
+
     // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
@@ -108,6 +112,26 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
                 HttpMethod.POST,
                 new HttpEntity<>(
                         Map.of("email", email.value(), "password", PASSWORD, "tokenDelivery", "body"), headers),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    private static String accessToken(ResponseEntity<Map<String, Object>> signedIn) {
+        return (String) signedIn.getBody().get("accessToken");
+    }
+
+    /** One of the shape Expo issues, unique so that no other suite's row collides with it. */
+    private static String pushToken() {
+        return "ExponentPushToken[anonymise" + SEQUENCE.incrementAndGet() + "]";
+    }
+
+    private ResponseEntity<Map<String, Object>> registerDevice(String accessToken, String token, String platform) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken);
+        return rest.exchange(
+                "/v1/me/devices",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("token", token, "platform", platform), headers),
                 new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
@@ -237,6 +261,45 @@ class AccountAnonymisationTests extends AbstractIntegrationTest {
         assertThat(sessions.findByUserIdOrderByCreatedAtDesc(userId))
                 .allSatisfy(session -> assertThat(refreshTokens.findBySessionIdOrderByIssuedAtAscIdAsc(session.getId()))
                         .isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("anonymisation deletes the account's push registrations and nobody else's")
+    void pushRegistrationsGoWithTheIdentity() {
+        // #643. push_devices cascades from users, and that cascade never fires because the
+        // row is never deleted -- so without the anonymiser asking, these would wait out the
+        // 180-day retention sweep under an identifier whose person asked to be forgotten.
+        EmailAddress email = registeredUser();
+        String accessToken = accessToken(signIn(email));
+        String phone = pushToken();
+        String tablet = pushToken();
+        assertThat(registerDevice(accessToken, phone, "ios").getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(registerDevice(accessToken, tablet, "android").getStatusCode())
+                .isEqualTo(HttpStatus.CREATED);
+
+        EmailAddress bystander = registeredUser();
+        String bystanderPhone = pushToken();
+        assertThat(registerDevice(accessToken(signIn(bystander)), bystanderPhone, "ios").getStatusCode())
+                .isEqualTo(HttpStatus.CREATED);
+
+        UUID userId = userId(email);
+        UUID bystanderId = userId(bystander);
+        deletions.request(userId, PASSWORD);
+
+        // Inside the grace period nothing is touched, these included: the account can still
+        // come back, and a cancellation restores it whole.
+        assertThat(anonymiser.anonymise(userId, nowPlus(WITHIN_THE_GRACE_PERIOD))).isFalse();
+        assertThat(pushDevices.findByUserId(userId)).hasSize(2);
+
+        assertThat(anonymiser.anonymise(userId, nowPlus(AFTER_THE_GRACE_PERIOD))).isTrue();
+
+        assertThat(pushDevices.findByUserId(userId)).isEmpty();
+        assertThat(pushDevices.findByToken(phone)).isEmpty();
+        assertThat(pushDevices.findByToken(tablet)).isEmpty();
+        // Deleted by account, not by anything wider.
+        assertThat(pushDevices.findByUserId(bystanderId))
+                .singleElement()
+                .satisfies(device -> assertThat(device.getToken()).isEqualTo(bystanderPhone));
     }
 
     @Test

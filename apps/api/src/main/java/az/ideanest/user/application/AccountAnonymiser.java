@@ -23,8 +23,14 @@ import org.springframework.transaction.annotation.Transactional;
  * <p><strong>What is overwritten:</strong> the email address, the display name,
  * the public slug, the avatar, the biography, the site, the location, every
  * social link, the proof that the address was verified, the password credential,
- * every unspent verification link, and the device label, user agent, and IP
- * address of every session.
+ * every unspent verification link, every push registration, and the device label,
+ * user agent, and IP address of every session.
+ *
+ * <p><strong>The push registrations are deleted here for the links' reason</strong>
+ * (#643): {@code push_devices} cascades from {@code users}, and the cascade never
+ * fires. They belong to {@code notification}, which depends on this module, so they
+ * are reached through {@link AccountPushRegistrations} the way the credentials are
+ * reached through {@link AccountSecurity}.
  *
  * <p><strong>#276's four go with the rest of the profile, and §17.4 is not
  * satisfied without them.</strong> A row whose name reads "Deleted account" and
@@ -58,11 +64,17 @@ public class AccountAnonymiser {
     private final UserRepository users;
     private final SocialLinkRepository socialLinks;
     private final AccountSecurity security;
+    private final AccountPushRegistrations pushRegistrations;
 
-    public AccountAnonymiser(UserRepository users, SocialLinkRepository socialLinks, AccountSecurity security) {
+    public AccountAnonymiser(
+            UserRepository users,
+            SocialLinkRepository socialLinks,
+            AccountSecurity security,
+            AccountPushRegistrations pushRegistrations) {
         this.users = users;
         this.socialLinks = socialLinks;
         this.security = security;
+        this.pushRegistrations = pushRegistrations;
     }
 
     /**
@@ -95,6 +107,8 @@ public class AccountAnonymiser {
                     // its own -- deleting nothing is what a second run does -- which is what
                     // keeps the whole method idempotent.
                     socialLinks.deleteByUserId(userId);
+                    // Bulk as well, and repeatable for the same reason (#643).
+                    pushRegistrations.forgetAll(userId);
                     security.forget(userId);
                     log.info("Account {} anonymised.", userId);
                     return true;

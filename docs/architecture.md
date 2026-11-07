@@ -7402,6 +7402,7 @@ overwritten yet. The sessions stay revoked.
 | `avatar_url`, `bio`, `email_verified_at` → null | `refresh_tokens` rows (a SHA-256 of 256 bits we generated) |
 | `user_credentials` row deleted | every financial row referring to `users.id` |
 | `verification_tokens` rows deleted | |
+| `push_devices` rows deleted (#643: the cascade from `users` never fires) | |
 | `sessions.device_label`, `user_agent`, `ip_address` → null | |
 
 The row survives because the alternative breaks the ledger. A pledge is a
