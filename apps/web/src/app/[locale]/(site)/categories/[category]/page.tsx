@@ -9,6 +9,8 @@ import { categoryPageGraph } from '../../../../../lib/seo/structured-data/graphs
 import { graphContext } from '../../../../../lib/i18n/shell-copy.server';
 import { localeOrDefault } from '../../../../../lib/i18n/locale';
 import { getTranslations } from 'next-intl/server';
+import { MarketSeed } from '../../../../../components/shell/MarketSeed';
+import { requestMarket } from '../../../../../lib/market/request';
 
 /**
  * `/categories/{category}` — §4.13 WS-05, issue #265.
@@ -75,6 +77,7 @@ export default async function CategoryPage({ params }: RouteParams) {
 
   return (
     <>
+      <MarketSeed market={await requestMarket()} />
       <StructuredData
         nodes={categoryPageGraph({
           trail: [{ name: category.name, path: categoryPath(category.slug) }],

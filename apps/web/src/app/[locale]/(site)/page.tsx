@@ -29,6 +29,8 @@ import { graphContext } from '../../../lib/i18n/shell-copy.server';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { marketCopy, projectCardCopy } from '../../../lib/i18n/shell-copy.server';
 import { MarketEmptyNotice } from '../../../components/shell/MarketEmptyNotice';
+import { MarketSeed } from '../../../components/shell/MarketSeed';
+import { requestMarket } from '../../../lib/market/request';
 
 /**
  * `/` — §4.13 WS-04, issue #264.
@@ -187,6 +189,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <MarketSeed market={await requestMarket()} />
       {/*
         THE SITE'S IDENTITY IS CLAIMED HERE. It used to be on `/discover`, because that was
         the entry page while this one did not exist — `lib/seo/structured-data/identity.ts`

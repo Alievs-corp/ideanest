@@ -13,6 +13,8 @@ import { discoverPageGraph } from '../../../../lib/seo/structured-data/graphs';
 import { graphContext } from '../../../../lib/i18n/shell-copy.server';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { feedCopy, marketCopy, projectCardCopy } from '../../../../lib/i18n/shell-copy.server';
+import { MarketSeed } from '../../../../components/shell/MarketSeed';
+import { requestMarket } from '../../../../lib/market/request';
 
 /**
  * `/discover`, and every filtered variant of it, is one canonical URL.
@@ -120,6 +122,7 @@ export default async function DiscoverPage({
 
   return (
     <>
+      <MarketSeed market={await requestMarket()} />
       <StructuredData nodes={discoverPageGraph(await graphContext())} />
       <Suspense
         fallback={

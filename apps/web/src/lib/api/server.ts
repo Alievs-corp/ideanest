@@ -1,7 +1,6 @@
 import { getLocale } from 'next-intl/server';
-import { headers } from 'next/headers';
 import { ALL_MARKETS } from '@ideanest/messages/country';
-import { MARKET_HEADER } from '../market/market';
+import { requestMarket } from '../market/request';
 import {
   ApiError,
   createApiClient,
@@ -162,18 +161,11 @@ async function readOptions(options: ServerReadOptions, ...tags: readonly string[
  * `{ market }` for the service, or nothing — #533.
  *
  * The proxy puts the reader's market on the request for the pages that list campaigns and
- * removes it from every other, so a page every reader shares reads every country here. Outside
- * a request (a test, a build step) `headers()` throws, and that is every country too.
+ * removes it from every other, so a page every reader shares reads every country here, as does
+ * a read outside a request (`requestMarket`).
  */
 async function marketQuery(options: ServerReadOptions): Promise<{ market?: string }> {
-  let market = options.market;
-  if (market === undefined) {
-    try {
-      market = (await headers()).get(MARKET_HEADER);
-    } catch {
-      market = null;
-    }
-  }
+  const market = options.market === undefined ? await requestMarket() : options.market;
   return market === null || market === ALL_MARKETS ? {} : { market };
 }
 
