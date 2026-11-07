@@ -439,6 +439,118 @@ export function platformAnalyticsCopyFrom(
 }
 
 /**
+ * The audience screen — issue #635.
+ *
+ * <p>Two catalogues. The nouns a backer's dashboard and the mobile app also print — the four
+ * periods, visitors, views, clicks, the platforms, the surfaces, "Unknown" and the note about
+ * daily sums — are `common.audience`, so a word means the same thing on every surface that
+ * counts people. What only the console says is `admin.screens.audience`.
+ */
+export interface AudienceCopy extends ConsoleChromeCopy {
+  readonly subject: string;
+  readonly loadingList: string;
+  /** The accessible name of the period buttons. */
+  readonly periodLegend: string;
+  readonly periods: Readonly<Record<'day' | 'week' | 'month' | 'year', string>>;
+  /** Carries `{from}`, `{to}`. */
+  readonly range: string;
+  /** Carries `{time}`: when the figures were read, in Baku. */
+  readonly computedAt: string;
+  readonly visitors: string;
+  readonly pageViews: string;
+  readonly campaignViews: string;
+  readonly campaignClicks: string;
+  readonly views: string;
+  readonly clicks: string;
+  readonly allTimeViews: string;
+  readonly dailySumNote: string;
+  readonly trafficHeading: string;
+  readonly campaignChartHeading: string;
+  readonly nothingRecorded: string;
+  readonly countries: string;
+  readonly platforms: string;
+  readonly surfacesHeading: string;
+  readonly showAllCountries: string;
+  readonly unknownCountry: string;
+  readonly platform: Readonly<Record<string, string>>;
+  readonly surface: Readonly<Record<string, string>>;
+  readonly topHeading: string;
+  readonly topNote: string;
+  readonly topEmpty: string;
+  readonly campaignColumn: string;
+  readonly ratioColumn: string;
+  readonly noViews: string;
+  readonly breakdown: string;
+  /** The breakdown control's accessible name. Carries `{title}`. */
+  readonly breakdownLabel: string;
+  readonly breakdownSubject: string;
+  readonly breakdownLoading: string;
+  readonly chart: AudienceChartCopy;
+}
+
+/** `AudienceChart`'s words. */
+export interface AudienceChartCopy {
+  /** The plot's accessible name and the table's caption. Carries `{first}`, `{second}`, `{from}`, `{to}`. */
+  readonly summary: string;
+  readonly granularity: Readonly<Record<'HOUR' | 'DAY' | 'MONTH', string>>;
+  readonly keyboardHint: string;
+  readonly tableToggle: string;
+  readonly periodColumn: string;
+}
+
+export function audienceCopyFrom(
+  t: AdminTranslator,
+  common: AdminTranslator,
+  chrome: ConsoleChromeCopy,
+): AudienceCopy {
+  const raw = (key: string) => String(t.raw(`screens.audience.${key}`));
+  return {
+    ...chrome,
+    subject: raw('subject'),
+    loadingList: raw('loadingList'),
+    periodLegend: common('audience.periodLabel'),
+    periods: common.raw('audience.period') as AudienceCopy['periods'],
+    range: String(t.raw('common.chart.range')),
+    computedAt: raw('computedAt'),
+    visitors: common('audience.visitors'),
+    pageViews: common('audience.pageViews'),
+    campaignViews: raw('campaignViews'),
+    campaignClicks: raw('campaignClicks'),
+    views: common('audience.views'),
+    clicks: common('audience.clicks'),
+    allTimeViews: raw('allTimeViews'),
+    dailySumNote: common('audience.dailySumNote'),
+    trafficHeading: raw('trafficHeading'),
+    campaignChartHeading: raw('campaignChartHeading'),
+    nothingRecorded: raw('nothingRecorded'),
+    countries: common('audience.countries'),
+    platforms: common('audience.platforms'),
+    surfacesHeading: raw('surfacesHeading'),
+    showAllCountries: raw('showAllCountries'),
+    unknownCountry: common('audience.unknownCountry'),
+    platform: common.raw('audience.platform') as Readonly<Record<string, string>>,
+    surface: common.raw('audience.surface') as Readonly<Record<string, string>>,
+    topHeading: raw('topHeading'),
+    topNote: raw('topNote'),
+    topEmpty: raw('topEmpty'),
+    campaignColumn: raw('campaignColumn'),
+    ratioColumn: raw('ratioColumn'),
+    noViews: raw('noViews'),
+    breakdown: raw('breakdown'),
+    breakdownLabel: raw('breakdownLabel'),
+    breakdownSubject: raw('breakdownSubject'),
+    breakdownLoading: raw('breakdownLoading'),
+    chart: {
+      summary: raw('chart.summary'),
+      granularity: t.raw('screens.audience.chart.granularity') as AudienceChartCopy['granularity'],
+      keyboardHint: t('common.chart.keyboardHint'),
+      tableToggle: t('common.chart.tableToggle'),
+      periodColumn: t('common.chart.periodColumn'),
+    },
+  };
+}
+
+/**
  * AD-15's list.
  *
  * <p>`category` is the console's own table rather than `account.notifications.category`, which

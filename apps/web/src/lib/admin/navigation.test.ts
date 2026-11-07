@@ -293,6 +293,29 @@ describe('what the rail offers', () => {
     expect(mayOpenConsoleLink('/admin/moderation', ROLE_CAPABILITIES.FINANCE)).toBe(false);
   });
 
+  it('offers the audience to whoever holds VIEW_AUDIENCE, and to nobody on VIEW_FINANCE alone', () => {
+    // #635: counts of people, not of money. A curator reads them; the books stay finance's.
+    expect(CONSOLE_LINK_CAPABILITIES['/admin/audience']).toEqual(['VIEW_AUDIENCE']);
+    for (const role of ['SUPER_ADMIN', 'FINANCE', 'CURATOR'] as const) {
+      expect(mayOpenConsoleLink('/admin/audience', ROLE_CAPABILITIES[role]), role).toBe(true);
+    }
+    for (const role of ['MODERATOR', 'COMPLIANCE'] as const) {
+      expect(mayOpenConsoleLink('/admin/audience', ROLE_CAPABILITIES[role]), role).toBe(false);
+    }
+    expect(mayOpenConsoleLink('/admin/audience', ['VIEW_FINANCE'])).toBe(false);
+
+    const platform = visibleConsoleGroups(ROLE_CAPABILITIES.CURATOR).find((group) => group.heading === 'platform');
+    expect(platform?.links).toContain('/admin/audience');
+    expect(platform?.links).not.toContain('/admin/analytics');
+  });
+
+  it('names the audience entry in every language', () => {
+    for (const catalogue of CATALOGUES) {
+      expect((catalogue.admin.links as Record<string, string>)['/admin/audience']).toBeTruthy();
+    }
+    expect((az.admin.links as Record<string, string>)['/admin/audience']).toBe('Auditoriya');
+  });
+
   it('gives only an administrator the screens that change the platform', () => {
     // Fees, plans, flags, email copy and §22.2's documents are CONFIGURE_PLATFORM and
     // PUBLISH_LEGAL_DOCUMENT, and no other role holds either.
