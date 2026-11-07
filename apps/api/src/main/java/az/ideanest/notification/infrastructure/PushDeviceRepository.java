@@ -51,7 +51,8 @@ public interface PushDeviceRepository extends JpaRepository<PushDevice, UUID> {
     long deleteByTokenAndUserId(String token, UUID userId);
 
     /**
-     * Forgets every installation an account has — its anonymisation (#643).
+     * Forgets every installation an account has — its deletion request (#645) and its
+     * anonymisation (#643).
      *
      * <p>A bulk statement rather than a derived delete, for {@code SocialLinkRepository}'s
      * reason: it runs in the middle of {@code AccountAnonymiser}'s transaction, and a statement

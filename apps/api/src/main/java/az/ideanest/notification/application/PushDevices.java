@@ -43,8 +43,9 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>The reverse — one person, several phones — is a real case and is supported: the
  * tokens differ, so the rows differ, and a send goes to all of them.
  *
- * <p>It also answers {@code user}'s {@link AccountPushRegistrations}, so that an anonymised
- * account's registrations go with its identity ({@link #forgetAll}).
+ * <p>It also answers {@code user}'s {@link AccountPushRegistrations}, so that a closing
+ * account's registrations go when it asks to be deleted and again with its identity
+ * ({@link #forgetAll}).
  *
  * <h2>The token is validated here as well as in the schema</h2>
  *
@@ -164,10 +165,12 @@ public class PushDevices implements AccountPushRegistrations {
     }
 
     /**
-     * Forgets every installation the account has — §17.4's anonymisation (#643).
+     * Forgets every installation the account has — §17.4's deletion request (#645) and
+     * anonymisation (#643).
      *
-     * <p>Called by {@code AccountAnonymiser}, and this joins its transaction: the registrations
-     * go if and only if the account's identity goes with them. Signing out deletes one row and
+     * <p>Called by {@code AccountDeletionService.request} and by {@code AccountAnonymiser}, and
+     * this joins the caller's transaction: the registrations go if and only if the request
+     * commits, or the account's identity goes with them. Signing out deletes one row and
      * the retention sweep deletes old ones, but an account closed on a phone that still has the
      * application has a row neither would reach for half a year, and the cascade on
      * {@code user_id} cannot help because the {@code users} row is never deleted.
@@ -180,7 +183,7 @@ public class PushDevices implements AccountPushRegistrations {
     public int forgetAll(UUID userId) {
         int removed = devices.deleteByUserId(userId);
         if (removed > 0) {
-            log.info("Forgot {} push registrations of an anonymised account.", removed);
+            log.info("Forgot {} push registrations of a closing account.", removed);
         }
         return removed;
     }

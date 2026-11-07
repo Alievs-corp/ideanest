@@ -12,6 +12,11 @@ import java.util.UUID;
  * an address for a phone, kept under an identifier whose person has asked to be forgotten, and
  * the one occasion the privacy policy's list of when a token is deleted did not cover.
  *
+ * <p><strong>And the deletion request asks first</strong> (#645). Sessions end when deletion is
+ * requested; without the same for the registrations, notifications addressed to the closing
+ * account would keep reaching its phones through the thirty-day grace period. Anonymisation still
+ * asks as well, for registrations that predate the request-time deletion.
+ *
  * <p><strong>An interface here, implemented over there</strong>, for {@link AccountSecurity}'s
  * reason. The registrations belong to {@code notification}, and {@code notification} already
  * depends on {@code user} — it looks recipients up through {@link UserAccounts} — so a call in the
@@ -22,9 +27,9 @@ public interface AccountPushRegistrations {
     /**
      * Deletes every push registration the account has.
      *
-     * <p>Runs inside the anonymiser's transaction, so a failed anonymisation leaves the
-     * registrations where they were and the next run tries both again. Idempotent: a second call
-     * finds nothing to delete.
+     * <p>Runs inside the caller's transaction — the deletion request's or the anonymiser's — so a
+     * failed request or anonymisation leaves the registrations where they were and a retry tries
+     * both again. Idempotent: a second call finds nothing to delete.
      *
      * @return how many registrations went
      */

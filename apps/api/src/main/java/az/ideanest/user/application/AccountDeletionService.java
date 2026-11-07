@@ -44,13 +44,19 @@ public class AccountDeletionService {
 
     private final UserRepository users;
     private final AccountSecurity security;
+    private final AccountPushRegistrations pushRegistrations;
     private final UserProperties properties;
     private final Clock clock;
 
     public AccountDeletionService(
-            UserRepository users, AccountSecurity security, UserProperties properties, Clock clock) {
+            UserRepository users,
+            AccountSecurity security,
+            AccountPushRegistrations pushRegistrations,
+            UserProperties properties,
+            Clock clock) {
         this.users = users;
         this.security = security;
+        this.pushRegistrations = pushRegistrations;
         this.properties = properties;
         this.clock = clock;
     }
@@ -100,6 +106,15 @@ public class AccountDeletionService {
         // closing an account should not stay signed in on a device they may no
         // longer control — which is frequently the reason they are closing it.
         security.endAllSessions(userId, now);
+        // And every push registration, for the same reason (#645). Ending the sessions
+        // stops the phones asking; this stops them being told. Left until anonymisation,
+        // a notification addressed to the closing account would keep reaching a phone it
+        // may no longer control for thirty days. A closing account cannot register again
+        // (POST /v1/me/devices is not one of its three paths), and a cancellation does not
+        // put them back: the application registers its token again the next time it opens
+        // signed in with a token that no longer carries the deletion claim. Repeatable, so
+        // asking twice deletes nothing the second time.
+        pushRegistrations.forgetAll(userId);
 
         log.info("Account {} scheduled for anonymisation at {}.", userId, user.getDeletionScheduledAt());
         return Optional.of(new DeletionSchedule(user.getDeletionRequestedAt(), user.getDeletionScheduledAt()));
@@ -111,7 +126,8 @@ public class AccountDeletionService {
      * <p>Nothing has been overwritten yet, so the account comes back whole. The
      * sessions do not: they were revoked when the deletion was requested and
      * stay revoked, because the caller has just proved they can sign in and the
-     * other devices have not.
+     * other devices have not. Nor do the push registrations: each phone that
+     * still allows notifications registers again when it next opens signed in.
      *
      * <p>Cancelling when nothing is pending succeeds. The caller wanted an
      * account that is not being deleted and has one; refusing would only tell
