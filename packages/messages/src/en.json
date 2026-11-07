@@ -794,6 +794,7 @@
       "/admin/fees": "Fees",
       "/admin/plans": "Plans",
       "/admin/analytics": "Analytics",
+      "/admin/audience": "Audience",
       "/admin/audit": "Audit log",
       "/admin/email-templates": "Email templates",
       "/admin/flags": "Feature flags",
@@ -878,7 +879,7 @@
       },
       "AD-13": {
         "title": "Analytics",
-        "summary": "Volume, success rate and average pledge, across the whole platform.",
+        "summary": "Volume, success rate and average pledge, and the audience: visitors, page views and campaign views, across the whole platform.",
         "waitingOn": "Cohorts need a rollup keyed on a backer’s first pledge and funnels need the visit-to-pledge path; neither exists, and the screen says so rather than approximating them (#313)."
       },
       "AD-14": {
@@ -984,6 +985,12 @@
         "metaDescription": "Volume, success rate and average pledge across the whole platform.",
         "title": "Platform analytics",
         "intro": "Pledge volume, backers, the average pledge and campaign outcomes for the period you choose."
+      },
+      "audience": {
+        "metaTitle": "Platform audience",
+        "metaDescription": "Visitors, page views, and campaign views and clicks across the whole platform.",
+        "title": "Platform audience",
+        "intro": "How many people came to the platform, from which countries and on which platforms, and which campaigns they looked at, for the period you choose."
       },
       "curation": {
         "metaTitle": "Collections",
@@ -1644,6 +1651,37 @@
         "populationNote": "Only pledges collected in this period and not refunded or charged back are counted; partial refunds are deducted.",
         "nowHeading": "Now",
         "computedAt": "Figures as read at {time}, Baku time."
+      },
+      "audience": {
+        "subject": "the audience figures",
+        "loadingList": "Loading the audience figures",
+        "computedAt": "Figures as read at {time}, Baku time.",
+        "campaignViews": "Campaign views",
+        "campaignClicks": "Campaign clicks",
+        "allTimeViews": "All-time views",
+        "trafficHeading": "Visitors and page views",
+        "campaignChartHeading": "Campaign views and clicks",
+        "nothingRecorded": "Nothing was recorded in this period.",
+        "surfacesHeading": "Where the clicks came from",
+        "showAllCountries": "Show every country",
+        "topHeading": "Most viewed campaigns",
+        "topNote": "The twenty campaigns viewed most in this period. Open a row to see that campaign on its own.",
+        "topEmpty": "No campaign was viewed in this period.",
+        "campaignColumn": "Campaign",
+        "ratioColumn": "Clicks per view",
+        "noViews": "No views",
+        "breakdown": "Breakdown",
+        "breakdownLabel": "Breakdown for {title}",
+        "breakdownSubject": "this campaign’s audience",
+        "breakdownLoading": "Loading this campaign’s audience",
+        "chart": {
+          "summary": "{first} and {second}, {from} – {to}",
+          "granularity": {
+            "HOUR": "Each pair of columns is an hour",
+            "DAY": "Each pair of columns is a day",
+            "MONTH": "Each pair of columns is a month"
+          }
+        }
       },
       "emailTemplates": {
         "subject": "the email templates",

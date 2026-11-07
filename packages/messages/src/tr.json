@@ -794,6 +794,7 @@
       "/admin/fees": "Ücretler",
       "/admin/plans": "Planlar",
       "/admin/analytics": "Platform analitiği",
+      "/admin/audience": "Kitle",
       "/admin/audit": "Denetim günlüğü",
       "/admin/email-templates": "E-posta şablonları",
       "/admin/flags": "Özellik bayrakları",
@@ -878,7 +879,7 @@
       },
       "AD-13": {
         "title": "Analitik",
-        "summary": "Platformun tamamında hacim, başarı oranı ve ortalama destek.",
+        "summary": "Platformun tamamında hacim, başarı oranı, ortalama destek ve kitle: ziyaretçiler, sayfa ve kampanya görüntülemeleri.",
         "waitingOn": "Kohortlar için destekçinin ilk desteğine dayalı bir toplama, huniler için ziyaretten desteğe giden yol gerekiyor; ikisi de yok ve ekran onları yaklaştırmak yerine bunu söylüyor (#313)."
       },
       "AD-14": {
@@ -984,6 +985,12 @@
         "metaDescription": "Tüm platform genelinde hacim, başarı oranı ve ortalama destek.",
         "title": "Platform analitiği",
         "intro": "Seçilen dönem için destek hacmi, destekçiler, ortalama destek ve kampanya sonuçları."
+      },
+      "audience": {
+        "metaTitle": "Platform kitlesi",
+        "metaDescription": "Tüm platform genelinde ziyaretçiler, sayfa görüntülemeleri, kampanya görüntülemeleri ve tıklamalar.",
+        "title": "Platform kitlesi",
+        "intro": "Seçtiğiniz dönemde platforma kaç kişinin geldiği, hangi ülkelerden ve hangi platformlardan girdiği ve hangi kampanyalara baktığı."
       },
       "curation": {
         "metaTitle": "Koleksiyonlar",
@@ -1644,6 +1651,37 @@
         "populationNote": "Yalnızca bu dönemde tahsil edilen ve iade ya da ters ibraz edilmeyen destekler sayılır; kısmi iadeler düşülmüştür.",
         "nowHeading": "Şu an",
         "computedAt": "Rakamlar {time} itibarıyla okundu (Bakü saati)."
+      },
+      "audience": {
+        "subject": "kitle rakamlarını",
+        "loadingList": "Kitle rakamları yükleniyor",
+        "computedAt": "Rakamlar {time} itibarıyla okundu (Bakü saati).",
+        "campaignViews": "Kampanya görüntülemeleri",
+        "campaignClicks": "Kampanya tıklamaları",
+        "allTimeViews": "Tüm zamanların görüntülenmesi",
+        "trafficHeading": "Ziyaretçiler ve sayfa görüntülemeleri",
+        "campaignChartHeading": "Kampanya görüntülemeleri ve tıklamalar",
+        "nothingRecorded": "Bu dönemde hiçbir şey kaydedilmedi.",
+        "surfacesHeading": "Tıklamaların geldiği yerler",
+        "showAllCountries": "Tüm ülkeleri göster",
+        "topHeading": "En çok görüntülenen kampanyalar",
+        "topNote": "Bu dönemde en çok görüntülenen yirmi kampanya. Kampanyanın kendi rakamlarını görmek için satırı açın.",
+        "topEmpty": "Bu dönemde hiçbir kampanya görüntülenmedi.",
+        "campaignColumn": "Kampanya",
+        "ratioColumn": "Görüntüleme başına tıklama",
+        "noViews": "Görüntüleme yok",
+        "breakdown": "Ayrıntılar",
+        "breakdownLabel": "{title}: ayrıntılar",
+        "breakdownSubject": "bu kampanyanın kitlesini",
+        "breakdownLoading": "Kampanyanın kitlesi yükleniyor",
+        "chart": {
+          "summary": "{first} ve {second}, {from} – {to}",
+          "granularity": {
+            "HOUR": "Her sütun çifti bir saat",
+            "DAY": "Her sütun çifti bir gün",
+            "MONTH": "Her sütun çifti bir ay"
+          }
+        }
       },
       "emailTemplates": {
         "subject": "e-posta şablonlarını",
