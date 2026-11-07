@@ -6,6 +6,7 @@ import { SessionProvider } from '../../../../components/session/SessionProvider'
 import { MAIN_CONTENT_ID } from '../../../../components/shell/SkipLink';
 import CampaignPageLayout from './[projectSlug]/layout';
 import PrelaunchPageLayout from './prelaunch/layout';
+import DashboardLayout from './dashboard/layout';
 import MESSAGES from '@ideanest/messages/en.json';
 import { resolveServerTree } from '../../../../test-support/server-tree';
 
@@ -124,6 +125,13 @@ async function renderInLayout(Layout: (props: { children: ReactNode }) => ReactN
 describe.each([
   ['the campaign page', CampaignPageLayout],
   ['the pre-launch page', PrelaunchPageLayout],
+  // #597: the dashboard had no header at all, so the creator's only way out was the back button.
+  [
+    'the campaign dashboard',
+    (props: { children: ReactNode }) => (
+      <DashboardLayout params={Promise.resolve({ id: 'p-597' })}>{props.children}</DashboardLayout>
+    ),
+  ],
 ])('%s', (_name, Layout) => {
   it('renders inside the site header and footer', async () => {
     await renderInLayout(Layout);

@@ -12,7 +12,7 @@ describe('the support contact', () => {
   });
 
   it('shows an Azerbaijani number grouped the way it is read aloud', () => {
-    expect(displayPhone(SUPPORT_PHONE)).toBe('+994 51 700 35 00');
+    expect(displayPhone(SUPPORT_PHONE)).toBe('+994 99 790 77 74');
   });
 
   it('shows any other shape as stored rather than grouping it wrongly', () => {

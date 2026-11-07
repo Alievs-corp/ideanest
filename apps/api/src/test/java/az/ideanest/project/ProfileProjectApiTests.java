@@ -56,9 +56,8 @@ class ProfileProjectApiTests extends AbstractIntegrationTest {
 
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
 
-    /** §6.1's nine, which is what {@code PublicProjects.VISIBLE} holds. */
+    /** What {@code PublicProjects.VISIBLE} holds of §6.1. */
     private static final List<String> PUBLIC_STATES = List.of(
-            "PRELAUNCH",
             "LIVE",
             "CANCELED",
             "SUCCESSFUL",
@@ -66,9 +65,12 @@ class ProfileProjectApiTests extends AbstractIntegrationTest {
             "FULFILLING",
             "COMPLETED");
 
-    /** The other seven. Every one of them is somebody's private business. */
-    private static final List<String> WITHHELD_STATES =
-            List.of("DRAFT", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "SUSPENDED");
+    /**
+     * The others. Every one of them is somebody's private business, or — PRELAUNCH since
+     * #626 — something no moderator has reviewed.
+     */
+    private static final List<String> WITHHELD_STATES = List.of(
+            "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "SUSPENDED");
 
     @Autowired
     private TestRestTemplate rest;
@@ -110,10 +112,11 @@ class ProfileProjectApiTests extends AbstractIntegrationTest {
 
         List<Map<String, Object>> cards = cards(created(slugOf(creator), null, 50));
 
-        // Every one of the nine, and none of the seven. Asserted as a set rather than by
+        // Every visible one, and none of the others. Asserted as a set rather than by
         // sampling: an omission from the visible set is as much a defect as an addition to
-        // it, and the version of this test that checked three examples would pass while
-        // PRELAUNCH quietly stopped being served.
+        // it, and a version of this test that checked three examples would pass while a
+        // state quietly stopped being served — or, as PRELAUNCH did before #626, was served
+        // without anybody having reviewed it.
         assertThat(cards.stream().map(card -> card.get("state")).toList())
                 .containsExactlyInAnyOrderElementsOf(PUBLIC_STATES);
         // And nothing in the response says a row was withheld -- which is what stops this
@@ -122,7 +125,7 @@ class ProfileProjectApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a card carries money as an object with a string amount, and a goal-less prelaunch as null")
+    @DisplayName("a card carries money as an object with a string amount")
     void aCardCarriesMoneyAsAnObject() {
         UUID creator = creator("priced");
         Campaigns.seed(dataSource, creator, "funded-thing")
@@ -131,9 +134,6 @@ class ProfileProjectApiTests extends AbstractIntegrationTest {
                 .pledged("1250.50")
                 .backers(7)
                 .insert();
-        // §5.3 requires a goal by submission and not before, so PRELAUNCH is the one public
-        // state a campaign reaches without one.
-        Campaigns.seed(dataSource, creator, "teaser").state("PRELAUNCH").insert();
 
         List<Map<String, Object>> cards = cards(created(slugOf(creator), null, 50));
         Map<String, Object> funded = card(cards, "funded-thing");
@@ -146,12 +146,6 @@ class ProfileProjectApiTests extends AbstractIntegrationTest {
         assertThat(funded.get("creatorSlug")).isEqualTo(slugOf(creator));
         assertThat(funded.get("coverImage"))
                 .isEqualTo(Map.of("url", "https://cdn.example.com/funded-thing.jpg", "width", 1600, "height", 900));
-
-        Map<String, Object> teaser = card(cards, "teaser");
-        // Present as a key and null as a value, so a client can tell "no goal yet" from a
-        // field it failed to read.
-        assertThat(teaser).containsKey("goal");
-        assertThat(teaser.get("goal")).isNull();
     }
 
     // -----------------------------------------------------------------------

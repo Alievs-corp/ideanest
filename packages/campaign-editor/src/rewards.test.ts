@@ -15,11 +15,13 @@ import {
   describeStock,
   emptyReward,
   fieldErrorsFrom,
+  heldItemFields,
   hidePatch,
   isRewardVideoTooLong,
   isEmptyPatch,
   isHiddenReward,
   isItemField,
+  isItemHeld,
   isRewardField,
   isScheduledReward,
   isShippingType,
@@ -162,6 +164,28 @@ describe('an item', () => {
     it('sends the weight with the digital flag whenever either moves', () => {
       const edited = { ...itemDraftFrom(ITEM), isDigital: true, weightGrams: '' };
       expect(itemPatchFrom(edited, ITEM)).toEqual({ isDigital: true, weightGrams: null });
+    });
+  });
+
+  describe('what waits for a moderator (#587)', () => {
+    it('names the held fields in the editor’s order, whatever order the server sent', () => {
+      const held = { ...ITEM, revisionChangedFields: ['isDigital', 'name'] };
+      expect(heldItemFields(held)).toEqual(['name', 'isDigital']);
+      expect(isItemHeld(held)).toBe(true);
+    });
+
+    it('holds nothing when the list is empty, null or absent', () => {
+      for (const revisionChangedFields of [[], null, undefined]) {
+        const item = { ...ITEM, revisionChangedFields };
+        expect(heldItemFields(item)).toEqual([]);
+        expect(isItemHeld(item)).toBe(false);
+      }
+    });
+
+    it('drops a field it has no control for, but still reads the item as held', () => {
+      const held = { ...ITEM, revisionChangedFields: ['colour'] };
+      expect(heldItemFields(held)).toEqual([]);
+      expect(isItemHeld(held)).toBe(true);
     });
   });
 });

@@ -10,6 +10,7 @@ import { FadeInDown } from 'react-native-reanimated';
 import en from '@ideanest/messages/en.json';
 import { formatMoney } from '@ideanest/money';
 import type { ProjectPage, PublicRewards } from '../../api/queries';
+import { sendAudienceEvent } from '../../features/audience/send';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
 import { colors, spacing, staggerDelay } from '../../theme';
@@ -190,11 +191,6 @@ interface Expectation {
 
 const CASES: readonly [string, ProjectPage, Expectation][] = [
   [
-    'PRELAUNCH',
-    page('PRELAUNCH'),
-    { tag: C.state.PRELAUNCH, chip: null, back: false, countdown: false, remind: true, trust: 'open', outcome: null },
-  ],
-  [
     'LIVE with three days left',
     page('LIVE'),
     { tag: C.state.LIVE, chip: null, back: true, countdown: true, remind: false, trust: 'open', outcome: null },
@@ -205,9 +201,10 @@ const CASES: readonly [string, ProjectPage, Expectation][] = [
     { tag: C.state.LIVE, chip: 'Last day', back: true, countdown: true, remind: false, trust: 'open', outcome: null },
   ],
   [
+    // Past its first deadline and counting to the extension's end (#618).
     'EXTENDED',
-    page('EXTENDED'),
-    { tag: C.state.EXTENDED, chip: null, back: true, countdown: false, remind: false, trust: 'open', outcome: null },
+    page('EXTENDED', { deadline: PAST, extendedUntil: new Date(NOW.getTime() + 20 * DAY).toISOString() }),
+    { tag: C.state.EXTENDED, chip: null, back: true, countdown: true, remind: false, trust: 'open', outcome: null },
   ],
   [
     'CLOSING_WINDOW',
@@ -635,8 +632,9 @@ describe('when the page is not a page', () => {
     expect(mockRouter.replace).toHaveBeenCalledWith('/discover');
   });
 
-  it('shows not-found for a state without a public page', async () => {
-    routes.page = () => json(page('DRAFT'));
+  // PRELAUNCH is reached from a draft without moderation, so it is hidden like one.
+  it.each(['DRAFT', 'PRELAUNCH'] as const)('shows not-found for %s, which has no public page', async (state) => {
+    routes.page = () => json(page(state));
     await show();
     expect(screen.getByTestId('campaign-not-found')).toBeTruthy();
     // Nothing else is asked about a campaign that is not public.
@@ -663,19 +661,30 @@ describe('when the page is not a page', () => {
     expect(screen.queryByTestId('campaign-screen')).toBeNull();
   });
 
-  it('shows the cached page offline with the notice, and disables Save and Remind with the reason', async () => {
+  it('shows the cached page offline with the notice, and disables Save with the reason', async () => {
     routes.page = () => Promise.reject(new TypeError('Network request failed'));
     await act(async () => setOnline(false));
-    await show({ cached: page('PRELAUNCH') });
+    await show({ cached: page('LIVE') });
     expect(screen.getByTestId('campaign-stale')).toBeTruthy();
     expect(screen.getByText(en.mobile.campaign.stale)).toBeTruthy();
 
     const save = screen.getByTestId('action-save');
     expect(save.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
-    expect(screen.getByTestId('action-remind').props.accessibilityState).toEqual(
-      expect.objectContaining({ disabled: true }),
-    );
     expect(textOf(screen.getByTestId('actions-notice'))).toBe(en.mobile.campaign.actionsOffline);
+  });
+});
+
+describe('the audience VIEW (#636)', () => {
+  it('counts the page once it says which campaign it is, and once only', async () => {
+    await show();
+    const views = (sendAudienceEvent as jest.Mock).mock.calls.filter(([event]) => event.kind === 'VIEW');
+    expect(views).toEqual([[{ kind: 'VIEW', projectId: ID }]]);
+  });
+
+  it.each(['DRAFT', 'PRELAUNCH'] as const)('does not count %s, which has no public page', async (state) => {
+    routes.page = () => json(page(state));
+    await show();
+    expect(sendAudienceEvent).not.toHaveBeenCalled();
   });
 });
 

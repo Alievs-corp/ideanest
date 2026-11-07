@@ -29,18 +29,6 @@ import java.util.stream.Collectors;
 public enum DiscoveryStatus {
 
     /**
-     * "It has not opened yet, but I can follow it."
-     *
-     * <p>Only {@code PRELAUNCH}. {@code APPROVED} and {@code SCHEDULED} are also
-     * campaigns that have not opened, and both are deliberately excluded: neither
-     * has a public page, and listing one would announce a launch date the creator
-     * has not announced. A campaign becomes discoverable as upcoming by taking the
-     * {@code DRAFT → PRELAUNCH} edge, which is an act, not a side effect of
-     * moderation clearing it.
-     */
-    UPCOMING("upcoming", "PRELAUNCH"),
-
-    /**
      * "I can back it right now, and the clock is running."
      *
      * <p>{@code LIVE}, and since IDN-EXT-01 the seven days after its first deadline and its
@@ -73,16 +61,19 @@ public enum DiscoveryStatus {
     SUCCESSFUL("successful", "SUCCESSFUL", "WITHDRAWN", "FULFILLING", "COMPLETED");
 
     /**
-     * The nine states a campaign may be listed in, whatever was asked for.
+     * The states a campaign's page may be public in, whatever was asked for.
      *
-     * <p>Applied to every query before any caller filter is. The seven that are
-     * absent are absent for three different reasons and all of them matter:
+     * <p>Applied to every query before any caller filter is. The eight that are
+     * absent are absent for four different reasons and all of them matter:
      *
      * <ul>
      *   <li>{@code DRAFT}, {@code SUBMITTED}, {@code CHANGES_REQUESTED} and
      *       {@code APPROVED} are work in progress. Listing one publishes what
      *       somebody is preparing, and in the case of {@code SUBMITTED} it would
      *       also publish the length of the moderation queue.
+     *   <li>{@code PRELAUNCH} was reached from a draft without moderation (#626).
+     *       Showing it published a campaign nobody had reviewed, so it is hidden
+     *       everywhere, and nothing enters it any more.
      *   <li>{@code SCHEDULED} is cleared and dated but not announced. The
      *       creator decides when a launch date becomes public.
      *   <li>{@code REJECTED} and {@code SUSPENDED} are moderation outcomes. A
@@ -103,7 +94,7 @@ public enum DiscoveryStatus {
      * {@code PublicProjects} answer for as well.
      */
     public static final Set<String> PUBLIC_STATES = Set.of(
-            "PRELAUNCH", "LIVE", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "FULFILLING", "COMPLETED",
+            "LIVE", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "FULFILLING", "COMPLETED",
             // IDN-EXT-01 (#32): still taking pledges, and closed by withdrawal.
             "CLOSING_WINDOW", "EXTENDED", "WITHDRAWN");
 
@@ -121,14 +112,15 @@ public enum DiscoveryStatus {
             .collect(Collectors.toUnmodifiableSet());
 
     /**
-     * The seven that must never be returned by anything in this module.
+     * The eight that must never be returned by anything in this module.
      *
      * <p>Stated as its own set rather than derived, so that the test which checks
      * the partition is checking two independent statements against §6.1 rather than
      * one statement against itself.
      */
     public static final Set<String> HIDDEN_STATES = Set.of(
-            "DRAFT", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "SUSPENDED");
+            "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED",
+            "SUSPENDED");
 
     /**
      * Which grouping a card's badge shows, for a state that is in more than one.
@@ -136,7 +128,7 @@ public enum DiscoveryStatus {
      * <p>{@link #EXTENDED} is not a badge: an extended campaign badges as {@code live}, and
      * the card carries {@code extended} beside it.
      */
-    private static final List<DiscoveryStatus> BADGE_ORDER = List.of(UPCOMING, LIVE, SUCCESSFUL);
+    private static final List<DiscoveryStatus> BADGE_ORDER = List.of(LIVE, SUCCESSFUL);
 
     private static final Map<String, DiscoveryStatus> BY_WIRE_VALUE = byWireValue();
 

@@ -82,6 +82,26 @@ export function emptyStory(): StoryDocument {
   return { version: STORY_SCHEMA_VERSION, blocks: [] };
 }
 
+/**
+ * The document an editor opens on when there is no story yet: one empty paragraph.
+ *
+ * An empty block list asks a creator to know that writing starts by choosing
+ * "Paragraph" from the add row, and somebody who does not know that sees a page with
+ * nowhere to type. An empty paragraph is valid (`blockProblem`), so nothing is held,
+ * and nothing is sent either: the editor saves on a change, and this is not one.
+ */
+export function starterStory(): StoryDocument {
+  return { version: STORY_SCHEMA_VERSION, blocks: [newBlock('paragraph')] };
+}
+
+/**
+ * The document to edit, given what the server holds: the starter when it holds nothing
+ * or an empty list, otherwise the document itself.
+ */
+export function editableStory(document: StoryDocument | null): StoryDocument {
+  return document === null || document.blocks.length === 0 ? starterStory() : document;
+}
+
 /* -------------------------------------------------------------------------
  * Anchors
  * ---------------------------------------------------------------------- */

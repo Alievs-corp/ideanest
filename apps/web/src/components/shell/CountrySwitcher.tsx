@@ -8,8 +8,9 @@ import { useLocale } from '../../i18n/navigation';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ShellCopy } from '../../lib/i18n/shell-copy';
-import { currentMarket, writeMarketCookie } from '../../lib/market/cookie';
+import { writeMarketCookie } from '../../lib/market/cookie';
 import { isMarketPage } from '../../lib/market/market';
+import { useMarket } from '../../lib/market/useMarket';
 
 /*
  * The list of every country is its own chunk, fetched when the control opens: the header is in
@@ -37,22 +38,21 @@ const PHONE_ALIGN = {
  * Which country's campaigns the lists show — issue #533.
  *
  * Beside the language control and built like it: a round button that opens a panel. The button
- * shows the country's code once the page has hydrated, because the market is the reader's (a
- * cookie the proxy reads) and the server render of the header is the same for everybody.
+ * shows the country's code once the page has hydrated, because the market is the reader's (their
+ * cookie, or where the proxy placed them, handed over by the page's `MarketSeed`) and the server
+ * render of the header is the same for everybody.
  *
  * Choosing writes the cookie and reloads a page that lists campaigns, so every list on it is
  * read again for the new country; any other page keeps its place.
  */
 export function CountrySwitcher({ copy, phoneAlign = 'end', rowLabel }: CountrySwitcherProps) {
   const locale = useLocale();
-  const [market, setMarket] = useState<string | null>(null);
+  const market = useMarket();
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const uid = useId();
   const triggerId = `${uid}-country`;
   const panelId = `${uid}-countries`;
-
-  useEffect(() => setMarket(currentMarket()), []);
 
   const close = useCallback(() => setOpen(false), []);
   useDismiss({ open, onDismiss: close });
@@ -69,7 +69,6 @@ export function CountrySwitcher({ copy, phoneAlign = 'end', rowLabel }: CountryS
 
   function choose(next: string): void {
     writeMarketCookie(next);
-    setMarket(next);
     setOpen(false);
     if (isMarketPage(window.location.pathname)) window.location.reload();
   }

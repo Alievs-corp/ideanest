@@ -196,18 +196,26 @@ export function Field({
           </Text>
         ) : null}
 
-        {errored ? (
-          <View style={styles.error} accessible accessibilityLabel={error}>
-            <View style={styles.errorIcon}>
-              <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
-            </View>
-            <Text style={[styles.caption, styles.errorText, { color: errorTextColor(surface) }]}>
-              {error}
-            </Text>
-          </View>
-        ) : null}
+        {errored ? <FieldError message={error} /> : null}
       </View>
     </FieldContext.Provider>
+  );
+}
+
+/**
+ * A field's error line on its own, for what is not one control in a `Field`: the story's blocks
+ * are many controls, and what the story as a whole lacks is said under all of them. The same
+ * icon, size and colour as a field's, so the two read as one kind of message.
+ */
+export function FieldError({ message, testID }: { readonly message: string; readonly testID?: string }) {
+  const surface = useSurface();
+  return (
+    <View style={styles.error} accessible accessibilityLabel={message} testID={testID}>
+      <View style={styles.errorIcon}>
+        <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
+      </View>
+      <Text style={[styles.caption, styles.errorText, { color: errorTextColor(surface) }]}>{message}</Text>
+    </View>
   );
 }
 

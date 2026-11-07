@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { InlineAlert, Skeleton, SkeletonGroup, StatBlock, StatRow } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import { formatMoney } from '../../lib/money';
-import { formatRelativeTime } from '../../lib/time';
+import { formatCalendarDay, formatRelativeTime } from '../../lib/time';
+import { capitalised, regionNames } from '../../lib/i18n/formats';
+import type { Locale } from '../../lib/i18n/locale';
 import type { Trend } from '@ideanest/dashboard/analytics';
 import { getTrend } from '../../lib/dashboard/analytics';
 import { getBreakdown, type BackerBreakdown } from '../../lib/dashboard/backers';
@@ -144,7 +146,10 @@ export function FundingCharts({
       {trendStatus === 'ready' && trend !== null ? (
         trend.days.length === 0 ? (
           <p className="mt-4 max-w-[62ch] text-sm text-fg-64">
-            {fillPlaceholders(copy.trendEmpty, { from: trend.from, to: trend.to })}
+            {fillPlaceholders(copy.trendEmpty, {
+              from: formatCalendarDay(trend.from, locale),
+              to: formatCalendarDay(trend.to, locale),
+            })}
           </p>
         ) : (
           <>
@@ -153,9 +158,8 @@ export function FundingCharts({
               from={trend.from}
               to={trend.to}
               label={fillPlaceholders(copy.trendLabel, {
-                from: trend.from,
-                to: trend.to,
-                zone: trend.zone,
+                from: formatCalendarDay(trend.from, locale),
+                to: formatCalendarDay(trend.to, locale),
               })}
               copy={copy.trend}
             />
@@ -166,13 +170,17 @@ export function FundingCharts({
             */}
             {trend.computedAt !== undefined ? (
               <p className="mt-2 text-sm text-fg-64">
-                {fillPlaceholders(copy.aggregated, {
-                  when: formatRelativeTime(
-                    trend.computedAt,
-                    (nowImpl ?? (() => new Date()))(),
-                    locale,
-                  ),
-                })}
+                {/* `{when}` opens the sentence, and "now" is a lower-case word in every language. */}
+                {capitalised(
+                  fillPlaceholders(copy.aggregated, {
+                    when: formatRelativeTime(
+                      trend.computedAt,
+                      (nowImpl ?? (() => new Date()))(),
+                      locale,
+                    ),
+                  }),
+                  locale,
+                )}
               </p>
             ) : null}
           </>
@@ -222,7 +230,7 @@ export function FundingCharts({
             <h3 className="mt-8 text-sm font-semibold text-fg">{copy.destinationHeading}</h3>
             <ShareBars
               label={copy.destinationLabel}
-              rows={breakdown.countries.map((slice) => countryRow(slice, copy.noDestination))}
+              rows={breakdown.countries.map((slice) => countryRow(slice, copy.noDestination, locale))}
               backers={copy.shareBackers}
               locale={locale}
             />
@@ -244,16 +252,16 @@ function rewardRow(slice: BackerBreakdown['rewards'][number], removedTier: strin
 }
 
 /**
- * A destination's row.
- *
- * The country code as it stands, rather than a translated country name: there is no country
- * vocabulary on the platform yet — `locations` covers the eighteen Azerbaijani cities a
- * campaign can be in, and nothing maps ISO codes to names in a locale. A code a creator can
- * look up beats a name this screen would have to invent.
+ * A destination's row, named in the reader's language (`regionNames`, the one the campaign
+ * editor's countries use since #532). The code stands when the runtime has no name for it.
  */
-function countryRow(slice: BackerBreakdown['countries'][number], noDestination: string): ShareBar {
+function countryRow(
+  slice: BackerBreakdown['countries'][number],
+  noDestination: string,
+  locale: Locale,
+): ShareBar {
   return {
-    label: slice.country ?? noDestination,
+    label: slice.country == null ? noDestination : (regionNames(locale)?.of(slice.country) ?? slice.country),
     backerCount: slice.backerCount,
     amount: slice.amount,
   };

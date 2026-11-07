@@ -61,5 +61,8 @@ public interface SubmissionQueueRow {
 
     String getCurrency();
 
+    /** The launch time its creator set, or null. An approval waits for it (#595). */
+    Instant getScheduledLaunchAt();
+
     UUID getCreatorId();
 }

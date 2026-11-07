@@ -88,6 +88,17 @@ export function formatDate(iso: string, locale: Locale): string {
   return dateTimeFormat(locale, { dateStyle: 'medium' }, 'date').format(at);
 }
 
+/**
+ * A calendar day, `YYYY-MM-DD`, in the reader's language. Read in UTC: the day is already the
+ * one its producer meant (a rollup's Baku day), and no reader's zone may move it to the one before.
+ */
+export function formatCalendarDay(day: string, locale: Locale): string {
+  const at = /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00Z`) : null;
+  if (at === null || Number.isNaN(at.getTime())) return day;
+
+  return dateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }, 'calendar-day').format(at);
+}
+
 /** The exact timestamp, for the `title` of the relative one. */
 export function formatExactTime(iso: string, locale: Locale): string {
   const at = new Date(iso);

@@ -212,6 +212,8 @@ export const queryKeys = {
   dashboardAnalytics: (projectId: string) => ['dashboard', projectId, 'analytics'] as const,
   dashboardBreakdown: (projectId: string) => ['dashboard', projectId, 'breakdown'] as const,
   dashboardFinance: (projectId: string) => ['dashboard', projectId, 'finance'] as const,
+  /** The Charts tab's audience panel (#636), one entry per period; under the same unpersisted root. */
+  dashboardAudience: (projectId: string, period: string) => ['dashboard', projectId, 'audience', period] as const,
   /**
    * The inbox's pages (#160). Its own root, `inbox`, never persisted: notifications are
    * time-sensitive, and last week's unread rows restored after a restart would read as news.

@@ -1,5 +1,7 @@
 package az.ideanest.project.api;
 
+import az.ideanest.audit.AuditAction;
+import az.ideanest.audit.AuditTrail;
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.project.application.CampaignVideo;
 import az.ideanest.project.application.ProjectRevisionService;
@@ -7,7 +9,9 @@ import az.ideanest.project.application.RewardWriting;
 import az.ideanest.project.domain.LockedField;
 import az.ideanest.project.domain.Project;
 import az.ideanest.project.domain.ProjectEditLocks;
+import az.ideanest.project.domain.ProjectState;
 import az.ideanest.shared.money.Money;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,10 +46,15 @@ public class ProjectEditResponses {
 
     private final ProjectRevisionService revisions;
 
-    public ProjectEditResponses(ObjectMapper json, MediaLibrary media, ProjectRevisionService revisions) {
+    /** Where the clock's refusal to open a campaign is already written (#589). */
+    private final AuditTrail audit;
+
+    public ProjectEditResponses(
+            ObjectMapper json, MediaLibrary media, ProjectRevisionService revisions, AuditTrail audit) {
         this.json = json;
         this.media = media;
         this.revisions = revisions;
+        this.audit = audit;
     }
 
     public ProjectEdit of(Project project) {
@@ -61,6 +70,7 @@ public class ProjectEditResponses {
                 Money.orNull(project.getGoalAmount(), project.getCurrency()),
                 project.getDurationDays(),
                 project.getScheduledLaunchAt(),
+                scheduledLaunchRefusedAt(project),
                 project.getLaunchedAt(),
                 project.getDeadline(),
                 storyOf(project),
@@ -77,6 +87,35 @@ public class ProjectEditResponses {
                 launched ? revisions.latestRejection(project.getId()).map(RevisionRejectionBody::of).orElse(null) : null,
                 project.getCreatedAt(),
                 project.getUpdatedAt());
+    }
+
+    /**
+     * When the clock last refused to open this campaign at its launch time, while that is still why
+     * it is not opening — #589.
+     *
+     * <p>The refusal clears the launch time and leaves the campaign approved (#587), so the editor
+     * sees a campaign that simply has no launch time any more. The notification says why once; this
+     * is what lets the review tab keep saying it for as long as it is true.
+     *
+     * <p><strong>Read from the audit row, not stored on the campaign.</strong> The refusal is
+     * recorded in the transaction that clears the time, so the row exists exactly when the
+     * refusal happened, and a column would be a second copy of it. What the row cannot say is
+     * whether the creator has answered it, and the campaign can: a launch time set again, or a
+     * campaign opened, is the answer, and either ends this. A creator who sets a time and clears
+     * it again by hand is shown the refusal again — still true, and still the last thing that
+     * stopped the campaign opening on its own.
+     *
+     * <p>Asked only of an approved campaign with no launch time, so the autosaves of every other
+     * campaign do not pay for a query whose answer is known to be null.
+     */
+    private Instant scheduledLaunchRefusedAt(Project project) {
+        ProjectState state = project.getState();
+        if ((state != ProjectState.APPROVED && state != ProjectState.SCHEDULED)
+                || project.getScheduledLaunchAt() != null) {
+            return null;
+        }
+        return audit.lastRecorded(AuditAction.PROJECT_SCHEDULED_LAUNCH_REFUSED, project.getId())
+                .orElse(null);
     }
 
     /**

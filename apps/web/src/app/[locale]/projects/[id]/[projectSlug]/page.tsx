@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { AudienceView } from '../../../../../components/audience/AudienceView';
 import { CampaignComments } from '../../../../../components/project/CampaignComments';
 import { CampaignFaqs } from '../../../../../components/project/CampaignFaqs';
 import { CampaignOutcomeNotice } from '../../../../../components/project/CampaignOutcomeNotice';
@@ -303,12 +304,15 @@ export default async function CampaignPage({
         nodes={projectPageGraph({
           preview: previewOf(campaign),
           path,
-          deadline: campaign.deadline,
+          deadline: campaign.fundingEndsAt,
           tiers,
           faqs: faqs ?? [],
           ...(await graphContext()),
         })}
       />
+
+      {/* #634: this campaign was opened. Renders nothing; once per mount, not per tab. */}
+      <AudienceView projectId={campaign.id} />
 
       {/*
         NO ENTRY ANIMATION, AND THAT IS A DECISION RATHER THAN AN OVERSIGHT.

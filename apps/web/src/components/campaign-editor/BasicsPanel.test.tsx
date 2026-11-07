@@ -489,6 +489,23 @@ describe('BasicsPanel', () => {
       expect(sent()).not.toContainEqual({ blurb: `${'a'.repeat(134)}bc` });
     });
 
+    it('says a summary is needed once the creator leaves it empty, and not before', async () => {
+      const user = await openBasics({ blurb: '' });
+      const needed = 'A project needs a summary. It is the line backers read under the title.';
+
+      // A fresh draft is work not yet done, not a mistake.
+      expect(screen.queryByText(needed)).not.toBeInTheDocument();
+
+      await user.click(summaryField());
+      await user.tab();
+
+      expect(screen.getByText(needed)).toBeInTheDocument();
+      expect(summaryField()).toHaveAccessibleDescription(expect.stringContaining(needed));
+
+      await user.type(summaryField(), 'Pocket-sized.');
+      expect(screen.queryByText(needed)).not.toBeInTheDocument();
+    });
+
     it('counts what is left, without a cap that swallows a paste', async () => {
       await openBasics({ title: 'a'.repeat(45) });
 
@@ -525,6 +542,25 @@ describe('BasicsPanel', () => {
       await user.type(screen.getByLabelText('Scheduled launch'), '2020-01-01T10:00');
       await tick(DEBOUNCE);
 
+      expect(screen.getByText('Choose a date and time in the future.')).toBeInTheDocument();
+    });
+
+    it('says nothing about a launched campaign’s launch time until the creator changes it', async () => {
+      const user = await openBasics({
+        state: 'LIVE',
+        scheduledLaunchAt: '2020-01-01T10:00:00.000Z',
+        launchedAt: '2020-01-01T10:00:00.000Z',
+      });
+      const launch = screen.getByLabelText('Scheduled launch');
+
+      // It passed when the campaign opened: history, not a fault.
+      expect(screen.queryByText('Choose a date and time in the future.')).not.toBeInTheDocument();
+
+      await user.clear(launch);
+      await user.type(launch, '2020-02-01T10:00');
+      await tick(DEBOUNCE);
+
+      // A past moment the creator has just chosen is still refused.
       expect(screen.getByText('Choose a date and time in the future.')).toBeInTheDocument();
     });
   });

@@ -279,6 +279,24 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
                         projectId);
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> submissionOf(UUID projectId, Creator moderator) {
+        List<Map<String, Object>> rows = (List<Map<String, Object>>)
+                get("/v1/admin/moderation/submissions?state=SUBMITTED", moderator.accessToken())
+                        .getBody()
+                        .get("submissions");
+        return rows.stream()
+                .filter(row -> projectId.toString().equals(row.get("projectId")))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> mineOf(Creator creator) {
+        return (List<Map<String, Object>>)
+                get("/v1/me/projects", creator.accessToken()).getBody().get("projects");
+    }
+
     private List<String> eventsOf(UUID projectId) {
         return new JdbcTemplate(dataSource)
                 .queryForList(
@@ -863,7 +881,7 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
                         // What the client can offer instead, so it does not have to
                         // reload and guess which of its buttons still works.
                         "allowed",
-                        List.of("PRELAUNCH", "SUBMITTED")));
+                        List.of("SUBMITTED")));
 
         // Nothing happened. A refused transition must not leave a state change or an
         // audit row behind.
@@ -973,6 +991,9 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
         patch("/v1/projects/" + id, creator.accessToken(), Map.of("scheduledLaunchAt", at.toString()));
         post("/v1/projects/" + id + "/submit", creator.accessToken(), null);
 
+        // The moderator is told before deciding that approving will not publish it (#595).
+        assertThat(submissionOf(id, moderator)).containsEntry("scheduledLaunchAt", at.toString());
+
         Map<String, Object> approved = post("/v1/admin/moderation/" + id + "/approve", moderator.accessToken(), null)
                 .getBody();
 
@@ -980,6 +1001,21 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
         assertThat(approved.get("launchedAt")).isNull();
         assertThat(eventsOf(id)).containsExactly("project.approved");
         assertThat(auditOf(id)).extracting(row -> row.get("action")).containsExactly("project.approved");
+
+        // The creator is told when it opens, not that it is live, and their list says it too.
+        relay.run();
+        assertThat(new JdbcTemplate(dataSource)
+                        .queryForList(
+                                "SELECT DISTINCT type, params->>'opensAt' AS opens_at FROM notifications"
+                                        + " WHERE recipient_id = ?",
+                                creator.id()))
+                .extracting(row -> row.get("type"), row -> row.get("opens_at"))
+                .containsExactly(tuple("PROJECT_APPROVED_SCHEDULED", at.toString()));
+        assertThat(mineOf(creator))
+                .singleElement()
+                .satisfies(card -> assertThat(card).containsEntry("opensAt", at.toString()));
+        assertThat(get("/v1/projects/" + id + "/dashboard", creator.accessToken()).getBody())
+                .containsEntry("opensAt", at.toString());
 
         // Nobody signed in at the time it was given, and it opens.
         assertThat(launcher.launchDueCampaigns(at.minus(1, ChronoUnit.MINUTES))).isZero();

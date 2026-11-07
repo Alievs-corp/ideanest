@@ -192,7 +192,7 @@ function Position({ reward, copy }: { readonly reward: RevisionReward; readonly 
   return text === null ? null : <p className="mt-1 text-sm text-fg-64">{text}</p>;
 }
 
-function ChangeIcon({ change }: { readonly change: RevisionRewardChange }) {
+export function ChangeIcon({ change }: { readonly change: RevisionRewardChange }) {
   const path = {
     created: 'M8 3v10M3 8h10',
     deleted: 'M3 8h10',
@@ -439,7 +439,7 @@ function LinesValue({
   );
 }
 
-function frame(kind: DiffKind): string {
+export function frame(kind: DiffKind): string {
   return kind === 'removed' ? BLOCK_REMOVED : kind === 'added' ? BLOCK_ADDED : 'border-fg/8';
 }
 

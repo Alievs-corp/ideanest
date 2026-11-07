@@ -9,6 +9,8 @@ import { graphContext } from '../../../../lib/i18n/shell-copy.server';
 import { StructuredData } from '../../../../components/seo/StructuredData';
 import { CategoryBadge } from '../../../../components/browse/CategoryLook';
 import { getTranslations } from 'next-intl/server';
+import { MarketSeed } from '../../../../components/shell/MarketSeed';
+import { requestMarket } from '../../../../lib/market/request';
 
 /**
  * `/categories` — the taxonomy's own page, and the index every category landing page hangs
@@ -58,6 +60,7 @@ export default async function CategoriesPage() {
 
   return (
     <>
+      <MarketSeed market={await requestMarket()} />
       <StructuredData nodes={categoryPageGraph({ trail: [], ...(await graphContext()) })} />
 
       <div className="mx-auto w-full max-w-[1400px] px-5 py-10 sm:px-6">

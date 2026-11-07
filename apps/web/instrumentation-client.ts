@@ -6,7 +6,7 @@ import {
   traceparentOf,
 } from './src/lib/rum/correlation';
 import { propagateCorrelation } from './src/lib/rum/propagation';
-import { parseSampleRate, resolveSession } from './src/lib/rum/sampling';
+import { parseSampleRate, resolveSession, type SessionHolder } from './src/lib/rum/sampling';
 
 /**
  * The half of the correlation that cannot be done anywhere else.
@@ -34,7 +34,8 @@ import { parseSampleRate, resolveSession } from './src/lib/rum/sampling';
  * <h2>What it is careful about</h2>
  *
  * - **It runs only for a sampled session.** An unsampled visit gets no wrapper at
- *   all, so the cost of this file for most visitors is one `sessionStorage` read.
+ *   all, so the cost of this file for most visitors is one coin flip. The session
+ *   is held in memory for the page's life, never in storage (#641).
  * - **It never overwrites a header a caller set.** A future `lib/api/client.ts`
  *   that propagates the trace itself takes precedence, and this becomes dead
  *   weight rather than a conflict.
@@ -49,7 +50,7 @@ import { parseSampleRate, resolveSession } from './src/lib/rum/sampling';
 try {
   const rate = parseSampleRate(process.env.NEXT_PUBLIC_IDEANEST_RUM_SAMPLE_RATE);
   if (rate > 0) {
-    const session = resolveSession(sessionStorageOrNull(), rate);
+    const session = resolveSession(window as Window & SessionHolder, rate);
     if (session.sampled) {
       const original = window.fetch.bind(window);
       const origin = window.location.origin;
@@ -78,12 +79,4 @@ try {
   // Instrumentation that can stop an application from booting is not
   // instrumentation. There is nothing to report to, and no user-visible
   // consequence beyond a trace that does not join.
-}
-
-function sessionStorageOrNull(): Storage | null {
-  try {
-    return window.sessionStorage;
-  } catch {
-    return null;
-  }
 }

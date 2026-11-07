@@ -189,6 +189,7 @@ export function CollectionPage({ slug }: { readonly slug: string }) {
     <Stack.Screen options={{ title }} />
     <CampaignList
       cards={cards}
+      surface="COLLECTION"
       header={header}
       empty={empty}
       footer={footer}

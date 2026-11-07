@@ -49,6 +49,7 @@ export default async function MyCampaignsPage() {
     refused: common('list.refused'),
     unreachable: common('list.unreachable'),
     draftHint: t('draftHint'),
+    opensAt: String(t.raw('opensAt')),
     view: t('view'),
     edit: t('edit'),
     dashboard: t('dashboard'),

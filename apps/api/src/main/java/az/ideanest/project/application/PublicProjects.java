@@ -24,14 +24,15 @@ import org.springframework.transaction.annotation.Transactional;
  * one rule per endpoint, and the first one that forgets {@code SUSPENDED} publishes a
  * campaign trust and safety stopped.
  *
- * <p><strong>The nine states, and why they are these nine.</strong> They are exactly
+ * <p><strong>The states, and why they are these.</strong> They are exactly
  * {@code DiscoveryStatus.PUBLIC_STATES}, which is the set every read in the discovery
  * module already applies. Two of the sixteen decide the shape:
  *
  * <ul>
- *   <li>{@link ProjectState#PRELAUNCH} is in. It has a public page — that is what the
- *       {@code DRAFT → PRELAUNCH} edge is for — so a stranger holding its identifier
- *       is looking at something the creator published.
+ *   <li>{@link ProjectState#PRELAUNCH} is out (#626). A creator reached it from a
+ *       draft without moderation, so serving it published a campaign nobody had
+ *       reviewed. Only what moderation has cleared is public; the pre-launch page now
+ *       opens on approval, which {@link PrelaunchService} serves on its own terms.
  *   <li>{@link ProjectState#SUSPENDED} is out, although it is a campaign the public
  *       has already seen and pledged to. It was stopped by trust and safety,
  *       frequently while an investigation is open, and continuing to serve its
@@ -57,7 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PublicProjects {
 
     /**
-     * See the class comment. The same nine as {@code DiscoveryStatus.PUBLIC_STATES}.
+     * See the class comment. The same set as {@code DiscoveryStatus.PUBLIC_STATES}.
      *
      * <p><strong>Package-private rather than private since #274.</strong>
      * {@link ProfileCampaigns} serves §4.2's two public campaign lists and has to apply
@@ -68,7 +69,6 @@ public class PublicProjects {
      * caller cannot come to depend on the enum it is written in.
      */
     static final Set<ProjectState> VISIBLE = EnumSet.of(
-            ProjectState.PRELAUNCH,
             ProjectState.LIVE,
             ProjectState.CANCELED,
             ProjectState.SUCCESSFUL,

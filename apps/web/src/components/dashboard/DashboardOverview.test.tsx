@@ -139,11 +139,36 @@ describe('the clock', () => {
     expect(screen.getByText('Closing soon')).toBeInTheDocument();
   });
 
+  /**
+   * #618: the service keeps `deadline` as the first one after an extension. The clock counts to
+   * the extension's end, so a creator who extended is not told "Closed" while still taking
+   * pledges.
+   */
+  it('counts an extended campaign down to the end of its extension, not its first deadline', async () => {
+    renderPanel(
+      dashboard({
+        state: 'EXTENDED',
+        deadline: '2026-08-18T12:00:00.000Z',
+        extendedUntil: '2026-09-19T12:00:00.000Z',
+      }),
+    );
+
+    expect(await screen.findByText('30 days left')).toBeInTheDocument();
+    expect(screen.queryByText('Closed')).not.toBeInTheDocument();
+  });
+
   it('is not urgent a month out', async () => {
     renderPanel(dashboard());
 
     expect(await screen.findByText('30 days left')).toBeInTheDocument();
     expect(screen.queryByText('Closing soon')).not.toBeInTheDocument();
+  });
+
+  it('says when an approved campaign opens instead of "no deadline yet" (#595)', async () => {
+    renderPanel(dashboard({ deadline: undefined, state: 'APPROVED', opensAt: '2026-08-25T12:00:00.000Z' }));
+
+    expect(await screen.findByText(/^The campaign opens on its own on .*2026/)).toBeInTheDocument();
+    expect(screen.queryByText(/no deadline yet/i)).not.toBeInTheDocument();
   });
 
   it('says there is no countdown rather than showing an expired one before launch', async () => {

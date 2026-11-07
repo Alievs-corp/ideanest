@@ -33,6 +33,7 @@ import {
   describeStock,
   hidePatch,
   isHiddenReward,
+  isItemHeld,
   isScheduledReward,
   itemIdsInRewards,
   movedTo,
@@ -47,6 +48,7 @@ import type {
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
+import { Revealed } from './Revealed';
 import { RevisionNotice } from './RevisionNotice';
 import { ItemEditor } from './ItemEditor';
 import { ItemsSection } from './ItemsSection';
@@ -234,14 +236,29 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
     [launched, refreshRevision],
   );
 
-  const applyItem = useCallback((saved: Item) => {
-    setItems((current) => {
-      const known = current.some((item) => item.id === saved.id);
-      return known
-        ? current.map((item) => (item.id === saved.id ? saved : item))
-        : [...current, saved];
-    });
-  }, []);
+  /*
+   * An item an approved tier contains is held like a tier (#587): the drawer
+   * closes on a save whose public value has not changed, so the reason is said
+   * here, where the creator lands: the item's marker in the list, and an
+   * announcement for a screen reader, which would otherwise hear nothing.
+   */
+  const applyItem = useCallback(
+    (saved: Item) => {
+      setItems((current) => {
+        const known = current.some((item) => item.id === saved.id);
+        return known
+          ? current.map((item) => (item.id === saved.id ? saved : item))
+          : [...current, saved];
+      });
+      if (isItemHeld(saved)) {
+        setAnnouncement(
+          fillPlaceholders(words.items.pending.heldAnnouncement, { name: saved.name }),
+        );
+      }
+      if (launched) void refreshRevision();
+    },
+    [launched, refreshRevision, words.items.pending.heldAnnouncement],
+  );
 
   /* ---------------------------------------------------------------------
    * Order
@@ -473,15 +490,17 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
         )}
 
         {failure !== null && (
-          <InlineAlert variant="danger" title={words.failedTitle}>
-            <p>{failure.message}</p>
-            {failure.code === 'ITEM_IN_USE' && (
-              <p className="mt-2 text-fg-64">{describeItemInUse(failure, rewards, words)}</p>
-            )}
-            {failure.code === 'REWARD_HAS_BACKERS' && (
-              <p className="mt-2 text-fg-64">{words.rewardHasBackers}</p>
-            )}
-          </InlineAlert>
+          <Revealed revealKey={failure.message}>
+            <InlineAlert variant="danger" title={words.failedTitle}>
+              <p>{failure.message}</p>
+              {failure.code === 'ITEM_IN_USE' && (
+                <p className="mt-2 text-fg-64">{describeItemInUse(failure, rewards, words)}</p>
+              )}
+              {failure.code === 'REWARD_HAS_BACKERS' && (
+                <p className="mt-2 text-fg-64">{words.rewardHasBackers}</p>
+              )}
+            </InlineAlert>
+          </Revealed>
         )}
 
         {listStatus === 'failed' && (
@@ -526,9 +545,11 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
           </div>
 
           {full && (
-            <InlineAlert variant="warning" title={words.atCapacityTitle}>
-              {fillPlaceholders(words.atCapacityBody, { max: String(MAX_REWARD_TIERS) })}
-            </InlineAlert>
+            <Revealed>
+              <InlineAlert variant="warning" title={words.atCapacityTitle}>
+                {fillPlaceholders(words.atCapacityBody, { max: String(MAX_REWARD_TIERS) })}
+              </InlineAlert>
+            </Revealed>
           )}
 
           {listStatus === 'loading' ? (

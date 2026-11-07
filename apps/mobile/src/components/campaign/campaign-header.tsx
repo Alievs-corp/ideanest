@@ -61,17 +61,19 @@ export const STATE_BADGES: Partial<Record<ProjectState, StateBadge>> = {
 };
 
 /**
- * Whether the page counts days down at all: LIVE with a deadline that has not passed at `now` (the
+ * Whether the page counts days down at all: LIVE, or EXTENDED (#618), with an end (`fundingEndsAt`:
+ * the extension's end once extended) that has not passed at `now` (the
  * page's clock, `lib/campaign-clock.ts`). `daysLeft` is floored at zero, so a campaign that closed
  * a fortnight ago and one closing tonight report the same number, and "Last day" on the first
  * would be a loud lie — so would "Last day" on a campaign whose deadline passed a minute ago while
  * the service has not yet moved its state on.
  */
 export function showsDaysLeft(campaign: CampaignPage, now: Date): boolean {
-  if (campaign.state !== 'LIVE' || campaign.daysLeft === null || campaign.deadline === null) {
+  const running = campaign.state === 'LIVE' || campaign.state === 'EXTENDED';
+  if (!running || campaign.daysLeft === null || campaign.fundingEndsAt === null) {
     return false;
   }
-  return Date.parse(campaign.deadline) > now.getTime();
+  return Date.parse(campaign.fundingEndsAt) > now.getTime();
 }
 
 export function CampaignHeader({

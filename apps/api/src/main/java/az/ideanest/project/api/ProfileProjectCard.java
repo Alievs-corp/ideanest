@@ -42,11 +42,16 @@ import java.util.UUID;
  * @param pledged what the campaign has raised now, which on a closed campaign keeps moving
  *     as collections fail. The frozen outcome that does not is on the campaign page, and a
  *     card is not where somebody reads a final result
+ * @param viewCount daily unique viewers summed, all time (#633), as the discovery card has it
  * @param creatorSlug null only when the campaign's creator row could not be joined. The two
  *     public tabs exclude those rows rather than serving a half-built link
  * @param video the campaign's ready video, or null. When present a client shows
  *     {@code video.posterUrl} as the cover and plays the clip on hover or a long press;
  *     {@code coverImage} stays the uploaded cover
+ * @param opensAt when an approved campaign opens on its own (#595), and null on every other
+ *     state: a card is the creator's way to see that it is waiting rather than lost. The two
+ *     public tabs never carry an approved campaign, so this is only ever set on the owner's list;
+ *     absent rather than null, unlike the rest, so every other card keeps the shape it had
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record ProfileProjectCard(
@@ -59,10 +64,12 @@ public record ProfileProjectCard(
         Money goal,
         Money pledged,
         int backersCount,
+        long viewCount,
         Instant deadline,
         Instant launchedAt,
         CoverImageBody coverImage,
-        CardVideoBody video) {
+        CardVideoBody video,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Instant opensAt) {
 
     /**
      * @param campaign the projection. {@code createdAt} on it is deliberately not mapped:
@@ -80,10 +87,17 @@ public record ProfileProjectCard(
                 campaign.goal(),
                 campaign.pledged(),
                 campaign.backersCount(),
+                campaign.viewCount(),
                 campaign.deadline(),
                 campaign.launchedAt(),
                 cover(campaign.cover()),
-                CardVideoBody.of(campaign.video()));
+                CardVideoBody.of(campaign.video()),
+                opensAt(campaign));
+    }
+
+    private static Instant opensAt(ProfileCampaign campaign) {
+        boolean waiting = "APPROVED".equals(campaign.state()) || "SCHEDULED".equals(campaign.state());
+        return waiting ? campaign.scheduledLaunchAt() : null;
     }
 
     /**

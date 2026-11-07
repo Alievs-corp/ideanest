@@ -204,11 +204,36 @@ describe('StoryPanel — loading and the document', () => {
     expect(within(anchors).getByText('#parts')).toBeTruthy();
   });
 
-  it('shows the empty-story card when there are no blocks', async () => {
+  it('opens a story that has none on one empty paragraph to type into, and sends nothing for it', async () => {
     mockProject = async () => project({ story: null });
     await show();
-    expect(within(screen.getByTestId('story-empty')).getByText(STORY.blocks.empty)).toBeTruthy();
+    // Without it the creator has to know that writing starts with "Add paragraph".
+    expect(screen.getByTestId('story-block-0-text')).toBeTruthy();
+    expect(screen.queryByTestId('story-block-1')).toBeNull();
+    expect(screen.queryByTestId('story-empty')).toBeNull();
     expect(screen.queryByTestId('story-anchors')).toBeNull();
+    await settle();
+    // Opening the tab is not an edit.
+    expect(storyPatches()).toEqual([]);
+  });
+
+  it('says under the story and the risks how much they still lack, once the creator has left them', async () => {
+    mockProject = async () => project({ story: null, risks: null });
+    await show();
+    // Nothing on a fresh draft: unwritten is not wrong.
+    expect(screen.queryByTestId('story-shortfall')).toBeNull();
+
+    await fireEvent.changeText(screen.getByTestId('story-block-0-text'), 'Short.');
+    await blur('story-block-0-text');
+    expect(screen.getByTestId('story-shortfall')).toHaveTextContent(
+      'The story needs at least 500 characters before you can submit. Add 494 more.',
+    );
+
+    await fireEvent.changeText(screen.getByTestId('story-risks'), 'Tooling.');
+    await blur('story-risks');
+    expect(
+      screen.getByText('Risks and challenges need at least 200 characters before you can submit. Add 192 more.'),
+    ).toBeTruthy();
   });
 
   it('names every icon-only control with the block’s kind and position', async () => {
@@ -400,19 +425,20 @@ describe('StoryPanel — adding, moving and removing blocks', () => {
     jest.spyOn(Image, 'getSize').mockImplementation((_url, success) => success(1600, 900));
     mockProject = async () => project({ story: doc([]) });
     await show();
+    // Added after the paragraph an empty story opens on.
     await fireEvent.press(screen.getByTestId('story-add-image'));
     await settle();
-    await fireEvent.press(screen.getByTestId('story-block-0-source-address-open'));
-    await fireEvent.changeText(screen.getByTestId('story-block-0-source-address'), 'https://images.example.com/a.jpg');
-    await fireEvent.press(screen.getByTestId('story-block-0-source-address-use'));
+    await fireEvent.press(screen.getByTestId('story-block-1-source-address-open'));
+    await fireEvent.changeText(screen.getByTestId('story-block-1-source-address'), 'https://images.example.com/a.jpg');
+    await fireEvent.press(screen.getByTestId('story-block-1-source-address-use'));
     await settle();
-    expect(screen.getByTestId('story-block-0-size')).toHaveTextContent('1600×900 pixels');
+    expect(screen.getByTestId('story-block-1-size')).toHaveTextContent('1600×900 pixels');
     // #543: warned about on the block and with the description field, never held.
-    expect(screen.getByTestId('story-block-0-warning')).toHaveTextContent(STORY.vocabulary.warnings.imageNeedsAlt);
-    expect(screen.getByTestId('story-block-0-alt').props.accessibilityHint).toContain(
+    expect(screen.getByTestId('story-block-1-warning')).toHaveTextContent(STORY.vocabulary.warnings.imageNeedsAlt);
+    expect(screen.getByTestId('story-block-1-alt').props.accessibilityHint).toContain(
       STORY.vocabulary.warnings.imageNeedsAlt,
     );
-    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+    expect(storyPatches().at(-1)?.blocks[1]).toEqual({
       type: 'image',
       url: 'https://images.example.com/a.jpg',
       width: 1600,
@@ -420,16 +446,16 @@ describe('StoryPanel — adding, moving and removing blocks', () => {
       alt: '',
     });
 
-    await fireEvent.changeText(screen.getByTestId('story-block-0-alt'), 'The lamp on a stall');
-    await blur('story-block-0-alt');
-    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+    await fireEvent.changeText(screen.getByTestId('story-block-1-alt'), 'The lamp on a stall');
+    await blur('story-block-1-alt');
+    expect(storyPatches().at(-1)?.blocks[1]).toEqual({
       type: 'image',
       url: 'https://images.example.com/a.jpg',
       width: 1600,
       height: 900,
       alt: 'The lamp on a stall',
     });
-    expect(screen.queryByTestId('story-block-0-warning')).toBeNull();
+    expect(screen.queryByTestId('story-block-1-warning')).toBeNull();
   });
 });
 
@@ -718,12 +744,12 @@ describe('StoryPanel — focus, pickers, uploads and the refusal mark', () => {
     await show();
     await fireEvent.press(screen.getByTestId('story-add-embed'));
     await settle();
-    await fireEvent.press(screen.getByTestId('story-block-0-provider'));
+    await fireEvent.press(screen.getByTestId('story-block-1-provider'));
     await fireEvent.press(screen.getByRole('radio', { name: 'Vimeo' }));
-    await fireEvent.changeText(screen.getByTestId('story-block-0-url'), 'https://vimeo.com/1');
-    await fireEvent.changeText(screen.getByTestId('story-block-0-title'), 'A film');
-    await blur('story-block-0-title');
-    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+    await fireEvent.changeText(screen.getByTestId('story-block-1-url'), 'https://vimeo.com/1');
+    await fireEvent.changeText(screen.getByTestId('story-block-1-title'), 'A film');
+    await blur('story-block-1-title');
+    expect(storyPatches().at(-1)?.blocks[1]).toEqual({
       type: 'embed',
       provider: 'vimeo',
       url: 'https://vimeo.com/1',
@@ -741,15 +767,15 @@ describe('StoryPanel — focus, pickers, uploads and the refusal mark', () => {
     await show();
     await fireEvent.press(screen.getByTestId('story-add-image'));
     await settle();
-    await fireEvent.press(screen.getByTestId(`story-block-0-source-${source}`));
+    await fireEvent.press(screen.getByTestId(`story-block-1-source-${source}`));
     await settle();
     expect(ImagePicker[launcher]).toHaveBeenCalled();
     expect(upload).toHaveBeenCalledWith('file:///photo.heic', expect.anything());
-    expect(screen.getByTestId('story-block-0-size')).toHaveTextContent('1200×800 pixels');
+    expect(screen.getByTestId('story-block-1-size')).toHaveTextContent('1200×800 pixels');
 
-    await fireEvent.changeText(screen.getByTestId('story-block-0-alt'), 'The lamp');
-    await blur('story-block-0-alt');
-    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+    await fireEvent.changeText(screen.getByTestId('story-block-1-alt'), 'The lamp');
+    await blur('story-block-1-alt');
+    expect(storyPatches().at(-1)?.blocks[1]).toEqual({
       type: 'image',
       url: 'https://cdn.example.com/m1.jpg',
       width: 1200,
@@ -972,13 +998,13 @@ describe('StoryPanel — sections', () => {
     await fireEvent.press(screen.getByTestId('story-add-section'));
     await settle();
     expect(screen.getByTestId('story-add-section').props.accessibilityLabel).toContain(STORY.blocks.hints.section);
-    expect(within(screen.getByTestId('story-block-0')).getByText(STORY.vocabulary.problems.sectionNeedsTitle)).toBeTruthy();
+    expect(within(screen.getByTestId('story-block-1')).getByText(STORY.vocabulary.problems.sectionNeedsTitle)).toBeTruthy();
     expect(storyPatches()).toEqual([]);
 
-    await fireEvent.changeText(screen.getByTestId('story-block-0-title'), 'Our workshop');
-    await fireEvent.changeText(screen.getByTestId('story-block-0-text'), 'Every lamp is **blown** here.');
-    await blur('story-block-0-text');
-    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+    await fireEvent.changeText(screen.getByTestId('story-block-1-title'), 'Our workshop');
+    await fireEvent.changeText(screen.getByTestId('story-block-1-text'), 'Every lamp is **blown** here.');
+    await blur('story-block-1-text');
+    expect(storyPatches().at(-1)?.blocks[1]).toEqual({
       type: 'section',
       id: 'our-workshop',
       title: 'Our workshop',
@@ -988,7 +1014,7 @@ describe('StoryPanel — sections', () => {
     });
     expect(within(screen.getByTestId('story-anchors')).getByText('#our-workshop')).toBeTruthy();
     // No picture yet: no description to type for one.
-    expect(screen.queryByTestId('story-block-0-image-alt')).toBeNull();
+    expect(screen.queryByTestId('story-block-1-image-alt')).toBeNull();
   });
 
   it('takes its anchor from the same set as the headings', async () => {

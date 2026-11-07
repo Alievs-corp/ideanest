@@ -81,7 +81,7 @@ describe('the trend', () => {
   it('shows the running total and every day behind it', async () => {
     renderCharts({ loadTrend: vi.fn().mockResolvedValue(trend({ days: DAYS })) });
 
-    expect(await screen.findByText('150.00 AZN by 2026-08-05')).toBeInTheDocument();
+    expect(await screen.findByText('150.00 AZN by 5 Aug 2026')).toBeInTheDocument();
 
     await userEvent.click(screen.getByText('Show the daily figures'));
     const table = within(screen.getByRole('region', { name: 'Daily funding figures' })).getByRole(
@@ -138,7 +138,8 @@ describe('the splits', () => {
     expect(within(rewards).getByText(/2 backers/)).toBeInTheDocument();
 
     const destinations = screen.getByRole('list', { name: 'Backers by destination' });
-    expect(within(destinations).getByText('DE')).toBeInTheDocument();
+    // Named, not coded (#597).
+    expect(within(destinations).getByText('Germany')).toBeInTheDocument();
     // The pledges that named nowhere are a group rather than a gap: a chart whose parts do
     // not add up to the total above it is one somebody has to reconcile by hand.
     expect(within(destinations).getByText('No destination')).toBeInTheDocument();
@@ -172,7 +173,7 @@ describe('the splits', () => {
     });
 
     // Half a dashboard beats an error page, and the two reads fail for different reasons.
-    expect(await screen.findByText('150.00 AZN by 2026-08-05')).toBeInTheDocument();
+    expect(await screen.findByText('150.00 AZN by 5 Aug 2026')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(/backer breakdown could not be loaded/);
   });
 });

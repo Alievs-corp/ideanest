@@ -213,6 +213,7 @@ public class ProjectRevisionModeration {
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         revision.reject(moderatorId, now, reason.trim());
         revisionService.discardRewards(project.getId());
+        revisionService.releaseMediaOf(revision);
 
         audit.record(
                 AuditAction.PROJECT_REVISION_REJECTED,

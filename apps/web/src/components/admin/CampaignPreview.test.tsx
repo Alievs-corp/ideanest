@@ -47,6 +47,8 @@ const SUBMITTED: CampaignPage = {
   backersCount: 0,
   launchedAt: null,
   deadline: null,
+  extendedUntil: null,
+  fundingEndsAt: null,
   story: {
     version: 1,
     blocks: [

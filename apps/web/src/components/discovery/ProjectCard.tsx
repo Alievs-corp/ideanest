@@ -2,7 +2,6 @@ import Decimal from 'decimal.js';
 import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
 import {
-  CalendarClock,
   CalendarPlus,
   CircleCheck,
   CircleDot,
@@ -15,6 +14,7 @@ import { Avatar, MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
 import { campaignAccent } from '@ideanest/discovery/category-look';
 import { cardCoverFrom } from '@ideanest/discovery/card-media';
 import { CardVideoPreview } from './CardVideoPreview';
+import { CardViewCount } from './CardViewCount';
 import { ACCENT_SURFACE } from '../browse/accent-surface';
 import { CAMPAIGN_CARD_SIZES } from '../../lib/images/sizes';
 import { canOptimise } from '../../lib/images/source';
@@ -25,6 +25,8 @@ import type { ProjectCardCopy } from '../../lib/i18n/card-copy';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
+import { audienceClickAttributes } from '../../lib/audience/paths';
+import type { AudienceSurface } from '../../lib/audience/beacon';
 
 /**
  * D-05's project card: image, title, creator, completion, days left, badge.
@@ -95,7 +97,6 @@ const URGENT_DAYS = 2;
  * `live`); it is here because the record is keyed by every status, and it matches the tag below.
  */
 const BADGES: Record<DiscoveryStatus, ReactNode> = {
-  upcoming: <CalendarClock className="size-2.5 max-sm:size-3 lg:size-3" />,
   live: <CircleDot className="size-2.5 max-sm:size-3 lg:size-3 text-info" />,
   extended: <CalendarPlus className="size-2.5 max-sm:size-3 lg:size-3" />,
   successful: <CircleCheck className="size-2.5 max-sm:size-3 lg:size-3 text-success" />,
@@ -178,6 +179,12 @@ export interface ProjectCardProps {
   coverScale?: number;
   /** Extra classes for the text below the cover — the home page trades its spacing for cover height. */
   bodyClassName?: string;
+  /**
+   * The listing this card is drawn in, sent with the click when its link is followed (#634).
+   * Each listing names itself; a card drawn anywhere else is `OTHER`. The click is read by
+   * `AudienceTracker`'s one listener off two data attributes, so the card stays a Server Component.
+   */
+  surface?: AudienceSurface;
 }
 
 const COVER_SCALE = 1.177;
@@ -202,6 +209,7 @@ export function ProjectCard({
   coverClassName,
   coverScale = COVER_SCALE,
   bodyClassName,
+  surface = 'OTHER',
 }: ProjectCardProps) {
   const completion = completionOf(card);
   /*
@@ -292,6 +300,8 @@ export function ProjectCard({
           />
         )}
         {cover.video !== null && <CardVideoPreview src={cover.video.url} className={COVER_ZOOM} />}
+        {/* Last, so it sits above the clip; outside the zoom, so it stays put. */}
+        <CardViewCount count={card.viewCount} label={copy.views} locale={locale} />
       </MediaFrame>
 
       {/*
@@ -360,6 +370,7 @@ export function ProjectCard({
           */}
           <Link
             href={href}
+            {...audienceClickAttributes(card.id, surface)}
             className="rounded-sm group-hover:underline group-hover:underline-offset-4 after:absolute after:inset-0 after:rounded-xl after:content-['']"
           >
             {card.title}

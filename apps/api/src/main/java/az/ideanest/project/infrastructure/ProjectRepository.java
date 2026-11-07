@@ -58,6 +58,43 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     boolean isVideoInAStory(@Param("mediaId") UUID mediaId);
 
     /**
+     * Whether anything at all still shows the upload: a campaign's cover or video, a story or a
+     * version of one, a reward tier, or any of those places in an open revision (#568). Asked
+     * before an upload that a revision stopped naming is deleted - replaced inside the draft,
+     * or left behind when the revision was refused or thrown away. One question rather than a
+     * question per place, because the owner may have attached the upload anywhere.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT EXISTS (
+                               SELECT 1 FROM projects
+                                WHERE cover_media_id = :mediaId OR video_media_id = :mediaId
+                                   OR story @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
+                        OR EXISTS (SELECT 1 FROM project_story_versions WHERE document @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
+                        OR EXISTS (SELECT 1 FROM reward_tiers WHERE image_media_id = :mediaId OR video_media_id = :mediaId)
+                        OR EXISTS (
+                               SELECT 1
+                                 FROM project_revisions revision
+                                WHERE revision.status IN ('DRAFT', 'PENDING')
+                                  AND (revision.content -> 'coverImage' ->> 'mediaId' = CAST(:mediaId AS text)
+                                       OR revision.content ->> 'videoMediaId' = CAST(:mediaId AS text)
+                                       OR revision.content -> 'story' @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text)))))))
+                        OR EXISTS (
+                               SELECT 1
+                                 FROM project_revisions revision
+                                CROSS JOIN LATERAL jsonb_each(
+                                      CASE WHEN jsonb_typeof(revision.content -> 'rewards') = 'object'
+                                           THEN revision.content -> 'rewards'
+                                           ELSE CAST('{}' AS jsonb) END) AS proposed(tier_id, tier)
+                                WHERE revision.status IN ('DRAFT', 'PENDING')
+                                  AND (proposed.tier ->> 'imageMediaId' = CAST(:mediaId AS text)
+                                       OR proposed.tier ->> 'videoMediaId' = CAST(:mediaId AS text)))
+                    """,
+            nativeQuery = true)
+    boolean isMediaInUse(@Param("mediaId") UUID mediaId);
+
+    /**
      * Whether this creator already has a campaign under this slug.
      *
      * <p>Scoped to the creator because the unique index is: the public URL is
@@ -220,7 +257,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                            t.note AS note,
                            p.id AS projectId, p.title AS title, p.slug AS slug,
                            p.state AS state, p.goal_amount AS goalAmount,
-                           p.currency AS currency, p.creator_id AS creatorId
+                           p.currency AS currency, p.creator_id AS creatorId,
+                           p.scheduled_launch_at AS scheduledLaunchAt
                     FROM projects p
                     LEFT JOIN LATERAL (
                         SELECT s.id, s.created_at, s.note
@@ -253,7 +291,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                            t.note AS note,
                            p.id AS projectId, p.title AS title, p.slug AS slug,
                            p.state AS state, p.goal_amount AS goalAmount,
-                           p.currency AS currency, p.creator_id AS creatorId
+                           p.currency AS currency, p.creator_id AS creatorId,
+                           p.scheduled_launch_at AS scheduledLaunchAt
                     FROM projects p
                     LEFT JOIN LATERAL (
                         SELECT s.id, s.created_at, s.note
@@ -372,4 +411,24 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             ORDER BY p.deadline ASC
             """)
     List<UUID> findDueForAutomaticWithdrawal(@Param("endedBefore") Instant endedBefore, Pageable page);
+
+    /**
+     * #633: what state a campaign is in, without loading it. The audience capture endpoint asks
+     * this for every campaign event it receives, so it is one column rather than an entity.
+     */
+    @Query("SELECT p.state FROM Project p WHERE p.id = :id")
+    Optional<az.ideanest.project.domain.ProjectState> findStateById(@Param("id") UUID id);
+
+    /**
+     * #633: one more daily viewer — see {@code CampaignViews}. An addition inside the statement,
+     * so concurrent first views cannot lose each other's increments, and V125's trigger leaves
+     * {@code updated_at} alone because only this statement changes the column.
+     */
+    @Modifying
+    @Query(value = "UPDATE projects SET view_count = view_count + 1 WHERE id = :id", nativeQuery = true)
+    int addView(@Param("id") UUID id);
+
+    /** #633: daily viewers summed, all time; empty for a campaign that does not exist. */
+    @Query(value = "SELECT view_count FROM projects WHERE id = :id", nativeQuery = true)
+    Optional<Long> findViewCountById(@Param("id") UUID id);
 }

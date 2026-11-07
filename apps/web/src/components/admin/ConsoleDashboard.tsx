@@ -83,6 +83,7 @@ const SECTION_LINKS: Readonly<Record<string, readonly { readonly href: string; r
   figures: [{ href: '/admin/analytics', label: 'analytics' }],
   campaigns: [
     { href: '/admin/moderation/submissions', label: 'moderation' },
+    { href: '/admin/moderation/revisions', label: 'revisions' },
     { href: '/admin/campaigns', label: 'campaigns' },
   ],
   reports: [{ href: '/admin/moderation/content', label: 'reports' }],

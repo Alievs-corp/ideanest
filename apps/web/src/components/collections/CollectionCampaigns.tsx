@@ -153,6 +153,7 @@ export function CollectionCampaigns({
       </p>
 
       <CampaignGrid
+        surface="COLLECTION"
         campaigns={items}
         priorityCount={3}
         label={fillPlaceholders(copy.gridLabel, { title })}

@@ -1,7 +1,12 @@
 import type { AdminTranslator } from '../admin-copy';
 import type { ConsoleChromeCopy } from './common-copy';
 import type { PluralForms } from '../plurals';
-import type { RevisionField, RevisionRewardChange, RevisionRewardField } from '../../admin/revisions';
+import type {
+  RevisionField,
+  RevisionItemField,
+  RevisionRewardChange,
+  RevisionRewardField,
+} from '../../admin/revisions';
 import type { StoryLineKind } from '../../admin/revision-diff';
 
 /**
@@ -82,6 +87,37 @@ export interface RevisionRewardsCopy {
   readonly secretLinkReplaced: string;
 }
 
+/** The words of the items a revision changes — issue #589, after #587. */
+export interface RevisionItemsCopy {
+  readonly intro: string;
+  readonly untitled: string;
+  /** Carries `{name}`. */
+  readonly itemLabel: string;
+  readonly fields: Readonly<Record<RevisionItemField, string>>;
+  /** Carries `{grams}`. */
+  readonly weight: string;
+  readonly noWeight: string;
+  /** Carries `{name}`. */
+  readonly imageAlt: string;
+}
+
+/** What a revision does to one shipping region. A region can be both renamed and given other countries. */
+export type RevisionZoneChange = 'added' | 'removed' | 'renamed' | 'countries';
+
+/** The words of the shipping regions a revision changes — issue #589, after #587. */
+export interface RevisionZonesCopy {
+  readonly intro: string;
+  readonly untitled: string;
+  /** Carries `{name}`. */
+  readonly zoneLabel: string;
+  readonly changes: Readonly<Record<RevisionZoneChange, string>>;
+  readonly addedNote: string;
+  readonly removedNote: string;
+  readonly name: string;
+  readonly countries: string;
+  readonly unchanged: string;
+}
+
 export interface RevisionReviewCopy extends ConsoleChromeCopy {
   readonly subject: string;
   readonly loadingReview: string;
@@ -134,6 +170,8 @@ export interface RevisionReviewCopy extends ConsoleChromeCopy {
   readonly rejected: string;
   readonly unavailable: string;
   readonly rewards: RevisionRewardsCopy;
+  readonly items: RevisionItemsCopy;
+  readonly shippingZones: RevisionZonesCopy;
 }
 
 export function revisionQueueCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy): RevisionQueueCopy {
@@ -213,6 +251,39 @@ export function revisionReviewCopyFrom(t: AdminTranslator, chrome: ConsoleChrome
     rejected: t(at('rejected')),
     unavailable: t(at('unavailable')),
     rewards: rewardsCopyFrom(t),
+    items: itemsCopyFrom(t),
+    shippingZones: zonesCopyFrom(t),
+  };
+}
+
+function itemsCopyFrom(t: AdminTranslator): RevisionItemsCopy {
+  const at = (key: string) => `screens.revisionReview.items.${key}`;
+  const text = (key: string) => String(t.raw(at(key)));
+
+  return {
+    intro: t(at('intro')),
+    untitled: t(at('untitled')),
+    itemLabel: text('itemLabel'),
+    fields: t.raw(at('fields')) as RevisionItemsCopy['fields'],
+    weight: text('weight'),
+    noWeight: t(at('noWeight')),
+    imageAlt: text('imageAlt'),
+  };
+}
+
+function zonesCopyFrom(t: AdminTranslator): RevisionZonesCopy {
+  const at = (key: string) => `screens.revisionReview.shippingZones.${key}`;
+
+  return {
+    intro: t(at('intro')),
+    untitled: t(at('untitled')),
+    zoneLabel: String(t.raw(at('zoneLabel'))),
+    changes: t.raw(at('changes')) as RevisionZonesCopy['changes'],
+    addedNote: t(at('addedNote')),
+    removedNote: t(at('removedNote')),
+    name: t(at('name')),
+    countries: t(at('countries')),
+    unchanged: t(at('unchanged')),
   };
 }
 

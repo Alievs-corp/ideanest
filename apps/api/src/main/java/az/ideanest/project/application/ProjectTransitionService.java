@@ -195,37 +195,6 @@ public class ProjectTransitionService {
     }
 
     /**
-     * Opens the campaign's pre-launch page: {@code DRAFT} → {@code PRELAUNCH}.
-     *
-     * <p><strong>Not in §10.2's endpoint list</strong>, and required by #39's
-     * definition of done — the same gap {@link #requestChanges} has, recorded the
-     * same way. §6.1 has had the edge since the state machine was written and
-     * nothing performed it, so a creator could reach {@code PRELAUNCH} only by a
-     * hand-written {@code UPDATE}. §4.6 lists a pre-launch page under Basics and
-     * a pre-launch link under Promotion; neither is reachable without this.
-     *
-     * <p><strong>The creator alone</strong>, through the two-argument
-     * {@code requireTransitionable}, which is the form {@link #launch} and
-     * {@link #cancel} use. That is a deliberate choice against giving it a
-     * capability: opening the page publishes the campaign's title, summary, and
-     * cover image to anybody with the link, and §6.1 has no edge back — there is no
-     * {@code PRELAUNCH → DRAFT}. A collaborator invited to edit the basics has not
-     * been given the authority to make them public, and the difference between
-     * those two is exactly what #38's granularity is for.
-     *
-     * <p>No precondition beyond the edge. A pre-launch page shows the title, the
-     * summary, and the cover image, all of which are nullable on a draft; a page
-     * with only a title is a thin page, and refusing to open it would be this
-     * service deciding what a creator's announcement has to contain. The
-     * completeness rules belong to the checklist (#37) and apply to submission.
-     */
-    @Transactional
-    public Project openPrelaunch(UUID projectId, UUID accountId) {
-        Project project = access.requireTransitionable(projectId, accountId);
-        return apply(project, ProjectState.PRELAUNCH, access.roleOf(project, accountId), accountId, null);
-    }
-
-    /**
      * Takes an approved campaign live: {@code APPROVED} or {@code SCHEDULED} →
      * {@code LIVE}.
      *

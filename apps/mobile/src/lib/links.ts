@@ -4,9 +4,10 @@
  * The claim (which paths open the app) and the parser (which screen a URL opens) are
  * `@ideanest/links`, shared with the web's association files and with `app.config.ts`'s intent
  * filters, so the three cannot drift. What is here is what only the application decides: what
- * to do with a link the parser does not answer, and the URL the share sheet sends.
+ * to do with a link the parser does not answer, the URL the share sheet sends, and the screen an
+ * inbox row opens.
  */
-import { NOT_FOUND, destinationFor, type Destination } from '@ideanest/links/destination';
+import { NOT_FOUND, destinationFor, hrefOf, isNotFound, type Destination } from '@ideanest/links/destination';
 import { isClaimedReturnRoute } from './auth-session-links';
 
 export { NOT_FOUND, destinationFor, hrefOf, isNotFound, type Destination } from '@ideanest/links/destination';
@@ -94,6 +95,22 @@ export function listenForLinks(source: LinkSource, siteHost: string, handlers: L
     live = false;
     subscription.remove();
   };
+}
+
+/**
+ * The screen an inbox row opens, from the locale-less web path `@ideanest/account/inbox`'s `hrefOf`
+ * gives it — #589.
+ *
+ * The inbox shares the web's destinations so the two land in one place, and most of them are this
+ * application's routes as well. The ones keyed by a campaign's id are not: Expo Router cannot hold
+ * `projects/[id]` beside `projects/[creatorSlug]`, so the web's `/projects/{id}/edit/review` is
+ * `/campaigns/{id}/edit/review` here. So the path is read by the link parser, and a row opens the
+ * screen a shared link to the same page would. A path the parser does not answer is returned as it
+ * is, which is what the inbox pushed before.
+ */
+export function inboxRouteOf(href: string, siteHost: string): string {
+  const destination = destinationFor(`https://${siteHost}${href}`, siteHost);
+  return destination === null || isNotFound(destination) ? href : hrefOf(destination);
 }
 
 /**

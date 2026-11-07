@@ -21,12 +21,12 @@
  * <h2>The number is digits, with no `+`</h2>
  *
  * `wa.me` takes an international number as digits only — no plus, no spaces, no dashes. The
- * displayed form (`+421 952 480 349`) is built from this one for the reader, so the two cannot
+ * displayed form (`+994 99 790 77 74`) is built from this one for the reader, so the two cannot
  * drift apart, and `whatsapp.test.ts` pins the shape.
  */
 
 /** The destination, in the form `wa.me` requires: E.164 digits without the leading `+`. */
-export const WHATSAPP_CONTACT_NUMBER = '421952480349';
+export const WHATSAPP_CONTACT_NUMBER = '994997907774';
 
 /**
  * How long a message may be.

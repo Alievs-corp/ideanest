@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { ALL_MARKETS } from '@ideanest/messages/country';
 import { Pill } from '@ideanest/ui';
 import { useLocale } from '../../i18n/navigation';
 import { regionNames } from '../../lib/i18n/formats';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ShellCopy } from '../../lib/i18n/shell-copy';
-import { currentMarket, writeMarketCookie } from '../../lib/market/cookie';
+import { writeMarketCookie } from '../../lib/market/cookie';
+import { useMarket } from '../../lib/market/useMarket';
 
 export interface MarketEmptyNoticeProps {
   readonly copy: ShellCopy['market'];
@@ -23,9 +23,7 @@ export interface MarketEmptyNoticeProps {
  */
 export function MarketEmptyNotice({ copy }: MarketEmptyNoticeProps) {
   const locale = useLocale();
-  const [market, setMarket] = useState<string | null>(null);
-
-  useEffect(() => setMarket(currentMarket()), []);
+  const market = useMarket();
 
   if (market === null || market === ALL_MARKETS) return null;
 

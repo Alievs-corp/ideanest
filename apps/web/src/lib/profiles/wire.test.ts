@@ -124,6 +124,12 @@ describe('reading a page of campaign cards', () => {
     expect(page.items.map((project) => project.id)).toEqual(['p1']);
   });
 
+  it('reads the view count (#634), and leaves it out when the service did not send one', () => {
+    expect(readProjectCardPage({ projects: [{ ...card, viewCount: 980 }] }).items[0]?.viewCount).toBe(980);
+    expect(readProjectCardPage({ projects: [card] }).items[0]).not.toHaveProperty('viewCount');
+    expect(readProjectCardPage({ projects: [{ ...card, viewCount: -1 }] }).items[0]).not.toHaveProperty('viewCount');
+  });
+
   it('refuses a cover with no dimensions, because the box could not be reserved', () => {
     const page = readProjectCardPage({
       projects: [{ ...card, coverImage: { url: 'https://cdn.test/p1.jpg' } }],

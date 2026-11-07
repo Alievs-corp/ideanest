@@ -50,7 +50,8 @@ public record SubmissionQueueResponse(String state, List<Submission> submissions
             UUID creatorId,
             String creatorName,
             String creatorSlug,
-            Money goal) {
+            Money goal,
+            Instant scheduledLaunchAt) {
 
         static Submission of(SubmittedCampaign campaign) {
             return new Submission(
@@ -64,7 +65,8 @@ public record SubmissionQueueResponse(String state, List<Submission> submissions
                     campaign.creatorId(),
                     campaign.creatorName(),
                     campaign.creatorSlug(),
-                    campaign.goal());
+                    campaign.goal(),
+                    campaign.scheduledLaunchAt());
         }
     }
 }

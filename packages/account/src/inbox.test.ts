@@ -63,6 +63,7 @@ const FULL_PARAMS = {
   planName: 'Growth',
   price: { amount: '49.00', currency: 'AZN' },
   periodEnd: '2026-11-13',
+  opensAt: '2026-10-27T12:00:00Z',
 };
 
 function notification(
@@ -78,8 +79,8 @@ function notification(
 }
 
 describe('the contract', () => {
-  it('publishes 32 types', () => {
-    expect(TYPES).toHaveLength(32);
+  it('publishes 35 types', () => {
+    expect(TYPES).toHaveLength(35);
   });
 });
 
@@ -152,6 +153,34 @@ describe('hrefOf', () => {
       expect(hrefOf(notification({ type, category: 'PAYMENTS' }))).toBe('/pricing');
       expect(hrefOf(notification({ type, category: 'PAYMENTS', params: {} }))).toBe('/pricing');
     }
+  });
+
+  it('sends a campaign that did not open at its launch time to its editor’s review tab, as the email does (#589)', () => {
+    // Approved and not public: the page the slugs name is not one its creator can act on.
+    expect(hrefOf(notification({ type: 'SCHEDULED_LAUNCH_REFUSED', category: 'CAMPAIGN' }))).toBe(
+      '/projects/01890000-0000-7000-8000-000000000001/edit/review',
+    );
+    // A document with no identifier names no editor, and keeps the campaign's page.
+    expect(
+      hrefOf(
+        notification({
+          type: 'SCHEDULED_LAUNCH_REFUSED',
+          category: 'CAMPAIGN',
+          params: { creatorSlug: 'aysel-studio', projectSlug: 'xari-bulbul-ceramics' },
+        }),
+      ),
+    ).toBe('/projects/aysel-studio/xari-bulbul-ceramics');
+  });
+
+  it('sends a refused campaign edit to the editor’s review tab and an approved one to the campaign (#568)', () => {
+    // Refused: the reason and the way to send it again are in the editor.
+    expect(hrefOf(notification({ type: 'CAMPAIGN_EDIT_REJECTED', category: 'CAMPAIGN' }))).toBe(
+      '/projects/01890000-0000-7000-8000-000000000001/edit/review',
+    );
+    // Approved: the news is the public page, which shows the changes now.
+    expect(hrefOf(notification({ type: 'CAMPAIGN_EDIT_APPROVED', category: 'CAMPAIGN' }))).toBe(
+      '/projects/aysel-studio/xari-bulbul-ceramics',
+    );
   });
 });
 
@@ -341,6 +370,26 @@ describe('cursorOf', () => {
     expect(cursorOf({ nextCursor: 't', nextCursorId: 'i' })).toEqual({ before: 't', beforeId: 'i' });
     expect(cursorOf({ nextCursor: 't' })).toBeNull();
     expect(cursorOf({})).toBeNull();
+  });
+});
+
+describe('PROJECT_APPROVED_SCHEDULED — #595', () => {
+  it('says when the approved campaign opens, not that it is live, and goes to its review tab', () => {
+    const view = describeNotification(notification({ type: 'PROJECT_APPROVED_SCHEDULED' }), COPY, 'en');
+
+    expect(view.headline).toMatch(/^Xari Bulbul Ceramics was approved and opens 27 October 2026.*\d{2}:\d{2}/);
+    expect(view.headline).not.toContain('published');
+    expect(view.href).toBe('/projects/01890000-0000-7000-8000-000000000001/edit/review');
+  });
+
+  it('says "soon" rather than inventing a time when the document has none', () => {
+    const view = describeNotification(
+      notification({ type: 'PROJECT_APPROVED_SCHEDULED', params: { projectTitle: 'Lamp', opensAt: 'later' } }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toBe('Lamp was approved and opens soon');
   });
 });
 

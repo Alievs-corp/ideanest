@@ -48,7 +48,7 @@ class DiscoveryStatusTests {
     }
 
     @Test
-    @DisplayName("the seven states a campaign may never be listed in are exactly these")
+    @DisplayName("the eight states a campaign may never be listed in are exactly these")
     void theHiddenStatesAreNamedOutLoud() {
         // Written as a literal rather than derived, so that moving a state from one
         // side to the other has to be done here, deliberately, by somebody who read
@@ -57,11 +57,18 @@ class DiscoveryStatusTests {
         // endpoint has.
         assertThat(DiscoveryStatus.HIDDEN_STATES)
                 .containsExactlyInAnyOrder(
-                        "DRAFT", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "SUSPENDED");
+                        "DRAFT",
+                        "PRELAUNCH",
+                        "SUBMITTED",
+                        "CHANGES_REQUESTED",
+                        "REJECTED",
+                        "APPROVED",
+                        "SCHEDULED",
+                        "SUSPENDED");
     }
 
     @Test
-    @DisplayName("IDN-EXT-01: an unsuccessful campaign is public but not listed, and nothing else differs")
+    @DisplayName("IDN-EXT-01: an unsuccessful campaign is public but not listed")
     void unsuccessfulIsPublicButNotListed() {
         // Hidden from the catalogue and search only: its page and rewards still resolve.
         assertThat(DiscoveryStatus.PUBLIC_STATES).contains("UNSUCCESSFUL");
@@ -69,6 +76,16 @@ class DiscoveryStatusTests {
         Set<String> difference = new LinkedHashSet<>(DiscoveryStatus.PUBLIC_STATES);
         difference.removeAll(DiscoveryStatus.LISTED_STATES);
         assertThat(difference).containsExactly("UNSUCCESSFUL");
+    }
+
+    @Test
+    @DisplayName("#626: a pre-launch campaign is hidden everywhere, because nobody has reviewed it")
+    void prelaunchIsHidden() {
+        // A creator reached PRELAUNCH from a draft without moderation, so the only
+        // campaigns the public sees are ones a moderator has cleared.
+        assertThat(DiscoveryStatus.HIDDEN_STATES).contains("PRELAUNCH");
+        assertThat(DiscoveryStatus.PUBLIC_STATES).doesNotContain("PRELAUNCH");
+        assertThat(DiscoveryStatus.badgeFor("PRELAUNCH")).isEmpty();
     }
 
     @Test
@@ -88,9 +105,9 @@ class DiscoveryStatusTests {
     }
 
     @Test
-    @DisplayName("IDN-EXT-01: the filter words are upcoming, live, extended and successful")
+    @DisplayName("the filter words are live, extended and successful")
     void theFilterWords() {
-        assertThat(DiscoveryStatus.wireValues()).containsExactly("upcoming", "live", "extended", "successful");
+        assertThat(DiscoveryStatus.wireValues()).containsExactly("live", "extended", "successful");
         assertThat(DiscoveryStatus.EXTENDED.states()).containsExactly("EXTENDED");
     }
 

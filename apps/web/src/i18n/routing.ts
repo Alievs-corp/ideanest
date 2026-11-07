@@ -41,6 +41,14 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '../lib/i18n/locale';
  * So detection happens in `proxy.ts` instead, once, on the bare path only, and the
  * pages it redirects to never negotiate anything.
  *
+ * <h2>`localeCookie: false`: next-intl's cookie is nobody's</h2>
+ *
+ * Left on, the middleware writes `NEXT_LOCALE` on any page whose language differs from what
+ * the browser's `Accept-Language` prefers, unasked. Nothing reads it: detection is off above,
+ * and the proxy's redirect reads `ideanest_locale`, which is written only when the reader picks
+ * a language. A cookie the reader did not ask for and the site does not need is one the site
+ * would have to ask consent for, so it is not set at all.
+ *
  * <h2>The list is imported, never spelled again</h2>
  *
  * `lib/i18n/locale.ts` is the third spelling of a list the API and a check constraint in
@@ -52,4 +60,5 @@ export const routing = defineRouting({
   defaultLocale: DEFAULT_LOCALE,
   localePrefix: 'always',
   localeDetection: false,
+  localeCookie: false,
 });

@@ -20,6 +20,7 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { EditorShell } from './EditorShell';
+import { Revealed } from './Revealed';
 import { RevisionNotice } from './RevisionNotice';
 import { FaqEntryEditor } from './FaqEntryEditor';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
@@ -350,26 +351,30 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
             a bigger cap; either way a creator who cannot press "Add" is owed the
             reason.
           */
-          <InlineAlert variant="info" title={words.atLimitTitle}>
-            {fillPlaceholders(words.atLimitBody, { max: String(MAX_PROJECT_FAQS) })}
-          </InlineAlert>
+          <Revealed>
+            <InlineAlert variant="info" title={words.atLimitTitle}>
+              {fillPlaceholders(words.atLimitBody, { max: String(MAX_PROJECT_FAQS) })}
+            </InlineAlert>
+          </Revealed>
         )}
 
         {failure !== null && (
-          <InlineAlert variant="danger" title={words.failedTitle}>
-            <p>{failure.message}</p>
-            {failure.code === 'FAQ_ORDER_INCOMPLETE' && (
-              /*
-                The service refuses an order that is not every entry exactly once
-                and names what was wrong in `meta`. It only happens when this
-                page's list has fallen behind — an entry added or deleted
-                somewhere else — so the recovery is the reload the reorder
-                already triggered, and what the creator needs is to be told which
-                questions the two lists disagreed about.
-              */
-              <p className="mt-2 text-fg-64">{describeOrderRefusal(failure, faqs, words)}</p>
-            )}
-          </InlineAlert>
+          <Revealed revealKey={failure.message}>
+            <InlineAlert variant="danger" title={words.failedTitle}>
+              <p>{failure.message}</p>
+              {failure.code === 'FAQ_ORDER_INCOMPLETE' && (
+                /*
+                  The service refuses an order that is not every entry exactly once
+                  and names what was wrong in `meta`. It only happens when this
+                  page's list has fallen behind — an entry added or deleted
+                  somewhere else — so the recovery is the reload the reorder
+                  already triggered, and what the creator needs is to be told which
+                  questions the two lists disagreed about.
+                */
+                <p className="mt-2 text-fg-64">{describeOrderRefusal(failure, faqs, words)}</p>
+              )}
+            </InlineAlert>
+          </Revealed>
         )}
 
         {listStatus === 'failed' && (

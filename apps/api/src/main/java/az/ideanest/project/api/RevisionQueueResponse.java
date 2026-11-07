@@ -6,13 +6,13 @@ import java.util.List;
 import java.util.UUID;
 
 /** The edits to launched campaigns that wait for a moderator, oldest first (#558). */
-public record RevisionQueueResponse(List<Entry> revisions) {
+public record RevisionQueueResponse(List<RevisionQueueEntry> revisions) {
 
     /**
      * @param title the campaign's title as the public sees it
      * @param creatorName null for an anonymised account
      */
-    public record Entry(
+    public record RevisionQueueEntry(
             UUID id,
             UUID projectId,
             String title,
@@ -24,7 +24,7 @@ public record RevisionQueueResponse(List<Entry> revisions) {
 
     static RevisionQueueResponse of(List<ProjectRevisionModeration.QueuedRevision> queued) {
         return new RevisionQueueResponse(queued.stream()
-                .map(entry -> new Entry(
+                .map(entry -> new RevisionQueueEntry(
                         entry.revision().getId(),
                         entry.revision().getProjectId(),
                         entry.title(),

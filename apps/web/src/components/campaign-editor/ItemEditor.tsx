@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
+import { Pencil } from 'lucide-react';
 import {
   CharacterCount,
   Field,
@@ -18,6 +19,7 @@ import {
   EMPTY_ITEM,
   ITEM_NAME_MAX_CHARACTERS,
   fieldErrorsFrom,
+  heldItemFields,
   isEmptyPatch,
   isItemField,
   itemDraftFrom,
@@ -26,6 +28,7 @@ import {
   validateItem,
   type ItemDraft,
   type ItemErrors,
+  type ItemField,
 } from '@ideanest/campaign-editor/rewards';
 import { EditorDrawer } from './EditorDrawer';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
@@ -48,6 +51,17 @@ import { useImageUpload } from '../../lib/media/useImageUpload';
  * refusal into a sentence exactly as it does for an autosave, and the field
  * messages land through the same `fieldErrorsFrom` both editors use, so a
  * refusal reads the same wherever in the editor it happened.
+ *
+ * <h3>WHAT WAITS FOR A MODERATOR</h3>
+ *
+ * On a launched campaign, an item an approved tier contains keeps its public
+ * name, description, picture, weight and kind until a moderator approves the
+ * new ones (#587); its SKU is written at once. The service answers with the
+ * proposed values and names the held fields, so the form is seeded with what
+ * the creator asked for and each held field says, in its description, that
+ * backers still see the approved value. Said once at the top and again at the
+ * field, because a creator who opens the drawer to fix one field reads that
+ * field and not the banner.
  */
 import type {
   ItemEditorCopy,
@@ -96,6 +110,24 @@ export function ItemEditor({
   } | null>(null);
 
   const digitalHintId = useId();
+
+  /* The fields a moderator still has to approve, as the service last answered for this item. */
+  const held = item === null ? [] : heldItemFields(item);
+
+  /*
+   * A field's hint with the held marker under it. In the hint rather than the
+   * label, so it reaches a screen reader as the control's description and the
+   * field keeps its plain name.
+   */
+  function hintFor(field: ItemField, hint: string): ReactNode {
+    if (!held.includes(field)) return hint;
+    return (
+      <>
+        {hint}
+        <HeldMark text={copy.held.field} />
+      </>
+    );
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -176,6 +208,12 @@ export function ItemEditor({
       onSave={() => void save()}
     >
       <div className="flex flex-col gap-6">
+        {held.length > 0 && (
+          <InlineAlert variant="info" title={copy.held.title}>
+            {copy.held.body}
+          </InlineAlert>
+        )}
+
         {failure !== null && (
           <InlineAlert variant="danger" title={copy.notSavedTitle}>
             <p>{failure.message}</p>
@@ -186,7 +224,7 @@ export function ItemEditor({
         <Field
           label={copy.name}
           required
-          hint={fillPlaceholders(copy.nameHint, { max: String(ITEM_NAME_MAX_CHARACTERS) })}
+          hint={hintFor('name', fillPlaceholders(copy.nameHint, { max: String(ITEM_NAME_MAX_CHARACTERS) }))}
           error={visible.name}
         >
           {/*
@@ -209,7 +247,7 @@ export function ItemEditor({
 
         <Field
           label={copy.description}
-          hint={copy.descriptionHint}
+          hint={hintFor('description', copy.descriptionHint)}
           error={visible.description}
         >
           <Textarea
@@ -222,7 +260,7 @@ export function ItemEditor({
         <Field
           grouped
           label={copy.image}
-          hint={copy.imageHint}
+          hint={hintFor('imageUrl', copy.imageHint)}
           error={visible.imageUrl}
         >
           <div className="flex flex-col gap-3">
@@ -332,13 +370,14 @@ export function ItemEditor({
           />
           <p id={digitalHintId} className="mt-2 text-[13px] text-fg-64">
             {copy.isDigitalHint}
+            {held.includes('isDigital') && <HeldMark text={copy.held.field} />}
           </p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Field
             label={copy.weight}
-            hint={draft.isDigital ? copy.weightHintDigital : copy.weightHint}
+            hint={hintFor('weightGrams', draft.isDigital ? copy.weightHintDigital : copy.weightHint)}
             error={visible.weightGrams}
           >
             <TextInput
@@ -364,5 +403,18 @@ export function ItemEditor({
         </div>
       </div>
     </EditorDrawer>
+  );
+}
+
+/*
+ * Words and an icon, never a colour alone (docs/ui-kit.md §9.2). The pencil is
+ * the one the tier and item lists wear for "changed, waiting for review".
+ */
+function HeldMark({ text }: { text: string }) {
+  return (
+    <span className="mt-1 flex items-center gap-1.5">
+      <Pencil aria-hidden="true" className="size-3.5 shrink-0" />
+      {text}
+    </span>
   );
 }

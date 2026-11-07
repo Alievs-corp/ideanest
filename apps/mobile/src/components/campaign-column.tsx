@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Card } from '../api/queries';
+import type { AudienceSurface } from '../features/audience/send';
 import { spacing } from '../theme';
 import { FIRST_SCREENFUL, FadeUp } from './motion';
 import { ProjectCard } from './project-card';
@@ -96,9 +97,11 @@ export interface CampaignColumnProps {
   readonly testID?: string;
   /** Passed to every card; see `ProjectCard`. */
   readonly coverScale?: number;
+  /** Which list this is, for the audience CLICK each card's press counts (#636). */
+  readonly surface?: AudienceSurface;
 }
 
-export function CampaignColumn({ cards, priority = 0, testID, coverScale }: CampaignColumnProps) {
+export function CampaignColumn({ cards, priority = 0, testID, coverScale, surface }: CampaignColumnProps) {
   const gate = useEntryGate(cards);
   return (
     <View style={styles.column} testID={testID}>
@@ -109,6 +112,7 @@ export function CampaignColumn({ cards, priority = 0, testID, coverScale }: Camp
             <ProjectCard
               card={card}
               priority={index < priority}
+              {...(surface === undefined ? {} : { surface })}
               {...(coverScale === undefined ? {} : { coverScale })}
             />
           </CardEntry>

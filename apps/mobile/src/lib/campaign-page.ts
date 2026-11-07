@@ -1,7 +1,7 @@
 import type Decimal from 'decimal.js';
 import type { Money } from '@ideanest/money';
 import { completionOf } from '@ideanest/campaign/completion';
-import { daysLeftOf } from '@ideanest/campaign/days-left';
+import { daysLeftOf, fundingEndsAt } from '@ideanest/campaign/days-left';
 import { isRenderableState, type ProjectState } from '@ideanest/campaign/states';
 import { readStoryDocument, type StoryDocument } from '@ideanest/campaign/story';
 import {
@@ -83,14 +83,19 @@ export interface CampaignPage {
   readonly goal: Money | null;
   readonly pledged: Money;
   readonly backersCount: number;
+  /** The first deadline. It does not move when the campaign is extended — see `fundingEndsAt`. */
   readonly deadline: string | null;
+  /** Where an extended campaign now ends (#618), or `null` until it is extended. */
+  readonly extendedUntil: string | null;
+  /** The extension's end while `EXTENDED`, the deadline otherwise (#618): what every clock counts to. */
+  readonly fundingEndsAt: string | null;
   /** The version-1 document, or `null` when absent or invalid — no story section either way. */
   readonly story: StoryDocument | null;
   readonly risks: string | null;
   readonly outcome: CampaignOutcome | null;
   /** The funded percent from the page's figures, rounded down; `null` without a goal. */
   readonly completionPercent: Decimal | null;
-  /** Whole days to the deadline, floored at zero; `null` without one. Not in the response. */
+  /** Whole days to `fundingEndsAt`, floored at zero; `null` without one. Not in the response. */
   readonly daysLeft: number | null;
 }
 
@@ -129,6 +134,8 @@ export function readCampaignPage(
 
   const goal = readMoney(response.goal);
   const deadline = text(response.deadline);
+  const extendedUntil = text(response.extendedUntil);
+  const endsAt = fundingEndsAt(state, deadline, extendedUntil);
 
   return {
     id,
@@ -145,11 +152,13 @@ export function readCampaignPage(
     pledged,
     backersCount: typeof response.backersCount === 'number' ? response.backersCount : 0,
     deadline,
+    extendedUntil,
+    fundingEndsAt: endsAt,
     story: readStoryDocument(response.story),
     risks: text(response.risks),
     outcome: readOutcome(response.outcome),
     completionPercent: completionOf(pledged, goal),
-    daysLeft: daysLeftOf(deadline, now),
+    daysLeft: daysLeftOf(endsAt, now),
   };
 }
 

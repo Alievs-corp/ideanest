@@ -11,6 +11,7 @@ import {
   getProjectEdit,
   listItems,
   listRewards,
+  patchItem,
   patchReward,
   reorderRewards,
   replaceShippingRules,
@@ -79,6 +80,7 @@ const listItemsMock = vi.mocked(listItems);
 const listRewardsMock = vi.mocked(listRewards);
 const createItemMock = vi.mocked(createItem);
 const deleteItemMock = vi.mocked(deleteItem);
+const patchItemMock = vi.mocked(patchItem);
 const createRewardMock = vi.mocked(createReward);
 const patchRewardMock = vi.mocked(patchReward);
 const deleteRewardMock = vi.mocked(deleteReward);
@@ -1015,6 +1017,105 @@ describe('RewardsPanel', () => {
     expect(
       screen.getByText(/The price cannot change once the campaign has launched/),
     ).toBeInTheDocument();
+  });
+
+  /*
+   * The list and the drawer show an item's PROPOSED values once a launched
+   * campaign holds them, so the creator must be told that backers still see the
+   * approved ones: on the item, at each held field, and after the save that
+   * held them (#587).
+   */
+  describe('a launched campaign holds changes to an item an approved tier contains (#587)', () => {
+    const LIVE: Partial<ProjectEdit> = { state: 'LIVE', launchedAt: '2026-09-01T09:00:00.000Z' };
+    const HELD: Item = { ...MUG, name: 'Steel mug', revisionChangedFields: ['name', 'isDigital'] };
+    const UNHELD: Item = { ...MUG, revisionChangedFields: [] };
+    const FIELD_NOTE = 'Waiting for review. Backers still see the approved value.';
+
+    const itemsSection = (): HTMLElement => screen.getByRole('region', { name: /^Items/ });
+
+    it('marks an item whose changes wait, in words and not by colour alone', async () => {
+      await openRewards({ project: LIVE, items: [HELD], rewards: [SECOND] });
+
+      const section = within(itemsSection());
+      expect(section.getByText('Changed, waiting for review')).toBeInTheDocument();
+      expect(
+        section.getByText(/Backers still see the approved version of this item until a moderator approves/),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Edit Steel mug' })).toBeEnabled();
+    });
+
+    it('marks nothing on an item whose list of held fields is empty', async () => {
+      await openRewards({ project: LIVE, items: [UNHELD], rewards: [SECOND] });
+
+      expect(within(itemsSection()).queryByText(/waiting for review/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/approved version of this item/)).not.toBeInTheDocument();
+    });
+
+    it('says in the drawer which fields hold proposed values, as each control’s description', async () => {
+      const user = await openRewards({ project: LIVE, items: [HELD], rewards: [SECOND] });
+
+      await user.click(screen.getByRole('button', { name: 'Edit Steel mug' }));
+
+      const drawer = within(screen.getByRole('dialog'));
+      expect(drawer.getByText('Some changes wait for review')).toBeInTheDocument();
+      // The proposed value, which is what the service answered with.
+      const name = drawer.getByRole('textbox', { name: 'Name' });
+      expect(name).toHaveValue('Steel mug');
+      expect(name).toHaveAccessibleDescription(expect.stringContaining(FIELD_NOTE));
+      expect(drawer.getByRole('switch', { name: 'Delivered as a file' })).toHaveAccessibleDescription(
+        expect.stringContaining(FIELD_NOTE),
+      );
+      expect(drawer.getByRole('textbox', { name: 'Description' })).not.toHaveAccessibleDescription(
+        expect.stringContaining(FIELD_NOTE),
+      );
+    });
+
+    it('says nothing of review in the drawer of an item nothing waits for', async () => {
+      const user = await openRewards({ project: LIVE, items: [UNHELD], rewards: [SECOND] });
+
+      await user.click(screen.getByRole('button', { name: 'Edit Enamel mug' }));
+
+      const drawer = within(screen.getByRole('dialog'));
+      expect(drawer.queryByText('Some changes wait for review')).not.toBeInTheDocument();
+      expect(drawer.queryByText(FIELD_NOTE)).not.toBeInTheDocument();
+    });
+
+    it('after a save the service holds, says why the public name has not changed', async () => {
+      const user = await openRewards({ project: LIVE, items: [MUG], rewards: [SECOND] });
+      patchItemMock.mockResolvedValue({ ...MUG, name: 'Steel mug', revisionChangedFields: ['name'] });
+      getProjectEditMock.mockClear();
+
+      await user.click(screen.getByRole('button', { name: 'Edit Enamel mug' }));
+      const name = screen.getByRole('textbox', { name: 'Name' });
+      await user.clear(name);
+      await user.type(name, 'Steel mug');
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+      await tick();
+
+      expect(patchItemMock).toHaveBeenCalledWith('item-mug', { name: 'Steel mug' });
+      expect(within(itemsSection()).getByText('Changed, waiting for review')).toBeInTheDocument();
+      const announcements = screen.getAllByRole('status').map((region) => region.textContent);
+      expect(announcements).toContain(
+        'Your changes to Steel mug wait for a moderator. Backers see the approved version until then.',
+      );
+      // The revision notice above the tab is read again, so it can name the items.
+      expect(getProjectEditMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('announces nothing about review after a save written at once', async () => {
+      const user = await openRewards({ project: LIVE, items: [MUG], rewards: [SECOND] });
+      patchItemMock.mockResolvedValue({ ...MUG, sku: 'MUG-01', revisionChangedFields: [] });
+
+      await user.click(screen.getByRole('button', { name: 'Edit Enamel mug' }));
+      await user.type(screen.getByRole('textbox', { name: 'Stock code' }), 'MUG-01');
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+      await tick();
+
+      expect(patchItemMock).toHaveBeenCalledWith('item-mug', { sku: 'MUG-01' });
+      expect(within(itemsSection()).queryByText(/waiting for review/)).not.toBeInTheDocument();
+      const announcements = screen.getAllByRole('status').map((region) => region.textContent);
+      expect(announcements.some((text) => text?.includes('wait for a moderator'))).toBe(false);
+    });
   });
 
   /*

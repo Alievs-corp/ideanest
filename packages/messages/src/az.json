@@ -13,7 +13,13 @@
         "many": "{count} dəstəkçi",
         "other": "{count} dəstəkçi"
       },
-      "rule": "Hədəfin 80%-ində uğurlu sayılır"
+      "rule": "Hədəfin 80%-ində uğurlu sayılır",
+      "views": {
+        "one": "{count} baxış",
+        "few": "{count} baxış",
+        "many": "{count} baxış",
+        "other": "{count} baxış"
+      }
     },
     "saving": "Yadda saxlanılır…",
     "tryAgain": "Yenidən cəhd edin",
@@ -43,6 +49,38 @@
         "few": "{count} simvol artıqdır",
         "many": "{count} simvol artıqdır",
         "other": "{count} simvol artıqdır"
+      }
+    },
+    "audience": {
+      "period": {
+        "day": "Günlük",
+        "week": "Həftəlik",
+        "month": "Aylıq",
+        "year": "İllik"
+      },
+      "periodLabel": "Dövr",
+      "views": "Baxış",
+      "clicks": "Klik",
+      "visitors": "Ziyarətçi",
+      "pageViews": "Səhifə baxışı",
+      "countries": "Ölkələr",
+      "platforms": "Platformalar",
+      "unknownCountry": "Naməlum",
+      "dailySumNote": "Ziyarətçilər hər gün ayrıca sayılır və cəmlənir; eyni adam iki gündə gəlibsə, iki dəfə sayılır.",
+      "platform": {
+        "WEB": "Veb",
+        "IOS": "iOS",
+        "ANDROID": "Android"
+      },
+      "surface": {
+        "HOME": "Ana səhifə",
+        "DISCOVER": "Kəşf et",
+        "SEARCH": "Axtarış",
+        "CATEGORY": "Kateqoriya",
+        "COLLECTION": "Kolleksiya",
+        "PROFILE": "Profil",
+        "SAVED": "Saxlanılanlar",
+        "OTHER": "Digər"
       }
     }
   },
@@ -204,7 +242,9 @@
       "settings": "Parametrlər"
     },
     "nav": {
-      "label": "Hesab"
+      "label": "Hesab",
+      "open": "Hesab menyusunu aç",
+      "close": "Hesab menyusunu bağla"
     },
     "links": {
       "pledges": {
@@ -288,6 +328,7 @@
         "loadMore": "Daha çox göstər",
         "loadingMore": "Yüklənir",
         "draftHint": "Hələ yayımlanmayıb",
+        "opensAt": "{date} tarixində özü açılacaq",
         "view": "Bax",
         "edit": "Redaktə et",
         "dashboard": "Panel",
@@ -557,7 +598,10 @@
         "CAMPAIGN_SUCCEEDED": "{campaign} kampaniyası {amount} məbləği ilə maliyyələşdi",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} kampaniyası hədəfinə çatmadan bağlandı",
         "PROJECT_APPROVED": "{campaign} təsdiqləndi və yayımlandı",
+        "PROJECT_APPROVED_SCHEDULED": "{campaign} təsdiqləndi və {when} açılacaq",
         "SCHEDULED_LAUNCH_REFUSED": "{campaign} başlanğıc vaxtında açılmadı: planınız onu əhatə etmir",
+        "CAMPAIGN_EDIT_APPROVED": "{campaign} üzrə dəyişiklikləriniz təsdiqləndi",
+        "CAMPAIGN_EDIT_REJECTED": "{campaign} üzrə dəyişiklikləriniz təsdiqlənmədi",
         "PAYMENT_COLLECTED": "{campaign} üçün {amount} məbləğində ödəniş alındı",
         "FINAL_PAYMENT_WARNING": "Son xəbərdarlıq: {campaign} üçün {amount} məbləğində ödəniş",
         "PAYOUT_SENT": "{campaign} üçün {amount} məbləğində ödəniş {when} köçürüldü",
@@ -591,7 +635,10 @@
         "CAMPAIGN_SUCCEEDED": "Bir kampaniya {amount} məbləği ilə maliyyələşdi",
         "CAMPAIGN_UNSUCCESSFUL": "Bir kampaniya hədəfinə çatmadan bağlandı",
         "PROJECT_APPROVED": "Bir kampaniya təsdiqləndi və yayımlandı",
+        "PROJECT_APPROVED_SCHEDULED": "Bir kampaniya təsdiqləndi və {when} açılacaq",
         "SCHEDULED_LAUNCH_REFUSED": "Bir kampaniya başlanğıc vaxtında açılmadı: planınız onu əhatə etmir",
+        "CAMPAIGN_EDIT_APPROVED": "Kampaniyadakı dəyişiklikləriniz təsdiqləndi",
+        "CAMPAIGN_EDIT_REJECTED": "Kampaniyadakı dəyişiklikləriniz təsdiqlənmədi",
         "PAYMENT_COLLECTED": "Bir kampaniya üçün {amount} məbləğində ödəniş alındı",
         "FINAL_PAYMENT_WARNING": "Son xəbərdarlıq: bir kampaniya üçün {amount} məbləğində ödəniş",
         "PAYOUT_SENT": "Bir kampaniya üçün {amount} məbləğində ödəniş {when} köçürüldü",
@@ -747,6 +794,7 @@
       "/admin/fees": "Komissiyalar",
       "/admin/plans": "Planlar",
       "/admin/analytics": "Analitika",
+      "/admin/audience": "Auditoriya",
       "/admin/audit": "Audit jurnalı",
       "/admin/email-templates": "E-poçt şablonları",
       "/admin/flags": "Funksiya bayraqları",
@@ -831,7 +879,7 @@
       },
       "AD-13": {
         "title": "Analitika",
-        "summary": "Bütün platforma üzrə həcm, uğur nisbəti və orta dəstək məbləği.",
+        "summary": "Bütün platforma üzrə həcm, uğur nisbəti, orta dəstək məbləği və auditoriya: ziyarətçilər, səhifə və kampaniya baxışları.",
         "waitingOn": "Kohortlar üçün dəstəkçinin ilk dəstəyinə əsaslanan yığım, huni üçün isə ziyarətdən dəstəyə gedən yol lazımdır; heç biri mövcud deyil və ekran onları təxmin etmək əvəzinə bunu bildirir (#313)."
       },
       "AD-14": {
@@ -937,6 +985,12 @@
         "metaDescription": "Bütün platforma üzrə həcm, uğur nisbəti və orta dəstək məbləği.",
         "title": "Platforma analitikası",
         "intro": "Seçilmiş dövr üzrə dəstək həcmi, dəstəkçilər, orta dəstək və kampaniyaların nəticəsi."
+      },
+      "audience": {
+        "metaTitle": "Platformanın auditoriyası",
+        "metaDescription": "Bütün platforma üzrə ziyarətçilər, səhifə baxışları, kampaniyalara baxışlar və kliklər.",
+        "title": "Platformanın auditoriyası",
+        "intro": "Seçdiyiniz dövrdə platformaya neçə nəfərin gəldiyi, hansı ölkələrdən və hansı platformalardan daxil olduğu, hansı kampaniyalara baxdığı."
       },
       "curation": {
         "metaTitle": "Kolleksiyalar",
@@ -1598,6 +1652,37 @@
         "nowHeading": "İndi",
         "computedAt": "Rəqəmlər {time} vaxtına oxunub (Bakı vaxtı)."
       },
+      "audience": {
+        "subject": "auditoriya rəqəmlərini",
+        "loadingList": "Auditoriya rəqəmləri yüklənir",
+        "computedAt": "Rəqəmlər {time} vaxtına oxunub (Bakı vaxtı).",
+        "campaignViews": "Kampaniyalara baxış",
+        "campaignClicks": "Kampaniyalara klik",
+        "allTimeViews": "Bütün dövr üzrə baxış",
+        "trafficHeading": "Ziyarətçilər və səhifə baxışları",
+        "campaignChartHeading": "Kampaniyalara baxışlar və kliklər",
+        "nothingRecorded": "Bu dövrdə heç nə qeydə alınmayıb.",
+        "surfacesHeading": "Kliklər haradan gəlib",
+        "showAllCountries": "Bütün ölkələri göstər",
+        "topHeading": "Ən çox baxılan kampaniyalar",
+        "topNote": "Bu dövrdə ən çox baxılan iyirmi kampaniya. Kampaniyanın öz rəqəmlərini görmək üçün sətri açın.",
+        "topEmpty": "Bu dövrdə heç bir kampaniyaya baxılmayıb.",
+        "campaignColumn": "Kampaniya",
+        "ratioColumn": "Baxış başına klik",
+        "noViews": "Baxış yoxdur",
+        "breakdown": "Ətraflı",
+        "breakdownLabel": "{title}: ətraflı",
+        "breakdownSubject": "bu kampaniyanın auditoriyasını",
+        "breakdownLoading": "Kampaniyanın auditoriyası yüklənir",
+        "chart": {
+          "summary": "{first} və {second}, {from} – {to}",
+          "granularity": {
+            "HOUR": "Hər sütun cütü bir saatdır",
+            "DAY": "Hər sütun cütü bir gündür",
+            "MONTH": "Hər sütun cütü bir aydır"
+          }
+        }
+      },
       "emailTemplates": {
         "subject": "e-poçt şablonlarını",
         "loadingList": "E-poçt şablonları yüklənir",
@@ -1636,7 +1721,10 @@
           "CAMPAIGN_EXTENDED": "Kampaniyanın müddəti uzadıldı",
           "UPDATE_DUE_SOON": "Yenilənmə vaxtı yaxınlaşır",
           "PROJECT_APPROVED": "Kampaniya təsdiqləndi",
+          "PROJECT_APPROVED_SCHEDULED": "Kampaniya təsdiqləndi, başlanğıc vaxtı gözlənilir",
           "SCHEDULED_LAUNCH_REFUSED": "Planlı başlanğıc baş tutmadı",
+          "CAMPAIGN_EDIT_APPROVED": "Kampaniya dəyişiklikləri təsdiqləndi",
+          "CAMPAIGN_EDIT_REJECTED": "Kampaniya dəyişiklikləri təsdiqlənmədi",
           "PAYMENT_COLLECTED": "Ödəniş alındı",
           "PAYMENT_FAILED": "Ödəniş keçmədi",
           "FINAL_PAYMENT_WARNING": "Son ödəniş xəbərdarlığı",
@@ -2338,7 +2426,8 @@
           "READ_BANK_DETAILS": "Müəllifin IBAN-ını tam açmaq — yoxlamaq və ya ödəniş etmək üçün",
           "GRANT_COMPLIANCE_OVERRIDE": "Bir hesab üçün uyğunluq tələbini məhdud müddətə ləğv etmək",
           "ADMINISTER_STAFF": "Rol vermək və geri almaq",
-          "VIEW_PARTNER_STATISTICS": "Maliyyə statistikasını tərəfdaş kimi oxumaq: yalnız yekunlar, razılaşdırılmış paya uyğun"
+          "VIEW_PARTNER_STATISTICS": "Maliyyə statistikasını tərəfdaş kimi oxumaq: yalnız yekunlar, razılaşdırılmış paya uyğun",
+          "VIEW_AUDIENCE": "Auditoriya rəqəmlərini oxumaq: ziyarətçilər, səhifə baxışları, kampaniyalara baxışlar və kliklər"
         },
         "picker": {
           "subject": "hesab kataloqunu",
@@ -3287,7 +3376,10 @@
         "creatorGone": "Müəllifin hesabı bağlanıb",
         "decideHeading": "Bu kampaniya barədə qərar verin",
         "decideGroup": "{title} barədə qərar ver",
-        "notice": "{title} indi {state} vəziyyətindədir."
+        "notice": "{title} indi {state} vəziyyətindədir.",
+        "launchLabel": "Başlanğıc vaxtı",
+        "approveWaits": "Müəllif başlanğıc vaxtı təyin edib. Təsdiq kampaniyanı indi yayımlamayacaq: o, {date} tarixində özü açılacaq.",
+        "noticeOpensAt": "{title} təsdiqləndi və {date} tarixində özü açılacaq."
       },
       "campaignDirectory": {
         "subject": "kampaniya siyahısı",
@@ -3724,7 +3816,9 @@
           "story": "Hekayə",
           "risks": "Risklər və çətinliklər",
           "countries": "Ölkələr",
-          "rewards": "Mükafatlar"
+          "rewards": "Mükafatlar",
+          "items": "Əşyalar",
+          "shippingZones": "Göndəriş zonaları"
         },
         "removed": "Silinib:",
         "added": "Əlavə olunub:",
@@ -3847,6 +3941,37 @@
           "noItems": "Məhsul yoxdur",
           "noRates": "Tarif yoxdur",
           "secretLinkReplaced": "Gizli link əvəz olunur. Köhnəsi işləməyəcək."
+        },
+        "items": {
+          "intro": "Bu redaktənin dəyişdiyi, canlı mükafat pillələrinin içindəki bütün əşyalar. Adı çəkilməyən sahə olduğu kimi qalır.",
+          "untitled": "Adsız əşya",
+          "itemLabel": "Əşya: {name}",
+          "fields": {
+            "name": "Ad",
+            "description": "Təsvir",
+            "imageUrl": "Şəkil",
+            "weightGrams": "Çəki",
+            "isDigital": "Rəqəmsal"
+          },
+          "weight": "{grams} q",
+          "noWeight": "Çəki yoxdur",
+          "imageAlt": "{name} əşyasının şəkli"
+        },
+        "shippingZones": {
+          "intro": "Bu redaktənin əlavə etdiyi, sildiyi və ya dəyişdiyi bütün göndəriş zonaları. Adı çəkilməyən zona olduğu kimi qalır.",
+          "untitled": "Adsız zona",
+          "zoneLabel": "Göndəriş zonası: {name}",
+          "changes": {
+            "added": "Yeni zona",
+            "removed": "Silinəcək",
+            "renamed": "Adı dəyişib",
+            "countries": "Ölkələri dəyişib"
+          },
+          "addedNote": "Yeni zona. Bu redaktə təsdiqlənənə qədər mövcud deyil.",
+          "removedNote": "Redaktə təsdiqləndikdə bu zona silinir. O vaxta qədər canlı qalır.",
+          "name": "Ad",
+          "countries": "Ölkələr",
+          "unchanged": "Təklif olunan zonalar canlı olanlarla eynidir."
         }
       }
     },
@@ -4061,6 +4186,7 @@
       "link": {
         "campaigns": "Kampaniyaları aç",
         "moderation": "Moderasiya növbəsini aç",
+        "revisions": "Kampaniya redaktələrini aç",
         "reports": "Şikayətləri aç",
         "support": "Dəstəyi aç",
         "accounts": "Hesabları aç",
@@ -4569,7 +4695,6 @@
     },
     "card": {
       "badges": {
-        "upcoming": "Gözlənilir",
         "live": "Aktiv",
         "extended": "Uzadılıb",
         "closing_soon": "Tezliklə bağlanır",
@@ -4587,7 +4712,6 @@
     },
     "filters": {
       "status": {
-        "upcoming": "Gözlənilir",
         "live": "Aktiv",
         "extended": "Uzadılmış",
         "successful": "Uğurlu"
@@ -5421,6 +5545,8 @@
     "eyebrow": "Kampaniya redaktoru",
     "loadingTitle": "Yüklənir",
     "sectionsLabel": "Kampaniya bölmələri",
+    "sectionsOpen": "Kampaniya bölmələrini aç",
+    "sectionsClose": "Kampaniya bölmələrini bağla",
     "dashboard": "Panel",
     "soon": "tezliklə",
     "notAvailable": ", bölmə hələ əlçatan deyil",
@@ -5498,6 +5624,7 @@
       "validation": {
         "titleRequired": "Layihənin başlığı olmalıdır.",
         "titleTooLong": "Başlıq ən çox {max} simvol olur. {over} simvol azaldın.",
+        "summaryRequired": "Layihənin qısa təsviri olmalıdır. Dəstəkçilər onu başlığın altında oxuyur.",
         "summaryTooLong": "Qısa təsvir ən çox {max} simvol olur. {over} simvol azaldın.",
         "subcategoryWithoutCategory": "Əvvəlcə kateqoriya seçin.",
         "currencyUnsupported": "Platformanın qəbul edə biləcəyi valyutanı seçin.",
@@ -5553,7 +5680,12 @@
         "itemsHeading": "Əşyalar",
         "edit": "Dəyiş",
         "notInReward": "Heç bir mükafatda deyil",
-        "notInRewardDetail": "Mükafata əlavə edilənə qədər dəstəkçilər onu görmür."
+        "notInRewardDetail": "Mükafata əlavə edilənə qədər dəstəkçilər onu görmür.",
+        "pending": {
+          "changed": "Dəyişdirilib, yoxlanışı gözləyir",
+          "changedNote": "Moderator dəyişikliklərinizi təsdiqləyənə qədər dəstəkçilər bu əşyanın təsdiqlənmiş versiyasını görür.",
+          "heldAnnouncement": "{name} üzrə dəyişiklikləriniz moderatoru gözləyir. O vaxta qədər dəstəkçilər təsdiqlənmiş versiyanı görür."
+        }
       },
       "item": {
         "addTitle": "Əşya əlavə et",
@@ -5586,7 +5718,12 @@
         "imageButtonLabel": "Şəkil seçin",
         "imageDropHint": "20 MB-a qədər: JPEG, PNG, WebP, AVIF və ya HEIC.",
         "imageRemove": "Şəkli sil",
-        "imageUploaded": "Şəkil yükləndi. Saxlamaq üçün əşyanı yadda saxlayın."
+        "imageUploaded": "Şəkil yükləndi. Saxlamaq üçün əşyanı yadda saxlayın.",
+        "held": {
+          "title": "Bəzi dəyişikliklər yoxlanışı gözləyir",
+          "body": "Bu əşya təsdiqlənmiş mükafatdadır, ona görə aşağıda işarələnmiş sahələr təklif etdiyiniz dəyişiklikləri göstərir. Moderator onları təsdiqləyənə qədər dəstəkçilər təsdiqlənmiş dəyərləri görür. Dərc etmək üçün dəyişiklikləri yoxlamaya göndərin.",
+          "field": "Yoxlanışı gözləyir. Dəstəkçilər hələ təsdiqlənmiş dəyəri görür."
+        }
       },
       "tier": {
         "addTitle": "Mükafat əlavə et",
@@ -5879,7 +6016,9 @@
         "risks": "Risklər və çətinliklər",
         "risksHint": "Nə səhv gedə bilər və siz bununla nə edəcəksiniz. Ən azı {min} simvol; baxışa göndərməzdən əvvəl mütləqdir.",
         "risksPlaceholder": "Adətən üç şey olur: istehsal, çatdırılma və vaxt. Nəyin artıq həll olunduğunu, nəyin isə yox, yazın.",
+        "risksTooShort": "Baxışa göndərmək üçün risklər və çətinliklər ən azı {min} simvol olmalıdır. Daha {remaining} simvol əlavə edin.",
         "charactersNeeded": "Baxışa göndərmək üçün lazım olan {min} simvoldan {count} yazılıb",
+        "storyTooShort": "Baxışa göndərmək üçün hekayədə ən azı {min} simvol olmalıdır. Daha {remaining} simvol əlavə edin.",
         "incomplete": {
           "one": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
           "few": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
@@ -6102,11 +6241,8 @@
     "prelaunch": {
       "loadingLabel": "Kampaniya yüklənir",
       "notSavedTitle": "Dəyişiklik yadda saxlanılmadı",
-      "notOpenHeading": "Başlanğıcdan əvvəlki səhifə hələ açıq deyil",
-      "notOpenBody": "Onu açanda aşağıdakı başlıq, qısa təsvir və örtük şəkli paylaşa biləcəyiniz bir linkdə ictimai olur, insanlar isə kampaniya başlayanda xəbər verilməsini istəyə bilir. Kampaniya haqqında başqa heç nə açılmır və pulla bağlı deyil.",
-      "notOpenIrreversible": "Geri bağlamaq olmaz — kampaniya buradan yalnız irəli gedir: baxışa, sonra isə başlanğıca.",
-      "openFailedTitle": "Səhifə açılmadı",
-      "open": "Başlanğıcdan əvvəlki səhifəni aç",
+      "pendingHeading": "Başlanğıcdan əvvəlki səhifə təsdiqdən sonra açılır",
+      "pendingBody": "Moderasiya kampaniyanı təsdiqləyəndə bu səhifə ictimai olur: insanlar onu izləyə bilir və kampaniya açılanda xəbər alır. O vaxta qədər onu sizdən başqa heç kim görmür.",
       "openHeading": "Başlanğıcdan əvvəlki səhifə açıqdır",
       "followersFailed": "Gözləyənlərin sayını yükləmək olmadı.",
       "waiting": {
@@ -6127,13 +6263,7 @@
       "title": "Başlıq",
       "titleHint": "Başlanğıc səhifəsindəki və layihələr lentindəki ad. Ən çox {max} simvol.",
       "summary": "Qısa təsvir",
-      "summaryHint": "Bir-iki cümlə. İzləməyə qərar verməzdən əvvəl insan məhz bunu oxuyur. Ən çox {max} simvol.",
-      "confirmTitle": "Başlanğıcdan əvvəlki səhifə açılsın?",
-      "confirmBody": "Başlıq, qısa təsvir və örtük şəkli hər kəsin aça biləcəyi bir linkdə ictimai olur. Bunu geri qaytarmaq olmaz.",
-      "cancel": "Ləğv et",
-      "opening": "Açılır",
-      "confirmOpen": "Səhifəni aç",
-      "confirmDetail": "Mükafatlarınız, hekayəniz və maliyyə hədəfiniz haqqında heç nə dərc olunmur. Kampaniya yoxlanılıb başladılana qədər pul qəbul etmir."
+      "summaryHint": "Bir-iki cümlə. İzləməyə qərar verməzdən əvvəl insan məhz bunu oxuyur. Ən çox {max} simvol."
     },
     "review": {
       "loadFailedTitle": "Kampaniyanı yükləmək olmadı",
@@ -6192,7 +6322,11 @@
       "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Təsdiq kampaniyanı dərhal və ya təyin etdiyiniz vaxtda yayımlayır, o andan hədəf və son tarix dəyişmir. Baxış gedərkən redaktə etmək olar.",
       "done": "Hazırdır",
       "launchExplanation": "Kampaniya başladığı andan platformanın hər yerində görünür və dəstək qəbul etməyə başlayır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı yenidən qaralamaya qaytarmaq olmaz.",
-      "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz."
+      "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz.",
+      "scheduledLaunchRefused": {
+        "title": "Kampaniya başlanğıc vaxtında açılmadı",
+        "body": "{date} tarixində açılmalı olanda planınız bu kampaniyanı əhatə etmirdi, ona görə də kampaniya yayımlanmadı və başlanğıc vaxtı ləğv edildi. Kampaniya təsdiqlənmiş olaraq qalır. Planınızı yeniləyin və ya dəyişin, yaxud hədəfi planınızın əhatə etdiyi məbləğə endirin, sonra kampaniyanı burada başladın və ya yeni başlanğıc vaxtı təyin edin."
+      }
     },
     "cover": {
       "label": "Örtük şəkli",
@@ -6334,7 +6468,9 @@
         "coverImage": "Üz qabığı şəkli",
         "videoMediaId": "Video",
         "countries": "Ölkələr",
-        "rewards": "Mükafatlar"
+        "rewards": "Mükafatlar",
+        "items": "Əşyalar",
+        "shippingZones": "Göndəriş zonaları"
       },
       "submit": "Baxışa göndər",
       "submitting": "Göndərilir…",
@@ -6795,7 +6931,8 @@
       },
       "hours": "{hours} saat {minutes} dəqiqə qalıb",
       "minutes": "{minutes} dəqiqə {seconds} saniyə qalıb",
-      "seconds": "{seconds} saniyə qalıb"
+      "seconds": "{seconds} saniyə qalıb",
+      "opensAt": "Kampaniya {date} tarixində özü açılacaq. Geri sayım o zaman başlayır."
     },
     "overview": {
       "loading": "Kampaniyanın cəmləri yüklənir",
@@ -6826,7 +6963,7 @@
       "trendNotGranted": "Bu kampaniya üzrə əməkdaşlıq səlahiyyətiniz maliyyələşmə dinamikasını əhatə etmir.",
       "trendUnavailable": "Maliyyələşmə dinamikası yüklənə bilmədi. Səbəb kampaniyanız deyil, xidmətdir — bir azdan yenidən cəhd edin.",
       "trendEmpty": "{from} və {to} tarixləri arasında heç nə dəstəklənməyib. Qrafik ilk təsdiqlənmiş dəstəklə görünür.",
-      "trendLabel": "Yığılan cəm, {from} — {to} ({zone})",
+      "trendLabel": "Yığılan cəm, {from} — {to}",
       "aggregated": "{when} toplanıb. İcmaldakı canlı cəmlər isə soruşduğunuz anda oxunur.",
       "splitHeading": "Mükafatlar və ünvanlar",
       "splitLoading": "Mükafat və ünvan bölgüsü yüklənir",
@@ -6937,14 +7074,23 @@
       "payable": "Ödəniləcək",
       "payableProjected": "Ödəniləcək, proqnoz",
       "payoutsHeading": "Ödənişlər",
-      "payoutsEmpty": "Hələ yoxdur. Ödəniş §5.4-ün saxlama müddətindən sonra hazırlanır və onların hamısı — ləğv edilənlər də daxil — burada görünür.",
+      "payoutsEmpty": "Hələ yoxdur. Ödəniş saxlama müddəti bitəndən sonra hazırlanır və hamısı — ləğv edilənlər də daxil — burada görünür.",
       "booksHeading": "Mühasibat nə deyir",
-      "booksIntro": "Bu kampaniya üzrə §7.2 hesabları. Yuxarıdakı cəmlərin sadəcə inamla qəbul edilməməsi, bir şeylə tutuşdurula bilməsi üçün dərc olunur. Hesabınızdakı mənfi qalıq platformanın sizin üçün saxladığı puldur.",
+      "booksIntro": "Bu kampaniya üzrə mühasibat hesabları. Yuxarıdakı cəmləri inama yox, bir şeyə qarşı yoxlaya biləsiniz deyə göstərilir. Hesabınızdakı mənfi qalıq platformanın sizin üçün saxladığı puldur.",
       "unbalancedTitle": "Bu mühasibat balanslaşmır",
       "unbalancedBody": "Bu kampaniya üzrə yazılışların cəmi sıfır etmir. Bunu izah edən heç bir hərəkətiniz yoxdur — yuxarıdakı rəqəmlərə güvənməzdən əvvəl bu kampaniyanı göstərərək dəstək xidmətinə yazın.",
       "ledgerEmpty": "Bu kampaniya üzrə hələ heç nə yazılmayıb.",
       "ledgerCaption": "Bu kampaniya üzrə hesablar üzrə qalıqlar",
       "account": "Hesab",
+      "accounts": {
+        "creator": "Sizin hesabınız",
+        "escrow": "Saxlanılan vəsait",
+        "platform_fee": "Platforma komissiyası",
+        "psp_fee": "Emal komissiyası",
+        "tax_payable": "Ödənilməli vergi",
+        "refunds": "Geri qaytarmalar",
+        "platform_expense": "Platforma xərcləri"
+      },
       "balance": "Qalıq",
       "asOf": "{time} tarixinə.",
       "payoutStates": {
@@ -7010,6 +7156,42 @@
         "many": "{count} dəstəkçiyə göndərildi.",
         "other": "{count} dəstəkçiyə göndərildi."
       }
+    },
+    "audience": {
+      "heading": "Auditoriya",
+      "intro": "Bu kampaniyanı neçə nəfərin açdığı, neçəsinin siyahıdakı kartına klikləyib keçdiyi və onların harada olduğu.",
+      "loading": "Auditoriya göstəriciləri yüklənir",
+      "notGranted": "Bu kampaniya üzrə əməkdaşlıq səlahiyyətiniz auditoriya göstəricilərini əhatə etmir.",
+      "unavailable": "Auditoriya göstəriciləri yüklənə bilmədi. Səbəb kampaniyanız deyil, xidmətdir — bir azdan yenidən cəhd edin.",
+      "empty": "Bu dövrdə bu kampaniyanı heç kim açmayıb və kartına klikləməyib.",
+      "allTimeViews": "Bütün dövr üzrə baxış",
+      "seriesHour": "Saatlar üzrə baxış və kliklər, {day}",
+      "seriesDay": "Günlər üzrə baxış və kliklər, {from} — {to}",
+      "seriesMonth": "Aylar üzrə baxış və kliklər, {from} — {to}",
+      "peak": "Ən çox baxış: {when}, {count}",
+      "showTable": "Rəqəmləri göstər",
+      "tableLabel": "Dövrlər üzrə baxış və kliklər",
+      "hour": "Saat",
+      "day": "Gün",
+      "month": "Ay",
+      "zoneNote": "Saat və günlər Bakı vaxtı ilədir.",
+      "countriesLabel": "Ölkələr üzrə baxış və kliklər",
+      "surfacesHeading": "Kliklər haradan gəlib",
+      "surfacesLabel": "Siyahılar üzrə kliklər",
+      "surfacesEmpty": "Bu dövrdə heç kim bu kampaniyanın kartına siyahıdan klikləməyib.",
+      "clickNote": "Klik — kimsə bu kampaniyanın kartına siyahıdan (ana səhifə, kəşf, axtarış, kateqoriya, kolleksiya, profil və ya saxlanılanlar) saytda və ya tətbiqdə klikləyib keçəndə sayılır.",
+      "viewsCount": {
+        "one": "{count} baxış",
+        "few": "{count} baxış",
+        "many": "{count} baxış",
+        "other": "{count} baxış"
+      },
+      "clicksCount": {
+        "one": "{count} klik",
+        "few": "{count} klik",
+        "many": "{count} klik",
+        "other": "{count} klik"
+      }
     }
   },
   "dashboardControls": {
@@ -7018,6 +7200,7 @@
     "extend": "Son tarixi uzatmaq",
     "extendLabel": "Yeni son tarix",
     "extendHint": "Ən gec {latest}. Dəstəkçilərə yeni tarix bildirilir, onlardan razılıq istənmir.",
+    "extendOpensOn": "Son tarixi {date} tarixindən uzatmaq olar: uzatma ilk son tarixdən yeddi gün əvvəl açılır.",
     "extendConfirmTitle": "Kampaniya {date} tarixinədək uzadılsın?",
     "extendConfirmBody": "Yalnız bir dəfə uzada bilərsiniz və yeni son tarixi bir daha dəyişmək olmaz. Hər dəstəkçiyə bildiriş göndərilir.",
     "extendNow": "Bu tarixədək uzatmaq",
@@ -7565,7 +7748,16 @@
         "removeOnApprovalBody": "{title} moderator dəyişikliklərinizi təsdiq edənə qədər açıq qalır, sonra silinir. O vaxta qədər bunu geri qaytara bilərsiniz.",
         "removeOnApprovalConfirm": "Təsdiqlə sil",
         "newTiersHidden": "Yeni səviyyələr moderator təsdiq edənə qədər dəstəkçilərdən gizli qalır.",
-        "revisionField": "Mükafatlar"
+        "revisionField": "Mükafatlar",
+        "heldItem": {
+          "note": "Bu əşyadakı dəyişikliklər hələ açıq deyil. Dəstəkçilər təsdiqlənmiş versiyanı görür.",
+          "fields": "Yoxlama gözlənilir: {fields}",
+          "editorTitle": "Bəzi dəyişikliklər yoxlama gözləyir",
+          "editorBody": "Bu əşya dəstəkçilərin gördüyü mükafatdadır, ona görə «Yoxlama gözlənilir» ilə işarələnmiş sahələr yeni dəyərlərinizi göstərir. Moderator dəyişikliklərinizi təsdiq edənə qədər dəstəkçilər təsdiqlənmiş dəyərləri görür.",
+          "savedAnnouncement": "{name} yadda saxlanıldı. Moderator təsdiq edəndən sonra dəstəkçilər dəyişiklikləri görəcək.",
+          "revisionItemsField": "Əşyalar",
+          "revisionShippingZonesField": "Göndəriş zonaları"
+        }
       },
       "faq": {
         "nothingCached": "Oflaynsınız, suallar isə bu telefonda hələ yüklənməyib."
@@ -7596,8 +7788,7 @@
         "copyFailed": "Linki kopyalamaq alınmadı. Yuxarıdakı linkə basıb saxlayın, onu seçib özünüz kopyalayın.",
         "share": "Paylaş",
         "shareLabel": "Başlanğıcdan əvvəlki linki paylaş",
-        "shareFailed": "Paylaşma pəncərəsini açmaq alınmadı. Yenidən cəhd edin.",
-        "fixFirst": "Əvvəlcə başlığı, qısa təsviri və ya örtük şəklini düzəldin. Səhifə ekrandakını deyil, son saxlanılanı dərc edərdi."
+        "shareFailed": "Paylaşma pəncərəsini açmaq alınmadı. Yenidən cəhd edin."
       }
     },
     "native": {
@@ -7612,6 +7803,24 @@
     "preview": {
       "cardHint": "Videoya baxmaq üçün basıb saxlayın",
       "rewardHint": "Videonu oynatmaq üçün basıb saxlayın"
+    },
+    "audience": {
+      "heading": "Auditoriya",
+      "intro": "Bu kampaniyanın səhifəsini neçə nəfər görüb və neçə nəfər onu siyahıdan açıb. Hər adam gündə bir dəfə sayılır, Bakı vaxtı ilə.",
+      "loading": "Auditoriya göstəriciləri yüklənir",
+      "notGranted": "Bu kampaniyada sizə verilən əməkdaş icazəsinə auditoriya göstəriciləri daxil deyil.",
+      "unavailable": "Auditoriya göstəriciləri yüklənmədi. Problem kampaniyanızda yox, xidmətdədir — bir az sonra yenidən cəhd edin.",
+      "allTimeViews": "Ümumi baxış",
+      "chartSummary": "{label}, {from} – {to}: cəmi {total}. Ən çox: {peak}, {when}.",
+      "chartEmpty": "{label}, {from} – {to}: hələ yoxdur.",
+      "countriesLabel": "Ölkələr üzrə baxışlar",
+      "countriesEmpty": "Bu dövrdə kampaniyaya heç kim baxmayıb.",
+      "surfacesHeading": "Haradan açılıb",
+      "surfacesLabel": "Siyahılar üzrə kliklər",
+      "surfacesEmpty": "Bu dövrdə kampaniyanı heç kim siyahıdan açmayıb.",
+      "showFigures": "Rəqəmləri göstər",
+      "hideFigures": "Rəqəmləri gizlət",
+      "figuresLabel": "Zamana görə baxış və kliklər"
     }
   },
   "blocking": {

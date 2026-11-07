@@ -10,6 +10,7 @@ import { campaignDashboardHref } from '../../lib/account/navigation';
 import { hasLaunched } from '../../lib/projects/mine';
 import { OWNER_LINK_CLASS } from '../project/owner-link';
 import { EDITOR_TABS, editorTabHref, type EditorTabKey } from '@ideanest/campaign-editor/tabs';
+import { EditorSectionsMenu } from './EditorSectionsMenu';
 
 /**
  * The frame every editor tab renders inside: who the project is, what state it
@@ -114,7 +115,15 @@ export function EditorShell({
         </div>
       </div>
 
-      <nav aria-label={copy.sectionsLabel} className="mt-7">
+      {/*
+        Below `md` the row does not fit and a menu names the section instead (`EditorSectionsMenu`
+        says why). Hidden with `display`, so a phone's reader meets one list of sections, not two.
+      */}
+      <div className="mt-7 md:hidden">
+        <EditorSectionsMenu projectId={projectId} copy={copy} active={active} />
+      </div>
+
+      <nav aria-label={copy.sectionsLabel} className="mt-7 hidden md:block">
         {/*
           `-m-1 p-1`: room for the focus ring inside the scroll container, given back (#177).
           A scroll container clips whatever overflows it, and the kit's unlayered

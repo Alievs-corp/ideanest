@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useLayoutEffect } from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,6 +64,38 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+describe('the section picker below sm (#597)', () => {
+  it('names the current section and opens the five as links, the current one marked', () => {
+    pathname = `${BASE}/finance`;
+    const copy = COPY.en;
+    render(<DashboardNav projectId={PROJECT} copy={copy} />);
+
+    const button = screen.getByRole('button', { name: new RegExp(copy.finance) });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button.closest('div')).toHaveClass('sm:hidden');
+    // The row stays the navigation at sm and up, hidden below it.
+    expect(screen.getByRole('navigation').querySelector(':scope > ul')).toHaveClass('max-sm:hidden');
+
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    const list = document.getElementById(button.getAttribute('aria-controls') ?? '') as HTMLElement;
+    const links = within(list).getAllByRole('link');
+    expect(links.map((link) => link.textContent)).toEqual(labelsOf(copy));
+    expect(within(list).getByRole('link', { current: 'page' })).toHaveTextContent(copy.finance);
+  });
+
+  it('closes on Escape and gives focus back to the button', () => {
+    render(<DashboardNav projectId={PROJECT} copy={COPY.en} />);
+    const button = screen.getByRole('button', { name: new RegExp(COPY.en.overview) });
+
+    fireEvent.click(button);
+    fireEvent.keyDown(button, { key: 'Escape' });
+
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).toHaveFocus();
+  });
 });
 
 describe('DashboardNav', () => {

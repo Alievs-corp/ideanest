@@ -6,9 +6,12 @@ import java.util.List;
 /**
  * A reminder was asked for on a campaign that is not collecting them.
  *
- * <p><strong>Two states accept reminders.</strong> {@link ProjectState#PRELAUNCH}
- * and {@link ProjectState#SCHEDULED} are the two in which a campaign is publicly
- * announced and is not yet taking money. {@link ProjectState#LIVE} is refused
+ * <p><strong>Two states accept reminders.</strong> {@link ProjectState#APPROVED} and
+ * {@link ProjectState#SCHEDULED}: cleared by moderation and not yet taking money (#626).
+ * APPROVED is in because it is where an approved campaign actually waits — the launcher
+ * takes it straight to LIVE at its launch time. {@link ProjectState#PRELAUNCH} accepted
+ * reminders until #626, but a creator reached it from a draft without moderation, so its
+ * page is now a 404 like a draft's. {@link ProjectState#LIVE} is refused
  * because a reminder to be told about something that has already happened is a
  * message nobody will ever be sent, and accepting it quietly would be worse than
  * refusing it: the visitor would believe they had been added to something.
@@ -29,9 +32,8 @@ import java.util.List;
  */
 public class RemindersClosedException extends RuntimeException {
 
-    /** The two states in which a pre-launch page exists and collects reminders. */
-    public static final List<ProjectState> ACCEPTED_IN =
-            List.of(ProjectState.PRELAUNCH, ProjectState.SCHEDULED);
+    /** The two states in which a pre-launch page exists and collects reminders (#626). */
+    public static final List<ProjectState> ACCEPTED_IN = List.of(ProjectState.APPROVED, ProjectState.SCHEDULED);
 
     private final transient ProjectState state;
 

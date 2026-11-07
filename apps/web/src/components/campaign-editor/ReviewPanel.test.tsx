@@ -582,6 +582,100 @@ describe('ReviewPanel', () => {
         screen.getByRole('group', { name: 'Launch this campaign now?' }),
       ).toBeInTheDocument();
     });
+
+    /*
+     * #589. A launch refused for want of a plan used to say "You do not have access to this
+     * campaign" -- the generic 403 -- to the creator of the campaign. Unlike a submission it is
+     * not navigated away from: the confirmation is open, and the pricing page's banner explains
+     * a submission.
+     */
+    it('says the plan does not cover the campaign when there is no plan, and offers the plans', async () => {
+      launchProjectMock.mockRejectedValue(
+        new ApiError(403, {
+          code: 'SUBSCRIPTION_REQUIRED',
+          detail: 'Building a campaign is free. Sending one for review needs an active plan.',
+          meta: { pricingPath: '/pricing' },
+        }),
+      );
+      const user = await renderCleared();
+
+      await user.click(screen.getByRole('button', { name: 'Launch this campaign' }));
+      await user.click(screen.getByRole('button', { name: 'Launch now' }));
+
+      expect(await screen.findByText('Your plan does not cover this campaign.')).toBeInTheDocument();
+      expect(screen.queryByText('You do not have access to this campaign.')).not.toBeInTheDocument();
+      // Not the server's sentence, which is about sending for review.
+      expect(screen.queryByText(/Sending one for review/)).not.toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'See what the other plans allow' })).toHaveAttribute(
+        'href',
+        expect.stringContaining('/pricing'),
+      );
+      expect(push).not.toHaveBeenCalled();
+      expect(screen.getByRole('group', { name: 'Launch this campaign now?' })).toBeInTheDocument();
+    });
+
+    it('offers the plans beside a plan bound that refused the launch, in the server’s words', async () => {
+      launchProjectMock.mockRejectedValue(
+        new ApiError(403, {
+          code: 'PLAN_LIMIT_EXCEEDED',
+          detail: 'Plan STARTER allows goals up to 10000.00 AZN; this campaign asks for 10000.01',
+          meta: { limit: 'GOAL_CEILING', plan: 'STARTER', allowed: '10000.00', actual: '10000.01' },
+        }),
+      );
+      const user = await renderCleared();
+
+      await user.click(screen.getByRole('button', { name: 'Launch this campaign' }));
+      await user.click(screen.getByRole('button', { name: 'Launch now' }));
+
+      expect(await screen.findByText(/allows goals up to 10000.00 AZN/)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'See what the other plans allow' })).toBeInTheDocument();
+    });
+
+    it('offers no plans beside a refusal that is not about the plan', async () => {
+      launchProjectMock.mockRejectedValue(
+        new ApiError(409, { code: 'PROJECT_NOT_LAUNCHABLE', detail: 'This campaign has no goal.' }),
+      );
+      const user = await renderCleared();
+
+      await user.click(screen.getByRole('button', { name: 'Launch this campaign' }));
+      await user.click(screen.getByRole('button', { name: 'Launch now' }));
+
+      expect(await screen.findByText('This campaign has no goal.')).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'See what the other plans allow' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('a scheduled launch the plan did not cover (#589)', () => {
+    it('says why the launch time is gone, when, and where the plans are', async () => {
+      getProjectEditMock.mockResolvedValue({
+        ...PROJECT,
+        state: 'APPROVED',
+        scheduledLaunchAt: null,
+        scheduledLaunchRefusedAt: '2026-11-01T09:00:00Z',
+      });
+      getProjectChecklistMock.mockResolvedValue(completeChecklist({ state: 'APPROVED' }));
+
+      await renderPanel();
+
+      expect(screen.getByText('This campaign did not open at its launch time')).toBeInTheDocument();
+      expect(screen.getByText(/Your plan did not cover this campaign when it was due to open on .*2026/)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'See what the other plans allow' })).toHaveAttribute(
+        'href',
+        expect.stringContaining('/pricing'),
+      );
+      // And the way to open it is still on the tab.
+      expect(screen.getByRole('button', { name: 'Launch this campaign' })).toBeInTheDocument();
+    });
+
+    it('says nothing of the kind about a campaign the clock never refused', async () => {
+      getProjectEditMock.mockResolvedValue({ ...PROJECT, state: 'APPROVED', scheduledLaunchAt: null });
+      getProjectChecklistMock.mockResolvedValue(completeChecklist({ state: 'APPROVED' }));
+
+      await renderPanel();
+
+      expect(screen.queryByText('This campaign did not open at its launch time')).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'See what the other plans allow' })).not.toBeInTheDocument();
+    });
   });
 
   describe('the moderation outcome', () => {

@@ -129,7 +129,7 @@ export function Select({
       <Sheet visible={open} onClose={() => setOpen(false)} title={title} returnFocusTo={trigger}>
         <View accessibilityRole="radiogroup" accessibilityLabel={title} style={styles.options}>
           {options.map((option) => (
-            <OptionRow
+            <SelectOptionRow
               key={option.value}
               option={option}
               selected={option.value === value}
@@ -148,15 +148,21 @@ export function Select({
   );
 }
 
-/** One option in the sheet: on white, always — the sheet is white. */
-function OptionRow({
+/**
+ * One option in the sheet: on white, always — the sheet is white. Exported for a sheet that is
+ * a choice among places rather than values (the campaign editor's sections, #616), so a phone
+ * has one look for "pick one of these".
+ */
+export function SelectOptionRow({
   option,
   selected,
   onChoose,
+  testID,
 }: {
   readonly option: SelectOption;
   readonly selected: boolean;
   readonly onChoose: () => void;
+  readonly testID?: string;
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
   const disabled = option.disabled ?? false;
@@ -173,6 +179,7 @@ function OptionRow({
       onPress={onChoose}
       onFocus={onFocus}
       onBlur={onBlur}
+      testID={testID}
       contentStyle={({ pressed }) => [
         styles.option,
         selected ? styles.optionChosen : null,

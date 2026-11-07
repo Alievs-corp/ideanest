@@ -170,20 +170,19 @@ class DiscoveryBandBoundaryTests extends DiscoveryTestSupport {
     }
 
     @Test
-    @DisplayName("a campaign with no goal is in no completion band and no goal band")
+    @DisplayName("a pre-launch teaser with no goal is in no band, because it is not listed at all")
     void aCampaignWithoutAGoalIsInNoBand() {
-        // A percentage of nothing is undefined rather than zero, and a goal band is a
-        // band of goals. Treating either as zero would file every unlaunched teaser
-        // under "under 25%" and "under 1000", which is the busiest facet on the panel.
+        // The only campaign with no goal is a pre-launch teaser, and nobody has reviewed
+        // one, so the catalogue does not list it. Were it listed, treating "no goal" as
+        // zero would file it under "under 25%" and "under 1000", the busiest facets.
         Campaigns.seed(dataSource, creator, "teaser")
                 .state("PRELAUNCH")
                 .category("games")
                 .insert();
 
-        assertThat(slugs(feed("?limit=100"))).containsExactly("teaser");
+        assertThat(slugs(feed("?limit=100"))).isEmpty();
         assertThat(slugs(feed("?limit=100&completion=under_25"))).isEmpty();
         assertThat(slugs(feed("?limit=100&goalBand=under_1000"))).isEmpty();
-        // It has raised nothing, though, and zero is a real amount.
-        assertThat(slugs(feed("?limit=100&raisedBand=under_1000"))).containsExactly("teaser");
+        assertThat(slugs(feed("?limit=100&raisedBand=under_1000"))).isEmpty();
     }
 }

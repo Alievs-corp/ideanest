@@ -83,7 +83,7 @@ export function ShareBars({ rows, label, backers, locale }: ShareBarsProps) {
             statement of this row, and a second reading of the same fact as a progress
             bar would make every row announce itself twice.
           */}
-          <div aria-hidden className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[--surface-3]">
+          <div aria-hidden className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-3">
             <div
               className="h-full rounded-full bg-fg"
               style={{ width: `${widths[index] ?? 0}%` }}

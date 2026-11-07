@@ -1,4 +1,4 @@
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   isPayoutState,
@@ -40,7 +40,6 @@ import { sectionOf, usePullToRefresh, type PanelFailure } from '../shared-charts
 import { useFinance } from './api';
 
 const EDGES = ['left', 'right', 'bottom'] as const;
-const MONO = Platform.select({ ios: 'Menlo', default: 'monospace' });
 
 /** The web's three placeholders: a heading's line, the stats and the deductions. */
 const PLACEHOLDERS = [
@@ -150,6 +149,11 @@ function Panel({ projectId }: { readonly projectId: string }) {
 
 function Summary({ finance }: { readonly finance: CampaignFinance }) {
   const t = useT('dashboard.finance');
+  // §7.2's accounts in words (#597): `creator:<id>` is the creator's own, an unknown name stands.
+  const accountName = (account: string): string => {
+    const key = `accounts.${account.startsWith('creator:') ? 'creator' : account}` as Parameters<typeof t>[0];
+    return t.has(key) ? t(key) : account;
+  };
   const locale = useLocale();
   const projected = finance.basis === 'PROJECTED';
 
@@ -232,10 +236,10 @@ function Summary({ finance }: { readonly finance: CampaignFinance }) {
                   <View
                     key={`${balance.account}-${balance.net.currency}`}
                     accessible
-                    accessibilityLabel={`${t('account')} ${balance.account}, ${t('balance')} ${formatMoney(balance.net)}`}
+                    accessibilityLabel={`${t('account')} ${accountName(balance.account)}, ${t('balance')} ${formatMoney(balance.net)}`}
                     style={[styles.row, styles.rule]}
                   >
-                    <Text style={[styles.account, { color: TONES.white.secondary }]}>{balance.account}</Text>
+                    <Text style={[styles.account, { color: TONES.white.secondary }]}>{accountName(balance.account)}</Text>
                     <Text style={[styles.amount, { color: TONES.white.primary }]}>{formatMoney(balance.net)}</Text>
                   </View>
                 ))}
@@ -329,7 +333,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   strong: { ...font.semibold },
-  account: { flexShrink: 1, fontFamily: MONO, fontSize: fontSize.caption, lineHeight: lineHeight.small },
+  account: { flexShrink: 1, ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small },
   card: {
     flexDirection: 'row',
     flexWrap: 'wrap',

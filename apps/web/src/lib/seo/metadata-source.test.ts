@@ -6,7 +6,7 @@ const env = { IDEANEST_API_ORIGIN: 'http://api.internal:8080' };
 const PUBLIC_BODY = {
   id: '0193f2a1',
   slug: 'quba-kilims',
-  state: 'PRELAUNCH',
+  state: 'SCHEDULED',
   title: 'Quba kilims',
   blurb: 'Handwoven rugs, dyed with plants.',
   coverImage: { url: 'https://cdn.example/quba.jpg', width: 1600, height: 900 },
@@ -29,7 +29,7 @@ describe('readPublicProjectPreview', () => {
     expect(readPublicProjectPreview(PUBLIC_BODY)).toEqual({
       id: '0193f2a1',
       slug: 'quba-kilims',
-      state: 'PRELAUNCH',
+      state: 'SCHEDULED',
       title: 'Quba kilims',
       blurb: 'Handwoven rugs, dyed with plants.',
       coverImage: { url: 'https://cdn.example/quba.jpg', width: 1600, height: 900 },
@@ -56,7 +56,7 @@ describe('readPublicProjectPreview', () => {
     ]);
   });
 
-  it.each(['DRAFT', 'SUBMITTED', 'CHANGES_REQUESTED', 'REJECTED', 'APPROVED', 'SUSPENDED', 'CANCELED'])(
+  it.each(['DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED', 'REJECTED', 'SUSPENDED', 'CANCELED'])(
     'refuses a campaign in %s',
     (state) => {
       expect(readPublicProjectPreview({ ...PUBLIC_BODY, state })).toBeNull();

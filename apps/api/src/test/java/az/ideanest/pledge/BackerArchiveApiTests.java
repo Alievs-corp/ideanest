@@ -127,6 +127,7 @@ class BackerArchiveApiTests extends AbstractIntegrationTest {
                         "goal",
                         "pledged",
                         "backersCount",
+                        "viewCount",
                         "deadline",
                         "launchedAt",
                         "coverImage",

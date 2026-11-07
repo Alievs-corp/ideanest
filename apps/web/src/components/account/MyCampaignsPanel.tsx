@@ -7,6 +7,8 @@ import { Link } from '../../i18n/navigation';
 import type { ProfileProjectCard } from '../../lib/profiles/api';
 import { campaignDashboardHref } from '../../lib/account/navigation';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { formatExactTime } from '../../lib/time';
 import { hasLaunched, isPubliclyVisible, listMyProjects, myCampaignHref } from '../../lib/projects/mine';
 import { OWNER_LINK_CLASS } from '../project/owner-link';
 import { useCursorList } from './useCursorList';
@@ -55,6 +57,8 @@ export interface MyCampaignsPanelCopy {
   readonly refused: string;
   readonly unreachable: string;
   readonly draftHint: string;
+  /** #595: carries `{date}`, when an approved campaign opens on its own. Replaces `draftHint`. */
+  readonly opensAt: string;
   /** #141: a launched campaign's two actions, and the first's stand-in when it is not public. */
   readonly view: string;
   readonly edit: string;
@@ -89,9 +93,21 @@ function RowTitle({ campaign, copy }: RowProps) {
         read the whole of it rather than its first thirty characters.
       */}
       <span className="wrap-anywhere text-[15px] font-medium text-fg">{campaign.title}</span>
-      {!isPubliclyVisible(campaign) && (
-        <span className="text-xs text-fg-40">{copy.draftHint}</span>
+      {campaign.opensAt != null ? (
+        <OpensAt at={campaign.opensAt} copy={copy} />
+      ) : (
+        !isPubliclyVisible(campaign) && <span className="text-xs text-fg-40">{copy.draftHint}</span>
       )}
+    </span>
+  );
+}
+
+/** #595: an approved campaign is waiting for its launch time, not lost, and says when it opens. */
+function OpensAt({ at, copy }: { readonly at: string; readonly copy: MyCampaignsPanelCopy }) {
+  const locale = useRouteLocale();
+  return (
+    <span className="text-xs text-fg-64">
+      {fillPlaceholders(copy.opensAt, { date: formatExactTime(at, locale) })}
     </span>
   );
 }

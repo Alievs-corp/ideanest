@@ -390,9 +390,13 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
 
     /**
      * Whether anything but this tier still shows the upload: another tier, a campaign's cover
-     * or video, or a story section, current or in a version that can be restored (#551). Asked
-     * before a released reward image or video is deleted, because one upload may be attached in
-     * more than one place by its owner.
+     * or video, or a story section, current or in a version that can be restored (#551), or the
+     * same places in a launched campaign's open revision (#568). Asked before a released reward
+     * image or video is deleted, because one upload may be attached in more than one place by
+     * its owner — and a revision's proposal names uploads no row shows yet, so deleting a
+     * draft tier could otherwise remove the picture another tier's waiting edit is about to
+     * publish. The revision's entry for this tier itself does not count: it is the tier the
+     * upload is being released from.
      *
      * <p>{@code projects} is read rather than asked about, as {@code pledges} reads this
      * module's tables: it is one existence check, and the project module has no question
@@ -410,6 +414,24 @@ public interface RewardTierRepository extends JpaRepository<RewardTier, UUID> {
                                 WHERE cover_media_id = :mediaId OR video_media_id = :mediaId)
                         OR EXISTS (SELECT 1 FROM projects WHERE story @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
                         OR EXISTS (SELECT 1 FROM project_story_versions WHERE document @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text))))))
+                        OR EXISTS (
+                               SELECT 1
+                                 FROM project_revisions revision
+                                WHERE revision.status IN ('DRAFT', 'PENDING')
+                                  AND (revision.content -> 'coverImage' ->> 'mediaId' = CAST(:mediaId AS text)
+                                       OR revision.content ->> 'videoMediaId' = CAST(:mediaId AS text)
+                                       OR revision.content -> 'story' @> jsonb_build_object('blocks', jsonb_build_array(jsonb_build_object('video', jsonb_build_object('mediaId', CAST(:mediaId AS text)))))))
+                        OR EXISTS (
+                               SELECT 1
+                                 FROM project_revisions revision
+                                CROSS JOIN LATERAL jsonb_each(
+                                      CASE WHEN jsonb_typeof(revision.content -> 'rewards') = 'object'
+                                           THEN revision.content -> 'rewards'
+                                           ELSE CAST('{}' AS jsonb) END) AS proposed(tier_id, tier)
+                                WHERE revision.status IN ('DRAFT', 'PENDING')
+                                  AND proposed.tier_id <> CAST(:excluding AS text)
+                                  AND (proposed.tier ->> 'imageMediaId' = CAST(:mediaId AS text)
+                                       OR proposed.tier ->> 'videoMediaId' = CAST(:mediaId AS text)))
                     """,
             nativeQuery = true)
     boolean isMediaShownElsewhere(@Param("mediaId") UUID mediaId, @Param("excluding") UUID excluding);

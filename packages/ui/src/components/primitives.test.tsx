@@ -422,6 +422,37 @@ describe('TopBar', () => {
       expect(pill.className).toContain('text-on-white');
     });
 
+    it('gives the collapsed bar the page ground where the consumer asks, with opacity only', () => {
+      const ground = (scrolled: boolean) => (
+        <TopBar
+          forceScrolled={scrolled}
+          groundClassName="md:hidden"
+          logo={<span>IdeyaNest</span>}
+          navClassName="hidden md:flex"
+          nav={<a href="/discover">Discover</a>}
+        />
+      );
+      const { container, rerender } = render(ground(false));
+      const layer = container.querySelector('[data-top-bar-ground]') as HTMLElement;
+
+      expect(layer).toHaveAttribute('aria-hidden', 'true');
+      expect(layer.className).toContain('opacity-0');
+      expect(layer.className).toContain('transition-opacity');
+      /* Only where the pill is not drawn. */
+      expect(layer.className).toContain('md:hidden');
+
+      rerender(ground(true));
+      expect(layer.className).toContain('opacity-100');
+      expect(layer.className).toContain('bg-surface-1');
+      /* No transform on the header: the drawer's fixed panel is inside it. */
+      expect(container.querySelector('header')?.className).not.toMatch(/translate|transform/);
+    });
+
+    it('has no ground at all unless the consumer asks for one', () => {
+      const { container } = render(bar(true));
+      expect(container.querySelector('[data-top-bar-ground]')).toBeNull();
+    });
+
     it('moves the row with a transform from where it was drawn to nothing', () => {
       stubLayout();
       const { container, rerender } = render(bar(false));

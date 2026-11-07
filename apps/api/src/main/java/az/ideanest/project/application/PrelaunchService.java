@@ -60,9 +60,10 @@ public class PrelaunchService {
      */
     private static final Set<ProjectState> NEVER_ANNOUNCED = EnumSet.of(
             ProjectState.DRAFT,
+            // #626: opened from a draft without moderation, so never public.
+            ProjectState.PRELAUNCH,
             ProjectState.SUBMITTED,
-            ProjectState.CHANGES_REQUESTED,
-            ProjectState.APPROVED);
+            ProjectState.CHANGES_REQUESTED);
 
     private final ProjectRepository projects;
     private final ReminderRepository reminders;
@@ -241,15 +242,11 @@ public class PrelaunchService {
      * creator's endpoints, and it would be odd for the public one to be less
      * careful.
      *
-     * <p>The states that produce a 404 are the ones before a campaign is
-     * announced — {@code DRAFT} — and the ones in which it has withdrawn its page
-     * for review: {@code SUBMITTED}, {@code CHANGES_REQUESTED}, {@code APPROVED}.
-     * That last group is a known rough edge: a creator who shares a pre-launch link
-     * and then submits for review has a dead link for the days moderation takes. It
-     * is the price of not showing the public a page a moderator may be about to
-     * send back, and the alternative — a {@code prelaunch_opened_at} column that
-     * keeps the page up through review — is a change of design rather than a fix,
-     * so it is named here rather than guessed at.
+     * <p>The states that produce a 404 are every one before moderation has cleared
+     * the campaign: {@code DRAFT}, {@code PRELAUNCH}, {@code SUBMITTED} and
+     * {@code CHANGES_REQUESTED}. Since #626 the page exists only once a moderator
+     * has approved what it shows — {@code APPROVED} and {@code SCHEDULED} — so a
+     * link a creator shares can never show the public something nobody reviewed.
      */
     private static void requireCollectingReminders(Project project) {
         if (RemindersClosedException.ACCEPTED_IN.contains(project.getState())) {

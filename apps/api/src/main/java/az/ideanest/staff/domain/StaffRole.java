@@ -66,7 +66,7 @@ public enum StaffRole {
      * exists so that the person who arranges the home page does not have to be trusted
      * with the report queue to do it.
      */
-    CURATOR(Set.of(StaffCapability.CURATE, StaffCapability.VIEW_AUDIT)),
+    CURATOR(Set.of(StaffCapability.CURATE, StaffCapability.VIEW_AUDIT, StaffCapability.VIEW_AUDIENCE)),
 
     /**
      * The money: the payment log, the ledger, refunds, disputes and the platform's own
@@ -84,7 +84,8 @@ public enum StaffRole {
             StaffCapability.MANAGE_DISPUTES,
             StaffCapability.HANDLE_SUPPORT,
             StaffCapability.READ_BANK_DETAILS,
-            StaffCapability.VIEW_AUDIT)),
+            StaffCapability.VIEW_AUDIT,
+            StaffCapability.VIEW_AUDIENCE)),
 
     /**
      * Who somebody is: identity verification, legal subject, and the payout destination

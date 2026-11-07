@@ -12,8 +12,9 @@ import type { PluralForms } from './plurals';
  * and it exists because §4.2's P-04 withholds amounts on a backed list, which is a rule about
  * what may be shown rather than about how to show it.
  *
- * Four of their sentences are word for word the same: the progress bar's accessible name, the
- * completion figure, the goal under it, and the backer count. Those live in `common.card` and
+ * Five of their sentences are word for word the same: the progress bar's accessible name, the
+ * completion figure, the goal under it, the backer count, and the view count on the cover
+ * (#634). Those live in `common.card` and
  * both read them. A second copy in each namespace would be two spellings of "of {amount} goal"
  * that agree until somebody edits one.
  *
@@ -45,6 +46,8 @@ export interface SharedCardCopy {
   readonly backers: PluralForms;
   /** IDN-EXT-01 §9: "succeeds at 80% of the goal", printed under the progress bar (#44). */
   readonly rule: string;
+  /** Carries `{count}`. The accessible name of the cover's eye chip (#634). */
+  readonly views: PluralForms;
 }
 
 export interface ProjectCardCopy extends SharedCardCopy {
@@ -65,6 +68,7 @@ export function sharedCardCopyFrom(common: CardTranslator): SharedCardCopy {
     ofGoal: String(common.raw('card.ofGoal')),
     backers: common.raw('card.backers') as PluralForms,
     rule: String(common.raw('card.rule')),
+    views: common.raw('card.views') as PluralForms,
   };
 }
 

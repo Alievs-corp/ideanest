@@ -66,8 +66,8 @@ public class ProfileCampaignRows {
     private static final String COLUMNS =
             """
             p.id, p.slug, p.title, p.blurb, p.state, p.currency,
-            p.goal_amount, p.pledged_amount, p.backers_count,
-            p.launched_at, p.deadline, p.created_at,
+            p.goal_amount, p.pledged_amount, p.backers_count, p.view_count,
+            p.launched_at, p.deadline, p.created_at, p.scheduled_launch_at,
             p.cover_image_url, p.cover_image_width, p.cover_image_height,
             vm.storage_key AS video_storage_key, vm.poster_storage_key AS video_poster_storage_key,
             vm.width AS video_width, vm.height AS video_height,
@@ -213,9 +213,11 @@ public class ProfileCampaignRows {
                 Money.orNull(row.getBigDecimal("goal_amount"), currency),
                 Money.orNull(row.getBigDecimal("pledged_amount"), currency),
                 row.getInt("backers_count"),
+                row.getLong("view_count"),
                 instantOf(row, "launched_at"),
                 instantOf(row, "deadline"),
                 instantOf(row, "created_at"),
+                instantOf(row, "scheduled_launch_at"),
                 cover,
                 video);
     }

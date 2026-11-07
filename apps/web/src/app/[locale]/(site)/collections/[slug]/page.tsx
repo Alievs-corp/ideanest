@@ -26,6 +26,8 @@ import {
 } from '../../../../../lib/i18n/collection-copy';
 import { type ProjectCardCopy, projectCardCopyFrom } from '../../../../../lib/i18n/card-copy';
 import type { Locale } from '../../../../../lib/i18n/locale';
+import { MarketSeed } from '../../../../../components/shell/MarketSeed';
+import { requestMarket } from '../../../../../lib/market/request';
 
 /**
  * `/collections/{slug}` — D-08's landing page, §4.13 WS-04. Issue #266.
@@ -152,6 +154,7 @@ export default async function CollectionPage({ params }: RouteParams) {
 
   return (
     <>
+      <MarketSeed market={await requestMarket()} />
       <StructuredData
         nodes={collectionPageGraph({
           title: collection.title,

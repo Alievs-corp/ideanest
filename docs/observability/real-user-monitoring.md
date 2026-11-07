@@ -79,7 +79,7 @@ One beacon per visit, carrying at most twenty samples. This is the whole of it:
 | `requestId` | `[A-Za-z0-9_-]{8,64}` | §18.1. One per beacon |
 | `traceId` | 32 lower-case hex | §18.1. One per session |
 | `spanId` | 16 lower-case hex | §18.1. One per beacon |
-| `sessionId` | A v4 UUID | Random, per tab, gone when the tab closes |
+| `sessionId` | A v4 UUID | Random, per page load, held in memory and gone with the page |
 | `route` | One of eleven Next route patterns, or `(unrecognised)` | Never a URL |
 | `connection` | `slow-2g` \| `2g` \| `3g` \| `4g` \| `unknown` | |
 | `device` | `mobile` \| `tablet` \| `desktop` \| `unknown` | Viewport width, at Tailwind's `md` and `lg` |
@@ -116,8 +116,11 @@ something to change.
   into. This is the same discipline
   `az.ideanest.shared.observability.LogFields` applies on the service, where
   there is a method per safe shape and none that takes text.
-- **No cookie, and nothing that outlives the tab.** The session identifier lives
-  in `sessionStorage` and is never sent anywhere except in the beacon body.
+- **No cookie, no storage, and nothing that outlives the page.** The session
+  identifier lives in the page's memory (a property of `window`) and is never
+  sent anywhere except in the beacon body and the `traceparent` it shares. It was
+  kept in `sessionStorage` until #641: storage the reader did not ask for is what
+  a consent banner exists to ask about, and the web sets none.
 
 Two locks, not one. The schema (`lib/rum/payload.ts`) validates every string
 against a closed vocabulary or a strict pattern and **refuses unknown keys**;
@@ -137,16 +140,18 @@ A string proved to match `^[0-9a-f]{16}$` can contain none of the shapes above.
 
 ## Sampling
 
-**Session-consistent, at a configurable rate, defaulting to 1.0.**
+**Consistent per page load, at a configurable rate, defaulting to 1.0.**
 
 ```
 NEXT_PUBLIC_IDEANEST_RUM_SAMPLE_RATE=0.25   # a quarter of sessions
 NEXT_PUBLIC_IDEANEST_RUM_SAMPLE_RATE=0      # collect nothing at all
 ```
 
-The decision is a pure function of the session identifier, taken once, cached in
-`sessionStorage`, and obeyed by every metric that session produces — including
-after a reload, which is a continuation of the same visit.
+The decision is a pure function of the session identifier, taken once, held in
+memory, and obeyed by every metric that session produces. A session is a page
+load: a client-side navigation stays in it, a reload or a new tab starts another
+(#641). Below a rate of 1.0 that makes a reload a fresh flip, so the sample is of
+slightly more, shorter visits; it is still ranked over visits, never metrics.
 
 **It has to be per session and not per metric.** A coin flip per metric looks
 equivalent and destroys the number. Core Web Vitals ranks *visits*; flipping per
@@ -171,7 +176,7 @@ thousand samples per route per day, and no fewer.
 
 The value is `NEXT_PUBLIC_`, so it is inlined at build time and changing it means
 rebuilding. Note that a rate of `0` also removes the `fetch` wrapper described
-below, so an unsampled visitor pays one `sessionStorage` read and nothing else.
+below, so an unsampled visitor pays one coin flip and nothing else.
 
 ---
 

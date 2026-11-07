@@ -7,6 +7,7 @@ import type { Locale } from '@ideanest/messages/locale';
 import {
   countdownIntervalMs,
   countdownLabel,
+  fundingEndsAt,
   remainingUntil,
   type CountdownUnits,
   type Remaining,
@@ -265,5 +266,31 @@ describe('the boundaries', () => {
     expect(from(0).past).toBe(true);
     expect(countdownLabel(from(0), UNITS.en, 'en')).toBeNull();
     expect(daysLeftOf(NOW.toISOString(), NOW)).toBe(0);
+  });
+});
+
+describe('fundingEndsAt (#618)', () => {
+  const deadline = '2026-11-03T16:10:00Z';
+  const extendedUntil = '2026-12-20T16:10:00Z';
+
+  it('is the extension end while the campaign is extended', () => {
+    expect(fundingEndsAt('EXTENDED', deadline, extendedUntil)).toBe(extendedUntil);
+  });
+
+  it('is the deadline in every other state, even when an extension end is present', () => {
+    for (const state of ['LIVE', 'CLOSING_WINDOW', 'SUCCESSFUL', 'UNSUCCESSFUL', 'WITHDRAWN']) {
+      expect(fundingEndsAt(state, deadline, extendedUntil)).toBe(deadline);
+    }
+  });
+
+  it('falls back to the deadline when an extended campaign carries no end', () => {
+    expect(fundingEndsAt('EXTENDED', deadline, null)).toBe(deadline);
+    expect(fundingEndsAt('EXTENDED', deadline, undefined)).toBe(deadline);
+    expect(fundingEndsAt('EXTENDED', deadline, '')).toBe(deadline);
+  });
+
+  it('is null when there is no deadline at all', () => {
+    expect(fundingEndsAt('LIVE', null, null)).toBeNull();
+    expect(fundingEndsAt('LIVE', undefined, undefined)).toBeNull();
   });
 });

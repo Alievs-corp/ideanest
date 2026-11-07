@@ -415,6 +415,59 @@ describe('StoryPanel', () => {
     expect(sent().at(-1)?.story?.blocks.at(-1)).toMatchObject({ type: 'section', id: 'how-it-works-2' });
   });
 
+  it('opens a story that has none on an empty paragraph to type into, and sends nothing for it', async () => {
+    getProjectEditMock.mockResolvedValue({ ...PROJECT, story: null });
+    renderPanel();
+
+    // Without it the creator has to know that writing starts with "Add paragraph".
+    const paragraph = await screen.findByRole('group', { name: /^Paragraph 1 of 1/ });
+    expect(within(paragraph).getByRole('textbox')).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(DEBOUNCE + 50);
+    });
+    // Opening the tab is not an edit.
+    expect(sent()).toEqual([]);
+  });
+
+  it('says under the story and the risks how much they still lack, once the creator has left them', async () => {
+    getProjectEditMock.mockResolvedValue({ ...PROJECT, story: null, risks: null });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPanel();
+
+    const paragraph = await screen.findByRole('group', { name: /^Paragraph 1 of 1/ });
+    const storyShort = /^The story needs at least 500 characters before you can submit\./;
+    const risksShort = /^Risks and challenges need at least 200 characters before you can submit\./;
+
+    // Nothing on a fresh draft: unwritten is not wrong.
+    expect(screen.queryByText(storyShort)).not.toBeInTheDocument();
+    expect(screen.queryByText(risksShort)).not.toBeInTheDocument();
+
+    await user.type(within(paragraph).getByRole('textbox'), 'Short.');
+    // Still writing: moving between the editor's own controls is not leaving it.
+    await user.click(screen.getByRole('button', { name: /Add heading/ }));
+    expect(screen.queryByText(storyShort)).not.toBeInTheDocument();
+
+    const risks = screen.getByRole('textbox', { name: /Risks and challenges/ });
+    await user.click(risks);
+    expect(screen.getByText(storyShort)).toHaveTextContent('Add 494 more.');
+
+    await user.type(risks, 'Tooling.');
+    await user.tab();
+    expect(screen.getByText(risksShort)).toHaveTextContent('Add 192 more.');
+    // On the field, not only near it: the textarea is described by it.
+    expect(risks).toHaveAccessibleDescription(expect.stringContaining('Add 192 more.'));
+  });
+
+  it('says at once when a story written earlier is still short', async () => {
+    renderPanel();
+    await screen.findByRole('group', { name: /^Heading 1 of 2/ });
+
+    expect(
+      screen.getByText(/^The story needs at least 500 characters before you can submit\./),
+    ).toBeInTheDocument();
+  });
+
   it('saves the risks section without refusing a half-written answer', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderPanel();

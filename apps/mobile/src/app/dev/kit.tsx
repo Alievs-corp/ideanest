@@ -329,7 +329,7 @@ function KitGallery() {
           <Pill label={nameOf(Pill)} iconLeft={Glyphs.Heart} iconRight={Glyphs.Share} fullWidth onPress={noop} />
           <Pill
             // `wrap`: a long full-width action takes a second line instead of an ellipsis.
-            label={t('campaignEditor.prelaunch.open')}
+            label={t('campaignEditor.prelaunch.pendingHeading')}
             size="lg"
             fullWidth
             wrap

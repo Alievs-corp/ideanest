@@ -175,6 +175,25 @@ function campaign(overrides: Partial<ProjectPageResponse> = {}): CampaignPage {
   return page;
 }
 
+/**
+ * A campaign with no goal and no deadline, built past `readCampaignPage`.
+ *
+ * Only a PRELAUNCH campaign had none, and `readCampaignPage` no longer renders one: a creator
+ * reached it from a draft without moderation, so it is hidden like a draft. The components still
+ * must not invent a figure or a date for a page that lacks them, so they are checked directly.
+ */
+function withoutGoal(state: CampaignPage['state'] = 'LIVE'): CampaignPage {
+  return {
+    ...campaign(),
+    state,
+    goal: null,
+    deadline: null,
+    fundingEndsAt: null,
+    completionPercent: null,
+    daysLeft: null,
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   sessionMock.mockResolvedValue(null);
@@ -243,8 +262,8 @@ describe('the campaign summary', () => {
     expect(screen.getByText('Funded')).toBeInTheDocument();
   });
 
-  it('renders a pre-launch campaign that has no goal, without inventing a percentage', async () => {
-    await renderSummary(campaign({ state: 'PRELAUNCH', goal: undefined, deadline: undefined }));
+  it('renders a campaign that has no goal, without inventing a percentage', async () => {
+    await renderSummary(withoutGoal());
 
 
 
@@ -552,6 +571,17 @@ describe('accessibility', () => {
     );
 
     await expectNoViolations(container);
+  });
+});
+
+describe('an extended campaign (#618)', () => {
+  it('counts down to the end of its extension, not its first deadline', async () => {
+    await renderSummary(
+      campaign({ state: 'EXTENDED', deadline: '2026-08-10T12:00:00Z', extendedUntil: '2026-09-18T12:00:00Z' }),
+    );
+
+    expect(screen.getByText(/30 days left/)).toBeInTheDocument();
+    expect(screen.queryByText('Last day')).not.toBeInTheDocument();
   });
 });
 

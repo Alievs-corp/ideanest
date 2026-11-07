@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import { pluralise } from '@ideanest/messages/plurals';
+import { fundingEndsAt } from '@ideanest/campaign/days-left';
 import { formatMoney } from '@ideanest/money';
 import {
   Body,
@@ -149,7 +150,14 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
             {t('mobile.dashboard.asOf', { time: formatDateTime(new Date(receivedAt).toISOString(), locale) })}
           </Meta>
         ) : null}
-        <CampaignClock deadline={dashboard.deadline} skewMs={skewMs} active={active} now={now} />
+        {/* The extension's end once extended (#618); the controls below keep the first deadline. */}
+        <CampaignClock
+          deadline={fundingEndsAt(dashboard.state ?? '', dashboard.deadline, dashboard.extendedUntil)}
+          skewMs={skewMs}
+          active={active}
+          now={now}
+          opensAt={dashboard.opensAt}
+        />
       </View>
 
       <StatRow testID="overview-stats">
@@ -212,6 +220,8 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
         stale={query.isError}
         reread={reread}
         stateLabel={stateLabel}
+        // The device's clock as the service's: `skewMs` is how far ahead the device is.
+        now={() => (now ?? Date.now)() - skewMs}
       />
 
       {outcome === undefined ? null : (

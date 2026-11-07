@@ -4,6 +4,10 @@ import az.ideanest.notification.application.NotificationMessage;
 import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.shared.money.Money;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriUtils;
@@ -52,6 +56,14 @@ public class NotificationFacts {
      * types go on every channel (#450), push included since #452: see {@link #appPathFor}.
      */
     private static final String PRICING = "/pricing";
+
+    /**
+     * How a launch time reads in an email or a push (#595): Baku's wall clock, in digits every
+     * language reads the same way. The copy names the zone; an instant with a {@code Z} on the end
+     * in the middle of a sentence is the platform showing its plumbing.
+     */
+    private static final DateTimeFormatter LAUNCH_TIME =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.of("Asia/Baku"));
 
     private final ObjectMapper json;
 
@@ -108,9 +120,14 @@ public class NotificationFacts {
             case CAMPAIGN_SUCCEEDED, CAMPAIGN_UNSUCCESSFUL -> facts.withAmount(money(params, "pledged"))
                     .withDetail(text(params, "backersCount"));
             case PROJECT_APPROVED -> facts;
+            // #595. The moment it opens is the message: the campaign is not live yet.
+            case PROJECT_APPROVED_SCHEDULED -> facts.withDetail(launchTime(text(params, "opensAt")));
             // #587. The campaign and what to do are the message; the date it did not open on is
             // the day the creator is reading it, so the copy does not repeat it.
             case SCHEDULED_LAUNCH_REFUSED -> facts;
+            // #568. The news is the message; a refusal also carries the moderator's reason.
+            case CAMPAIGN_EDIT_APPROVED -> facts;
+            case CAMPAIGN_EDIT_REJECTED -> facts.withDetail(text(params, "reason"));
             // IDN-EXT-01 (#34). The new deadline is the whole of the message: backers are
             // told, not asked, so the copy leads with the date and needs nothing else.
             case CAMPAIGN_EXTENDED -> facts.withDetail(text(params, "extendedUntil"));
@@ -239,10 +256,26 @@ public class NotificationFacts {
      * message's destination on the web, in the browser, rather than in the application: the
      * application does not sell or renew plans (Apple 3.1.1 and Play Billing, #164), the website
      * does. An application built before #452 opens its own pricing screen, which links to the web.
+     *
+     * <p>A campaign that did not open at its launch time goes to its editor's review tab (#589), not
+     * to its public page: the campaign is not public, so that page is not one its creator can act
+     * on, and the review tab is where the refusal is explained and the campaign launched. The web
+     * and the application share the path ({@code @ideanest/links} parses it to the app's editor). A
+     * document with no {@code projectId} falls through to the campaign's page, as before. A campaign
+     * approved to open at its launch time (#595) goes there too: it is not public until then, and the
+     * review tab is where its creator reads when it opens.
      */
     public String appPathFor(NotificationType type, JsonNode params) {
         if (isAboutAPlan(type)) {
             return PRICING;
+        }
+        if (type == NotificationType.SCHEDULED_LAUNCH_REFUSED
+                || type == NotificationType.PROJECT_APPROVED_SCHEDULED
+                || type == NotificationType.CAMPAIGN_EDIT_REJECTED) {
+            UUID projectId = uuid(params);
+            if (projectId != null) {
+                return "/projects/" + projectId + "/edit/review";
+            }
         }
         if (type == NotificationType.REFUND_NEEDS_BANK_DETAILS || type == NotificationType.REFUND_SENT_BY_BANK) {
             String pledge = text(params, "pledgeId");
@@ -324,6 +357,18 @@ public class NotificationFacts {
     public static String text(JsonNode params, String field) {
         JsonNode node = params.get(field);
         return node == null || node.isNull() ? "" : node.asString();
+    }
+
+    /** An instant from the document as Baku's wall clock, or empty when it is not one. */
+    private static String launchTime(String instant) {
+        if (instant.isEmpty()) {
+            return "";
+        }
+        try {
+            return LAUNCH_TIME.format(Instant.parse(instant));
+        } catch (DateTimeParseException notAnInstant) {
+            return "";
+        }
     }
 
     /** {@code params.projectId} as an identifier, or null when it is absent or not one. */

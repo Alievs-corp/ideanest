@@ -4,7 +4,6 @@ import userEvent, { type UserEvent } from '@testing-library/user-event';
 import {
   getPrelaunchPage,
   getProjectEdit,
-  openPrelaunch,
   patchProject,
   type PrelaunchPage,
   type ProjectEdit,
@@ -15,11 +14,10 @@ import { BASICS_COPY, EDITOR_COPY, PRELAUNCH_COPY } from '../../test-editor-copy
 /**
  * The creator's pre-launch tab.
  *
- * The test that carries the design is
- * {@link openingIsBehindAConfirmation}: opening the page publishes the campaign
- * and docs/architecture.md §6.1 has no edge back, so a control that did it on a
- * single click would be the worst control on the platform. The rest cover the
- * two things a creator comes to this tab for — the link and the number — and the
+ * The tests that carry the design are the first two: the page is public only
+ * once moderation has approved the campaign, so before
+ * that there is nothing to open and no link to share. The rest cover the two
+ * things a creator comes to this tab for — the link and the number — and the
  * fact that the content editor writes through the ordinary autosave path rather
  * than inventing a second one.
  *
@@ -31,13 +29,11 @@ vi.mock('../../lib/projects/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/projects/api')>()),
   getProjectEdit: vi.fn(),
   getPrelaunchPage: vi.fn(),
-  openPrelaunch: vi.fn(),
   patchProject: vi.fn(),
 }));
 
 const getProjectEditMock = vi.mocked(getProjectEdit);
 const getPrelaunchPageMock = vi.mocked(getPrelaunchPage);
-const openPrelaunchMock = vi.mocked(openPrelaunch);
 const patchProjectMock = vi.mocked(patchProject);
 
 /** The debounce `useAutosave` defaults to. */
@@ -63,7 +59,7 @@ const PROJECT: ProjectEdit = {
 const PAGE: PrelaunchPage = {
   id: 'project-1',
   slug: 'a-field-recorder',
-  state: 'PRELAUNCH',
+  state: 'SCHEDULED',
   title: 'A field recorder',
   blurb: 'Pocket-sized and repairable.',
   coverImage: null,
@@ -104,7 +100,6 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   getPrelaunchPageMock.mockResolvedValue(PAGE);
   patchProjectMock.mockImplementation(async () => PROJECT);
-  openPrelaunchMock.mockImplementation(async () => ({ ...PROJECT, state: 'PRELAUNCH' }));
 });
 
 afterEach(() => {
@@ -112,56 +107,42 @@ afterEach(() => {
 });
 
 describe('PrelaunchPanel', () => {
-  it('says the page is not open yet, and does not show a link to nowhere', async () => {
-    await openPanel();
+  it.each(['DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED'] as const)(
+    'says the page of a %s campaign opens after approval, and offers nothing to open',
+    async (state) => {
+      await openPanel({ state });
 
-    expect(screen.getByRole('heading', { name: 'The pre-launch page is not open yet' })).toBeInTheDocument();
-    // A link that 404s is worse than no link. Nothing to share until there is
-    // something at the other end.
-    expect(screen.queryByRole('textbox', { name: 'Pre-launch link' })).not.toBeInTheDocument();
-    // And nothing is read from the public endpoint for a campaign that has no
-    // public page.
-    expect(getPrelaunchPageMock).not.toHaveBeenCalled();
-  });
+      expect(screen.getByText('The pre-launch page opens after approval')).toBeInTheDocument();
+      // Opening it from a draft published a campaign nobody had reviewed. There is
+      // no such control any more, and no link to a page that would 404.
+      expect(screen.queryByRole('button', { name: /open the/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('textbox', { name: 'Pre-launch link' })).not.toBeInTheDocument();
+      // And nothing is read from the public endpoint for a campaign that has no
+      // public page.
+      expect(getPrelaunchPageMock).not.toHaveBeenCalled();
+    },
+  );
 
-  it('opens the page only after the creator confirms, and says what cannot be undone', async () => {
-    const user = await openPanel();
+  it.each(['APPROVED', 'SCHEDULED'] as const)(
+    'shows the link and the number of people waiting once the campaign is %s',
+    async (state) => {
+      await openPanel({ state });
 
-    await user.click(screen.getByRole('button', { name: 'Open the pre-launch page' }));
+      const link = screen.getByRole('textbox', { name: 'Pre-launch link' });
+      // Read-only rather than disabled: a disabled input cannot be focused or
+      // selected, and selecting the address by hand is the fallback when the
+      // clipboard is refused.
+      expect(link).toHaveAttribute('readonly');
+      expect(link).toHaveValue('http://localhost:3000/projects/project-1/prelaunch');
 
-    // The dialog, not a toast and not an inline "are you sure": this publishes
-    // the campaign and §6.1 has no PRELAUNCH -> DRAFT edge.
-    const dialog = screen.getByRole('dialog', { name: 'Open the pre-launch page?' });
-    expect(dialog).toHaveAccessibleDescription(/cannot be undone/);
-    expect(openPrelaunchMock).not.toHaveBeenCalled();
-
-    // Cancelling does nothing at all.
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(openPrelaunchMock).not.toHaveBeenCalled();
-
-    await user.click(screen.getByRole('button', { name: 'Open the pre-launch page' }));
-    await user.click(screen.getByRole('button', { name: 'Open the page' }));
-    await tick();
-
-    expect(openPrelaunchMock).toHaveBeenCalledWith('project-1');
-  });
-
-  it('shows the link and the number of people waiting once the page is open', async () => {
-    await openPanel({ state: 'PRELAUNCH' });
-
-    const link = screen.getByRole('textbox', { name: 'Pre-launch link' });
-    // Read-only rather than disabled: a disabled input cannot be focused or
-    // selected, and selecting the address by hand is the fallback when the
-    // clipboard is refused.
-    expect(link).toHaveAttribute('readonly');
-    expect(link).toHaveValue('http://localhost:3000/projects/project-1/prelaunch');
-
-    expect(screen.getByText('41')).toBeInTheDocument();
-    expect(screen.getByText(/people are waiting for this campaign/)).toBeInTheDocument();
-  });
+      expect(screen.getByText('41')).toBeInTheDocument();
+      expect(screen.getByText(/people are waiting for this campaign/)).toBeInTheDocument();
+      expect(screen.queryByText('The pre-launch page opens after approval')).not.toBeInTheDocument();
+    },
+  );
 
   it('copies the link and says so, rather than only changing an icon', async () => {
-    const user = await openPanel({ state: 'PRELAUNCH' });
+    const user = await openPanel({ state: 'SCHEDULED' });
 
     await user.click(screen.getByRole('button', { name: 'Copy' }));
     await tick();
@@ -183,7 +164,7 @@ describe('PrelaunchPanel', () => {
   it('says the number is unavailable rather than pretending it is zero', async () => {
     getPrelaunchPageMock.mockRejectedValue(new Error('offline'));
 
-    await openPanel({ state: 'PRELAUNCH' });
+    await openPanel({ state: 'SCHEDULED' });
 
     // Telling a creator that nobody has signed up, when the request simply
     // failed, is worse than telling them nothing.
@@ -191,7 +172,7 @@ describe('PrelaunchPanel', () => {
   });
 
   it('edits the page content through the ordinary autosave path', async () => {
-    const user = await openPanel({ state: 'PRELAUNCH' });
+    const user = await openPanel({ state: 'SCHEDULED' });
 
     await user.clear(screen.getByRole('textbox', { name: 'Summary' }));
     await user.type(screen.getByRole('textbox', { name: 'Summary' }), 'Now with two microphones.');
@@ -209,12 +190,12 @@ describe('PrelaunchPanel', () => {
     await openPanel({ state: 'LIVE' });
 
     expect(screen.getByText(/The pre-launch page has closed/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Open the pre-launch page' })).not.toBeInTheDocument();
+    expect(screen.queryByText('The pre-launch page opens after approval')).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: 'Pre-launch link' })).not.toBeInTheDocument();
   });
 
   it('gives every control an accessible name', async () => {
-    await openPanel({ state: 'PRELAUNCH' });
+    await openPanel({ state: 'SCHEDULED' });
 
     for (const control of [
       ...screen.getAllByRole('textbox'),

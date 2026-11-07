@@ -48,6 +48,8 @@ import java.util.UUID;
  *     implementation of that schema in the read path
  * @param video the campaign's video when it has a ready one — issue #331. Null otherwise
  * @param outcome null until the deadline has been decided
+ * @param extendedUntil where an extended campaign now ends (§5.1), null until it is
+ *     extended (#618). {@link #deadline()} stays the first deadline
  */
 public record PublicProjectPage(
         UUID id,
@@ -65,6 +67,7 @@ public record PublicProjectPage(
         int backersCount,
         Instant launchedAt,
         Instant deadline,
+        Instant extendedUntil,
         String story,
         String risks,
         Outcome outcome) {

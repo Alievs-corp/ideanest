@@ -176,6 +176,25 @@ function campaign(overrides: Partial<ProjectPageResponse> = {}): CampaignPage {
   return page;
 }
 
+/**
+ * A campaign with no goal and no deadline, built past `readCampaignPage`.
+ *
+ * Only a PRELAUNCH campaign had none, and `readCampaignPage` no longer renders one: a creator
+ * reached it from a draft without moderation, so it is hidden like a draft. The components still
+ * must not invent a figure or a date for a page that lacks them, so they are checked directly.
+ */
+function withoutGoal(state: CampaignPage['state'] = 'LIVE'): CampaignPage {
+  return {
+    ...campaign(),
+    state,
+    goal: null,
+    deadline: null,
+    fundingEndsAt: null,
+    completionPercent: null,
+    daysLeft: null,
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   sessionMock.mockResolvedValue(null);
@@ -549,6 +568,22 @@ describe('the trust block', () => {
     expect(time).toHaveAttribute('datetime', '2026-08-29T12:00:00Z');
   });
 
+  /**
+   * #618: the date a backer is promised is the one they were emailed when the campaign was
+   * extended. The first deadline beside an "Extended" badge gives one promise two dates.
+   */
+  it('names the end of the extension once the campaign is extended', async () => {
+    const { container } = render(
+      await resolveServerTree(
+        <CampaignTrustBlock
+          campaign={campaign({ state: 'EXTENDED', deadline: '2026-08-10T12:00:00Z', extendedUntil: '2026-09-18T12:00:00Z' })}
+        />,
+      ),
+    );
+
+    expect(container.querySelector('time')).toHaveAttribute('datetime', '2026-09-18T12:00:00Z');
+  });
+
   it('uses the past tense for a campaign that has closed', async () => {
     render(
       await resolveServerTree(
@@ -563,15 +598,14 @@ describe('the trust block', () => {
   });
 
   /**
-   * A pre-launch campaign has neither a goal nor a closing date (§5.3). The rule is still
-   * stated, because §4.4 requires it on every project; the date is not invented to have
-   * something to name.
+   * A campaign with neither a goal nor a closing date. The rule is still stated, because §4.4
+   * requires it on every project; the date is not invented to have something to name.
    */
   it('keeps the fixed copy and names no date when there is no deadline', async () => {
     render(
       await resolveServerTree(
         <CampaignTrustBlock
-        campaign={campaign({ state: 'PRELAUNCH', goal: undefined, deadline: undefined })}
+        campaign={withoutGoal()}
       />,
       ),
     );
@@ -674,7 +708,7 @@ describe('the save, share and reminder controls', () => {
   it('starts Save and Remind where the reader left them', async () => {
     sessionMock.mockResolvedValue(ACCOUNT);
     viewerMock.mockResolvedValue({ saved: true, reminded: true, followingCreator: false, backed: false });
-    await renderActions(campaign({ state: 'PRELAUNCH', goal: undefined, deadline: undefined }));
+    await renderActions(withoutGoal('PRELAUNCH'));
 
     expect(
       await screen.findByRole('button', { name: 'A coffee table book is saved' }),
@@ -765,7 +799,7 @@ describe('the save, share and reminder controls', () => {
     expect(screen.queryByRole('button', { name: /Remind me/u })).not.toBeInTheDocument();
 
     cleanup();
-    await renderActions(campaign({ state: 'PRELAUNCH', goal: undefined, deadline: undefined }));
+    await renderActions(withoutGoal('PRELAUNCH'));
 
 
 

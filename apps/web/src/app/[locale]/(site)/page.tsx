@@ -7,6 +7,7 @@ import {
   HOME_RAIL,
   HOME_RAIL_ITEM,
   HOME_SPLIT_GRID,
+  HOME_SPLIT_GRID_SPARSE,
 } from '../../../components/browse/campaign-grid-layout';
 import { ProjectCard as ProjectCardView } from '../../../components/discovery/ProjectCard';
 import { RailControls } from '../../../components/home/RailControls';
@@ -28,6 +29,8 @@ import { graphContext } from '../../../lib/i18n/shell-copy.server';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { marketCopy, projectCardCopy } from '../../../lib/i18n/shell-copy.server';
 import { MarketEmptyNotice } from '../../../components/shell/MarketEmptyNotice';
+import { MarketSeed } from '../../../components/shell/MarketSeed';
+import { requestMarket } from '../../../lib/market/request';
 
 /**
  * `/` — §4.13 WS-04, issue #264.
@@ -170,6 +173,9 @@ export default async function HomePage() {
       .map((card) => card.id),
   );
 
+  /* Fewer than three rows of closing campaigns keep their own height rather than stretching. */
+  const splitLayout = splitIds.size > SPLIT_SIZE - 2 ? HOME_SPLIT_GRID : HOME_SPLIT_GRID_SPARSE;
+
   /*
    * The pages a creator reads before starting, in each page's own words: the title and the
    * description its `<meta>` already carries, so this band cannot promise what the page does
@@ -183,6 +189,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <MarketSeed market={await requestMarket()} />
       {/*
         THE SITE'S IDENTITY IS CLAIMED HERE. It used to be on `/discover`, because that was
         the entry page while this one did not exist — `lib/seo/structured-data/identity.ts`
@@ -307,12 +314,13 @@ export default async function HomePage() {
                 other one fetched early: on a phone it is the first campaign under the hero.
               */}
               <CampaignGrid
+                surface="HOME"
                 campaigns={closing}
                 priorityCount={2}
                 label={t('closing.gridLabel')}
                 cardCopy={cardCopy}
                 locale={locale}
-                layout={HOME_SPLIT_GRID}
+                layout={splitLayout}
                 coverClassName="lg:aspect-[16/7.91]"
                 bodyClassName={CLOSING_BODY}
                 itemClassName={(card, index) =>
@@ -334,6 +342,7 @@ export default async function HomePage() {
             seeAll={t('seeAll')}
           >
             <CampaignGrid
+              surface="HOME"
               campaigns={closing}
               priorityCount={1}
               label={t('closing.gridLabel')}
@@ -366,6 +375,7 @@ export default async function HomePage() {
               second wall of twelve straight after the first.
             */}
             <CampaignGrid
+              surface="HOME"
               id={LAUNCHED_RAIL}
               campaigns={launched}
               label={t('launched.gridLabel')}

@@ -87,11 +87,11 @@ describe('the console rail', () => {
 
     // `100dvh` and not `100vh`: the dynamic unit tracks a collapsing browser toolbar, and
     // `vh` would size the rail to a viewport the reader does not have.
-    expect(rail.className).toContain('lg:max-h-[calc(100dvh-4rem)]');
-    expect(rail.className).toContain('lg:overflow-y-auto');
+    expect(rail.className).toContain('xl:max-h-[calc(100dvh-4rem)]');
+    expect(rail.className).toContain('xl:overflow-y-auto');
     // Without `overscroll-contain`, reaching the end of the rail hands the wheel to the page
     // and scrolls the screen nobody was looking at.
-    expect(rail.className).toContain('lg:overscroll-contain');
+    expect(rail.className).toContain('xl:overscroll-contain');
   });
 
   it('keeps room for the focus ring the scroll container would otherwise clip', () => {
@@ -102,8 +102,8 @@ describe('the console rail', () => {
     // The links take `outline-2 outline-offset-2` — four pixels outside their own box — and
     // docs/ui-kit.md §9.3 requires that ring visible on every interactive element. The
     // negative margin gives the padding back, so nothing moves.
-    expect(rail.className).toContain('lg:px-1');
-    expect(rail.className).toContain('lg:-mx-1');
+    expect(rail.className).toContain('xl:px-1');
+    expect(rail.className).toContain('xl:-mx-1');
   });
 
   /**
@@ -116,7 +116,7 @@ describe('the console rail', () => {
 
     const rail = screen.getByRole('navigation', { name: COPY.navLabel });
     expect(rail).toHaveClass('hidden');
-    expect(rail).toHaveClass('lg:block');
+    expect(rail).toHaveClass('xl:block');
     expect(rail.querySelector('ul')).not.toHaveClass('overflow-x-auto');
   });
 

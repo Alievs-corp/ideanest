@@ -47,9 +47,11 @@
 /*
  * IDN-EXT-01 (#37): `late_pledge` and `unsuccessful` are gone — late pledges are switched off, and a
  * campaign that ended without succeeding is hidden from the catalogue and search (its page stays).
- * `extended` is new, and is also inside `live`.
+ * `extended` is new, and is also inside `live`. `upcoming` is gone too: it named only a pre-launch
+ * teaser, which a creator opens from a draft without moderation, and the catalogue lists only what
+ * moderation has cleared.
  */
-export const STATUS_VALUES = ['upcoming', 'live', 'extended', 'successful'] as const;
+export const STATUS_VALUES = ['live', 'extended', 'successful'] as const;
 
 export type DiscoveryStatus = (typeof STATUS_VALUES)[number];
 

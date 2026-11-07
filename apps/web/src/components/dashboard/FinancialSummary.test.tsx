@@ -164,8 +164,10 @@ describe('the financial summary', () => {
   it('publishes the ledger, so the totals can be checked against something', async () => {
     renderPanel(finance());
 
-    expect(await screen.findByText('escrow')).toBeInTheDocument();
-    expect(screen.getByText('creator:0193f2a1-0000-7000-8000-000000000002')).toBeInTheDocument();
+    // In words (#597): the creator's account is theirs, not an identifier after a prefix.
+    expect(await screen.findByText('Held funds')).toBeInTheDocument();
+    expect(screen.getByText('Your account')).toBeInTheDocument();
+    expect(screen.queryByText(/creator:/u)).not.toBeInTheDocument();
   });
 
   it('warns, once, when this campaign’s books do not balance', async () => {
@@ -199,7 +201,7 @@ describe('the financial summary', () => {
     const { container } = renderPanel(finance({ reconciled: false }));
 
     await screen.findByRole('heading', { level: 1, name: 'Financial summary' });
-    await waitFor(() => expect(screen.getByText('escrow')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Held funds')).toBeInTheDocument());
 
     await expectNoViolations(container);
   });

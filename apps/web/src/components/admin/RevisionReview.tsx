@@ -37,6 +37,14 @@ const RevisionRewards = lazy(() =>
   import('./RevisionRewards').then((module) => ({ default: module.RevisionRewards })),
 );
 
+/* The items and shipping zones an edit changes, for the same reason: one chunk for both. */
+const RevisionItems = lazy(() =>
+  import('./RevisionCatalogue').then((module) => ({ default: module.RevisionItems })),
+);
+const RevisionShippingZones = lazy(() =>
+  import('./RevisionCatalogue').then((module) => ({ default: module.RevisionShippingZones })),
+);
+
 type Outcome = 'approve' | 'reject';
 
 type Notice = { readonly variant: 'success' | 'warning'; readonly text: string };
@@ -267,11 +275,21 @@ export function RevisionReview({ revisionId, copy }: RevisionReviewProps) {
           categories={categories}
           locale={locale}
           copy={copy}
-          hasRewards={revision.rewards.length > 0}
+          drawnBeside={revision.rewards.length > 0 || revision.items.length > 0 || revision.shippingZones !== null}
         />
         {revision.rewards.length > 0 && (
           <Suspense fallback={<Skeleton height="6rem" className="mt-8" />}>
             <RevisionRewards rewards={revision.rewards} locale={locale} copy={copy} />
+          </Suspense>
+        )}
+        {revision.items.length > 0 && (
+          <Suspense fallback={<Skeleton height="6rem" className="mt-8" />}>
+            <RevisionItems items={revision.items} copy={copy} />
+          </Suspense>
+        )}
+        {revision.shippingZones !== null && (
+          <Suspense fallback={<Skeleton height="6rem" className="mt-8" />}>
+            <RevisionShippingZones zones={revision.shippingZones} locale={locale} copy={copy} />
           </Suspense>
         )}
       </section>

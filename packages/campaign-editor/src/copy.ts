@@ -96,6 +96,10 @@ export interface EditorChromeCopy {
   readonly loadingTitle: string;
   /** Names the section links for assistive technology. */
   readonly sectionsLabel: string;
+  /** Below `md`: the spoken half of the button that opens the section list, before the current section's name. */
+  readonly sectionsOpen: string;
+  /** The list's close control. Icon-only, so this is its whole name. */
+  readonly sectionsClose: string;
   /** #141: the link to the campaign's dashboard, drawn once it has launched. */
   readonly dashboard: string;
   readonly tabs: Readonly<Record<EditorTabKey, string>>;
@@ -316,6 +320,8 @@ export function editorChromeCopyFrom(
     eyebrow: t('eyebrow'),
     loadingTitle: t('loadingTitle'),
     sectionsLabel: t('sectionsLabel'),
+    sectionsOpen: t('sectionsOpen'),
+    sectionsClose: t('sectionsClose'),
     dashboard: t('dashboard'),
     tabs: record(EDITOR_TAB_KEYS, (key) => t(`tabs.${key}`)),
     soon: t('soon'),
@@ -399,6 +405,11 @@ export interface BasicsValidationCopy {
   readonly titleRequired: string;
   /** Carries `{max}` and `{over}`. */
   readonly titleTooLong: string;
+  /**
+   * Shown only once the creator has left the summary empty, never on a fresh draft:
+   * `validateBasics` does not report what is merely missing, the tab does after a blur.
+   */
+  readonly summaryRequired: string;
   /** Carries `{max}` and `{over}`. */
   readonly summaryTooLong: string;
   readonly subcategoryWithoutCategory: string;
@@ -471,6 +482,7 @@ export function basicsValidationCopyFrom(t: CampaignEditorTranslator): BasicsVal
   return {
     titleRequired: t('basics.validation.titleRequired'),
     titleTooLong: template(t, 'basics.validation.titleTooLong'),
+    summaryRequired: t('basics.validation.summaryRequired'),
     summaryTooLong: template(t, 'basics.validation.summaryTooLong'),
     subcategoryWithoutCategory: t('basics.validation.subcategoryWithoutCategory'),
     currencyUnsupported: t('basics.validation.currencyUnsupported'),
@@ -575,6 +587,15 @@ export interface ItemEditorCopy {
   readonly failures: SaveFailureCopy;
   readonly sku: string;
   readonly skuHint: string;
+  readonly held: ItemHeldCopy;
+}
+
+/** The item drawer's words for fields whose new values wait for a moderator (#587). */
+export interface ItemHeldCopy {
+  readonly title: string;
+  readonly body: string;
+  /** Under each held field: the value shown is the proposed one. */
+  readonly field: string;
 }
 
 /** `ItemsSection` — the list the rewards are assembled from. */
@@ -599,6 +620,15 @@ export interface ItemsSectionCopy {
   readonly notInReward: string;
   /** Why that matters: backers only ever meet an item inside a reward. */
   readonly notInRewardDetail: string;
+  readonly pending: ItemPendingCopy;
+}
+
+/** What an item of a launched campaign says while its changes wait for a moderator (#587). */
+export interface ItemPendingCopy {
+  readonly changed: string;
+  readonly changedNote: string;
+  /** Carries `{name}`. Said after a save the campaign's revision holds. */
+  readonly heldAnnouncement: string;
 }
 
 /** `RewardTierEditor` — the drawer one reward is edited in. */
@@ -923,6 +953,11 @@ export function rewardsPanelCopyFrom(
       weight: tpl('rewards.items.weight'),
       notInReward: at('items.notInReward'),
       notInRewardDetail: at('items.notInRewardDetail'),
+      pending: {
+        changed: at('items.pending.changed'),
+        changedNote: at('items.pending.changedNote'),
+        heldAnnouncement: tpl('rewards.items.pending.heldAnnouncement'),
+      },
     },
     item: {
       drawer: drawer('item'),
@@ -956,6 +991,11 @@ export function rewardsPanelCopyFrom(
       failures,
       sku: at('item.sku'),
       skuHint: at('item.skuHint'),
+      held: {
+        title: at('item.held.title'),
+        body: at('item.held.body'),
+        field: at('item.held.field'),
+      },
     },
     tier: {
       drawer: drawer('tier'),
@@ -1433,8 +1473,12 @@ export interface StoryPanelCopy {
   /** Carries `{min}`. */
   readonly risksHint: string;
   readonly risksPlaceholder: string;
+  /** Carries `{min}` and `{remaining}`. Under the field, once the creator has left it short. */
+  readonly risksTooShort: string;
   /** Carries `{count}` and `{min}`. */
   readonly charactersNeeded: string;
+  /** Carries `{min}` and `{remaining}`. Under the story, once the creator has left it short. */
+  readonly storyTooShort: string;
   readonly blocks: StoryBlocksCopy;
   readonly history: StoryHistoryCopy;
   readonly toolbar: StoryToolbarCopy;
@@ -1584,7 +1628,9 @@ export function storyPanelCopyFrom(
     risks: at('panel.risks'),
     risksHint: tpl('panel.risksHint'),
     risksPlaceholder: at('panel.risksPlaceholder'),
+    risksTooShort: tpl('panel.risksTooShort'),
     charactersNeeded: tpl('panel.charactersNeeded'),
+    storyTooShort: tpl('panel.storyTooShort'),
     blocks: {
       heading: at('blocks.heading'),
       add: at('blocks.add'),
@@ -1816,13 +1862,12 @@ export interface PrelaunchPanelCopy {
   readonly notSavedTitle: string;
   /** The basics tab's sentence: both autosave, and say the same thing when that fails. */
   readonly notSavedDetail: string;
-  /** Under the confirmation: what opening the page does not publish. */
-  readonly confirmDetail: string;
-  readonly notOpenHeading: string;
-  readonly notOpenBody: string;
-  readonly notOpenIrreversible: string;
-  readonly openFailedTitle: string;
-  readonly open: string;
+  /**
+   * Before approval: the page goes public only once moderation has approved the campaign, so a
+   * creator cannot publish an unreviewed campaign by opening it.
+   */
+  readonly pendingHeading: string;
+  readonly pendingBody: string;
   readonly openHeading: string;
   readonly followersFailed: string;
   /**
@@ -1848,11 +1893,6 @@ export interface PrelaunchPanelCopy {
   readonly summary: string;
   /** Carries `{max}`. */
   readonly summaryHint: string;
-  readonly confirmTitle: string;
-  readonly confirmBody: string;
-  readonly cancel: string;
-  readonly opening: string;
-  readonly confirmOpen: string;
   readonly characterCount: CharacterCountCopy;
   readonly locale: Locale;
 }
@@ -1869,12 +1909,8 @@ export function prelaunchPanelCopyFrom(
     loadingLabel: at('loadingLabel'),
     notSavedTitle: at('notSavedTitle'),
     notSavedDetail: t('basics.notSavedDetail'),
-    confirmDetail: at('confirmDetail'),
-    notOpenHeading: at('notOpenHeading'),
-    notOpenBody: at('notOpenBody'),
-    notOpenIrreversible: at('notOpenIrreversible'),
-    openFailedTitle: at('openFailedTitle'),
-    open: at('open'),
+    pendingHeading: at('pendingHeading'),
+    pendingBody: at('pendingBody'),
     openHeading: at('openHeading'),
     followersFailed: at('followersFailed'),
     waiting: t.raw('prelaunch.waiting') as AppPluralForms,
@@ -1891,11 +1927,6 @@ export function prelaunchPanelCopyFrom(
     titleHint: tpl('titleHint'),
     summary: at('summary'),
     summaryHint: tpl('summaryHint'),
-    confirmTitle: at('confirmTitle'),
-    confirmBody: at('confirmBody'),
-    cancel: at('cancel'),
-    opening: at('opening'),
-    confirmOpen: at('confirmOpen'),
     characterCount: counter,
     locale,
   };
@@ -1977,6 +2008,12 @@ export interface ReviewPanelCopy {
    * opens on its own (#552). Carries `{date}`.
    */
   readonly opensAt: string;
+  /**
+   * Why an approved campaign has no launch time any more: the clock refused to open it at that
+   * time because the plan did not cover it, and cleared it (#589). `body` carries `{date}`, the
+   * moment of the refusal.
+   */
+  readonly scheduledLaunchRefused: { readonly title: string; readonly body: string };
   /** The language whose plural rule picks the outstanding-items form. */
   readonly locale: Locale;
 }
@@ -2043,6 +2080,10 @@ export function reviewPanelCopyFrom(
     unreachable: at('unreachable'),
     stateNote: record(REVIEW_NOTED_STATES, (state) => at(`stateNote.${state}`)),
     opensAt: tpl('opensAt'),
+    scheduledLaunchRefused: {
+      title: at('scheduledLaunchRefused.title'),
+      body: tpl('scheduledLaunchRefused.body'),
+    },
     locale,
   };
 }

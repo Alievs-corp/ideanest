@@ -139,20 +139,20 @@ export function AdminNav({ copy, layout = 'rail' }: AdminNavProps) {
           Nothing below the breakpoint: a phone reaches the same entries through the menu
           button in the bar — see "Two layouts, one list" above.
         */
-        'hidden lg:sticky lg:top-8 lg:block',
+        'hidden xl:sticky xl:top-8 xl:block',
         /*
           The rail is its own scroll container — see the docblock. The offset is the `top-8`
           above it (2rem) plus 2rem, so the last entry does not sit flush against the bottom
           edge of the viewport.
         */
-        'lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto lg:overscroll-contain',
+        'xl:max-h-[calc(100dvh-4rem)] xl:overflow-y-auto xl:overscroll-contain',
         /*
           Room for the focus ring, which the scroll container would otherwise clip. The links
           take `outline-2 outline-offset-2` — four pixels outside their own box — and
           docs/ui-kit.md §9.3 requires it visible on every interactive element. The negative
           margin gives the padding back, so nothing moves.
         */
-        'lg:-mx-1 lg:px-1',
+        'xl:-mx-1 xl:px-1',
       ].join(' ')}
     >
       {/*
@@ -194,7 +194,7 @@ function NavLink({
       href={link}
       aria-current={current ? 'page' : undefined}
       className={[
-        'block rounded-lg border-l-2 px-3 py-2 text-sm transition-colors duration-150 ease-in-out lg:text-[15px]',
+        'block rounded-lg border-l-2 px-3 py-2 text-sm transition-colors duration-150 ease-in-out xl:text-[15px]',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
         current
           ? 'border-[var(--lime-500)] bg-surface-2 text-fg'

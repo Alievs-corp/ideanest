@@ -1154,6 +1154,32 @@ campaign's name comes from the cached list or at most three list pages; a pledge
 cannot be named still renders. `pledges/[id]/address` is a web placeholder until its own pull
 request.
 
+## Audience figures (#636, epic #632)
+
+The app counts its readers for the creator's dashboard with the service's cookieless beacon,
+`POST /v1/audience/events` (`docs/architecture.md` CD-03a). `src/features/audience/` sends it:
+
+- **VISIT** on launch and on each return from the background (`watchVisits`, started by the root
+  layout). Coming back from `inactive` — the app switcher, the control centre — is not a visit.
+- **VIEW** when a campaign page shows a campaign (`useAudienceView` in `CampaignScreen`), once per
+  campaign; a page that is not public is never counted.
+- **CLICK** when a campaign card is pressed, with the list it is in: `HOME`, `DISCOVER`, `SEARCH`,
+  `CATEGORY`, `COLLECTION` through `CampaignColumn`/`CampaignList`'s `surface`, `PROFILE` and
+  `SAVED` from their own lists, `OTHER` otherwise.
+
+`platform` is `IOS` or `ANDROID` from `Platform.OS`; a web build sends nothing. The send is plain
+`fetch`, not awaited and never retried, without the session, and swallows every failure (a 429
+included): a figure for the creator never costs the reader a frame. The phone's own `User-Agent`
+goes with it, which the service hashes with the address and does not store. In jest the send is a
+spy for every suite (`jest.setup.ts`); `send.test.ts` tests the real one.
+
+The cards (`ProjectCard`, the profile's `ProfileCampaignCard`) draw the all-time `viewCount` as an
+eye chip at the bottom-left of the cover, compact and light on the black/64 scrim, absent at zero,
+and read the full count in the card's accessible value (`common.card.views`). The dashboard's
+Charts tab draws the campaign's `GET /v1/projects/{id}/audience` under a Daily / Weekly / Monthly /
+Yearly filter (`features/dashboard/charts/audience-panel.tsx`), cached per period under the
+unpersisted `dashboard` root.
+
 ## Static and legal pages (#164)
 
 `about`, `how-it-works` and `trust-safety` are the web's three `(site)` pages, block for block
@@ -1284,7 +1310,11 @@ package's `offersSubmit` / `offersLaunch`, shared with the web; whether the camp
 submitted is the server's answer alone. A blocked "Submit for review" is the kit pill's
 `softDisabled` — announced disabled at 40%, but a press moves screen-reader focus to the
 required list. `SUBSCRIPTION_REQUIRED` opens `pricing?from=submit&project={id}`; a plan limit
-offers the plans beside the refusal. Launch is confirmed inline, with focus on "Launch now". The
+offers the plans beside the refusal. Launch is confirmed inline, with focus on "Launch now"; a
+launch refused for the plan (no plan, or a bound) says the plan does not cover the campaign and
+offers the plans without leaving the tab, and `scheduledLaunchRefusedAt` draws why a launch time
+the clock refused is gone (#589). An inbox row opens its web path through the link parser
+(`lib/links.ts` `inboxRouteOf`), so a refused launch's `/projects/{id}/edit/review` is the editor. The
 completeness bar is the one motion the editor allows: the kit `ProgressBar`'s `rise="progress"`
 (800ms, once), drawn at its figure under Reduce Motion, and without the funded glow at 100%.
 

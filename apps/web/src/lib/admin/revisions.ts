@@ -6,12 +6,14 @@ import { errorFrom } from '../api/problem';
  * What the review of an edit to a launched campaign asks the service — issue #560, part of
  * epic #557.
  *
- * <h2>Why these are the console's own types</h2>
+ * <h2>The queue row is the generated `RevisionQueueEntry`, narrowed</h2>
  *
- * The generated schema names the queue's row `Entry`, a name three unrelated schemas share, so
- * `RevisionQueueResponse` is typed as a list of survey answers. The row is read here as what
- * the controller sends instead, and `live` and `proposed` are the creator-side `ProjectEdit`
- * on both sides of the comparison: the same shape, so a field is compared with its own kind.
+ * The service used to name the row `Entry`, which a survey type shares, so the generated
+ * `RevisionQueueResponse` was a list of survey answers (#568). It is `RevisionQueueEntry` now;
+ * `QueuedRevision` is that shape with the fields the controller always sends made required, and
+ * the assertion below fails the typecheck if the two drift apart. `live` and `proposed` are the
+ * creator-side `ProjectEdit` on both sides of the comparison: the same shape, so a field is
+ * compared with its own kind.
  *
  * <h2>The decisions are not optimistic</h2>
  *
@@ -34,6 +36,8 @@ export const REVISION_FIELDS = [
   'risks',
   'countries',
   'rewards',
+  'items',
+  'shippingZones',
 ] as const;
 
 export type RevisionField = (typeof REVISION_FIELDS)[number];
@@ -52,6 +56,13 @@ export interface QueuedRevision {
   readonly changedFields: readonly string[];
   readonly submittedAt: string;
 }
+
+type WireQueuedRevision = components['schemas']['RevisionQueueEntry'];
+
+/** Fails the typecheck if a field of `QueuedRevision` is not in the generated row, or vice versa. */
+type SameKeys<A, B> = [keyof A] extends [keyof B] ? ([keyof B] extends [keyof A] ? true : false) : false;
+const queuedRevisionMatchesTheSchema: SameKeys<QueuedRevision, WireQueuedRevision> = true;
+void queuedRevisionMatchesTheSchema;
 
 export interface RevisionQueue {
   readonly revisions: readonly QueuedRevision[];
@@ -113,6 +124,43 @@ export interface RevisionReward {
   readonly proposed?: RevisionRewardWriting | null;
 }
 
+/**
+ * An item's writing as the review sends it (#587). The console's own type because the service
+ * writes every field, a null included, and the generated schema has no null.
+ */
+export interface RevisionItemWriting {
+  readonly name?: string | null;
+  readonly description?: string | null;
+  readonly imageUrl?: string | null;
+  /** Null for a digital item, and for a physical one nobody has weighed. */
+  readonly weightGrams?: number | null;
+  readonly isDigital?: boolean | null;
+}
+
+/** The names the service gives a changed item's fields: the creator's item response names. */
+export type RevisionItemField = 'name' | 'description' | 'imageUrl' | 'weightGrams' | 'isDigital';
+
+/** An item an approved tier contains that the revision changes. */
+export interface RevisionItem {
+  readonly id: string;
+  readonly changedFields: readonly string[];
+  readonly live?: RevisionItemWriting | null;
+  readonly proposed?: RevisionItemWriting | null;
+}
+
+/** One shipping region. A region the revision adds already carries the identifier it will be created with. */
+export interface RevisionZone {
+  readonly id: string;
+  readonly name?: string | null;
+  readonly countryCodes?: readonly string[] | null;
+}
+
+/** The campaign's shipping regions, and the whole set the revision proposes instead. */
+export interface RevisionZones {
+  readonly live: readonly RevisionZone[];
+  readonly proposed: readonly RevisionZone[];
+}
+
 export interface RevisionReview {
   readonly id: string;
   readonly projectId: string;
@@ -127,6 +175,10 @@ export interface RevisionReview {
   readonly proposed: ProjectEdit;
   /** Empty when the revision touches no reward tier. */
   readonly rewards: readonly RevisionReward[];
+  /** Empty when the revision touches no item an approved tier contains. */
+  readonly items: readonly RevisionItem[];
+  /** Null when the revision leaves the shipping regions alone. */
+  readonly shippingZones: RevisionZones | null;
 }
 
 export interface RevisionDecision {
@@ -154,19 +206,31 @@ export async function listRevisionQueue(options: {
   });
   if (!response.ok) throw await errorFrom(response);
 
-  const body = (await response.json()) as { revisions?: readonly QueuedRevision[] | null };
-  return { revisions: body.revisions ?? [] };
+  const body = (await response.json()) as { revisions?: readonly WireQueuedRevision[] | null };
+  return { revisions: (body.revisions ?? []) as readonly QueuedRevision[] };
 }
 
 export async function readRevisionReview(id: string, signal?: AbortSignal): Promise<RevisionReview> {
   const response = await authorizedFetch(revisionPath(id), { signal });
   if (!response.ok) throw await errorFrom(response);
 
-  const body = (await response.json()) as Omit<RevisionReview, 'changedFields' | 'rewards'> & {
+  const body = (await response.json()) as Omit<RevisionReview, 'changedFields' | 'rewards' | 'items' | 'shippingZones'> & {
     changedFields?: readonly string[] | null;
     rewards?: readonly RevisionReward[] | null;
+    items?: readonly (Omit<RevisionItem, 'changedFields'> & { changedFields?: readonly string[] | null })[] | null;
+    shippingZones?: { live?: readonly RevisionZone[] | null; proposed?: readonly RevisionZone[] | null } | null;
   };
-  return { ...body, changedFields: body.changedFields ?? [], rewards: body.rewards ?? [] };
+
+  // A revision saved before #587 holds neither, and the review then has no such fields at all:
+  // it reads as an edit that leaves the items and the regions alone.
+  const zones = body.shippingZones;
+  return {
+    ...body,
+    changedFields: body.changedFields ?? [],
+    rewards: body.rewards ?? [],
+    items: (body.items ?? []).map((item) => ({ ...item, changedFields: item.changedFields ?? [] })),
+    shippingZones: zones == null ? null : { live: zones.live ?? [], proposed: zones.proposed ?? [] },
+  };
 }
 
 /** An absent note is absent from the body, not an empty string. */

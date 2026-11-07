@@ -498,7 +498,7 @@ and each entry needs a translation per supported locale.
 
 | Filter | Values |
 |---|---|
-| Status | Upcoming, live, extended, successful (IDN-EXT-01, #37) |
+| Status | Live, extended, successful (IDN-EXT-01, #37; *upcoming* withdrawn) |
 | Category | 15 primary plus subcategories, each with a live count |
 | Location | Country, city, or proximity |
 | Goal amount | Bands plus a custom range |
@@ -547,10 +547,17 @@ and each entry needs a translation per supported locale.
 > `EXTENDED`), *extended* (`EXTENDED`, also inside *live*) and *successful*; *late pledge*
 > and *unsuccessful* are no longer filter values. `LATE_PLEDGE` and `COLLECTING` are gone
 > (#45, V106): a campaign left in either was moved to `FULFILLING`, which badges as *successful*. A card carries `closingSoon` and `extended` beside its badge;
-> an extended card counts `daysLeft` to the extension's end. `UNSUCCESSFUL` stays in
+> an extended card counts `daysLeft` to the extension's end, and since #618 the campaign page and the creator dashboard do too: both responses carry `extendedUntil` beside the first `deadline`, and the countdown and the trust block's date use it. `UNSUCCESSFUL` stays in
 > `DiscoveryStatus.PUBLIC_STATES` — its page and rewards resolve — and is not in
 > `LISTED_STATES`, which every feed, search, suggestion, facet, explanation and collection
 > read applies. The description of the five words above is the pre-IDN-EXT-01 design.
+>
+> **Only moderated campaigns are public (#626).** `PRELAUNCH` was reached from `DRAFT`
+> without moderation, so it is in neither `PUBLIC_STATES` nor `LISTED_STATES`: no feed,
+> search, suggestion, facet, collection, sitemap, campaign page or profile list shows it.
+> *Upcoming*, which named `PRELAUNCH` alone, is no longer a filter value or a badge, and
+> `?status=upcoming` is refused like any unknown word. The pre-launch page now opens on
+> approval — see §6.1.
 >
 > **Bands are closed below and open above** — `[lower, upper)` — so that the five
 > partition the line rather than overlapping at four boundaries. A campaign at
@@ -586,8 +593,11 @@ and each entry needs a translation per supported locale.
 > categories, collections) and strips from every other. **Those pages left the
 > shared cache** (`private, no-cache`), because they now differ by reader; a
 > campaign page, a profile and the documents did not, so a link to a campaign
-> works whatever country is chosen. The app keeps the choice on the device and
-> starts from the phone's region.
+> works whatever country is chosen. The page hands the browser the market it was
+> rendered for (`MarketSeed`), for the header's country control and the browser's
+> own list reads; where a reader is was once mirrored into a session cookie and no
+> longer is (#641), so the only market cookie is the reader's own choice. The app
+> keeps the choice on the device and starts from the phone's region.
 >
 > **Location is one dimension with three controls (#47).** `country` is ISO
 > 3166-1 alpha-2; `city` is a `locations.slug`, folded by §11.3 so `Bakı`,
@@ -1254,9 +1264,10 @@ moderation outcome, launch (scheduled or immediate).
 
 | # | Capability |
 |---|---|
-| CD-01 | Live totals: raised, backers, completion, time remaining. Built (#93). Read from `projects` at the moment of the request, which is why it is not folded into CD-02's endpoint — that one is as fresh as #95's last rollup, and a screen mixing them would show a total from this second beside a chart that stopped at midnight. **"Time remaining" crosses as `deadline` and `serverTime` rather than as a countdown**: a remainder computed on the server is wrong the moment it is sent and grows more wrong for as long as the page stays open, so the client measures its own clock's offset once and counts down against it. Completion is rounded **down** and is not capped — a campaign at 99.99% has not reached its goal, and one at 240% should say so |
+| CD-01 | Live totals: raised, backers, completion, time remaining. Built (#93). Read from `projects` at the moment of the request, which is why it is not folded into CD-02's endpoint — that one is as fresh as #95's last rollup, and a screen mixing them would show a total from this second beside a chart that stopped at midnight. **"Time remaining" crosses as `deadline` and `serverTime` rather than as a countdown**: a remainder computed on the server is wrong the moment it is sent and grows more wrong for as long as the page stays open, so the client measures its own clock's offset once and counts down against it. Completion is rounded **down** and is not capped — a campaign at 99.99% has not reached its goal, and one at 240% should say so. **Once a campaign is extended it also carries `extendedUntil`** (#618): `deadline` stays the first deadline, because the extension window and its D+60 limit are measured from it, and the clock counts to `extendedUntil` |
 | CD-02 | **Pledge trend over time.** Built (#96). Read from #95's daily rollup through `GET /analytics`, so it is as fresh as the last aggregation pass and never a scan of `pledges` — which is what stops the chart from getting slower as the campaign succeeds. The line is the **running total**, not the day's takings: a campaign's daily figures are famously front-and-back loaded and mostly noise, and the shape that answers "are we going to make it" is the cumulative one. The daily figures are in a table under the chart. **The series is sparse** — a day with no pledges has no row at all — so points are placed by which day they are rather than by position, and a quiet fortnight is a gap rather than a compressed stretch. `computedAt` is printed beside it, because a stalled aggregator and a quiet week draw the same flat line |
 | CD-03 | **Referrer attribution** — top sources with pledge count, value, and share. Built (#94, §7.2). The rule is **last non-direct touch inside a thirty-day window**: a visit carrying a source is recorded against an opaque visitor token, and a confirmed pledge belongs to the most recent such visit that was not direct, ignoring any past its window and any recorded after the pledge. A pledge with none is reported as `DIRECT` rather than left out, so a share is a share of the campaign and not of the part that could be explained. Nothing in the report names a backer: `referral_attributions` has nowhere to put one |
+| CD-03a | **Audience: views and clicks.** Built (#633, epic #632). `GET /v1/projects/{id}/audience?period=day\|week\|month\|year`, `VIEW_FINANCES`, `private, no-store`: how many people opened the campaign's page and clicked its card, by Baku hour, day or month (every bucket present, zeros included), by country, by the surface the card was on, and by platform, beside the all-time count on its card (`projects.view_count`). **A person is counted once a day**: the visitor key is `HMAC-SHA256(day salt, address "|" user agent)` with a random salt per Baku day that `audience-cleanup` deletes once the day and one more have passed, so there is no cookie, no stored address and no key that survives its day, and a multi-day figure is daily people summed — the screens say so. Country is Cloudflare's `CF-IPCountry`, else DB-IP's free country database (optional at run time), else unknown (`ZZ`). Bots by user agent and campaigns outside the public states are not counted. On the web (#634) the Charts tab draws it under the funding charts with a Daily / Weekly / Monthly / Yearly control; the site sends `VISIT` once per address (never the console, a dashboard or the editor), `VIEW` once per campaign page and `CLICK` from a card link with its listing as the surface, by `sendBeacon` through the `/v1` rewrite and never under `navigator.webdriver`; both cards show the all-time count as an eye chip on the cover, hidden at zero |
 | CD-04 | Device split per source |
 | CD-05 | Visitor-to-backer conversion |
 | CD-06 | Video engagement |
@@ -1708,6 +1719,7 @@ Preferences are per category and per channel, with a digest option.
 | AD-11 | Fee configuration | Platform and processing rates, exceptions. **Built (#311)** at `/admin/fees`. There is no edit: a change closes the schedule in force and opens a new one, so a payout calculated last month still prices against last month's terms. **The creator subscription catalogue is here too**, at `/admin/plans` — §5.6's plans, and the payments waiting to be recorded against them. **So is what those plans brought in**, at `/admin/revenue` (#23): received, reversed and kept per currency for a period in Baku's calendar, broken down by plan and by payment method, with the payments behind the figures and the same list as a CSV download. Filed under this module rather than a seventeenth row: a fee comes out of a backer's pledge and a plan comes out of a creator's pocket, which is one authority over two subjects. Unlike a fee schedule, a plan **is** edited in place, because what a subscriber was charged is written on their own subscription |
 | AD-12 | Feature flags | Gradual rollout, experiments. **Rollout is built (#312)** at `/admin/flags`; experiments are not, because a variant needs a metric to judge it by and nothing measures one. **Clients read flags at `GET /v1/feature-flags`** — public, `{ flags: { key: boolean } }` for the caller (a visitor gets the rollout-independent answer: on only at a hundred percent), `private, max-age` for the service's ten-second snapshot and `Vary: Authorization`; `apps/web/src/lib/feature-flags.ts` reads it and fails closed. **No feature reads a flag yet**, and the console says so: a switch changes the answer and nothing else until one does. A save carries the `version` it was read at (V110): none creates and is refused for a name that exists (409 `FEATURE_FLAG_EXISTS`), a stale one is refused (409 `FEATURE_FLAG_CHANGED`), an edit of a missing flag is 404 `FEATURE_FLAG_NOT_FOUND`, and a name V50's `CHECK` refuses is 400 `FEATURE_FLAG_KEY_INVALID`. The rollout bucket is the first four bytes of SHA-256 over `key:accountId`, so two flags' cohorts are independent. The audit row records the flag before and after and the accounts added and removed |
 | AD-13 | Analytics | Volume, success rate, average pledge, cohorts, funnels. **The first three are built (#313)** at `/admin/analytics`. **Every pledge figure counts one population**: pledges collected in the window (`collected_at`, in Baku's calendar) that are still `COLLECTED` or `FULFILLED`, net of any partial refund that has settled against them — a refunded or charged-back pledge is in none of them, and the screen says so. Volume, count, average, backers and the daily series are read from `pledges` in one snapshot; they used to come from V27's rollups, which never forget a refund, beside a backer count keyed on when the checkout began. The daily series has a point for every day of the window. Outcomes count campaigns **decided** in the window (the transition to `SUCCESSFUL` or `UNSUCCESSFUL`), not deadlines, because a decision comes a closing window after the deadline. "Running now" is `LIVE`, `CLOSING_WINDOW` and `EXTENDED`, the front page's set, and is drawn apart from the window's figures. Plan revenue (net of reversals, from `subscription_payments`) sits beside them (#478). Each read is audited as `analytics.read`. The reporting zone, the rollup zone and the front page's zone must be the same or the service does not start. Cohorts and funnels are not built, and the screen says so |
+| AD-13a | Audience | Site visitors and page views, campaign views and card clicks, by country and platform, and the twenty most-viewed campaigns, over `period=day\|week\|month\|year` (#633). The API is built: `GET /v1/admin/audience` and `GET /v1/admin/audience/projects/{id}`, gated by **`VIEW_AUDIENCE`** — its own capability rather than `VIEW_FINANCE`, because these are counts of readers, not money, and a curator arranging the front page needs them; held by default by `SUPER_ADMIN`, `FINANCE` and `CURATOR` and adjustable per role (V114). Every read is audited as `analytics.read`. The screen is `/admin/audience` (#635), the second screen of AD-13 in the console's Platform group: a Daily/Weekly/Monthly/Yearly control, the four totals, visitors beside page views and campaign views beside clicks per bucket, visitors by country and platform, and the twenty campaigns, each opening in place into its own series, countries, surfaces and platforms. Counting rules as CD-03a |
 | AD-04a | Compliance overrides | An exception to one compliance requirement for one account (#436), at `/v1/admin/accounts/{id}/compliance-overrides` — `GRANT_COMPLIANCE_OVERRIDE`, which only `SUPER_ADMIN` holds, and readable with `REVIEW_IDENTITY_VERIFICATION` so that the person deciding a verification can see an exception was made. **Under the account and not on a screen of its own**, because §3.1 asks that an override appear "on the account it was applied to where the next person to look at that account will see it" — a separate overrides screen would be a list nobody opens except when they are already looking for one. `DELETE` revokes and never deletes: an override withdrawn after somebody used it is a different fact from one that was never granted |
 | AD-04b | Legal subject | Who a creator legally is (#430), at `GET /v1/admin/accounts/{id}/legal-subject` — `REVIEW_IDENTITY_VERIFICATION`, audited, **read-only**. Under the account beside AD-04a for AD-04a's reason, and read-only for one of its own: a member of staff correcting somebody's legal name would be the platform asserting who a person is on their behalf, and #429's whole name match assumes the name came from the person it names. It draws the live subject **and every campaign frozen against it**, because the divergence is what the screen exists for — a funded campaign submitted by an individual whose account now says company is not an error, and it is what a finance operator has to see before approving a payout. **The console's account page draws it** in a "VÖEN and business card" panel beside the card from `GET /v1/admin/accounts/{id}/payout-destination` (`VERIFY_PAYOUT_DESTINATION`), each half read on its own so a moderator holding one capability sees that half and is told who sees the other. The creator's name in the submission queue and the campaign directory links to that page, so whether somebody has given a VÖEN and attached a card is one click from the campaign being decided |
 | AD-14 | Audit log | Immutable record of privileged actions. The record is built (#107, §7.2) and **the screen that reads it is built (#314)** at `/admin/audit`. **Ordered by `occurred_at` since #404**, not by the primary key: the two columns are written by two different clocks — the identifier is minted in the application, `occurred_at` is `DEFAULT now()` — so the page headed "newest first" opened on last month while today's rows sat at position fifteen. The cursor carries the instant and the identifier that breaks its tie, and is sent only when another row exists. **An actor combines with an entity kind** ("what did this person do to campaigns"); it used to be dropped whenever a kind was set. **`hideReads=true` leaves out the routine screen reads** — the trail's own reads, the front page, the figure screens, the payment log, the ledger, the risk queue and account searches — and the screen asks for it by default, because otherwise its first page is the reader's own reads; opening one person's private record (an identity document, a signed agreement, a legal subject, a payout destination, a bank account) is never hidden. Every kind the service writes is a filter chip, and every action has a label in all four languages (a web test reads `AuditAction.java`). The account search is drawn only for `ADMINISTER_ACCOUNTS`; any reader can narrow to a row's actor from the row |
@@ -2222,8 +2234,10 @@ the 14-day hold, the automatic payout on day 30 + 14, and disputes.
 > **Built (#44), the creator's controls.** The dashboard overview offers **Withdraw** at 80%
 > or more (live, closing window, extended or successful) and **Extend** while the campaign takes
 > pledges and has raised 50%, to a day after the deadline and no later than D+60, keeping the
-> deadline's time of day. Each asks before acting and states what it closes or promises; the
-> service applies the window and the thresholds and its `meta.reason` is worded, never guessed.
+> deadline's time of day. Extend is offered only inside the window the service accepts it in,
+> D-7 to D+7, judged on the service's clock (#619); before D-7 the card names the day it opens
+> instead. Each asks before acting and states what it closes or promises; the service applies
+> the window and the thresholds and its `meta.reason` is worded, never guessed.
 
 **Everyone is refunded** when: D+8 passes unextended below 80%; an extension
 ends below 80%; a moderator suspends the campaign; the creator cancels it. The refund is the
@@ -2477,6 +2491,16 @@ individual agreement can differ without a deployment.
 > replaced video is released, because neither can happen while the campaign is not
 > changing.
 >
+> The creator is told of the decision (#568): `project.revision_decided` becomes
+> `CAMPAIGN_EDIT_APPROVED` or `CAMPAIGN_EDIT_REJECTED` on email, push and the inbox. A
+> refusal carries the moderator's reason and opens the editor's review tab; an approval
+> opens the public page, which shows the changes. An upload a revision stops naming is
+> deleted once nothing else shows it - replaced inside the draft, or left in a revision
+> that was refused or thrown away - and the reward module's `isMediaShownElsewhere`
+> counts what an open revision proposes as a use, so deleting a draft tier cannot remove
+> a picture another tier's waiting edit names. The queue row is `RevisionQueueEntry`
+> in the contract, rather than `Entry`, which a survey type shares.
+>
 > The console screens are `/admin/moderation/revisions` (the queue, beside the submission
 > queue) and `/admin/moderation/revisions/{id}` (#560): the live campaign beside the
 > proposal for exactly the fields the service names as changed, with a word diff for the
@@ -2554,8 +2578,9 @@ individual agreement can differ without a deployment.
 > and `proposed`). Approval applies both before the tiers, so a tier rate for a region the
 > revision deletes is dropped; nothing about either is a row until then, so refusing has nothing
 > to delete. A region proposed in a revision can be priced once it has been approved. The web
-> and mobile editors and the admin review page do not yet draw any of this: they show the two
-> new changed fields by their raw names.
+> and mobile editors mark an item whose changes wait, on its card and on each held field, and
+> say so after a save the service held (#589); neither has a shipping-region editor, so regions
+> are only named in the revision notice. The admin review page draws both (below).
 >
 > The review page draws `rewards` under the campaign's fields (#569): one card per tier
 > with a tag, an icon and a word for each of created, deleted, changed and reordered, its
@@ -2564,6 +2589,16 @@ individual agreement can differ without a deployment.
 > service names (a word diff for the title and description, pictures, delivery, limit,
 > shipping type, flags, availability, composition and country and zone rates). The cards
 > are loaded only when an edit touches a tier, so the route's First Load JS is unchanged.
+>
+> Its `items` and `shippingZones` are drawn after the tiers (#589), from a chunk of their
+> own that is loaded only when an edit touches either. An item is a card named by its live
+> name, with a before and after for each field the service names: a word diff for the name
+> and description, the picture beside its address (drawn only for an `https:` one), weight
+> and digital delivery. A zone is matched with its live self by identifier, so a renamed
+> zone is one card: a new or a removed zone is shown whole with its countries, a changed one
+> as a before and after of its name and of its countries by name, each with a tag, an icon
+> and a word, and a zone the proposed set leaves as it is is not drawn. The queue and the
+> review name both fields in words.
 >
 > **A refused edit is `409`, not `400`.** `PROJECT_FIELD_LOCKED` and
 > `REWARD_FIELD_LOCKED`, each with the field and the campaign's state in `meta`. A
@@ -2684,7 +2719,7 @@ the first moment it stops being private.
 
 | | |
 |---|---|
-| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator, who is told (`SCHEDULED_LAUNCH_REFUSED`, from `project.scheduled_launch_refused`: renew or upgrade the plan, or lower the goal, then set a new launch time or launch); the refusal is audited as `project.scheduled_launch_refused` under the system actor, with the bound in the detail |
+| Enforced in | `ProjectTransitionService.submit`, through `PublishingGate`, and again at `approve` and at the creator's `launch` (#587): nothing is locked between submission and launch, so the goal can be raised in review. The scheduled launch asks too, and a campaign over its plan at its launch time is not opened: its launch time is cleared and it waits in `APPROVED` for its creator, who is told (`SCHEDULED_LAUNCH_REFUSED`, from `project.scheduled_launch_refused`: renew or upgrade the plan, or lower the goal, then set a new launch time or launch); the refusal is audited as `project.scheduled_launch_refused` under the system actor, with the bound in the detail. The notification opens the campaign's editor at its review tab (`/projects/{id}/edit/review`, `NotificationFacts.appPathFor` and the inbox's `hrefOf`; the app reads it as `/campaigns/{id}/edit/review`), not its public page, which an approved campaign does not have; and until a launch time is set again or the campaign opens, the creator's `ProjectEdit` carries `scheduledLaunchRefusedAt`, the moment of that audit row (read from it, not stored twice), so the review tab says why the launch time is gone and links to the plans. A Launch press refused with `SUBSCRIPTION_REQUIRED` or `PLAN_LIMIT_EXCEEDED` says the plan does not cover the campaign beside the same link, and stays on the tab: unlike a refused submission it is not sent to the pricing page (#589) |
 | Contract | `shared.access.PublishingEntitlement` → `PublishingAllowance` |
 | Refusals | `SUBSCRIPTION_REQUIRED` (403), `PLAN_LIMIT_EXCEEDED` (403) |
 | Exempt | A creator holding `SUPER_ADMIN`, granted or bootstrapped: no plan and no plan limits. Other staff roles buy a plan |
@@ -2883,9 +2918,8 @@ subscription's snapshot; the plan's name is the catalogue's, as the pricing page
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT
-    DRAFT --> PRELAUNCH
     DRAFT --> SUBMITTED
-    PRELAUNCH --> SUBMITTED
+    PRELAUNCH --> SUBMITTED: legacy rows only, #626
     SUBMITTED --> CHANGES_REQUESTED
     CHANGES_REQUESTED --> SUBMITTED
     SUBMITTED --> REJECTED
@@ -2968,7 +3002,14 @@ stateDiagram-v2
 > moderation decision the creator reads back; `audit_logs` records both
 > `project.approved` and `project.launched` under the moderator. The creator is told
 > once, by `PROJECT_APPROVED` from `project.approved` (which nothing produced before
-> #552), and never by the followers' launch notice.
+> #552), and never by the followers' launch notice. An approval that waits for its
+> launch time is `PROJECT_APPROVED_SCHEDULED` instead (#595): `project.approved`
+> carries `opensAt`, the copy says when the campaign opens rather than that it is
+> live, the email and push read it on Baku's clock, and the message opens the
+> editor's review tab like `SCHEDULED_LAUNCH_REFUSED`. The moderation queue's rows
+> carry `scheduledLaunchAt`, so the approve dialog and the notice after it name the
+> time, and the creator's own list (`GET /v1/me/projects`) carries `opensAt` on an
+> approved card, so the creator's campaign list says when it opens on the web and in the app.
 >
 > **An approval that cannot publish is refused, not taken.** A goal or a duration
 > cleared while the campaign was in review answers `409 PROJECT_NOT_LAUNCHABLE`, the
@@ -3886,6 +3927,7 @@ by a database constraint and verified by a nightly reconciliation job.
 | `media` | Metadata and transcoding state |
 | `referral_touches`, `referral_attributions` | Attribution (#94). §7.2 asked for one table called `referrers` and one table cannot hold this: a **touch** is a visit that carried a source — evidence, only for as long as the attribution window says, and most of them lead to nothing — while an **attribution** is the answer for one pledge, decided once and never moving, because a creator who read "the newsletter brought forty pledges" last week has to read the same number this week. One table would mean either deleting rows a report is made of or retaining browsing evidence for as long as financial records. The attribution therefore **copies** the source rather than joining to the touch, so the touch stays prunable. A visitor is a SHA-256 of an opaque 256-bit token the server minted — never anything derived from `users.id`, because a derivable code turns "guess a code" into "enumerate the platform's users" — and the token itself is never stored. `referral_attributions` carries **no backer identifier at all**, deliberately: a creator who could see which named person a source brought would be told what §4.5's PL-12 spends a column on not telling them. `pledge_id` is unique and has no foreign key, for V19's reason about `outbox_events.aggregate_id`: the row is written by a consumer of a published event, and the uniqueness is what makes redelivery harmless. **No retention job sweeps expired touches yet** — the index for it exists, the schedule does not |
 | `project_analytics_daily`, `project_analytics_daily_channels` | Pre-aggregated daily metrics (#95). **This row used to say `project_analytics_daily`, "pre-aggregated metrics", and did not say what a day is.** The grain is one row per campaign per **calendar day in one platform zone** — `ideanest.analytics.aggregation.zone`, `Asia/Baku` — and that is the correctness question in this feature rather than a detail. Baku is UTC+4, so a UTC day ends at four in the morning locally and every pledge taken between midnight and 04:00, the tail of the evening where a campaign's traffic actually peaks, would be reported against the previous day; the dashboard would disagree with the creator's own calendar and nothing on screen would explain why. The campaign's own zone is the honest answer and `projects` has no column for one (V6), so it would be a column nobody sets; the reader's zone is worse than either, because the same campaign would then report different numbers to a creator and to a collaborator abroad looking at the same screen. So: one zone, read by the writer and by the reader from one property, and **frozen onto every row** in `time_zone`, so that reconfiguring it is visible at the read side rather than retroactively re-labelling history that was never recomputed. Derived entirely from `referral_attributions` and therefore safe to rebuild: a day's row is a **pure function of the attributions in it**, nothing is accumulated onto what was there before, and the running totals are recomputed from the campaign's first pledge on every pass — so `(project_id, day)` as the conflict target of an upsert is the whole of the idempotency, and a re-run is a repair rather than a double count. **A day with no pledges gets no row**: absence means "nothing happened", the alternative grows the table by campaigns × days whether or not anything ever happens, and the cumulative columns are what make the gaps harmless. Late-arriving attributions — the outbox retries, and `pledged_at` is when the pledge was confirmed rather than when the event arrived — are answered by a **bounded re-rollup window**, `ideanest.analytics.aggregation.re-rollup-window`, three days, beyond which a day stops moving until somebody re-runs the range by hand. A campaign whose attributions are not all in one currency is **left out and named in the log** rather than reported as the addition of two different kinds of thing (§7.3, §21.2). The channel split is `ReferralChannel` **only**: `source`, `campaign` and `referrer_code` are free text that arrived in a URL, so at a daily grain they are an unbounded number of rows per campaign per day, and the full breakdown stays in `GET /referrers`, which folds it at read time. `computed_at` is returned by the read side because it is the only thing that distinguishes a quiet week from an aggregator that stopped on Tuesday |
+| `audience_day_salts`, `audience_seen`, `audience_hourly` | Audience figures (#633, V124). `audience_hourly` is the kept aggregate: counts per Baku hour, campaign (`NULL` for the site), country, platform and card surface, with no identifier of any kind. `audience_seen` holds one first-of-the-day marker per visitor, kind and campaign, and an `INSERT ... ON CONFLICT DO NOTHING` that inserts one is what makes an event a person's first; `audience_day_salts` holds the day's random HMAC key. Both are deleted by `audience-cleanup` once older than yesterday, which is what makes a visitor key unrecoverable. `projects.view_count` (V125) is the running total of first views, incremented in the same transaction, and V125 stops it from moving `projects.updated_at` |
 | `backer_segments` | §4.7's CD-10 (#97): a named filter over a campaign's backers. **It stores the question and never the answer.** One row per saved filter, holding four axes — `states`, `reward_tier_ids`, `countries`, `term` — and no backer identifier at all; membership is re-evaluated against `pledges` on every read. A stored membership list was the obvious alternative and is wrong twice over: it is out of date the moment somebody pledges, which nobody notices until a bulk message reaches the wrong set, and it is personal data with a second retention rule in a table §17.4 has no mechanism to reach. **Columns rather than one `jsonb` filter**, so the database can say what a filter *is*: `states` is checked against the five states that are a backing, `countries` is checked element-wise against ISO 3166-1 alpha-2, and a filter that will not parse cannot be stored. The cost is a migration when the report gains an axis, which is the right cost — a new axis is a change to the screen and to the API contract, so it was never free. **NULL means "any", not "none"**, and an empty array is refused so that one fact has one representation. Names are unique per campaign, folded and trimmed: "Germany" and "germany " are the same segment named twice, and the second is somebody who forgot they made the first. The segment belongs to the campaign rather than to the person who saved it — a private filter would mean a collaborator messaging a segment nobody else can see — and `created_by` is for the support conversation that starts "who set this up" |
 | `content_reports` | Trust and safety (#102). **This row used to say `moderation_cases`, `reports`, and #102 renamed the second and did not build the first.** "Reports" already means something else three times over in this specification — CD-10's and PM-17's backer report, and §3.1's "view the backer report" — none of which is a moderation object, so a table called `reports` beside a backer report yet to be built is a table the first support query gets wrong. One row per complaint: what was reported as a `target_type`/`target_id` pair with **no foreign key**, for V19's and V21's reason about `aggregate_id` and `entity_id` — it names `projects` and `users` today and `comments` and `project_updates` when §4.9 exists, no single reference can point at four tables, and the consequence is the right one here: a report outlives what it was about, so a campaign hard deleted during an investigation cannot take the complaint with it. The reporter is never null, which is what makes duplicate suppression expressible at all; that suppression is a **unique index partial on `state = 'OPEN'`** rather than a service check, because a read-then-write loses the race between two taps and the open-report count is the queue's only triage signal. Partial rather than absolute so that a reporter whose complaint was dismissed in March can report the same campaign again in June — dropping that while showing them a success is the worst failure a safety feature has. `OPEN → UPHELD` or `DISMISSED`, both terminal, both audited. `moderation_cases` — grouping many reports about one target into one case — is **not built**: the queue answers the same question with a count per target, and a case table that nothing opens or closes is a join nobody needs yet |
 | `update_obligations` | §5.5's monthly-update clock, one row per funded campaign (#437). **One row per campaign and not one per cycle**, which is where it departs from `deadline_notices`: that table is a set of claims because a deadline notice happens twice ever, and this one has to answer "is this creator up to date" on every render of the campaign page. So the row is the current state, and the two claims it makes idempotently -- the reminder and the escalation -- are columns holding **the due date they were made for** rather than booleans. That is what makes "escalate once rather than daily" expressible: `due_at` does not move until an update moves it, and a boolean would have needed clearing by a release that eventually forgets. `lapsed_for` is cleared by an update and `lapsed_at` is not, which is what makes the moderator's queue a queue rather than a snooze button. No column here is derived into money or campaign state, and that absence is the design |
@@ -4125,6 +4167,7 @@ load profile).
 | `reservation-cleaner` | Every minute | Release expired stock reservations: lapsed drafts, and since #171 the places a raise of a paid pledge held for a payment that did not arrive in the payment window. Since #174's review it also settles a raise whose charge settled without it (a rolling deployment's previous-release node): applied if it still can be, otherwise `UNAPPLIED` and refunded |
 | `search-indexer` | Event-driven plus nightly full | Keep the index current |
 | `analytics-aggregator` | Hourly | Populate daily rollups |
+| `audience-cleanup` | Hourly | Delete audience day salts and first-of-the-day markers older than yesterday, Asia/Baku (#633) |
 | `reminder-sender` | Every minute | Launch reminders (#39) |
 | `deadline-reminder` | Every 5 minutes | Deadline reminders: §4.10's 48- and 24-hour thresholds (#90) |
 | `survey-nudge` | Daily | Chase non-responders (#74). The `survey_nudges` row is the claim -- written in the same transaction as the outbox event, so a crash leaves somebody either unchased and unclaimed or chased and claimed. Without it the sweep's question is true for as long as they have not answered, and every pass is another email. Bounded per pass and by a configured number of attempts: one is a reminder and five is a campaign of its own |
@@ -5419,6 +5462,8 @@ GET    /v1/projects/{id}/dashboard        # CD-01 (#93); VIEW_FINANCES, no-store
 GET    /v1/projects/{id}/analytics
 GET    /v1/projects/{id}/referrers
 POST   /v1/projects/{id}/referral-visits     # public; the other half of CD-03
+GET    /v1/projects/{id}/audience            # CD-03a (#633); ?period=day|week|month|year. VIEW_FINANCES, no-store
+POST   /v1/audience/events                   # public, no token read; VISIT, VIEW or CLICK. Always 204 when well formed
 GET    /v1/projects/{id}/backers            # CD-10 (#97); VIEW_FINANCES, no-store
 GET    /v1/projects/{id}/backers/breakdown  # CD-07 and CD-08 (#96); VIEW_FINANCES
 POST   /v1/projects/{id}/backers/export     # CD-11 (#79); text/csv, audited, rate limited
@@ -5502,6 +5547,8 @@ POST   /v1/admin/reconciliation/runs     # AD-05 (#106); one now. VIEW_FINANCE; 
 GET    /v1/admin/audit                   # AD-14 (#314); the trail, newest first
                                          #   ?from=&to= an ISO instant each; from inclusive, to exclusive (#404)
 GET    /v1/admin/directory               # #402; names for identifiers a console screen holds
+GET    /v1/admin/audience                # AD-13a (#633); ?period=. VIEW_AUDIENCE, audited
+GET    /v1/admin/audience/projects/{id}  # AD-13a (#633); one campaign, any state. VIEW_AUDIENCE, audited
 GET    /v1/admin/collections
 POST   /v1/admin/collections
 GET    /v1/admin/collections/{slug}
@@ -5693,17 +5740,15 @@ GET    /v1/admin/users/{accountId}/subscriptions # one account's subscriptions (
 > reaches the client as a `500`, and one enforced in a service reaches it as a
 > `400` naming the field.
 >
-> **`/v1/projects/{id}/prelaunch` is two endpoints on one path**, and the method
-> is the whole difference. `POST` is the creator's `DRAFT → PRELAUNCH` transition
-> — not listed in this section before #39 built it, for the reason
-> `POST /v1/admin/moderation/{id}/request-changes` was not either: §6.1 has had
-> the edge since the state machine was written and no endpoint performed it. It
-> belongs to the campaign's creator alone, because opening the page publishes the
-> campaign and there is no edge back. `GET` is the page itself, public, and served
-> only for a campaign in `PRELAUNCH` or `SCHEDULED`; every other state answers
-> `404`, including a draft that exists, so the endpoint cannot be used to find out
-> what somebody is preparing. The filter chain permits the `GET` and only the
-> `GET`.
+> **`GET /v1/projects/{id}/prelaunch` is the pre-launch page**, public, and served
+> only for a campaign moderation has cleared that has not opened — `APPROVED` or
+> `SCHEDULED`; every other state answers `404`, including a draft that exists, so
+> the endpoint cannot be used to find out what somebody is preparing. The filter
+> chain permits the `GET` and only the `GET`. Until #626 a `POST` on the same path
+> was the creator's `DRAFT → PRELAUNCH` transition, which published a campaign no
+> moderator had read; the edge and the endpoint are gone, the page opens on
+> approval, and a campaign still in `PRELAUNCH` is a `404` that can still be
+> submitted.
 >
 > **That projection is not the public project page.** It carries the title,
 > summary, cover image, scheduled launch, and follower count — what a pre-launch
@@ -7784,6 +7829,11 @@ it was written in.
 > English. Georgia and Ukraine left the CIS and are deliberately not in the table.
 > `Accept-Language` is still not negotiated, for #123's reason: the country is read on the one
 > response that is `private, no-store` anyway, so no localised page varies by it.
+>
+> **The web sets no language cookie a reader did not ask for (#641).** next-intl's own
+> `NEXT_LOCALE` is turned off in `routing.ts` (`localeCookie: false`): nothing read it,
+> and the redirect above reads `ideanest_locale`, which is written only when the reader
+> picks a language or their account's language is applied.
 >
 > **What is still English, stated rather than left to be found.** Nothing. The campaign
 > editor was the last surface on this line and came off it with #78, which is the list of

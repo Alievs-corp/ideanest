@@ -12,10 +12,8 @@ import {
   Textarea,
   TextInput,
 } from '@ideanest/ui';
-import { Modal } from '@ideanest/ui/motion';
 import {
   getPrelaunchPage,
-  openPrelaunch,
   patchProject,
   type CoverImage,
   type ProjectEdit,
@@ -44,15 +42,16 @@ import type {
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralForm } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
+import { Revealed } from './Revealed';
 import { RevisionNotice } from './RevisionNotice';
 import { SaveStatus } from './SaveStatus';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
-import { useAutosave, describeFailure } from './useAutosave';
+import { useAutosave } from './useAutosave';
 import { useProjectEdit } from './useProjectEdit';
 
 /**
- * The pre-launch tab: what the pre-launch page will say, the link to share, how
- * many people are waiting, and the control that makes it public.
+ * The pre-launch tab: what the pre-launch page will say, the link to share, and
+ * how many people are waiting.
  *
  * THE CONTENT IS THE BASICS, ON PURPOSE. There is no separate pre-launch
  * headline or pre-launch summary. A dedicated pair would let a creator promise
@@ -63,11 +62,11 @@ import { useProjectEdit } from './useProjectEdit';
  * public page renders them in, so a creator can see what they are publishing
  * rather than imagining it.
  *
- * OPENING THE PAGE IS NOT AN AUTOSAVE. It publishes the campaign's title,
- * summary, and cover to anybody with the link, and docs/architecture.md §6.1 has
- * no edge back — there is no PRELAUNCH → DRAFT. A switch that did that silently
- * on the way past would be the worst control on the platform, so it is a button,
- * behind a dialog that says what cannot be undone.
+ * THE PAGE OPENS ON APPROVAL, NOT ON A BUTTON. A creator used to open it from a
+ * draft, which published a campaign nobody had reviewed. Now it is public only
+ * once moderation has approved the campaign (`APPROVED` or `SCHEDULED`); before
+ * that this tab says so, and nobody else can see the page.
+ * A `PRELAUNCH` campaign opened the old way is hidden like a draft.
  *
  * MOTION: none beyond the save indicator (docs/motion-system.md §5, "campaign
  * editor — none"). The modal's own entry is the overlay pattern of §4.11 and
@@ -76,8 +75,11 @@ import { useProjectEdit } from './useProjectEdit';
 
 const LOADING_ROWS = [0, 1, 2];
 
-/** The states in which a pre-launch page exists and collects followers. */
-const COLLECTING: readonly ProjectState[] = ['PRELAUNCH', 'SCHEDULED'];
+/** The states in which a pre-launch page is public and collects followers: cleared, not yet live. */
+const COLLECTING: readonly ProjectState[] = ['APPROVED', 'SCHEDULED'];
+
+/** Before approval: the page exists only as this tab's preview. */
+const PENDING: readonly ProjectState[] = ['DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED'];
 
 /** Maps a validation failure's `errors` map onto the fields this form has. */
 function serverErrors(failure: SaveFailure | null): BasicsErrors {
@@ -139,9 +141,6 @@ export function PrelaunchPanel({
   /** Seeded once, for the reason `BasicsPanel` gives: re-seeding eats keystrokes. */
   const [draft, setDraft] = useState<BasicsDraft | null>(null);
 
-  const [confirming, setConfirming] = useState(false);
-  const [opening, setOpening] = useState(false);
-  const [openFailure, setOpenFailure] = useState<SaveFailure | null>(null);
   const [copied, setCopied] = useState(false);
   const [followerCount, setFollowerCount] = useState<number | null>(null);
 
@@ -197,22 +196,6 @@ export function PrelaunchPanel({
     autosave.save(patch);
   }
 
-  async function open(): Promise<void> {
-    setOpening(true);
-    setOpenFailure(null);
-    try {
-      // Anything still queued goes first. Opening the page publishes whatever the
-      // server holds, and a summary typed a second ago is not there yet.
-      autosave.flush();
-      apply(await openPrelaunch(projectId));
-      setConfirming(false);
-    } catch (cause) {
-      setOpenFailure(describeFailure(cause, copy.failures));
-    } finally {
-      setOpening(false);
-    }
-  }
-
   async function copyLink(): Promise<void> {
     try {
       await navigator.clipboard.writeText(prelaunchLink(projectId));
@@ -264,9 +247,12 @@ export function PrelaunchPanel({
     );
   }
 
-  const errors: BasicsErrors = { ...validateBasics(draft, validation), ...serverErrors(autosave.failure) };
-  const canOpen = project.state === 'DRAFT';
-  const closed = !canOpen && !collecting;
+  const errors: BasicsErrors = {
+    ...validateBasics(draft, validation, { savedLaunchAt: draftFromProject(project).scheduledLaunchAt }),
+    ...serverErrors(autosave.failure),
+  };
+  const pending = PENDING.includes(project.state);
+  const closed = !pending && !collecting;
 
   return (
     <EditorShell
@@ -280,42 +266,26 @@ export function PrelaunchPanel({
     >
       <div className="flex flex-col gap-7">
         {autosave.failure !== null && (
-          <InlineAlert variant="danger" title={words.notSavedTitle}>
-            <p>{autosave.failure.message}</p>
-            <p className="mt-2 text-fg-64">{words.notSavedDetail}</p>
-            <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
-              {copy.tryAgain}
-            </Pill>
-          </InlineAlert>
+          <Revealed revealKey={autosave.failure.message}>
+            <InlineAlert variant="danger" title={words.notSavedTitle}>
+              <p>{autosave.failure.message}</p>
+              <p className="mt-2 text-fg-64">{words.notSavedDetail}</p>
+              <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
+                {copy.tryAgain}
+              </Pill>
+            </InlineAlert>
+          </Revealed>
         )}
 
         {/* ---------------------------------------------------------------
-            The state of the page itself: not opened, open, or finished.
+            The state of the page itself: waiting for approval, open, or
+            finished.
            --------------------------------------------------------------- */}
 
-        {canOpen && (
-          <section
-            aria-labelledby="prelaunch-open-heading"
-            className="rounded-lg border border-fg/8 bg-surface-2 p-5"
-          >
-            <h2 id="prelaunch-open-heading" className="text-base font-semibold text-fg">
-              {words.notOpenHeading}
-            </h2>
-            <p className="mt-2 text-[13px] text-fg-64">
-              {words.notOpenBody}
-            </p>
-            <p className="mt-2 text-[13px] text-fg-64">
-              {words.notOpenIrreversible}
-            </p>
-            {openFailure !== null && (
-              <InlineAlert variant="danger" title={words.openFailedTitle} className="mt-4">
-                {openFailure.message}
-              </InlineAlert>
-            )}
-            <Pill className="mt-4" onClick={() => setConfirming(true)}>
-              {words.open}
-            </Pill>
-          </section>
+        {pending && (
+          <InlineAlert variant="info" title={words.pendingHeading}>
+            {words.pendingBody}
+          </InlineAlert>
         )}
 
         {collecting && (
@@ -455,29 +425,6 @@ export function PrelaunchPanel({
           />
         </form>
       </div>
-
-      <Modal
-        open={confirming}
-        onOpenChange={setConfirming}
-        size="sm"
-        title={words.confirmTitle}
-        description={words.confirmBody}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Pill variant="outline" onClick={() => setConfirming(false)} disabled={opening}>
-              {words.cancel}
-            </Pill>
-            <Pill onClick={() => void open()} disabled={opening}>
-              {opening ? words.opening : words.confirmOpen}
-            </Pill>
-          </div>
-        }
-      >
-        {/* `text-on-white`, not `text-fg`: the modal is the one white surface
-            in the system (docs/ui-kit.md §7.14), and white text on it is
-            invisible. */}
-        <p className="text-sm text-on-white/64">{words.confirmDetail}</p>
-      </Modal>
     </EditorShell>
   );
 }

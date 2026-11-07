@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type Ref } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
-import { useQueryClient } from '@tanstack/react-query';
 import { fillNodes, fillPlaceholders } from '@ideanest/messages/placeholders';
 import {
   BLURB_MAX_CHARACTERS,
@@ -22,12 +21,11 @@ import {
   type BasicsPanelCopy,
   type PrelaunchPanelCopy,
 } from '@ideanest/campaign-editor/copy';
-import { queryKeys, usePrelaunchPage } from '../../../api/queries';
+import { usePrelaunchPage } from '../../../api/queries';
 import {
   Body,
   Caption,
   CharacterCount,
-  Dialog,
   Field,
   Icon,
   InlineAlert,
@@ -45,14 +43,12 @@ import { colors, font, fontSize, lineHeight, radius, spacing } from '../../../th
 import { basicsServerErrors, reseedDraft } from '../basics-panel';
 import { CoverImageField } from '../cover-image-field';
 import { useEditor } from '../editor-context';
-import { describeSaveFailure } from '../save-failure';
 import { useEditorChromeCopy, useEditorTranslators } from '../translator';
-import { useSaveFailureCopy } from '../use-describe-failure';
-import { openPrelaunch, prelaunchLink } from './api';
+import { prelaunchLink } from './api';
 
 /**
  * The Pre-launch tab — the web's `PrelaunchPanel` (#162): what the pre-launch page will say, the
- * link to share, how many people are waiting, and the control that makes it public.
+ * link to share, and how many people are waiting.
  *
  * <p><b>The content is the Basics, on purpose.</b> Title, summary and cover are the same fields as
  * the Basics tab's, on the editor's ONE shared autosave (`useEditor().autosave`): each change
@@ -60,19 +56,17 @@ import { openPrelaunch, prelaunchLink } from './api';
  * blur. A pre-launch page that promised something different from the campaign would promise it to
  * the people most likely to notice.
  *
- * <p><b>Opening the page is not an autosave.</b> It publishes the title, summary and cover to
- * anybody with the link, and there is no way back (§6.1), so it is a button behind the kit's white
- * dialog. Confirming flushes the autosave and waits for it to settle before
- * `POST /v1/projects/{id}/prelaunch`: the page publishes whatever the server holds, and a summary
- * typed a second ago must be there first. A change the server refused stops the opening with that
- * refusal rather than publishing the older text.
+ * <p><b>The page opens on approval, not on a button.</b> A creator used to open it from a draft,
+ * which published a campaign nobody had reviewed. It is public only once moderation has approved
+ * the campaign (`APPROVED` or `SCHEDULED`); before that the tab says so, and nobody else can see
+ * the page. A `PRELAUNCH` campaign opened the old way is hidden like a draft.
  *
- * <p>While the page is open (PRELAUNCH or SCHEDULED), the follower count is read from the public
+ * <p>While the page is open (APPROVED or SCHEDULED), the follower count is read from the public
  * `GET /v1/projects/{id}/prelaunch` — the app's own pre-launch screen's reader — and a count that
  * could not be read says so instead of drawing a zero nobody said. The link copies (announced) and
  * opens the share sheet.
  *
- * <p>Motion: none (the editor's budget). Offline, the fields and the buttons are disabled.
+ * <p>Motion: none (the editor's budget). Offline, the fields are disabled.
  */
 export function PrelaunchPanel() {
   const editor = useEditor();
@@ -115,14 +109,14 @@ function Loading({ label }: { readonly label: string }) {
   );
 }
 
-/** The states in which a pre-launch page exists and collects followers. */
-const COLLECTING: readonly ProjectState[] = ['PRELAUNCH', 'SCHEDULED'];
+/** The states in which a pre-launch page is public and collects followers: cleared, not yet live. */
+const COLLECTING: readonly ProjectState[] = ['APPROVED', 'SCHEDULED'];
+
+/** Before approval: the page exists only as this tab's preview. */
+const PENDING: readonly ProjectState[] = ['DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED'];
 
 /** How long "Copied" stays on the button, as on the web. */
 export const COPIED_MS = 2000;
-
-/** Opening: asked, waiting for the autosave to settle, then the request itself. */
-type Opening = 'idle' | 'settling' | 'sending';
 
 function PrelaunchForm({
   seed,
@@ -135,10 +129,7 @@ function PrelaunchForm({
 }) {
   const editor = useEditor();
   const chrome = useEditorChromeCopy();
-  const failures = useSaveFailureCopy();
-  const tPrelaunch = useT('mobile.editor.prelaunch');
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
   const [draft, setDraft] = useState<BasicsDraft>(() => draftFromProject(seed));
   /** Fields whose text is only on this phone: changed, and refused before it was sent. */
   const localOnly = useRef(new Set<BasicsField>());
@@ -152,30 +143,10 @@ function PrelaunchForm({
     seen.current = editor.revision;
     setDraft((current) => reseedDraft(latestSeed.current, current, localOnly.current));
   }, [editor.revision]);
-  const [confirming, setConfirming] = useState(false);
-  const [opening, setOpening] = useState<Opening>('idle');
-  /** Why the page did not open; `fromSave` when an autosave refusal stopped it. */
-  const [openFailure, setOpenFailure] = useState<{ message: string; fromSave: boolean } | null>(null);
-  const openButton = useRef<View>(null);
-  const openHeading = useRef<View>(null);
-  /** Set once the page has opened: the dialog then hands focus to the open card's heading. */
-  const opened = useRef(false);
-  /** Bumped by Cancel, so an answer that arrives after it is not acted on as if still awaited. */
-  const attempt = useRef(0);
-  /** The failure on screen when the opening began, which a retry clears and must not stop it. */
-  const failureAtStart = useRef<unknown>(null);
-  const returnFocus = useMemo(
-    () => ({
-      get current(): unknown {
-        return opened.current ? openHeading.current : openButton.current;
-      },
-    }),
-    [],
-  );
 
-  const { autosave, readOnly, projectId, apply } = editor;
+  const { autosave, readOnly, projectId } = editor;
   const project = editor.project ?? seed;
-  const canOpen = project.state === 'DRAFT';
+  const pending = PENDING.includes(project.state);
   const collecting = COLLECTING.includes(project.state);
 
   function change(field: BasicsField, next: BasicsDraft, sendNow = false): void {
@@ -191,84 +162,13 @@ function PrelaunchForm({
     if (sendNow) autosave.flush();
   }
 
-  function confirmOpen(): void {
-    if (readOnly || opening !== 'idle' || refusedHere) return;
-    setOpenFailure(null);
-    setOpening('settling');
-    failureAtStart.current = autosave.failure;
-    // Anything still queued goes first; the effect below waits for its answer. A change that
-    // failed earlier is sent again rather than taken as this opening's answer.
-    if (autosave.failure !== null) autosave.retry();
-    else autosave.flush();
-  }
-
-  /** Cancel, even mid-request: stop waiting. An answer that still arrives is the truth and is applied. */
-  function abandon(): void {
-    attempt.current += 1;
-    setOpening('idle');
-    setConfirming(false);
-  }
-
-  /*
-   * The opening waits for the autosave: nothing pending means the server holds what is on screen.
-   * A refused change stops it — the page would otherwise publish the text before it.
-   */
-  const { pending, failure } = autosave;
-  useEffect(() => {
-    if (opening !== 'settling') return;
-    if (failure !== null && failure !== failureAtStart.current) {
-      setOpening('idle');
-      setConfirming(false);
-      setOpenFailure({ message: failure.message, fromSave: true });
-      return;
-    }
-    if (pending) return;
-    setOpening('sending');
-    const mine = attempt.current;
-    void (async () => {
-      try {
-        const answer = await openPrelaunch(projectId);
-        // Applied even after Cancel: the server opened the page, and the screen must say so.
-        apply(answer);
-        // The public page exists now; a read made before it did must not be kept.
-        void queryClient.invalidateQueries({ queryKey: queryKeys.prelaunch(projectId) });
-        if (mine !== attempt.current) return;
-        opened.current = true;
-        announce(words.openHeading);
-        setConfirming(false);
-        setOpening('idle');
-      } catch (cause) {
-        if (mine !== attempt.current) return;
-        setConfirming(false);
-        setOpening('idle');
-        setOpenFailure({
-          fromSave: false,
-          message: describeSaveFailure(cause, failures).message,
-        });
-      }
-    })();
-  }, [opening, pending, failure, apply, projectId, queryClient, failures, words.openHeading]);
-
-  // An opening stopped by a refused change stops being the news once that change is saved.
-  useEffect(() => {
-    if (openFailure?.fromSave === true && failure === null && !pending) setOpenFailure(null);
-  }, [openFailure, failure, pending]);
-
+  const { failure } = autosave;
   const errors: BasicsErrors = {
-    ...validateBasics(draft, basics.validation),
+    ...validateBasics(draft, basics.validation, {
+      savedLaunchAt: draftFromProject(project).scheduledLaunchAt,
+    }),
     ...basicsServerErrors(failure, basics),
   };
-  /*
-   * A field the phone refused (an empty or too-long title, a summary over 135, a cover it would
-   * not take) was never sent, so the server still holds the older text, and opening publishes
-   * what the server holds. The page waits until what is on screen is what would be published.
-   */
-  const refusedHere =
-    errors.title !== undefined ||
-    errors.blurb !== undefined ||
-    errors.coverImage !== undefined ||
-    localOnly.current.size > 0;
-  const busy = opening !== 'idle';
 
   return (
     <ScrollView
@@ -303,32 +203,15 @@ function PrelaunchForm({
           />
         )}
 
-        {canOpen ? (
-          <View style={styles.card} testID="prelaunch-draft">
-            <Subheading accessibilityRole="header">{words.notOpenHeading}</Subheading>
-            <Body>{words.notOpenBody}</Body>
-            <Body>{words.notOpenIrreversible}</Body>
-            {openFailure === null ? null : (
-              <InlineAlert
-                variant="danger"
-                title={words.openFailedTitle}
-                description={openFailure.message}
-                testID="prelaunch-open-failed"
-              />
-            )}
-            {/* Full width and wrapping: "Başlanğıcdan əvvəlki səhifəni aç" does not fit one line at a large font. */}
-            <Pill
-              ref={openButton}
-              label={words.open}
-              fullWidth
-              wrap
-              disabled={readOnly}
-              onPress={() => setConfirming(true)}
-              testID="prelaunch-open"
-            />
-          </View>
+        {pending ? (
+          <InlineAlert
+            variant="info"
+            title={words.pendingHeading}
+            description={words.pendingBody}
+            testID="prelaunch-pending"
+          />
         ) : collecting ? (
-          <OpenCard projectId={projectId} words={words} headingRef={openHeading} />
+          <OpenCard projectId={projectId} words={words} />
         ) : (
           <InlineAlert
             variant="info"
@@ -388,43 +271,6 @@ function PrelaunchForm({
         />
       </View>
 
-      <Dialog
-        open={confirming}
-        // Android back and the iOS escape gesture are a Cancel, and a Cancel stops waiting.
-        onClose={abandon}
-        title={words.confirmTitle}
-        description={words.confirmBody}
-        showClose={false}
-        dismissOnScrim={!busy}
-        returnFocusTo={returnFocus}
-        testID="prelaunch-confirm"
-        footer={
-          <>
-            <Pill
-              label={busy ? words.opening : words.confirmOpen}
-              fullWidth
-              wrap
-              busy={busy}
-              disabled={busy || readOnly || refusedHere}
-              onPress={confirmOpen}
-              testID="prelaunch-confirm-open"
-            />
-            <Pill
-              label={words.cancel}
-              variant="ghost"
-              fullWidth
-              wrap
-              onPress={abandon}
-              testID="prelaunch-confirm-cancel"
-            />
-          </>
-        }
-      >
-        <Body>{words.confirmDetail}</Body>
-        {refusedHere ? (
-          <InlineAlert variant="warning" description={tPrelaunch('fixFirst')} testID="prelaunch-fix-first" />
-        ) : null}
-      </Dialog>
     </ScrollView>
   );
 }
@@ -433,11 +279,9 @@ function PrelaunchForm({
 function OpenCard({
   projectId,
   words,
-  headingRef,
 }: {
   readonly projectId: string;
   readonly words: PrelaunchPanelCopy;
-  readonly headingRef: Ref<View>;
 }) {
   const t = useT('mobile.editor.prelaunch');
   const page = usePrelaunchPage(projectId);
@@ -490,7 +334,7 @@ function OpenCard({
 
   return (
     <View style={styles.card} testID="prelaunch-open-card">
-      <View ref={headingRef} accessible accessibilityRole="header" testID="prelaunch-open-heading">
+      <View accessible accessibilityRole="header" testID="prelaunch-open-heading">
         <Subheading>{words.openHeading}</Subheading>
       </View>
 

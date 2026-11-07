@@ -13,6 +13,8 @@ import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.RecordingLaunchReminderNotifier;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +40,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * Pre-launch pages and launch reminders, over HTTP.
  *
  * <p>The tests that carry the design are the three CLAUDE.md §3 calls
- * non-optional. {@link #openingThePrelaunchPageIsAudited()} is the state
+ * non-optional. {@link #approvalOpensThePrelaunchPage()} is the state
  * transition; {@link #registeringTwiceIsOneRow()} and
  * {@link #registeringWhileSignedInSupersedesTheAnonymousRow()} are idempotency on
  * the way in; and {@link #aFailedSendLeavesTheRestPendingAndNobodyIsToldTwice()}
@@ -49,6 +51,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * <p>The pre-launch page is also the first public endpoint in this module, so a
  * fair share of what is asserted here is what it does <em>not</em> say: no goal,
  * no story, and a 404 rather than a 409 for a campaign nobody has announced.
+ *
+ * <p><strong>Since #626 the page opens on approval.</strong> A creator used to open
+ * it from a draft, which published a campaign no moderator had read. The page now
+ * exists for an approved campaign that has not opened — {@code APPROVED} or
+ * {@code SCHEDULED} — and a campaign still in {@code PRELAUNCH} is a 404.
  */
 class PrelaunchApiTests extends AbstractIntegrationTest {
 
@@ -207,17 +214,49 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
         return idOf(project);
     }
 
-    /** A campaign with an open pre-launch page, which is where reminders are collected. */
-    private UUID prelaunching(Creator creator, String title) {
+    /**
+     * An approved campaign that has not opened, which is where reminders are collected
+     * since #626: the real route, a launch time in the future, submission and approval.
+     */
+    private UUID approved(Creator creator, String title) {
         UUID id = fundableDraft(creator, title);
-        assertThat(post("/v1/projects/" + id + "/prelaunch", creator.accessToken(), null)
-                        .getBody())
-                .containsEntry("state", "PRELAUNCH");
+        approve(creator, id);
         return id;
     }
 
     /**
-     * The real route to {@code LIVE}: submit, then approve, which publishes it (#552).
+     * Submits and approves a campaign with a launch time a month away, so approval
+     * leaves it {@code APPROVED} rather than publishing it (#552).
+     *
+     * <p><strong>Every step is asserted, not just the last one</strong>, for the
+     * reason {@link #publishFromDraft} gives.
+     */
+    private void approve(Creator creator, UUID id) {
+        rest.exchange(
+                "/v1/projects/" + id,
+                HttpMethod.PATCH,
+                new HttpEntity<>(
+                        Map.of("scheduledLaunchAt", Instant.now().plus(30, ChronoUnit.DAYS).toString()),
+                        bearer(creator.accessToken())),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+        assertThat(post("/v1/projects/" + id + "/submit", creator.accessToken(), null)
+                        .getBody())
+                .containsEntry("state", "SUBMITTED");
+        assertThat(post("/v1/admin/moderation/" + id + "/approve", moderator().accessToken(), null)
+                        .getBody())
+                .containsEntry("state", "APPROVED");
+    }
+
+    /** Opens an approved campaign now, which is what the creator's launch button does. */
+    private void launch(Creator creator, UUID id) {
+        assertThat(post("/v1/projects/" + id + "/launch", creator.accessToken(), null)
+                        .getBody())
+                .containsEntry("state", "LIVE");
+    }
+
+    /**
+     * The real route from a draft to {@code LIVE}: submit, then approve, which publishes
+     * it (#552).
      *
      * <p><strong>Every step is asserted, not just the last one.</strong> This
      * previously checked only the final state, so when #37 started refusing an
@@ -227,7 +266,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
      * A fixture that hides which of its steps broke costs more to read than it
      * saves to write.
      */
-    private void launch(Creator creator, UUID id) {
+    private void publishFromDraft(Creator creator, UUID id) {
         assertThat(post("/v1/projects/" + id + "/submit", creator.accessToken(), null)
                         .getBody())
                 .containsEntry("state", "SUBMITTED");
@@ -264,74 +303,53 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("opening the pre-launch page moves DRAFT to PRELAUNCH and writes one audit row")
-    void openingThePrelaunchPageIsAudited() {
+    @DisplayName("#626: a draft cannot open a pre-launch page; approval is what opens it")
+    void approvalOpensThePrelaunchPage() {
         Creator creator = creator();
         UUID id = fundableDraft(creator, "An unannounced product");
 
+        // The old DRAFT -> PRELAUNCH request is gone. It published a campaign before any
+        // moderator had read it, so nothing a creator sends can open the page now.
         assertThat(post("/v1/projects/" + id + "/prelaunch", creator.accessToken(), null)
-                        .getBody())
-                .containsEntry("state", "PRELAUNCH");
-
-        // The whole reason ProjectTransitionService exists: the edge, the state,
-        // and the row are one transaction. A pre-launch page that opened without a
-        // row would be a campaign that went public and nobody can say when or by
-        // whom.
-        List<ProjectStateTransition> history = transitions.findByProjectIdOrderByCreatedAtAsc(id);
-        assertThat(history)
-                .extracting(ProjectStateTransition::getToState)
-                .containsExactly(ProjectState.DRAFT, ProjectState.PRELAUNCH);
-        assertThat(history.getLast().getActorRole()).isEqualTo(ActorRole.CREATOR);
-        assertThat(history.getLast().getActorId()).isEqualTo(creator.id());
-    }
-
-    @Test
-    @DisplayName("only the creator can open a pre-launch page")
-    void openingIsTheCreatorsAlone() {
-        Creator owner = creator();
-        Creator stranger = creator();
-        UUID id = fundableDraft(owner, "An unannounced product");
-
-        // 404 rather than 403: a draft is confidential, and telling a stranger that
-        // the campaign exists is the leak this answer prevents.
-        assertThat(post("/v1/projects/" + id + "/prelaunch", stranger.accessToken(), null)
+                        .getStatusCode()
+                        .is4xxClientError())
+                .isTrue();
+        assertThat(anonymously("/v1/projects/" + id + "/prelaunch", HttpMethod.GET, null)
                         .getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
 
-        assertThat(get("/v1/projects/" + id + "/edit", owner.accessToken()).getBody())
-                .containsEntry("state", "DRAFT");
+        approve(creator, id);
+
+        assertThat(anonymously("/v1/projects/" + id + "/prelaunch", HttpMethod.GET, null)
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        // The page opened on a moderator's decision, and the history says so: there is
+        // no PRELAUNCH in it.
+        List<ProjectStateTransition> history = transitions.findByProjectIdOrderByCreatedAtAsc(id);
+        assertThat(history)
+                .extracting(ProjectStateTransition::getToState)
+                .containsExactly(ProjectState.DRAFT, ProjectState.SUBMITTED, ProjectState.APPROVED);
+        assertThat(history.getLast().getActorRole()).isEqualTo(ActorRole.MODERATOR);
     }
 
     @Test
-    @DisplayName("a pre-launch page cannot be opened twice, and the refusal says what is possible")
-    void openingIsNotRepeatable() {
-        Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
-
-        ResponseEntity<Map<String, Object>> refused =
-                post("/v1/projects/" + id + "/prelaunch", creator.accessToken(), null);
-
-        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(refused.getBody()).containsEntry("code", "PROJECT_TRANSITION_NOT_ALLOWED");
-        // §6.1 has no PRELAUNCH -> PRELAUNCH edge, and no way back to DRAFT either.
-        assertThat(refused.getBody().get("meta"))
-                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP)
-                .containsEntry("state", "PRELAUNCH")
-                .containsEntry("requested", "PRELAUNCH");
-    }
-
-    @Test
-    @DisplayName("opening the pre-launch page needs a bearer token")
-    void openingIsBehindAuthentication() {
+    @DisplayName("#626: a campaign left in PRELAUNCH is a 404 like a draft, and can still be submitted")
+    void aCampaignLeftInPrelaunchIsNotFound() {
         Creator creator = creator();
         UUID id = fundableDraft(creator, "An unannounced product");
+        // How a campaign opened before #626 sits in the database. Nothing enters the
+        // state any more, so it is set directly.
+        new JdbcTemplate(dataSource).update("UPDATE projects SET state = 'PRELAUNCH' WHERE id = ?", id);
 
-        // The public GET on this exact path is permitted; the POST is not. If the
-        // filter chain ever stops distinguishing the two, anybody could publish
-        // somebody else's draft.
-        assertThat(anonymously("/v1/projects/" + id + "/prelaunch", HttpMethod.POST, null)
+        assertThat(anonymously("/v1/projects/" + id + "/prelaunch", HttpMethod.GET, null)
                         .getStatusCode())
-                .isEqualTo(HttpStatus.UNAUTHORIZED);
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(remindAs(id, address("early")).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        // Its creator is not stranded: PRELAUNCH -> SUBMITTED stays.
+        assertThat(post("/v1/projects/" + id + "/submit", creator.accessToken(), null)
+                        .getBody())
+                .containsEntry("state", "SUBMITTED");
     }
 
     // ------------------------------------------------------------------
@@ -342,13 +360,13 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("the pre-launch page is public, and carries only what a pre-launch page shows")
     void thePageIsPublicAndNarrow() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
 
         Map<String, Object> page =
                 anonymously("/v1/projects/" + id + "/prelaunch", HttpMethod.GET, null).getBody();
 
         assertThat(page).containsEntry("title", "An unannounced product");
-        assertThat(page).containsEntry("state", "PRELAUNCH");
+        assertThat(page).containsEntry("state", "APPROVED");
         assertThat(page).containsEntry("followerCount", 0);
         assertThat(page.get("slug")).isEqualTo("an-unannounced-product");
 
@@ -379,7 +397,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("the page is served with a cache header, per §10.3")
     void thePageIsCacheable() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
 
         ResponseEntity<String> page = rest.exchange(
                 "/v1/projects/" + id + "/prelaunch",
@@ -398,7 +416,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("somebody with no account can ask to be reminded")
     void anAnonymousVisitorCanRegister() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
 
         String stranger = address("stranger");
         ResponseEntity<Map<String, Object>> registered = remindAs(id, stranger);
@@ -417,7 +435,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("registering twice is one row, and the two answers are indistinguishable")
     void registeringTwiceIsOneRow() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
 
         String stranger = address("stranger");
         Map<String, Object> first = remindAs(id, stranger).getBody();
@@ -436,7 +454,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     void aSignedInVisitorRegistersAgainstTheirAccount() {
         Creator creator = creator();
         Creator visitor = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
 
         // No body at all: a signed-in caller does not say where to write, because
         // the account's verified address is the one we would use anyway.
@@ -461,7 +479,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     void registeringWhileSignedInSupersedesTheAnonymousRow() {
         Creator creator = creator();
         Creator visitor = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
 
         // Signed out first — the ordinary case, because a pre-launch link is
         // usually opened from somebody else's post.
@@ -483,7 +501,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("a reminder on a campaign that has already launched is a 409 naming the state")
     void aReminderOnALiveCampaignIsRefused() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
         launch(creator, id);
 
         ResponseEntity<Map<String, Object>> refused = remindAs(id, address("late"));
@@ -496,14 +514,14 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
         assertThat(refused.getBody().get("meta"))
                 .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.MAP)
                 .containsEntry("state", "LIVE")
-                .containsEntry("acceptedIn", List.of("PRELAUNCH", "SCHEDULED"));
+                .containsEntry("acceptedIn", List.of("APPROVED", "SCHEDULED"));
     }
 
     @Test
     @DisplayName("a reminder needs somewhere to write to")
     void aReminderWithoutAnAddressIsRefused() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
 
         ResponseEntity<Map<String, Object>> refused =
                 anonymously("/v1/projects/" + id + "/remind", HttpMethod.POST, Map.of());
@@ -524,11 +542,11 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
         // matters is this one rather than the per-client one: subscribing somebody
         // else's address to everything is mail-bombing them with our domain on it.
         for (int campaign = 0; campaign < 3; campaign++) {
-            UUID id = prelaunching(creator, "Campaign " + campaign);
+            UUID id = approved(creator, "Campaign " + campaign);
             assertThat(remindAs(id, victim).getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
-        UUID fourth = prelaunching(creator, "Campaign 4");
+        UUID fourth = approved(creator, "Campaign 4");
         ResponseEntity<Map<String, Object>> refused = remindAs(fourth, victim);
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
         assertThat(refused.getHeaders().getFirst("Retry-After")).isNotNull();
@@ -543,7 +561,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     void aSignedInFollowerCanWithdraw() {
         Creator creator = creator();
         Creator visitor = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
         post("/v1/projects/" + id + "/remind", visitor.accessToken(), null);
 
         ResponseEntity<Map<String, Object>> gone = rest.exchange(
@@ -570,7 +588,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("an unsubscribe with no credential at all is refused")
     void withdrawingNeedsSomethingToIdentifyTheRow() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
         remindAs(id, address("stranger"));
 
         assertThat(anonymously("/v1/projects/" + id + "/remind", HttpMethod.DELETE, null)
@@ -588,7 +606,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     void launchingNotifiesEveryFollower() {
         Creator creator = creator();
         Creator signedIn = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
 
         String one = address("one");
         String two = address("two");
@@ -626,7 +644,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("sweeping again after a launch tells nobody a second time")
     void theSweepIsIdempotent() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
         EmailAddress one = EmailAddress.of(address("one"));
         remindAs(id, one.value());
 
@@ -645,7 +663,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("a failed send leaves the rest pending, and nobody is told twice")
     void aFailedSendLeavesTheRestPendingAndNobodyIsToldTwice() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
         // Four followers against a batch size of three, so the sweep's second pass
         // is exercised rather than described.
         remindAs(id, address("one"));
@@ -682,7 +700,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     @DisplayName("the launch notice carries a link that removes the reminder")
     void theLaunchNoticeCarriesAWorkingUnsubscribe() {
         Creator creator = creator();
-        UUID id = prelaunching(creator, "An unannounced product");
+        UUID id = approved(creator, "An unannounced product");
         remindAs(id, address("one"));
         launch(creator, id);
 
@@ -707,7 +725,7 @@ class PrelaunchApiTests extends AbstractIntegrationTest {
     void aCampaignWithNoFollowersIsNotWorkedOn() {
         Creator creator = creator();
         UUID id = fundableDraft(creator, "An unannounced product");
-        launch(creator, id);
+        publishFromDraft(creator, id);
 
         // The sweep asks which live campaigns still owe a notice, not which are
         // live. A campaign that never opened a pre-launch page owes nothing.

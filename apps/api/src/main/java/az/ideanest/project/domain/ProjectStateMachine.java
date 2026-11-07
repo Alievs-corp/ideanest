@@ -41,10 +41,11 @@ public final class ProjectStateMachine {
     private static Map<ProjectState, Set<ProjectState>> allowedEdges() {
         Map<ProjectState, Set<ProjectState>> edges = new EnumMap<>(ProjectState.class);
 
-        // A draft either opens a pre-launch page first or goes straight to
-        // review. Both are the creator's choice and neither is a prerequisite
-        // for the other.
-        edges.put(ProjectState.DRAFT, EnumSet.of(ProjectState.PRELAUNCH, ProjectState.SUBMITTED));
+        // A draft goes to review, and nowhere else (#626). It used to be able to
+        // open a pre-launch page first, which published the campaign before any
+        // moderator had read it; the pre-launch page now opens on approval. Nothing enters PRELAUNCH any more, and a
+        // campaign already in it can still be submitted.
+        edges.put(ProjectState.DRAFT, EnumSet.of(ProjectState.SUBMITTED));
         edges.put(ProjectState.PRELAUNCH, EnumSet.of(ProjectState.SUBMITTED));
 
         // The three moderation outcomes. CHANGES_REQUESTED is the only one the

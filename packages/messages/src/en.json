@@ -13,7 +13,13 @@
         "many": "{count} backers",
         "other": "{count} backers"
       },
-      "rule": "Succeeds at 80% of the goal"
+      "rule": "Succeeds at 80% of the goal",
+      "views": {
+        "one": "{count} view",
+        "few": "{count} views",
+        "many": "{count} views",
+        "other": "{count} views"
+      }
     },
     "saving": "Saving…",
     "tryAgain": "Try again",
@@ -43,6 +49,38 @@
         "few": "{count} characters too many",
         "many": "{count} characters too many",
         "other": "{count} characters too many"
+      }
+    },
+    "audience": {
+      "period": {
+        "day": "Daily",
+        "week": "Weekly",
+        "month": "Monthly",
+        "year": "Yearly"
+      },
+      "periodLabel": "Period",
+      "views": "Views",
+      "clicks": "Clicks",
+      "visitors": "Visitors",
+      "pageViews": "Page views",
+      "countries": "Countries",
+      "platforms": "Platforms",
+      "unknownCountry": "Unknown",
+      "dailySumNote": "Visitors are counted per day and summed; someone who came on two days counts twice.",
+      "platform": {
+        "WEB": "Web",
+        "IOS": "iOS",
+        "ANDROID": "Android"
+      },
+      "surface": {
+        "HOME": "Home",
+        "DISCOVER": "Discover",
+        "SEARCH": "Search",
+        "CATEGORY": "Category",
+        "COLLECTION": "Collection",
+        "PROFILE": "Profile",
+        "SAVED": "Saved",
+        "OTHER": "Other"
       }
     }
   },
@@ -204,7 +242,9 @@
       "settings": "Settings"
     },
     "nav": {
-      "label": "Account"
+      "label": "Account",
+      "open": "Open account menu",
+      "close": "Close account menu"
     },
     "links": {
       "pledges": {
@@ -288,6 +328,7 @@
         "loadMore": "Show more",
         "loadingMore": "Loading",
         "draftHint": "Not published yet",
+        "opensAt": "Opens on its own on {date}",
         "view": "View",
         "edit": "Edit",
         "dashboard": "Dashboard",
@@ -557,7 +598,10 @@
         "CAMPAIGN_SUCCEEDED": "{campaign} was funded at {amount}",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} closed without reaching its goal",
         "PROJECT_APPROVED": "{campaign} has been approved and published",
+        "PROJECT_APPROVED_SCHEDULED": "{campaign} was approved and opens {when}",
         "SCHEDULED_LAUNCH_REFUSED": "{campaign} did not open at its launch time: your plan does not cover it",
+        "CAMPAIGN_EDIT_APPROVED": "Your changes to {campaign} were approved",
+        "CAMPAIGN_EDIT_REJECTED": "Your changes to {campaign} were not approved",
         "PAYMENT_COLLECTED": "A payment of {amount} for {campaign} was collected",
         "FINAL_PAYMENT_WARNING": "Final notice: a payment of {amount} for {campaign}",
         "PAYOUT_SENT": "A payout of {amount} for {campaign} was paid {when}",
@@ -591,7 +635,10 @@
         "CAMPAIGN_SUCCEEDED": "A campaign was funded at {amount}",
         "CAMPAIGN_UNSUCCESSFUL": "A campaign closed without reaching its goal",
         "PROJECT_APPROVED": "A campaign has been approved and published",
+        "PROJECT_APPROVED_SCHEDULED": "A campaign was approved and opens {when}",
         "SCHEDULED_LAUNCH_REFUSED": "A campaign did not open at its launch time: your plan does not cover it",
+        "CAMPAIGN_EDIT_APPROVED": "Your campaign changes were approved",
+        "CAMPAIGN_EDIT_REJECTED": "Your campaign changes were not approved",
         "PAYMENT_COLLECTED": "A payment of {amount} for a campaign was collected",
         "FINAL_PAYMENT_WARNING": "Final notice: a payment of {amount} for a campaign",
         "PAYOUT_SENT": "A payout of {amount} for a campaign was paid {when}",
@@ -747,6 +794,7 @@
       "/admin/fees": "Fees",
       "/admin/plans": "Plans",
       "/admin/analytics": "Analytics",
+      "/admin/audience": "Audience",
       "/admin/audit": "Audit log",
       "/admin/email-templates": "Email templates",
       "/admin/flags": "Feature flags",
@@ -831,7 +879,7 @@
       },
       "AD-13": {
         "title": "Analytics",
-        "summary": "Volume, success rate and average pledge, across the whole platform.",
+        "summary": "Volume, success rate and average pledge, and the audience: visitors, page views and campaign views, across the whole platform.",
         "waitingOn": "Cohorts need a rollup keyed on a backer’s first pledge and funnels need the visit-to-pledge path; neither exists, and the screen says so rather than approximating them (#313)."
       },
       "AD-14": {
@@ -937,6 +985,12 @@
         "metaDescription": "Volume, success rate and average pledge across the whole platform.",
         "title": "Platform analytics",
         "intro": "Pledge volume, backers, the average pledge and campaign outcomes for the period you choose."
+      },
+      "audience": {
+        "metaTitle": "Platform audience",
+        "metaDescription": "Visitors, page views, and campaign views and clicks across the whole platform.",
+        "title": "Platform audience",
+        "intro": "How many people came to the platform, from which countries and on which platforms, and which campaigns they looked at, for the period you choose."
       },
       "curation": {
         "metaTitle": "Collections",
@@ -1598,6 +1652,37 @@
         "nowHeading": "Now",
         "computedAt": "Figures as read at {time}, Baku time."
       },
+      "audience": {
+        "subject": "the audience figures",
+        "loadingList": "Loading the audience figures",
+        "computedAt": "Figures as read at {time}, Baku time.",
+        "campaignViews": "Campaign views",
+        "campaignClicks": "Campaign clicks",
+        "allTimeViews": "All-time views",
+        "trafficHeading": "Visitors and page views",
+        "campaignChartHeading": "Campaign views and clicks",
+        "nothingRecorded": "Nothing was recorded in this period.",
+        "surfacesHeading": "Where the clicks came from",
+        "showAllCountries": "Show every country",
+        "topHeading": "Most viewed campaigns",
+        "topNote": "The twenty campaigns viewed most in this period. Open a row to see that campaign on its own.",
+        "topEmpty": "No campaign was viewed in this period.",
+        "campaignColumn": "Campaign",
+        "ratioColumn": "Clicks per view",
+        "noViews": "No views",
+        "breakdown": "Breakdown",
+        "breakdownLabel": "Breakdown for {title}",
+        "breakdownSubject": "this campaign’s audience",
+        "breakdownLoading": "Loading this campaign’s audience",
+        "chart": {
+          "summary": "{first} and {second}, {from} – {to}",
+          "granularity": {
+            "HOUR": "Each pair of columns is an hour",
+            "DAY": "Each pair of columns is a day",
+            "MONTH": "Each pair of columns is a month"
+          }
+        }
+      },
       "emailTemplates": {
         "subject": "the email templates",
         "loadingList": "Loading the email templates",
@@ -1636,7 +1721,10 @@
           "CAMPAIGN_EXTENDED": "Campaign extended",
           "UPDATE_DUE_SOON": "Update due soon",
           "PROJECT_APPROVED": "Campaign approved",
+          "PROJECT_APPROVED_SCHEDULED": "Campaign approved, waiting for its launch time",
           "SCHEDULED_LAUNCH_REFUSED": "Scheduled launch not opened",
+          "CAMPAIGN_EDIT_APPROVED": "Campaign changes approved",
+          "CAMPAIGN_EDIT_REJECTED": "Campaign changes not approved",
           "PAYMENT_COLLECTED": "Payment collected",
           "PAYMENT_FAILED": "Payment failed",
           "FINAL_PAYMENT_WARNING": "Final payment warning",
@@ -2338,7 +2426,8 @@
           "READ_BANK_DETAILS": "Open a creator's IBAN in full, to verify it or to pay into it",
           "GRANT_COMPLIANCE_OVERRIDE": "Waive a compliance requirement for one account, for a bounded time",
           "ADMINISTER_STAFF": "Grant and withdraw roles",
-          "VIEW_PARTNER_STATISTICS": "Read the financial statistics as a partner: totals only, scaled to an agreed share"
+          "VIEW_PARTNER_STATISTICS": "Read the financial statistics as a partner: totals only, scaled to an agreed share",
+          "VIEW_AUDIENCE": "Read the audience figures: visitors, page views, and campaign views and clicks"
         },
         "picker": {
           "subject": "the account directory",
@@ -3287,7 +3376,10 @@
         "creatorGone": "Creator account closed",
         "decideHeading": "Decide this campaign",
         "decideGroup": "Decide {title}",
-        "notice": "{title} is now {state}."
+        "notice": "{title} is now {state}.",
+        "launchLabel": "Launch time",
+        "approveWaits": "The creator set a launch time. Approving will not publish the campaign now: it opens on its own on {date}.",
+        "noticeOpensAt": "{title} is approved and opens on its own on {date}."
       },
       "campaignDirectory": {
         "subject": "the campaign directory",
@@ -3724,7 +3816,9 @@
           "story": "Story",
           "risks": "Risks and challenges",
           "countries": "Countries",
-          "rewards": "Rewards"
+          "rewards": "Rewards",
+          "items": "Items",
+          "shippingZones": "Shipping zones"
         },
         "removed": "Removed:",
         "added": "Added:",
@@ -3847,6 +3941,37 @@
           "noItems": "No items",
           "noRates": "No rates",
           "secretLinkReplaced": "The private link is replaced. The old one stops working."
+        },
+        "items": {
+          "intro": "Every item inside a live reward tier that this edit changes. A field it does not name stays as it is.",
+          "untitled": "Untitled item",
+          "itemLabel": "Item: {name}",
+          "fields": {
+            "name": "Name",
+            "description": "Description",
+            "imageUrl": "Picture",
+            "weightGrams": "Weight",
+            "isDigital": "Digital"
+          },
+          "weight": "{grams} g",
+          "noWeight": "No weight",
+          "imageAlt": "Picture of the item {name}"
+        },
+        "shippingZones": {
+          "intro": "Every shipping zone this edit adds, removes or changes. A zone it does not name stays as it is.",
+          "untitled": "Untitled zone",
+          "zoneLabel": "Shipping zone: {name}",
+          "changes": {
+            "added": "New zone",
+            "removed": "To be removed",
+            "renamed": "Renamed",
+            "countries": "Countries changed"
+          },
+          "addedNote": "A new zone. It does not exist until this edit is approved.",
+          "removedNote": "This zone is removed when the edit is approved. It stays live until then.",
+          "name": "Name",
+          "countries": "Countries",
+          "unchanged": "The proposed zones are the same as the live ones."
         }
       }
     },
@@ -4061,6 +4186,7 @@
       "link": {
         "campaigns": "Open the campaigns",
         "moderation": "Open the moderation queue",
+        "revisions": "Open the campaign edits",
         "reports": "Open the reports",
         "support": "Open support",
         "accounts": "Open the accounts",
@@ -4569,7 +4695,6 @@
     },
     "card": {
       "badges": {
-        "upcoming": "Upcoming",
         "live": "Live",
         "extended": "Extended",
         "closing_soon": "Closing soon",
@@ -4587,7 +4712,6 @@
     },
     "filters": {
       "status": {
-        "upcoming": "Upcoming",
         "live": "Live",
         "extended": "Extended",
         "successful": "Successful"
@@ -5421,6 +5545,8 @@
     "eyebrow": "Campaign editor",
     "loadingTitle": "Loading",
     "sectionsLabel": "Campaign sections",
+    "sectionsOpen": "Open campaign sections",
+    "sectionsClose": "Close campaign sections",
     "dashboard": "Dashboard",
     "soon": "soon",
     "notAvailable": ", not available yet",
@@ -5498,6 +5624,7 @@
       "validation": {
         "titleRequired": "A project needs a title.",
         "titleTooLong": "A title is {max} characters or fewer. Remove {over}.",
+        "summaryRequired": "A project needs a summary. It is the line backers read under the title.",
         "summaryTooLong": "A summary is {max} characters or fewer. Remove {over}.",
         "subcategoryWithoutCategory": "Choose a category first.",
         "currencyUnsupported": "Choose a currency the platform can collect in.",
@@ -5553,7 +5680,12 @@
         "itemsHeading": "Items",
         "edit": "Edit",
         "notInReward": "Not in any reward",
-        "notInRewardDetail": "Backers do not see it until it is added to a reward."
+        "notInRewardDetail": "Backers do not see it until it is added to a reward.",
+        "pending": {
+          "changed": "Changed, waiting for review",
+          "changedNote": "Backers still see the approved version of this item until a moderator approves your changes.",
+          "heldAnnouncement": "Your changes to {name} wait for a moderator. Backers see the approved version until then."
+        }
       },
       "item": {
         "addTitle": "Add an item",
@@ -5586,7 +5718,12 @@
         "imageButtonLabel": "Choose an image",
         "imageDropHint": "Up to 20 MB: JPEG, PNG, WebP, AVIF or HEIC.",
         "imageRemove": "Remove image",
-        "imageUploaded": "Image uploaded. Save the item to keep it."
+        "imageUploaded": "Image uploaded. Save the item to keep it.",
+        "held": {
+          "title": "Some changes wait for review",
+          "body": "This item is in an approved reward, so the fields marked below show your proposed changes. Backers still see the approved values until a moderator approves them. Send your changes for review to publish them.",
+          "field": "Waiting for review. Backers still see the approved value."
+        }
       },
       "tier": {
         "addTitle": "Add a reward",
@@ -5879,7 +6016,9 @@
         "risks": "Risks and challenges",
         "risksHint": "What could go wrong, and what you will do about it. At least {min} characters, and required before you can submit.",
         "risksPlaceholder": "Manufacturing, shipping, and timing are the usual three. Say what is already settled and what is not.",
+        "risksTooShort": "Risks and challenges need at least {min} characters before you can submit. Add {remaining} more.",
         "charactersNeeded": "{count} of {min} characters needed to submit",
+        "storyTooShort": "The story needs at least {min} characters before you can submit. Add {remaining} more.",
         "incomplete": {
           "one": "{count} block is incomplete. The message beside it says what is missing, and saving resumes as soon as it is filled in.",
           "few": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.",
@@ -6102,11 +6241,8 @@
     "prelaunch": {
       "loadingLabel": "Loading this campaign",
       "notSavedTitle": "This change was not saved",
-      "notOpenHeading": "The pre-launch page is not open yet",
-      "notOpenBody": "Opening it publishes the title, summary, and cover image below at a link you can share, and lets people ask to be told the moment the campaign opens. Nothing else about the campaign becomes public, and no money is involved.",
-      "notOpenIrreversible": "It cannot be closed again — the campaign moves forward from here, to review and then to launch.",
-      "openFailedTitle": "The page was not opened",
-      "open": "Open the pre-launch page",
+      "pendingHeading": "The pre-launch page opens after approval",
+      "pendingBody": "Once moderation approves the campaign, this page goes public: people can follow it and are told when the campaign opens. Until then nobody else can see it.",
       "openHeading": "The pre-launch page is open",
       "followersFailed": "The number of people waiting could not be loaded.",
       "waiting": {
@@ -6127,13 +6263,7 @@
       "title": "Title",
       "titleHint": "The name on the pre-launch page and on the discovery grid. {max} characters or fewer.",
       "summary": "Summary",
-      "summaryHint": "One or two sentences. This is what somebody reads before deciding to follow. {max} characters or fewer.",
-      "confirmTitle": "Open the pre-launch page?",
-      "confirmBody": "The title, summary, and cover image become public at a link anyone can open. This cannot be undone.",
-      "cancel": "Cancel",
-      "opening": "Opening",
-      "confirmOpen": "Open the page",
-      "confirmDetail": "Nothing about your rewards, story, or funding goal is published, and the campaign does not take money until it is reviewed and launched."
+      "summaryHint": "One or two sentences. This is what somebody reads before deciding to follow. {max} characters or fewer."
     },
     "review": {
       "loadFailedTitle": "This campaign could not be loaded",
@@ -6192,7 +6322,11 @@
       "moderatorNote": "A moderator reads the campaign and either approves it, asks for changes, or refuses it. Approval publishes it straight away, or at the launch time you set, and its goal and deadline are fixed from then. You can keep editing while it is in review.",
       "done": "Done",
       "launchExplanation": "The campaign appears everywhere on the platform and starts taking pledges the moment it launches. Its goal and its deadline freeze from that point, and a live campaign cannot be taken back to a draft.",
-      "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft."
+      "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft.",
+      "scheduledLaunchRefused": {
+        "title": "This campaign did not open at its launch time",
+        "body": "Your plan did not cover this campaign when it was due to open on {date}, so it was not published and its launch time was cleared. It is still approved. Renew or change your plan, or lower the goal to one your plan covers, then launch it here or set a new launch time."
+      }
     },
     "cover": {
       "label": "Cover image",
@@ -6334,7 +6468,9 @@
         "coverImage": "Cover image",
         "videoMediaId": "Video",
         "countries": "Countries",
-        "rewards": "Rewards"
+        "rewards": "Rewards",
+        "items": "Items",
+        "shippingZones": "Shipping zones"
       },
       "submit": "Send for review",
       "submitting": "Sending…",
@@ -6795,7 +6931,8 @@
       },
       "hours": "{hours}h {minutes}m left",
       "minutes": "{minutes}m {seconds}s left",
-      "seconds": "{seconds}s left"
+      "seconds": "{seconds}s left",
+      "opensAt": "The campaign opens on its own on {date}. The countdown starts then."
     },
     "overview": {
       "loading": "Loading the campaign’s totals",
@@ -6826,7 +6963,7 @@
       "trendNotGranted": "Your collaborator grant on this campaign does not include the funding trend.",
       "trendUnavailable": "The funding trend could not be loaded. It is the service rather than your campaign — try again shortly.",
       "trendEmpty": "Nothing has been pledged between {from} and {to}. The chart appears with the first confirmed pledge.",
-      "trendLabel": "Running total, {from} to {to} ({zone})",
+      "trendLabel": "Running total, {from} to {to}",
       "aggregated": "Aggregated {when}. The live totals on the overview are read at the moment you ask for them.",
       "splitHeading": "Rewards and destinations",
       "splitLoading": "Loading the reward and destination split",
@@ -6937,14 +7074,23 @@
       "payable": "Payable",
       "payableProjected": "Payable, projected",
       "payoutsHeading": "Payouts",
-      "payoutsEmpty": "None yet. A payout is prepared after §5.4’s hold, and every one of them appears here — including any that were cancelled.",
+      "payoutsEmpty": "None yet. A payout is prepared once the holding period ends, and every one of them appears here — including any that were cancelled.",
       "booksHeading": "What the books say",
-      "booksIntro": "§7.2’s accounts, for this campaign. Published so the totals above can be checked against something rather than taken on trust. A negative balance on your account is money the platform is holding for you.",
+      "booksIntro": "The ledger accounts for this campaign, shown so the totals above can be checked against something rather than taken on trust. A negative balance on your account is money the platform is holding for you.",
       "unbalancedTitle": "These books do not balance",
       "unbalancedBody": "The entries for this campaign do not sum to zero. Nothing you can do explains this — please contact support, quoting this campaign, before relying on the figures above.",
       "ledgerEmpty": "Nothing has been posted for this campaign yet.",
       "ledgerCaption": "Ledger balances for this campaign, by account",
       "account": "Account",
+      "accounts": {
+        "creator": "Your account",
+        "escrow": "Held funds",
+        "platform_fee": "Platform fee",
+        "psp_fee": "Processing fee",
+        "tax_payable": "Tax payable",
+        "refunds": "Refunds",
+        "platform_expense": "Platform expenses"
+      },
       "balance": "Balance",
       "asOf": "As of {time}.",
       "payoutStates": {
@@ -7010,6 +7156,42 @@
         "many": "Sent to {count} backers.",
         "other": "Sent to {count} backers."
       }
+    },
+    "audience": {
+      "heading": "Audience",
+      "intro": "How many people opened this campaign, how many followed its card from a listing, and where they are.",
+      "loading": "Loading the audience figures",
+      "notGranted": "Your collaborator grant on this campaign does not include the audience figures.",
+      "unavailable": "The audience figures could not be loaded. It is the service rather than your campaign — try again shortly.",
+      "empty": "Nobody opened this campaign or clicked its card in this period.",
+      "allTimeViews": "All-time views",
+      "seriesHour": "Views and clicks by hour, {day}",
+      "seriesDay": "Views and clicks by day, {from} to {to}",
+      "seriesMonth": "Views and clicks by month, {from} to {to}",
+      "peak": "Most views: {when}, {count}",
+      "showTable": "Show the figures",
+      "tableLabel": "Views and clicks by period",
+      "hour": "Hour",
+      "day": "Day",
+      "month": "Month",
+      "zoneNote": "Hours and days are Baku time.",
+      "countriesLabel": "Views and clicks by country",
+      "surfacesHeading": "Where the clicks came from",
+      "surfacesLabel": "Clicks by listing",
+      "surfacesEmpty": "Nobody followed this campaign's card from a listing in this period.",
+      "clickNote": "A click is somebody following this campaign's card from a listing — the home page, discovery, search, a category, a collection, a profile or a saved list — on the site or in the app.",
+      "viewsCount": {
+        "one": "{count} view",
+        "few": "{count} views",
+        "many": "{count} views",
+        "other": "{count} views"
+      },
+      "clicksCount": {
+        "one": "{count} click",
+        "few": "{count} clicks",
+        "many": "{count} clicks",
+        "other": "{count} clicks"
+      }
     }
   },
   "dashboardControls": {
@@ -7018,6 +7200,7 @@
     "extend": "Extend the deadline",
     "extendLabel": "New deadline",
     "extendHint": "No later than {latest}. Backers are told the new date; they are not asked.",
+    "extendOpensOn": "You can extend from {date}: extension opens seven days before the first deadline.",
     "extendConfirmTitle": "Extend this campaign to {date}?",
     "extendConfirmBody": "You can extend only once, and the new deadline cannot be moved again. Every backer is notified.",
     "extendNow": "Extend to this date",
@@ -7565,7 +7748,16 @@
         "removeOnApprovalBody": "{title} stays public until a moderator approves your changes, then it is removed. You can undo this until then.",
         "removeOnApprovalConfirm": "Remove on approval",
         "newTiersHidden": "New tiers stay hidden from backers until a moderator approves them.",
-        "revisionField": "Rewards"
+        "revisionField": "Rewards",
+        "heldItem": {
+          "note": "Your changes to this item are not public yet. Backers still see the approved version.",
+          "fields": "Waiting for review: {fields}",
+          "editorTitle": "Some changes wait for review",
+          "editorBody": "A reward backers can see contains this item, so the fields marked “Waiting for review” show your new values. Backers still see the approved ones until a moderator approves your changes.",
+          "savedAnnouncement": "{name} was saved. Backers will see the changes once a moderator approves them.",
+          "revisionItemsField": "Items",
+          "revisionShippingZonesField": "Shipping zones"
+        }
       },
       "faq": {
         "nothingCached": "You are offline, and the questions have not been loaded on this phone yet."
@@ -7596,8 +7788,7 @@
         "copyFailed": "The link could not be copied. Press and hold the link above to select it and copy it yourself.",
         "share": "Share",
         "shareLabel": "Share the pre-launch link",
-        "shareFailed": "The share sheet could not be opened. Try again.",
-        "fixFirst": "Fix the title, summary or cover first. The page would publish what was last saved, not what is on screen."
+        "shareFailed": "The share sheet could not be opened. Try again."
       }
     },
     "native": {
@@ -7612,6 +7803,24 @@
     "preview": {
       "cardHint": "Press and hold to preview the video",
       "rewardHint": "Press and hold to play the video"
+    },
+    "audience": {
+      "heading": "Audience",
+      "intro": "How many people saw this campaign's page, and how many opened it from a list. Each person counts once a day, in Baku time.",
+      "loading": "Loading the audience figures",
+      "notGranted": "Your collaborator grant on this campaign does not include the audience figures.",
+      "unavailable": "The audience figures could not be loaded. It is the service rather than your campaign — try again shortly.",
+      "allTimeViews": "All-time views",
+      "chartSummary": "{label}, {from} to {to}: {total} in all. Highest: {peak}, {when}.",
+      "chartEmpty": "{label}, {from} to {to}: none yet.",
+      "countriesLabel": "Views by country",
+      "countriesEmpty": "Nobody viewed this campaign in this period.",
+      "surfacesHeading": "Opened from",
+      "surfacesLabel": "Clicks by list",
+      "surfacesEmpty": "Nobody opened this campaign from a list in this period.",
+      "showFigures": "Show the figures",
+      "hideFigures": "Hide the figures",
+      "figuresLabel": "Views and clicks over time"
     }
   },
   "blocking": {

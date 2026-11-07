@@ -15,6 +15,7 @@ import { useCursorList } from './useCursorList';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { SignalListCopy } from '../../lib/i18n/signals-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { audienceClickAttributes } from '../../lib/audience/paths';
 
 /**
  * §4.9's C-10 — the campaigns this account saved. Issue #288.
@@ -136,6 +137,8 @@ export function SavedProjectsPanel({ copy }: SavedProjectsPanelProps) {
             <div className="min-w-0">
               <Link
                 href={campaignHref(campaign)}
+                // Counted as a click from the saved list (#634) — `AudienceTracker` reads these.
+                {...audienceClickAttributes(campaign.projectId, 'SAVED')}
                 className="rounded-sm text-[17px] font-medium tracking-[-0.01em] text-fg hover:text-fg-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {campaign.title}

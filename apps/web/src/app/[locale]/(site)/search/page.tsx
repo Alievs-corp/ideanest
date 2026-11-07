@@ -12,6 +12,8 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { marketCopy, projectCardCopy, searchFieldCopy } from '../../../../lib/i18n/shell-copy.server';
 import { MarketEmptyNotice } from '../../../../components/shell/MarketEmptyNotice';
+import { MarketSeed } from '../../../../components/shell/MarketSeed';
+import { requestMarket } from '../../../../lib/market/request';
 
 /**
  * `/search` — §4.13 WS-06, issue #262.
@@ -83,6 +85,7 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto w-full max-w-[1400px] px-5 py-10 sm:px-6">
+      <MarketSeed market={await requestMarket()} />
       <h1 className="text-3xl font-semibold tracking-[-0.035em] text-fg sm:text-4xl">
         {query === '' ? t('title') : t('resultsTitle', { query })}
       </h1>
@@ -149,6 +152,7 @@ export default async function SearchPage({
             ) : (
               <>
                 <CampaignGrid
+                  surface="SEARCH"
                   cardCopy={cardCopy}
                   locale={locale}
                   campaigns={results}

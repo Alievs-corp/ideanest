@@ -275,6 +275,20 @@ describe('the inbox', () => {
     expect(mockRouter.push).toHaveBeenLastCalledWith('/settings/sessions');
   });
 
+  it('opens a campaign that did not open at its launch time in its editor, at the review tab (#589)', async () => {
+    const id = '01890000-0000-7000-8000-000000000001';
+    api.listNotifications.mockResolvedValueOnce(
+      page([row('r', { type: 'SCHEDULED_LAUNCH_REFUSED', params: { ...row('r').params, projectId: id } })]),
+    );
+    api.markNotificationRead.mockResolvedValue({ ...row('r'), readAt: NOW.toISOString() });
+    await show();
+
+    await fireEvent.press(screen.getByTestId('notification-r'));
+    // The web's `/projects/{id}/edit/review`, which is the editor's route under `campaigns/` here.
+    expect(mockRouter.push).toHaveBeenCalledWith(`/campaigns/${id}/edit/review`);
+    expect(WebBrowser.openBrowserAsync).not.toHaveBeenCalled();
+  });
+
   describe('a message about the creator’s plan (#452)', () => {
     const plan = (id: string, type: InboxNotification['type']) =>
       row(id, {

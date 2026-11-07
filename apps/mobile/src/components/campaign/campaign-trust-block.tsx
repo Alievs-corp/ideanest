@@ -33,7 +33,8 @@ export function CampaignTrustBlock({ campaign }: { readonly campaign: CampaignPa
   const t = useT('campaign.trust');
   const locale = useLocale();
   const open = OPEN_STATES.includes(campaign.state);
-  const deadline = formatInstant(campaign.deadline, locale);
+  // The extension's end once extended (#618): the date every backer was emailed.
+  const deadline = formatInstant(campaign.fundingEndsAt, locale);
 
   const strong = (chunks: ReactNode) => <NoticeStrong>{chunks}</NoticeStrong>;
   const when = () => <NoticeStrong>{deadline}</NoticeStrong>;

@@ -164,6 +164,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/audience": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["platformAudiencePlatform"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/audience/projects/{projectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["platformAudienceProject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/audit": {
         parameters: {
             query?: never;
@@ -2164,6 +2196,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/audience/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["audienceEventRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/2fa/confirm": {
         parameters: {
             query?: never;
@@ -3597,7 +3645,7 @@ export interface paths {
         };
         get: operations["prelaunchPage"];
         put?: never;
-        post: operations["projectOpenPrelaunch"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3756,6 +3804,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["analyticsAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/projects/{projectId}/audience": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["projectAudienceAudience"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4740,6 +4804,60 @@ export interface components {
         ApproveRequest: {
             note?: string;
         };
+        AudienceCountryVisitors: {
+            country?: string;
+            /** Format: int64 */
+            visitors?: number;
+        };
+        AudienceEventRequest: {
+            /** @enum {string} */
+            kind: "VISIT" | "VIEW" | "CLICK";
+            /** @enum {string} */
+            platform: "WEB" | "IOS" | "ANDROID";
+            /** Format: uuid */
+            projectId?: string;
+            /** @enum {string} */
+            surface?: "HOME" | "DISCOVER" | "SEARCH" | "CATEGORY" | "COLLECTION" | "PROFILE" | "SAVED" | "OTHER";
+        };
+        AudiencePlatformVisitors: {
+            /** @enum {string} */
+            platform?: "WEB" | "IOS" | "ANDROID";
+            /** Format: int64 */
+            visitors?: number;
+        };
+        AudiencePoint: {
+            /** Format: int64 */
+            campaignClicks?: number;
+            /** Format: int64 */
+            campaignViews?: number;
+            /** Format: int64 */
+            pageViews?: number;
+            /** Format: date-time */
+            start?: string;
+            /** Format: int64 */
+            visitors?: number;
+        };
+        AudienceTopCampaign: {
+            /** Format: int64 */
+            clicks?: number;
+            creatorSlug?: string;
+            /** Format: uuid */
+            projectId?: string;
+            slug?: string;
+            title?: string;
+            /** Format: int64 */
+            views?: number;
+        };
+        AudienceTotals: {
+            /** Format: int64 */
+            campaignClicks?: number;
+            /** Format: int64 */
+            campaignViews?: number;
+            /** Format: int64 */
+            pageViews?: number;
+            /** Format: int64 */
+            visitors?: number;
+        };
         Backer: {
             amount?: components["schemas"]["Money"];
             anonymous?: boolean;
@@ -5047,6 +5165,8 @@ export interface components {
             state?: string;
             title?: string;
             video?: components["schemas"]["CardVideo"];
+            /** Format: int64 */
+            viewCount?: number;
         };
         CardRegistrationRequest: {
             /** Format: uri */
@@ -5421,10 +5541,14 @@ export interface components {
             currency?: string;
             /** Format: date-time */
             deadline?: string;
+            /** Format: date-time */
+            extendedUntil?: string;
             goal?: components["schemas"]["Money"];
             goalReached?: boolean;
             /** Format: date-time */
             launchedAt?: string;
+            /** Format: date-time */
+            opensAt?: string;
             outcome?: components["schemas"]["Outcome"];
             percentFunded?: number;
             /** Format: uuid */
@@ -5586,7 +5710,7 @@ export interface components {
             shippedSubject?: string;
             shippedSubjectNamed?: string;
             /** @enum {string} */
-            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
         };
         DraftCopy: {
             body: string;
@@ -6093,7 +6217,7 @@ export interface components {
             /** Format: uuid */
             accountId?: string;
             bootstrapped?: boolean;
-            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS" | "VIEW_AUDIENCE")[];
             roles?: ("MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "SUPER_ADMIN" | "PARTNER")[];
             staff?: boolean;
         };
@@ -6211,7 +6335,7 @@ export interface components {
             subjectId?: string;
             subjectType?: string;
             /** @enum {string} */
-            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
         };
         OAuthSignInRequest: {
             deviceLabel?: string;
@@ -6440,6 +6564,24 @@ export interface components {
             to?: string;
             totals?: components["schemas"]["Totals"];
         };
+        PlatformAudienceResponse: {
+            /** @enum {string} */
+            bucket?: "HOUR" | "DAY" | "MONTH";
+            /** Format: date-time */
+            computedAt?: string;
+            countries?: components["schemas"]["AudienceCountryVisitors"][];
+            /** Format: date-time */
+            from?: string;
+            /** @enum {string} */
+            period?: "day" | "week" | "month" | "year";
+            platforms?: components["schemas"]["AudiencePlatformVisitors"][];
+            series?: components["schemas"]["AudiencePoint"][];
+            timeZone?: string;
+            /** Format: date-time */
+            to?: string;
+            topCampaigns?: components["schemas"]["AudienceTopCampaign"][];
+            totals?: components["schemas"]["AudienceTotals"];
+        };
         PlatformHealth: {
             /** Format: date-time */
             at?: string;
@@ -6593,11 +6735,15 @@ export interface components {
             id?: string;
             /** Format: date-time */
             launchedAt?: string;
+            /** Format: date-time */
+            opensAt?: string;
             pledged?: components["schemas"]["Money"];
             slug?: string;
             state?: string;
             title?: string;
             video?: components["schemas"]["CardVideoBody"];
+            /** Format: int64 */
+            viewCount?: number;
         };
         ProfileProjectListResponse: {
             nextCursor?: string;
@@ -6626,6 +6772,59 @@ export interface components {
             timeZone?: string;
             /** Format: date */
             to?: string;
+        };
+        ProjectAudienceCountry: {
+            /** Format: int64 */
+            clicks?: number;
+            country?: string;
+            /** Format: int64 */
+            views?: number;
+        };
+        ProjectAudiencePlatform: {
+            /** @enum {string} */
+            platform?: "WEB" | "IOS" | "ANDROID";
+            /** Format: int64 */
+            views?: number;
+        };
+        ProjectAudiencePoint: {
+            /** Format: int64 */
+            clicks?: number;
+            /** Format: date-time */
+            start?: string;
+            /** Format: int64 */
+            views?: number;
+        };
+        ProjectAudienceResponse: {
+            /** Format: int64 */
+            allTimeViews?: number;
+            /** @enum {string} */
+            bucket?: "HOUR" | "DAY" | "MONTH";
+            /** Format: date-time */
+            computedAt?: string;
+            countries?: components["schemas"]["ProjectAudienceCountry"][];
+            /** Format: date-time */
+            from?: string;
+            /** @enum {string} */
+            period?: "day" | "week" | "month" | "year";
+            platforms?: components["schemas"]["ProjectAudiencePlatform"][];
+            series?: components["schemas"]["ProjectAudiencePoint"][];
+            surfaces?: components["schemas"]["ProjectAudienceSurface"][];
+            timeZone?: string;
+            /** Format: date-time */
+            to?: string;
+            totals?: components["schemas"]["ProjectAudienceTotals"];
+        };
+        ProjectAudienceSurface: {
+            /** Format: int64 */
+            clicks?: number;
+            /** @enum {string} */
+            surface?: "HOME" | "DISCOVER" | "SEARCH" | "CATEGORY" | "COLLECTION" | "PROFILE" | "SAVED" | "OTHER";
+        };
+        ProjectAudienceTotals: {
+            /** Format: int64 */
+            clicks?: number;
+            /** Format: int64 */
+            views?: number;
         };
         ProjectChecklist: {
             advisory?: components["schemas"]["ChecklistItemBody"][];
@@ -6661,6 +6860,8 @@ export interface components {
             risks?: string;
             /** Format: date-time */
             scheduledLaunchAt?: string;
+            /** Format: date-time */
+            scheduledLaunchRefusedAt?: string;
             slug?: string;
             state?: string;
             story?: components["schemas"]["JsonNode"];
@@ -6689,6 +6890,8 @@ export interface components {
             creator?: components["schemas"]["Creator"];
             /** Format: date-time */
             deadline?: string;
+            /** Format: date-time */
+            extendedUntil?: string;
             goal?: components["schemas"]["Money"];
             /** Format: uuid */
             id?: string;
@@ -7107,8 +7310,22 @@ export interface components {
             /** Format: int32 */
             weightGrams?: number;
         };
+        RevisionQueueEntry: {
+            changedFields?: string[];
+            /** Format: uuid */
+            creatorId?: string;
+            creatorName?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            projectId?: string;
+            slug?: string;
+            /** Format: date-time */
+            submittedAt?: string;
+            title?: string;
+        };
         RevisionQueueResponse: {
-            revisions?: components["schemas"]["Entry"][];
+            revisions?: components["schemas"]["RevisionQueueEntry"][];
         };
         RevisionRejectionBody: {
             /** Format: date-time */
@@ -7326,15 +7543,15 @@ export interface components {
             width?: number;
         };
         RoleCapabilitiesRequest: {
-            capabilities: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+            capabilities: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS" | "VIEW_AUDIENCE")[];
         };
         RoleCapabilityMatrix: {
             roles?: components["schemas"]["RoleCapabilitySet"][];
         };
         RoleCapabilitySet: {
-            adjustable?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
-            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
-            defaults?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+            adjustable?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS" | "VIEW_AUDIENCE")[];
+            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS" | "VIEW_AUDIENCE")[];
+            defaults?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS" | "VIEW_AUDIENCE")[];
             /** @enum {string} */
             role?: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "SUPER_ADMIN" | "PARTNER";
         };
@@ -7615,6 +7832,8 @@ export interface components {
             note?: string;
             /** Format: uuid */
             projectId?: string;
+            /** Format: date-time */
+            scheduledLaunchAt?: string;
             slug?: string;
             state?: string;
             title?: string;
@@ -8137,6 +8356,12 @@ export type SchemaAmounts = components['schemas']['Amounts'];
 export type SchemaAnswerBody = components['schemas']['AnswerBody'];
 export type SchemaApproval = components['schemas']['Approval'];
 export type SchemaApproveRequest = components['schemas']['ApproveRequest'];
+export type SchemaAudienceCountryVisitors = components['schemas']['AudienceCountryVisitors'];
+export type SchemaAudienceEventRequest = components['schemas']['AudienceEventRequest'];
+export type SchemaAudiencePlatformVisitors = components['schemas']['AudiencePlatformVisitors'];
+export type SchemaAudiencePoint = components['schemas']['AudiencePoint'];
+export type SchemaAudienceTopCampaign = components['schemas']['AudienceTopCampaign'];
+export type SchemaAudienceTotals = components['schemas']['AudienceTotals'];
 export type SchemaBacker = components['schemas']['Backer'];
 export type SchemaBackerBreakdownResponse = components['schemas']['BackerBreakdownResponse'];
 export type SchemaBackerFilterBody = components['schemas']['BackerFilterBody'];
@@ -8326,6 +8551,7 @@ export type SchemaPlanPaymentBankTransferRequest = components['schemas']['PlanPa
 export type SchemaPlanText = components['schemas']['PlanText'];
 export type SchemaPlanTranslation = components['schemas']['PlanTranslation'];
 export type SchemaPlatformAnalyticsResponse = components['schemas']['PlatformAnalyticsResponse'];
+export type SchemaPlatformAudienceResponse = components['schemas']['PlatformAudienceResponse'];
 export type SchemaPlatformHealth = components['schemas']['PlatformHealth'];
 export type SchemaPlatformStatus = components['schemas']['PlatformStatus'];
 export type SchemaPledgeAddonBody = components['schemas']['PledgeAddonBody'];
@@ -8344,6 +8570,12 @@ export type SchemaProfileProjectListResponse = components['schemas']['ProfilePro
 export type SchemaProfileVisibilityRequest = components['schemas']['ProfileVisibilityRequest'];
 export type SchemaProject = components['schemas']['Project'];
 export type SchemaProjectAnalyticsResponse = components['schemas']['ProjectAnalyticsResponse'];
+export type SchemaProjectAudienceCountry = components['schemas']['ProjectAudienceCountry'];
+export type SchemaProjectAudiencePlatform = components['schemas']['ProjectAudiencePlatform'];
+export type SchemaProjectAudiencePoint = components['schemas']['ProjectAudiencePoint'];
+export type SchemaProjectAudienceResponse = components['schemas']['ProjectAudienceResponse'];
+export type SchemaProjectAudienceSurface = components['schemas']['ProjectAudienceSurface'];
+export type SchemaProjectAudienceTotals = components['schemas']['ProjectAudienceTotals'];
 export type SchemaProjectChecklist = components['schemas']['ProjectChecklist'];
 export type SchemaProjectEdit = components['schemas']['ProjectEdit'];
 export type SchemaProjectFaqListResponse = components['schemas']['ProjectFaqListResponse'];
@@ -8401,6 +8633,7 @@ export type SchemaRevisionBody = components['schemas']['RevisionBody'];
 export type SchemaRevisionDecisionResponse = components['schemas']['RevisionDecisionResponse'];
 export type SchemaRevisionItem = components['schemas']['RevisionItem'];
 export type SchemaRevisionItemWriting = components['schemas']['RevisionItemWriting'];
+export type SchemaRevisionQueueEntry = components['schemas']['RevisionQueueEntry'];
 export type SchemaRevisionQueueResponse = components['schemas']['RevisionQueueResponse'];
 export type SchemaRevisionRejectionBody = components['schemas']['RevisionRejectionBody'];
 export type SchemaRevisionReviewResponse = components['schemas']['RevisionReviewResponse'];
@@ -8769,6 +9002,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlatformAnalyticsResponse"];
+                };
+            };
+        };
+    };
+    platformAudiencePlatform: {
+        parameters: {
+            query?: {
+                period?: "day" | "week" | "month" | "year";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAudienceResponse"];
+                };
+            };
+        };
+    };
+    platformAudienceProject: {
+        parameters: {
+            query?: {
+                period?: "day" | "week" | "month" | "year";
+            };
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectAudienceResponse"];
                 };
             };
         };
@@ -9287,7 +9566,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9311,7 +9590,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9339,7 +9618,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9361,7 +9640,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9384,7 +9663,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9410,7 +9689,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9436,7 +9715,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PROJECT_APPROVED_SCHEDULED" | "CAMPAIGN_EDIT_APPROVED" | "CAMPAIGN_EDIT_REJECTED" | "SCHEDULED_LAUNCH_REFUSED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "REFUND_SENT_BY_BANK" | "SUBSCRIPTION_RENEWAL_DUE" | "SUBSCRIPTION_LAPSED" | "SUBSCRIPTION_RENEWED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -12120,6 +12399,28 @@ export interface operations {
             };
         };
     };
+    audienceEventRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudienceEventRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     twoFactorConfirm: {
         parameters: {
             query?: never;
@@ -12748,7 +13049,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "extended" | "successful")[];
+                status?: ("live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */
@@ -12815,7 +13116,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "extended" | "successful")[];
+                status?: ("live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */
@@ -14684,28 +14985,6 @@ export interface operations {
             };
         };
     };
-    projectOpenPrelaunch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectEdit"];
-                };
-            };
-        };
-    };
     prelaunchRemind: {
         parameters: {
             query?: never;
@@ -14957,6 +15236,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectAnalyticsResponse"];
+                };
+            };
+        };
+    };
+    projectAudienceAudience: {
+        parameters: {
+            query?: {
+                period?: "day" | "week" | "month" | "year";
+            };
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectAudienceResponse"];
                 };
             };
         };
@@ -16070,7 +16373,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "extended" | "successful")[];
+                status?: ("live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */

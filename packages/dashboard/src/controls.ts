@@ -6,9 +6,12 @@ import Decimal from 'decimal.js';
  *
  * <h2>The service decides; this only decides what to offer</h2>
  *
- * The window around the first deadline is not visible from the dashboard, so a refusal still
- * comes back with a reason and is worded by {@link refusalOf}. What is offered here is the part
- * that can be known beforehand: the state, the share of the goal raised, and the date bounds.
+ * A refusal still comes back with a reason and is worded by {@link refusalOf}. What is offered
+ * here is the part that can be known beforehand: the state, the share of the goal raised, the
+ * date bounds, and whether today is inside the window the service accepts an extension in —
+ * from {@link EXTENSION_OPENS_BEFORE_DAYS} days before the first deadline until the closing
+ * window ends (#619). Offering a date field before then only led to a confirmed choice being
+ * refused with `OUTSIDE_WINDOW`.
  *
  * <h2>Percentages compared as decimals</h2>
  *
@@ -33,6 +36,16 @@ export const EXTEND_AT_PERCENT = new Decimal(50);
 export const WITHDRAW_AT_PERCENT = new Decimal(80);
 /** The latest new deadline, in days after the first one — "even if extended on the seventh day after". */
 export const MAX_EXTENSION_DAYS = 60;
+/**
+ * How long before the first deadline the service starts accepting an extension — the API's
+ * `ideanest.project.extension.opens-before`, 7d.
+ */
+export const EXTENSION_OPENS_BEFORE_DAYS = 7;
+/**
+ * How long after the first deadline a campaign still takes pledges and may be extended — the
+ * API's `ideanest.project.finalisation.closing-window`, 7d.
+ */
+export const CLOSING_WINDOW_DAYS = 7;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -56,25 +69,44 @@ export interface ControlsOffer {
   readonly canWithdraw: boolean;
   /** Withdrawal is the state's to offer, but the campaign has not reached 80%: say when it will be. */
   readonly belowThreshold: boolean;
+  /**
+   * The campaign qualifies for an extension but the window has not opened yet: the instant it
+   * opens, so the card names the day instead of offering a field the service would refuse.
+   * `null` whenever there is nothing to wait for.
+   */
+  readonly extendOpensAt: string | null;
 }
 
+/**
+ * @param deadline the first deadline, as the dashboard reports it
+ * @param now the current instant in epoch milliseconds, corrected by the clock skew the caller
+ *     measured against the response's `serverTime`, so a device whose clock is wrong does not
+ *     open the window early or late
+ */
 export function controlsOffer(
   state: string,
   percentFunded: number | string | null | undefined,
   deadline: string | null | undefined,
+  now: number,
 ): ControlsOffer {
   const shown = CONTROL_STATES.has(state);
   // No goal is nothing raised against one: the service refuses both actions for it.
   const percent = percentOf(percentFunded) ?? new Decimal(0);
   const reachedWithdraw = percent.greaterThanOrEqualTo(WITHDRAW_AT_PERCENT);
+  const qualifies =
+    EXTENDABLE_STATES.has(state) &&
+    percent.greaterThanOrEqualTo(EXTEND_AT_PERCENT) &&
+    extensionWindow(deadline) !== null;
+  // `qualifies` already rules out a missing or unreadable deadline, so `at` is a number below.
+  const at = deadline == null ? Number.NaN : Date.parse(deadline);
+  const opens = at - EXTENSION_OPENS_BEFORE_DAYS * DAY_MS;
+  const closes = at + CLOSING_WINDOW_DAYS * DAY_MS;
   return {
     shown,
-    canExtend:
-      EXTENDABLE_STATES.has(state) &&
-      percent.greaterThanOrEqualTo(EXTEND_AT_PERCENT) &&
-      extensionWindow(deadline) !== null,
+    canExtend: qualifies && now >= opens && now < closes,
     canWithdraw: shown && reachedWithdraw,
     belowThreshold: shown && !reachedWithdraw,
+    extendOpensAt: qualifies && now < opens ? new Date(opens).toISOString() : null,
   };
 }
 

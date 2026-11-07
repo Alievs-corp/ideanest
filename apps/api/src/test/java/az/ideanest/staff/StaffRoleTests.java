@@ -135,6 +135,19 @@ class StaffRoleTests {
                         StaffCapability.VIEW_FINANCE);
     }
 
+    @Test
+    @DisplayName("the audience figures are held by super admins, finance and curators, and by nobody else by default")
+    void audienceFiguresHaveTheirOwnCapability() {
+        // #633. Counts of people reading the site, not money: a curator needs them to arrange the
+        // front page, and holding them must not need VIEW_FINANCE.
+        for (StaffRole role : StaffRole.values()) {
+            assertThat(role.capabilities().contains(StaffCapability.VIEW_AUDIENCE))
+                    .withFailMessage("%s and VIEW_AUDIENCE", role)
+                    .isEqualTo(role == StaffRole.SUPER_ADMIN || role == StaffRole.FINANCE || role == StaffRole.CURATOR);
+        }
+        assertThat(StaffRole.adjustableCapabilities()).contains(StaffCapability.VIEW_AUDIENCE);
+    }
+
     @ParameterizedTest
     @DisplayName("every role can read the audit trail")
     @EnumSource(value = StaffRole.class, mode = EnumSource.Mode.EXCLUDE, names = "PARTNER")

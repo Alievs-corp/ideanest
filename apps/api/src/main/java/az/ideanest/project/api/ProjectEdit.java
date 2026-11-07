@@ -37,6 +37,11 @@ import java.util.UUID;
  *     {@code 409 PROJECT_FIELD_LOCKED} when it tries. A reward's price is frozen by
  *     the same rule and is deliberately not listed here — it is not a field of this
  *     body. See {@code ProjectEditLocks}
+ * @param scheduledLaunchRefusedAt when the clock last refused to open the campaign at its launch
+ *     time because its creator's plan did not cover it, and cleared that time (#587, #589). Set
+ *     only while that is still why it is not opening: the campaign is approved and has no launch
+ *     time. Null once a launch time is set again or the campaign opens, and on every campaign
+ *     the clock never refused
  * @param revision for a launched campaign, the edit its creator has open: the fields above then
  *     hold that edit rather than what the public sees, until a moderator approves it (#558).
  *     Null when there is none
@@ -55,6 +60,7 @@ public record ProjectEdit(
         Money goal,
         Integer durationDays,
         Instant scheduledLaunchAt,
+        Instant scheduledLaunchRefusedAt,
         Instant launchedAt,
         Instant deadline,
         JsonNode story,

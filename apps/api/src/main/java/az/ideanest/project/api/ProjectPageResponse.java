@@ -32,6 +32,9 @@ import tools.jackson.databind.JsonNode;
  *     {@link #of}
  * @param outcome §5.1's decision and the numbers that produced it, once the deadline has
  *     passed. Absent while the campaign is running
+ * @param extendedUntil where an extended campaign now ends, absent until it is extended
+ *     (#618). {@code deadline} stays the first deadline; what a backer is promised — the
+ *     date the campaign must reach 80% by — is this one while the state is {@code EXTENDED}
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ProjectPageResponse(
@@ -50,6 +53,7 @@ public record ProjectPageResponse(
         int backersCount,
         Instant launchedAt,
         Instant deadline,
+        Instant extendedUntil,
         JsonNode story,
         String risks,
         Outcome outcome) {
@@ -94,6 +98,7 @@ public record ProjectPageResponse(
                 page.backersCount(),
                 page.launchedAt(),
                 page.deadline(),
+                page.extendedUntil(),
                 story,
                 page.risks(),
                 outcome(page.outcome()));

@@ -6,6 +6,7 @@ import { InlineAlert, ProgressBar, Skeleton, SkeletonGroup, StatBlock, StatRow }
 import { ApiError } from '../../lib/api/problem';
 import { getDashboard, type CampaignDashboard } from '../../lib/dashboard/api';
 import { clockSkewMs } from '@ideanest/dashboard/clock';
+import { fundingEndsAt } from '@ideanest/campaign/days-left';
 import { formatMoney } from '../../lib/money';
 import { CampaignClock } from './CampaignClock';
 import { CampaignControls } from './CampaignControls';
@@ -140,29 +141,39 @@ export function DashboardOverview({
       </h1>
 
       <div className="mt-6">
+        {/* The extension's end once extended (#618); the controls below keep the first deadline. */}
         <CampaignClock
-          deadline={dashboard.deadline ?? null}
+          deadline={fundingEndsAt(dashboard.state, dashboard.deadline, dashboard.extendedUntil)}
           skewMs={skewMs}
           nowImpl={nowImpl}
           copy={copy.clock}
+          opensAt={dashboard.opensAt ?? null}
         />
       </div>
 
+      {/*
+        The total is the figure; the other two are its context, a size down and wrapping as a
+        pair, so no width leaves one of them alone on a line of its own.
+      */}
       <StatRow className="mt-8">
         <StatBlock label={copy.raised} value={formatMoney(dashboard.raised)} />
-        <StatBlock
-          label={copy.backers}
-          value={
-            <span className="inline-flex items-center gap-2">
-              <Users className="size-5" aria-hidden />
-              {dashboard.backersCount}
-            </span>
-          }
-        />
-        <StatBlock
-          label={copy.goal}
-          value={dashboard.goal ? formatMoney(dashboard.goal) : copy.goalUnset}
-        />
+        <StatRow>
+          <StatBlock
+            size="md"
+            label={copy.backers}
+            value={
+              <span className="inline-flex items-center gap-2">
+                <Users className="size-6" aria-hidden />
+                {dashboard.backersCount}
+              </span>
+            }
+          />
+          <StatBlock
+            size="md"
+            label={copy.goal}
+            value={dashboard.goal ? formatMoney(dashboard.goal) : copy.goalUnset}
+          />
+        </StatRow>
       </StatRow>
 
       {percent === undefined || percent === null ? (
@@ -182,7 +193,7 @@ export function DashboardOverview({
               {fillPlaceholders(copy.percentFunded, { percent: String(percent) })}
             </span>
             {funded ? (
-              <span className="inline-flex items-center gap-1 text-[--success]">
+              <span className="inline-flex items-center gap-1 text-success">
                 <CircleCheck className="size-4" aria-hidden />
                 {copy.goalReached}
               </span>
@@ -200,6 +211,8 @@ export function DashboardOverview({
           copy={controls.copy}
           locale={controls.locale}
           onChanged={() => setAttempt((n) => n + 1)}
+          // The device's clock as the service's: `skewMs` is how far ahead the device is.
+          now={() => now() - skewMs}
         />
       )}
 

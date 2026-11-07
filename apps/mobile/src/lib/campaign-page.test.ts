@@ -50,6 +50,17 @@ describe('readCampaignPage', () => {
     expect(page?.daysLeft).toBe(0);
   });
 
+  it('counts an extended campaign to the end of its extension, not its first deadline (#618)', () => {
+    const page = readCampaignPage(
+      { ...RESPONSE, state: 'EXTENDED', deadline: '2026-09-20T13:00:00Z', extendedUntil: '2026-10-21T13:00:00Z' },
+      'aysel',
+      NOW,
+    );
+    expect(page?.deadline).toBe('2026-09-20T13:00:00Z');
+    expect(page?.fundingEndsAt).toBe('2026-10-21T13:00:00Z');
+    expect(page?.daysLeft).toBe(20);
+  });
+
   it('reads the video a player needs, and no video from one that lacks any of it (#331)', () => {
     const video = {
       mediaId: '7d0c5b8e-0f6e-4c43-9a43-2a3f0c8a1b11',

@@ -83,6 +83,7 @@ import {
   userDirectoryCopyFrom,
 } from './people-copy';
 import {
+  audienceCopyFrom,
   auditTrailCopyFrom,
   emailTemplateEditorCopyFrom,
   emailTemplateIndexCopyFrom,
@@ -91,6 +92,7 @@ import {
   legalDocumentEditorCopyFrom,
   maintenanceConsoleCopyFrom,
   platformAnalyticsCopyFrom,
+  type AudienceCopy,
   type AuditTrailCopy,
   type EmailTemplateEditorCopy,
   type EmailTemplateIndexCopy,
@@ -159,6 +161,10 @@ export async function maintenanceConsoleCopy(): Promise<MaintenanceConsoleCopy> 
 
 export async function platformAnalyticsCopy(): Promise<PlatformAnalyticsCopy> {
   return platformAnalyticsCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+export async function audienceCopy(): Promise<AudienceCopy> {
+  return audienceCopyFrom(await getTranslations('admin'), await getTranslations('common'), await consoleChrome());
 }
 
 export async function emailTemplateIndexCopy(): Promise<EmailTemplateIndexCopy> {

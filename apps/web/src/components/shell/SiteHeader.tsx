@@ -99,6 +99,11 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
         </Link>
       }
       navClassName="hidden md:flex"
+      /*
+        Where the pill is hidden, the collapsed bar takes the page ground instead, so what
+        scrolls under it goes under it rather than through it. Same breakpoint as the pill's.
+      */
+      groundClassName="md:hidden"
       nav={
         /*
          * THE PILL IS WHAT IS HIDDEN BELOW `md`, NOT THE LIST INSIDE IT. It used to be the

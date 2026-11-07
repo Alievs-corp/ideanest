@@ -206,8 +206,7 @@ export async function submitProject(
  * The one transition on this screen that moves money rather than paperwork. The
  * campaign enters every public listing, starts taking pledges, and its goal and
  * deadline freeze on the edge into `LIVE` — §6.1 has no way back to a draft. So
- * the interface asks first, the way `openPrelaunch` does for a much smaller
- * consequence.
+ * the interface asks first.
  *
  * Refused with `PROJECT_TRANSITION_NOT_ALLOWED` (409) from any other state, and
  * with `PROJECT_NOT_LAUNCHABLE` (409) naming the fields a campaign cannot launch
@@ -368,32 +367,16 @@ export async function restoreStoryVersion(
 /* -------------------------------------------------------------------------
  * Pre-launch and launch reminders — #39
  *
- * THREE OF THESE FOUR NEED NO SESSION, which is the whole point of the feature:
- * a pre-launch page collects followers from people who have not registered, and
+ * NONE OF THESE NEED A SESSION, which is the whole point of the feature: a
+ * pre-launch page collects followers from people who have not registered, and
  * asking them to sign in first is how the list stays empty. They go through
  * `publicFetch` rather than `authorizedFetch` for that reason — see the comment
  * on it for what changes when the visitor happens to be signed in anyway.
  *
- * `openPrelaunch` is the exception and is the creator's: it publishes the
- * campaign, and there is no way back (docs/architecture.md §6.1 has no
- * PRELAUNCH -> DRAFT edge).
+ * There is no call that opens the page. It is public once moderation has
+ * approved the campaign (`APPROVED` or `SCHEDULED`); a creator can no longer
+ * publish an unreviewed draft through it.
  * ---------------------------------------------------------------------- */
-
-/**
- * Opens the pre-launch page: `DRAFT` → `PRELAUNCH`.
- *
- * An action with consequences and no undo, so the interface asks first. It is a
- * transition like `submit` and `launch`, so it answers with the whole
- * `ProjectEdit` and the caller takes that as the new truth.
- */
-export async function openPrelaunch(id: string, signal?: AbortSignal): Promise<ProjectEdit> {
-  return readProject(
-    await authorizedFetch(`/v1/projects/${encodeURIComponent(id)}/prelaunch`, {
-      method: 'POST',
-      signal,
-    }),
-  );
-}
 
 /** The public pre-launch page. 404 for a campaign that has not opened one. */
 export async function getPrelaunchPage(id: string, signal?: AbortSignal): Promise<PrelaunchPage> {
@@ -515,6 +498,14 @@ export async function createItem(
   );
 }
 
+/**
+ * Edits an item, and answers with it.
+ *
+ * On a launched campaign the change to an item an approved tier contains is held for a
+ * moderator (#587): the answer, like the list's, carries the PROPOSED values and names the held
+ * fields in `revisionChangedFields`. The SKU, and an item no approved tier contains, are written
+ * at once.
+ */
 export async function patchItem(id: string, patch: ItemPatch, signal?: AbortSignal): Promise<Item> {
   return readItem(
     await authorizedFetch(`/v1/items/${encodeURIComponent(id)}`, {

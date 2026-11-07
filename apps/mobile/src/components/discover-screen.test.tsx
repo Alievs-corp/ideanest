@@ -55,7 +55,6 @@ function card(title: string, index: number) {
 
 const NO_FACETS = {
   status: [
-    { value: 'upcoming', count: 2 },
     { value: 'live', count: 5 },
     { value: 'extended', count: 0 },
     { value: 'successful', count: 1 },

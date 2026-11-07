@@ -176,23 +176,23 @@ describe('ProjectCard', () => {
   });
 
   it('renders a campaign with no goal, no deadline, and no cover', () => {
-    // `foxtrot` in the service's own fixture: the row that finds a card which
-    // cannot be built without a cover image, and a completion band that treats
-    // "no goal" as zero percent. A percentage of nothing is undefined, not zero.
+    // The catalogue no longer lists a pre-launch teaser, the one campaign with no
+    // goal, but the card must still not break on one: a card that cannot be built
+    // without a cover image, or that reads "no goal" as zero percent, is wrong
+    // wherever it is drawn. A percentage of nothing is undefined, not zero.
     renderCard({
       image: null,
       goal: null,
       completionPercent: null,
       daysLeft: null,
       deadline: null,
-      badge: 'upcoming',
+      badge: null,
       state: 'PRELAUNCH',
       backersCount: 0,
     });
 
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     expect(screen.getByText('Not open for pledges yet')).toBeInTheDocument();
-    expect(screen.getByText('Upcoming')).toBeInTheDocument();
     expect(screen.getByText('0 backers')).toBeInTheDocument();
   });
 
@@ -201,7 +201,7 @@ describe('ProjectCard', () => {
     // about a withdrawn campaign that is not true.
     renderCard({ badge: null, state: 'CANCELED' });
 
-    for (const word of ['Live', 'Upcoming', 'Successful', 'Extended', 'Closing soon']) {
+    for (const word of ['Live', 'Successful', 'Extended', 'Closing soon']) {
       expect(screen.queryByText(word)).not.toBeInTheDocument();
     }
   });

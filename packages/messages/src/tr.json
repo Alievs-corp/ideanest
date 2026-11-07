@@ -13,7 +13,13 @@
         "many": "{count} destekçi",
         "other": "{count} destekçi"
       },
-      "rule": "Hedefin %80'inde başarılı"
+      "rule": "Hedefin %80'inde başarılı",
+      "views": {
+        "one": "{count} görüntülenme",
+        "few": "{count} görüntülenme",
+        "many": "{count} görüntülenme",
+        "other": "{count} görüntülenme"
+      }
     },
     "saving": "Kaydediliyor…",
     "tryAgain": "Tekrar deneyin",
@@ -43,6 +49,38 @@
         "few": "{count} karakter fazla",
         "many": "{count} karakter fazla",
         "other": "{count} karakter fazla"
+      }
+    },
+    "audience": {
+      "period": {
+        "day": "Günlük",
+        "week": "Haftalık",
+        "month": "Aylık",
+        "year": "Yıllık"
+      },
+      "periodLabel": "Dönem",
+      "views": "Görüntülenme",
+      "clicks": "Tıklama",
+      "visitors": "Ziyaretçi",
+      "pageViews": "Sayfa görüntüleme",
+      "countries": "Ülkeler",
+      "platforms": "Platformlar",
+      "unknownCountry": "Bilinmiyor",
+      "dailySumNote": "Ziyaretçiler her gün ayrı sayılır ve toplanır; iki farklı günde gelen biri iki kez sayılır.",
+      "platform": {
+        "WEB": "Web",
+        "IOS": "iOS",
+        "ANDROID": "Android"
+      },
+      "surface": {
+        "HOME": "Ana sayfa",
+        "DISCOVER": "Keşfet",
+        "SEARCH": "Arama",
+        "CATEGORY": "Kategori",
+        "COLLECTION": "Koleksiyon",
+        "PROFILE": "Profil",
+        "SAVED": "Kaydedilenler",
+        "OTHER": "Diğer"
       }
     }
   },
@@ -204,7 +242,9 @@
       "settings": "Ayarlar"
     },
     "nav": {
-      "label": "Hesap"
+      "label": "Hesap",
+      "open": "Hesap menüsünü aç",
+      "close": "Hesap menüsünü kapat"
     },
     "links": {
       "pledges": {
@@ -288,6 +328,7 @@
         "loadMore": "Daha fazla göster",
         "loadingMore": "Yükleniyor",
         "draftHint": "Henüz yayımlanmadı",
+        "opensAt": "{date} tarihinde kendiliğinden açılacak",
         "view": "Görüntüle",
         "edit": "Düzenle",
         "dashboard": "Pano",
@@ -557,7 +598,10 @@
         "CAMPAIGN_SUCCEEDED": "{campaign} kampanyası {amount} tutarıyla fonlandı",
         "CAMPAIGN_UNSUCCESSFUL": "{campaign} kampanyası hedefine ulaşamadan kapandı",
         "PROJECT_APPROVED": "{campaign} onaylandı ve yayınlandı",
+        "PROJECT_APPROVED_SCHEDULED": "{campaign} onaylandı, {when} açılacak",
         "SCHEDULED_LAUNCH_REFUSED": "{campaign} lansman saatinde açılmadı: planınız onu kapsamıyor",
+        "CAMPAIGN_EDIT_APPROVED": "{campaign} için yaptığınız değişiklikler onaylandı",
+        "CAMPAIGN_EDIT_REJECTED": "{campaign} için yaptığınız değişiklikler onaylanmadı",
         "PAYMENT_COLLECTED": "{campaign} için {amount} tutarındaki ödeme tahsil edildi",
         "FINAL_PAYMENT_WARNING": "Son uyarı: {campaign} için {amount} tutarındaki ödeme",
         "PAYOUT_SENT": "{campaign} için {amount} tutarındaki ödeme {when} yapıldı",
@@ -591,7 +635,10 @@
         "CAMPAIGN_SUCCEEDED": "Bir kampanya {amount} tutarıyla fonlandı",
         "CAMPAIGN_UNSUCCESSFUL": "Bir kampanya hedefine ulaşamadan kapandı",
         "PROJECT_APPROVED": "Bir kampanya onaylandı ve yayınlandı",
+        "PROJECT_APPROVED_SCHEDULED": "Bir kampanya onaylandı, {when} açılacak",
         "SCHEDULED_LAUNCH_REFUSED": "Bir kampanya lansman saatinde açılmadı: planınız onu kapsamıyor",
+        "CAMPAIGN_EDIT_APPROVED": "Kampanyanızdaki değişiklikler onaylandı",
+        "CAMPAIGN_EDIT_REJECTED": "Kampanyanızdaki değişiklikler onaylanmadı",
         "PAYMENT_COLLECTED": "Bir kampanya için {amount} tutarındaki ödeme tahsil edildi",
         "FINAL_PAYMENT_WARNING": "Son uyarı: bir kampanya için {amount} tutarındaki ödeme",
         "PAYOUT_SENT": "Bir kampanya için {amount} tutarındaki ödeme {when} yapıldı",
@@ -747,6 +794,7 @@
       "/admin/fees": "Ücretler",
       "/admin/plans": "Planlar",
       "/admin/analytics": "Platform analitiği",
+      "/admin/audience": "Kitle",
       "/admin/audit": "Denetim günlüğü",
       "/admin/email-templates": "E-posta şablonları",
       "/admin/flags": "Özellik bayrakları",
@@ -831,7 +879,7 @@
       },
       "AD-13": {
         "title": "Analitik",
-        "summary": "Platformun tamamında hacim, başarı oranı ve ortalama destek.",
+        "summary": "Platformun tamamında hacim, başarı oranı, ortalama destek ve kitle: ziyaretçiler, sayfa ve kampanya görüntülemeleri.",
         "waitingOn": "Kohortlar için destekçinin ilk desteğine dayalı bir toplama, huniler için ziyaretten desteğe giden yol gerekiyor; ikisi de yok ve ekran onları yaklaştırmak yerine bunu söylüyor (#313)."
       },
       "AD-14": {
@@ -937,6 +985,12 @@
         "metaDescription": "Tüm platform genelinde hacim, başarı oranı ve ortalama destek.",
         "title": "Platform analitiği",
         "intro": "Seçilen dönem için destek hacmi, destekçiler, ortalama destek ve kampanya sonuçları."
+      },
+      "audience": {
+        "metaTitle": "Platform kitlesi",
+        "metaDescription": "Tüm platform genelinde ziyaretçiler, sayfa görüntülemeleri, kampanya görüntülemeleri ve tıklamalar.",
+        "title": "Platform kitlesi",
+        "intro": "Seçtiğiniz dönemde platforma kaç kişinin geldiği, hangi ülkelerden ve hangi platformlardan girdiği ve hangi kampanyalara baktığı."
       },
       "curation": {
         "metaTitle": "Koleksiyonlar",
@@ -1598,6 +1652,37 @@
         "nowHeading": "Şu an",
         "computedAt": "Rakamlar {time} itibarıyla okundu (Bakü saati)."
       },
+      "audience": {
+        "subject": "kitle rakamlarını",
+        "loadingList": "Kitle rakamları yükleniyor",
+        "computedAt": "Rakamlar {time} itibarıyla okundu (Bakü saati).",
+        "campaignViews": "Kampanya görüntülemeleri",
+        "campaignClicks": "Kampanya tıklamaları",
+        "allTimeViews": "Tüm zamanların görüntülenmesi",
+        "trafficHeading": "Ziyaretçiler ve sayfa görüntülemeleri",
+        "campaignChartHeading": "Kampanya görüntülemeleri ve tıklamalar",
+        "nothingRecorded": "Bu dönemde hiçbir şey kaydedilmedi.",
+        "surfacesHeading": "Tıklamaların geldiği yerler",
+        "showAllCountries": "Tüm ülkeleri göster",
+        "topHeading": "En çok görüntülenen kampanyalar",
+        "topNote": "Bu dönemde en çok görüntülenen yirmi kampanya. Kampanyanın kendi rakamlarını görmek için satırı açın.",
+        "topEmpty": "Bu dönemde hiçbir kampanya görüntülenmedi.",
+        "campaignColumn": "Kampanya",
+        "ratioColumn": "Görüntüleme başına tıklama",
+        "noViews": "Görüntüleme yok",
+        "breakdown": "Ayrıntılar",
+        "breakdownLabel": "{title}: ayrıntılar",
+        "breakdownSubject": "bu kampanyanın kitlesini",
+        "breakdownLoading": "Kampanyanın kitlesi yükleniyor",
+        "chart": {
+          "summary": "{first} ve {second}, {from} – {to}",
+          "granularity": {
+            "HOUR": "Her sütun çifti bir saat",
+            "DAY": "Her sütun çifti bir gün",
+            "MONTH": "Her sütun çifti bir ay"
+          }
+        }
+      },
       "emailTemplates": {
         "subject": "e-posta şablonlarını",
         "loadingList": "E-posta şablonları yükleniyor",
@@ -1636,7 +1721,10 @@
           "CAMPAIGN_EXTENDED": "Kampanya süresi uzatıldı",
           "UPDATE_DUE_SOON": "Güncelleme zamanı yaklaşıyor",
           "PROJECT_APPROVED": "Kampanya onaylandı",
+          "PROJECT_APPROVED_SCHEDULED": "Kampanya onaylandı, lansman saatini bekliyor",
           "SCHEDULED_LAUNCH_REFUSED": "Planlanan lansman gerçekleşmedi",
+          "CAMPAIGN_EDIT_APPROVED": "Kampanya değişiklikleri onaylandı",
+          "CAMPAIGN_EDIT_REJECTED": "Kampanya değişiklikleri onaylanmadı",
           "PAYMENT_COLLECTED": "Ödeme alındı",
           "PAYMENT_FAILED": "Ödeme gerçekleşmedi",
           "FINAL_PAYMENT_WARNING": "Son ödeme uyarısı",
@@ -2338,7 +2426,8 @@
           "READ_BANK_DETAILS": "Yaratıcının IBAN'ını tam olarak açmak — doğrulamak ya da ödeme yapmak için",
           "GRANT_COMPLIANCE_OVERRIDE": "Bir hesap için uyum gereğini sınırlı bir süreyle kaldırmak",
           "ADMINISTER_STAFF": "Rol vermek ve geri almak",
-          "VIEW_PARTNER_STATISTICS": "Finansal istatistikleri ortak olarak okumak: yalnızca toplamlar, anlaşılan paya göre"
+          "VIEW_PARTNER_STATISTICS": "Finansal istatistikleri ortak olarak okumak: yalnızca toplamlar, anlaşılan paya göre",
+          "VIEW_AUDIENCE": "Kitle rakamlarını okumak: ziyaretçiler, sayfa görüntülemeleri, kampanya görüntülemeleri ve tıklamalar"
         },
         "picker": {
           "subject": "hesap dizinini",
@@ -3287,7 +3376,10 @@
         "creatorGone": "Kurucunun hesabı kapatıldı",
         "decideHeading": "Bu kampanya için karar verin",
         "decideGroup": "{title} için karar ver",
-        "notice": "{title} artık {state}."
+        "notice": "{title} artık {state}.",
+        "launchLabel": "Lansman saati",
+        "approveWaits": "Kampanya sahibi bir lansman saati belirledi. Onay kampanyayı şimdi yayınlamaz: kampanya {date} tarihinde kendiliğinden açılacak.",
+        "noticeOpensAt": "{title} onaylandı ve {date} tarihinde kendiliğinden açılacak."
       },
       "campaignDirectory": {
         "subject": "kampanya dizini",
@@ -3724,7 +3816,9 @@
           "story": "Hikâye",
           "risks": "Riskler ve zorluklar",
           "countries": "Ülkeler",
-          "rewards": "Ödüller"
+          "rewards": "Ödüller",
+          "items": "Ürünler",
+          "shippingZones": "Gönderim bölgeleri"
         },
         "removed": "Silindi:",
         "added": "Eklendi:",
@@ -3847,6 +3941,37 @@
           "noItems": "Ürün yok",
           "noRates": "Ücret yok",
           "secretLinkReplaced": "Gizli bağlantı değiştirilir. Eskisi çalışmaz."
+        },
+        "items": {
+          "intro": "Bu düzenlemenin değiştirdiği, yayındaki ödül kademelerinde yer alan tüm ürünler. Adı geçmeyen alan olduğu gibi kalır.",
+          "untitled": "Adsız ürün",
+          "itemLabel": "Ürün: {name}",
+          "fields": {
+            "name": "Ad",
+            "description": "Açıklama",
+            "imageUrl": "Görsel",
+            "weightGrams": "Ağırlık",
+            "isDigital": "Dijital"
+          },
+          "weight": "{grams} g",
+          "noWeight": "Ağırlık yok",
+          "imageAlt": "{name} ürününün görseli"
+        },
+        "shippingZones": {
+          "intro": "Bu düzenlemenin eklediği, kaldırdığı veya değiştirdiği tüm gönderim bölgeleri. Adı geçmeyen bölge olduğu gibi kalır.",
+          "untitled": "Adsız bölge",
+          "zoneLabel": "Gönderim bölgesi: {name}",
+          "changes": {
+            "added": "Yeni bölge",
+            "removed": "Kaldırılacak",
+            "renamed": "Adı değişti",
+            "countries": "Ülkeleri değişti"
+          },
+          "addedNote": "Yeni bir bölge. Bu düzenleme onaylanana kadar yoktur.",
+          "removedNote": "Düzenleme onaylandığında bu bölge kaldırılır. O zamana kadar yayında kalır.",
+          "name": "Ad",
+          "countries": "Ülkeler",
+          "unchanged": "Önerilen bölgeler yayındakilerle aynı."
         }
       }
     },
@@ -4061,6 +4186,7 @@
       "link": {
         "campaigns": "Kampanyaları aç",
         "moderation": "Moderasyon kuyruğunu aç",
+        "revisions": "Kampanya düzenlemelerini aç",
         "reports": "Şikayetleri aç",
         "support": "Desteği aç",
         "accounts": "Hesapları aç",
@@ -4569,7 +4695,6 @@
     },
     "card": {
       "badges": {
-        "upcoming": "Yakında",
         "live": "Etkin",
         "extended": "Uzatıldı",
         "closing_soon": "Yakında kapanıyor",
@@ -4587,7 +4712,6 @@
     },
     "filters": {
       "status": {
-        "upcoming": "Yakında",
         "live": "Etkin",
         "extended": "Uzatılmış",
         "successful": "Başarılı"
@@ -5421,6 +5545,8 @@
     "eyebrow": "Kampanya düzenleyici",
     "loadingTitle": "Yükleniyor",
     "sectionsLabel": "Kampanya bölümleri",
+    "sectionsOpen": "Kampanya bölümlerini aç",
+    "sectionsClose": "Kampanya bölümlerini kapat",
     "dashboard": "Pano",
     "soon": "yakında",
     "notAvailable": ", bölüm henüz kullanılamıyor",
@@ -5498,6 +5624,7 @@
       "validation": {
         "titleRequired": "Bir projenin başlığı olmalı.",
         "titleTooLong": "Başlık en fazla {max} karakter olur. {over} karakter çıkarın.",
+        "summaryRequired": "Bir projenin özeti olmalı. Destekçiler onu başlığın altında okur.",
         "summaryTooLong": "Özet en fazla {max} karakter olur. {over} karakter çıkarın.",
         "subcategoryWithoutCategory": "Önce bir kategori seçin.",
         "currencyUnsupported": "Platformun tahsil edebileceği bir para birimi seçin.",
@@ -5553,7 +5680,12 @@
         "itemsHeading": "Ürünler",
         "edit": "Düzenle",
         "notInReward": "Hiçbir ödülde değil",
-        "notInRewardDetail": "Bir ödüle eklenene kadar destekçiler onu görmez."
+        "notInRewardDetail": "Bir ödüle eklenene kadar destekçiler onu görmez.",
+        "pending": {
+          "changed": "Değiştirildi, incelemeyi bekliyor",
+          "changedNote": "Bir moderatör değişikliklerinizi onaylayana kadar destekçiler bu ürünün onaylı sürümünü görür.",
+          "heldAnnouncement": "{name} için yaptığınız değişiklikler moderatörü bekliyor. O zamana kadar destekçiler onaylı sürümü görür."
+        }
       },
       "item": {
         "addTitle": "Ürün ekle",
@@ -5586,7 +5718,12 @@
         "imageButtonLabel": "Bir görsel seçin",
         "imageDropHint": "En fazla 20 MB: JPEG, PNG, WebP, AVIF veya HEIC.",
         "imageRemove": "Görseli kaldır",
-        "imageUploaded": "Görsel yüklendi. Saklamak için ürünü kaydedin."
+        "imageUploaded": "Görsel yüklendi. Saklamak için ürünü kaydedin.",
+        "held": {
+          "title": "Bazı değişiklikler incelemeyi bekliyor",
+          "body": "Bu ürün onaylı bir ödülde yer aldığı için aşağıda işaretli alanlar önerdiğiniz değişiklikleri gösterir. Bir moderatör onaylayana kadar destekçiler onaylı değerleri görür. Yayınlamak için değişikliklerinizi incelemeye gönderin.",
+          "field": "İncelemeyi bekliyor. Destekçiler hâlâ onaylı değeri görür."
+        }
       },
       "tier": {
         "addTitle": "Ödül ekle",
@@ -5879,7 +6016,9 @@
         "risks": "Riskler ve zorluklar",
         "risksHint": "Ne ters gidebilir ve bu konuda ne yapacaksınız. En az {min} karakter; incelemeye göndermeden önce zorunludur.",
         "risksPlaceholder": "Genellikle üç şey olur: üretim, kargo ve zamanlama. Nelerin çözüldüğünü, nelerin çözülmediğini yazın.",
+        "risksTooShort": "İncelemeye göndermek için riskler ve zorluklar en az {min} karakter olmalı. {remaining} karakter daha ekleyin.",
         "charactersNeeded": "Göndermek için gereken {min} karakterden {count} tanesi",
+        "storyTooShort": "İncelemeye göndermek için hikâyede en az {min} karakter olmalı. {remaining} karakter daha ekleyin.",
         "incomplete": {
           "one": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
           "few": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
@@ -6102,11 +6241,8 @@
     "prelaunch": {
       "loadingLabel": "Kampanya yükleniyor",
       "notSavedTitle": "Bu değişiklik kaydedilmedi",
-      "notOpenHeading": "Lansman öncesi sayfa henüz açık değil",
-      "notOpenBody": "Açtığınızda aşağıdaki başlık, özet ve kapak görseli paylaşabileceğiniz bir bağlantıda herkese açık olur ve insanlar kampanya başladığında haber verilmesini isteyebilir. Kampanyayla ilgili başka hiçbir şey açılmaz ve parayla ilgisi yoktur.",
-      "notOpenIrreversible": "Geri kapatılamaz — kampanya buradan yalnızca ileri gider: önce incelemeye, sonra lansmana.",
-      "openFailedTitle": "Sayfa açılmadı",
-      "open": "Lansman öncesi sayfayı aç",
+      "pendingHeading": "Lansman öncesi sayfa onaydan sonra açılır",
+      "pendingBody": "Moderasyon kampanyayı onayladığında bu sayfa herkese açık olur: insanlar onu takip edebilir ve kampanya açıldığında haber alır. O zamana kadar sizden başka kimse göremez.",
       "openHeading": "Lansman öncesi sayfa açık",
       "followersFailed": "Bekleyen kişi sayısı yüklenemedi.",
       "waiting": {
@@ -6127,13 +6263,7 @@
       "title": "Başlık",
       "titleHint": "Lansman öncesi sayfadaki ve keşfet akışındaki ad. En fazla {max} karakter.",
       "summary": "Özet",
-      "summaryHint": "Bir iki cümle. Takip etmeye karar vermeden önce insan tam olarak bunu okur. En fazla {max} karakter.",
-      "confirmTitle": "Lansman öncesi sayfa açılsın mı?",
-      "confirmBody": "Başlık, özet ve kapak görseli herkesin açabileceği bir bağlantıda herkese açık olur. Bu geri alınamaz.",
-      "cancel": "İptal",
-      "opening": "Açılıyor",
-      "confirmOpen": "Sayfayı aç",
-      "confirmDetail": "Ödülleriniz, hikâyeniz veya fonlama hedefiniz hakkında hiçbir şey yayımlanmaz ve kampanya incelenip başlatılana kadar para kabul etmez."
+      "summaryHint": "Bir iki cümle. Takip etmeye karar vermeden önce insan tam olarak bunu okur. En fazla {max} karakter."
     },
     "review": {
       "loadFailedTitle": "Bu kampanya yüklenemedi",
@@ -6192,7 +6322,11 @@
       "moderatorNote": "Bir moderatör kampanyayı okur ve ya onaylar, ya değişiklik ister, ya da reddeder. Onay kampanyayı hemen ya da belirlediğiniz lansman saatinde yayınlar, o andan itibaren hedefi ve bitiş tarihi değişmez. İnceleme sürerken düzenlemeye devam edebilirsiniz.",
       "done": "Tamamlandı",
       "launchExplanation": "Kampanya başlatıldığı anda platformun her yerinde görünür ve destek almaya başlar. O andan itibaren hedefi ve bitiş tarihi değişmez, yayındaki bir kampanya taslağa geri alınamaz.",
-      "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz."
+      "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz.",
+      "scheduledLaunchRefused": {
+        "title": "Bu kampanya lansman saatinde açılmadı",
+        "body": "Kampanya {date} tarihinde açılacağı sırada planınız onu kapsamıyordu, bu yüzden yayınlanmadı ve lansman saati kaldırıldı. Kampanya onaylı olarak kalıyor. Planınızı yenileyin ya da değiştirin veya hedefi planınızın kapsadığı bir tutara düşürün, ardından kampanyayı buradan başlatın ya da yeni bir lansman saati belirleyin."
+      }
     },
     "cover": {
       "label": "Kapak görseli",
@@ -6334,7 +6468,9 @@
         "coverImage": "Kapak görseli",
         "videoMediaId": "Video",
         "countries": "Ülkeler",
-        "rewards": "Ödüller"
+        "rewards": "Ödüller",
+        "items": "Ürünler",
+        "shippingZones": "Gönderim bölgeleri"
       },
       "submit": "İncelemeye gönder",
       "submitting": "Gönderiliyor…",
@@ -6795,7 +6931,8 @@
       },
       "hours": "{hours} saat {minutes} dakika kaldı",
       "minutes": "{minutes} dakika {seconds} saniye kaldı",
-      "seconds": "{seconds} saniye kaldı"
+      "seconds": "{seconds} saniye kaldı",
+      "opensAt": "Kampanya {date} tarihinde kendiliğinden açılacak. Geri sayım o zaman başlar."
     },
     "overview": {
       "loading": "Kampanyanın toplamları yükleniyor",
@@ -6826,7 +6963,7 @@
       "trendNotGranted": "Bu kampanyadaki ortak çalışan yetkiniz fonlama eğrisini kapsamıyor.",
       "trendUnavailable": "Fonlama eğrisi yüklenemedi. Sorun kampanyanızda değil, serviste — birazdan yeniden deneyin.",
       "trendEmpty": "{from} ile {to} arasında hiç destek verilmedi. Grafik ilk onaylanan destekle görünür.",
-      "trendLabel": "Birikimli toplam, {from} — {to} ({zone})",
+      "trendLabel": "Birikimli toplam, {from} — {to}",
       "aggregated": "{when} toplandı. Genel bakıştaki canlı toplamlar ise sorduğunuz anda okunur.",
       "splitHeading": "Ödüller ve adresler",
       "splitLoading": "Ödül ve adres dağılımı yükleniyor",
@@ -6937,14 +7074,23 @@
       "payable": "Ödenecek",
       "payableProjected": "Ödenecek, öngörülen",
       "payoutsHeading": "Ödemeler",
-      "payoutsEmpty": "Henüz yok. Ödeme §5.4’teki bekletmeden sonra hazırlanır ve hepsi — iptal edilenler dahil — burada görünür.",
+      "payoutsEmpty": "Henüz yok. Ödeme bekletme süresi bittikten sonra hazırlanır ve hepsi — iptal edilenler dahil — burada görünür.",
       "booksHeading": "Defterler ne diyor",
-      "booksIntro": "Bu kampanya için §7.2 hesapları. Yukarıdaki toplamların güvene değil, bir şeye karşı kontrol edilebilmesi için yayımlanıyor. Hesabınızdaki eksi bakiye, platformun sizin için tuttuğu paradır.",
+      "booksIntro": "Bu kampanyanın muhasebe hesapları. Yukarıdaki toplamları güvene değil, bir şeye karşı kontrol edebilmeniz için gösterilir. Hesabınızdaki eksi bakiye, platformun sizin için tuttuğu paradır.",
       "unbalancedTitle": "Bu defterler denk gelmiyor",
       "unbalancedBody": "Bu kampanyanın kayıtları sıfır toplamıyor. Bunu açıklayan bir şey sizin elinizde değil — yukarıdaki rakamlara güvenmeden önce bu kampanyayı belirterek destek ekibine yazın.",
       "ledgerEmpty": "Bu kampanya için henüz bir kayıt işlenmedi.",
       "ledgerCaption": "Bu kampanyanın hesap bazında bakiyeleri",
       "account": "Hesap",
+      "accounts": {
+        "creator": "Hesabınız",
+        "escrow": "Bekletilen tutar",
+        "platform_fee": "Platform komisyonu",
+        "psp_fee": "İşlem komisyonu",
+        "tax_payable": "Ödenecek vergi",
+        "refunds": "İadeler",
+        "platform_expense": "Platform giderleri"
+      },
       "balance": "Bakiye",
       "asOf": "{time} itibarıyla.",
       "payoutStates": {
@@ -7010,6 +7156,42 @@
         "many": "{count} destekçiye gönderildi.",
         "other": "{count} destekçiye gönderildi."
       }
+    },
+    "audience": {
+      "heading": "Kitle",
+      "intro": "Bu kampanyayı kaç kişinin açtığı, kaçının bir listedeki kartına tıklayıp geldiği ve nerede oldukları.",
+      "loading": "Kitle verileri yükleniyor",
+      "notGranted": "Bu kampanyadaki ortak çalışan yetkiniz kitle verilerini kapsamıyor.",
+      "unavailable": "Kitle verileri yüklenemedi. Sorun kampanyanızda değil, hizmette — birazdan tekrar deneyin.",
+      "empty": "Bu dönemde kimse bu kampanyayı açmadı ya da kartına tıklamadı.",
+      "allTimeViews": "Tüm zamanların görüntülenmesi",
+      "seriesHour": "Saatlere göre görüntülenme ve tıklamalar, {day}",
+      "seriesDay": "Günlere göre görüntülenme ve tıklamalar, {from} – {to}",
+      "seriesMonth": "Aylara göre görüntülenme ve tıklamalar, {from} – {to}",
+      "peak": "En çok görüntülenme: {when}, {count}",
+      "showTable": "Rakamları göster",
+      "tableLabel": "Dönemlere göre görüntülenme ve tıklamalar",
+      "hour": "Saat",
+      "day": "Gün",
+      "month": "Ay",
+      "zoneNote": "Saatler ve günler Bakü saatine göredir.",
+      "countriesLabel": "Ülkelere göre görüntülenme ve tıklamalar",
+      "surfacesHeading": "Tıklamalar nereden geldi",
+      "surfacesLabel": "Listelere göre tıklamalar",
+      "surfacesEmpty": "Bu dönemde kimse bu kampanyanın kartına bir listeden tıklamadı.",
+      "clickNote": "Tıklama, birinin bu kampanyanın kartına bir listeden — ana sayfa, keşfet, arama, kategori, koleksiyon, profil ya da kaydedilenler — sitede veya uygulamada tıklayıp gelmesidir.",
+      "viewsCount": {
+        "one": "{count} görüntülenme",
+        "few": "{count} görüntülenme",
+        "many": "{count} görüntülenme",
+        "other": "{count} görüntülenme"
+      },
+      "clicksCount": {
+        "one": "{count} tıklama",
+        "few": "{count} tıklama",
+        "many": "{count} tıklama",
+        "other": "{count} tıklama"
+      }
     }
   },
   "dashboardControls": {
@@ -7018,6 +7200,7 @@
     "extend": "Son tarihi uzat",
     "extendLabel": "Yeni son tarih",
     "extendHint": "En geç {latest}. Destekçilere yeni tarih bildirilir; onlara sorulmaz.",
+    "extendOpensOn": "Son tarihi {date} tarihinden itibaren uzatabilirsiniz: uzatma ilk son tarihten yedi gün önce açılır.",
     "extendConfirmTitle": "Kampanya {date} tarihine kadar uzatılsın mı?",
     "extendConfirmBody": "Yalnızca bir kez uzatabilirsiniz ve yeni son tarih bir daha değiştirilemez. Her destekçiye bildirim gönderilir.",
     "extendNow": "Bu tarihe kadar uzat",
@@ -7565,7 +7748,16 @@
         "removeOnApprovalBody": "{title}, bir moderatör değişikliklerinizi onaylayana kadar herkese açık kalır, sonra kaldırılır. O zamana kadar bunu geri alabilirsiniz.",
         "removeOnApprovalConfirm": "Onayla kaldır",
         "newTiersHidden": "Yeni kademeler, bir moderatör onaylayana kadar destekçilerden gizli kalır.",
-        "revisionField": "Ödüller"
+        "revisionField": "Ödüller",
+        "heldItem": {
+          "note": "Bu üründeki değişiklikleriniz henüz herkese açık değil. Destekçiler onaylı sürümü görmeye devam eder.",
+          "fields": "İnceleme bekleniyor: {fields}",
+          "editorTitle": "Bazı değişiklikler inceleme bekliyor",
+          "editorBody": "Bu ürün destekçilerin gördüğü bir ödülde yer alıyor, bu yüzden «İnceleme bekleniyor» işaretli alanlar yeni değerlerinizi gösterir. Bir moderatör değişikliklerinizi onaylayana kadar destekçiler onaylı değerleri görür.",
+          "savedAnnouncement": "{name} kaydedildi. Destekçiler değişiklikleri bir moderatör onayladığında görecek.",
+          "revisionItemsField": "Ürünler",
+          "revisionShippingZonesField": "Gönderim bölgeleri"
+        }
       },
       "faq": {
         "nothingCached": "Çevrimdışısınız ve sorular bu telefonda henüz yüklenmedi."
@@ -7596,8 +7788,7 @@
         "copyFailed": "Bağlantı kopyalanamadı. Seçip kendiniz kopyalamak için yukarıdaki bağlantıya basılı tutun.",
         "share": "Paylaş",
         "shareLabel": "Lansman öncesi bağlantıyı paylaş",
-        "shareFailed": "Paylaşım menüsü açılamadı. Tekrar deneyin.",
-        "fixFirst": "Önce başlığı, özeti veya kapağı düzeltin. Sayfa ekrandakini değil, en son kaydedileni yayımlar."
+        "shareFailed": "Paylaşım menüsü açılamadı. Tekrar deneyin."
       }
     },
     "native": {
@@ -7612,6 +7803,24 @@
     "preview": {
       "cardHint": "Videoyu önizlemek için basılı tutun",
       "rewardHint": "Videoyu oynatmak için basılı tutun"
+    },
+    "audience": {
+      "heading": "Kitle",
+      "intro": "Kampanya sayfasını kaç kişinin gördüğü ve kaç kişinin bir listeden açtığı. Herkes günde bir kez sayılır, Bakü saatiyle.",
+      "loading": "Kitle verileri yükleniyor",
+      "notGranted": "Bu kampanyadaki ortak çalışan izniniz kitle verilerini kapsamıyor.",
+      "unavailable": "Kitle verileri yüklenemedi. Sorun kampanyanızda değil, hizmette — birazdan tekrar deneyin.",
+      "allTimeViews": "Toplam görüntülenme",
+      "chartSummary": "{label}, {from} – {to}: toplam {total}. En yüksek: {peak}, {when}.",
+      "chartEmpty": "{label}, {from} – {to}: henüz yok.",
+      "countriesLabel": "Ülkelere göre görüntülenme",
+      "countriesEmpty": "Bu dönemde kampanyayı kimse görüntülemedi.",
+      "surfacesHeading": "Nereden açıldı",
+      "surfacesLabel": "Listelere göre tıklamalar",
+      "surfacesEmpty": "Bu dönemde kampanyayı kimse bir listeden açmadı.",
+      "showFigures": "Rakamları göster",
+      "hideFigures": "Rakamları gizle",
+      "figuresLabel": "Zamana göre görüntülenme ve tıklamalar"
     }
   },
   "blocking": {

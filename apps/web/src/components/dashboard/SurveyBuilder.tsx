@@ -286,7 +286,7 @@ export function SurveyBuilder({
                 type="button"
                 onClick={() => startEditing(survey)}
                 aria-current={editing?.id === survey.id ? 'true' : undefined}
-                className="text-left text-sm font-medium text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+                className="text-left text-sm font-medium text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
               >
                 {survey.title}
               </button>
@@ -305,7 +305,7 @@ export function SurveyBuilder({
                   onClick={() => onDelete(survey)}
                   disabled={busy}
                   aria-label={fillPlaceholders(copy.deleteDraft, { title: survey.title })}
-                  className="ml-auto rounded-full p-1 text-fg-64 hover:text-fg disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+                  className="ml-auto rounded-full p-1 text-fg-64 hover:text-fg disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   <Trash2 className="size-4" aria-hidden />
                 </button>
@@ -402,7 +402,7 @@ export function SurveyBuilder({
                 <button
                   type="button"
                   onClick={() => setQuestions(questions.filter((_, at) => at !== index))}
-                  className="self-start text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+                  className="self-start text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                 >
                   {copy.removeQuestion}
                 </button>
@@ -413,7 +413,7 @@ export function SurveyBuilder({
           <button
             type="button"
             onClick={() => setQuestions([...questions, emptyQuestion()])}
-            className="inline-flex items-center gap-2 self-start rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-[--surface-3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+            className="inline-flex items-center gap-2 self-start rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
           >
             <Plus className="size-4" aria-hidden />
             {copy.addQuestion}
@@ -424,7 +424,7 @@ export function SurveyBuilder({
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-full bg-[--lime-500] px-5 py-2.5 text-sm font-semibold text-[--text-on-lime] hover:bg-[--lime-400] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+            className="inline-flex items-center gap-2 rounded-full bg-inverse px-5 py-2.5 text-sm font-semibold text-on-inverse hover:bg-inverse-muted disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
           >
             {editing ? copy.save : copy.createDraft}
           </button>
@@ -434,7 +434,7 @@ export function SurveyBuilder({
               type="button"
               onClick={onSend}
               disabled={busy}
-              className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-[--surface-3] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+              className="inline-flex items-center gap-2 rounded-full border border-fg/16 px-4 py-2.5 text-sm font-medium text-fg hover:bg-surface-3 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               <Send className="size-4" aria-hidden />
               {confirmingSend ? copy.confirmSend : copy.send}
@@ -445,7 +445,7 @@ export function SurveyBuilder({
             <button
               type="button"
               onClick={startNew}
-              className="text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+              className="text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
             >
               {copy.startNew}
             </button>

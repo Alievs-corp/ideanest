@@ -94,13 +94,13 @@ class RoleCapabilitiesApiTests extends AbstractIntegrationTest {
 
         assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(strings(changed.getBody().get("capabilities"))).containsExactly("CURATE", "VIEW_HEALTH");
-        assertThat(strings(changed.getBody().get("defaults"))).containsExactly("CURATE", "VIEW_AUDIT");
+        assertThat(strings(changed.getBody().get("defaults"))).containsExactly("CURATE", "VIEW_AUDIT", "VIEW_AUDIENCE");
 
         assertThat(strings(get("/v1/admin/me", curator).getBody().get("capabilities")))
                 .containsExactly("CURATE", "VIEW_HEALTH");
         assertThat(get("/v1/admin/audit", curator).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
 
-        change("CURATOR", List.of("CURATE", "VIEW_AUDIT"), admin);
+        change("CURATOR", List.of("CURATE", "VIEW_AUDIT", "VIEW_AUDIENCE"), admin);
         assertThat(get("/v1/admin/audit", curator).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 

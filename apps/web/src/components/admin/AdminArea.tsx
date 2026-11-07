@@ -141,7 +141,7 @@ export async function AdminArea({ children }: AdminAreaProps) {
               `AdminNavDrawer`'s panel — a sentence carrying a name and four roles does not fit
               beside the wordmark, and wrapped it made the bar taller than the screen's title.
             */}
-            <div className="hidden flex-wrap items-center gap-4 lg:flex">
+            <div className="hidden flex-wrap items-center gap-4 xl:flex">
               {/* Who is reading, and with what authority. Nothing at all for anybody else. */}
               <ConsoleReader copy={copy} />
 
@@ -168,9 +168,9 @@ export async function AdminArea({ children }: AdminAreaProps) {
           tabIndex={-1}
           className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 focus:outline-none sm:px-6 sm:py-10 lg:py-12"
         >
-          <div className="flex flex-col lg:flex-row lg:gap-14">
+          <div className="flex flex-col xl:flex-row xl:gap-14">
             {/* The rail is `hidden` below the breakpoint, so this wrapper is too. */}
-            <div className="hidden lg:block lg:w-[15rem] lg:shrink-0">
+            <div className="hidden xl:block xl:w-[15rem] xl:shrink-0">
               <AdminNav copy={copy} />
             </div>
             {/*

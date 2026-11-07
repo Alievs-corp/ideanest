@@ -4,6 +4,7 @@ import {
   blockProblem,
   blockWarning,
   describeBlock,
+  editableStory,
   headingAnchors,
   isMarkActive,
   isSaveable,
@@ -41,6 +42,21 @@ import {
 function document(blocks: readonly StoryBlock[]): StoryDocument {
   return { version: 1, blocks };
 }
+
+describe('editableStory', () => {
+  it('opens a story with no blocks on one empty paragraph, which is saveable', () => {
+    for (const held of [null, { version: 1, blocks: [] }] as const) {
+      const opened = editableStory(held);
+      expect(opened.blocks).toEqual([{ type: 'paragraph', spans: [] }]);
+      expect(isSaveable(opened, STORY_COPY.vocabulary)).toBe(true);
+    }
+  });
+
+  it('leaves a story with blocks exactly as it is', () => {
+    const held: StoryDocument = { version: 1, blocks: [{ type: 'rule' }] };
+    expect(editableStory(held)).toBe(held);
+  });
+});
 
 describe('slugifyHeading', () => {
   it('folds Azerbaijani the way the server does', () => {

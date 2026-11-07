@@ -10,6 +10,7 @@ const card = (id: string): ProfileProjectCard => ({
   creatorSlug: 'aysel',
   blurb: null,
   state: 'LIVE',
+  viewCount: 0,
   goal: null,
   pledged: null,
   backersCount: 0,

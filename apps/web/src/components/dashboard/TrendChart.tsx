@@ -4,6 +4,8 @@ import { formatMoney } from '../../lib/money';
 import { TREND_CHART, polylinePoints, trendPoints, type TrendDay } from '@ideanest/dashboard/analytics';
 import type { TrendChartCopy } from '../../lib/i18n/dashboard-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { formatCalendarDay } from '../../lib/time';
 
 /**
  * §4.7's CD-02: what the campaign has raised, over the days it has been running.
@@ -54,6 +56,7 @@ export interface TrendChartProps {
 }
 
 export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
+  const locale = useRouteLocale();
   const points = trendPoints(days, from, to);
   const peak = days[days.length - 1];
   // A single point, held separately: `noUncheckedIndexedAccess` is on, and the narrowing
@@ -101,21 +104,21 @@ export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
           <span className="text-fg">
             {fillPlaceholders(copy.peak, {
               amount: formatMoney(peak.cumulativeAmount),
-              day: peak.day,
+              day: formatCalendarDay(peak.day, locale),
             })}
           </span>
         ) : null}
       </figcaption>
 
       <details className="mt-3">
-        <summary className="cursor-pointer text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]">
+        <summary className="cursor-pointer text-sm text-fg-64 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]">
           {copy.showDaily}
         </summary>
         <div
           role="region"
           aria-label={copy.dailyLabel}
           tabIndex={0}
-          className="mt-3 overflow-x-auto rounded-[14px] border border-fg/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
+          className="mt-3 overflow-x-auto rounded-[14px] border border-fg/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
           <table className="w-full min-w-[420px] border-collapse text-sm">
             <caption className="sr-only">{label}</caption>
@@ -139,7 +142,7 @@ export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
               {days.map((day) => (
                 <tr key={day.day} className="border-b border-fg/6 last:border-0">
                   <th scope="row" className="px-4 py-3 text-left font-normal text-fg">
-                    {day.day}
+                    {formatCalendarDay(day.day, locale)}
                   </th>
                   <td className="px-4 py-3 text-right tabular-nums text-fg-64">{day.pledgeCount}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-fg-64">

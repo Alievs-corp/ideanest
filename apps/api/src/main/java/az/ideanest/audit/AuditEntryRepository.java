@@ -3,6 +3,7 @@ package az.ideanest.audit;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -60,6 +61,16 @@ public interface AuditEntryRepository extends JpaRepository<AuditEntry, UUID> {
 
     /** What one account has done, most recent first. */
     List<AuditEntry> findByActorIdOrderByOccurredAtDesc(UUID actorId);
+
+    /**
+     * The newest row of one action about one thing, if there is one.
+     *
+     * <p>The one read outside the viewer: the editor asks when the clock last refused to open a
+     * campaign (#589), and the trail is where that is already written. The entity half of V21's
+     * index finds the rows and the action is filtered among them, which for one campaign is tens.
+     */
+    Optional<AuditEntry> findFirstByEntityTypeAndEntityIdAndActionOrderByOccurredAtDesc(
+            String entityType, UUID entityId, String action);
 
     /*
      * The eight below are AD-14's viewer, and every one of them carries the same two extra

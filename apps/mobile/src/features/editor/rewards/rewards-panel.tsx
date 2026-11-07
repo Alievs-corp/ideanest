@@ -49,6 +49,7 @@ import {
   deleteItem,
   deleteReward,
   duplicateReward,
+  heldFieldsOf,
   patchReward,
   pendingOf,
   reorderRewards,
@@ -56,7 +57,7 @@ import {
   useEditorItems,
   useEditorRewards,
 } from './api';
-import { ItemEditor } from './item-editor';
+import { ItemEditor, itemFieldLabel } from './item-editor';
 import { RewardEditor } from './reward-editor';
 
 /**
@@ -98,6 +99,14 @@ import { RewardEditor } from './reward-editor';
  * the limit of 100; a card whose request is in the air (its controls rest). Offline the lists are
  * shown as last loaded (`projectEditLists`, persisted) and nothing can be changed. The frame draws
  * signed out, a failed project and the offline notice.
+ *
+ * <h2>Held item changes (#587)</h2>
+ *
+ * On a launched campaign the service holds an edit to an item a backer-visible tier contains, and
+ * answers with the proposed values and the held fields' names (`revisionChangedFields`). The card
+ * shows those new values, so it also says, in words and with a clock, that they wait for review,
+ * which fields, and that backers still see the approved version; a save that was held says so
+ * aloud, and the campaign is read again so the revision notice names the items section.
  *
  * <p>Motion: none. The list does not animate as it reorders.
  */
@@ -181,8 +190,10 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
     (next: (current: readonly Item[] | undefined) => readonly Item[]) => {
       queryClient.setQueryData<readonly Item[]>(queryKeys.editorItems(projectId), next);
       publicStale();
+      // A held item change opens or changes the campaign's edit, as a tier change does.
+      if (launched) reload();
     },
-    [queryClient, projectId, publicStale],
+    [queryClient, projectId, publicStale, launched, reload],
   );
   const setRewards = useCallback(
     (next: (current: readonly Reward[] | undefined) => readonly Reward[]) => {
@@ -502,7 +513,13 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
         copy={words}
         readOnly={readOnly}
         onClose={() => setItemEditor((current) => ({ ...current, open: false }))}
-        onSaved={(saved) => setItems((current) => upsert(current, saved))}
+        onSaved={(saved) => {
+          setItems((current) => upsert(current, saved));
+          // The modal closes on this answer; the card keeps the note, and this says it at once.
+          if (heldFieldsOf(saved).length > 0) {
+            announce(fillPlaceholders(t('heldItem.savedAnnouncement'), { name: saved.name }));
+          }
+        }}
       />
 
       <RewardEditor
@@ -606,6 +623,8 @@ function ItemCard({
   readonly onEdit: () => void;
   readonly onDelete: () => void;
 }) {
+  const t = useT('mobile.editor.rewards');
+  const held = heldFieldsOf(item);
   return (
     <View style={styles.card} testID={`item-${item.id}`}>
       <View style={styles.summary} accessible>
@@ -616,11 +635,21 @@ function ItemCard({
           <Tag label={item.isDigital ? words.items.digital : words.items.physical} />
           {item.weightGrams == null ? null : <Tag label={fillPlaceholders(words.items.weight, { grams: String(item.weightGrams) })} />}
           {item.sku == null || item.sku === '' ? null : <Tag label={item.sku} />}
+          {held.length === 0 ? null : (
+            <Tag label={t('waitingForReview')} icon={Glyphs.Clock} variant="warning" testID={`item-${item.id}-pending`} />
+          )}
           {inRewards ? null : (
             <Tag label={words.items.notInReward} icon={Glyphs.EyeSlash} variant="warning" testID={`item-${item.id}-unseen`} />
           )}
         </View>
         {inRewards ? null : <Caption>{words.items.notInRewardDetail}</Caption>}
+        {held.length === 0 ? null : (
+          <Caption testID={`item-${item.id}-pending-note`}>
+            {`${t('heldItem.note')} ${fillPlaceholders(t('heldItem.fields'), {
+              fields: held.map((field) => itemFieldLabel(field, words.item, t('image'))).join(', '),
+            })}`}
+          </Caption>
+        )}
       </View>
       <View style={styles.actions}>
         <Pill

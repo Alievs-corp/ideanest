@@ -13,6 +13,8 @@ import {
   collectionIndexCopyFrom,
 } from '../../../../lib/i18n/collection-copy';
 import type { Locale } from '../../../../lib/i18n/locale';
+import { MarketSeed } from '../../../../components/shell/MarketSeed';
+import { requestMarket } from '../../../../lib/market/request';
 
 /**
  * `/collections` — D-08's index, §4.13 WS-04. Issue #266.
@@ -84,6 +86,7 @@ export default async function CollectionsPage() {
 
   return (
     <>
+      <MarketSeed market={await requestMarket()} />
       <StructuredData nodes={collectionsIndexGraph(await graphContext())} />
       <CollectionIndex collections={collections} locale={locale} copy={copy} />
     </>

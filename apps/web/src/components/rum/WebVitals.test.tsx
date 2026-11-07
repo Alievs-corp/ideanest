@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { WebVitals } from './WebVitals';
-import { SESSION_STORAGE_KEY } from '../../lib/rum/sampling';
+import { SESSION_SLOT } from '../../lib/rum/sampling';
 
 /**
  * Next's hook is replaced, because the real one attaches six
@@ -20,7 +20,7 @@ vi.mock('next/web-vitals', () => ({
 afterEach(() => {
   cleanup();
   subscriptions.length = 0;
-  sessionStorage.clear();
+  delete (window as { [SESSION_SLOT]?: unknown })[SESSION_SLOT];
   vi.unstubAllGlobals();
 });
 
@@ -70,14 +70,11 @@ describe('WebVitals', () => {
   });
 
   it('collects nothing for a session that was not sampled', () => {
-    sessionStorage.setItem(
-      SESSION_STORAGE_KEY,
-      JSON.stringify({
-        id: '0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c',
-        sampled: false,
-        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-      }),
-    );
+    (window as { [SESSION_SLOT]?: unknown })[SESSION_SLOT] = {
+      id: '0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c',
+      sampled: false,
+      traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+    };
     const sendBeacon = vi.fn().mockReturnValue(true);
     vi.stubGlobal('navigator', { ...navigator, sendBeacon });
 
