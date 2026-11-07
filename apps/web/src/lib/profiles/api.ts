@@ -241,6 +241,8 @@ export interface ProfileProjectCard {
    * for a campaign waiting for its launch time; optional so a card built by hand type-checks.
    */
   readonly opensAt?: string | null;
+  /** All-time daily unique viewers, drawn on the cover (#634). Absent from an older response. */
+  readonly viewCount?: number;
 }
 
 /**

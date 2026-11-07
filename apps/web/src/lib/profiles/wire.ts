@@ -109,6 +109,7 @@ function readProjectCard(value: unknown): ProfileProjectCard | null {
     return null;
   }
   const opensAt = text(source['opensAt']);
+  const viewCount = count(source['viewCount']);
 
   return {
     id,
@@ -126,6 +127,8 @@ function readProjectCard(value: unknown): ProfileProjectCard | null {
     video: readCardVideo(source['video']),
     // Only when there is one, so a public card reads exactly as it did before #595.
     ...(opensAt === null ? {} : { opensAt }),
+    // The same for the view count (#634), which an older service does not send.
+    ...(viewCount === null ? {} : { viewCount }),
   };
 }
 

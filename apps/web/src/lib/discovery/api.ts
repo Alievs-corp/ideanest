@@ -81,6 +81,11 @@ export interface ProjectCard {
   extended?: boolean;
   /** The campaign's category, which colours the card (#335). Absent when it has none. */
   categorySlug?: string | null;
+  /**
+   * All-time daily unique viewers (#633's `projects.view_count`), drawn on the cover (#634).
+   * Optional so an older response, and a card built by hand, still renders — without the chip.
+   */
+  viewCount?: number | null;
 }
 
 export interface DiscoveryFeed {

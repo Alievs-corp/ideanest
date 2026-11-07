@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
 import { MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
 import { cardCoverFrom } from '@ideanest/discovery/card-media';
 import { CardVideoPreview } from '../discovery/CardVideoPreview';
+import { CardViewCount } from '../discovery/CardViewCount';
+import { audienceClickAttributes } from '../../lib/audience/paths';
 import { canOptimise } from '../../lib/images/source';
 import { PROFILE_CARD_SIZES } from '../../lib/images/sizes';
 import { formatMoney } from '../../lib/money';
@@ -176,6 +178,8 @@ export function ProfileCampaignCard({
           />
         )}
         {cover.video !== null && <CardVideoPreview src={cover.video.url} />}
+        {/* The campaign's views, as on the discovery card (#634). Not an amount, so P-04 does not withhold it. */}
+        <CardViewCount count={card.viewCount} label={copy.views} locale={locale} />
       </MediaFrame>
 
       {/*
@@ -205,6 +209,8 @@ export function ProfileCampaignCard({
               with the pointer target still the size of the card. */}
           <Link
             href={profileCampaignHref(card)}
+            // A followed card is counted as a click from a profile (#634) — `AudienceTracker`.
+            {...audienceClickAttributes(card.id, 'PROFILE')}
             className="after:absolute after:inset-0 after:content-['']"
           >
             {card.title}
