@@ -278,6 +278,96 @@ export function fundingChartsCopyFrom(t: DashboardTranslator): FundingChartsCopy
   };
 }
 
+/**
+ * #634's audience section on the charts page: views, clicks, countries and listings.
+ *
+ * Two namespaces, deliberately. `common.audience` is the vocabulary the console and the app use
+ * for the same figures — the four periods, "Views", "Clicks", the surface names, "Unknown", the
+ * daily-sum footnote — and a creator reading the same word the console does is the point of it
+ * being shared. `dashboard.audience` is what only this panel says.
+ */
+export interface AudienceCopy {
+  readonly heading: string;
+  readonly intro: string;
+  readonly failures: SharedFailures;
+  readonly loading: string;
+  readonly notGranted: string;
+  readonly unavailable: string;
+  readonly empty: string;
+  readonly periodLabel: string;
+  /** Keyed by `day`, `week`, `month`, `year`. */
+  readonly periods: Readonly<Record<string, string>>;
+  readonly views: string;
+  readonly clicks: string;
+  readonly allTimeViews: string;
+  /** Carries `{day}`. Names the hourly chart. */
+  readonly seriesHour: string;
+  /** Carries `{from}` and `{to}`. */
+  readonly seriesDay: string;
+  /** Carries `{from}` and `{to}`. */
+  readonly seriesMonth: string;
+  /** Carries `{when}` and `{count}`. */
+  readonly peak: string;
+  readonly showTable: string;
+  readonly tableLabel: string;
+  readonly hour: string;
+  readonly day: string;
+  readonly month: string;
+  readonly zoneNote: string;
+  readonly countries: string;
+  readonly countriesLabel: string;
+  readonly unknownCountry: string;
+  readonly surfacesHeading: string;
+  readonly surfacesLabel: string;
+  readonly surfacesEmpty: string;
+  /** Keyed by the service's `AudienceSurface`. */
+  readonly surfaces: Readonly<Record<string, string>>;
+  readonly clickNote: string;
+  readonly dailySumNote: string;
+  /** Carries `{count}`. */
+  readonly viewsCount: PluralForms;
+  /** Carries `{count}`. */
+  readonly clicksCount: PluralForms;
+}
+
+export function audienceCopyFrom(t: DashboardTranslator, common: DashboardTranslator): AudienceCopy {
+  return {
+    heading: t('audience.heading'),
+    intro: t('audience.intro'),
+    failures: failuresFrom(t),
+    loading: t('audience.loading'),
+    notGranted: t('audience.notGranted'),
+    unavailable: t('audience.unavailable'),
+    empty: t('audience.empty'),
+    periodLabel: common('audience.periodLabel'),
+    periods: common.raw('audience.period') as Readonly<Record<string, string>>,
+    views: common('audience.views'),
+    clicks: common('audience.clicks'),
+    allTimeViews: t('audience.allTimeViews'),
+    seriesHour: String(t.raw('audience.seriesHour')),
+    seriesDay: String(t.raw('audience.seriesDay')),
+    seriesMonth: String(t.raw('audience.seriesMonth')),
+    peak: String(t.raw('audience.peak')),
+    showTable: t('audience.showTable'),
+    tableLabel: t('audience.tableLabel'),
+    hour: t('audience.hour'),
+    day: t('audience.day'),
+    month: t('audience.month'),
+    zoneNote: t('audience.zoneNote'),
+    countries: common('audience.countries'),
+    countriesLabel: t('audience.countriesLabel'),
+    unknownCountry: common('audience.unknownCountry'),
+    surfacesHeading: t('audience.surfacesHeading'),
+    surfacesLabel: t('audience.surfacesLabel'),
+    surfacesEmpty: t('audience.surfacesEmpty'),
+    surfaces: common.raw('audience.surface') as Readonly<Record<string, string>>,
+    clickNote: t('audience.clickNote'),
+    dailySumNote: common('audience.dailySumNote'),
+    viewsCount: t.raw('audience.viewsCount') as PluralForms,
+    clicksCount: t.raw('audience.clicksCount') as PluralForms,
+  };
+}
+
 /** §4.7's CD-10 as a table: who backed the campaign, and what each of them took. */
 export interface BackerTableCopy {
   readonly backer: string;

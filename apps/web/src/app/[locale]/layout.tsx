@@ -5,6 +5,7 @@ import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { WebVitals } from '../../components/rum/WebVitals';
+import { AudienceTracker } from '../../components/audience/AudienceTracker';
 import { SessionProvider } from '../../components/session/SessionProvider';
 import { routing } from '../../i18n/routing';
 import { DEFAULT_LOCALE, localeOrDefault } from '../../lib/i18n/locale';
@@ -151,6 +152,10 @@ export function generateStaticParams(): Array<{ locale: string }> {
  *
  * It renders `{children}` unchanged and adds no element of its own. What it costs every route
  * is a context and one effect; what it buys is that no page has to remember to guard itself.
+ *
+ * `<AudienceTracker />` is #634's counter and, like `<WebVitals />`, renders nothing: a page
+ * view per address and one delegated listener for the campaign cards' links.
+ * `components/audience/AudienceTracker.tsx` says which addresses it leaves out and why.
  */
 export default async function LocaleLayout({
   children,
@@ -198,6 +203,7 @@ export default async function LocaleLayout({
           }}
         />
         <WebVitals />
+        <AudienceTracker />
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

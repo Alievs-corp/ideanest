@@ -149,6 +149,7 @@ export default async function SearchPage({
             ) : (
               <>
                 <CampaignGrid
+                  surface="SEARCH"
                   cardCopy={cardCopy}
                   locale={locale}
                   campaigns={results}

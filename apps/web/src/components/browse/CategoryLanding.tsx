@@ -186,6 +186,7 @@ export async function CategoryLanding({
         ) : (
           <>
             <CampaignGrid
+              surface="CATEGORY"
               campaigns={campaigns}
               priorityCount={3}
               label={t('gridLabel', { title })}

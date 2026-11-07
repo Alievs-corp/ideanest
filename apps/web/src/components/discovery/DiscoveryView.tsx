@@ -489,6 +489,7 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy, marketCopy }: Di
                         priority={index < 3}
                         copy={cardCopy}
                         locale={locale}
+                        surface="DISCOVER"
                       />
                     </li>
                   ))}
