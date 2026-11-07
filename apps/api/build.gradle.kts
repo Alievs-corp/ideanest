@@ -195,7 +195,7 @@ dependencies {
     // in-process on a free port and hands back the received MIME, so the
     // subject, the two body parts and the Message-ID are asserted as they went
     // over the wire.
-    testImplementation("com.icegreen:greenmail-junit5:2.1.13")
+    testImplementation("com.icegreen:greenmail-junit5:2.1.15")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
