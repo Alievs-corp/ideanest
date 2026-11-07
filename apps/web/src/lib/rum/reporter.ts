@@ -10,7 +10,7 @@ import { newRequestId, newSpanId } from './correlation';
 import { isFieldMetricName, isPlausibleValue } from './metrics';
 import { MAX_SAMPLES, PAYLOAD_VERSION, type RumPayload, type RumSample } from './payload';
 import { routePatternOf } from './route-pattern';
-import { parseSampleRate, resolveSession, type RumSession } from './sampling';
+import { parseSampleRate, resolveSession, type RumSession, type SessionHolder } from './sampling';
 
 /**
  * The buffer between `useReportWebVitals` and the network.
@@ -20,7 +20,7 @@ import { parseSampleRate, resolveSession, type RumSession } from './sampling';
  * code path a user is waiting for. `beacon.ts` explains why the flush is either
  * idle or synchronous-at-unload and never anything in between.
  *
- * **Everything is injected.** The `Window`, the storage, the clock's stand-in
+ * **Everything is injected.** The `Window`, which holds the session, the clock's stand-in
  * for `requestIdleCallback` — all of it arrives as arguments, so the tests
  * exercise the real code rather than a re-implementation of it, and so the
  * module can be imported on the server without touching a global that is not
@@ -174,7 +174,7 @@ export function browserEnvironment(
   const rate = parseSampleRate(rawSampleRate);
   if (rate <= 0) return null;
 
-  const session = resolveSession(safeSessionStorage(window), rate);
+  const session = resolveSession(window as Window & SessionHolder, rate);
   if (!session.sampled) return null;
 
   return {
@@ -191,19 +191,6 @@ export function browserEnvironment(
     defer: deferOn(window),
     session,
   };
-}
-
-/**
- * `sessionStorage` throws rather than returning null when a cookie policy or a
- * private window forbids it, and it throws on the *property access*, not on the
- * first method call.
- */
-function safeSessionStorage(window: Window): Storage | null {
-  try {
-    return window.sessionStorage;
-  } catch {
-    return null;
-  }
 }
 
 /**

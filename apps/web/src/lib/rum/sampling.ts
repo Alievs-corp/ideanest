@@ -1,7 +1,7 @@
-import { isSessionId, isTraceId, newTraceId } from './correlation';
+import { newTraceId } from './correlation';
 
 /**
- * Who is measured, decided once per session rather than once per metric.
+ * Who is measured, decided once per page load rather than once per metric.
  *
  * <h2>Why the decision is per session and not per sample</h2>
  *
@@ -15,13 +15,18 @@ import { isSessionId, isTraceId, newTraceId } from './correlation';
  * are worst at. The number that comes out has the shape of a p75 and is not one.
  *
  * The decision is therefore a pure function of the session identifier, taken
- * once, cached in `sessionStorage`, and reused for every metric that session
- * produces — including after a reload, which is a continuation of the same visit
- * and would otherwise be a fresh flip.
+ * once and reused for every metric that session produces.
  *
- * `sessionStorage` and not `localStorage`: it dies with the tab, so nothing here
- * outlives the visit or follows a person between visits. It is also not a cookie
- * and is never sent to a server, so there is nothing to consent to.
+ * <h2>Why a session is a page load, held in memory — #641</h2>
+ *
+ * It used to be kept in `sessionStorage`, so a reload continued the same session.
+ * That is storage on the reader's device that the reader did not ask for and the
+ * site does not strictly need, which under the EU ePrivacy benchmark is what a
+ * consent banner exists to ask about. So the session now lives in this page's
+ * JavaScript and nowhere else: a client-side navigation stays in it, a reload or a
+ * new tab starts another. The cost is that a reload is a fresh flip, which at the
+ * default rate of 1.0 is no cost at all, and below it measures slightly more,
+ * shorter visits; the p75 is still over whole page loads, never over metrics.
  *
  * <h2>Why the default rate is 1.0</h2>
  *
@@ -56,11 +61,22 @@ export const SAMPLE_RATE_VARIABLE = 'NEXT_PUBLIC_IDEANEST_RUM_SAMPLE_RATE';
 
 export const DEFAULT_SAMPLE_RATE = 1;
 
-/** Where the session's identifier and its decision are kept, for the tab's life. */
-export const SESSION_STORAGE_KEY = 'ideanest.rum.session';
+/**
+ * Where the session is held: a property of the page's global object, for the
+ * life of its JavaScript. `instrumentation-client.ts` and the reporter both
+ * resolve the session and must agree on its trace, and a registered symbol is
+ * the same key even if the bundler gives each of them its own copy of this
+ * module, which a module-level variable would not be.
+ */
+export const SESSION_SLOT: unique symbol = Symbol.for('ideanest.rum.session');
+
+/** What holds the session: the `window` in a browser, a plain object in a test. */
+export interface SessionHolder {
+  [SESSION_SLOT]?: RumSession;
+}
 
 export interface RumSession {
-  /** A v4 UUID. Not an account, not a device, and gone when the tab closes. */
+  /** A v4 UUID. Not an account, not a device, and gone with the page. */
   readonly id: string;
   /** Whether this visit reports. Taken once; every metric obeys it. */
   readonly sampled: boolean;
@@ -114,67 +130,23 @@ export function isSampled(sessionId: string, rate: number): boolean {
   return hashToUnitInterval(sessionId) < rate;
 }
 
-interface StoredSession {
-  id?: unknown;
-  sampled?: unknown;
-  traceId?: unknown;
-}
-
 /**
- * The session for this tab: the one already stored, or a new one stored now.
+ * The session for this page: the one already resolved, or a new one now.
  *
- * A stored record that does not parse, or whose fields are not the shapes
- * `correlation.ts` accepts, is replaced rather than repaired. `sessionStorage`
- * is writable by any script on the page, and a session identifier chosen by
- * something else is either a bug or somebody selecting their own sampling
- * outcome; neither is worth carrying forward.
- *
- * Storage that throws — Safari in private browsing, a quota, a `SecurityError`
- * behind a strict cookie policy — is treated as absent. The session is then
- * minted per page load, which measures slightly fewer whole visits and is a long
- * way better than an exception thrown before hydration.
+ * Nothing is read from or written to storage, so there is nothing left over from
+ * an earlier page to validate, and nothing for a private window or a strict
+ * storage policy to refuse.
  */
 export function resolveSession(
-  storage: Pick<Storage, 'getItem' | 'setItem'> | null,
+  holder: SessionHolder,
   rate: number,
   mintId: () => string = () => crypto.randomUUID(),
 ): RumSession {
-  const stored = read(storage);
-  if (stored !== null) return stored;
+  const existing = holder[SESSION_SLOT];
+  if (existing !== undefined) return existing;
 
   const id = mintId();
   const session: RumSession = { id, sampled: isSampled(id, rate), traceId: newTraceId() };
-  try {
-    storage?.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-  } catch {
-    // See above: an unwritable storage costs a little accuracy and nothing else.
-  }
+  holder[SESSION_SLOT] = session;
   return session;
-}
-
-function read(storage: Pick<Storage, 'getItem'> | null): RumSession | null {
-  if (storage === null) return null;
-
-  let raw: string | null;
-  try {
-    raw = storage.getItem(SESSION_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-  if (raw === null) return null;
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  if (typeof parsed !== 'object' || parsed === null) return null;
-
-  const { id, sampled, traceId } = parsed as StoredSession;
-  if (typeof id !== 'string' || !isSessionId(id)) return null;
-  if (typeof sampled !== 'boolean') return null;
-  if (typeof traceId !== 'string' || !isTraceId(traceId)) return null;
-
-  return { id, sampled, traceId };
 }

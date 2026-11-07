@@ -8,7 +8,7 @@ import {
 } from './reporter';
 import { MAX_SAMPLES, parseRumPayload } from './payload';
 import { UNRECOGNISED_ROUTE } from './route-pattern';
-import { SESSION_STORAGE_KEY } from './sampling';
+import { SESSION_SLOT, type RumSession } from './sampling';
 
 const session = {
   id: '0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c',
@@ -200,17 +200,13 @@ describe('createReporter', () => {
 });
 
 describe('browserEnvironment', () => {
-  function fakeWindow(storage: Record<string, string> = {}): Window {
-    const entries = new Map(Object.entries(storage));
+  function fakeWindow(session?: RumSession): Window {
     return {
+      ...(session === undefined ? {} : { [SESSION_SLOT]: session }),
       location: { pathname: '/en/discover' },
       navigator: { sendBeacon: () => true },
       innerWidth: 400,
       fetch: () => Promise.resolve(new Response()),
-      sessionStorage: {
-        getItem: (key: string) => entries.get(key) ?? null,
-        setItem: (key: string, value: string) => void entries.set(key, value),
-      },
       setTimeout: (task: () => void) => {
         task();
         return 0;
@@ -234,15 +230,27 @@ describe('browserEnvironment', () => {
     expect(browserEnvironment(fakeWindow(), '0')).toBeNull();
   });
 
-  it('returns nothing when the stored session was not sampled', () => {
-    const stored = {
-      [SESSION_STORAGE_KEY]: JSON.stringify({
-        id: '0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c',
-        sampled: false,
-        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-      }),
+  it('returns nothing when the page’s session was not sampled', () => {
+    const unsampled: RumSession = {
+      id: '0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c',
+      sampled: false,
+      traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
     };
-    expect(browserEnvironment(fakeWindow(stored), '1')).toBeNull();
+    expect(browserEnvironment(fakeWindow(unsampled), '1')).toBeNull();
+  });
+
+  /*
+   * #641. `instrumentation-client.ts` resolves the session before the reporter
+   * does, and the beacons only join the service's requests if both use one trace.
+   */
+  it('uses the session the page already resolved', () => {
+    const window = fakeWindow();
+    const built = browserEnvironment(window, '1');
+    const session = (window as Window & { [SESSION_SLOT]?: RumSession })[SESSION_SLOT];
+
+    expect(session).toBeDefined();
+    expect(built?.session).toBe(session);
+    expect(browserEnvironment(window, '1')?.session).toBe(session);
   });
 });
 
