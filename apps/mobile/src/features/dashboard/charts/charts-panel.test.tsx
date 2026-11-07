@@ -76,10 +76,13 @@ const SPLIT: Breakdown = breakdown({
 
 type Answer = unknown | Error | Promise<never>;
 
-/** Answers each read by its path, so the two parallel requests can be told apart. */
-function serve({ trend, split }: { trend: Answer; split: Answer }) {
+/**
+ * Answers each read by its path, so the parallel requests can be told apart. The audience panel's
+ * read (#636, `audience-panel.test.tsx`) waits unless a test gives it an answer.
+ */
+function serve({ trend, split, audience = new Promise<never>(() => {}) }: { trend: Answer; split: Answer; audience?: Answer }) {
   mockGet.mockImplementation((path: string) => {
-    const answer = path.endsWith('/analytics') ? trend : split;
+    const answer = path.endsWith('/analytics') ? trend : path.endsWith('/audience') ? audience : split;
     if (answer instanceof Error) return Promise.reject(answer);
     if (answer instanceof Promise) return answer;
     return Promise.resolve(answer);
@@ -290,8 +293,8 @@ describe('the panel', () => {
     expect(within(screen.getByTestId('split-failed')).getByText(en.mobile.offline.nothingCached)).toBeTruthy();
   });
 
-  it('reads both again on pull to refresh', async () => {
-    serve({ trend: analytics(TWO_DAYS), split: SPLIT });
+  it('reads all three again on pull to refresh', async () => {
+    serve({ trend: analytics(TWO_DAYS), split: SPLIT, audience: {} });
     await show();
     mockGet.mockClear();
 
@@ -299,7 +302,7 @@ describe('the panel', () => {
       screen.getByTestId('dashboard-charts').props.refreshControl.props.onRefresh();
     });
     await settle();
-    expect(mockGet).toHaveBeenCalledTimes(2);
+    expect(mockGet).toHaveBeenCalledTimes(3);
   });
 
   it('signed out, asks to sign in and comes back here', async () => {

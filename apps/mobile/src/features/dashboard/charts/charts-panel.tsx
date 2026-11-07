@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Trend } from '@ideanest/dashboard/analytics';
@@ -27,6 +28,8 @@ import { spacing } from '../../../theme';
 import { relativeTime } from '../../settings/sessions/relative-time';
 import { sectionOf, usePullToRefresh, type PanelFailure, type SectionState } from '../shared-charts-finance';
 import { useBreakdown, useTrend, type Breakdown } from './api';
+import { useAudience, type AudiencePeriod } from './audience';
+import { AudienceSection } from './audience-panel';
 import { ShareBars, type ShareRow } from './share-bars';
 import { DailyFigures, TrendChart } from './trend-chart';
 
@@ -76,10 +79,17 @@ function Panel({ projectId }: { readonly projectId: string }) {
   const online = useOnline();
   const trendQuery = useTrend(projectId);
   const breakdownQuery = useBreakdown(projectId);
+  // The audience panel opens on today, the service's own default (#636).
+  const [period, setPeriod] = useState<AudiencePeriod>('day');
+  const audienceQuery = useAudience(projectId, period);
   const trend = sectionOf(trendQuery, online);
   const split = sectionOf(breakdownQuery, online);
-  const pull = usePullToRefresh([trendQuery.refetch, breakdownQuery.refetch]);
-  const stale = (trend.kind === 'ready' && trend.stale) || (split.kind === 'ready' && split.stale);
+  const audience = sectionOf(audienceQuery, online);
+  const pull = usePullToRefresh([trendQuery.refetch, breakdownQuery.refetch, audienceQuery.refetch]);
+  const stale =
+    (trend.kind === 'ready' && trend.stale) ||
+    (split.kind === 'ready' && split.stale) ||
+    (audience.kind === 'ready' && audience.stale);
 
   return (
     <Screen
@@ -100,6 +110,21 @@ function Panel({ projectId }: { readonly projectId: string }) {
         <View style={styles.section}>
           <Subheading accessibilityRole="header">{t('dashboard.charts.trendHeading')}</Subheading>
           <TrendSection state={trend} onRetry={() => void trendQuery.refetch()} retrying={trendQuery.isFetching} />
+        </View>
+      </FadeUp>
+      <FadeUp index={2}>
+        <View style={styles.section}>
+          <View style={styles.intro}>
+            <Subheading accessibilityRole="header">{t('mobile.audience.heading')}</Subheading>
+            <Body>{t('mobile.audience.intro')}</Body>
+          </View>
+          <AudienceSection
+            state={audience}
+            period={period}
+            onPeriod={setPeriod}
+            onRetry={() => void audienceQuery.refetch()}
+            retrying={audienceQuery.isFetching}
+          />
         </View>
       </FadeUp>
       <ContentSheet title={t('dashboard.charts.splitHeading')} testID="split-sheet">
@@ -255,6 +280,7 @@ function moneyOf(amount: Money | undefined, currency: string): Money {
 
 const styles = StyleSheet.create({
   header: { gap: spacing[2], paddingTop: spacing[4] },
+  intro: { gap: spacing[2] },
   section: { gap: spacing[3] },
   split: { gap: spacing[6] },
 });
