@@ -7,7 +7,7 @@ import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale, isLocale } from './lib/i18n
 import { routing } from './i18n/routing';
 import { appPaymentReturn } from './lib/pledges/app-return';
 import { appCardReturn } from './lib/account/app-return';
-import { DETECTED_MARKET_COOKIE, MARKET_COOKIE, resolveMarket } from '@ideanest/messages/country';
+import { MARKET_COOKIE, resolveMarket } from '@ideanest/messages/country';
 import { MARKET_HEADER, MARKET_PAGE_CACHE_CONTROL, isMarketPage } from './lib/market/market';
 
 /**
@@ -94,6 +94,12 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
      * #533. The market reaches the render as a request header, set here on the pages that list
      * campaigns and REMOVED everywhere else, so a header a client sent itself never decides what
      * a shared cache keeps.
+     *
+     * NOTHING IS WRITTEN BACK — #641. Where the reader is used to be mirrored into a session
+     * cookie for the header's country control. The page now hands the browser the market it was
+     * rendered for (`MarketSeed`), so the only market cookie is the one the reader sets by
+     * choosing. An old `ideanest_country_detected` a browser still holds is never read, and it
+     * ends with the browser session that made it.
      */
     const headers = new Headers(request.headers);
     if (marketPage) headers.set(MARKET_HEADER, market);
@@ -103,10 +109,6 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
 
     if (marketPage) {
       response.headers.set('cache-control', MARKET_PAGE_CACHE_CONTROL);
-      // So the header's country control shows what the page shows, before anybody has chosen.
-      if (request.cookies.get(MARKET_COOKIE) === undefined) {
-        response.cookies.set(DETECTED_MARKET_COOKIE, market, { path: '/', sameSite: 'lax' });
-      }
       return response;
     }
 

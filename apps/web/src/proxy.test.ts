@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { COUNTRY_HEADER } from './lib/i18n/country';
 import { LOCALE_COOKIE } from './lib/i18n/locale';
-import { DETECTED_MARKET_COOKIE, MARKET_COOKIE } from '@ideanest/messages/country';
+import { MARKET_COOKIE } from '@ideanest/messages/country';
 import { MARKET_HEADER, MARKET_PAGE_CACHE_CONTROL } from './lib/market/market';
 
 /*
@@ -168,14 +168,27 @@ describe('the reader’s market (#533)', () => {
 
     expect(forwarded?.headers.get(MARKET_HEADER)).toBe('DE');
     expect(response.headers.get('cache-control')).toBe(MARKET_PAGE_CACHE_CONTROL);
-    expect(response.cookies.get(DETECTED_MARKET_COOKIE)?.value).toBe('DE');
+  });
+
+  it('hands it over in the request alone, and never writes it into a cookie (#641)', async () => {
+    /*
+     * Where the reader is used to be mirrored into `ideanest_country_detected` for the header's
+     * control. Nobody asked for that cookie; the page now hands the market to the browser itself
+     * (`MarketSeed`), so the answer carries no `Set-Cookie` at all.
+     */
+    for (const path of ['/az', '/az/discover', '/en/search', '/ru/categories/games', '/tr/collections/spring']) {
+      const response = await proxy(request(path, undefined, 'DE'));
+
+      expect(forwarded?.headers.get(MARKET_HEADER), path).toBe('DE');
+      expect(response.headers.get('set-cookie'), path).toBeNull();
+    }
   });
 
   it('lets the reader’s choice outrank where they are, and does not overwrite it', async () => {
     const response = await proxy(request('/en', undefined, 'DE', 'ALL'));
 
     expect(forwarded?.headers.get(MARKET_HEADER)).toBe('ALL');
-    expect(response.cookies.get(DETECTED_MARKET_COOKIE)).toBeUndefined();
+    expect(response.headers.get('set-cookie')).toBeNull();
   });
 
   it('starts in Azerbaijan when Cloudflare does not know the country', async () => {
@@ -191,7 +204,7 @@ describe('the reader’s market (#533)', () => {
 
     expect(forwarded?.headers.get(MARKET_HEADER)).toBeNull();
     expect(response.headers.get('cache-control')).not.toBe(MARKET_PAGE_CACHE_CONTROL);
-    expect(response.cookies.get(DETECTED_MARKET_COOKIE)).toBeUndefined();
+    expect(response.headers.get('set-cookie')).toBeNull();
   });
 });
 

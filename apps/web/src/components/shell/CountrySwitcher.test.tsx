@@ -1,18 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DETECTED_MARKET_COOKIE, MARKET_COOKIE } from '@ideanest/messages/country';
+import { MARKET_COOKIE } from '@ideanest/messages/country';
 import { shellCopyFrom } from '../../lib/i18n/shell-copy';
 import { translatorFor } from '../../test-copy';
 import { expectNoViolations } from '../../test-axe';
+import { rememberPageMarket } from '../../lib/market/cookie';
 import { CountrySwitcher } from './CountrySwitcher';
 import { MarketEmptyNotice } from './MarketEmptyNotice';
+import { MarketSeed } from './MarketSeed';
 
 /**
  * The country control and the empty-list notice — issue #533.
  *
- * Both read the market from the cookies the proxy reads, and choosing writes the reader's
- * cookie; a page that lists campaigns is reloaded so its lists are read again.
+ * Both read the reader's cookie, then the market the page was rendered for (handed over by
+ * `MarketSeed`, never a cookie — #641), and choosing writes the reader's cookie; a page that
+ * lists campaigns is reloaded so its lists are read again.
  */
 
 const copy = shellCopyFrom(translatorFor('shell')).market;
@@ -25,12 +28,9 @@ vi.mock('next/navigation', async (importOriginal) => ({
 
 const reload = vi.fn();
 
-function clearCookies(): void {
-  for (const name of [MARKET_COOKIE, DETECTED_MARKET_COOKIE]) document.cookie = `${name}=; Path=/; Max-Age=0`;
-}
-
 beforeEach(() => {
-  clearCookies();
+  document.cookie = `${MARKET_COOKIE}=; Path=/; Max-Age=0`;
+  rememberPageMarket(null);
   reload.mockReset();
   vi.stubGlobal('location', { ...window.location, pathname: '/en/discover', reload });
 });
@@ -42,11 +42,45 @@ afterEach(() => {
 
 describe('CountrySwitcher', () => {
   it('names the country the page was narrowed to, before anybody chose one', async () => {
-    document.cookie = `${DETECTED_MARKET_COOKIE}=GE; Path=/`;
-    render(<CountrySwitcher copy={copy} />);
+    // The header comes before the page, so the switcher renders before the page's seed does.
+    render(
+      <>
+        <CountrySwitcher copy={copy} />
+        <MarketSeed market="GE" />
+      </>,
+    );
 
     const trigger = await screen.findByRole('button', { name: 'Choose a country. Country: Georgia' });
     expect(trigger).toHaveTextContent('GE');
+    expect(document.cookie).not.toContain('ideanest_country');
+  });
+
+  it('follows a page that arrives later, as a client-side navigation brings one', async () => {
+    const view = render(<CountrySwitcher copy={copy} />);
+    expect(await screen.findByRole('button', { name: 'Choose a country. Country: Azerbaijan' })).toBeInTheDocument();
+
+    act(() => {
+      view.rerender(
+        <>
+          <CountrySwitcher copy={copy} />
+          <MarketSeed market="DE" />
+        </>,
+      );
+    });
+
+    expect(await screen.findByRole('button', { name: 'Choose a country. Country: Germany' })).toHaveTextContent('DE');
+  });
+
+  it('keeps the reader’s own choice over the market the page was rendered for', async () => {
+    document.cookie = `${MARKET_COOKIE}=TR; Path=/`;
+    render(
+      <>
+        <CountrySwitcher copy={copy} />
+        <MarketSeed market="DE" />
+      </>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Choose a country. Country: Türkiye' })).toHaveTextContent('TR');
   });
 
   it('opens the list from the drawer row’s words, not only from the badge', async () => {
@@ -85,8 +119,12 @@ describe('CountrySwitcher', () => {
 
 describe('MarketEmptyNotice', () => {
   it('says which country the list was for and offers every country', async () => {
-    document.cookie = `${DETECTED_MARKET_COOKIE}=DE; Path=/`;
-    render(<MarketEmptyNotice copy={copy} />);
+    render(
+      <>
+        <MarketSeed market="DE" />
+        <MarketEmptyNotice copy={copy} />
+      </>,
+    );
 
     expect(await screen.findByText('No campaigns for Germany yet')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: copy.emptyAction }));

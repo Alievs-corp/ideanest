@@ -101,13 +101,6 @@ export const DEFAULT_MARKET = 'AZ';
 /** The reader's explicit choice. Remembered for a year, and it outranks where they are. */
 export const MARKET_COOKIE = 'ideanest_country';
 
-/**
- * What the web derived from where the reader is, when they have not chosen. A session cookie,
- * written by the proxy on the pages it narrows, so a client control can show what the page
- * shows. Never read as a choice.
- */
-export const DETECTED_MARKET_COOKIE = 'ideanest_country_detected';
-
 /** A code the service accepts as `market`, or `ALL_MARKETS`. */
 export function isMarket(value: unknown): value is string {
   return typeof value === 'string' && (value === ALL_MARKETS || COUNTRY_CODES.includes(value));

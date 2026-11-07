@@ -1,32 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SAMPLE_RATE,
-  SESSION_STORAGE_KEY,
+  SESSION_SLOT,
+  type SessionHolder,
   hashToUnitInterval,
   isSampled,
   parseSampleRate,
   resolveSession,
 } from './sampling';
 import { isSessionId, isTraceId } from './correlation';
-
-/** A `sessionStorage` stand-in, plus the two that misbehave in real browsers. */
-function memoryStorage(initial: Record<string, string> = {}) {
-  const entries = new Map(Object.entries(initial));
-  return {
-    getItem: (key: string) => entries.get(key) ?? null,
-    setItem: (key: string, value: string) => void entries.set(key, value),
-    read: (key: string) => entries.get(key) ?? null,
-  };
-}
-
-const throwingStorage = {
-  getItem: (): string => {
-    throw new DOMException('denied', 'SecurityError');
-  },
-  setItem: (): void => {
-    throw new DOMException('denied', 'SecurityError');
-  },
-};
 
 /** A v4-shaped identifier that is predictable, so a test can compare two. */
 let counter = 0;
@@ -104,62 +86,64 @@ describe('isSampled', () => {
 });
 
 describe('resolveSession', () => {
-  it('mints a session, stores it, and reuses it on the next read', () => {
-    const storage = memoryStorage();
+  it('mints a session and reuses it for the rest of the page', () => {
+    const page: SessionHolder = {};
 
-    const first = resolveSession(storage, 1, uuid);
+    const first = resolveSession(page, 1, uuid);
     expect(isSessionId(first.id)).toBe(true);
     expect(isTraceId(first.traceId)).toBe(true);
     expect(first.sampled).toBe(true);
 
-    const second = resolveSession(storage, 1, uuid);
-    expect(second).toEqual(first);
-    expect(storage.read(SESSION_STORAGE_KEY)).toContain(first.id);
+    const second = resolveSession(page, 1, uuid);
+    expect(second).toBe(first);
+    expect(page[SESSION_SLOT]).toBe(first);
   });
 
   /*
-   * A reload is a continuation of the same visit. Re-deciding on it would be the
+   * Every metric of the page obeys one decision. Re-deciding per call would be the
    * per-metric coin flip in slower motion.
    */
-  it('keeps the stored decision even when the rate has since changed', () => {
-    const storage = memoryStorage();
-    const original = resolveSession(storage, 1, uuid);
+  it('keeps the decision even when asked again at another rate', () => {
+    const page: SessionHolder = {};
+    const original = resolveSession(page, 1, uuid);
 
-    const afterRateChange = resolveSession(storage, 0.0001, uuid);
+    const afterRateChange = resolveSession(page, 0.0001, uuid);
 
-    expect(afterRateChange).toEqual(original);
+    expect(afterRateChange).toBe(original);
     expect(afterRateChange.sampled).toBe(true);
   });
 
-  it('replaces a stored record that is not the shape it wrote', () => {
-    for (const stored of [
-      'not json',
-      '{}',
-      '[]',
-      'null',
-      JSON.stringify({ id: 'chosen-by-somebody', sampled: true, traceId: 'a'.repeat(32) }),
-      JSON.stringify({ id: '0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c', sampled: 'yes' }),
-      JSON.stringify({
-        id: '0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c',
-        sampled: true,
-        traceId: 'short',
-      }),
-    ]) {
-      const storage = memoryStorage({ [SESSION_STORAGE_KEY]: stored });
-      const session = resolveSession(storage, 1, uuid);
-      expect(isSessionId(session.id)).toBe(true);
-      expect(isTraceId(session.traceId)).toBe(true);
-    }
+  /*
+   * #641. A reload is a new page and a new session: nothing is kept on the device
+   * for the next one to find.
+   */
+  it('starts a new session on a new page', () => {
+    const first = resolveSession({}, 1, uuid);
+    const second = resolveSession({}, 1, uuid);
+
+    expect(second.id).not.toBe(first.id);
+    expect(second.traceId).not.toBe(first.traceId);
   });
 
   /*
-   * Safari in a private window, a strict cookie policy, a quota. All three throw
-   * on the property access rather than returning null, and none of them is a
-   * reason to throw before hydration.
+   * #641. The session used to be kept in `sessionStorage`; a reader's device now
+   * holds nothing for it, in any store, and a key left there by an older build is
+   * not read.
    */
-  it('works when storage is absent or throws', () => {
-    expect(() => resolveSession(null, 1, uuid)).not.toThrow();
-    expect(() => resolveSession(throwingStorage, 1, uuid)).not.toThrow();
-    expect(isSessionId(resolveSession(throwingStorage, 1, uuid).id)).toBe(true);
+  it('writes nothing to the browser’s storage and reads nothing from it', () => {
+    sessionStorage.setItem(
+      'ideanest.rum.session',
+      JSON.stringify({ id: '0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c', sampled: false, traceId: 'a'.repeat(32) }),
+    );
+    const page: SessionHolder = {};
+
+    const session = resolveSession(page, 1, uuid);
+
+    expect(session.sampled).toBe(true);
+    expect(session.id).not.toBe('0f4b7a2c-1d3e-4f5a-8b9c-0d1e2f3a4b5c');
+    sessionStorage.removeItem('ideanest.rum.session');
+    expect(sessionStorage.length).toBe(0);
+    expect(localStorage.length).toBe(0);
+    expect(document.cookie).toBe('');
   });
 });
