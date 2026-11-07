@@ -254,6 +254,12 @@ export const CONSOLE_MODULES: readonly ConsoleModule[] = Object.freeze([
     code: 'AD-13',
     state: 'partial',
     href: '/admin/analytics',
+    /*
+     * Who came and what they looked at (#635) is the module's second screen: the same
+     * platform-wide question asked of people rather than of pledges, under its own capability
+     * because a curator reads it and the books are not theirs.
+     */
+    otherScreens: ['/admin/audience'],
     issue: 313,
   },
   {
@@ -380,6 +386,7 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
     heading: 'platform',
     links: [
       '/admin/analytics',
+      '/admin/audience',
       '/admin/audit',
       '/admin/email-templates',
       '/admin/flags',
@@ -465,12 +472,16 @@ export const CONSOLE_LINK_CAPABILITIES: Readonly<Record<string, readonly StaffCa
     '/admin/partner-statistics': ['VIEW_PARTNER_STATISTICS'],
 
     /*
-     * Platform - four different authorities, which is why this group is the one that proves
-     * the table was worth writing. The platform figures are finance's, the trail is every
+     * Platform - five different authorities, which is why this group is the one that proves
+     * the table was worth writing. The platform figures are finance's, the audience is
+     * VIEW_AUDIENCE, the trail is every
      * role's, the queue depths are VIEW_HEALTH, and §22.2's documents are the one thing on
      * this rail that only an administrator may publish.
      */
     '/admin/analytics': ['VIEW_FINANCE'],
+    // Counts of people, not of money, so not VIEW_FINANCE: a curator deciding what to feature
+    // reads it, and the default roles for it are super admin, finance and curator.
+    '/admin/audience': ['VIEW_AUDIENCE'],
     '/admin/audit': ['VIEW_AUDIT'],
     '/admin/email-templates': ['CONFIGURE_PLATFORM'],
     '/admin/flags': ['CONFIGURE_PLATFORM'],
