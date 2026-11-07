@@ -7398,6 +7398,16 @@ thirty more days; registering a device is not one of the three paths a closing
 account may use. A cancellation does not restore them: each phone that still
 allows notifications registers its token again on the next signed-in launch.
 
+The request also withdraws the public profile (#647). From that moment
+`GET /v1/users/{slug}`, its two archives (`/projects`, `/backed`) and the name
+beside the account's comments answer exactly as for a private profile: 404
+`USER_NOT_FOUND`, and no name. Nothing is written for it. The rule reads the
+pending request, so the owner's own `profile_visibility` is left alone, and a
+cancellation brings back exactly the page they had: a private profile stays
+private. Campaigns the account created are not changed and keep its name and
+avatar, as they do for a private profile; the creator link on them leads to the
+same 404 until the deletion is cancelled.
+
 **After the window, anonymisation — not deletion.**
 
 | Overwritten | Retained |
@@ -7412,12 +7422,29 @@ allows notifications registers its token again on the next signed-in launch.
 | `provider_identities` rows deleted (#645) | |
 | `email_change_requests` rows deleted (#645) | |
 | `push_devices` rows deleted (#643: the cascade from `users` never fires; also at the request since #645) | |
+| `notifications` and `notification_preferences` rows deleted (#647); the `email_deliveries` rows of those notifications go with them by cascade | |
+| the uploaded avatar: its object in storage and its `media` row deleted after the commit (#647), unless a campaign or reward also shows that upload | |
 | `sessions.device_label`, `user_agent`, `ip_address` → null | |
 
 The row survives because the alternative breaks the ledger. A pledge is a
 financial record and "pledge #123 was made by user X" has to stay true after X
 leaves; every one of those rows is a foreign key to `users.id`. Severing the
 identity and keeping the reference is exactly what anonymisation is for.
+
+The avatar picture is deleted after the anonymisation commits, never inside it:
+object storage does not roll back, and a failed anonymisation has to leave a
+still-existing account with its picture. A file that is already gone is not a
+failure, and one the store refuses to delete is logged and left, not retried.
+Only the current avatar is reached, and only when it is an upload of this
+account's at this platform's address. Pictures replaced earlier are not deleted
+(nothing records that an upload was ever an avatar), and neither is any other
+upload of the account, campaign media above all.
+
+**Kept on purpose** (#647): support tickets, identity verifications, creator
+legal subjects, signature sessions, payout destinations and card
+registrations, and partner profiles are not deleted at anonymisation. They are
+retained under legal or contractual obligations, for the periods the privacy
+policy states.
 
 The password hash goes rather than being kept, because it is a credential and
 not a record: people reuse passwords, so retaining it is a liability to the
