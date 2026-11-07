@@ -13,7 +13,13 @@
         "many": "{count} backers",
         "other": "{count} backers"
       },
-      "rule": "Succeeds at 80% of the goal"
+      "rule": "Succeeds at 80% of the goal",
+      "views": {
+        "one": "{count} view",
+        "few": "{count} views",
+        "many": "{count} views",
+        "other": "{count} views"
+      }
     },
     "saving": "Saving…",
     "tryAgain": "Try again",
@@ -43,6 +49,38 @@
         "few": "{count} characters too many",
         "many": "{count} characters too many",
         "other": "{count} characters too many"
+      }
+    },
+    "audience": {
+      "period": {
+        "day": "Daily",
+        "week": "Weekly",
+        "month": "Monthly",
+        "year": "Yearly"
+      },
+      "periodLabel": "Period",
+      "views": "Views",
+      "clicks": "Clicks",
+      "visitors": "Visitors",
+      "pageViews": "Page views",
+      "countries": "Countries",
+      "platforms": "Platforms",
+      "unknownCountry": "Unknown",
+      "dailySumNote": "Visitors are counted per day and summed; someone who came on two days counts twice.",
+      "platform": {
+        "WEB": "Web",
+        "IOS": "iOS",
+        "ANDROID": "Android"
+      },
+      "surface": {
+        "HOME": "Home",
+        "DISCOVER": "Discover",
+        "SEARCH": "Search",
+        "CATEGORY": "Category",
+        "COLLECTION": "Collection",
+        "PROFILE": "Profile",
+        "SAVED": "Saved",
+        "OTHER": "Other"
       }
     }
   },
@@ -2350,7 +2388,8 @@
           "READ_BANK_DETAILS": "Open a creator's IBAN in full, to verify it or to pay into it",
           "GRANT_COMPLIANCE_OVERRIDE": "Waive a compliance requirement for one account, for a bounded time",
           "ADMINISTER_STAFF": "Grant and withdraw roles",
-          "VIEW_PARTNER_STATISTICS": "Read the financial statistics as a partner: totals only, scaled to an agreed share"
+          "VIEW_PARTNER_STATISTICS": "Read the financial statistics as a partner: totals only, scaled to an agreed share",
+          "VIEW_AUDIENCE": "Read the audience figures: visitors, page views, and campaign views and clicks"
         },
         "picker": {
           "subject": "the account directory",

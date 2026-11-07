@@ -13,7 +13,13 @@
         "many": "{count} dəstəkçi",
         "other": "{count} dəstəkçi"
       },
-      "rule": "Hədəfin 80%-ində uğurlu sayılır"
+      "rule": "Hədəfin 80%-ində uğurlu sayılır",
+      "views": {
+        "one": "{count} baxış",
+        "few": "{count} baxış",
+        "many": "{count} baxış",
+        "other": "{count} baxış"
+      }
     },
     "saving": "Yadda saxlanılır…",
     "tryAgain": "Yenidən cəhd edin",
@@ -43,6 +49,38 @@
         "few": "{count} simvol artıqdır",
         "many": "{count} simvol artıqdır",
         "other": "{count} simvol artıqdır"
+      }
+    },
+    "audience": {
+      "period": {
+        "day": "Günlük",
+        "week": "Həftəlik",
+        "month": "Aylıq",
+        "year": "İllik"
+      },
+      "periodLabel": "Dövr",
+      "views": "Baxış",
+      "clicks": "Klik",
+      "visitors": "Ziyarətçi",
+      "pageViews": "Səhifə baxışı",
+      "countries": "Ölkələr",
+      "platforms": "Platformalar",
+      "unknownCountry": "Naməlum",
+      "dailySumNote": "Ziyarətçilər hər gün ayrıca sayılır və cəmlənir; eyni adam iki gündə gəlibsə, iki dəfə sayılır.",
+      "platform": {
+        "WEB": "Veb",
+        "IOS": "iOS",
+        "ANDROID": "Android"
+      },
+      "surface": {
+        "HOME": "Ana səhifə",
+        "DISCOVER": "Kəşf et",
+        "SEARCH": "Axtarış",
+        "CATEGORY": "Kateqoriya",
+        "COLLECTION": "Kolleksiya",
+        "PROFILE": "Profil",
+        "SAVED": "Saxlanılanlar",
+        "OTHER": "Digər"
       }
     }
   },
@@ -2350,7 +2388,8 @@
           "READ_BANK_DETAILS": "Müəllifin IBAN-ını tam açmaq — yoxlamaq və ya ödəniş etmək üçün",
           "GRANT_COMPLIANCE_OVERRIDE": "Bir hesab üçün uyğunluq tələbini məhdud müddətə ləğv etmək",
           "ADMINISTER_STAFF": "Rol vermək və geri almaq",
-          "VIEW_PARTNER_STATISTICS": "Maliyyə statistikasını tərəfdaş kimi oxumaq: yalnız yekunlar, razılaşdırılmış paya uyğun"
+          "VIEW_PARTNER_STATISTICS": "Maliyyə statistikasını tərəfdaş kimi oxumaq: yalnız yekunlar, razılaşdırılmış paya uyğun",
+          "VIEW_AUDIENCE": "Auditoriya rəqəmlərini oxumaq: ziyarətçilər, səhifə baxışları, kampaniyalara baxışlar və kliklər"
         },
         "picker": {
           "subject": "hesab kataloqunu",
