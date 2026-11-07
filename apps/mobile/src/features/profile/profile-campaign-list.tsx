@@ -13,6 +13,7 @@ import {
   SkeletonGroup,
 } from '../../components/ui';
 import { Glyphs } from '../../icons';
+import { recordClick } from '../audience/beacons';
 import { useT } from '../../lib/i18n';
 import { spacing } from '../../theme';
 import type { ProfileList, ProfileListKind } from './api';
@@ -100,11 +101,13 @@ export function ProfileCampaignList({
   const funding = kind === 'created' ? 'shown' : 'withheld';
 
   const open = useCallback(
-    (card: ProfileProjectCard) =>
+    (card: ProfileProjectCard) => {
       router.push({
         pathname: '/projects/[creatorSlug]/[projectSlug]',
         params: { creatorSlug: card.creatorSlug, projectSlug: card.slug },
-      }),
+      });
+      recordClick(card.id, 'PROFILE');
+    },
     [router],
   );
 

@@ -197,6 +197,7 @@ function DiscoverScreen() {
     <Stack.Screen options={{ title: t('title') }} />
     <CampaignList
       cards={cards}
+      surface="DISCOVER"
       header={header}
       empty={emptyBody()}
       footer={cards.length > 0 ? footer() : undefined}

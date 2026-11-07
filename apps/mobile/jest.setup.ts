@@ -292,6 +292,17 @@ jest.mock('@sentry/react-native', () => ({
   wrap: (component: unknown) => component,
 }));
 
+/**
+ * Audience beacons (#636). Fire-and-forget POSTs from the card, the campaign page and the root
+ * layout would otherwise land in whatever `fetch` double a suite set up and in its call log, so
+ * every suite gets a spy in place of the send. `features/audience/send.test.ts` tests the real
+ * one through `jest.requireActual`; the others assert on the spy.
+ */
+jest.mock('./src/features/audience/send', () => ({
+  ...jest.requireActual('./src/features/audience/send'),
+  sendAudienceEvent: jest.fn(),
+}));
+
 /** Whether this is a real device. False, which is what a test runner is. */
 jest.mock('expo-device', () => ({ isDevice: false, deviceName: 'Test device' }));
 

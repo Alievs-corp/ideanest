@@ -26,6 +26,7 @@ import {
 } from '@ideanest/campaign/tabs';
 import { realtimeOrigin, siteUrl } from '../../api/config';
 import { useProjectPage, useProjectRewards, useUpdateObligation } from '../../api/queries';
+import { useAudienceView } from '../../features/audience/beacons';
 import { useAppActive } from '../../lib/app-active';
 import { useCampaignClock } from '../../lib/campaign-clock';
 import { readCampaignPage, tiersOf, type CampaignPage } from '../../lib/campaign-page';
@@ -145,6 +146,8 @@ export function CampaignScreen({ creatorSlug, projectSlug, now }: CampaignScreen
     () => readCampaignPage(query.data, creatorSlug, clock),
     [query.data, creatorSlug, clock],
   );
+  // One audience VIEW per campaign this screen shows (#636), once the page has said which it is.
+  useAudienceView(campaign?.id);
 
   const missing = query.error instanceof ApiError && query.error.status === 404;
   if (missing || (query.data !== undefined && campaign === null)) {

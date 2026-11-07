@@ -51,6 +51,8 @@ export interface ProfileProjectCard {
   readonly goal: Money | null;
   readonly pledged: Money | null;
   readonly backersCount: number;
+  /** Every day's unique viewers, added up (#636); zero when the service sent none. */
+  readonly viewCount: number;
   /** The still to draw: the video's poster when the campaign has a video, else its cover. */
   readonly coverUrl: string | null;
   /** The clip a held card previews, or `null`. */
@@ -122,6 +124,7 @@ function readProjectCard(value: unknown): ProfileProjectCard | null {
     goal: money(source['goal']),
     pledged: money(source['pledged']),
     backersCount: count(source['backersCount']),
+    viewCount: count(source['viewCount']),
     ...coverOf(source),
   };
 }

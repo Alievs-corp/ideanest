@@ -129,7 +129,7 @@ function HomeScreen() {
             testID="rail-popular"
           >
             {/* The first campaign under the hero, so its cover is fetched first. */}
-            <CampaignColumn cards={popularCards} priority={1} coverScale={1} />
+            <CampaignColumn cards={popularCards} priority={1} coverScale={1} surface="HOME" />
           </HomeSection>
         ) : null}
 
@@ -144,7 +144,7 @@ function HomeScreen() {
             index={2}
             testID="rail-closing"
           >
-            <CampaignColumn cards={closingCards} />
+            <CampaignColumn cards={closingCards} surface="HOME" />
           </HomeSection>
         ) : null}
 
@@ -159,7 +159,7 @@ function HomeScreen() {
             index={3}
             testID="rail-launched"
           >
-            <CampaignColumn cards={launchedCards} />
+            <CampaignColumn cards={launchedCards} surface="HOME" />
           </HomeSection>
         ) : null}
 

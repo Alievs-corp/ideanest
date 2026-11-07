@@ -273,7 +273,7 @@ function LandingBody({
           ) : (
             <>
               <View accessibilityLabel={t('gridLabel', { title })} testID="landing-cards">
-                <CampaignColumn cards={cards} priority={3} />
+                <CampaignColumn cards={cards} priority={3} surface="CATEGORY" />
               </View>
               <View style={styles.more}>
                 <Pill

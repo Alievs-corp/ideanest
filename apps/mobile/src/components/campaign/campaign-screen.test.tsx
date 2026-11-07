@@ -10,6 +10,7 @@ import { FadeInDown } from 'react-native-reanimated';
 import en from '@ideanest/messages/en.json';
 import { formatMoney } from '@ideanest/money';
 import type { ProjectPage, PublicRewards } from '../../api/queries';
+import { sendAudienceEvent } from '../../features/audience/send';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
 import { colors, spacing, staggerDelay } from '../../theme';
@@ -670,6 +671,20 @@ describe('when the page is not a page', () => {
     const save = screen.getByTestId('action-save');
     expect(save.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
     expect(textOf(screen.getByTestId('actions-notice'))).toBe(en.mobile.campaign.actionsOffline);
+  });
+});
+
+describe('the audience VIEW (#636)', () => {
+  it('counts the page once it says which campaign it is, and once only', async () => {
+    await show();
+    const views = (sendAudienceEvent as jest.Mock).mock.calls.filter(([event]) => event.kind === 'VIEW');
+    expect(views).toEqual([[{ kind: 'VIEW', projectId: ID }]]);
+  });
+
+  it.each(['DRAFT', 'PRELAUNCH'] as const)('does not count %s, which has no public page', async (state) => {
+    routes.page = () => json(page(state));
+    await show();
+    expect(sendAudienceEvent).not.toHaveBeenCalled();
   });
 });
 
