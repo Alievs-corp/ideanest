@@ -6,7 +6,11 @@ import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
 import az.ideanest.shared.SecureTokens;
 import az.ideanest.auth.domain.SessionRevocationReason;
+import az.ideanest.auth.infrastructure.EmailChangeRequestRepository;
+import az.ideanest.auth.infrastructure.ProviderIdentityRepository;
+import az.ideanest.auth.infrastructure.RecoveryCodeRepository;
 import az.ideanest.auth.infrastructure.SessionRepository;
+import az.ideanest.auth.infrastructure.TwoFactorChallengeRepository;
 import az.ideanest.auth.infrastructure.TwoFactorSecretRepository;
 import az.ideanest.auth.infrastructure.UserCredentialRepository;
 import az.ideanest.auth.infrastructure.VerificationTokenRepository;
@@ -32,6 +36,10 @@ public class AuthAccountSecurity implements AccountSecurity {
 
     private final UserCredentialRepository credentials;
     private final TwoFactorSecretRepository twoFactorSecrets;
+    private final RecoveryCodeRepository recoveryCodes;
+    private final TwoFactorChallengeRepository twoFactorChallenges;
+    private final ProviderIdentityRepository providerIdentities;
+    private final EmailChangeRequestRepository emailChanges;
     private final SessionRepository sessions;
     private final VerificationTokenRepository verificationTokens;
     private final PasswordHasher passwordHasher;
@@ -48,6 +56,10 @@ public class AuthAccountSecurity implements AccountSecurity {
     public AuthAccountSecurity(
             UserCredentialRepository credentials,
             TwoFactorSecretRepository twoFactorSecrets,
+            RecoveryCodeRepository recoveryCodes,
+            TwoFactorChallengeRepository twoFactorChallenges,
+            ProviderIdentityRepository providerIdentities,
+            EmailChangeRequestRepository emailChanges,
             SessionRepository sessions,
             VerificationTokenRepository verificationTokens,
             PasswordHasher passwordHasher,
@@ -55,6 +67,10 @@ public class AuthAccountSecurity implements AccountSecurity {
             RevokedSessions revokedSessions) {
         this.credentials = credentials;
         this.twoFactorSecrets = twoFactorSecrets;
+        this.recoveryCodes = recoveryCodes;
+        this.twoFactorChallenges = twoFactorChallenges;
+        this.providerIdentities = providerIdentities;
+        this.emailChanges = emailChanges;
         this.sessions = sessions;
         this.verificationTokens = verificationTokens;
         this.passwordHasher = passwordHasher;
@@ -121,6 +137,24 @@ public class AuthAccountSecurity implements AccountSecurity {
         // other accounts and an asset to nobody.
         credentials.deleteById(userId);
         verificationTokens.deleteAllForUser(userId);
+        // The second factor goes for the password's reason (#645): the TOTP secret
+        // and the recovery codes are credentials for an account nobody can sign in
+        // to any more. The challenges are not credentials once spent, but each one
+        // carries the device label, user agent and IP address of a sign-in, which
+        // is what stripPersonalDetails removes from the sessions below.
+        twoFactorSecrets.deleteForUser(userId);
+        recoveryCodes.deleteAllForUser(userId);
+        twoFactorChallenges.deleteAllForUser(userId);
+        // The provider links are the person's identifier at Google or Apple and
+        // the address the provider last asserted. Left behind, the next sign-in
+        // with the same provider would also resolve to this account and be
+        // refused, instead of starting a new one.
+        providerIdentities.deleteAllForUser(userId);
+        // A pending address change is a capability plus an address (#645).
+        emailChanges.deleteAllForUser(userId);
+        // Every one of these tables cascades from users, and the cascade never
+        // fires because the row is never deleted. Each statement deletes nothing
+        // on a second run, which keeps this method idempotent.
         sessions.stripPersonalDetails(userId);
         // Refresh tokens are left alone. A row there is a SHA-256 of 256 bits we
         // generated plus two timestamps: it identifies nobody, and V2 keeps

@@ -50,4 +50,18 @@ public interface TwoFactorChallengeRepository extends JpaRepository<TwoFactorCha
                AND c.consumedAt IS NULL
             """)
     int consumeOutstanding(@Param("userId") UUID userId, @Param("at") Instant at);
+
+    /**
+     * Removes every challenge a user has, spent or not — §17.4's anonymisation (#645).
+     *
+     * <p>Called from {@code AuthAccountSecurity.forget}. A spent challenge is no longer a
+     * credential, but it still carries the device label, user agent and IP address of the
+     * sign-in that made it, which is the personal data anonymisation strips from the
+     * sessions. Deleted rather than stripped: unlike a session, a challenge records
+     * nothing the security history needs. The foreign key cascades on a real delete;
+     * this covers the anonymisation, which is not one.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM TwoFactorChallenge c WHERE c.userId = :userId")
+    int deleteAllForUser(@Param("userId") UUID userId);
 }

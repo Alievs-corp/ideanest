@@ -23,8 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
  * <p><strong>What is overwritten:</strong> the email address, the display name,
  * the public slug, the avatar, the biography, the site, the location, every
  * social link, the proof that the address was verified, the password credential,
- * every unspent verification link, every push registration, and the device label,
- * user agent, and IP address of every session.
+ * the second factor (its secret, recovery codes and sign-in challenges), every
+ * Google and Apple link, every pending address change, every unspent verification
+ * link, every push registration, and the device label, user agent, and IP address
+ * of every session. Everything from the credential on lives in {@code auth} and goes
+ * through {@link AccountSecurity#forget} (#645).
  *
  * <p><strong>The push registrations are deleted here for the links' reason</strong>
  * (#643): {@code push_devices} cascades from {@code users}, and the cascade never
@@ -107,7 +110,10 @@ public class AccountAnonymiser {
                     // its own -- deleting nothing is what a second run does -- which is what
                     // keeps the whole method idempotent.
                     socialLinks.deleteByUserId(userId);
-                    // Bulk as well, and repeatable for the same reason (#643).
+                    // Bulk as well, and repeatable for the same reason (#643). Usually nothing is
+                    // left by now -- the deletion request already deleted them (#645) and a closing
+                    // account cannot register again -- but an account closed before that change
+                    // still has its rows, and this is what reaches them.
                     pushRegistrations.forgetAll(userId);
                     security.forget(userId);
                     log.info("Account {} anonymised.", userId);

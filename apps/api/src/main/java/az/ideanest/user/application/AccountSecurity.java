@@ -48,7 +48,9 @@ public interface AccountSecurity {
 
     /**
      * Destroys what is left of the account's ability to authenticate, and the
-     * personal data attached to the record of it having done so.
+     * personal data attached to the record of it having done so: the password,
+     * the second factor, the Google and Apple links, every verification link and
+     * pending address change, and the device details of every session (#645).
      *
      * <p>Idempotent: the anonymisation job may run this again after a crash, or
      * on two instances at once.
