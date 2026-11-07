@@ -794,6 +794,7 @@
       "/admin/fees": "Komissiyalar",
       "/admin/plans": "Planlar",
       "/admin/analytics": "Analitika",
+      "/admin/audience": "Auditoriya",
       "/admin/audit": "Audit jurnalı",
       "/admin/email-templates": "E-poçt şablonları",
       "/admin/flags": "Funksiya bayraqları",
@@ -878,7 +879,7 @@
       },
       "AD-13": {
         "title": "Analitika",
-        "summary": "Bütün platforma üzrə həcm, uğur nisbəti və orta dəstək məbləği.",
+        "summary": "Bütün platforma üzrə həcm, uğur nisbəti, orta dəstək məbləği və auditoriya: ziyarətçilər, səhifə və kampaniya baxışları.",
         "waitingOn": "Kohortlar üçün dəstəkçinin ilk dəstəyinə əsaslanan yığım, huni üçün isə ziyarətdən dəstəyə gedən yol lazımdır; heç biri mövcud deyil və ekran onları təxmin etmək əvəzinə bunu bildirir (#313)."
       },
       "AD-14": {
@@ -984,6 +985,12 @@
         "metaDescription": "Bütün platforma üzrə həcm, uğur nisbəti və orta dəstək məbləği.",
         "title": "Platforma analitikası",
         "intro": "Seçilmiş dövr üzrə dəstək həcmi, dəstəkçilər, orta dəstək və kampaniyaların nəticəsi."
+      },
+      "audience": {
+        "metaTitle": "Platformanın auditoriyası",
+        "metaDescription": "Bütün platforma üzrə ziyarətçilər, səhifə baxışları, kampaniyalara baxışlar və kliklər.",
+        "title": "Platformanın auditoriyası",
+        "intro": "Seçdiyiniz dövrdə platformaya neçə nəfərin gəldiyi, hansı ölkələrdən və hansı platformalardan daxil olduğu, hansı kampaniyalara baxdığı."
       },
       "curation": {
         "metaTitle": "Kolleksiyalar",
@@ -1644,6 +1651,37 @@
         "populationNote": "Yalnız bu dövrdə toplanan və geri qaytarılmayan dəstəklər sayılır; qismən geri qaytarılan məbləğlər çıxılıb.",
         "nowHeading": "İndi",
         "computedAt": "Rəqəmlər {time} vaxtına oxunub (Bakı vaxtı)."
+      },
+      "audience": {
+        "subject": "auditoriya rəqəmlərini",
+        "loadingList": "Auditoriya rəqəmləri yüklənir",
+        "computedAt": "Rəqəmlər {time} vaxtına oxunub (Bakı vaxtı).",
+        "campaignViews": "Kampaniyalara baxış",
+        "campaignClicks": "Kampaniyalara klik",
+        "allTimeViews": "Bütün dövr üzrə baxış",
+        "trafficHeading": "Ziyarətçilər və səhifə baxışları",
+        "campaignChartHeading": "Kampaniyalara baxışlar və kliklər",
+        "nothingRecorded": "Bu dövrdə heç nə qeydə alınmayıb.",
+        "surfacesHeading": "Kliklər haradan gəlib",
+        "showAllCountries": "Bütün ölkələri göstər",
+        "topHeading": "Ən çox baxılan kampaniyalar",
+        "topNote": "Bu dövrdə ən çox baxılan iyirmi kampaniya. Kampaniyanın öz rəqəmlərini görmək üçün sətri açın.",
+        "topEmpty": "Bu dövrdə heç bir kampaniyaya baxılmayıb.",
+        "campaignColumn": "Kampaniya",
+        "ratioColumn": "Baxış başına klik",
+        "noViews": "Baxış yoxdur",
+        "breakdown": "Ətraflı",
+        "breakdownLabel": "{title}: ətraflı",
+        "breakdownSubject": "bu kampaniyanın auditoriyasını",
+        "breakdownLoading": "Kampaniyanın auditoriyası yüklənir",
+        "chart": {
+          "summary": "{first} və {second}, {from} – {to}",
+          "granularity": {
+            "HOUR": "Hər sütun cütü bir saatdır",
+            "DAY": "Hər sütun cütü bir gündür",
+            "MONTH": "Hər sütun cütü bir aydır"
+          }
+        }
       },
       "emailTemplates": {
         "subject": "e-poçt şablonlarını",
