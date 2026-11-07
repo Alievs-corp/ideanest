@@ -270,6 +270,30 @@ from the matched segment, and `src/i18n/navigation.tsx` is what every `Link`, `u
 sends the reader through the redirect, which reads to them as the site forgetting what they
 picked.
 
+**The web sets only the cookies and storage that are needed or chosen (#641).** Under the
+EU ePrivacy benchmark that is what lets the site go without a consent banner, so a new
+cookie or storage key is a decision, not a detail. Every cookie:
+
+| Cookie | Set when | Why |
+|---|---|---|
+| `ideanest_refresh` | Sign-in and refresh, by the API (`Path=/v1/auth`, `HttpOnly`) | Strictly necessary: keeps the reader signed in |
+| `ideanest_locale` | The reader picks a language, or their account's language is applied | Their choice, read by `proxy.ts` on a bare path |
+| `ideanest_locale_synced`, `ideanest_locale_pending` | Signed-in readers only (`lib/i18n/sync.ts`) | Keeps that choice level with the account |
+| `ideanest_country` | The reader picks a country | Their choice of market |
+
+Two are deliberately absent. next-intl's `NEXT_LOCALE` is off (`localeCookie: false` in
+`src/i18n/routing.ts`): nothing read it. And where Cloudflare places a reader is not
+mirrored into a cookie any more: the proxy hands it to the render in `x-ideanest-market`
+on the pages that list campaigns, and the page passes it to the browser through
+`components/shell/MarketSeed.tsx`, which keeps it in memory for the header's country
+control, the empty-list notice and the browser's own list reads. `proxy.cookies.test.ts`
+runs the real next-intl middleware and asserts that no page answers with a `Set-Cookie`.
+
+Browser storage follows the same rule: `localStorage` holds `ideanest-theme` once a reader
+picks the light theme and `ideanest.maintenance.dismissed` once they close the maintenance
+notice, and nothing else. Real-user monitoring keeps its session in the page's memory, not
+in `sessionStorage` (#641, `docs/observability/real-user-monitoring.md`).
+
 **Azerbaijani is formatted here rather than by the browser (#401).** Chromium claims `az`
 — `Intl.RelativeTimeFormat.supportedLocalesOf(['az'])` answers `['az']` and
 `resolvedOptions().locale` says `az` — and then formats it from root-locale data: `-3 w`,

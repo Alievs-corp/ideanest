@@ -593,8 +593,11 @@ and each entry needs a translation per supported locale.
 > categories, collections) and strips from every other. **Those pages left the
 > shared cache** (`private, no-cache`), because they now differ by reader; a
 > campaign page, a profile and the documents did not, so a link to a campaign
-> works whatever country is chosen. The app keeps the choice on the device and
-> starts from the phone's region.
+> works whatever country is chosen. The page hands the browser the market it was
+> rendered for (`MarketSeed`), for the header's country control and the browser's
+> own list reads; where a reader is was once mirrored into a session cookie and no
+> longer is (#641), so the only market cookie is the reader's own choice. The app
+> keeps the choice on the device and starts from the phone's region.
 >
 > **Location is one dimension with three controls (#47).** `country` is ISO
 > 3166-1 alpha-2; `city` is a `locations.slug`, folded by §11.3 so `Bakı`,
@@ -7826,6 +7829,11 @@ it was written in.
 > English. Georgia and Ukraine left the CIS and are deliberately not in the table.
 > `Accept-Language` is still not negotiated, for #123's reason: the country is read on the one
 > response that is `private, no-store` anyway, so no localised page varies by it.
+>
+> **The web sets no language cookie a reader did not ask for (#641).** next-intl's own
+> `NEXT_LOCALE` is turned off in `routing.ts` (`localeCookie: false`): nothing read it,
+> and the redirect above reads `ideanest_locale`, which is written only when the reader
+> picks a language or their account's language is applied.
 >
 > **What is still English, stated rather than left to be found.** Nothing. The campaign
 > editor was the last surface on this line and came off it with #78, which is the list of
