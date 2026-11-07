@@ -7392,6 +7392,12 @@ closing account does not get.
 Cancelling inside the window restores the account completely. Nothing has been
 overwritten yet. The sessions stay revoked.
 
+The request also deletes every push registration of the account (#645), so a
+notification addressed to it stops reaching its phones at once rather than for
+thirty more days; registering a device is not one of the three paths a closing
+account may use. A cancellation does not restore them: each phone that still
+allows notifications registers its token again on the next signed-in launch.
+
 **After the window, anonymisation — not deletion.**
 
 | Overwritten | Retained |
@@ -7402,7 +7408,10 @@ overwritten yet. The sessions stay revoked.
 | `avatar_url`, `bio`, `email_verified_at` → null | `refresh_tokens` rows (a SHA-256 of 256 bits we generated) |
 | `user_credentials` row deleted | every financial row referring to `users.id` |
 | `verification_tokens` rows deleted | |
-| `push_devices` rows deleted (#643: the cascade from `users` never fires) | |
+| `user_two_factor` row, `two_factor_recovery_codes` and `two_factor_challenges` rows deleted (#645) | |
+| `provider_identities` rows deleted (#645) | |
+| `email_change_requests` rows deleted (#645) | |
+| `push_devices` rows deleted (#643: the cascade from `users` never fires; also at the request since #645) | |
 | `sessions.device_label`, `user_agent`, `ip_address` → null | |
 
 The row survives because the alternative breaks the ledger. A pledge is a

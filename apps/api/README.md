@@ -1163,17 +1163,25 @@ a flag it lacks, so that a missing claim denies rather than allows.
 
 Sessions are revoked when deletion is requested and stay revoked after a
 cancellation. The user has just proved they can sign in; the other devices have
-not.
+not. Push registrations are deleted at the same moment (#645), so notifications
+stop reaching the account's phones for the whole grace period, and a closing
+account cannot register a device again. A cancellation does not restore them
+either: the mobile app registers its token again on its next signed-in launch
+(`lib/push-sync.tsx`; the access token lives only in memory, so a launch refreshes
+it and the new one carries no `deletion_pending` claim), or on a foreground once
+the token in memory has been refreshed.
 
 **After the grace period the account is anonymised, not deleted.** The row
 survives with its identifier and its foreign keys intact, because "pledge #123
 was made by user X" has to stay true after X leaves. The email, name, slug,
-avatar, and biography are overwritten; the password credential and every
-verification token are deleted; the sessions keep their timings and lose their
-IP addresses and user agents. Every push registration is deleted too (#643):
-`push_devices` cascades from `users`, and that cascade never fires because the
-row is never deleted, so without this a closed account's tokens would wait out the
-180-day retention sweep.
+avatar, and biography are overwritten; the password credential, the second
+factor (TOTP secret, recovery codes, sign-in challenges), every Google and Apple
+link, every pending address change, and every verification token are deleted
+(#645); the sessions keep their timings and lose their IP addresses and user
+agents. Push registrations are deleted again (#643), which reaches an account
+closed before the request started deleting them. Each of these tables cascades
+from `users`, and that cascade never fires because the row is never deleted, so
+anonymisation has to delete them itself.
 
 **The address is released by anonymisation** and not before. Holding it in
 reserve permanently would mean retaining the address — or a hash of it, which
