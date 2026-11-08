@@ -408,9 +408,13 @@ Marked `[W]` web, `[M]` mobile, `[A]` admin.
 > still holds an address rather than a `mediaId`, so an uploaded picture is saved as
 > the address the media row answers with, and the address of a picture published
 > elsewhere is still accepted beside the upload. Two consequences follow from the
-> address: a replaced avatar's asset stays in storage, because `deleteAbandoned`
-> removes only `PENDING` rows, and a deployment whose `MEDIA_PUBLIC_BASE_URL` is not
-> https has the save refused with `PROFILE_FIELD_INVALID`. **The crop is not built**:
+> address. A replaced or removed avatar's upload is found by that address and
+> deleted after the save commits (#649), under §17.4's anonymisation rules: only
+> the account's own upload served at exactly that address, never one a campaign
+> also shows, never the one the new address names. Avatars replaced before #649
+> stay in storage, because nothing records that an upload was one. And a
+> deployment whose `MEDIA_PUBLIC_BASE_URL` is not https has the save refused with
+> `PROFILE_FIELD_INVALID`. **The crop is not built**:
 > the frame is a circle cut from the middle, and both clients say so.
 >
 > **P-10 arrived with #280, as one half offered and one half stated.** Its blocker
@@ -7436,9 +7440,11 @@ object storage does not roll back, and a failed anonymisation has to leave a
 still-existing account with its picture. A file that is already gone is not a
 failure, and one the store refuses to delete is logged and left, not retried.
 Only the current avatar is reached, and only when it is an upload of this
-account's at this platform's address. Pictures replaced earlier are not deleted
-(nothing records that an upload was ever an avatar), and neither is any other
-upload of the account, campaign media above all.
+account's at this platform's address. A picture replaced or removed in the
+profile editor is deleted at that moment, under the same rules (#649); one
+replaced before that change is not (nothing records that an upload was ever an
+avatar), and neither is any other upload of the account, campaign media above
+all.
 
 **Kept on purpose** (#647): support tickets, identity verifications, creator
 legal subjects, signature sessions, payout destinations and card
