@@ -32,6 +32,8 @@ public class LocalObjectStore implements ObjectStore {
 
     private final Path root;
 
+    private volatile boolean refusingDeletes;
+
     public LocalObjectStore() {
         try {
             this.root = Files.createTempDirectory("ideanest-object-store-");
@@ -66,6 +68,15 @@ public class LocalObjectStore implements ObjectStore {
 
     public boolean has(String key) {
         return Files.exists(pathOf(key));
+    }
+
+    /**
+     * Makes every {@link #delete} fail as an unreachable store would, until switched back — so a
+     * test can show that an outage after a commit does not undo the request (#649). A test that
+     * switches it on switches it off in a {@code finally}: the store is one bean for the suite.
+     */
+    public void refuseDeletes(boolean refuse) {
+        this.refusingDeletes = refuse;
     }
 
     /** Forgets everything, so one test's objects are not another's. */
@@ -115,6 +126,9 @@ public class LocalObjectStore implements ObjectStore {
 
     @Override
     public void delete(String key) {
+        if (refusingDeletes) {
+            throw new UncheckedIOException(new IOException("The test store is refusing deletes"));
+        }
         try {
             Files.deleteIfExists(pathOf(key));
         } catch (IOException problem) {

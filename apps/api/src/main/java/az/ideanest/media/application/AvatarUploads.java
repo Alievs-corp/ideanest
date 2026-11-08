@@ -11,8 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The picture behind an anonymised account's avatar, deleted — {@code user}'s
- * {@link AccountAvatarFiles} (#647).
+ * The picture behind an avatar the profile no longer shows, deleted — {@code user}'s
+ * {@link AccountAvatarFiles}: at anonymisation (#647), and when the owner replaces or removes
+ * the picture (#649).
  *
  * <h2>An address in, an upload out</h2>
  *
@@ -38,10 +39,16 @@ import org.springframework.transaction.annotation.Transactional;
  * <h2>Only the avatar</h2>
  *
  * <p>The account's other uploads are not touched, and campaign media above all: campaigns
- * outlive their creator's account. Pictures the person used as an avatar earlier and then
- * replaced are not reached either, because a replaced avatar leaves no reference behind to
- * recognise it by (the profile editor does not delete them, and {@code media} has no column
- * saying what an upload was for).
+ * outlive their creator's account. A picture is recognised as an avatar only while
+ * {@code avatar_url} still names it, so the profile editor asks for the deletion at the moment it
+ * moves the column on (#649). Avatars replaced before that change are not reached: they left no
+ * reference behind to recognise them by, and {@code media} has no column saying what an upload
+ * was for.
+ *
+ * <h2>Never the picture the profile shows now</h2>
+ *
+ * <p>On a replacement the new address is compared too: when it names the same upload, written
+ * differently, the old address is not a picture that went away, and nothing is deleted.
  */
 @Service
 public class AvatarUploads implements AccountAvatarFiles {
@@ -69,18 +76,34 @@ public class AvatarUploads implements AccountAvatarFiles {
     @Override
     @Transactional
     public void forgetAfterCommit(UUID userId, String avatarUrl) {
+        forget(userId, avatarUrl, Optional.empty());
+    }
+
+    /**
+     * {@link #forgetAfterCommit}, keeping whatever upload {@code currentUrl} names (#649).
+     */
+    @Override
+    @Transactional
+    public void forgetReplacedAfterCommit(UUID userId, String previousUrl, String currentUrl) {
+        if (previousUrl == null || previousUrl.equals(currentUrl)) {
+            return;
+        }
+        forget(userId, previousUrl, currentUrl == null ? Optional.empty() : mediaIdIn(currentUrl));
+    }
+
+    private void forget(UUID userId, String avatarUrl, Optional<UUID> stillShown) {
         // A deployment with no storage serves no uploads, so its avatars are all hosted
         // elsewhere -- and its store refuses even to build an address to compare with.
         if (avatarUrl == null || avatarUrl.isBlank() || !store.isAvailable()) {
             return;
         }
         mediaIdIn(avatarUrl)
+                .filter(mediaId -> !stillShown.equals(Optional.of(mediaId)))
                 .flatMap(mediaId -> assets.findByIdAndOwnerUserId(mediaId, userId))
                 .filter(asset -> servedAt(asset, avatarUrl))
                 .filter(asset -> {
                     if (usage.isInUse(asset.getId())) {
-                        log.info("Media {} was an anonymised account's avatar and is still in use; kept.",
-                                asset.getId());
+                        log.info("Media {} is no longer an avatar but is still in use; kept.", asset.getId());
                         return false;
                     }
                     return true;

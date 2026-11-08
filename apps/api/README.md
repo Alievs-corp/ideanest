@@ -1202,6 +1202,19 @@ objects after the anonymisation commits, through
 of an account that still exists, and an object that is already gone is not an
 error. Other uploads of the account, campaign media above all, are not touched.
 
+**A replaced or removed profile picture goes the same way** (#649). When
+`PATCH /v1/me/profile` moves `avatar_url` from one address to another or to
+null, `ProfileEditing` hands the old address to
+`AccountAvatarFiles.forgetReplacedAfterCommit`, and `AvatarUploads` deletes that
+upload after the save commits, under the rules above, plus one: the upload the
+new address names is kept, so saving the same picture again (however its
+address is written) deletes nothing. A refused edit rolls back and deletes
+nothing; a store that refuses the deletion is logged and the save still answers
+200. The edit reads the `users` row `FOR UPDATE`, so a concurrent save cannot
+write the old address back over the replacement. Avatars replaced before #649
+are not cleaned up: `media` records no purpose, so they cannot be told apart
+from any other upload.
+
 **The address is released by anonymisation** and not before. Holding it in
 reserve permanently would mean retaining the address — or a hash of it, which
 for an enumerable space is the same thing — in order to prove we no longer have
