@@ -168,6 +168,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * nothing — which is what "safe on more than one instance" has to mean in
      * practice rather than in a comment.
      *
+     * <p>The profile editor takes it too (#649), so that a save which read the previous
+     * avatar address cannot write it back over a replacement whose file is already deleted.
+     *
      * <p>Ignores {@code deleted_at}, unlike every other finder here: this is the
      * one operation whose whole purpose is to act on an account nobody may sign
      * in to.

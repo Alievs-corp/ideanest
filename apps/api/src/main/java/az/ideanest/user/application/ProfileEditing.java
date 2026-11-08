@@ -10,6 +10,7 @@ import az.ideanest.user.infrastructure.UserRepository;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -60,6 +61,16 @@ import org.springframework.transaction.annotation.Transactional;
  * tidier and would still have to be a transaction, since the social links are rows in another
  * table. A partial save is the outcome neither design may produce, and the transaction is what
  * actually prevents it.
+ *
+ * <h2>A replaced picture is deleted, after the commit</h2>
+ *
+ * <p>Overwriting {@code avatar_url} used to be all a new picture, or none, did: the previous
+ * upload stayed in the store under its public address for good (#649). The edit now hands the
+ * address it replaced to {@link AccountAvatarFiles}, which deletes that upload once this
+ * transaction has committed, and only when it is the account's own, served at exactly that
+ * address, not shown by any campaign, and not the picture the profile shows now. A refused edit
+ * rolls back and deletes nothing; a store that fails is logged by {@code media} and does not fail
+ * the save, which has already committed.
  */
 @Service
 public class ProfileEditing {
@@ -98,11 +109,17 @@ public class ProfileEditing {
     private final UserRepository users;
     private final SocialLinkRepository socialLinks;
     private final ProfileLocations locations;
+    private final AccountAvatarFiles avatarFiles;
 
-    public ProfileEditing(UserRepository users, SocialLinkRepository socialLinks, ProfileLocations locations) {
+    public ProfileEditing(
+            UserRepository users,
+            SocialLinkRepository socialLinks,
+            ProfileLocations locations,
+            AccountAvatarFiles avatarFiles) {
         this.users = users;
         this.socialLinks = socialLinks;
         this.locations = locations;
+        this.avatarFiles = avatarFiles;
     }
 
     /**
@@ -137,7 +154,13 @@ public class ProfileEditing {
      */
     @Transactional
     public OwnProfile apply(UUID accountId, ProfileEdit edit) {
-        User account = require(accountId);
+        // Locked, so that two saves from the same account run one after the other (#649). Each
+        // one rewrites the whole row, and without the lock a save that read the old picture's
+        // address could write it back after the other had replaced it -- and had its file deleted.
+        User account = users.findByIdForUpdate(accountId)
+                .filter(found -> !found.isDeleted())
+                .orElseThrow(() -> new AccountNotFoundException(accountId));
+        String previousAvatarUrl = account.getAvatarUrl();
 
         // Through the entity's setters rather than an UPDATE, so that the checks above are
         // the ones that run. The same reason PublicProfiles.setVisibility gives.
@@ -147,6 +170,12 @@ public class ProfileEditing {
         edit.websiteUrl().ifPresent(url -> account.setWebsiteUrl(optionalHttpsUrl("websiteUrl", url)));
         edit.locationSlug().ifPresent(slug -> account.setLocationId(resolveLocation(slug)));
         edit.socialLinks().ifPresent(links -> replaceSocialLinks(accountId, links));
+
+        // Last, after every refusal above has had its chance to roll the edit back. Saving the
+        // picture the profile already has is not a replacement and deletes nothing.
+        if (!Objects.equals(previousAvatarUrl, account.getAvatarUrl())) {
+            avatarFiles.forgetReplacedAfterCommit(accountId, previousAvatarUrl, account.getAvatarUrl());
+        }
 
         return toProfile(account);
     }
