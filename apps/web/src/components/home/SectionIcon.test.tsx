@@ -31,6 +31,17 @@ describe('SectionIcon', () => {
     expect(bulk?.getAttribute('class')).toContain('group-focus-within/heading:opacity-100');
   });
 
+  it('turns lime ink only while it answers — never lime at rest, never raw lime', () => {
+    const { container } = render(<SectionIcon glyph={Timer1} gesture="tilt" />);
+    const classes = (container.firstElementChild?.getAttribute('class') ?? '').split(/\s+/);
+    expect(classes).toContain('text-fg');
+    expect(classes).toContain('group-hover/heading:text-lime-ink');
+    expect(classes).toContain('group-focus-within/heading:text-lime-ink');
+    for (const name of classes) {
+      if (name.includes('lime')) expect(name).toMatch(/^group-(hover|focus-within)\/heading:.*lime-ink/);
+    }
+  });
+
   it.each(GLYPHS)('moves %s only for a reader who has not asked for reduced motion', (glyph, gesture) => {
     const { container } = render(<SectionIcon glyph={glyph} gesture={gesture} />);
     const mover = container.querySelector('svg')?.parentElement;

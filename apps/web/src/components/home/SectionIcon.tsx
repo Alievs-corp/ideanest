@@ -17,6 +17,14 @@ import type { GlyphNode, IconsaxGlyph } from '../icons/iconsax-types';
  * hover), and the gesture is behind `motion-safe:`. Under reduced motion the fill still changes —
  * that is a state, not motion.
  *
+ * <h2>Lime as ink, while it answers</h2>
+ *
+ * Under the pointer the mark turns `--lime-ink` and its border takes the same at 40%. Lime is a
+ * state, not decoration (docs/ui-kit.md §2): the hovered band is the current one, and the colour
+ * leaves with the pointer, so at rest the page still spends its one lime element on urgency.
+ * `--lime-ink` rather than `--lime-500` because on the light theme lime measures 1.1:1; the ink
+ * darkens there and stays lime on dark — the same token `CampaignStory`'s links hover to.
+ *
  * <h2>Decorative</h2>
  *
  * The heading beside it says what the band is, so the mark is hidden from assistive technology.
@@ -81,7 +89,7 @@ export function SectionIcon({
     <span
       aria-hidden="true"
       data-icon={glyph.name}
-      className="grid size-10 shrink-0 place-items-center rounded-xl border border-fg/8 bg-surface-2 text-fg transition-colors duration-150 ease-in-out group-hover/heading:bg-surface-3 group-focus-within/heading:bg-surface-3 sm:size-11"
+      className="grid size-10 shrink-0 place-items-center rounded-xl border border-fg/8 bg-surface-2 text-fg transition-colors duration-150 ease-in-out group-hover/heading:border-lime-ink/40 group-hover/heading:bg-surface-3 group-hover/heading:text-lime-ink group-focus-within/heading:border-lime-ink/40 group-focus-within/heading:bg-surface-3 group-focus-within/heading:text-lime-ink sm:size-11"
     >
       <span className={`grid transition-transform duration-300 ease-in-out ${GESTURE[gesture]}`}>
         <Drawing
