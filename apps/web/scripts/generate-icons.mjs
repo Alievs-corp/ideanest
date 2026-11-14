@@ -7,8 +7,9 @@
  *
  * The drawings come from `iconsax-react-native`, which `apps/mobile` already carries for its own
  * generator (`apps/mobile/scripts/generate-icons.mjs`), so the web and the app draw the same
- * Iconsax lines from one source and the web takes no new dependency. Only `linear` and `bulk`
- * are written: a section icon is drawn in line at rest and fills to bulk under the pointer.
+ * Iconsax lines from one source and the web takes no new dependency. `linear`, `bold` and `bulk`
+ * are written: a section icon is drawn in line at rest and fills under the pointer — solid
+ * (`bold`) on the dark theme, like the logo, and two-tone (`bulk`) on the light one.
  *
  * Licence: Iconsax Free is MIT and free for commercial use inside a product
  * (https://docs.iconsax.io/license-and-terms/license); the React Native packaging is MIT
@@ -27,7 +28,7 @@ const require = createRequire(join(here, '..', '..', 'mobile', 'package.json'));
 /** The Iconsax names the web uses. Keep sorted. */
 const ICONS = ['Category', 'LampCharge', 'Send2', 'Timer1', 'TrendUp'];
 
-const VARIANTS = { linear: 'Linear', bulk: 'Bulk' };
+const VARIANTS = { linear: 'Linear', bold: 'Bold', bulk: 'Bulk' };
 const COLOUR = 'currentColor';
 
 /*

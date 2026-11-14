@@ -15,6 +15,8 @@ export interface IconsaxGlyph {
   readonly name: string;
   /** The line drawing — at rest. */
   readonly linear: readonly GlyphNode[];
-  /** The filled drawing, its second layer the same colour at 40% — under the pointer. */
+  /** The solid drawing — under the pointer on the dark theme, one lime like the logo. */
+  readonly bold: readonly GlyphNode[];
+  /** The filled drawing, its second layer the same colour at 40% — under the pointer on light. */
   readonly bulk: readonly GlyphNode[];
 }

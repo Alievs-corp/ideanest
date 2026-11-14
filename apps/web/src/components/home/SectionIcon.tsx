@@ -7,7 +7,7 @@ import type { GlyphNode, IconsaxGlyph } from '../icons/iconsax-types';
  * <h2>It answers the pointer, it does not enter</h2>
  *
  * The heading row is the `group/heading`. At rest the glyph is Iconsax's line drawing; while the
- * row is hovered, or something in it has the keyboard focus, the line fades into the bulk
+ * row is hovered, or something in it has the keyboard focus, the line fades into the filled
  * drawing (150ms, `opacity`) and the glyph makes its own small gesture (300ms, `transform`) —
  * the clock tilts, the trend line steps up, the plane leaves, the lamp swings, the tiles turn.
  * docs/motion-system.md §3.2's two hover durations, and nothing else moves.
@@ -19,7 +19,9 @@ import type { GlyphNode, IconsaxGlyph } from '../icons/iconsax-types';
  *
  * <h2>Lime as ink, while it answers</h2>
  *
- * Under the pointer the mark turns `--lime-ink`. It stands bare, with no tile behind it. Lime is a
+ * Under the pointer the mark turns `--lime-ink`. It stands bare, with no tile behind it. On the
+ * dark theme it fills with the solid `bold` drawing, so it is the logo's lime undimmed — `bulk`'s
+ * 40% second layer reads as olive on black; on the light theme it keeps `bulk`. Lime is a
  * state, not decoration (docs/ui-kit.md §2): the hovered band is the current one, and the colour
  * leaves with the pointer, so at rest the page still spends its one lime element on urgency.
  * `--lime-ink` rather than `--lime-500` because on the light theme lime measures 1.1:1; the ink
@@ -96,9 +98,15 @@ export function SectionIcon({
           nodes={glyph.linear}
           className="transition-opacity duration-150 ease-in-out group-hover/heading:opacity-0 group-focus-within/heading:opacity-0"
         />
+        {/* Dark: the solid drawing, one lime from edge to edge — the logo's colour, undimmed. */}
+        <Drawing
+          nodes={glyph.bold}
+          className="opacity-0 transition-opacity duration-150 ease-in-out group-hover/heading:opacity-100 group-focus-within/heading:opacity-100 [[data-theme=light]_&]:hidden"
+        />
+        {/* Light: the two-tone drawing, its second layer the darkened ink at 40%. */}
         <Drawing
           nodes={glyph.bulk}
-          className="opacity-0 transition-opacity duration-150 ease-in-out group-hover/heading:opacity-100 group-focus-within/heading:opacity-100"
+          className="hidden opacity-0 transition-opacity duration-150 ease-in-out group-hover/heading:opacity-100 group-focus-within/heading:opacity-100 [[data-theme=light]_&]:block"
         />
       </span>
     </span>

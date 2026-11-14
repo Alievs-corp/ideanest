@@ -18,17 +18,29 @@ describe('SectionIcon', () => {
     const { container } = render(<SectionIcon glyph={Timer1} gesture="tilt" />);
     const mark = container.firstElementChild;
     expect(mark?.getAttribute('aria-hidden')).toBe('true');
-    expect(container.querySelectorAll('svg')).toHaveLength(2);
+    expect(container.querySelectorAll('svg')).toHaveLength(3);
   });
 
-  it('draws the line at rest and the bulk drawing only under the pointer or focus', () => {
+  it('draws the line at rest and a filled drawing only under the pointer or focus', () => {
     const { container } = render(<SectionIcon glyph={Timer1} gesture="tilt" />);
-    const [line, bulk] = Array.from(container.querySelectorAll('svg'));
+    const [line, bold, bulk] = Array.from(container.querySelectorAll('svg'));
     expect(line?.getAttribute('class')).not.toContain(' opacity-0');
     expect(line?.getAttribute('class')).toContain('group-hover/heading:opacity-0');
-    expect(bulk?.getAttribute('class')).toContain('opacity-0');
-    expect(bulk?.getAttribute('class')).toContain('group-hover/heading:opacity-100');
-    expect(bulk?.getAttribute('class')).toContain('group-focus-within/heading:opacity-100');
+    for (const filled of [bold, bulk]) {
+      expect(filled?.getAttribute('class')).toContain('opacity-0');
+      expect(filled?.getAttribute('class')).toContain('group-hover/heading:opacity-100');
+      expect(filled?.getAttribute('class')).toContain('group-focus-within/heading:opacity-100');
+    }
+  });
+
+  it('fills solid on the dark theme, like the logo, and two-tone on the light one', () => {
+    const { container } = render(<SectionIcon glyph={Timer1} gesture="tilt" />);
+    const [, bold, bulk] = Array.from(container.querySelectorAll('svg'));
+    expect(bold?.querySelector('[opacity]')).toBeNull();
+    expect(bold?.getAttribute('class')).toContain('[[data-theme=light]_&]:hidden');
+    expect(bulk?.querySelector('[opacity]')).not.toBeNull();
+    expect(bulk?.getAttribute('class')?.split(/\s+/)).toContain('hidden');
+    expect(bulk?.getAttribute('class')).toContain('[[data-theme=light]_&]:block');
   });
 
   it('turns lime ink only while it answers — never lime at rest, never raw lime', () => {
