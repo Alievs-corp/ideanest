@@ -19,7 +19,7 @@ import type { GlyphNode, IconsaxGlyph } from '../icons/iconsax-types';
  *
  * <h2>Lime as ink, while it answers</h2>
  *
- * Under the pointer the mark turns `--lime-ink` and its border takes the same at 40%. Lime is a
+ * Under the pointer the mark turns `--lime-ink`. It stands bare, with no tile behind it. Lime is a
  * state, not decoration (docs/ui-kit.md §2): the hovered band is the current one, and the colour
  * leaves with the pointer, so at rest the page still spends its one lime element on urgency.
  * `--lime-ink` rather than `--lime-500` because on the light theme lime measures 1.1:1; the ink
@@ -72,7 +72,7 @@ function draw(nodes: readonly GlyphNode[], prefix: string): ReactElement[] {
 
 function Drawing({ nodes, className }: { readonly nodes: readonly GlyphNode[]; readonly className: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={`col-start-1 row-start-1 size-6 ${className}`}>
+    <svg viewBox="0 0 24 24" fill="none" className={`col-start-1 row-start-1 size-full ${className}`}>
       {draw(nodes, '')}
     </svg>
   );
@@ -89,9 +89,9 @@ export function SectionIcon({
     <span
       aria-hidden="true"
       data-icon={glyph.name}
-      className="grid size-10 shrink-0 place-items-center rounded-xl border border-fg/8 bg-surface-2 text-fg transition-colors duration-150 ease-in-out group-hover/heading:border-lime-ink/40 group-hover/heading:bg-surface-3 group-hover/heading:text-lime-ink group-focus-within/heading:border-lime-ink/40 group-focus-within/heading:bg-surface-3 group-focus-within/heading:text-lime-ink sm:size-11"
+      className="grid size-7 shrink-0 place-items-center text-fg transition-colors duration-150 ease-in-out group-hover/heading:text-lime-ink group-focus-within/heading:text-lime-ink sm:size-8"
     >
-      <span className={`grid transition-transform duration-300 ease-in-out ${GESTURE[gesture]}`}>
+      <span className={`grid size-full transition-transform duration-300 ease-in-out ${GESTURE[gesture]}`}>
         <Drawing
           nodes={glyph.linear}
           className="transition-opacity duration-150 ease-in-out group-hover/heading:opacity-0 group-focus-within/heading:opacity-0"
