@@ -11,6 +11,9 @@ import {
 } from '../../../components/browse/campaign-grid-layout';
 import { ProjectCard as ProjectCardView } from '../../../components/discovery/ProjectCard';
 import { RailControls } from '../../../components/home/RailControls';
+import { SectionIcon, type SectionGesture } from '../../../components/home/SectionIcon';
+import { Category, LampCharge, Send2, Timer1, TrendUp } from '../../../components/icons/iconsax';
+import type { IconsaxGlyph } from '../../../components/icons/iconsax-types';
 import { FEATURED_CARD_SIZES } from '../../../lib/images/sizes';
 import { ACCENT_SURFACE } from '../../../components/browse/accent-surface';
 import { CategoryIcon } from '../../../components/browse/CategoryLook';
@@ -270,6 +273,7 @@ export default async function HomePage() {
           <div className="lg:grid lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-x-10">
             <HomeSection
               heading={t('featured.heading')}
+              icon={{ glyph: TrendUp, gesture: 'rise' }}
               standfirst={t('featured.standfirst')}
               href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'popularity' })}
               linkLabel={t('featured.link')}
@@ -303,6 +307,7 @@ export default async function HomePage() {
 
             <HomeSection
               heading={t('closing.heading')}
+              icon={{ glyph: Timer1, gesture: 'tilt' }}
               standfirst={t('closing.standfirst')}
               href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' })}
               linkLabel={t('closing.link')}
@@ -336,6 +341,7 @@ export default async function HomePage() {
         {closing.length > 0 && featured.length === 0 && (
           <HomeSection
             heading={t('closing.heading')}
+            icon={{ glyph: Timer1, gesture: 'tilt' }}
             standfirst={t('closing.standfirst')}
             href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' })}
             linkLabel={t('closing.link')}
@@ -356,6 +362,7 @@ export default async function HomePage() {
         {launched.length > 0 && (
           <HomeSection
             heading={t('launched.heading')}
+            icon={{ glyph: Send2, gesture: 'launch' }}
             standfirst={t('launched.standfirst')}
             href={toHref({ ...NO_FILTERS, statuses: ['live'], sort: 'newest' })}
             linkLabel={t('launched.link')}
@@ -396,8 +403,12 @@ export default async function HomePage() {
         */}
         <section className={`pb-20 ${DIVIDED}`}>
           <FadeUpSection>
-            <div className="pb-8">
-              <SectionHeading heading={t('creators.heading')} standfirst={t('creators.standfirst')} />
+            <div className="group/heading pb-8">
+              <SectionHeading
+                heading={t('creators.heading')}
+                standfirst={t('creators.standfirst')}
+                icon={{ glyph: LampCharge, gesture: 'swing' }}
+              />
             </div>
           </FadeUpSection>
           <ul
@@ -427,6 +438,7 @@ export default async function HomePage() {
         {categories !== null && categories.length > 0 && (
           <HomeSection
             heading={t('categories.heading')}
+            icon={{ glyph: Category, gesture: 'turn' }}
             standfirst={t('categories.standfirst')}
             href="/categories"
             linkLabel={t('categories.link')}
@@ -515,6 +527,7 @@ function itemsOf(feed: { items: readonly ProjectCard[] } | null): readonly Proje
  */
 function HomeSection({
   heading,
+  icon,
   standfirst,
   href,
   linkLabel,
@@ -524,6 +537,7 @@ function HomeSection({
   children,
 }: {
   readonly heading: string;
+  readonly icon: HeadingIcon;
   readonly standfirst: string;
   readonly href: string;
   /** The link's accessible name; `seeAll` is what is shown. */
@@ -538,8 +552,8 @@ function HomeSection({
   return (
     <section className={className === undefined ? 'pb-20' : `pb-20 ${className}`}>
       <FadeUpSection>
-        <div className="flex flex-col gap-3 pb-8 sm:flex-row sm:items-end sm:justify-between">
-          <SectionHeading heading={heading} standfirst={standfirst} />
+        <div className="group/heading flex flex-col gap-3 pb-8 sm:flex-row sm:items-end sm:justify-between">
+          <SectionHeading heading={heading} standfirst={standfirst} icon={icon} />
           <div className="flex shrink-0 items-center gap-6 max-sm:hidden">
             <Link
               href={href}
@@ -574,18 +588,35 @@ function HomeSection({
   );
 }
 
-/** A band's heading and its one sentence — shared by every band, the featured half included. */
+/**
+ * The Iconsax mark a band's heading wears, and the gesture it makes under the pointer
+ * (`SectionIcon`). The row around the heading is the `group/heading` that answers.
+ */
+interface HeadingIcon {
+  readonly glyph: IconsaxGlyph;
+  readonly gesture: SectionGesture;
+}
+
+/**
+ * A band's heading and its one sentence — shared by every band, the featured half included. The
+ * mark sits in front of the heading and the sentence runs under both, from the band's left edge.
+ */
 function SectionHeading({
   heading,
   standfirst,
+  icon,
 }: {
   readonly heading: string;
   readonly standfirst: string;
+  readonly icon: HeadingIcon;
 }) {
   return (
     <div>
-      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">{heading}</h2>
-      <p className="mt-2 max-w-[60ch] text-fg-64">{standfirst}</p>
+      <div className="flex items-center gap-3">
+        <SectionIcon glyph={icon.glyph} gesture={icon.gesture} />
+        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-fg sm:text-3xl">{heading}</h2>
+      </div>
+      <p className="mt-3 max-w-[60ch] text-fg-64">{standfirst}</p>
     </div>
   );
 }
