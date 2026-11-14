@@ -510,7 +510,11 @@ decisions.
 > **Hover is an answer, not an entry (#341).** A campaign card rises 4px and
 > its cover zooms 5% under the pointer; a home category tile rises, its icon
 > tilts and grows and its arrow steps forward; the categories index's icon disc
-> grows. These are `transform` transitions behind `motion-safe:`, and Tailwind's
+> grows; a home band's Iconsax heading mark fills from line to bulk and makes
+> its own small gesture (`SectionIcon`) while its heading row is hovered or
+> holds the focus. These are `transform` transitions behind `motion-safe:`
+> (the fill is an `opacity` cross-fade, a state that stays under reduced
+> motion), and Tailwind's
 > `hover:` applies only on a device that can hover — so they cost nothing while
 > the pointer rests, never play on a touch screen, and are not the list entry
 > animation §5.1 forbids. Discovery's budget is about what moves on its own.
