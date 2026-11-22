@@ -5400,8 +5400,10 @@
       "renewalBody": "Renewing adds the period you choose to the end of this one, so renewing early costs you no days. Nothing is charged unless you renew.",
       "renewalCancelled": "You cancelled this plan. Renewing it now keeps it going.",
       "renewsFrom": "You can renew from {date}",
-      "extendLabel": "Renew for how long",
+      "extendLabel": "Extend by",
       "extendsTo": "New end date: {date}",
+      "extendBy": "Extend by {period} — {price}",
+      "extendBody": "You can extend it now: the time you add starts when this period ends, so you lose no days.",
       "returned": {
         "waitingTitle": "Waiting for the payment to be confirmed",
         "waitingBody": "The payment provider has not told us the outcome yet. This page checks again for a minute; you do not need to pay a second time.",
@@ -7732,6 +7734,8 @@
       "renewalTitle": "Your {plan} plan ends on {date} — renew it on the website",
       "pendingOnWeb": "Complete the payment on the IdeyaNest website, by card or by bank transfer. The plan starts as soon as the payment is confirmed, and you can publish from then on.",
       "renewsFromOnWeb": "You can renew it on the website from {date}",
+      "extendOnWeb": "Extend on the website",
+      "extendOnWebBody": "You can extend it on the IdeyaNest website now: the time you add starts when this period ends.",
       "webOnly": {
         "title": "Plans are chosen on the website",
         "body": "To choose, change or cancel a plan, open this page on the IdeyaNest website. What you choose there applies in the app as soon as it is active.",

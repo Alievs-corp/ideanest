@@ -5400,8 +5400,10 @@
       "renewalBody": "Yeniləmə seçdiyiniz müddəti bu dövrün sonuna əlavə edir, ona görə vaxtından əvvəl yeniləsəniz, heç bir gün itirmirsiniz. Siz yeniləməsəniz, heç nə tutulmur.",
       "renewalCancelled": "Bu planı ləğv etmisiniz. İndi yeniləsəniz, plan davam edəcək.",
       "renewsFrom": "{date} tarixindən yeniləyə bilərsiniz",
-      "extendLabel": "Nə qədər uzadılsın",
+      "extendLabel": "Uzatma müddəti",
       "extendsTo": "Yeni bitmə tarixi: {date}",
+      "extendBy": "{period} uzat — {price}",
+      "extendBody": "Planı indi uzada bilərsiniz: əlavə etdiyiniz müddət bu dövr bitəndən sonra başlayır, ona görə heç bir gün itirmirsiniz.",
       "returned": {
         "waitingTitle": "Ödənişin təsdiqi gözlənilir",
         "waitingBody": "Ödəniş provayderi hələ nəticəni bildirməyib. Bu səhifə bir dəqiqə ərzində yenidən yoxlayır; ikinci dəfə ödəməyiniz lazım deyil.",
@@ -7732,6 +7734,8 @@
       "renewalTitle": "{plan} planınız {date} tarixində bitir — onu saytda yeniləyin",
       "pendingOnWeb": "Ödənişi IdeyaNest saytında kartla və ya bank köçürməsi ilə tamamlayın. Ödəniş təsdiqlənən kimi plan başlayır və dərc edə biləcəksiniz.",
       "renewsFromOnWeb": "{date} tarixindən saytda yeniləyə bilərsiniz",
+      "extendOnWeb": "Saytda uzat",
+      "extendOnWebBody": "Planı indi IdeyaNest saytında uzada bilərsiniz: əlavə etdiyiniz müddət bu dövr bitəndən sonra başlayır.",
       "webOnly": {
         "title": "Plan saytda seçilir",
         "body": "Plan seçmək, dəyişmək və ya ləğv etmək üçün bu səhifəni IdeyaNest saytında açın. Orada seçdiyiniz plan aktiv olan kimi tətbiqdə də keçərli olur.",
