@@ -531,6 +531,30 @@ every other endpoint, and refuses a submission with **503** — not 500, because
 creator told there was a server error tries again for ever and one told the
 service is not taking documents asks somebody.
 
+### Student verification (#655)
+
+The second check in this module, on the same rules: what the student plan
+(`STUDENT`, `subscription_plans.student_only`) is sold against. A creator sends an
+institution, a student card number, a photograph of the card (JPEG, PNG or PDF)
+and a selfie (JPEG or PNG) to `POST /v1/me/student-verification`; staff with
+`REVIEW_IDENTITY_VERIFICATION` approve it for a year, reject it or later revoke
+it from `/v1/admin/student-verifications`, and only `OPEN_IDENTITY_DOCUMENT` opens
+a photograph — audited as `student.document_read` before the bytes leave.
+
+- **One card number, one account.** The number is normalised (upper case,
+  letters and digits only) and a number pending, or approved and unexpired, on
+  another account is refused with `STUDENT_CARD_IN_USE`. V127's partial unique
+  index over `PENDING`/`APPROVED` holds it when two submissions race; it cannot
+  read a clock, so an approval whose year has run out is retired to `EXPIRED` by
+  the submission it stands in the way of, and by `student-document-retention`.
+- The photographs use `DocumentCipher` and `DocumentBytes` unchanged, and a
+  decision erases them. The institution and the card number stay, for the rule
+  above; anonymising the account deletes everything
+  (`user.AccountStudentVerifications`).
+- The subscription module asks `shared.access.StudentStandings`, which
+  `StudentVerifications` answers, when a student plan is chosen, paid for and
+  renewed.
+
 ## Cache invalidation
 
 `docs/architecture.md` §4.13 and issue #127. The web client caches its public
@@ -823,7 +847,7 @@ az.ideanest
 ├── moderation        reports, review queues, suspension
 ├── analytics         campaign metric aggregation, audience figures
 ├── risk              §17.2's fraud signals: velocity, account age, address familiarity
-├── verification      §22.1's identity documents: capture, restricted access, retention
+├── verification      §22.1's identity documents and #655's student check: capture, restricted access, retention
 ├── admin             internal operations tooling
 └── shared            money, outbox, idempotency, audit
 ```

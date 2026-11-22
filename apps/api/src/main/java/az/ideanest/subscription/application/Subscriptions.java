@@ -7,6 +7,9 @@ import az.ideanest.audit.AuditOutcome;
 import az.ideanest.shared.Identifiers;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
+import az.ideanest.shared.access.StudentStandings;
+import az.ideanest.shared.money.Money;
+import az.ideanest.subscription.domain.BillingPeriod;
 import az.ideanest.subscription.domain.PaymentMethod;
 import az.ideanest.subscription.domain.Subscription;
 import az.ideanest.subscription.domain.SubscriptionPayment;
@@ -72,6 +75,7 @@ public class Subscriptions {
     private final SubscriptionPaymentRepository payments;
     private final PlatformStaff staff;
     private final UserDirectory accounts;
+    private final StudentStandings students;
     private final AuditLog audit;
     private final Clock clock;
 
@@ -81,6 +85,7 @@ public class Subscriptions {
             SubscriptionPaymentRepository payments,
             PlatformStaff staff,
             UserDirectory accounts,
+            StudentStandings students,
             AuditLog audit,
             Clock clock) {
         this.subscriptions = subscriptions;
@@ -88,6 +93,7 @@ public class Subscriptions {
         this.payments = payments;
         this.staff = staff;
         this.accounts = accounts;
+        this.students = students;
         this.audit = audit;
         this.clock = clock;
     }
@@ -127,25 +133,39 @@ public class Subscriptions {
      * the wrong plan should not have to find a cancel control first or be left with nothing
      * between two requests.
      *
+     * <p>The same goes for the same plan chosen for a different period (#655): one month
+     * picked, not paid, and then a year picked instead is a creator changing their mind.
+     *
+     * @param period how long a period to buy — #655. Null means the shortest the plan is sold
+     *     for, which is what a client written before plans had several periods asks for
      * @throws AlreadySubscribedException when the account holds one that has not ended, or
-     *     is waiting for payment on this same plan. Changing a paid plan is
+     *     is waiting for payment on this same plan for this same period. Changing a paid plan is
      *     cancel-then-subscribe, because upgrading mid-period needs a provider that can refund
      *     a part-month
+     * @throws PeriodNotOfferedException when the plan is not sold for that period
+     * @throws StudentVerificationRequiredException when the plan is for students and the
+     *     account's student verification is not approved, or has run out
      */
     @Transactional
-    public Subscription subscribe(UUID accountId, UUID planId) {
+    public Subscription subscribe(UUID accountId, UUID planId, BillingPeriod period) {
         SubscriptionPlan plan = plans.findById(planId).orElseThrow(() -> new UnknownPlanException(planId));
         if (!plan.isListed()) {
             throw new PlanNotOnSaleException(planId);
         }
+        BillingPeriod chosen = period == null ? plan.getBillingPeriod() : period;
+        Money price = plan.priceFor(chosen).orElseThrow(() -> new PeriodNotOfferedException(planId, chosen));
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        if (plan.isStudentOnly() && !students.isVerifiedStudent(accountId, now)) {
+            throw new StudentVerificationRequiredException();
+        }
 
         Optional<Subscription> open = subscriptions.openFor(accountId);
         if (open.isPresent()) {
             Subscription existing = open.get();
             boolean pending = existing.getState() == SubscriptionState.PENDING_PAYMENT;
-            if (pending && !existing.getPlanId().equals(planId)) {
+            boolean sameChoice = existing.getPlanId().equals(planId) && existing.getBillingPeriod() == chosen;
+            if (pending && !sameChoice) {
                 existing.cancelNow(null, now);
             } else if (existing.hasLapsedBy(now)) {
                 // Its period ran out and the index does not know. Retired here rather than by
@@ -157,9 +177,9 @@ public class Subscriptions {
             subscriptions.saveAndFlush(existing);
         }
 
-        Subscription bought = plan.requiresPayment()
-                ? Subscription.awaitingPayment(Identifiers.newIdentifier(), accountId, plan, now)
-                : Subscription.activeFrom(Identifiers.newIdentifier(), accountId, plan, now);
+        Subscription bought = price.isPositive()
+                ? Subscription.awaitingPayment(Identifiers.newIdentifier(), accountId, plan, chosen, now)
+                : Subscription.activeFrom(Identifiers.newIdentifier(), accountId, plan, chosen, now);
 
         Subscription saved;
         try {
@@ -171,10 +191,11 @@ public class Subscriptions {
         }
 
         log.info(
-                "Account {} subscribed to plan {} ({}), state {}",
+                "Account {} subscribed to plan {} ({}) for {}, state {}",
                 accountId,
                 plan.getId(),
                 plan.getCode(),
+                chosen,
                 saved.getState());
         return saved;
     }

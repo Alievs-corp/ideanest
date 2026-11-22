@@ -1366,6 +1366,13 @@
             "verification_approved": "Identity verification approved",
             "verification_rejected": "Identity verification rejected"
           },
+          "student": {
+            "verification_submitted": "Student verification submitted",
+            "document_read": "Student document read",
+            "verification_approved": "Student verification approved",
+            "verification_rejected": "Student verification rejected",
+            "verification_revoked": "Student verification revoked"
+          },
           "ledger": {
             "read": "Ledger read",
             "reconciled": "Ledger reconciled"

@@ -1366,6 +1366,13 @@
             "verification_approved": "Kimlik doğrulaması onaylandı",
             "verification_rejected": "Kimlik doğrulaması reddedildi"
           },
+          "student": {
+            "verification_submitted": "Öğrenci doğrulaması gönderildi",
+            "document_read": "Öğrenci belgesi okundu",
+            "verification_approved": "Öğrenci doğrulaması onaylandı",
+            "verification_rejected": "Öğrenci doğrulaması reddedildi",
+            "verification_revoked": "Öğrenci doğrulaması geri alındı"
+          },
           "ledger": {
             "read": "Defter okundu",
             "reconciled": "Defter mutabakatı yapıldı"

@@ -1366,6 +1366,13 @@
             "verification_approved": "Личность подтверждена",
             "verification_rejected": "Подтверждение личности отклонено"
           },
+          "student": {
+            "verification_submitted": "Подтверждение статуса студента отправлено",
+            "document_read": "Студенческий документ просмотрен",
+            "verification_approved": "Статус студента подтверждён",
+            "verification_rejected": "Подтверждение статуса студента отклонено",
+            "verification_revoked": "Подтверждение статуса студента отозвано"
+          },
           "ledger": {
             "read": "Книга прочитана",
             "reconciled": "Книга сверена"

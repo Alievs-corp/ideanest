@@ -9,6 +9,7 @@ import az.ideanest.subscription.application.SubscriptionCardPayments;
 import az.ideanest.subscription.application.SubscriptionPlans;
 import az.ideanest.subscription.application.Subscriptions;
 import az.ideanest.subscription.application.UnknownPlanException;
+import az.ideanest.subscription.domain.BillingPeriod;
 import az.ideanest.subscription.domain.Subscription;
 import az.ideanest.subscription.domain.SubscriptionPlan;
 import jakarta.validation.Valid;
@@ -134,7 +135,7 @@ public class SubscriptionController {
             @Valid @RequestBody SubscribeRequest request) {
 
         UUID accountId = callerOf(accessToken);
-        subscriptions.subscribe(accountId, request.planId());
+        subscriptions.subscribe(accountId, request.planId(), request.billingPeriod());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .cacheControl(CacheControl.noStore())
@@ -205,8 +206,12 @@ public class SubscriptionController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(describe(accountId, acceptLanguage));
     }
 
-    /** @param planId which plan, from {@code GET /v1/plans} */
-    public record SubscribeRequest(@NotNull UUID planId) {
+    /**
+     * @param planId which plan, from {@code GET /v1/plans}
+     * @param billingPeriod how long a period to buy, from the plan's {@code prices} — #655. Absent
+     *     means the shortest the plan is sold for
+     */
+    public record SubscribeRequest(@NotNull UUID planId, BillingPeriod billingPeriod) {
     }
 
     /**

@@ -252,7 +252,8 @@ class SubscriptionRenewalReminderTests extends AbstractIntegrationTest {
         assertThat(row)
                 .containsEntry("subject_type", "subscription")
                 .containsEntry("subject_id", subscription)
-                .containsEntry("plan", "Growth")
+                // The catalogue's primary (Azerbaijani) name since V128.
+                .containsEntry("plan", "İnkişaf")
                 .containsEntry("price", "49.00")
                 .containsEntry("period_end", "2031-03-12")
                 .containsEntry("days_left", "3");
@@ -270,7 +271,7 @@ class SubscriptionRenewalReminderTests extends AbstractIntegrationTest {
 
         assertThat(notification("SUBSCRIPTION_LAPSED"))
                 .containsEntry("subject_id", subscription)
-                .containsEntry("plan", "Growth")
+                .containsEntry("plan", "İnkişaf")
                 .containsEntry("period_end", "2031-03-09");
     }
 
