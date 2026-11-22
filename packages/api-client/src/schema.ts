@@ -1700,6 +1700,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/student-verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["studentVerificationAdminList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/student-verifications/{verificationId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["studentVerificationAdminApprove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/student-verifications/{verificationId}/documents/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["studentVerificationAdminDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/student-verifications/{verificationId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["studentVerificationAdminReject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/student-verifications/{verificationId}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["studentVerificationAdminRevoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/subscription/payments": {
         parameters: {
             query?: never;
@@ -3220,6 +3300,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/student-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["studentVerificationMine"];
+        put?: never;
+        post: operations["studentVerificationSubmit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/subscription": {
         parameters: {
             query?: never;
@@ -4697,7 +4793,7 @@ export interface components {
         };
         AddPlanRequest: {
             /** @enum {string} */
-            billingPeriod: "MONTHLY" | "YEARLY";
+            billingPeriod?: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
             code: string;
             currency: string;
             description?: string;
@@ -4705,9 +4801,11 @@ export interface components {
             /** Format: int32 */
             maxActiveCampaigns?: number;
             name: string;
-            price: number;
+            price?: number;
+            prices?: components["schemas"]["PeriodPrice"][];
             /** Format: int32 */
             sortOrder?: number;
+            studentOnly?: boolean;
             translations?: {
                 [key: string]: components["schemas"]["PlanText"];
             };
@@ -5262,8 +5360,10 @@ export interface components {
             maxActiveCampaigns?: number;
             name?: string;
             price?: number;
+            prices?: components["schemas"]["PeriodPrice"][];
             /** Format: int32 */
             sortOrder?: number;
+            studentOnly?: boolean;
             translations?: {
                 [key: string]: components["schemas"]["PlanText"];
             };
@@ -5418,7 +5518,7 @@ export interface components {
             /** Format: uuid */
             activatedBy?: string;
             /** @enum {string} */
-            billingPeriod?: "MONTHLY" | "YEARLY";
+            billingPeriod?: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
             cancelAtPeriodEnd?: boolean;
             /** Format: date-time */
             createdAt?: string;
@@ -6518,9 +6618,15 @@ export interface components {
             state?: "CALCULATED" | "PENDING_APPROVAL" | "APPROVED" | "PAID" | "FAILED" | "CANCELLED";
             taxWithheld?: components["schemas"]["Money"];
         };
+        PeriodPrice: {
+            /** @enum {string} */
+            billingPeriod: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
+            currency?: string;
+            price: number;
+        };
         Plan: {
             /** @enum {string} */
-            billingPeriod?: "MONTHLY" | "YEARLY";
+            billingPeriod?: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
             code?: string;
             currency?: string;
             description?: string;
@@ -6532,8 +6638,10 @@ export interface components {
             maxActiveCampaigns?: number;
             name?: string;
             price?: string;
+            prices?: components["schemas"]["PlanPrice"][];
             /** Format: int32 */
             sortOrder?: number;
+            studentOnly?: boolean;
             translations?: {
                 [key: string]: components["schemas"]["PlanTranslation"];
             };
@@ -6543,6 +6651,12 @@ export interface components {
         PlanPaymentBankTransferRequest: {
             bankReference: string;
             note?: string;
+        };
+        PlanPrice: {
+            /** @enum {string} */
+            billingPeriod?: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
+            currency?: string;
+            price?: string;
         };
         PlanText: {
             description?: string;
@@ -7797,6 +7911,55 @@ export interface components {
             /** Format: int32 */
             number?: number;
         };
+        StudentCardHolder: {
+            /** Format: uuid */
+            accountId?: string;
+            accountName?: string;
+            /** @enum {string} */
+            state?: "NONE" | "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+        };
+        StudentVerificationDecision: {
+            reason: string;
+        };
+        StudentVerificationList: {
+            verifications?: components["schemas"]["StudentVerificationRow"][];
+        };
+        StudentVerificationRow: {
+            accountEmail?: string;
+            /** Format: uuid */
+            accountId?: string;
+            accountName?: string;
+            cardNumber?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            /** Format: uuid */
+            decidedBy?: string;
+            documents?: ("STUDENT_CARD" | "SELFIE")[];
+            /** Format: uuid */
+            id?: string;
+            institution?: string;
+            rejectionReason?: string;
+            sameCardElsewhere?: components["schemas"]["StudentCardHolder"][];
+            /** @enum {string} */
+            state?: "NONE" | "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: date-time */
+            validUntil?: string;
+        };
+        StudentVerificationStatus: {
+            cardNumber?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            institution?: string;
+            rejectionReason?: string;
+            /** @enum {string} */
+            state?: "NONE" | "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: date-time */
+            validUntil?: string;
+        };
         Subcategory: {
             /** Format: uuid */
             id?: string;
@@ -7847,6 +8010,8 @@ export interface components {
             submissions?: components["schemas"]["Submission"][];
         };
         SubscribeRequest: {
+            /** @enum {string} */
+            billingPeriod?: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
             /** Format: uuid */
             planId: string;
         };
@@ -7857,7 +8022,7 @@ export interface components {
             accountName?: string;
             amount?: string;
             /** @enum {string} */
-            billingPeriod?: "MONTHLY" | "YEARLY";
+            billingPeriod?: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
             currency?: string;
             /** Format: uuid */
             id?: string;
@@ -7912,7 +8077,7 @@ export interface components {
         };
         SubscriptionRevenuePlanTotal: {
             /** @enum {string} */
-            billingPeriod?: "MONTHLY" | "YEARLY";
+            billingPeriod?: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
             currency?: string;
             /** Format: int64 */
             entries?: number;
@@ -8546,8 +8711,10 @@ export type SchemaPayoutFile = components['schemas']['PayoutFile'];
 export type SchemaPayoutPage = components['schemas']['PayoutPage'];
 export type SchemaPayoutRecord = components['schemas']['PayoutRecord'];
 export type SchemaPayoutSummary = components['schemas']['PayoutSummary'];
+export type SchemaPeriodPrice = components['schemas']['PeriodPrice'];
 export type SchemaPlan = components['schemas']['Plan'];
 export type SchemaPlanPaymentBankTransferRequest = components['schemas']['PlanPaymentBankTransferRequest'];
+export type SchemaPlanPrice = components['schemas']['PlanPrice'];
 export type SchemaPlanText = components['schemas']['PlanText'];
 export type SchemaPlanTranslation = components['schemas']['PlanTranslation'];
 export type SchemaPlatformAnalyticsResponse = components['schemas']['PlatformAnalyticsResponse'];
@@ -8686,6 +8853,11 @@ export type SchemaStatistics = components['schemas']['Statistics'];
 export type SchemaStatusWindow = components['schemas']['StatusWindow'];
 export type SchemaStoryVersionDetail = components['schemas']['StoryVersionDetail'];
 export type SchemaStoryVersionSummary = components['schemas']['StoryVersionSummary'];
+export type SchemaStudentCardHolder = components['schemas']['StudentCardHolder'];
+export type SchemaStudentVerificationDecision = components['schemas']['StudentVerificationDecision'];
+export type SchemaStudentVerificationList = components['schemas']['StudentVerificationList'];
+export type SchemaStudentVerificationRow = components['schemas']['StudentVerificationRow'];
+export type SchemaStudentVerificationStatus = components['schemas']['StudentVerificationStatus'];
 export type SchemaSubcategory = components['schemas']['Subcategory'];
 export type SchemaSubcategoryResponse = components['schemas']['SubcategoryResponse'];
 export type SchemaSubmission = components['schemas']['Submission'];
@@ -11600,6 +11772,126 @@ export interface operations {
             };
         };
     };
+    studentVerificationAdminList: {
+        parameters: {
+            query?: {
+                state?: "NONE" | "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentVerificationList"];
+                };
+            };
+        };
+    };
+    studentVerificationAdminApprove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                verificationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentVerificationRow"];
+                };
+            };
+        };
+    };
+    studentVerificationAdminDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                verificationId: string;
+                kind: "STUDENT_CARD" | "SELFIE";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    studentVerificationAdminReject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                verificationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentVerificationDecision"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentVerificationRow"];
+                };
+            };
+        };
+    };
+    studentVerificationAdminRevoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                verificationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentVerificationDecision"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentVerificationRow"];
+                };
+            };
+        };
+    };
     subscriptionRevenuePayments: {
         parameters: {
             query?: {
@@ -14178,6 +14470,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SavedListResponse"];
+                };
+            };
+        };
+    };
+    studentVerificationMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentVerificationStatus"];
+                };
+            };
+        };
+    };
+    studentVerificationSubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    cardNumber?: string;
+                    institution?: string;
+                    /** Format: binary */
+                    selfie?: string;
+                    /** Format: binary */
+                    studentCard?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentVerificationStatus"];
                 };
             };
         };

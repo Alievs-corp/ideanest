@@ -82,6 +82,14 @@ public class Subscription {
     @Column(name = "cancel_at_period_end", nullable = false)
     private boolean cancelAtPeriodEnd;
 
+    /**
+     * Whether this was bought at a student rate â€” the plan's {@code student_only}, copied at
+     * purchase like the price (#655). Paying and renewing need an approved student check on the
+     * strength of this, so marking a plan student-only later reaches only new buyers.
+     */
+    @Column(name = "student_rate", nullable = false, updatable = false)
+    private boolean studentRate;
+
     @Column(name = "canceled_at")
     private Instant canceledAt;
 
@@ -101,13 +109,19 @@ public class Subscription {
         // Hibernate.
     }
 
-    private Subscription(UUID id, UUID accountId, SubscriptionPlan plan, Instant now) {
+    private Subscription(UUID id, UUID accountId, SubscriptionPlan plan, BillingPeriod period, Instant now) {
+        // The chosen period's price, copied — #655. A plan sold for one, six and twelve months
+        // has three prices, and the one the creator agreed to is the one for the period they
+        // picked.
+        Money chosen = plan.priceFor(period)
+                .orElseThrow(() -> new IllegalArgumentException("Plan " + plan.getCode() + " is not sold for " + period));
         this.id = id;
         this.accountId = accountId;
         this.planId = plan.getId();
-        this.price = plan.getPrice().amount();
-        this.currency = plan.getPrice().currency();
-        this.billingPeriod = plan.getBillingPeriod();
+        this.price = chosen.amount();
+        this.currency = chosen.currency();
+        this.billingPeriod = period;
+        this.studentRate = plan.isStudentOnly();
         this.cancelAtPeriodEnd = false;
         this.createdAt = now;
         this.updatedAt = now;
@@ -122,7 +136,19 @@ public class Subscription {
      * with a window and no payment would be a free subscription with a price on it.
      */
     public static Subscription awaitingPayment(UUID id, UUID accountId, SubscriptionPlan plan, Instant now) {
-        Subscription subscription = new Subscription(id, requireAccount(accountId), requirePlan(plan), require(now));
+        return awaitingPayment(id, accountId, plan, requirePlan(plan).getBillingPeriod(), now);
+    }
+
+    /**
+     * The same, for one of the periods the plan is sold for — #655.
+     *
+     * @throws IllegalArgumentException when the plan is not sold for that period. The service
+     *     refuses first, with a code; this is the assertion that it did
+     */
+    public static Subscription awaitingPayment(
+            UUID id, UUID accountId, SubscriptionPlan plan, BillingPeriod period, Instant now) {
+        Subscription subscription =
+                new Subscription(id, requireAccount(accountId), requirePlan(plan), requirePeriod(period), require(now));
         subscription.state = SubscriptionState.PENDING_PAYMENT;
         return subscription;
     }
@@ -134,10 +160,17 @@ public class Subscription {
      * make the column mean two different things depending on the price.
      */
     public static Subscription activeFrom(UUID id, UUID accountId, SubscriptionPlan plan, Instant now) {
-        Subscription subscription = new Subscription(id, requireAccount(accountId), requirePlan(plan), require(now));
+        return activeFrom(id, accountId, plan, requirePlan(plan).getBillingPeriod(), now);
+    }
+
+    /** The same, for one of the periods the plan is sold for — #655. */
+    public static Subscription activeFrom(
+            UUID id, UUID accountId, SubscriptionPlan plan, BillingPeriod period, Instant now) {
+        Subscription subscription =
+                new Subscription(id, requireAccount(accountId), requirePlan(plan), requirePeriod(period), require(now));
         subscription.state = SubscriptionState.ACTIVE;
         subscription.startedAt = now;
-        subscription.currentPeriodEnd = plan.periodEndFrom(now);
+        subscription.currentPeriodEnd = period.endOf(now);
         return subscription;
     }
 
@@ -159,9 +192,12 @@ public class Subscription {
         if (state != SubscriptionState.PENDING_PAYMENT) {
             throw new IllegalStateException("Only a subscription waiting for payment can be activated");
         }
+        requirePlan(plan);
         this.state = SubscriptionState.ACTIVE;
         this.startedAt = require(now);
-        this.currentPeriodEnd = requirePlan(plan).periodEndFrom(now);
+        // This row's own period and never the plan's: since #655 a plan is sold for several, and
+        // a creator who paid for a year is owed a year whatever the plan's shortest period is.
+        this.currentPeriodEnd = billingPeriod.endOf(now);
         this.activatedBy = Objects.requireNonNull(activatedBy, "Somebody recorded this payment");
         this.note = trimmedOrNull(note);
         this.updatedAt = now;
@@ -177,9 +213,10 @@ public class Subscription {
         if (state != SubscriptionState.PENDING_PAYMENT) {
             throw new IllegalStateException("Only a subscription waiting for payment can be activated");
         }
+        requirePlan(plan);
         this.state = SubscriptionState.ACTIVE;
         this.startedAt = require(now);
-        this.currentPeriodEnd = requirePlan(plan).periodEndFrom(now);
+        this.currentPeriodEnd = billingPeriod.endOf(now);
         this.updatedAt = now;
     }
 
@@ -335,6 +372,11 @@ public class Subscription {
         return currentPeriodEnd;
     }
 
+    /** Whether it was bought at a student rate, and so needs a student check to be paid for. */
+    public boolean isStudentRate() {
+        return studentRate;
+    }
+
     public boolean isCancelAtPeriodEnd() {
         return cancelAtPeriodEnd;
     }
@@ -365,6 +407,10 @@ public class Subscription {
 
     private static SubscriptionPlan requirePlan(SubscriptionPlan plan) {
         return Objects.requireNonNull(plan, "A subscription is against a plan");
+    }
+
+    private static BillingPeriod requirePeriod(BillingPeriod period) {
+        return Objects.requireNonNull(period, "A subscription runs for some period");
     }
 
     private static Instant require(Instant now) {

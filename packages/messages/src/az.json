@@ -1366,6 +1366,13 @@
             "verification_approved": "Şəxsiyyət təsdiqləndi",
             "verification_rejected": "Şəxsiyyət təsdiqi rədd edildi"
           },
+          "student": {
+            "verification_submitted": "Tələbə təsdiqi göndərildi",
+            "document_read": "Tələbə sənədi açıldı",
+            "verification_approved": "Tələbə təsdiqləndi",
+            "verification_rejected": "Tələbə təsdiqi rədd edildi",
+            "verification_revoked": "Tələbə təsdiqi geri alındı"
+          },
           "ledger": {
             "read": "Baş kitab oxundu",
             "reconciled": "Baş kitab uzlaşdırıldı"

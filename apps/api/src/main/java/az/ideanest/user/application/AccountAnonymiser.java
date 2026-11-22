@@ -25,8 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
  * social link, the proof that the address was verified, the password credential,
  * the second factor (its secret, recovery codes and sign-in challenges), every
  * Google and Apple link, every pending address change, every unspent verification
- * link, every push registration, every notification and notification preference, the
- * uploaded avatar picture itself, and the device label, user agent, and IP address
+ * link, every push registration, every notification and notification preference, every
+ * student verification and its photographs (#655), the uploaded avatar picture itself, and the
+ * device label, user agent, and IP address
  * of every session. Everything from the credential on lives in {@code auth} and goes
  * through {@link AccountSecurity#forget} (#645).
  *
@@ -79,6 +80,7 @@ public class AccountAnonymiser {
     private final AccountPushRegistrations pushRegistrations;
     private final AccountNotifications notifications;
     private final AccountAvatarFiles avatarFiles;
+    private final AccountStudentVerifications studentVerifications;
 
     public AccountAnonymiser(
             UserRepository users,
@@ -86,13 +88,15 @@ public class AccountAnonymiser {
             AccountSecurity security,
             AccountPushRegistrations pushRegistrations,
             AccountNotifications notifications,
-            AccountAvatarFiles avatarFiles) {
+            AccountAvatarFiles avatarFiles,
+            AccountStudentVerifications studentVerifications) {
         this.users = users;
         this.socialLinks = socialLinks;
         this.security = security;
         this.pushRegistrations = pushRegistrations;
         this.notifications = notifications;
         this.avatarFiles = avatarFiles;
+        this.studentVerifications = studentVerifications;
     }
 
     /**
@@ -136,6 +140,9 @@ public class AccountAnonymiser {
                     // Bulk and repeatable as well (#647). Not at the request: the inbox and the
                     // switches are the account's own, and a cancellation gives them back whole.
                     notifications.forgetAll(userId);
+                    // Bulk and repeatable as well (#655): the institution, the card number and any
+                    // photograph of the card and the face still held.
+                    studentVerifications.forgetAll(userId);
                     // Found now, deleted after the commit -- see the class comment. A crash
                     // between the commit and the deletion leaves an orphaned file and a log line,
                     // not a retry: the next run finds the account already anonymised.

@@ -2783,6 +2783,55 @@ from AD-11's second screen, and the catalogue an operator seeds decides whether
 there is a free tier. A plan's `name` and `description` are Azerbaijani; the
 console adds the other languages beside them (V113's `translations`, keyed by
 locale), and a reader in a language a plan has none in reads the Azerbaijani.
+V62 had seeded English into those columns; V128 (#655) moves the three seeded plans
+to Azerbaijani with English, Russian and Turkish beside it, touching a row only while
+it still holds V62's exact seed, so a plan an operator edited is left as it is.
+
+**One, six or twelve months, each at its own price (#655).** `BillingPeriod` is
+`MONTHLY`, `SEMIANNUAL` (`Period.ofMonths(6)`) or `YEARLY`, and every plan may be
+sold for any of them: `subscription_plan_prices` (V126) holds one row per period on
+sale, in the plan's currency. `subscription_plans.price` and `billing_period` stay
+and always describe the **shortest** period on sale, so every reader written before
+a plan had several prices still reads a true sentence; `SubscriptionPlan.reprice`
+is the only writer of either and keeps them in step. V126 seeded six and twelve
+months at six and twelve times every monthly plan's price — no discount; the owner
+sets one from the console. A `Plan` on the wire carries `prices` (shortest first,
+never empty) and `studentOnly`. The creator chooses with `POST /v1/me/subscription`
+`{ planId, billingPeriod? }`, absent meaning the shortest; the subscription copies
+that period's price and the period, and a period runs and renews by its own length
+whatever the plan's shortest is. A period the plan is not sold for is
+`PERIOD_NOT_OFFERED` (400). Choosing the same plan for another period replaces an
+unpaid choice, as choosing another plan does. The console's `POST`/`PATCH
+/v1/admin/plans` take `prices: [{ billingPeriod, price }]`, which replaces the whole
+set (at least one, no period twice, never negative, in the plan's currency; absent
+on `POST` means one entry from `price` and `billingPeriod`), and `studentOnly`.
+
+**The student plan (#655).** `STUDENT` (V127) has Starter's limits at 10 AZN a month
+(60 / 120 for six and twelve months) and `student_only`: it is sold only to an account
+whose newest student verification is approved and whose `validUntil` has not passed
+(`shared.access.StudentStandings`, answered by `verification.StudentVerifications`).
+The check is made when the plan is chosen, when its first period is paid and when a
+period is renewed — `STUDENT_VERIFICATION_REQUIRED` (403) — and a period already paid
+for is not taken away when the approval runs out or is revoked.
+
+**Student verification (#655)** is the `verification` module's second check, on the
+identity check's rules: the creator sends `POST /v1/me/student-verification`
+(multipart: `institution`, `cardNumber`, `studentCard` JPEG/PNG/PDF, `selfie`
+JPEG/PNG) and reads `GET` (`state` `NONE` / `PENDING` / `APPROVED` / `REJECTED` /
+`EXPIRED`, the last computed from `validUntil`); the photographs are sealed with the
+identity documents' `DocumentCipher` and typed from their bytes. Staff holding
+`REVIEW_IDENTITY_VERIFICATION` list (`GET /v1/admin/student-verifications?state=`),
+approve (a year), reject or revoke with a reason; `OPEN_IDENTITY_DOCUMENT` opens a
+photograph, audited before the bytes leave. A decision erases the photographs; the
+institution and card number stay for the one-card rule. **One card number is one
+account**: a card pending, or approved and unexpired, on another account is
+`STUDENT_CARD_IN_USE` (409), and staff see every other account that ever used the same
+number. Other refusals: `STUDENT_VERIFICATION_ALREADY_SUBMITTED` (409), the identity
+check's `EMPTY` / `TOO_LARGE` / `UNSUPPORTED_TYPE` with `field` `studentCard` or
+`selfie`, `INVALID_STUDENT_VERIFICATION` (400, `field`), `DOCUMENT_STORAGE_UNAVAILABLE`
+(503), `STUDENT_VERIFICATION_NOT_DECIDABLE` (409), `STUDENT_VERIFICATION_NOT_FOUND`
+(404). Audited as `student.verification_submitted`, `student.document_read`,
+`student.verification_approved` / `_rejected` / `_revoked`.
 
 What counts against the campaign limit is a campaign that has left the creator's
 hands and not finished: `SUBMITTED`, `CHANGES_REQUESTED`, `APPROVED`,
@@ -2823,7 +2872,7 @@ so a repricing reaches new buyers only.
 | Recorded in | `subscription_charges` (V102), the page's life; `subscription_payments`, the receipt (`CARD`, `recorded_by` null) |
 | Settled by | `SubscriptionChargeEvents` on the provider's callback, or `hosted-charge-sweep` when it never came |
 | What the money buys | Decided under a row lock when it arrives: pending → first period, active → one more period, ended → `UNAPPLIED`, returned by staff from `/admin/refunds` (#457) |
-| Refusals | `SUBSCRIPTION_PAYMENT_NOT_DUE` (409, `reason` `FREE_PLAN` / `RENEWAL_NOT_OPEN` / `LAPSED`), `PAYMENT_UNAVAILABLE` (503) |
+| Refusals | `SUBSCRIPTION_PAYMENT_NOT_DUE` (409, `reason` `FREE_PLAN` / `RENEWAL_NOT_OPEN` / `LAPSED`), `STUDENT_VERIFICATION_REQUIRED` (403, a student-only plan and no approved, unexpired student verification — first period and renewal alike, #655), `PAYMENT_UNAVAILABLE` (503) |
 
 **The pricing page offers what `paymentDue` says, and nothing else (#451).**
 `FIRST_PERIOD` shows "Pay by card" with the subscription's price, beside the
@@ -3938,6 +3987,8 @@ by a database constraint and verified by a nightly reconciliation job.
 | `compliance_overrides` | One exception to one compliance requirement for one account (#436). Time-boxed by a NOT NULL `expires_at`, so there is no shape for a permanent one; reasoned from a closed set plus the grantor's own words; attributed through a `RESTRICT` foreign key rather than `SET NULL`, unlike `identity_verifications.reviewed_by`, because an override with no named grantor is an anonymous waiver. `granted_by <> subject_user_id` is total -- both columns are NOT NULL and the grantor cannot become null -- which is the gap `payout_approvals` warns a two-column CHECK leaves. Never deleted: expiry is a comparison rather than a swept state, so an override stops working because time passed |
 | `signatures` | One SİMA İmza signature: what was signed, by which certificate subject, and when (#428). **Never a copy of the certificate material**, which is V58's territory with V58's encryption and V58's sweep -- this must not become a second uncontrolled place where a person's identity sits. The name and FIN are §17.4 personal data and are kept because without them the row proves a certificate signed and not that *this creator* did; #423 governs for how long. `document_acceptances.signature_id` finally has its referent, `RESTRICT`, so a signed agreement cannot silently become a ticked one |
 | `subscription_payments` | What the platform was paid for a subscription, one append-only row per payment (§5.6). **Not `transactions` and `ledger_entries`**: those hold a backer's money moving through the platform — `transactions.project_id` is NOT NULL and `ledger_entries.account` is closed by a CHECK over escrow, fees, tax and a creator's own — and a subscription payment has no campaign and belongs to none of those accounts, so making it fit would mean relaxing a NOT NULL and widening a CHECK on the two tables that hold every pledge, to admit rows that are not pledges. **The plan is copied onto the row** — code, name, price, billing period — because a plan is editable on purpose, so a report joining to `subscription_plans` would be retitled by a rename and re-priced by a repricing; `plan_id` is kept alongside so it can still be filtered by. **No foreign keys at all**, for V21's reason with a sharper edge: `subscriptions` cascades with its account, so a key here would delete the platform's only record of money it was paid when the payer closed their account — or, as `RESTRICT`, make closing the account fail — and either arrives as a DELETE the append-only trigger then refuses, breaking account closure with an error about a table nobody touched. `amount` is **signed and never zero**: a correction is a reversing row, so every total is a sum that nets, and `reverses` is unique so a payment cannot be reversed twice. `received_at` is the caller's and may be backdated to the day a transfer cleared — it is what every total is grouped by, so the report agrees with the bank statement it is checked against — while `recorded_at` is `DEFAULT now()`, which is what makes backdating visible rather than silent; a future `received_at` is refused by the service rather than clamped. `method` is a closed CHECK (`BANK_TRANSFER`, `CARD`, `CASH`, `OTHER`) unlike the free-text plan code, because an operator adds a plan from the console and nobody adds a way of being paid without the platform learning to reconcile it |
+| `subscription_plan_prices` | What one period of a plan costs (#655, V126): `(plan_id, billing_period)` → `price`, in the plan's currency, one row per period on sale. The plan's own `price` and `billing_period` stay and describe the shortest period here, so readers older than this table stay right; `SubscriptionPlan.reprice` writes both together. Cascades from the plan, which the application never deletes — a plan leaves the catalogue by being unlisted |
+| `student_verifications` | One student verification submission (#655, V127): institution, the **normalised** card number (upper case, letters and digits only), state `PENDING` / `APPROVED` / `REJECTED` / `EXPIRED`, the decision and `valid_until` (a year from approval). One row per submission, so the card's history on other accounts survives a refusal. **One card, one account** is two partial unique indexes over `state IN ('PENDING','APPROVED')` — per card and per account — and an index cannot read a clock, so an approval whose year has run out is retired to `EXPIRED` by the submission it stands in the way of (and by the daily sweep), V62's answer for `subscriptions`. Deleted by anonymisation through `user.AccountStudentVerifications`. The photographs are `student_verification_documents`: V58's AES-GCM envelope through the same `DocumentCipher`, one `STUDENT_CARD` (JPEG/PNG/PDF) and one `SELFIE` (JPEG/PNG, a CHECK) per submission, erased at the decision |
 | `subscription_reminders` | Which renewal reminders and lapse notices a subscription period has been sent (#450, V103). **The row is the claim**: inserted with `ON CONFLICT DO NOTHING` in the transaction that records the outbox event it authorises, keyed by `(subscription_id, period_end, kind, lead_hours)`, so a pass run twice sends nothing twice and a renewal, which moves `period_end`, needs nothing cleared. `lead_hours` is an integer, as `deadline_notices.threshold_hours` is, because the leads are configurable and a key over a free interval would compare `3 days` and `72 hours` by a rule nobody reads; a lapse is `LAPSED` with 0. Cascades with the subscription; no personal data |
 | `signature_sessions` | A signing session in flight (#429): what was to be signed, by whom, and what became of it. **A row rather than a handle the client holds**, and V71 names the three quiet failures of the stateless alternative -- a session identifier becomes a bearer token for somebody else's signature, the hash a resolve compares against arrives from the party with the reason to change it, and a cancellation leaves nothing, so "the citizen declined" is indistinguishable from "nothing happened". The FIN and mobile number the citizen typed are passed to the provider and **not stored**: §17.4 asks for the data the purpose needs and this purpose needs neither; the FIN that is kept is the certificate's, in `signatures`. Terminal outcomes are recorded once and a resolved session is never re-resolved, which is what stops one act of signing producing two `signatures` rows |
 | `creator_legal_subjects` | Who a creator legally is (#430): the subject kind, the legal name, the VÖEN -- a company's, or an individual entrepreneur's since #239, because §6.3 approves no payout without one -- and, for a registered entity only, the registered address and the registration number. **A fact about the account and not a record of a check**, which is the whole of #430: `identity_verifications.subject_kind` says what a reviewer was looking at when they looked, and a creator who has never been asked to verify has no row there at all while a payout still needs to know whether to withhold as a person or as a company. The VÖEN is **shape-validated and nothing more** -- ten digits, in the schema -- because a validator that appeared to confirm existence "would produce a green tick that means nothing, in front of the exact field where a green tick is relied upon"; whether the number names a real company is a human reading a `COMPANY_REGISTRATION` document in V58's queue. There is deliberately **no constraint requiring a legal entity to carry all three of its fields**: completeness is a gate's question, asked of a row rather than enforced on one, so a creator part-way through a form does not lose their work. The foreign key cascades, for the reason every reference to `users` in this schema gives twice over |
@@ -4187,6 +4238,7 @@ load profile).
 | `notification-sender` | Every second | Send what §12.2's fan-out queued, one row per transaction |
 | `notification-digest` | Hourly | Combine what §12.2's fan-out held, one message per recipient and channel |
 | `push-device-retention` | Daily | Forget push registrations nobody has refreshed (#87). §17.4 applied to addresses: the application re-registers on every cold start, so a registration older than the window is a phone that has not opened it since. It is the only sweep that can catch that case — a sign-out deletes its row and an uninstall is discovered the first time a send is refused, but a phone nobody opens again produces no signal at all |
+| `student-document-retention` | Daily | Destroy student verification photographs nobody decided on within `unreviewed-retention` (sixty days), and retire approvals past their year (#655). The backstop: a decision erases at once, and a submission retires an expired approval standing in its way |
 | `identity-document-retention` | Daily | Destroy identity documents past their limit, and expire approvals past their life (#105). **The backstop rather than the ordinary path**: a decision erases the documents behind it in the same transaction, so this exists for the submission nobody ever decides — which is what turns a review queue into an archive of passports — and for a document whose decision erased nothing. The age is measured on the document rather than on its verification, so it does not depend on the state machine being right |
 
 > **The scheduler underneath all of them is built (#134).** Every trigger in this
@@ -7095,7 +7147,7 @@ ideanest/
 │   │   │   ├── moderation/
 │   │   │   ├── analytics/
 │   │   │   ├── risk/                 fraud signals (#108)
-│   │   │   ├── verification/         identity documents (#105)
+│   │   │   ├── verification/         identity documents (#105), student verification (#655)
 │   │   │   ├── admin/
 │   │   │   └── shared/               money, outbox, idempotency, audit
 │   │   │       └── access/           the cross-module permission contract (§16.1)

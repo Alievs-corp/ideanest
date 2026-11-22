@@ -1,6 +1,7 @@
 package az.ideanest.subscription.api;
 
 import az.ideanest.subscription.application.AccountSubscriptionHistory;
+import az.ideanest.subscription.application.PeriodPrice;
 import az.ideanest.subscription.application.SubscriptionPlans;
 import az.ideanest.subscription.application.Subscriptions;
 import az.ideanest.subscription.domain.BillingPeriod;
@@ -98,6 +99,8 @@ public class AdminSubscriptionController {
                 request.price(),
                 request.currency(),
                 request.billingPeriod(),
+                request.prices(),
+                Boolean.TRUE.equals(request.studentOnly()),
                 request.maxActiveCampaigns(),
                 request.goalCeiling(),
                 request.sortOrder() == null ? 0 : request.sortOrder());
@@ -115,6 +118,10 @@ public class AdminSubscriptionController {
      * meanings for one absent field is the ambiguity that makes a PATCH endpoint
      * untestable, so {@code clearMaxActiveCampaigns} and {@code clearGoalCeiling} say
      * which of the two the caller meant.
+     *
+     * <p><strong>{@code prices} replaces every period's price</strong> (#655): a period left out
+     * of it is no longer sold to anybody new. It wins over {@code price}, which names only the
+     * shortest period's.
      */
     @PatchMapping("/plans/{planId}")
     public ResponseEntity<SubscriptionResponses.Plan> change(
@@ -130,6 +137,8 @@ public class AdminSubscriptionController {
                 textsOf(request.translations()),
                 request.price(),
                 request.currency(),
+                request.prices(),
+                request.studentOnly(),
                 request.maxActiveCampaigns(),
                 Boolean.TRUE.equals(request.clearMaxActiveCampaigns()),
                 request.goalCeiling(),
@@ -281,14 +290,23 @@ public class AdminSubscriptionController {
      *     wire for {@code PublishingAllowance}'s reason
      * @param goalCeiling null for no ceiling. In {@code currency}
      */
+    /**
+     * @param price the one period's price when {@code prices} is absent; ignored when it is present
+     * @param billingPeriod the one period when {@code prices} is absent; ignored when it is present
+     * @param prices every period it is sold for and its price — #655. At least one, no period
+     *     twice. Absent means one entry, {@code billingPeriod} at {@code price}
+     * @param studentOnly whether only a verified student may buy it — #655. Absent means false
+     */
     public record AddPlanRequest(
             @NotBlank @Pattern(regexp = "^[A-Za-z][A-Za-z0-9_]{1,39}$") String code,
             @NotBlank @Size(max = 120) String name,
             @Size(max = 2000) String description,
             @Size(max = 20) Map<String, @Valid PlanText> translations,
-            @NotNull @DecimalMin("0") BigDecimal price,
+            @DecimalMin("0") BigDecimal price,
             @NotBlank @Pattern(regexp = "^[A-Z]{3}$") String currency,
-            @NotNull BillingPeriod billingPeriod,
+            BillingPeriod billingPeriod,
+            @Size(min = 1, max = 3) List<@Valid @NotNull PeriodPrice> prices,
+            Boolean studentOnly,
             @Min(1) Integer maxActiveCampaigns,
             @DecimalMin(value = "0", inclusive = false) BigDecimal goalCeiling,
             Integer sortOrder) {
@@ -314,6 +332,8 @@ public class AdminSubscriptionController {
             @Size(max = 20) Map<String, @Valid PlanText> translations,
             @DecimalMin("0") BigDecimal price,
             @Pattern(regexp = "^[A-Z]{3}$") String currency,
+            @Size(min = 1, max = 3) List<@Valid @NotNull PeriodPrice> prices,
+            Boolean studentOnly,
             @Min(1) Integer maxActiveCampaigns,
             Boolean clearMaxActiveCampaigns,
             @DecimalMin(value = "0", inclusive = false) BigDecimal goalCeiling,

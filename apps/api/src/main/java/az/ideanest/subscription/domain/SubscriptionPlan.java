@@ -3,18 +3,29 @@ package az.ideanest.subscription.domain;
 import az.ideanest.shared.ReaderLocale;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.money.MoneyAmountConverter;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.MapKeyEnumerated;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -43,6 +54,16 @@ import tools.jackson.databind.ObjectMapper;
  *
  * <p><strong>Null limits mean no limit</strong>, in both of them. {@link
  * az.ideanest.shared.access.PublishingAllowance} has the argument against a sentinel.
+ *
+ * <p><strong>One price per period it is sold for</strong> — #655, V126's
+ * {@code subscription_plan_prices}. {@link #price} and {@link #billingPeriod} stay, and always
+ * describe the <em>shortest</em> period on sale, so that every reader written before a plan had
+ * more than one price — the revenue report, the reminder e-mail, the previous release during a
+ * rolling deployment — still reads a true sentence. {@link #reprice} is the only way either
+ * changes, and it keeps the two in step.
+ *
+ * <p><strong>{@link #studentOnly}</strong> — #655, V127: sold only to an account whose student
+ * card a member of staff has approved, for as long as that approval has not run out.
  */
 @Entity
 @Table(name = "subscription_plans")
@@ -100,6 +121,22 @@ public class SubscriptionPlan {
     @Enumerated(EnumType.STRING)
     @Column(name = "billing_period", nullable = false)
     private BillingPeriod billingPeriod;
+
+    /**
+     * V126's rows: what one period costs, in {@link #currency}. Never empty once written, and
+     * always holding {@link #billingPeriod} at {@link #price}. Eager because the catalogue is a
+     * handful of rows read outside any open session ({@code open-in-view: false}), and every
+     * reader of a plan now draws its periods.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "subscription_plan_prices", joinColumns = @JoinColumn(name = "plan_id"))
+    @MapKeyEnumerated(EnumType.STRING)
+    @MapKeyColumn(name = "billing_period")
+    @Column(name = "price", nullable = false)
+    private Map<BillingPeriod, BigDecimal> prices = new HashMap<>();
+
+    @Column(name = "student_only", nullable = false)
+    private boolean studentOnly;
 
     @Column(name = "max_active_campaigns")
     private Integer maxActiveCampaigns;
@@ -176,10 +213,12 @@ public class SubscriptionPlan {
         Objects.requireNonNull(createdBy, "A plan the console wrote names who wrote it");
 
         SubscriptionPlan plan = new SubscriptionPlan(id, requireCode(code), now, createdBy);
-        plan.price(price);
+        Objects.requireNonNull(price, "A plan has a price, even if it is zero");
+        plan.reprice(
+                Map.of(Objects.requireNonNull(billingPeriod, "A plan bills over some period"), price.amount()),
+                price.currency());
         plan.rename(name, description);
         plan.translate(translations);
-        plan.billingPeriod = Objects.requireNonNull(billingPeriod, "A plan bills over some period");
         plan.limits(maxActiveCampaigns, goalCeiling);
         plan.sortOrder = sortOrder;
         return plan;
@@ -223,11 +262,60 @@ public class SubscriptionPlan {
      */
     public void price(Money price) {
         Objects.requireNonNull(price, "A plan has a price, even if it is zero");
-        if (price.amount().signum() < 0) {
-            throw new IllegalArgumentException("A plan cannot cost less than nothing");
+        // The shortest period's price, which is what this single figure has always meant. The
+        // other periods keep theirs: an operator who changed the monthly price has said nothing
+        // about the yearly one.
+        Map<BillingPeriod, BigDecimal> next = new EnumMap<>(BillingPeriod.class);
+        next.putAll(prices);
+        next.put(billingPeriod, price.amount());
+        reprice(next, price.currency());
+    }
+
+    /**
+     * Every period it is sold for, and what each costs — #655. Replaces the whole set: a period
+     * left out is no longer sold to anybody new.
+     *
+     * <p>{@link #price} and {@link #billingPeriod} follow the shortest period in the set, which
+     * is what they have always described.
+     *
+     * @param byPeriod at least one period, and a price of zero or more for each. Reaches nobody
+     *     who has already bought, for {@link #price(Money)}'s reason
+     * @param currency every price is in it — a plan with two currencies in it is a comparison
+     *     nobody can make honestly
+     */
+    public void reprice(Map<BillingPeriod, BigDecimal> byPeriod, String currency) {
+        if (byPeriod == null || byPeriod.isEmpty()) {
+            throw new IllegalArgumentException("A plan is sold for at least one period");
         }
-        this.price = price.amount();
-        this.currency = price.currency();
+        EnumMap<BillingPeriod, BigDecimal> checked = new EnumMap<>(BillingPeriod.class);
+        byPeriod.forEach((period, amount) -> {
+            if (period == null) {
+                throw new IllegalArgumentException("Every price is for some period");
+            }
+            if (amount == null) {
+                throw new IllegalArgumentException("Every period on sale has a price, even if it is zero");
+            }
+            Money money = Money.of(amount, currency);
+            if (money.amount().signum() < 0) {
+                throw new IllegalArgumentException("A plan cannot cost less than nothing");
+            }
+            checked.put(period, money.amount());
+        });
+        // An EnumMap iterates in declaration order, which is shortest first.
+        BillingPeriod shortest = checked.keySet().iterator().next();
+
+        this.currency = Money.zero(currency).currency();
+        this.billingPeriod = shortest;
+        this.price = checked.get(shortest);
+        // Cleared and refilled rather than reassigned, so that Hibernate sees the rows of the
+        // collection it loaded change rather than a new collection replace it.
+        this.prices.clear();
+        this.prices.putAll(checked);
+    }
+
+    /** Whether it is sold only to an account with an approved, unexpired student check — #655. */
+    public void restrictToStudents(boolean studentOnly) {
+        this.studentOnly = studentOnly;
     }
 
     /**
@@ -265,9 +353,33 @@ public class SubscriptionPlan {
         this.updatedAt = Objects.requireNonNull(now, "An edit happens at some instant");
     }
 
-    /** When a period bought now would end. */
+    /** When the shortest period on sale, bought now, would end. */
     public Instant periodEndFrom(Instant start) {
         return billingPeriod.endOf(start);
+    }
+
+    /** What one period of this length costs, or empty when the plan is not sold for it. */
+    public Optional<Money> priceFor(BillingPeriod period) {
+        if (period == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(getPrices().get(period));
+    }
+
+    /** Every period on sale and its price, shortest first. Never empty. */
+    public SortedMap<BillingPeriod, Money> getPrices() {
+        TreeMap<BillingPeriod, Money> sorted = new TreeMap<>();
+        prices.forEach((period, amount) -> sorted.put(period, Money.of(amount, currency)));
+        if (sorted.isEmpty()) {
+            // A plan the previous release added during a rolling deployment, before this release
+            // first wrote its prices: its one price is the only period it is sold for.
+            sorted.put(billingPeriod, Money.of(price, currency));
+        }
+        return Collections.unmodifiableSortedMap(sorted);
+    }
+
+    public boolean isStudentOnly() {
+        return studentOnly;
     }
 
     /**
