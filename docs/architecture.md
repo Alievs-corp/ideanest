@@ -2902,11 +2902,11 @@ staff-recorded renewal, so nothing there changed.
 **Shipped in two steps, for the rolling deployment.** An instance of the release
 before V129 settles every page by the subscription's own period, so a page for a
 year settled there would grant a month. The release that adds V129 therefore
-records and settles by the page's period but offers only the held period
-(`SubscriptionCardPayments.OTHER_PERIODS_OFFERED = false`: `renewalPrices` lists
-the held period alone, and another `billingPeriod` is `PERIOD_NOT_OFFERED`); the
-next release flips that constant and offers the others. No environment change is
-needed for either.
+recorded and settled by the page's period but offered only the held period
+(`SubscriptionCardPayments.OTHER_PERIODS_OFFERED = false`: `renewalPrices` listed
+the held period alone, and another `billingPeriod` was `PERIOD_NOT_OFFERED`); the
+next release flipped that constant to `true` and offers the others. No
+environment change was needed for either.
 
 | | |
 |---|---|
