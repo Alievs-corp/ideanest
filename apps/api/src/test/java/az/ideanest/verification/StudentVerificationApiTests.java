@@ -190,6 +190,31 @@ class StudentVerificationApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("two photographs at the size limit each fit in one request")
+    void twoFilesAtTheLimitFit() {
+        Account creator = account();
+        byte[] card = new byte[5 * 1024 * 1024];
+        System.arraycopy(JPEG, 0, card, 0, JPEG.length);
+        byte[] selfie = new byte[5 * 1024 * 1024];
+        System.arraycopy(PNG, 0, selfie, 0, PNG.length);
+
+        ResponseEntity<Map<String, Object>> submitted =
+                submit(creator, "Bakı Dövlət Universiteti", "BIG-0001", card, selfie);
+
+        assertThat(submitted.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(submitted.getBody()).containsEntry("state", "PENDING");
+        assertThat(jdbc().queryForList(
+                        """
+                        SELECT d.byte_length FROM student_verification_documents d
+                          JOIN student_verifications v ON v.id = d.verification_id
+                         WHERE v.account_id = ?
+                        """,
+                        Integer.class,
+                        creator.id()))
+                .containsOnly(5 * 1024 * 1024);
+    }
+
+    @Test
     @DisplayName("a second submission while one is pending or approved is refused")
     void oneOpenCheckPerAccount() {
         Account creator = account();

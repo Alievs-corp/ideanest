@@ -23,13 +23,13 @@ spring:
   # container refuses anything larger while it parses. Spring's own default was a
   # one-megabyte file, which quietly refused most phone photographs of a passport
   # long before the service's five-megabyte rule could. A student submission is two
-  # files and two short fields, hence a request of eleven. Media never comes this
+  # files and two short fields, hence a request of twelve. Media never comes this
   # way: it goes straight to object storage on a presigned URL. Every other body is
   # bounded by RequestBodyLimitFilter (ideanest.request-body, two megabytes).
   servlet:
     multipart:
       max-file-size: 5MB
-      max-request-size: 11MB
+      max-request-size: 12MB
 
   http:
     clients:
