@@ -14,7 +14,7 @@ import {
 import { lookUpNames } from '../../lib/admin/directory';
 import { bankDay } from '../../lib/admin/payouts';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
-import { PlanManager } from './PlanManager';
+import { PlanManager, samePrices } from './PlanManager';
 import { LOCALE_NAMES } from '../../lib/i18n/locale';
 import { translatorFor } from '../../test-copy';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
@@ -452,5 +452,48 @@ describe('the money pages audit on the plan manager', () => {
     await userEvent.click(await within(section).findByRole('button', { name: COPY.tryAgain }));
 
     expect(await within(section).findByText(COPY.emptyQueueTitle)).toBeInTheDocument();
+  });
+});
+
+describe('who may buy a plan (#655 review)', () => {
+  it('asks before selling a plan to students only, and says it applies from now on', async () => {
+    ready();
+    changePlanMock.mockResolvedValue({ ...STARTER, studentOnly: true });
+    render(<PlanManager copy={COPY} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: `${COPY.makeStudentOnly}: ${STARTER.name}` }));
+    expect(changePlanMock).not.toHaveBeenCalled();
+    expect(screen.getByText(fillPlaceholders(COPY.confirmStudentOnly, { plan: STARTER.name }))).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: COPY.confirmStudentOnlyAction }));
+    await waitFor(() => expect(changePlanMock).toHaveBeenCalledWith({ planId: STARTER.id, studentOnly: true }));
+  });
+
+  it('asks before opening a student plan to everyone, and can be backed out of', async () => {
+    ready([{ ...STARTER, studentOnly: true }]);
+    render(<PlanManager copy={COPY} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: `${COPY.openToEveryone}: ${STARTER.name}` }));
+    expect(screen.getByText(fillPlaceholders(COPY.confirmOpenToEveryone, { plan: STARTER.name }))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: COPY.back }));
+
+    expect(changePlanMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('samePrices', () => {
+  it('compares amounts as decimals, so retyping 60.00 as 60 is no change', () => {
+    expect(samePrices([{ billingPeriod: 'MONTHLY', price: '60' }], [{ billingPeriod: 'MONTHLY', price: '60.00' }])).toBe(true);
+    expect(samePrices([{ billingPeriod: 'MONTHLY', price: '60' }], [{ billingPeriod: 'MONTHLY', price: '60.01' }])).toBe(false);
+    expect(samePrices([{ billingPeriod: 'MONTHLY', price: '60' }], [{ billingPeriod: 'YEARLY', price: '60' }])).toBe(false);
+    expect(
+      samePrices(
+        [{ billingPeriod: 'MONTHLY', price: '60' }],
+        [
+          { billingPeriod: 'MONTHLY', price: '60' },
+          { billingPeriod: 'YEARLY', price: '600' },
+        ],
+      ),
+    ).toBe(false);
   });
 });

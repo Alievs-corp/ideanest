@@ -1366,6 +1366,12 @@ export interface PlanManagerCopy extends ConsoleChromeCopy {
   readonly studentTag: string;
   readonly makeStudentOnly: string;
   readonly openToEveryone: string;
+  /** Carries `{plan}`: what making it student-only does from now on. */
+  readonly confirmStudentOnly: string;
+  readonly confirmStudentOnlyAction: string;
+  /** Carries `{plan}`. */
+  readonly confirmOpenToEveryone: string;
+  readonly confirmOpenToEveryoneAction: string;
   readonly maxActiveLabel: string;
   readonly goalCeilingLabel: string;
   readonly unlimitedHint: string;
@@ -1481,6 +1487,10 @@ export function planManagerCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCop
     studentTag: t('screens.plans.studentTag'),
     makeStudentOnly: t('screens.plans.makeStudentOnly'),
     openToEveryone: t('screens.plans.openToEveryone'),
+    confirmStudentOnly: String(t.raw('screens.plans.confirmStudentOnly')),
+    confirmStudentOnlyAction: t('screens.plans.confirmStudentOnlyAction'),
+    confirmOpenToEveryone: String(t.raw('screens.plans.confirmOpenToEveryone')),
+    confirmOpenToEveryoneAction: t('screens.plans.confirmOpenToEveryoneAction'),
     maxActiveLabel: t('screens.plans.maxActiveLabel'),
     goalCeilingLabel: t('screens.plans.goalCeilingLabel'),
     unlimitedHint: t('screens.plans.unlimitedHint'),
