@@ -15,8 +15,10 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -111,6 +113,10 @@ public class SubscriptionPlans {
      * every addition took two actions, and the second one would be the one somebody
      * forgot — leaving a plan an operator believes is on sale and nobody can buy.
      *
+     * @param prices every period it is sold for and its price, in {@code currency} — #655. Null
+     *     or empty means one period, {@code billingPeriod} at {@code price}, which is what the
+     *     console asked for before a plan had several
+     * @param studentOnly whether only a verified student may buy it — #655
      * @throws PlanCodeTakenException when the code is in use. Checked first for the
      *     message, and caught from the index as well, because between the read and the
      *     write another administrator may have added the same one
@@ -125,11 +131,21 @@ public class SubscriptionPlans {
             BigDecimal price,
             String currency,
             BillingPeriod billingPeriod,
+            List<PeriodPrice> prices,
+            boolean studentOnly,
             Integer maxActiveCampaigns,
             BigDecimal goalCeiling,
             int sortOrder) {
 
         staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
+
+        Map<BillingPeriod, BigDecimal> byPeriod = prices == null ? null : PeriodPrice.byPeriod(prices, currency);
+        if (byPeriod == null && (price == null || billingPeriod == null)) {
+            throw new IllegalArgumentException("A plan needs its prices, or a price and the period it buys");
+        }
+        Map.Entry<BillingPeriod, BigDecimal> first = byPeriod != null
+                ? new TreeMap<>(byPeriod).firstEntry()
+                : Map.entry(billingPeriod, price);
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         SubscriptionPlan plan = SubscriptionPlan.create(
@@ -138,13 +154,17 @@ public class SubscriptionPlans {
                 name,
                 description,
                 translations,
-                Money.of(price, currency),
-                billingPeriod,
+                Money.of(first.getValue(), currency),
+                first.getKey(),
                 maxActiveCampaigns,
                 goalCeiling,
                 sortOrder,
                 now,
                 staffId);
+        if (byPeriod != null) {
+            plan.reprice(byPeriod, currency);
+        }
+        plan.restrictToStudents(studentOnly);
 
         plans.findByCode(plan.getCode()).ifPresent(existing -> {
             throw new PlanCodeTakenException(plan.getCode());
@@ -182,6 +202,11 @@ public class SubscriptionPlans {
      * the flags rather than by the values, and the caller says which fields it is
      * touching. {@code SubscriptionPlanController} has the wire shape.
      *
+     * @param price the shortest period's price. Ignored when {@code prices} is present, which
+     *     says the same thing and more
+     * @param prices when present, every period the plan is sold for from now on — #655. It
+     *     replaces the whole set; a period left out stops being sold to anybody new
+     * @param studentOnly when present, whether only a verified student may buy it — #655
      * @param clearMaxActiveCampaigns when true, the limit is removed whatever
      *     {@code maxActiveCampaigns} says
      * @param clearGoalCeiling likewise
@@ -195,6 +220,8 @@ public class SubscriptionPlans {
             Map<String, SubscriptionPlan.PlanTranslation> translations,
             BigDecimal price,
             String currency,
+            List<PeriodPrice> prices,
+            Boolean studentOnly,
             Integer maxActiveCampaigns,
             boolean clearMaxActiveCampaigns,
             BigDecimal goalCeiling,
@@ -216,8 +243,18 @@ public class SubscriptionPlans {
         if (translations != null) {
             plan.translate(translations);
         }
-        if (price != null) {
-            plan.price(Money.of(price, currency == null ? plan.getPrice().currency() : currency));
+        String inCurrency = currency == null ? plan.getPrice().currency() : currency;
+        if (prices != null) {
+            plan.reprice(PeriodPrice.byPeriod(prices, inCurrency), inCurrency);
+        } else if (price != null) {
+            plan.price(Money.of(price, inCurrency));
+        } else if (currency != null) {
+            // A currency alone moves every price into it, figures unchanged — what changing only
+            // that field always did to the one price there was.
+            plan.reprice(amountsOf(plan), inCurrency);
+        }
+        if (studentOnly != null) {
+            plan.restrictToStudents(studentOnly);
         }
 
         boolean limitsTouched = clearMaxActiveCampaigns || clearGoalCeiling || maxActiveCampaigns != null
@@ -251,7 +288,14 @@ public class SubscriptionPlans {
     /** Puts a plan on sale, or takes it off. The one way a plan leaves the catalogue. */
     @Transactional
     public SubscriptionPlan list(UUID staffId, UUID planId, boolean listed) {
-        return change(staffId, planId, null, null, null, null, null, null, false, null, false, listed, null);
+        return change(
+                staffId, planId, null, null, null, null, null, null, null, null, false, null, false, listed, null);
+    }
+
+    private static Map<BillingPeriod, BigDecimal> amountsOf(SubscriptionPlan plan) {
+        Map<BillingPeriod, BigDecimal> amounts = new EnumMap<>(BillingPeriod.class);
+        plan.getPrices().forEach((period, money) -> amounts.put(period, money.amount()));
+        return amounts;
     }
 
     /**
@@ -263,12 +307,15 @@ public class SubscriptionPlans {
      * worded".
      */
     private static String describe(SubscriptionPlan plan) {
-        return "code=%s; languages=%s; price=%s; period=%s; maxActive=%s; goalCeiling=%s; listed=%s"
+        return ("code=%s; languages=%s; price=%s; period=%s; prices=%s; studentOnly=%s; maxActive=%s;"
+                        + " goalCeiling=%s; listed=%s")
                 .formatted(
                         plan.getCode(),
                         plan.getTranslations().keySet(),
                         plan.getPrice(),
                         plan.getBillingPeriod(),
+                        plan.getPrices(),
+                        plan.isStudentOnly(),
                         plan.getMaxActiveCampaigns() == null ? "none" : plan.getMaxActiveCampaigns(),
                         plan.getGoalCeiling() == null ? "none" : plan.getGoalCeiling(),
                         plan.isListed());

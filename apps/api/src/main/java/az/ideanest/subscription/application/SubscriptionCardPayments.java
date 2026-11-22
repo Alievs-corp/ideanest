@@ -9,6 +9,7 @@ import az.ideanest.payment.application.SubscriptionCheckout;
 import az.ideanest.payment.application.SubscriptionPaymentPage;
 import az.ideanest.payment.application.SubscriptionPaymentRequest;
 import az.ideanest.shared.Identifiers;
+import az.ideanest.shared.access.StudentStandings;
 import az.ideanest.shared.outbox.Outbox;
 import az.ideanest.subscription.SubscriptionProperties;
 import az.ideanest.subscription.domain.PaymentMethod;
@@ -62,6 +63,7 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
     private final SubscriptionPaymentRepository payments;
     private final SubscriptionCheckout checkout;
     private final SubscriptionProperties properties;
+    private final StudentStandings students;
     private final AuditLog audit;
     private final Outbox outbox;
     private final Clock clock;
@@ -72,6 +74,7 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
             SubscriptionPaymentRepository payments,
             SubscriptionCheckout checkout,
             SubscriptionProperties properties,
+            StudentStandings students,
             AuditLog audit,
             Outbox outbox,
             Clock clock) {
@@ -80,6 +83,7 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
         this.payments = payments;
         this.checkout = checkout;
         this.properties = properties;
+        this.students = students;
         this.audit = audit;
         this.outbox = outbox;
         this.clock = clock;
@@ -93,6 +97,9 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
      *
      * @throws NoSubscriptionException when the account holds nothing
      * @throws NoPaymentDueException when what it holds has nothing to pay for now
+     * @throws StudentVerificationRequiredException when the plan is for students and the account
+     *     is not a verified student now — #655. Asked of the first period and of every renewal,
+     *     because an approval lasts a year and a subscription may outlive it
      * @throws az.ideanest.payment.application.SubscriptionCheckoutUnavailableException when no
      *     provider can take the payment now
      */
@@ -103,6 +110,9 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
                 .orElseThrow(() -> new NoPaymentDueException(reasonNothingIsDue(held, now)));
         SubscriptionPlan plan = plans.findById(held.getPlanId())
                 .orElseThrow(() -> new UnknownPlanException(held.getPlanId()));
+        if (plan.isStudentOnly() && !students.isVerifiedStudent(accountId, now)) {
+            throw new StudentVerificationRequiredException();
+        }
 
         return checkout.open(
                 new SubscriptionPaymentRequest(
