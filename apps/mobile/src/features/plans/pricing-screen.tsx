@@ -15,7 +15,6 @@ import {
 } from '@ideanest/plans/catalogue';
 import { qualifiesForStudentPlans, type StudentVerification } from '@ideanest/plans/student';
 import { inAppPlanChoice } from '../../api/config';
-import { queryKeys } from '../../api/queries';
 import { StaticPage } from '../../components/content/static-page';
 import { FeeDisclosure } from '../../components/fees/fee-disclosure';
 import {
@@ -45,6 +44,7 @@ import { spacing } from '../../theme';
 import {
   cancelSubscription,
   chooseSubscription,
+  mySubscriptionKey,
   useMySubscription,
   usePlanCatalogue,
   usePlatformFeeDisclosure,
@@ -103,8 +103,8 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
   const { signedIn } = useSession();
   const inApp = inAppPlanChoice();
 
-  const plans = usePlanCatalogue();
-  const mine = useMySubscription(signedIn);
+  const plans = usePlanCatalogue(locale);
+  const mine = useMySubscription(signedIn, locale);
   const fees = usePlatformFeeDisclosure();
 
   const hasStudentPlan = plans.data?.some((plan) => plan.studentOnly) ?? false;
@@ -127,7 +127,7 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
 
   const settle = (next: MySubscription) => {
     const answer: SubscriptionAnswer = { state: 'read', subscription: next.subscription };
-    client.setQueryData([...queryKeys.mySubscription(), signedIn], answer);
+    client.setQueryData(mySubscriptionKey(signedIn, locale), answer);
   };
 
   // What changed is said politely, whatever changed it: a choice, a cancel, the web or a re-read.

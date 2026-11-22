@@ -116,6 +116,8 @@ let fees: () => Response;
 let studentRead: () => Response;
 let write: (request: Request) => Response;
 let requests: Request[];
+/** Each read's `Accept-Language`, by path: the language the service is asked to answer in. */
+let languages: { readonly path: string; readonly language: string | null }[];
 let client: QueryClient;
 
 let appStateListeners: ((state: AppStateStatus) => void)[];
@@ -138,6 +140,7 @@ beforeEach(async () => {
   studentRead = () => json({ state: 'NONE' });
   write = () => json({ subscription: null });
   requests = [];
+  languages = [];
   global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url);
     const request = {
@@ -146,6 +149,7 @@ beforeEach(async () => {
       body: typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined,
     };
     requests.push(request);
+    languages.push({ path: url.pathname, language: new Headers(init?.headers).get('Accept-Language') });
     if (request.method !== 'GET') return write(request);
     if (url.pathname === '/v1/plans') return plans();
     if (url.pathname === '/v1/me/subscription') return mine();
@@ -812,5 +816,29 @@ describe('the student plan (#655)', () => {
 
   it('never keeps the check in the offline store', () => {
     expect(shouldPersistQuery(queryKeys.studentVerification())).toBe(false);
+  });
+});
+
+describe('the plans in the reader language (#655)', () => {
+  const languageOf = (path: string) =>
+    languages.filter((entry) => entry.path === path).map((entry) => entry.language);
+
+  it('asks for the plans and the subscription in the app language, and again when it changes', async () => {
+    mine = () => json({ subscription: held() });
+    plans = () => json({ plans: [starter, growth] });
+    await show();
+    expect(languageOf('/v1/plans')).toEqual(['en']);
+    expect(languageOf('/v1/me/subscription')).toEqual(['en']);
+    expect(screen.getByTestId('pricing-plan-GROWTH')).toHaveTextContent(/Growth/);
+
+    // The service names the plans in the language asked for; the cached English must not stay.
+    plans = () => json({ plans: [starter, { ...growth, name: 'Böyümə' }] });
+    mine = () => json({ subscription: held({ plan: { ...growth, name: 'Böyümə' } }) });
+    await act(async () => setLocale('az'));
+    await settle();
+    expect(languageOf('/v1/plans')).toEqual(['en', 'az']);
+    expect(languageOf('/v1/me/subscription')).toEqual(['en', 'az']);
+    expect(screen.getByTestId('pricing-plan-GROWTH')).toHaveTextContent(/Böyümə/);
+    expect(screen.getByTestId('pricing-held-standing')).toHaveTextContent(/Böyümə/);
   });
 });

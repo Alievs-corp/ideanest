@@ -8,6 +8,7 @@ import {
   type Plan,
 } from '@ideanest/plans/catalogue';
 import { readFeeDisclosure, type FeeDisclosure } from '@ideanest/plans/fees';
+import type { Locale } from '@ideanest/messages/locale';
 import { api, sendJson } from '../../api/client';
 import { queryKeys } from '../../api/queries';
 
@@ -42,9 +43,15 @@ export type SubscriptionAnswer =
 /** An hour fresh, as the web caches the catalogue and the fee terms. */
 const PUBLIC_STALE_MS = 60 * 60 * 1000;
 
-export function usePlanCatalogue() {
+/**
+ * The catalogue in `locale` (#655): the service names and describes each plan in the language
+ * `Accept-Language` asks for, which `api()` sets from the app's language on every read. The
+ * language is in the key, so switching it reads the plans again rather than showing the cached
+ * names in the old one.
+ */
+export function usePlanCatalogue(locale: Locale) {
   return useQuery({
-    queryKey: queryKeys.plans(),
+    queryKey: [...queryKeys.plans(), locale] as const,
     staleTime: PUBLIC_STALE_MS,
     retry: false,
     queryFn: async ({ signal }): Promise<readonly Plan[]> => {
@@ -72,9 +79,10 @@ export function usePlatformFeeDisclosure() {
   });
 }
 
-export function useMySubscription(signedIn: boolean) {
+/** What this account holds. The held plan's name is in `locale` too, so the language is in the key. */
+export function useMySubscription(signedIn: boolean, locale: Locale) {
   return useQuery({
-    queryKey: [...queryKeys.mySubscription(), signedIn] as const,
+    queryKey: mySubscriptionKey(signedIn, locale),
     retry: false,
     queryFn: async ({ signal }): Promise<SubscriptionAnswer> => {
       if (!signedIn) return { state: 'signed-out' };
@@ -88,6 +96,11 @@ export function useMySubscription(signedIn: boolean) {
       return { state: 'read', subscription: mineOf(body).subscription };
     },
   });
+}
+
+/** The subscription read's key, for a screen that writes an answer into it. */
+export function mySubscriptionKey(signedIn: boolean, locale: Locale) {
+  return [...queryKeys.mySubscription(), signedIn, locale] as const;
 }
 
 function mineOf(body: unknown): MySubscription {
