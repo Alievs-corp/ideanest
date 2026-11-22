@@ -229,6 +229,9 @@ describe('the form', () => {
     expect(ImagePicker.launchCameraAsync).toHaveBeenCalledWith(expect.objectContaining({ cameraType: 'front' }));
     expect(screen.getByTestId('student-studentCard-preview')).toBeTruthy();
     expect(screen.getByTestId('student-selfie-preview')).toBeTruthy();
+    // Neither the card nor the face is written to the image disk cache.
+    expect(screen.getByTestId('student-studentCard-preview').props.cachePolicy).toBe('none');
+    expect(screen.getByTestId('student-selfie-preview').props.cachePolicy).toBe('none');
     // The picker's copies are removed; the JPEGs made from them are kept to send.
     expect(forgetPicked).toHaveBeenCalledWith('file:///cache/picked-card.jpg');
     expect(forgetPicked).toHaveBeenCalledWith('file:///cache/picked-selfie.jpg');

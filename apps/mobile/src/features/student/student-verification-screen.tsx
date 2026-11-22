@@ -441,6 +441,9 @@ function PhotoField({
               style={styles.thumbnail}
               contentFit="cover"
               transition={0}
+              // A student card and a face: never written to the image disk cache, where a scaled
+              // copy would outlive the submission.
+              cachePolicy="none"
               accessibilityIgnoresInvertColors
               accessible={false}
               testID={`student-${kind}-preview`}
