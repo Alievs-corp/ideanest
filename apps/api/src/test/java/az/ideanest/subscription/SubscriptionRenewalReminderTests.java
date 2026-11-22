@@ -124,6 +124,24 @@ class SubscriptionRenewalReminderTests extends AbstractIntegrationTest {
         assertThat(events(subscription, "subscription.renewal_due")).isEmpty();
     }
 
+    /**
+     * #660 widened the renewal window to a month. The reminders keep their own leads: a period that
+     * may already be extended is not reminded until three days before it ends.
+     */
+    @Test
+    @DisplayName("#660: a plan inside the month-long renewal window is still reminded only at its leads")
+    void theWiderWindowDoesNotRemindEarly() {
+        UUID subscription = active(NOW.plus(Duration.ofDays(20)), "49.00", false);
+
+        job.remind(NOW);
+        job.remind(NOW.plus(Duration.ofDays(16)));
+
+        assertThat(events(subscription, "subscription.renewal_due")).isEmpty();
+
+        job.remind(NOW.plus(Duration.ofDays(17)));
+        assertThat(claims(subscription)).containsExactly("RENEWAL_DUE/72");
+    }
+
     @Test
     @DisplayName("a creator who cancelled is neither reminded nor told the plan lapsed")
     void cancelledByTheCreatorIsLeftAlone() {

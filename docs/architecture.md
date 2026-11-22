@@ -2856,23 +2856,65 @@ audited under their name. A plan priced at zero activates on the spot.
 
 **Every period is paid by the creator, on purpose (epic #448).** There is no
 stored card and nothing is charged on a schedule. Inside the renewal window
-before a period ends (`ideanest.subscription.renewal-window`, seven days), the
-creator is reminded and may pay for the next period on the provider's page;
-paying extends the same row by one billing period **from the old end**, so
-renewing early loses no days, or from the payment if the period had already run
-out. A lapsed plan is not renewed but bought again. Why not `cardSave` and
-`autoPay`: nobody is charged without acting, which means no standing
-merchant-initiated consent in the terms and no chargebacks on a provider that
-keeps its fee on a refund. The renewal price is the subscription's own snapshot,
-so a repricing reaches new buyers only.
+before a period ends (`ideanest.subscription.extension-window`, env
+`SUBSCRIPTION_EXTENSION_WINDOW`; the old `renewal-window` /
+`SUBSCRIPTION_RENEWAL_WINDOW`, a seven-day `Duration`, is retired on purpose and
+no longer read, so a deployment still setting it neither fails to start nor
+keeps the seven-day rule), the creator may pay for the next period on the
+provider's page; paying extends the same row **from the old end**, so renewing
+early loses no days, or from the payment if the period had already run out. A
+lapsed plan is not renewed but bought again. Why not `cardSave` and `autoPay`:
+nobody is charged without acting, which means no standing merchant-initiated
+consent in the terms and no chargebacks on a provider that keeps its fee on a
+refund.
+
+**A running subscription may be extended once its last month begins (#660).**
+The window is one **calendar** month (`P1M`, an ISO-8601 `Period`, never a
+`Duration`): it opens at `current_period_end` minus one month in UTC, so a period
+ending on 31 March opens on 28 or 29 February. A monthly subscription is
+therefore extendable as soon as it is paid, a yearly one only in its twelfth
+month (`RENEWAL_NOT_OPEN` before). An extension runs from the old end, so the
+window shuts again until the new end is a month away, and it never opens before
+the running period began (`subscriptions.current_period_start`, V129): a month
+ending on 31 March extended on the 30th ends on 30 April, whose month-before is
+the day of payment, and without that floor a second extension would be due at
+once. The renewal reminders keep their own leads (three days and one day) and
+do not start a month early. The creator may extend by the subscription's own
+period at its **own snapshot price** (a repricing reaches new buyers only), or by
+another period the plan is sold for at the plan's **current** price for it
+(`subscription_plan_prices`); `POST /v1/me/subscription/payment` takes an
+optional `billingPeriod` for that, and `GET /v1/me/subscription` lists the
+choices as `renewalPrices` while `paymentDue` is `RENEWAL` (empty otherwise). A
+first period is paid only for the period chosen; another one is
+`PERIOD_NOT_OFFERED` and the creator chooses again. The page records the period
+and the amount (`subscription_charges.billing_period`, V129), and settlement
+extends by **the page's** period and copies its period and amount onto the
+subscription, never re-reading the plan — a repricing between the redirect and
+the callback does not change what was bought, and the next renewal defaults to
+what was last bought. A page with no period (opened before V129) renews the
+subscription's own period at its own price. Another period is offered only
+while the plan is listed (an unlisted plan's subscribers renew what they hold,
+`subscribe`'s rule). Two pages open for different periods can both be paid, and
+each extends by its own. The `subscription.renewed` audit row names the period.
+Staff record bank transfers only for a first period; there is no
+staff-recorded renewal, so nothing there changed.
+
+**Shipped in two steps, for the rolling deployment.** An instance of the release
+before V129 settles every page by the subscription's own period, so a page for a
+year settled there would grant a month. The release that adds V129 therefore
+records and settles by the page's period but offers only the held period
+(`SubscriptionCardPayments.OTHER_PERIODS_OFFERED = false`: `renewalPrices` lists
+the held period alone, and another `billingPeriod` is `PERIOD_NOT_OFFERED`); the
+next release flips that constant and offers the others. No environment change is
+needed for either.
 
 | | |
 |---|---|
 | Opened by | `POST /v1/me/subscription/payment` → `SubscriptionCardPayments.pay` → `payment.SubscriptionCheckout` |
 | Recorded in | `subscription_charges` (V102), the page's life; `subscription_payments`, the receipt (`CARD`, `recorded_by` null) |
 | Settled by | `SubscriptionChargeEvents` on the provider's callback, or `hosted-charge-sweep` when it never came |
-| What the money buys | Decided under a row lock when it arrives: pending → first period, active → one more period, ended → `UNAPPLIED`, returned by staff from `/admin/refunds` (#457) |
-| Refusals | `SUBSCRIPTION_PAYMENT_NOT_DUE` (409, `reason` `FREE_PLAN` / `RENEWAL_NOT_OPEN` / `LAPSED`), `STUDENT_VERIFICATION_REQUIRED` (403, a student-only plan and no approved, unexpired student verification — first period and renewal alike, #655), `PAYMENT_UNAVAILABLE` (503) |
+| What the money buys | Decided under a row lock when it arrives: pending → first period, active → one more period of the page's `billing_period` at its amount (#660), ended → `UNAPPLIED`, returned by staff from `/admin/refunds` (#457) |
+| Refusals | `SUBSCRIPTION_PAYMENT_NOT_DUE` (409, `reason` `FREE_PLAN` / `RENEWAL_NOT_OPEN` / `LAPSED`), `STUDENT_VERIFICATION_REQUIRED` (403, a student-only plan and no approved, unexpired student verification — first period and renewal alike, #655), `PERIOD_NOT_OFFERED` (400, `billingPeriod` names a period the plan is not sold for, or another period than the chosen one for a first period, #660), `PAYMENT_UNAVAILABLE` (503) |
 
 **The pricing page offers what `paymentDue` says, and nothing else (#451).**
 `FIRST_PERIOD` shows "Pay by card" with the subscription's price, beside the
@@ -5626,7 +5668,8 @@ GET    /v1/plans                         # the catalogue on sale. Public and cac
 GET    /v1/me/subscription               # what this account holds, or nothing. 200 with a null subscription rather than 404
 POST   /v1/me/subscription               # buy a plan. A priced one comes back PENDING_PAYMENT with paymentDue FIRST_PERIOD
 POST   /v1/me/subscription/payment       # #449: open the provider's page for what is due now -- the first period, or the next one inside
-                                         # the renewal window. Idempotency-Key; a second key while a page is open returns that page
+                                         # the renewal window. Idempotency-Key; a second key while a page for the same period is open
+                                         # returns that page. #660: optional billingPeriod to extend by another period (renewal only)
 DELETE /v1/me/subscription               # cancel: keeps the period that was paid for, stops the renewal
 GET    /v1/admin/plan-payments/unapplied # #457: plan payments that arrived for an ended subscription, oldest first. VIEW_FINANCE
 POST   /v1/admin/plan-payments/{id}/refund         # return it in full to the card through the provider. ISSUE_REFUND, audited

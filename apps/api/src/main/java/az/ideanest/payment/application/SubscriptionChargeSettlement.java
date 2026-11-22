@@ -20,7 +20,10 @@ public interface SubscriptionChargeSettlement {
     Outcome paid(PaidSubscriptionCharge charge);
 
     /**
-     * @param amount what the provider took
+     * @param amount what the provider took, and the subscription's price from now on (#660)
+     * @param billingPeriod the period the page was opened for, as the subscription module names it,
+     *     and what the subscription is extended by — never a re-read of the plan (#660). Null for a
+     *     page opened before V129, which pays for the subscription's own period
      * @param provider the provider's name, for the receipt's reference
      * @param providerTransactionId the provider's order, recorded as the receipt's reference
      */
@@ -29,6 +32,7 @@ public interface SubscriptionChargeSettlement {
             UUID subscriptionId,
             UUID accountId,
             Money amount,
+            String billingPeriod,
             String provider,
             String providerTransactionId,
             Instant paidAt) {

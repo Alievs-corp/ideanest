@@ -1,5 +1,6 @@
 package az.ideanest.subscription.api;
 
+import az.ideanest.shared.money.Money;
 import az.ideanest.subscription.domain.BillingPeriod;
 import az.ideanest.subscription.domain.Subscription;
 import az.ideanest.subscription.domain.SubscriptionPlan;
@@ -9,6 +10,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.UUID;
 
 /**
@@ -134,6 +136,10 @@ public final class SubscriptionResponses {
      *     client offers "Pay" or "Renew" on this rather than working out the window itself
      * @param renewalOpensAt when renewing the running period is first offered, or null for a
      *     pending or free subscription
+     * @param renewalPrices what extending the subscription by each period costs now, shortest first
+     *     — #660. Only while {@code paymentDue} is {@code RENEWAL}, and empty otherwise. Its own period
+     *     at its own (locked) price; any other period the plan is sold for at the plan's current
+     *     price. The choices {@code POST /v1/me/subscription/payment}'s {@code billingPeriod} takes
      */
     public record Held(
             UUID id,
@@ -148,7 +154,8 @@ public final class SubscriptionResponses {
             boolean cancelAtPeriodEnd,
             Instant createdAt,
             Subscription.DuePayment paymentDue,
-            Instant renewalOpensAt) {
+            Instant renewalOpensAt,
+            List<PlanPrice> renewalPrices) {
 
         public static Held of(
                 Subscription subscription,
@@ -156,7 +163,8 @@ public final class SubscriptionResponses {
                 String locale,
                 Instant now,
                 Subscription.DuePayment paymentDue,
-                Instant renewalOpensAt) {
+                Instant renewalOpensAt,
+                SortedMap<BillingPeriod, Money> renewalPrices) {
             return new Held(
                     subscription.getId(),
                     subscription.getState(),
@@ -170,7 +178,13 @@ public final class SubscriptionResponses {
                     subscription.isCancelAtPeriodEnd(),
                     subscription.getCreatedAt(),
                     paymentDue,
-                    renewalOpensAt);
+                    renewalOpensAt,
+                    renewalPrices.entrySet().stream()
+                            .map(entry -> new PlanPrice(
+                                    entry.getKey(),
+                                    entry.getValue().amount().toPlainString(),
+                                    entry.getValue().currency()))
+                            .toList());
         }
     }
 
