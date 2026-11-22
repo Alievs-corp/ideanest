@@ -72,6 +72,8 @@ const STARTER: Plan = {
   price: '19.00',
   currency: 'AZN',
   billingPeriod: 'MONTHLY',
+  prices: [{ billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' }],
+  studentOnly: false,
   maxActiveCampaigns: 1,
   goalCeiling: '10000.00',
   listed: true,
@@ -86,6 +88,7 @@ const PRO: Plan = {
   name: 'Pro',
   description: null,
   price: '149.00',
+  prices: [{ billingPeriod: 'MONTHLY', price: '149.00', currency: 'AZN' }],
   maxActiveCampaigns: null,
   goalCeiling: null,
   sortOrder: 30,
@@ -274,7 +277,7 @@ describe('the plan chooser', () => {
     await userEvent.click(screen.getByRole('button', { name: /Choose this plan: Starter/ }));
 
     expect(await screen.findByText(COPY.held.pendingBody)).toBeInTheDocument();
-    expect(subscribeMock).toHaveBeenCalledWith(STARTER.id);
+    expect(subscribeMock).toHaveBeenCalledWith(STARTER.id, 'MONTHLY', 'en');
   });
 
   it('says when a plan runs to, and offers to stop it renewing', async () => {
@@ -299,7 +302,7 @@ describe('the plan chooser', () => {
 
     await userEvent.click(pro);
 
-    await waitFor(() => expect(subscribeMock).toHaveBeenCalledWith(PRO.id));
+    await waitFor(() => expect(subscribeMock).toHaveBeenCalledWith(PRO.id, 'MONTHLY', 'en'));
     expect(cancelMock).not.toHaveBeenCalled();
   });
 

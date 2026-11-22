@@ -20,6 +20,7 @@ import {
 } from '../collections/api';
 import type { DiscoveryFeed, ProjectCard } from '../discovery/api';
 import type { Plan } from '../plans/api';
+import { readPlanCatalogue } from '@ideanest/plans/catalogue';
 import { DEFAULT_LOCALE } from '../i18n/locale';
 import { LEGAL_UNAVAILABLE, LEGAL_UNPUBLISHED, type LegalRead } from '@ideanest/legal/documents';
 import {
@@ -367,8 +368,11 @@ export async function fetchPlanCatalogue(
   const withWindow: ServerReadOptions = { revalidateSeconds: TAXONOMY_REVALIDATE_SECONDS, ...options };
 
   try {
-    const catalogue = await client(withWindow).get('/v1/plans', await readOptions(withWindow, PLANS));
-    return ((catalogue as { plans?: readonly Plan[] }).plans ?? []) as readonly Plan[];
+    const catalogue: unknown = await client(withWindow).get('/v1/plans', await readOptions(withWindow, PLANS));
+    // Through the shared reader (#655): a plan the service sent without `prices` still has the one
+    // period `price` describes, so a card always has a price to print for the switch's position. A
+    // body that is not a catalogue is `null` — "could not be read", never "no plans on sale".
+    return readPlanCatalogue(catalogue);
   } catch (cause) {
     return refusalOrRethrow(cause);
   }
