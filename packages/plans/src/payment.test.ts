@@ -13,6 +13,8 @@ const subscription: HeldSubscription = {
     price: '19.00',
     currency: 'AZN',
     billingPeriod: 'MONTHLY',
+    prices: [{ billingPeriod: 'MONTHLY' as const, price: '19.00', currency: 'AZN' }],
+    studentOnly: false,
     listed: true,
     sortOrder: 2,
     updatedAt: '2026-09-01T00:00:00Z',

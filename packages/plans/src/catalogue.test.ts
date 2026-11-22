@@ -3,6 +3,8 @@ import {
   canChoose,
   isFreePrice,
   isHeldPlan,
+  offeredPeriods,
+  priceFor,
   readMine,
   readPlan,
   readPlanCatalogue,
@@ -19,6 +21,8 @@ const growth = {
   price: '19.00',
   currency: 'AZN',
   billingPeriod: 'MONTHLY',
+  prices: [{ billingPeriod: 'MONTHLY' as const, price: '19.00', currency: 'AZN' }],
+  studentOnly: false,
   maxActiveCampaigns: 3,
   goalCeiling: '50000.00',
   listed: true,
@@ -163,5 +167,60 @@ describe('the rules the page draws by', () => {
     expect(refusalOf(401, null)).toBe('signedOut');
     expect(refusalOf(500, 'SOMETHING')).toBe('generic');
     expect(refusalOf(null, undefined)).toBe('generic');
+  });
+});
+
+describe('plan prices by period', () => {
+  it('reads every offered period, shortest first, and drops unreadable entries', () => {
+    const plan = readPlan({
+      ...growth,
+      studentOnly: true,
+      prices: [
+        { billingPeriod: 'YEARLY', price: '190.00', currency: 'AZN' },
+        { billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' },
+        { billingPeriod: 'SEMIANNUAL', price: 'nope', currency: 'AZN' },
+        { billingPeriod: 'WEEKLY', price: '5.00', currency: 'AZN' },
+      ],
+    });
+    expect(plan?.studentOnly).toBe(true);
+    expect(plan?.prices.map((p) => p.billingPeriod)).toEqual(['MONTHLY', 'YEARLY']);
+    expect(plan && priceFor(plan, 'YEARLY')?.price).toBe('190.00');
+    expect(plan && priceFor(plan, 'SEMIANNUAL')).toBeNull();
+  });
+
+  it('falls back to the plan price when the body has no prices', () => {
+    const plan = readPlan(growth);
+    expect(plan?.studentOnly).toBe(false);
+    expect(plan?.prices).toEqual([{ billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' }]);
+  });
+
+  it('reads a six-month plan', () => {
+    expect(readPlan({ ...growth, billingPeriod: 'SEMIANNUAL' })?.billingPeriod).toBe('SEMIANNUAL');
+  });
+
+  it('offers only the periods some plan is sold for', () => {
+    const monthly = readPlan(growth);
+    const both = readPlan({
+      ...growth,
+      id: 'other',
+      prices: [
+        { billingPeriod: 'MONTHLY', price: '10.00', currency: 'AZN' },
+        { billingPeriod: 'SEMIANNUAL', price: '60.00', currency: 'AZN' },
+      ],
+    });
+    expect(monthly && both && offeredPeriods([monthly, both])).toEqual(['MONTHLY', 'SEMIANNUAL']);
+  });
+
+  it('lets the same pending plan be chosen again for another period', () => {
+    const pending = readMine({ subscription: { ...held, state: 'PENDING_PAYMENT', entitled: false } });
+    const sub = pending?.subscription ?? null;
+    expect(canChoose(sub, growth.id)).toBe(false);
+    expect(canChoose(sub, growth.id, 'MONTHLY')).toBe(false);
+    expect(canChoose(sub, growth.id, 'YEARLY')).toBe(true);
+  });
+
+  it('maps the new refusals', () => {
+    expect(refusalOf(400, 'PERIOD_NOT_OFFERED')).toBe('periodNotOffered');
+    expect(refusalOf(403, 'STUDENT_VERIFICATION_REQUIRED')).toBe('studentVerificationRequired');
   });
 });
