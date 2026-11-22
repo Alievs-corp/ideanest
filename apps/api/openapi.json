@@ -16509,6 +16509,10 @@
       "PayForPlanRequest" : {
         "type" : "object",
         "properties" : {
+          "billingPeriod" : {
+            "type" : "string",
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
+          },
           "errorUrl" : {
             "type" : "string",
             "format" : "uri"

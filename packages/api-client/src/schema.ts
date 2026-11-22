@@ -6533,6 +6533,8 @@ export interface components {
             shippingCountry?: string;
         };
         PayForPlanRequest: {
+            /** @enum {string} */
+            billingPeriod?: "MONTHLY" | "SEMIANNUAL" | "YEARLY";
             /** Format: uri */
             errorUrl?: string;
             language?: string;
