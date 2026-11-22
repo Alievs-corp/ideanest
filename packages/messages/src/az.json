@@ -5397,9 +5397,11 @@
       "opening": "Ödəniş səhifəsi açılır",
       "cardBody": "Ödənişi ödəniş provayderimizin təhlükəsiz səhifəsində edirsiniz. Ödəniş keçən kimi plan başlayır.",
       "renewalTitle": "{plan} planınız {date} tarixində bitir",
-      "renewalBody": "Yeniləmə həmin tarixdən daha bir ödəniş dövrü əlavə edir, ona görə vaxtından əvvəl yeniləsəniz, heç bir gün itirmirsiniz. Siz yeniləməsəniz, heç nə tutulmur.",
+      "renewalBody": "Yeniləmə seçdiyiniz müddəti bu dövrün sonuna əlavə edir, ona görə vaxtından əvvəl yeniləsəniz, heç bir gün itirmirsiniz. Siz yeniləməsəniz, heç nə tutulmur.",
       "renewalCancelled": "Bu planı ləğv etmisiniz. İndi yeniləsəniz, plan davam edəcək.",
       "renewsFrom": "{date} tarixindən yeniləyə bilərsiniz",
+      "extendLabel": "Nə qədər uzadılsın",
+      "extendsTo": "Yeni bitmə tarixi: {date}",
       "returned": {
         "waitingTitle": "Ödənişin təsdiqi gözlənilir",
         "waitingBody": "Ödəniş provayderi hələ nəticəni bildirməyib. Bu səhifə bir dəqiqə ərzində yenidən yoxlayır; ikinci dəfə ödəməyiniz lazım deyil.",

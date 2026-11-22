@@ -5397,9 +5397,11 @@
       "opening": "Opening the payment page",
       "cardBody": "You pay on our payment provider's secure page, and the plan starts as soon as the payment goes through.",
       "renewalTitle": "Your {plan} plan ends on {date}",
-      "renewalBody": "Renewing adds one more billing period from that date, so renewing early costs you no days. Nothing is charged unless you renew.",
+      "renewalBody": "Renewing adds the period you choose to the end of this one, so renewing early costs you no days. Nothing is charged unless you renew.",
       "renewalCancelled": "You cancelled this plan. Renewing it now keeps it going.",
       "renewsFrom": "You can renew from {date}",
+      "extendLabel": "Renew for how long",
+      "extendsTo": "New end date: {date}",
       "returned": {
         "waitingTitle": "Waiting for the payment to be confirmed",
         "waitingBody": "The payment provider has not told us the outcome yet. This page checks again for a minute; you do not need to pay a second time.",
