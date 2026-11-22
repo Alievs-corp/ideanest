@@ -17,8 +17,11 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * Extending a running subscription — #660, without a database.
@@ -85,6 +88,58 @@ class SubscriptionExtensionDomainTests {
             assertThat(held.getCurrentPeriodEnd()).isEqualTo(Instant.parse("2026-07-15T10:00:00Z"));
             assertThat(held.renewalOpensAt(WINDOW)).isEqualTo(Instant.parse("2026-06-15T10:00:00Z"));
             assertThat(held.paymentDueAt(bought.plusSeconds(120), WINDOW)).isEmpty();
+        }
+
+        /**
+         * The stacking hole near a month's end: an end on the 31st extended by a month on the 30th
+         * ends on the 30th of the next month, and a month before that is the day of payment. The
+         * window must stay shut until the old end, never reopen at once.
+         */
+        @ParameterizedTest(name = "end {0}, extended by a month on {1}, opens no earlier than the old end")
+        @CsvSource({
+            "2027-03-31T10:00:00Z, 2027-03-30T11:00:00Z, 2027-04-30T10:00:00Z",
+            "2027-03-30T10:00:00Z, 2027-03-29T11:00:00Z, 2027-04-30T10:00:00Z",
+            "2027-03-29T10:00:00Z, 2027-03-28T11:00:00Z, 2027-04-29T10:00:00Z",
+            "2027-05-31T10:00:00Z, 2027-05-30T11:00:00Z, 2027-06-30T10:00:00Z",
+            "2027-01-31T10:00:00Z, 2027-01-30T11:00:00Z, 2027-02-28T10:00:00Z",
+            "2028-01-31T10:00:00Z, 2028-01-30T11:00:00Z, 2028-02-29T10:00:00Z",
+            "2027-12-31T10:00:00Z, 2027-12-30T11:00:00Z, 2028-01-31T10:00:00Z"
+        })
+        void anExtensionNearAMonthsEndCannotBeStacked(String end, String paid, String newEnd) {
+            Subscription held = heldUntil(Instant.parse(end));
+            Instant payment = Instant.parse(paid);
+            assertThat(held.paymentDueAt(payment, WINDOW)).contains(Subscription.DuePayment.RENEWAL);
+
+            held.extend(BillingPeriod.MONTHLY, money("10.00"), payment);
+
+            assertThat(held.getCurrentPeriodEnd()).isEqualTo(Instant.parse(newEnd));
+            assertThat(held.getCurrentPeriodStart()).isEqualTo(Instant.parse(end));
+            assertThat(held.renewalOpensAt(WINDOW)).isAfterOrEqualTo(Instant.parse(end));
+            assertThat(held.paymentDueAt(payment.plusSeconds(1), WINDOW)).isEmpty();
+            assertThat(held.paymentDueAt(Instant.parse(end).minusMillis(1), WINDOW)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("an extension paid after the end opens again a month before the new end, not before the payment")
+        void aLateExtensionOpensFromThePayment() {
+            Subscription held = heldUntil(Instant.parse("2027-03-31T10:00:00Z"));
+            Instant late = Instant.parse("2027-04-02T10:00:00Z");
+
+            held.extend(BillingPeriod.MONTHLY, money("10.00"), late);
+
+            assertThat(held.getCurrentPeriodEnd()).isEqualTo(Instant.parse("2027-05-02T10:00:00Z"));
+            assertThat(held.renewalOpensAt(WINDOW)).isEqualTo(late);
+        }
+
+        @Test
+        @DisplayName("a row last paid before V129 has no period start, and opens a month before its end")
+        void aRowWithoutAStartOpensAMonthBefore() {
+            Subscription held = heldUntil(Instant.parse("2027-03-31T10:00:00Z"));
+            held.extend(BillingPeriod.MONTHLY, money("10.00"), Instant.parse("2027-03-30T11:00:00Z"));
+            ReflectionTestUtils.setField(held, "currentPeriodStart", null);
+
+            // The pre-#660 reading: a month before the end, with nothing to hold it back.
+            assertThat(held.renewalOpensAt(WINDOW)).isEqualTo(Instant.parse("2027-03-30T10:00:00Z"));
         }
 
         @Test
@@ -185,6 +240,19 @@ class SubscriptionExtensionDomainTests {
             plan.reprice(prices(null, "54.00", "100.00"), "AZN");
 
             assertThat(held.extensionPriceFor(BillingPeriod.MONTHLY, plan)).contains(money("10.00"));
+        }
+
+        @Test
+        @DisplayName("an unlisted plan offers only the held period, at its own price")
+        void anUnlistedPlanOffersOnlyTheHeldPeriod() {
+            SubscriptionPlan plan = plan("10.00", "54.00", "100.00");
+            Subscription held = held(plan, BillingPeriod.MONTHLY, Instant.parse("2026-05-15T10:00:00Z"));
+
+            plan.list(false);
+
+            assertThat(held.extensionPriceFor(BillingPeriod.MONTHLY, plan)).contains(money("10.00"));
+            assertThat(held.extensionPriceFor(BillingPeriod.YEARLY, plan)).isEmpty();
+            assertThat(held.extensionPrices(plan)).containsOnlyKeys(BillingPeriod.MONTHLY);
         }
 
         @Test

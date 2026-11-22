@@ -44,6 +44,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * the plan's current one, what settles is what the page was opened for even if the plan is repriced
  * in between, a settlement counts once, and the subscription holds the extension's period and price
  * afterwards.
+ *
+ * <p><strong>Step one.</strong> This release records the page's period and settles by it, but
+ * offers only the held period ({@code SubscriptionCardPayments.OTHER_PERIODS_OFFERED}), because an
+ * instance of the previous release may settle a page during the rolling deployment and would renew
+ * by the held period whatever the page said. Settling a page for another period is tested by
+ * rewriting a page the way the next release will open it ({@link #pageFor}).
  */
 class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
 
@@ -84,7 +90,7 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("renewalPrices lists every extension while a renewal is due: its own at its locked price, the others at today's")
+    @DisplayName("step one: renewalPrices lists the held period at its locked price while a renewal is due")
     void renewalPricesWhileDue() {
         UUID plan = addPlan(prices("10.00", "54.00", "100.00"));
         Account creator = activeOn(plan, "MONTHLY");
@@ -95,7 +101,7 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         assertThat(held.get("paymentDue")).isEqualTo("RENEWAL");
         assertThat(renewalPricesOf(held))
                 .extracting(entry -> entry.get("billingPeriod") + "=" + entry.get("price") + " " + entry.get("currency"))
-                .containsExactly("MONTHLY=10.00 AZN", "SEMIANNUAL=80.00 AZN", "YEARLY=150.00 AZN");
+                .containsExactly("MONTHLY=10.00 AZN");
     }
 
     @Test
@@ -182,18 +188,18 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("another period is charged at the plan's current price for it")
-    void anotherPeriodIsTodaysPrice() {
+    @DisplayName("step one: another period the plan sells is not offered yet, and opens no page")
+    void anotherPeriodIsNotOfferedYet() {
         UUID plan = addPlan(prices("10.00", "54.00", "100.00"));
         Account creator = activeOn(plan, "MONTHLY");
-        reprice(plan, prices("15.00", "80.00", "150.00"));
+        int pagesBefore = provider.hostedPayments().size();
 
-        assertThat(pay(creator, "YEARLY").getStatusCode()).isEqualTo(HttpStatus.OK);
+        ResponseEntity<Map<String, Object>> refused = pay(creator, "YEARLY");
 
-        assertThat(provider.hostedPayments().getLast().amount().amount()).isEqualByComparingTo("150.00");
-        Map<String, Object> charge = latestCharge(creator);
-        assertThat(charge).containsEntry("billing_period", "YEARLY").containsEntry("purpose", "RENEWAL");
-        assertThat((java.math.BigDecimal) charge.get("amount")).isEqualByComparingTo("150.00");
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(refused.getBody().get("code")).isEqualTo("PERIOD_NOT_OFFERED");
+        assertThat(refused.getBody().get("billingPeriod")).isEqualTo("YEARLY");
+        assertThat(provider.hostedPayments()).hasSize(pagesBefore);
     }
 
     @Test
@@ -209,9 +215,6 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         assertThat(refused.getBody().get("code")).isEqualTo("PERIOD_NOT_OFFERED");
         assertThat(refused.getBody().get("billingPeriod")).isEqualTo("SEMIANNUAL");
         assertThat(provider.hostedPayments()).hasSize(pagesBefore);
-        assertThat(renewalPricesOf(mine(creator)))
-                .extracting(entry -> entry.get("billingPeriod"))
-                .containsExactly("MONTHLY", "YEARLY");
     }
 
     @Test
@@ -240,18 +243,18 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         UUID plan = addPlan(prices("10.00", "54.00", "100.00"));
         Account creator = activeOn(plan, "MONTHLY");
 
+        String year = pageFor(creator, "YEARLY", "100.00");
         String month = order(pay(creator, "MONTHLY"));
         String monthAgain = order(pay(creator, null));
-        String year = order(pay(creator, "YEARLY"));
 
+        assertThat(month).isNotEqualTo(year);
         assertThat(monthAgain).isEqualTo(month);
-        assertThat(year).isNotEqualTo(month);
         assertThat(jdbc().queryForList(
                         "SELECT billing_period FROM subscription_charges WHERE account_id = ? AND status = 'PENDING'"
                                 + " ORDER BY opened_at",
                         String.class,
                         creator.id()))
-                .containsExactly("MONTHLY", "YEARLY");
+                .containsExactly("YEARLY", "MONTHLY");
     }
 
     // ------------------------------------------------------------------
@@ -266,7 +269,7 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         Instant end = Instant.now().plus(Duration.ofDays(10)).truncatedTo(ChronoUnit.SECONDS);
         endsAt(creator, end);
 
-        String order = order(pay(creator, "YEARLY"));
+        String order = pageFor(creator, "YEARLY", "100.00");
         assertThat(deliver(order, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
 
         Map<String, Object> held = mine(creator);
@@ -284,6 +287,16 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         assertThat((java.math.BigDecimal) receipt.get("amount")).isEqualByComparingTo("100.00");
         assertThat(receipt).containsEntry("billing_period", "YEARLY").containsEntry("method", "CARD");
         assertThat(audited(creator, "subscription.renewed")).isEqualTo(1);
+        assertThat(jdbc().queryForObject(
+                        """
+                        SELECT detail FROM audit_logs
+                        WHERE action = 'subscription.renewed'
+                          AND entity_id IN (SELECT id FROM subscriptions WHERE account_id = ?)
+                        """,
+                        String.class,
+                        creator.id()))
+                .contains("period=YEARLY")
+                .contains("paid=100.00");
 
         // The next renewal defaults to the year, at the year's price as bought.
         endsAt(creator, Instant.now().plus(Duration.ofDays(10)));
@@ -298,7 +311,7 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         UUID plan = addPlan(prices("10.00", "54.00", "100.00"));
         Account creator = activeOn(plan, "MONTHLY");
         Instant end = Instant.parse((String) mine(creator).get("currentPeriodEnd"));
-        String order = order(pay(creator, "SEMIANNUAL"));
+        String order = pageFor(creator, "SEMIANNUAL", "54.00");
 
         reprice(plan, prices("12.00", "70.00", null));
         deliver(order, "charge_succeeded");
@@ -316,7 +329,7 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         UUID plan = addPlan(prices("10.00", "54.00", "100.00"));
         Account creator = activeOn(plan, "MONTHLY");
         Instant end = Instant.parse((String) mine(creator).get("currentPeriodEnd"));
-        String order = order(pay(creator, "YEARLY"));
+        String order = pageFor(creator, "YEARLY", "100.00");
         String eventId = "evt-" + UUID.randomUUID();
 
         deliver(eventId, order, "charge_succeeded");
@@ -340,7 +353,7 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         UUID plan = addPlan(prices("10.00", "54.00", "100.00"));
         Account creator = activeOn(plan, "MONTHLY");
         Instant end = Instant.parse((String) mine(creator).get("currentPeriodEnd"));
-        String order = order(pay(creator, "SEMIANNUAL"));
+        String order = pageFor(creator, "SEMIANNUAL", "54.00");
         provider.willLookUp(order, PaymentLookup.State.SUCCEEDED);
 
         sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
@@ -374,7 +387,7 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("extending a student-rate subscription needs a valid student check, for any period")
+    @DisplayName("extending a student-rate subscription needs a valid student check")
     void aStudentExtensionIsGated() {
         UUID plan = addPlan(prices("10.00", "54.00", "100.00"));
         Account lapsed = account();
@@ -382,7 +395,7 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         heldAtStudentRate(lapsed, plan);
         int pagesBefore = provider.hostedPayments().size();
 
-        ResponseEntity<Map<String, Object>> refused = pay(lapsed, "YEARLY");
+        ResponseEntity<Map<String, Object>> refused = pay(lapsed, "MONTHLY");
 
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(refused.getBody().get("code")).isEqualTo("STUDENT_VERIFICATION_REQUIRED");
@@ -391,8 +404,8 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
         Account current = account();
         verification(current, Instant.now().plus(Duration.ofDays(100)));
         heldAtStudentRate(current, plan);
-        assertThat(pay(current, "YEARLY").getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(provider.hostedPayments().getLast().amount().amount()).isEqualByComparingTo("100.00");
+        assertThat(pay(current, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(provider.hostedPayments().getLast().amount().amount()).isEqualByComparingTo("10.00");
     }
 
     // ------------------------------------------------------------------
@@ -452,9 +465,12 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
 
     private void endsAt(Account creator, Instant end) {
         jdbc().update(
-                "UPDATE subscriptions SET current_period_end = ?, started_at = ? WHERE account_id = ? AND state = 'ACTIVE'",
+                "UPDATE subscriptions SET current_period_end = ?, started_at = ?, current_period_start = ?"
+                        + " WHERE account_id = ? AND state = 'ACTIVE'",
                 Timestamp.from(end),
                 Timestamp.from(end.minus(Duration.ofDays(30))),
+                // A month's period that ends there began a calendar month before it.
+                Timestamp.from(end.atOffset(ZoneOffset.UTC).minusMonths(1).toInstant()),
                 creator.id());
     }
 
@@ -506,6 +522,20 @@ class SubscriptionExtensionApiTests extends AbstractIntegrationTest {
             body.put("billingPeriod", period);
         }
         return rest.exchange("/v1/me/subscription/payment", HttpMethod.POST, new HttpEntity<>(body, headers), mapType());
+    }
+
+    /**
+     * A page for another period at another amount, as the next release opens one: a page for the held
+     * period, rewritten. What settlement does with it is this release's.
+     */
+    private String pageFor(Account creator, String period, String amount) {
+        String order = order(pay(creator, null));
+        jdbc().update(
+                "UPDATE subscription_charges SET billing_period = ?, amount = ? WHERE provider_transaction_id = ?",
+                period,
+                new java.math.BigDecimal(amount),
+                order);
+        return order;
     }
 
     private static String order(ResponseEntity<Map<String, Object>> page) {

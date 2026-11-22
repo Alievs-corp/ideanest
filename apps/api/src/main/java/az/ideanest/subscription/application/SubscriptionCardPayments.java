@@ -26,6 +26,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -68,6 +69,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
 
     private static final Logger log = LoggerFactory.getLogger(SubscriptionCardPayments.class);
+
+    /**
+     * Whether a renewal may be for a period other than the subscription's own — #660, step two.
+     *
+     * <p>Off in the release that starts recording a page's period (V129), on in the next. During a
+     * rolling deployment an instance of the previous release may settle a page this one opened, and
+     * it renews by the subscription's own period whatever the page was for: a year paid for and a
+     * month granted. So this release records periods and settles by them, but offers only the held
+     * period; once no instance of the previous release is left, flipping this constant offers the
+     * rest. A constant rather than configuration, so no environment change is needed and the flip
+     * is a reviewed diff.
+     */
+    static final boolean OTHER_PERIODS_OFFERED = false;
 
     private final SubscriptionRepository subscriptions;
     private final SubscriptionPlanRepository plans;
@@ -128,7 +142,9 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
 
         BillingPeriod chosen = period == null ? held.getBillingPeriod() : period;
         Money price;
-        if (due == Subscription.DuePayment.RENEWAL) {
+        if (chosen != held.getBillingPeriod() && !OTHER_PERIODS_OFFERED) {
+            throw new PeriodNotOfferedException(plan.getId(), chosen);
+        } else if (due == Subscription.DuePayment.RENEWAL) {
             price = held.extensionPriceFor(chosen, plan)
                     .orElseThrow(() -> new PeriodNotOfferedException(plan.getId(), chosen));
         } else if (chosen == held.getBillingPeriod()) {
@@ -173,6 +189,9 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
             Subscription subscription, SubscriptionPlan plan, Instant now) {
         if (dueFor(subscription, now).orElse(null) != Subscription.DuePayment.RENEWAL) {
             return new TreeMap<>();
+        }
+        if (!OTHER_PERIODS_OFFERED) {
+            return new TreeMap<>(Map.of(subscription.getBillingPeriod(), subscription.getPrice()));
         }
         return subscription.extensionPrices(plan);
     }
@@ -222,10 +241,11 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
                 subscription.getId(),
                 AuditActor.system(),
                 AuditOutcome.SUCCEEDED,
-                "account=%s; plan=%s; paid=%s; provider=%s; order=%s; payment=%s; until=%s"
+                "account=%s; plan=%s; period=%s; paid=%s; provider=%s; order=%s; payment=%s; until=%s"
                         .formatted(
                                 subscription.getAccountId(),
                                 plan.getCode(),
+                                subscription.getBillingPeriod(),
                                 subscription.getPrice(),
                                 charge.provider(),
                                 charge.providerTransactionId(),

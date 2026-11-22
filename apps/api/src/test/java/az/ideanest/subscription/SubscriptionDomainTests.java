@@ -296,7 +296,12 @@ class SubscriptionDomainTests {
         void renewalWindow() {
             Subscription held = active("49.00");
             Instant end = held.getCurrentPeriodEnd();
-            Instant opens = end.atOffset(ZoneOffset.UTC).minusMonths(1).toInstant();
+            // A month before 28 February is 28 January, before the period began on the 31st; the
+            // window never opens before the running period began (#660).
+            Instant opens = end.atOffset(ZoneOffset.UTC).minusMonths(1).toInstant().isBefore(NOW)
+                    ? NOW
+                    : end.atOffset(ZoneOffset.UTC).minusMonths(1).toInstant();
+            assertThat(opens).isEqualTo(NOW);
 
             assertThat(held.renewalOpensAt(WINDOW)).isEqualTo(opens);
             assertThat(held.paymentDueAt(opens.minusMillis(1), WINDOW)).isEmpty();

@@ -2874,8 +2874,11 @@ The window is one **calendar** month (`P1M`, an ISO-8601 `Period`, never a
 ending on 31 March opens on 28 or 29 February. A monthly subscription is
 therefore extendable as soon as it is paid, a yearly one only in its twelfth
 month (`RENEWAL_NOT_OPEN` before). An extension runs from the old end, so the
-window shuts again until the new end is a month away and extensions cannot be
-stacked. The renewal reminders keep their own leads (three days and one day) and
+window shuts again until the new end is a month away, and it never opens before
+the running period began (`subscriptions.current_period_start`, V129): a month
+ending on 31 March extended on the 30th ends on 30 April, whose month-before is
+the day of payment, and without that floor a second extension would be due at
+once. The renewal reminders keep their own leads (three days and one day) and
 do not start a month early. The creator may extend by the subscription's own
 period at its **own snapshot price** (a repricing reaches new buyers only), or by
 another period the plan is sold for at the plan's **current** price for it
@@ -2889,8 +2892,21 @@ extends by **the page's** period and copies its period and amount onto the
 subscription, never re-reading the plan — a repricing between the redirect and
 the callback does not change what was bought, and the next renewal defaults to
 what was last bought. A page with no period (opened before V129) renews the
-subscription's own period at its own price. Staff record bank transfers only for
-a first period; there is no staff-recorded renewal, so nothing there changed.
+subscription's own period at its own price. Another period is offered only
+while the plan is listed (an unlisted plan's subscribers renew what they hold,
+`subscribe`'s rule). Two pages open for different periods can both be paid, and
+each extends by its own. The `subscription.renewed` audit row names the period.
+Staff record bank transfers only for a first period; there is no
+staff-recorded renewal, so nothing there changed.
+
+**Shipped in two steps, for the rolling deployment.** An instance of the release
+before V129 settles every page by the subscription's own period, so a page for a
+year settled there would grant a month. The release that adds V129 therefore
+records and settles by the page's period but offers only the held period
+(`SubscriptionCardPayments.OTHER_PERIODS_OFFERED = false`: `renewalPrices` lists
+the held period alone, and another `billingPeriod` is `PERIOD_NOT_OFFERED`); the
+next release flips that constant and offers the others. No environment change is
+needed for either.
 
 | | |
 |---|---|

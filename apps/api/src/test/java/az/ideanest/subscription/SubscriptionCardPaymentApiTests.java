@@ -568,9 +568,12 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
 
     private void endsAt(Account creator, Instant end) {
         jdbc().update(
-                "UPDATE subscriptions SET current_period_end = ?, started_at = ? WHERE account_id = ? AND state = 'ACTIVE'",
+                "UPDATE subscriptions SET current_period_end = ?, started_at = ?, current_period_start = ?"
+                        + " WHERE account_id = ? AND state = 'ACTIVE'",
                 Timestamp.from(end),
                 Timestamp.from(end.minus(Duration.ofDays(30))),
+                // A month's period that ends there began a calendar month before it.
+                Timestamp.from(end.atOffset(ZoneOffset.UTC).minusMonths(1).toInstant()),
                 creator.id());
     }
 

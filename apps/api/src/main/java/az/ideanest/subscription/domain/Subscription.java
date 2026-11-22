@@ -87,6 +87,14 @@ public class Subscription {
     @Column(name = "current_period_end")
     private Instant currentPeriodEnd;
 
+    /**
+     * When the running period began: the activation, or the end of the period an extension ran on
+     * from (V129, #660). The renewal window never opens before it, so an extension paid near a
+     * month's end cannot reopen the window at once. Null on a row last paid before V129.
+     */
+    @Column(name = "current_period_start")
+    private Instant currentPeriodStart;
+
     @Column(name = "cancel_at_period_end", nullable = false)
     private boolean cancelAtPeriodEnd;
 
@@ -178,6 +186,7 @@ public class Subscription {
                 new Subscription(id, requireAccount(accountId), requirePlan(plan), requirePeriod(period), require(now));
         subscription.state = SubscriptionState.ACTIVE;
         subscription.startedAt = now;
+        subscription.currentPeriodStart = now;
         subscription.currentPeriodEnd = period.endOf(now);
         return subscription;
     }
@@ -206,6 +215,7 @@ public class Subscription {
         // This row's own period and never the plan's: since #655 a plan is sold for several, and
         // a creator who paid for a year is owed a year whatever the plan's shortest period is.
         this.currentPeriodEnd = billingPeriod.endOf(now);
+        this.currentPeriodStart = now;
         this.activatedBy = Objects.requireNonNull(activatedBy, "Somebody recorded this payment");
         this.note = trimmedOrNull(note);
         this.updatedAt = now;
@@ -224,6 +234,7 @@ public class Subscription {
         requirePlan(plan);
         this.state = SubscriptionState.ACTIVE;
         this.startedAt = require(now);
+        this.currentPeriodStart = now;
         this.currentPeriodEnd = billingPeriod.endOf(now);
         this.updatedAt = now;
     }
@@ -263,6 +274,7 @@ public class Subscription {
         requirePeriod(period);
         Objects.requireNonNull(paid, "An extension was paid for");
         Instant from = currentPeriodEnd.isAfter(require(now)) ? currentPeriodEnd : now;
+        this.currentPeriodStart = from;
         this.currentPeriodEnd = period.endOf(from);
         this.billingPeriod = period;
         this.price = paid.amount();
@@ -279,7 +291,9 @@ public class Subscription {
      * <p>Its own period at its own price, whatever the plan costs new buyers today: renewing what
      * was bought is the snapshot's whole point, and it stays on offer even if the plan stops
      * selling that period. Any other period is the plan's current price for it, because that is
-     * a new agreement. A free period of a priced plan is not an extension anybody can pay for.
+     * a new agreement, and so it is offered only while the plan is on sale: an unlisted plan is
+     * not sold to anybody, {@code Subscriptions.subscribe}'s rule, and its subscribers renew what
+     * they hold. A free period of a priced plan is not an extension anybody can pay for.
      */
     public Optional<Money> extensionPriceFor(BillingPeriod period, SubscriptionPlan plan) {
         if (period == null) {
@@ -288,15 +302,20 @@ public class Subscription {
         if (period == billingPeriod) {
             return Optional.of(getPrice());
         }
-        return requirePlan(plan).priceFor(period).filter(Money::isPositive);
+        if (!requirePlan(plan).isListed()) {
+            return Optional.empty();
+        }
+        return plan.priceFor(period).filter(Money::isPositive);
     }
 
     /** Every period this subscription can be extended by now and what each costs, shortest first — #660. */
     public SortedMap<BillingPeriod, Money> extensionPrices(SubscriptionPlan plan) {
         SortedMap<BillingPeriod, Money> prices = new TreeMap<>();
-        for (Map.Entry<BillingPeriod, Money> sold : requirePlan(plan).getPrices().entrySet()) {
-            if (sold.getValue().isPositive()) {
-                prices.put(sold.getKey(), sold.getValue());
+        if (requirePlan(plan).isListed()) {
+            for (Map.Entry<BillingPeriod, Money> sold : plan.getPrices().entrySet()) {
+                if (sold.getValue().isPositive()) {
+                    prices.put(sold.getKey(), sold.getValue());
+                }
             }
         }
         prices.put(billingPeriod, getPrice());
@@ -328,12 +347,18 @@ public class Subscription {
      *
      * <p>Calendar arithmetic in UTC, like {@link BillingPeriod#endOf}: a month before a period that
      * ends on 31 March opens on 28 or 29 February, clamped rather than spilling into March.
+     *
+     * <p>Never before the running period began (#660). A month extended on 30 March from an end of
+     * 31 March ends on 30 April, and 30 April minus a month is 30 March — already past, so without
+     * this the window would reopen the moment the extension settled and extensions could be
+     * stacked one after another near a month's end.
      */
     public Instant renewalOpensAt(Period renewalWindow) {
         if (state != SubscriptionState.ACTIVE || currentPeriodEnd == null || price.signum() == 0) {
             return null;
         }
-        return currentPeriodEnd.atOffset(ZoneOffset.UTC).minus(renewalWindow).toInstant();
+        Instant opens = currentPeriodEnd.atOffset(ZoneOffset.UTC).minus(renewalWindow).toInstant();
+        return currentPeriodStart != null && currentPeriodStart.isAfter(opens) ? currentPeriodStart : opens;
     }
 
     /** What paying for this subscription now would be for. */
@@ -433,6 +458,11 @@ public class Subscription {
 
     public Instant getStartedAt() {
         return startedAt;
+    }
+
+    /** When the running period began, or null on a row last paid before V129. */
+    public Instant getCurrentPeriodStart() {
+        return currentPeriodStart;
     }
 
     public Instant getCurrentPeriodEnd() {
