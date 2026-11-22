@@ -43,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Nothing is charged without the creator on the provider's page. The first period of a pending
  * subscription is paid the same way a renewal is, and a renewal is offered only inside the renewal
- * window before the period ends ({@link SubscriptionProperties#renewalWindow()}, the last calendar
+ * window before the period ends ({@link SubscriptionProperties#extensionWindow()}, the last calendar
  * month since #660). No card is stored and nothing is collected on a schedule: the epic argues why.
  *
  * <h2>An extension may be for another period (#660)</h2>
@@ -121,7 +121,7 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
             UUID accountId, BillingPeriod period, String language, URI successUrl, URI errorUrl) {
         Instant now = clock.instant();
         Subscription held = subscriptions.openFor(accountId).orElseThrow(NoSubscriptionException::new);
-        Subscription.DuePayment due = held.paymentDueAt(now, properties.renewalWindow())
+        Subscription.DuePayment due = held.paymentDueAt(now, properties.extensionWindow())
                 .orElseThrow(() -> new NoPaymentDueException(reasonNothingIsDue(held, now)));
         SubscriptionPlan plan = plans.findById(held.getPlanId())
                 .orElseThrow(() -> new UnknownPlanException(held.getPlanId()));
@@ -157,12 +157,12 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
 
     /** What {@link #pay} would pay for now, for the client to offer the right button. Empty when nothing. */
     public Optional<Subscription.DuePayment> dueFor(Subscription subscription, Instant now) {
-        return subscription.paymentDueAt(now, properties.renewalWindow());
+        return subscription.paymentDueAt(now, properties.extensionWindow());
     }
 
     /** When renewing this subscription's period is first offered, or null. */
     public Instant renewalOpensAt(Subscription subscription) {
-        return subscription.renewalOpensAt(properties.renewalWindow());
+        return subscription.renewalOpensAt(properties.extensionWindow());
     }
 
     /**

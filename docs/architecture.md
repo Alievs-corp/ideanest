@@ -2856,8 +2856,11 @@ audited under their name. A plan priced at zero activates on the spot.
 
 **Every period is paid by the creator, on purpose (epic #448).** There is no
 stored card and nothing is charged on a schedule. Inside the renewal window
-before a period ends (`ideanest.subscription.renewal-window`, env
-`SUBSCRIPTION_RENEWAL_WINDOW`), the creator may pay for the next period on the
+before a period ends (`ideanest.subscription.extension-window`, env
+`SUBSCRIPTION_EXTENSION_WINDOW`; the old `renewal-window` /
+`SUBSCRIPTION_RENEWAL_WINDOW`, a seven-day `Duration`, is retired on purpose and
+no longer read, so a deployment still setting it neither fails to start nor
+keeps the seven-day rule), the creator may pay for the next period on the
 provider's page; paying extends the same row **from the old end**, so renewing
 early loses no days, or from the payment if the period had already run out. A
 lapsed plan is not renewed but bought again. Why not `cardSave` and `autoPay`:

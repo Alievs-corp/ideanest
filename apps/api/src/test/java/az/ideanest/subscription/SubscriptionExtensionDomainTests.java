@@ -17,6 +17,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 
 /**
  * Extending a running subscription — #660, without a database.
@@ -109,13 +111,29 @@ class SubscriptionExtensionDomainTests {
         @Test
         @DisplayName("refuses a window of nothing, or a negative one")
         void theWindowIsPositive() {
-            assertThat(new SubscriptionProperties(null).renewalWindow()).isEqualTo(Period.ofMonths(1));
-            assertThat(new SubscriptionProperties(Period.ofDays(7)).renewalWindow()).isEqualTo(Period.ofDays(7));
+            assertThat(new SubscriptionProperties(null).extensionWindow()).isEqualTo(Period.ofMonths(1));
+            assertThat(new SubscriptionProperties(Period.ofDays(7)).extensionWindow()).isEqualTo(Period.ofDays(7));
             assertThatThrownBy(() -> new SubscriptionProperties(Period.ZERO)).isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> new SubscriptionProperties(Period.ofMonths(-1)))
                     .isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> new SubscriptionProperties(Period.of(0, 1, -3)))
                     .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        @DisplayName("binds extension-window, and ignores the retired renewal-window however it is set")
+        void theRetiredPropertyIsNotRead() {
+            assertThat(bind(Map.of("ideanest.subscription.renewal-window", "PT168H")).extensionWindow())
+                    .isEqualTo(Period.ofMonths(1));
+            assertThat(bind(Map.of("ideanest.subscription.renewal-window", "P7D")).extensionWindow())
+                    .isEqualTo(Period.ofMonths(1));
+            assertThat(bind(Map.of("ideanest.subscription.extension-window", "P2M")).extensionWindow())
+                    .isEqualTo(Period.ofMonths(2));
+        }
+
+        private static SubscriptionProperties bind(Map<String, String> properties) {
+            return new Binder(new MapConfigurationPropertySource(properties))
+                    .bindOrCreate("ideanest.subscription", SubscriptionProperties.class);
         }
     }
 
