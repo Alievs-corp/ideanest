@@ -73,6 +73,7 @@ public class SubscriptionChargeEvents implements PaymentEventHandler {
                 charge.getSubscriptionId(),
                 charge.getAccountId(),
                 charge.getAmount(),
+                charge.getBillingPeriod(),
                 charge.getProvider().name(),
                 reference,
                 now));

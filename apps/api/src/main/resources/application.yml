@@ -520,9 +520,12 @@ ideanest:
 
   subscription:
     # Creator plans, epic #448. A plan is paid by the creator for every period on the
-    # provider's page; nothing is charged on a schedule. Renewing is offered this long
-    # before a period ends (#449).
-    renewal-window: ${SUBSCRIPTION_RENEWAL_WINDOW:P7D}
+    # provider's page; nothing is charged on a schedule. Renewing -- extending a running
+    # subscription, for its own period or another one the plan is sold for -- is offered this
+    # long before a period ends (#449, #660). A calendar period (ISO-8601 `P1M`, `P7D`), not a
+    # duration: one month before 31 March is 28/29 February. The reminders below keep their
+    # own lead times.
+    renewal-window: ${SUBSCRIPTION_RENEWAL_WINDOW:P1M}
     reminders:
       # #450: `subscription-renewal-reminders`. Hourly, 09:00-20:00 in Baku (#457), so a lead
       # is met within the hour and nobody is pushed at night. Nothing renews a plan by itself

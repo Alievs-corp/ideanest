@@ -29,7 +29,9 @@ import org.springframework.stereotype.Service;
  * {@code hosted-charges.answered-after} is still waiting, it is returned instead of opening another
  * order — two open orders for one period are two payments a creator could make. After that window
  * the sweep starts asking about the old page, and a new one may be opened; if both are paid, each
- * pays for a period of its own.
+ * pays for a period of its own. A page open for another period or amount (#660: the creator chose
+ * to extend by a year after opening the page for a month) is not returned to; the new one is
+ * opened beside it, and each pays for what it says if both are paid.
  */
 @Service
 public class SubscriptionCheckout {
@@ -71,7 +73,9 @@ public class SubscriptionCheckout {
 
         Optional<SubscriptionCharge> open = charges.findFirstBySubscriptionIdAndStatusOrderByOpenedAtDesc(
                 request.subscriptionId(), SubscriptionCharge.Status.PENDING);
-        if (open.isPresent() && open.get().isReusableAt(now, properties.answeredAfter())) {
+        if (open.isPresent()
+                && open.get().isReusableAt(now, properties.answeredAfter())
+                && open.get().isFor(request.billingPeriod(), request.amount())) {
             SubscriptionCharge reused = open.get();
             log.info("Returned subscription {} to its open payment {}.",
                     request.subscriptionId(), reused.getProviderTransactionId());
@@ -110,6 +114,7 @@ public class SubscriptionCheckout {
                 request.accountId(),
                 request.renewal() ? SubscriptionCharge.Purpose.RENEWAL : SubscriptionCharge.Purpose.FIRST_PERIOD,
                 request.amount(),
+                request.billingPeriod(),
                 provider.name(),
                 session,
                 now));

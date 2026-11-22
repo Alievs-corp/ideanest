@@ -159,7 +159,8 @@ public class SubscriptionController {
      * Opens the provider's page for whatever the caller owes now — #449.
      *
      * <p>The first period of a pending subscription, or the next period of one whose end is inside
-     * the renewal window. Idempotent on the key like every payment mutation: a retried request
+     * the renewal window. A renewal may name another period the plan is sold for (#660), at the
+     * price {@code renewalPrices} showed for it; a first period may name only its own. Idempotent on the key like every payment mutation: a retried request
      * answers with the page it opened. A second key while that page is still open is sent back to
      * it rather than given a second order.
      */
@@ -170,7 +171,7 @@ public class SubscriptionController {
             @RequestBody(required = false) PayForPlanRequest body) {
 
         UUID accountId = callerOf(accessToken);
-        PayForPlanRequest request = body == null ? new PayForPlanRequest(null, null, null) : body;
+        PayForPlanRequest request = body == null ? new PayForPlanRequest(null, null, null, null) : body;
         RecordedResponse response = idempotency.execute(
                 accountId,
                 "subscription.pay",
@@ -178,8 +179,12 @@ public class SubscriptionController {
                 request,
                 HttpStatus.OK.value(),
                 () -> {
-                    SubscriptionPaymentPage page =
-                            cardPayments.pay(accountId, request.language(), request.successUrl(), request.errorUrl());
+                    SubscriptionPaymentPage page = cardPayments.pay(
+                            accountId,
+                            request.billingPeriod(),
+                            request.language(),
+                            request.successUrl(),
+                            request.errorUrl());
                     return new SubscriptionResponses.PaymentPage(page.providerTransactionId(), page.redirectUrl());
                 });
         return ResponseEntity.status(response.status())
@@ -192,8 +197,11 @@ public class SubscriptionController {
      * @param language the payment page's language: az, en or ru
      * @param successUrl where the provider returns the creator after paying
      * @param errorUrl where it returns them after a failure
+     * @param billingPeriod how long a period to pay for — #660. Absent means the subscription's own.
+     *     Another one is accepted only for a renewal, from {@code renewalPrices}; for a first period,
+     *     or a period the plan is not sold for, it is refused with {@code PERIOD_NOT_OFFERED}
      */
-    public record PayForPlanRequest(String language, URI successUrl, URI errorUrl) {
+    public record PayForPlanRequest(String language, URI successUrl, URI errorUrl, BillingPeriod billingPeriod) {
     }
 
     @DeleteMapping("/v1/me/subscription")
@@ -227,13 +235,17 @@ public class SubscriptionController {
 
         return subscriptions
                 .heldBy(accountId)
-                .map(held -> new SubscriptionResponses.Mine(SubscriptionResponses.Held.of(
-                        held,
-                        planOf(held),
-                        ReaderLocale.fromAcceptLanguage(acceptLanguage),
-                        now,
-                        cardPayments.dueFor(held, now).orElse(null),
-                        cardPayments.renewalOpensAt(held))))
+                .map(held -> {
+                    SubscriptionPlan plan = planOf(held);
+                    return new SubscriptionResponses.Mine(SubscriptionResponses.Held.of(
+                            held,
+                            plan,
+                            ReaderLocale.fromAcceptLanguage(acceptLanguage),
+                            now,
+                            cardPayments.dueFor(held, now).orElse(null),
+                            cardPayments.renewalOpensAt(held),
+                            cardPayments.renewalPricesFor(held, plan, now)));
+                })
                 .orElse(SubscriptionResponses.Mine.NONE);
     }
 

@@ -113,7 +113,8 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
         Map<String, Object> held = mine(creator);
         assertThat(held.get("state")).isEqualTo("ACTIVE");
         assertThat(held.get("entitled")).isEqualTo(true);
-        assertThat(held.get("paymentDue")).isNull();
+        // #660: a month's last month is all of it, so a monthly plan may be extended at once.
+        assertThat(held.get("paymentDue")).isEqualTo("RENEWAL");
         Instant end = Instant.parse((String) held.get("currentPeriodEnd"));
         assertThat(end).isAfter(Instant.now().plus(Duration.ofDays(27)));
 
@@ -212,17 +213,19 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a running period cannot be renewed before the window opens")
+    @DisplayName("a running period cannot be renewed before the window opens, a calendar month before its end")
     void renewalWaitsForTheWindow() {
         Account creator = active();
+        Instant end = Instant.now().plus(Duration.ofDays(45)).truncatedTo(ChronoUnit.SECONDS);
+        endsAt(creator, end);
 
         ResponseEntity<Map<String, Object>> refused = pay(creator, UUID.randomUUID().toString());
 
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(refused.getBody().get("code")).isEqualTo("SUBSCRIPTION_PAYMENT_NOT_DUE");
         assertThat(refused.getBody().get("reason")).isEqualTo("RENEWAL_NOT_OPEN");
-        Instant end = Instant.parse((String) mine(creator).get("currentPeriodEnd"));
-        assertThat(Instant.parse((String) mine(creator).get("renewalOpensAt"))).isEqualTo(end.minus(Duration.ofDays(7)));
+        assertThat(Instant.parse((String) mine(creator).get("renewalOpensAt")))
+                .isEqualTo(end.atOffset(ZoneOffset.UTC).minusMonths(1).toInstant());
     }
 
     @Test

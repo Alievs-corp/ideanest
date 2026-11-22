@@ -11,6 +11,8 @@ import az.ideanest.subscription.domain.SubscriptionState;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.Period;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -264,7 +266,7 @@ class SubscriptionDomainTests {
     @DisplayName("paying by card (#449)")
     class CardPayments {
 
-        private static final Duration WINDOW = Duration.ofDays(7);
+        private static final Period WINDOW = Period.ofMonths(1);
 
         @Test
         @DisplayName("a paid first period names nobody as having activated it")
@@ -294,7 +296,7 @@ class SubscriptionDomainTests {
         void renewalWindow() {
             Subscription held = active("49.00");
             Instant end = held.getCurrentPeriodEnd();
-            Instant opens = end.minus(WINDOW);
+            Instant opens = end.atOffset(ZoneOffset.UTC).minusMonths(1).toInstant();
 
             assertThat(held.renewalOpensAt(WINDOW)).isEqualTo(opens);
             assertThat(held.paymentDueAt(opens.minusMillis(1), WINDOW)).isEmpty();

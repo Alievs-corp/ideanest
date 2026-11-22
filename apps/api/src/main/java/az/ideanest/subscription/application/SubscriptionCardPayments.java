@@ -10,8 +10,10 @@ import az.ideanest.payment.application.SubscriptionPaymentPage;
 import az.ideanest.payment.application.SubscriptionPaymentRequest;
 import az.ideanest.shared.Identifiers;
 import az.ideanest.shared.access.StudentStandings;
+import az.ideanest.shared.money.Money;
 import az.ideanest.shared.outbox.Outbox;
 import az.ideanest.subscription.SubscriptionProperties;
+import az.ideanest.subscription.domain.BillingPeriod;
 import az.ideanest.subscription.domain.PaymentMethod;
 import az.ideanest.subscription.domain.Subscription;
 import az.ideanest.subscription.domain.SubscriptionPayment;
@@ -25,6 +27,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +43,15 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Nothing is charged without the creator on the provider's page. The first period of a pending
  * subscription is paid the same way a renewal is, and a renewal is offered only inside the renewal
- * window before the period ends ({@link SubscriptionProperties#renewalWindow()}). No card is stored
- * and nothing is collected on a schedule: the epic argues why.
+ * window before the period ends ({@link SubscriptionProperties#renewalWindow()}, the last calendar
+ * month since #660). No card is stored and nothing is collected on a schedule: the epic argues why.
+ *
+ * <h2>An extension may be for another period (#660)</h2>
+ *
+ * <p>A renewal names the period it buys: its own at the subscription's own price, or another the
+ * plan is sold for at the plan's current price ({@link Subscription#extensionPriceFor}). The page
+ * records both, and settlement extends by what the page says rather than by what the plan says
+ * when the money arrives.
  *
  * <h2>What the money means is decided when it arrives</h2>
  *
@@ -100,16 +111,31 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
      * @throws StudentVerificationRequiredException when the plan is for students and the account
      *     is not a verified student now — #655. Asked of the first period and of every renewal,
      *     because an approval lasts a year and a subscription may outlive it
+     * @throws PeriodNotOfferedException when {@code period} is one the plan is not sold for, or,
+     *     for a first period, any period but the one chosen — #660. A creator who wants another
+     *     period before paying chooses again through {@code Subscriptions.subscribe}
      * @throws az.ideanest.payment.application.SubscriptionCheckoutUnavailableException when no
      *     provider can take the payment now
      */
-    public SubscriptionPaymentPage pay(UUID accountId, String language, URI successUrl, URI errorUrl) {
+    public SubscriptionPaymentPage pay(
+            UUID accountId, BillingPeriod period, String language, URI successUrl, URI errorUrl) {
         Instant now = clock.instant();
         Subscription held = subscriptions.openFor(accountId).orElseThrow(NoSubscriptionException::new);
         Subscription.DuePayment due = held.paymentDueAt(now, properties.renewalWindow())
                 .orElseThrow(() -> new NoPaymentDueException(reasonNothingIsDue(held, now)));
         SubscriptionPlan plan = plans.findById(held.getPlanId())
                 .orElseThrow(() -> new UnknownPlanException(held.getPlanId()));
+
+        BillingPeriod chosen = period == null ? held.getBillingPeriod() : period;
+        Money price;
+        if (due == Subscription.DuePayment.RENEWAL) {
+            price = held.extensionPriceFor(chosen, plan)
+                    .orElseThrow(() -> new PeriodNotOfferedException(plan.getId(), chosen));
+        } else if (chosen == held.getBillingPeriod()) {
+            price = held.getPrice();
+        } else {
+            throw new PeriodNotOfferedException(plan.getId(), chosen);
+        }
         // What was bought decides, not the plan's flag today: a plan marked student-only after
         // somebody subscribed must not stop them renewing what they bought.
         if (held.isStudentRate() && !students.isVerifiedStudent(accountId, now)) {
@@ -120,7 +146,8 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
                 new SubscriptionPaymentRequest(
                         held.getId(),
                         accountId,
-                        held.getPrice(),
+                        price,
+                        chosen.name(),
                         plan.getName(),
                         due == Subscription.DuePayment.RENEWAL),
                 language,
@@ -136,6 +163,18 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
     /** When renewing this subscription's period is first offered, or null. */
     public Instant renewalOpensAt(Subscription subscription) {
         return subscription.renewalOpensAt(properties.renewalWindow());
+    }
+
+    /**
+     * What extending the subscription by each period costs now, shortest first — #660. Empty
+     * unless a renewal is due, so a client offers the choice only when {@link #pay} would take it.
+     */
+    public SortedMap<BillingPeriod, Money> renewalPricesFor(
+            Subscription subscription, SubscriptionPlan plan, Instant now) {
+        if (dueFor(subscription, now).orElse(null) != Subscription.DuePayment.RENEWAL) {
+            return new TreeMap<>();
+        }
+        return subscription.extensionPrices(plan);
     }
 
     @Override
@@ -156,7 +195,12 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
         Instant now = charge.paidAt().truncatedTo(ChronoUnit.MICROS);
 
         boolean renewal = subscription.getState() == SubscriptionState.ACTIVE;
-        if (renewal) {
+        if (renewal && charge.billingPeriod() != null) {
+            // The page's period and amount, never the plan's: a repricing between the redirect and
+            // this callback must not change what was bought (#660).
+            subscription.extend(BillingPeriod.valueOf(charge.billingPeriod()), charge.amount(), now);
+        } else if (renewal) {
+            // A page opened before V129 recorded no period; it was opened for the row's own.
             subscription.renew(now);
         } else {
             subscription.activatePaid(plan, now);

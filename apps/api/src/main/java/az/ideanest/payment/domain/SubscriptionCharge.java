@@ -70,6 +70,16 @@ public class SubscriptionCharge {
     @Column(name = "currency", nullable = false, updatable = false)
     private String currency;
 
+    /**
+     * How long a period this pays for, as the subscription module names it ({@code MONTHLY},
+     * {@code SEMIANNUAL}, {@code YEARLY}) — V129, #660. A name rather than the subscription's enum,
+     * for {@link az.ideanest.payment.application.SubscriptionChargeSettlement}'s reason: this module
+     * does not name subscription types. Null on a page opened before V129, which pays for the
+     * subscription's own period.
+     */
+    @Column(name = "billing_period", updatable = false)
+    private String billingPeriod;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "provider", nullable = false, updatable = false)
     private ProviderName provider;
@@ -129,6 +139,7 @@ public class SubscriptionCharge {
             UUID accountId,
             Purpose purpose,
             Money amount,
+            String billingPeriod,
             ProviderName provider,
             HostedPaymentSession session,
             Instant at) {
@@ -139,6 +150,7 @@ public class SubscriptionCharge {
         charge.purpose = Objects.requireNonNull(purpose);
         charge.amount = Objects.requireNonNull(amount).amount();
         charge.currency = amount.currency();
+        charge.billingPeriod = Objects.requireNonNull(billingPeriod, "A plan payment is for some period");
         charge.provider = Objects.requireNonNull(provider);
         charge.providerTransactionId = session.providerTransactionId();
         charge.paymentUrl = session.redirectUrl().toString();
@@ -219,6 +231,14 @@ public class SubscriptionCharge {
         return isPending() && openedAt.plus(reuseFor).isAfter(now);
     }
 
+    /**
+     * Whether this page asks for exactly this payment — the same period at the same amount (#660).
+     * A page opened for a month is not the page for a year, and is not returned to for one.
+     */
+    public boolean isFor(String period, Money price) {
+        return Objects.equals(billingPeriod, period) && getAmount().equals(price);
+    }
+
     private void settle(Status outcome, Instant at, String raw) {
         if (!isPending()) {
             throw new IllegalStateException("Subscription charge " + id + " is already " + status);
@@ -246,6 +266,11 @@ public class SubscriptionCharge {
 
     public Money getAmount() {
         return Money.of(amount, currency);
+    }
+
+    /** The period this pays for, or null for a page opened before V129. */
+    public String getBillingPeriod() {
+        return billingPeriod;
     }
 
     public ProviderName getProvider() {

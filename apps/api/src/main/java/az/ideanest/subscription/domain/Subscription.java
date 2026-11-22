@@ -10,10 +10,14 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.Instant;
+import java.time.Period;
+import java.time.ZoneOffset;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.UUID;
 
 /**
@@ -22,8 +26,9 @@ import java.util.UUID;
  * <h2>The price is copied here; the limits are not</h2>
  *
  * <p>{@link #price}, {@link #currency} and {@link #billingPeriod} are snapshots taken at
- * purchase. The limits are read live from the plan, every time. V62's header has the full
- * argument; the short form is that a price that moved under a subscriber is a bill they
+ * purchase, and replaced only by a paid extension (#660), which is a new agreement at the
+ * price the creator was shown for it. The limits are read live from the plan, every time.
+ * V62's header has the full argument; the short form is that a price that moved under a subscriber is a bill they
  * never agreed to, whereas a limit that moved is either a gift or a change that reaches
  * only their next submission.
  *
@@ -62,15 +67,18 @@ public class Subscription {
     @Column(name = "state", nullable = false)
     private SubscriptionState state;
 
+    // Updatable since #660, deliberately: a paid extension for another period replaces the
+    // snapshot, so the next renewal defaults to what the creator last bought. Only
+    // #extend writes them after the row is created.
     @Convert(converter = MoneyAmountConverter.class)
-    @Column(name = "price", nullable = false, updatable = false)
+    @Column(name = "price", nullable = false)
     private BigDecimal price;
 
-    @Column(name = "currency", nullable = false, updatable = false)
+    @Column(name = "currency", nullable = false)
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "billing_period", nullable = false, updatable = false)
+    @Column(name = "billing_period", nullable = false)
     private BillingPeriod billingPeriod;
 
     @Column(name = "started_at")
@@ -232,14 +240,67 @@ public class Subscription {
      * they bought, whatever the plan costs new buyers today.
      */
     public void renew(Instant now) {
+        extend(billingPeriod, getPrice(), now);
+    }
+
+    /**
+     * One more period of the length the creator chose, at the price they paid for it — #660.
+     *
+     * <p>{@link #renew}'s arithmetic, from the end of the running period or from now if it has run
+     * out, by {@code period} rather than this row's own. The row then holds the period and the
+     * price that were paid, so the next renewal defaults to them: a creator who extended a month by
+     * a year has a yearly subscription at the price they were shown for the year.
+     *
+     * <p>Both come from the paid charge, never from the plan: a repricing between the provider's
+     * page and its callback must not change what was bought.
+     *
+     * @throws IllegalStateException unless it is active
+     */
+    public void extend(BillingPeriod period, Money paid, Instant now) {
         if (state != SubscriptionState.ACTIVE) {
             throw new IllegalStateException("Only an active subscription can be renewed");
         }
+        requirePeriod(period);
+        Objects.requireNonNull(paid, "An extension was paid for");
         Instant from = currentPeriodEnd.isAfter(require(now)) ? currentPeriodEnd : now;
-        this.currentPeriodEnd = billingPeriod.endOf(from);
+        this.currentPeriodEnd = period.endOf(from);
+        this.billingPeriod = period;
+        this.price = paid.amount();
+        this.currency = paid.currency();
         this.cancelAtPeriodEnd = false;
         this.canceledAt = null;
         this.updatedAt = now;
+    }
+
+    /**
+     * What extending this subscription by {@code period} costs now — #660. Empty when the plan is
+     * not sold for that period.
+     *
+     * <p>Its own period at its own price, whatever the plan costs new buyers today: renewing what
+     * was bought is the snapshot's whole point, and it stays on offer even if the plan stops
+     * selling that period. Any other period is the plan's current price for it, because that is
+     * a new agreement. A free period of a priced plan is not an extension anybody can pay for.
+     */
+    public Optional<Money> extensionPriceFor(BillingPeriod period, SubscriptionPlan plan) {
+        if (period == null) {
+            return Optional.empty();
+        }
+        if (period == billingPeriod) {
+            return Optional.of(getPrice());
+        }
+        return requirePlan(plan).priceFor(period).filter(Money::isPositive);
+    }
+
+    /** Every period this subscription can be extended by now and what each costs, shortest first — #660. */
+    public SortedMap<BillingPeriod, Money> extensionPrices(SubscriptionPlan plan) {
+        SortedMap<BillingPeriod, Money> prices = new TreeMap<>();
+        for (Map.Entry<BillingPeriod, Money> sold : requirePlan(plan).getPrices().entrySet()) {
+            if (sold.getValue().isPositive()) {
+                prices.put(sold.getKey(), sold.getValue());
+            }
+        }
+        prices.put(billingPeriod, getPrice());
+        return prices;
     }
 
     /**
@@ -249,9 +310,10 @@ public class Subscription {
      * that is still running and whose end is inside the renewal window. A lapsed subscription is
      * bought again rather than renewed, through {@code Subscriptions.subscribe}.
      *
-     * @param renewalWindow how long before the end of a period renewing it is offered
+     * @param renewalWindow how long before the end of a period renewing it is offered, as calendar
+     *     time (#660)
      */
-    public Optional<DuePayment> paymentDueAt(Instant now, Duration renewalWindow) {
+    public Optional<DuePayment> paymentDueAt(Instant now, Period renewalWindow) {
         if (state == SubscriptionState.PENDING_PAYMENT) {
             return Optional.of(DuePayment.FIRST_PERIOD);
         }
@@ -261,12 +323,17 @@ public class Subscription {
         return Optional.empty();
     }
 
-    /** When renewing this period is first offered, or null for a row with no running period. */
-    public Instant renewalOpensAt(Duration renewalWindow) {
+    /**
+     * When renewing this period is first offered, or null for a row with no running period.
+     *
+     * <p>Calendar arithmetic in UTC, like {@link BillingPeriod#endOf}: a month before a period that
+     * ends on 31 March opens on 28 or 29 February, clamped rather than spilling into March.
+     */
+    public Instant renewalOpensAt(Period renewalWindow) {
         if (state != SubscriptionState.ACTIVE || currentPeriodEnd == null || price.signum() == 0) {
             return null;
         }
-        return currentPeriodEnd.minus(renewalWindow);
+        return currentPeriodEnd.atOffset(ZoneOffset.UTC).minus(renewalWindow).toInstant();
     }
 
     /** What paying for this subscription now would be for. */
