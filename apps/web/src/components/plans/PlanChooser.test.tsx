@@ -134,7 +134,8 @@ afterEach(() => {
 });
 
 /** The plan's own price, as the page prints it. */
-const PRICE = formatPrice('19.00', 'AZN', 'en');
+/** The held plan's price as the pay and renew lines print it: with the period it buys (#655). */
+const PRICE = `${formatPrice('19.00', 'AZN', 'en')} (${COPY.periods.MONTHLY})`;
 
 /** A date as the panel prints it, through the same formatter. */
 function day(iso: string): string {

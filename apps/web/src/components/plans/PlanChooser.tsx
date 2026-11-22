@@ -7,6 +7,7 @@ import { newIdempotencyKey } from '@ideanest/checkout/idempotency';
 import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
 import { canChoose } from '@ideanest/plans/choice';
 import { planPaymentRefusalOf, planPaymentReturnOf } from '@ideanest/plans/payment';
+import { isZeroAmount, offeredPeriods, priceFor, refusalOf } from '@ideanest/plans/periods';
 import { qualifiesForStudentPlans } from '@ideanest/plans/student';
 import { ApiError } from '../../lib/api/problem';
 import {
@@ -23,8 +24,6 @@ import {
   type PlanPaymentReturn,
   type PlanPaymentReturnHint,
 } from '../../lib/plans/api';
-// The contract's period rules without `decimal.js`, which `@ideanest/plans/catalogue` brings.
-import { offeredPeriods, priceFor, refusalOf } from '../../lib/plans/periods';
 import { readMyStudentVerification, type StudentVerification } from '../../lib/plans/student';
 import { leaveForPaymentPage } from '../../lib/pledges/payment';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -88,10 +87,11 @@ import { Link, useRouter } from '../../i18n/navigation';
  * <h2>A student plan asks for a student card first</h2>
  *
  * A `studentOnly` card says so, and what its button does depends on the reader's student
- * verification, read beside the subscription: approved, it subscribes like any other; pending,
- * it says the card is being checked and does nothing; anything else, it goes to the page where
- * the card is sent. A reader whose verification could not be read is offered the ordinary button,
- * and the service's `STUDENT_VERIFICATION_REQUIRED` is put into words if it refuses.
+ * verification, read beside the subscription (`studentStep`, the app's rule): approved, it
+ * subscribes like any other; pending, it says the card is being checked and does nothing; not yet
+ * answered, it offers nothing; anything else — signed out, refused, expired, or a check that could
+ * not be read — it goes to the page where the card is sent. The service's
+ * `STUDENT_VERIFICATION_REQUIRED` is put into words if it refuses anyway.
  *
  * MOTION: none. `docs/motion-system.md` §5 gives money surfaces no entry animation, and this
  * is the page where somebody decides to spend some.
@@ -123,9 +123,10 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
   const [returned, setReturned] = useState<PlanPaymentReturnHint | null>(null);
   const [checks, setChecks] = useState(0);
   const periods = offeredPeriods(plans);
-  const [period, setPeriod] = useState<BillingPeriod>(() => periods[0] ?? 'MONTHLY');
-  // `null` until read, and left `null` when it could not be: the ordinary button is offered then.
-  const [student, setStudent] = useState<StudentVerification | null>(null);
+  // The reader's pick; until they make one, the switch follows what they hold (`periodShown`).
+  const [chosenPeriod, setChosenPeriod] = useState<BillingPeriod | null>(null);
+  const period = periodShown(periods, chosenPeriod, held === null || held.state === 'CANCELED' ? null : held.billingPeriod);
+  const [student, setStudent] = useState<StudentRead>({ state: 'loading' });
   const sellsStudentPlans = plans.some((plan) => plan.studentOnly);
 
   const announcement = useRef<HTMLDivElement>(null);
@@ -166,8 +167,8 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
 
   /*
    * The student check, read only for a signed-in reader and only when a student plan is on sale:
-   * nobody else's card has a button that depends on it. A failed read leaves it unknown, which
-   * offers the ordinary button rather than hiding a plan behind a request that did not answer.
+   * nobody else's card has a button that depends on it. Until it answers the student card offers
+   * no choice; a read that failed offers the student page, which says itself what it can read.
    */
   useEffect(() => {
     if (status !== 'ready' || !sellsStudentPlans) return;
@@ -176,9 +177,9 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
     void (async () => {
       try {
         const verification = await readMyStudentVerification(controller.signal);
-        if (!controller.signal.aborted) setStudent(verification);
+        if (!controller.signal.aborted) setStudent({ state: 'read', verification });
       } catch {
-        // Unknown, and the service still decides: its refusal is put into words if it comes.
+        if (!controller.signal.aborted) setStudent({ state: 'failed' });
       }
     })();
 
@@ -215,7 +216,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
         // so the student check is read again and the card's button follows it.
         if (cause instanceof ApiError && cause.problem?.code === 'STUDENT_VERIFICATION_REQUIRED') {
           try {
-            setStudent(await readMyStudentVerification());
+            setStudent({ state: 'read', verification: await readMyStudentVerification() });
           } catch {
             // The sentence above already says what is needed.
           }
@@ -430,7 +431,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
           {periods.length > 1 && (
             <ChipRow aria-label={copy.periods.label}>
               {periods.map((option) => (
-                <Chip key={option} active={period === option} onClick={() => setPeriod(option)}>
+                <Chip key={option} active={period === option} onClick={() => setChosenPeriod(option)}>
                   {copy.periods[option]}
                 </Chip>
               ))}
@@ -455,7 +456,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
                   disabled={
                     !sold || busyPlan !== null || outcome === 'waiting' || !canChoose(held, plan.id, period)
                   }
-                  student={plan.studentOnly ? studentStep(student) : 'choose'}
+                  student={plan.studentOnly ? studentStep(status, student) : 'choose'}
                   onChoose={() => void choose(plan.id, period)}
                   tone={planTone(index)}
                 />
@@ -490,7 +491,9 @@ function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, o
   const renewing = due === 'RENEWAL' && held.entitled;
   // The subscription's own snapshot price, not today's catalogue price (V62): a renewal is charged
   // at the price the creator bought at.
-  const price = formatPrice(held.price, held.currency, locale);
+  // With the period it buys (#655): "60 ₼" is six months of one plan and a month of another.
+  // Bracketed rather than "for 6 months", which reads wrongly inside "Renew for {price}" in Turkish.
+  const price = `${formatPrice(held.price, held.currency, locale)} (${copy.periods[held.billingPeriod]})`;
   const opensAt = due === null && held.entitled ? formatDate(held.renewalOpensAt, locale) : '';
 
   return (
@@ -641,18 +644,43 @@ function PaymentReturnNotice({
  * One plan
  * ---------------------------------------------------------------------- */
 
-/**
- * What a student plan's button does for this reader (#655).
- *
- * <p>`choose` — approved, or not known: the ordinary button, and the service decides. `verify` —
- * nothing approved: the button goes to the page where the card is sent. `pending` — sent and not
- * yet decided: the button says so and does nothing.
- */
-export type StudentStep = 'choose' | 'verify' | 'pending';
+/** The student check as this page has it: not yet answered, answered, or not readable. */
+export type StudentRead =
+  | { readonly state: 'loading' }
+  | { readonly state: 'read'; readonly verification: StudentVerification }
+  | { readonly state: 'failed' };
 
-export function studentStep(verification: StudentVerification | null): StudentStep {
-  if (verification === null || qualifiesForStudentPlans(verification)) return 'choose';
-  return verification.state === 'PENDING' ? 'pending' : 'verify';
+/**
+ * What a student plan's button does for this reader (#655) — the app's `studentStandingOf`.
+ *
+ * <p>`choose` — approved: the ordinary button. `pending` — sent and not yet decided: the button says
+ * so and does nothing. `unknown` — the check has not answered: no choice is offered, because one
+ * the service is about to refuse is not an offer. `verify` — anything else, including a reader
+ * with no session and a check that could not be read: the button goes to the student page, which
+ * signs the reader in and says itself what it can read.
+ */
+export type StudentStep = 'choose' | 'verify' | 'pending' | 'unknown';
+
+export function studentStep(status: 'loading' | 'ready' | 'signed-out', read: StudentRead): StudentStep {
+  if (status === 'signed-out') return 'verify';
+  if (status === 'loading' || read.state === 'loading') return 'unknown';
+  if (read.state === 'failed') return 'verify';
+  if (read.verification.state === 'PENDING') return 'pending';
+  return qualifiesForStudentPlans(read.verification) ? 'choose' : 'verify';
+}
+
+/**
+ * The period the cards are priced for: the reader's pick while it is still offered, else the held
+ * plan's period when it is, else the shortest offered — the app's `periodShown`.
+ */
+export function periodShown(
+  periods: readonly BillingPeriod[],
+  chosen: BillingPeriod | null,
+  held: BillingPeriod | null,
+): BillingPeriod {
+  if (chosen !== null && periods.includes(chosen)) return chosen;
+  if (held !== null && periods.includes(held)) return held;
+  return periods[0] ?? 'MONTHLY';
 }
 
 interface PlanCardProps {
@@ -671,9 +699,11 @@ interface PlanCardProps {
 
 function PlanCard({ plan, period, copy, locale, current, busy, disabled, student, onChoose, tone }: PlanCardProps) {
   const offer = priceFor(plan, period);
-  const free = offer !== null && Number(offer.price) === 0;
+  const free = offer !== null && isZeroAmount(offer.price);
   const price = offer === null ? null : free ? copy.free : formatPrice(offer.price, offer.currency, locale);
   const skin = PLAN_SKIN[tone];
+  // A student card whose check is pending or not yet answered offers no choice.
+  const waiting = student === 'pending' || student === 'unknown';
   const points = [
     ...(plan.studentOnly ? [copy.student.needsCheck] : []),
     ...(plan.description == null ? [] : [plan.description]),
@@ -747,15 +777,21 @@ function PlanCard({ plan, period, copy, locale, current, busy, disabled, student
       ) : (
         <button
           type="button"
-          aria-disabled={disabled || busy || student === 'pending'}
+          aria-disabled={disabled || busy || waiting}
           onClick={() => {
-            if (disabled || busy || student === 'pending') return;
+            if (disabled || busy || waiting) return;
             onChoose();
           }}
-          className={`mt-5 flex h-12 w-full items-center justify-between gap-4 rounded-full px-5 text-sm font-medium transition-opacity duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 ${skin.button} ${disabled || busy || student === 'pending' ? 'opacity-40' : 'hover:opacity-90'}`}
+          className={`mt-5 flex h-12 w-full items-center justify-between gap-4 rounded-full px-5 text-sm font-medium transition-opacity duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 ${skin.button} ${disabled || busy || waiting ? 'opacity-40' : 'hover:opacity-90'}`}
         >
           <span>
-            {student === 'pending' && price !== null ? copy.student.pending : busy ? copy.choosing : copy.choose}
+            {student === 'pending' && price !== null
+              ? copy.student.pending
+              : student === 'unknown' && price !== null
+                ? copy.loading
+                : busy
+                  ? copy.choosing
+                  : copy.choose}
             <span className="sr-only">: {plan.name}</span>
           </span>
           <MoveRight aria-hidden="true" className="h-4 w-16 shrink-0 transition-transform duration-300 ease-in-out motion-safe:group-hover:translate-x-1.5" strokeWidth={1.5} />
@@ -824,13 +860,11 @@ function messageFor(cause: unknown, copy: PricingCopy): string {
 /**
  * A refused plan payment as something to read (#451): by `code` and `reason`, never by prose.
  *
- * <p>A student plan's renewal or first payment is refused with `STUDENT_VERIFICATION_REQUIRED`
- * once the approval has lapsed (#655). `planPaymentRefusalOf` does not know that code yet, so it
- * is read here before it, rather than said as "that did not work".
+ * <p>A student plan's renewal or first payment refused with `STUDENT_VERIFICATION_REQUIRED` once
+ * the approval has lapsed (#655) is one of `planPaymentRefusalOf`'s answers.
  */
 function paymentMessageFor(cause: unknown, copy: PricingCopy): string {
   if (!(cause instanceof ApiError)) return copy.errors.generic;
-  if (cause.problem?.code === 'STUDENT_VERIFICATION_REQUIRED') return copy.errors.studentVerificationRequired;
   const problem: Record<string, unknown> = { ...cause.problem };
   return copy.errors[planPaymentRefusalOf(cause.status, cause.problem?.code, problem.reason)];
 }

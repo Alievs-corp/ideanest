@@ -9,7 +9,8 @@ import { pricingCopyFrom } from '../../lib/i18n/plans-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { translatorFor } from '../../test-copy';
 import { expectNoViolations } from '../../test-axe';
-import { PlanChooser, studentStep } from './PlanChooser';
+import { PlanChooser, periodShown, studentStep } from './PlanChooser';
+import type { HeldSubscription } from '../../lib/plans/api';
 
 /*
  * #655: the period switch and the student plan. A file of its own beside `PlanChooser.test.tsx`
@@ -207,23 +208,59 @@ describe('a student plan', () => {
     studentMock.mockResolvedValue(verification('APPROVED'));
     subscribeMock.mockResolvedValue({ subscription: null });
     render(<PlanChooser plans={[STUDENT]} copy={COPY} locale="en" />);
-    await waitFor(() => expect(studentMock).toHaveBeenCalled());
 
-    await userEvent.click(screen.getByRole('button', { name: `${COPY.choose}: Campus` }));
+    await userEvent.click(await screen.findByRole('button', { name: `${COPY.choose}: Campus` }));
 
     await waitFor(() => expect(subscribeMock).toHaveBeenCalledWith(STUDENT.id, 'MONTHLY', 'en'));
   });
 
-  it('offers the ordinary button when the check could not be read, and says the refusal', async () => {
+  it('offers no choice on a student card while the check has not answered', async () => {
     readMock.mockResolvedValue({ subscription: null });
-    studentMock.mockRejectedValue(new ApiError(503, null, 'down'));
-    subscribeMock.mockRejectedValue(new ApiError(403, { status: 403, code: 'STUDENT_VERIFICATION_REQUIRED' }));
-    render(<PlanChooser plans={[STUDENT]} copy={COPY} locale="en" />);
+    studentMock.mockReturnValue(new Promise(() => {}));
+    render(<PlanChooser plans={[STUDENT, GROWTH]} copy={COPY} locale="en" />);
     await waitFor(() => expect(studentMock).toHaveBeenCalled());
 
-    await userEvent.click(screen.getByRole('button', { name: `${COPY.choose}: Campus` }));
+    const button = within(card('Campus')).getByRole('button', { name: `${COPY.loading}: Campus` });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.click(button);
+    expect(subscribeMock).not.toHaveBeenCalled();
+    // The other cards do not wait on a student check.
+    expect(within(card('Growth')).getByRole('button', { name: `${COPY.choose}: Growth` })).toHaveAttribute(
+      'aria-disabled',
+      'false',
+    );
+  });
+
+  it('sends a reader whose check could not be read to the student page, not to a choice', async () => {
+    readMock.mockResolvedValue({ subscription: null });
+    studentMock.mockRejectedValue(new ApiError(503, null, 'down'));
+    render(<PlanChooser plans={[STUDENT]} copy={COPY} locale="en" />);
+
+    expect(await within(card('Campus')).findByRole('link', { name: `${COPY.student.verify}: Campus` })).toHaveAttribute(
+      'href',
+      '/en/account/student',
+    );
+    expect(within(card('Campus')).queryByRole('button', { name: `${COPY.choose}: Campus` })).not.toBeInTheDocument();
+  });
+
+  it('sends a reader with no session to the student page, which signs them in', async () => {
+    readMock.mockRejectedValue(new ApiError(401, null, 'signed out'));
+    render(<PlanChooser plans={[STUDENT]} copy={COPY} locale="en" />);
+
+    expect(await within(card('Campus')).findByRole('link', { name: `${COPY.student.verify}: Campus` })).toBeInTheDocument();
+    expect(studentMock).not.toHaveBeenCalled();
+  });
+
+  it('says the refusal when the service decides the approval no longer holds, and reads the check again', async () => {
+    readMock.mockResolvedValue({ subscription: null });
+    studentMock.mockResolvedValueOnce(verification('APPROVED')).mockResolvedValueOnce(verification('EXPIRED'));
+    subscribeMock.mockRejectedValue(new ApiError(403, { status: 403, code: 'STUDENT_VERIFICATION_REQUIRED' }));
+    render(<PlanChooser plans={[STUDENT]} copy={COPY} locale="en" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: `${COPY.choose}: Campus` }));
 
     expect(await screen.findByText(COPY.errors.studentVerificationRequired)).toBeInTheDocument();
+    expect(await within(card('Campus')).findByRole('link', { name: `${COPY.student.verify}: Campus` })).toBeInTheDocument();
   });
 
   it('has no accessibility violations with the switch and a student card drawn', async () => {
@@ -237,15 +274,58 @@ describe('a student plan', () => {
 });
 
 describe('studentStep', () => {
-  it('reads unknown and approved as the ordinary button', () => {
-    expect(studentStep(null)).toBe('choose');
-    expect(studentStep(verification('APPROVED'))).toBe('choose');
+  const read = (state: StudentVerification['state']) => ({ state: 'read' as const, verification: verification(state) });
+
+  it('offers the ordinary button to an approved reader only', () => {
+    expect(studentStep('ready', read('APPROVED'))).toBe('choose');
   });
 
-  it('reads pending as waiting, and anything else as "send your card"', () => {
-    expect(studentStep(verification('PENDING'))).toBe('pending');
-    expect(studentStep(verification('NONE'))).toBe('verify');
-    expect(studentStep(verification('REJECTED'))).toBe('verify');
-    expect(studentStep(verification('EXPIRED'))).toBe('verify');
+  it('offers nothing while either read is in flight', () => {
+    expect(studentStep('loading', { state: 'loading' })).toBe('unknown');
+    expect(studentStep('ready', { state: 'loading' })).toBe('unknown');
+  });
+
+  it('reads pending as waiting, and everything else as "send your card"', () => {
+    expect(studentStep('ready', read('PENDING'))).toBe('pending');
+    expect(studentStep('ready', read('NONE'))).toBe('verify');
+    expect(studentStep('ready', read('REJECTED'))).toBe('verify');
+    expect(studentStep('ready', read('EXPIRED'))).toBe('verify');
+    expect(studentStep('ready', { state: 'failed' })).toBe('verify');
+    expect(studentStep('signed-out', { state: 'loading' })).toBe('verify');
+  });
+});
+
+describe('the period the cards open on', () => {
+  it('is the reader’s pick, else the held period, else the shortest offered', () => {
+    expect(periodShown(['MONTHLY', 'YEARLY'], 'YEARLY', 'MONTHLY')).toBe('YEARLY');
+    expect(periodShown(['MONTHLY', 'YEARLY'], null, 'YEARLY')).toBe('YEARLY');
+    expect(periodShown(['MONTHLY', 'YEARLY'], null, 'SEMIANNUAL')).toBe('MONTHLY');
+    expect(periodShown(['MONTHLY', 'YEARLY'], 'SEMIANNUAL', null)).toBe('MONTHLY');
+    expect(periodShown([], null, null)).toBe('MONTHLY');
+  });
+
+  it('follows what the reader holds, and names the period on the pay line', async () => {
+    const held: HeldSubscription = {
+      id: 's1',
+      state: 'PENDING_PAYMENT',
+      entitled: false,
+      plan: GROWTH,
+      price: '264.00',
+      currency: 'AZN',
+      billingPeriod: 'SEMIANNUAL',
+      cancelAtPeriodEnd: false,
+      createdAt: '2026-11-01T09:00:00Z',
+      paymentDue: 'FIRST_PERIOD',
+    };
+    readMock.mockResolvedValue({ subscription: held });
+    render(<PlanChooser plans={[GROWTH]} copy={COPY} locale="en" />);
+
+    const pay = await screen.findByRole('button', {
+      name: fillPlaceholders(COPY.payment.payByCard, {
+        price: `${formatPrice('264.00', 'AZN', 'en')} (${COPY.periods.SEMIANNUAL})`,
+      }),
+    });
+    expect(pay).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.periods.SEMIANNUAL })).toHaveAttribute('aria-pressed', 'true');
   });
 });

@@ -1,7 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { BillingPeriod, Plan } from '../plans/api';
-import { withPeriods } from '../plans/periods';
+import { withPeriods } from '../plans/with-periods';
 import type { PlanTranslations } from '@ideanest/plans/catalogue';
 import type { PaymentMethod } from './revenue';
 
