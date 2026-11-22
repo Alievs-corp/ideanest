@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { HeldSubscription } from './catalogue';
-import { planPaymentRefusalOf, planPaymentReturnOf } from './payment';
+import {
+  planPaymentDepartureOf,
+  planPaymentRefusalOf,
+  planPaymentReturnOf,
+  readPlanPaymentDeparture,
+  renewalStandingOf,
+} from './payment';
 
 const subscription: HeldSubscription = {
   id: 'f0c3a7e2-1d4b-4c55-8b0e-3c1d2e3f4a5b',
@@ -70,5 +76,77 @@ describe('paying for a plan', () => {
 describe('a refused extension', () => {
   it('names a period the plan is not sold for', () => {
     expect(planPaymentRefusalOf(400, 'PERIOD_NOT_OFFERED', undefined)).toBe('periodNotOffered');
+  });
+});
+
+describe('coming back from paying, with a month-long renewal window (#660)', () => {
+  const pending = {
+    ...subscription,
+    state: 'PENDING_PAYMENT' as const,
+    entitled: false,
+    currentPeriodEnd: null,
+    paymentDue: 'FIRST_PERIOD' as const,
+  };
+  // A monthly plan has a renewal due from the moment its first period is paid.
+  const firstPaid = { ...subscription, paymentDue: 'RENEWAL' as const };
+  const extended = { ...firstPaid, currentPeriodEnd: '2026-11-01T00:00:00Z' };
+
+  it('calls a first monthly payment paid although a renewal is due straight after it', () => {
+    const left = planPaymentDepartureOf(pending);
+    expect(planPaymentReturnOf('returned', pending, false, left)).toBe('waiting');
+    expect(planPaymentReturnOf('returned', firstPaid, false, left)).toBe('paid');
+    expect(planPaymentReturnOf('failed', firstPaid, false, left)).toBe('paid');
+  });
+
+  it('calls an extension paid once the end has moved, and not before', () => {
+    const left = planPaymentDepartureOf(firstPaid);
+    expect(planPaymentReturnOf('returned', firstPaid, false, left)).toBe('waiting');
+    expect(planPaymentReturnOf('returned', firstPaid, true, left)).toBe('unconfirmed');
+    expect(planPaymentReturnOf('failed', firstPaid, false, left)).toBe('failed');
+    expect(planPaymentReturnOf('returned', extended, false, left)).toBe('paid');
+  });
+
+  it('does not call an unchanged plan paid because nothing is due', () => {
+    const left = planPaymentDepartureOf(firstPaid);
+    expect(planPaymentReturnOf('returned', { ...firstPaid, paymentDue: null }, false, left)).toBe('waiting');
+  });
+
+  it('ignores a departure remembered for another subscription, falling back to the older rule', () => {
+    const left = { ...planPaymentDepartureOf(pending), subscriptionId: 'someone-else' };
+    expect(planPaymentReturnOf('returned', firstPaid, false, left)).toBe('waiting');
+    expect(planPaymentReturnOf('returned', subscription, false, left)).toBe('paid');
+  });
+
+  it('says nothing about a plan that lapsed meanwhile', () => {
+    const left = planPaymentDepartureOf(firstPaid);
+    expect(planPaymentReturnOf('returned', { ...firstPaid, entitled: false, paymentDue: null }, false, left)).toBeNull();
+  });
+
+  it('reads a remembered departure back, and nothing else', () => {
+    const left = planPaymentDepartureOf(firstPaid);
+    expect(readPlanPaymentDeparture(JSON.parse(JSON.stringify(left)))).toEqual(left);
+    expect(readPlanPaymentDeparture({ ...left, currentPeriodEnd: null })).toEqual({ ...left, currentPeriodEnd: null });
+    expect(readPlanPaymentDeparture(null)).toBeNull();
+    expect(readPlanPaymentDeparture('paid')).toBeNull();
+    expect(readPlanPaymentDeparture({ state: 'ACTIVE', currentPeriodEnd: null })).toBeNull();
+    expect(readPlanPaymentDeparture({ ...left, currentPeriodEnd: 7 })).toBeNull();
+  });
+});
+
+describe('a renewal that is due, early or urgent (#660)', () => {
+  const now = Date.parse('2026-09-10T00:00:00Z');
+  const due = { ...subscription, paymentDue: 'RENEWAL' as const };
+
+  it('is an option while more than seven days are left, and a warning from then on', () => {
+    expect(renewalStandingOf(due, now)).toBe('early');
+    expect(renewalStandingOf({ ...due, currentPeriodEnd: '2026-09-17T00:00:01Z' }, now)).toBe('early');
+    expect(renewalStandingOf({ ...due, currentPeriodEnd: '2026-09-17T00:00:00Z' }, now)).toBe('urgent');
+    expect(renewalStandingOf({ ...due, currentPeriodEnd: '2026-09-12T00:00:00Z' }, now)).toBe('urgent');
+    expect(renewalStandingOf({ ...due, currentPeriodEnd: null }, now)).toBe('urgent');
+  });
+
+  it('is nothing when no renewal is due or the plan no longer entitles', () => {
+    expect(renewalStandingOf(subscription, now)).toBe('none');
+    expect(renewalStandingOf({ ...due, entitled: false }, now)).toBe('none');
   });
 });
