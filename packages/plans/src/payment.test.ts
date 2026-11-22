@@ -28,6 +28,7 @@ const subscription: HeldSubscription = {
   createdAt: '2026-09-01T00:00:00Z',
   paymentDue: null,
   renewalOpensAt: '2026-09-24T00:00:00Z',
+  renewalPrices: [],
 };
 
 describe('paying for a plan', () => {
@@ -63,5 +64,11 @@ describe('paying for a plan', () => {
 
     expect(planPaymentReturnOf('returned', null, false)).toBeNull();
     expect(planPaymentReturnOf('returned', { ...subscription, entitled: false }, true)).toBeNull();
+  });
+});
+
+describe('a refused extension', () => {
+  it('names a period the plan is not sold for', () => {
+    expect(planPaymentRefusalOf(400, 'PERIOD_NOT_OFFERED', undefined)).toBe('periodNotOffered');
   });
 });

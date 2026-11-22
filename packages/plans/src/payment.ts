@@ -28,6 +28,7 @@ export type PlanPaymentRefusal =
   | 'notDue'
   | 'paymentUnavailable'
   | 'studentVerificationRequired'
+  | 'periodNotOffered'
   | 'signedOut'
   | 'generic';
 
@@ -43,6 +44,7 @@ export function planPaymentRefusalOf(
     return 'notDue';
   }
   if (code === 'STUDENT_VERIFICATION_REQUIRED') return 'studentVerificationRequired';
+  if (code === 'PERIOD_NOT_OFFERED') return 'periodNotOffered';
   if (code === 'PAYMENT_UNAVAILABLE' || status === 503) return 'paymentUnavailable';
   if (status === 401) return 'signedOut';
   return 'generic';

@@ -44,6 +44,7 @@ const held = {
   createdAt: '2026-09-01T00:00:00Z',
   paymentDue: null,
   renewalOpensAt: '2026-09-24T00:00:00Z',
+  renewalPrices: [],
 };
 
 describe('reading the plan catalogue', () => {
@@ -222,5 +223,30 @@ describe('plan prices by period', () => {
   it('maps the new refusals', () => {
     expect(refusalOf(400, 'PERIOD_NOT_OFFERED')).toBe('periodNotOffered');
     expect(refusalOf(403, 'STUDENT_VERIFICATION_REQUIRED')).toBe('studentVerificationRequired');
+  });
+});
+
+describe('extending a held subscription', () => {
+  it('reads the renewal prices, shortest first, in the held currency', () => {
+    const read = readMine({
+      subscription: {
+        ...held,
+        paymentDue: 'RENEWAL',
+        renewalPrices: [
+          { billingPeriod: 'YEARLY', price: '228.00' },
+          { billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' },
+          { billingPeriod: 'WEEKLY', price: '1.00' },
+        ],
+      },
+    });
+    expect(read?.subscription?.renewalPrices).toEqual([
+      { billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' },
+      { billingPeriod: 'YEARLY', price: '228.00', currency: 'AZN' },
+    ]);
+  });
+
+  it('reads an absent list as nothing to extend', () => {
+    const { renewalPrices: _omit, ...older } = { ...held, renewalPrices: undefined };
+    expect(readMine({ subscription: older })?.subscription?.renewalPrices).toEqual([]);
   });
 });
