@@ -95,7 +95,8 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
         assertThat((String) page.getBody().get("redirectUrl")).startsWith("https://");
         HostedPaymentRequest asked = provider.hostedPayments().getLast();
         assertThat(asked.amount().amount()).isEqualByComparingTo("19.00");
-        assertThat(asked.description()).contains("Starter");
+        // V128: the primary (Azerbaijani) name, which is what the page is described with.
+        assertThat(asked.description()).contains("Başlanğıc");
         assertThat(chargeStates(creator)).containsExactly("PENDING");
         assertThat(mine(creator).get("state")).isEqualTo("PENDING_PAYMENT");
         assertThat(mine(creator).get("entitled")).isEqualTo(false);
