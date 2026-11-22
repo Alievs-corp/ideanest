@@ -136,6 +136,8 @@ export const ACCOUNT_GROUPS: readonly AccountGroup[] = Object.freeze([
       { href: '/account/following', key: 'following' },
       { href: '/account/surveys', key: 'surveys' },
       { href: '/account/deliveries', key: 'deliveries' },
+      // #655: the student card a student plan asks for. Last, because it is about standing, not things.
+      { href: '/account/student', key: 'student' },
     ],
   },
   {

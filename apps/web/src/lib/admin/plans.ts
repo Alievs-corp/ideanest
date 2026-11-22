@@ -1,6 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { BillingPeriod, Plan } from '../plans/api';
+import { withPeriods } from '../plans/periods';
 import type { PlanTranslations } from '@ideanest/plans/catalogue';
 import type { PaymentMethod } from './revenue';
 
@@ -37,7 +38,7 @@ import type { PaymentMethod } from './revenue';
  * `"19.00"`, never `19`. A JSON number is an IEEE 754 double in every mainstream parser.
  */
 
-export type { Plan, BillingPeriod } from '../plans/api';
+export type { Plan, BillingPeriod, PlanPrice } from '../plans/api';
 export type { PlanText, PlanTranslations } from '@ideanest/plans/catalogue';
 export type { PaymentMethod } from './revenue';
 
@@ -79,7 +80,17 @@ export async function readPlanCatalogue(signal?: AbortSignal): Promise<PlanCatal
   const response = await authorizedFetch('/v1/admin/plans', { signal });
   if (!response.ok) throw await errorFrom(response);
 
-  return (await response.json()) as PlanCatalogue;
+  const catalogue = (await response.json()) as PlanCatalogue;
+  return { plans: catalogue.plans.map(withPeriods) };
+}
+
+/**
+ * One period's price, as the console sends it (#655). The currency is the plan's: the service
+ * refuses a price in any other.
+ */
+export interface PlanPriceRequest {
+  readonly billingPeriod: BillingPeriod;
+  readonly price: string;
 }
 
 export interface AddPlanRequest {
@@ -88,9 +99,14 @@ export interface AddPlanRequest {
   readonly description: string | null;
   /** Every language but Azerbaijani, which is `name` and `description`. */
   readonly translations: PlanTranslations;
-  readonly price: string;
   readonly currency: string;
-  readonly billingPeriod: BillingPeriod;
+  /**
+   * Every period the plan is sold for, at least one, shortest first (#655). `price` and
+   * `billingPeriod` are sent as the shortest of them, which is what they describe on the wire.
+   */
+  readonly prices: readonly PlanPriceRequest[];
+  /** Only an account with an approved student card may buy it. */
+  readonly studentOnly: boolean;
   readonly maxActiveCampaigns: number | null;
   readonly goalCeiling: string | null;
   readonly sortOrder: number;
@@ -107,9 +123,11 @@ export async function addPlan(request: AddPlanRequest): Promise<Plan> {
       name: request.name,
       description: request.description,
       translations: request.translations,
-      price: request.price,
+      price: request.prices[0]?.price,
       currency: request.currency,
-      billingPeriod: request.billingPeriod,
+      billingPeriod: request.prices[0]?.billingPeriod,
+      prices: request.prices,
+      studentOnly: request.studentOnly,
       maxActiveCampaigns: request.maxActiveCampaigns,
       goalCeiling: request.goalCeiling,
       sortOrder: request.sortOrder,
@@ -118,7 +136,7 @@ export async function addPlan(request: AddPlanRequest): Promise<Plan> {
   });
   if (!response.ok) throw await errorFrom(response);
 
-  return (await response.json()) as Plan;
+  return withPeriods((await response.json()) as Plan);
 }
 
 /**
@@ -137,6 +155,9 @@ export interface ChangePlanRequest {
   readonly translations?: PlanTranslations;
   readonly price?: string;
   readonly currency?: string;
+  /** Replaces every period's price (#655): a period left out is no longer sold. At least one. */
+  readonly prices?: readonly PlanPriceRequest[];
+  readonly studentOnly?: boolean;
   readonly maxActiveCampaigns?: number;
   readonly clearMaxActiveCampaigns?: boolean;
   readonly goalCeiling?: string;
@@ -157,7 +178,7 @@ export async function changePlan(request: ChangePlanRequest): Promise<Plan> {
   });
   if (!response.ok) throw await errorFrom(response);
 
-  return (await response.json()) as Plan;
+  return withPeriods((await response.json()) as Plan);
 }
 
 /**

@@ -306,6 +306,10 @@
       "payout": {
         "label": "Ödəniş məlumatları",
         "summary": "VÖEN-iniz və ödənişlərin göndərildiyi bank hesabı."
+      },
+      "student": {
+        "label": "Tələbə statusu",
+        "summary": "Tələbə planı üçün tələbə kartının yoxlanması."
       }
     },
     "pages": {
@@ -369,6 +373,12 @@
         "metaDescription": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar.",
         "title": "Dəstəyiniz",
         "intro": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, ödəniş provayderinin komissiyası çıxılmaqla qaytarılır. Ödənilmiş dəstəyi artıranda yalnız fərq dərhal tutulur."
+      },
+      "student": {
+        "metaTitle": "Tələbə statusu",
+        "metaDescription": "Tələbə planı üçün tələbə kartınızın yoxlanması.",
+        "title": "Tələbə statusu",
+        "intro": "Tələbə planı yalnız tələbə kartı təsdiqlənmiş hesablara satılır. Təsdiq bir il qüvvədədir."
       }
     },
     "fulfilment": {
@@ -757,6 +767,62 @@
         "heading": "Sizə nə göndərilir",
         "savedNotice": "Yadda saxlanıldı. {change}"
       }
+    },
+    "student": {
+      "loading": "Tələbə statusunuz yüklənir",
+      "unavailable": "Tələbə statusunuzu oxumaq alınmadı. Bir azdan yenidən cəhd edin.",
+      "tryAgain": "Yenidən cəhd et",
+      "statusHeading": "Vəziyyət",
+      "state": {
+        "NONE": "Hələ tələbə kartı göndərməmisiniz",
+        "PENDING": "Tələbə kartınız yoxlanılır",
+        "APPROVED": "Tələbə statusunuz təsdiqlənib",
+        "REJECTED": "Tələbə kartınız qəbul edilmədi",
+        "EXPIRED": "Tələbə statusunuzun müddəti bitib"
+      },
+      "stateBody": {
+        "NONE": "Tələbə planını almaq üçün aşağıdakı formanı doldurun. Kartınızı əməkdaşlarımız yoxlayır.",
+        "PENDING": "Əməkdaşlarımız kartınıza baxır. Qərar veriləndə bu səhifədə görünəcək.",
+        "APPROVED": "Tələbə planını ala bilərsiniz. Təsdiqin müddəti bitəndə kartınızı yenidən göndərin.",
+        "REJECTED": "Səbəbi aşağıda yazılıb. Düzəldib kartınızı yenidən göndərə bilərsiniz.",
+        "EXPIRED": "Təsdiqin bir illik müddəti bitib. Tələbə planını yenidən almaq üçün kartınızı yenidən göndərin."
+      },
+      "institutionLabel": "Tədris müəssisəsi",
+      "cardNumberLabel": "Kart nömrəsi",
+      "submittedLabel": "Göndərilib",
+      "validUntilLabel": "Qüvvədədir",
+      "reasonLabel": "Səbəb",
+      "toPricing": "Planlara bax",
+      "formHeading": "Tələbə kartını göndərin",
+      "why": "Selfi kartdakı şəxsin siz olduğunu yoxlamaq üçündür, bir tələbə kartı isə yalnız bir hesabda istifadə oluna bilər.",
+      "institutionField": "Tədris müəssisəsi",
+      "institutionHint": "Universitet, kollec və ya məktəbin tam adı.",
+      "cardNumberField": "Tələbə kartının nömrəsi",
+      "cardNumberHint": "Kartda yazıldığı kimi.",
+      "studentCardField": "Tələbə kartının şəkli",
+      "studentCardHint": "Kartın aydın oxunan şəkli və ya skanı: JPEG, PNG və ya PDF, ən çox {megabytes} MB.",
+      "selfieField": "Selfi",
+      "selfieHint": "Üzünüzün aydın göründüyü şəkil: JPEG və ya PNG, ən çox {megabytes} MB.",
+      "pdfChosen": "{name} seçildi.",
+      "studentCardPreview": "Seçdiyiniz tələbə kartı",
+      "selfiePreview": "Seçdiyiniz selfi",
+      "institutionMissing": "Tədris müəssisəsini yazın.",
+      "cardNumberInvalid": "Kart nömrəsi 3–40 simvol olmalıdır.",
+      "fileMissing": "Fayl seçin.",
+      "submit": "Yoxlamaya göndər",
+      "submitting": "Göndərilir…",
+      "sentTitle": "Kartınız yoxlamaya göndərildi",
+      "errorTitle": "Alınmadı",
+      "refusals": {
+        "cardInUse": "Bu tələbə kartı artıq başqa hesabda istifadə olunur. Bir kart yalnız bir hesaba aid ola bilər.",
+        "alreadySubmitted": "Kartınız artıq yoxlanılır və ya təsdiqlənib. Səhifəni yenidən yükləyin.",
+        "emptyFile": "Fayl boşdur. Başqasını seçin.",
+        "unsupportedFile": "Bu fayl növü qəbul edilmir.",
+        "tooLarge": "Fayl çox böyükdür. Daha kiçik fayl seçin.",
+        "storageUnavailable": "Sənədləri hazırda qəbul edə bilmirik. Heç nə saxlanmadı; bir azdan yenidən cəhd edin.",
+        "signedOut": "Göndərmək üçün yenidən daxil olun.",
+        "generic": "Göndərmək alınmadı. Yenidən cəhd edin."
+      }
     }
   },
   "admin": {
@@ -806,7 +872,8 @@
       "/admin/partners": "Tərəfdaşlar",
       "/admin/partner-statistics": "Tərəfdaş statistikası",
       "/admin/maintenance": "Texniki xidmət",
-      "/admin/moderation/revisions": "Kampaniya redaktələri"
+      "/admin/moderation/revisions": "Kampaniya redaktələri",
+      "/admin/student-verifications": "Tələbə yoxlamaları"
     },
     "states": {
       "built": "Hazırdır",
@@ -830,7 +897,7 @@
       "AD-02": {
         "title": "Etibar və təhlükəsizlik",
         "summary": "Kampaniyalar barədə şikayətlər və ən ağırlarına cavab verən dayandırma.",
-        "waitingOn": "Fırıldaq siqnalları və şəxsiyyət yoxlaması qurulub və qiymətləndirilir (#108, #105), lakin heç birinin burada ekranı yoxdur — hər iki növbə yalnız API vasitəsilə əlçatandır."
+        "waitingOn": "Fırıldaq siqnalları və şəxsiyyət yoxlaması qurulub və qiymətləndirilir (#108, #105), lakin heç birinin burada ekranı yoxdur — hər iki növbə yalnız API vasitəsilə əlçatandır. Hələlik modulun yeganə ekranı tələbə kartı yoxlamasıdır (#655)."
       },
       "AD-03": {
         "title": "Kurasiya",
@@ -1204,6 +1271,12 @@
         "metaDescription": "Canlı kampaniya və təklif olunan redaktə yan-yana, qərar verən moderator üçün.",
         "title": "Kampaniya redaktəsinə baxış",
         "intro": "Solda canlı versiya, sağda müəllifin təklifi. Yalnız dəyişən sahələr göstərilir."
+      },
+      "studentVerifications": {
+        "metaTitle": "Tələbə yoxlamaları",
+        "metaDescription": "Tələbə planı üçün göndərilmiş tələbə kartları və selfilər.",
+        "title": "Tələbə yoxlamaları",
+        "intro": "Tələbə planı üçün göndərilmiş tələbə kartları, ən köhnəsi əvvəldə. Təsdiq hesaba bir il tələbə planı almağa icazə verir; rədd və ləğv səbəb tələb edir. Hər qərar və açılan hər sənəd audit jurnalına yazılır, sənədlər isə qərardan sonra silinir."
       }
     },
     "screens": {
@@ -3232,11 +3305,11 @@
         "loadingCatalogue": "Planlar yüklənir",
         "emptyCatalogueTitle": "Plan yoxdur",
         "emptyCatalogueBody": "Dərc etmək plana bağlıdır, ona görə boş kataloqla heç kim kampaniyanı baxışa göndərə bilməz. Aşağıda plan əlavə edin.",
-        "planSummary": "{price} / {period} · eyni vaxtda {campaigns} kampaniya · hədəf limiti: {ceiling}",
+        "planSummary": "{prices} · eyni vaxtda {campaigns} kampaniya · hədəf limiti: {ceiling}",
         "onSale": "Satışda",
         "retired": "Satışdan çıxarılıb",
-        "repriceLabel": "Yeni qiymət",
-        "reprice": "Qiyməti dəyiş",
+        "repriceLabel": "Yeni qiymətlər",
+        "reprice": "Qiymətləri dəyiş",
         "retire": "Satışdan çıxar",
         "putOnSale": "Satışa qoy",
         "unlimited": "limitsiz",
@@ -3246,9 +3319,8 @@
         "nameLabel": "Ad",
         "descriptionLabel": "Təsvir",
         "descriptionHint": "Qiymət səhifəsində adın altında bir sətir.",
-        "priceLabel": "Qiymət",
+        "priceLabel": "Qiymətlər",
         "priceHint": "AZN ilə. Sıfır pulsuz səviyyə deməkdir.",
-        "periodLabel": "Ödəniş dövrü",
         "maxActiveLabel": "Eyni vaxtda kampaniya",
         "goalCeilingLabel": "Hədəf limiti",
         "unlimitedHint": "Limitsiz üçün boş saxlayın.",
@@ -3279,12 +3351,13 @@
         "doneTitle": "Hazırdır",
         "failedTitle": "Alınmadı",
         "addedNotice": "{plan} əlavə olundu və satışdadır.",
-        "repricedNotice": "{plan} planının qiyməti dəyişdi. Mövcud abunəçilər ödədikləri məbləğdə qalır.",
+        "repricedNotice": "{plan} planının qiymətləri dəyişdi. Mövcud abunəçilər ödədikləri məbləğdə qalır.",
         "activatedNotice": "{account} hesabının abunəliyi aktivdir.",
         "endedNotice": "{account} hesabının abunəliyi bitirildi.",
         "period": {
-          "MONTHLY": "Aylıq",
-          "YEARLY": "İllik"
+          "MONTHLY": "1 ay",
+          "SEMIANNUAL": "6 ay",
+          "YEARLY": "1 il"
         },
         "state": {
           "PENDING_PAYMENT": "Ödəniş gözlənilir",
@@ -3310,7 +3383,7 @@
         "confirmEndAction": "Bəli, bitir",
         "confirmRetire": "{plan} satışdan çıxarılsın? Yeni müəlliflər onu ala bilməyəcək; hazırda onda olanlar qalır.",
         "confirmRetireAction": "Bəli, satışdan çıxar",
-        "confirmReprice": "{plan} planının qiyməti {old} əvəzinə {new} olsun? Yeni qiyməti yalnız yeni alışlar ödəyir.",
+        "confirmReprice": "{plan} planının qiymətləri {old} əvəzinə {new} olsun? Yeni qiymətləri yalnız yeni alışlar ödəyir; boş qoyulan müddətə plan artıq satılmayacaq.",
         "confirmRepriceAction": "Bəli, qiyməti dəyiş",
         "back": "Geri qayıt",
         "priceInvalid": "Qiyməti 19,00 kimi, ən çox iki onluq rəqəmlə daxil edin.",
@@ -3325,7 +3398,17 @@
           "SUBSCRIPTION_NOT_OPEN": "Bu abunəlik artıq bitib. Siyahı yeniləndi.",
           "PAYMENT_NOT_YET_RECEIVED": "Ödəniş tarixi gələcəkdə ola bilməz.",
           "INVALID_REQUEST": "Xidmət sorğunu qəbul etmədi. Sahələri yoxlayıb yenidən cəhd edin."
-        }
+        },
+        "pricePer": "{price} / {period}",
+        "priceFor": "{period} üçün qiymət",
+        "newPriceFor": "{period} üçün yeni qiymət",
+        "pricesHint": "AZN ilə. Boş qoyulan müddətə plan satılmır; ən azı biri lazımdır.",
+        "pricesMissing": "Ən azı bir müddət üçün qiymət yazın.",
+        "studentOnlyLabel": "Yalnız tələbələr üçün",
+        "studentOnlyHint": "Yalnız tələbə kartı təsdiqlənmiş hesablar ala bilər.",
+        "studentTag": "Tələbə",
+        "makeStudentOnly": "Yalnız tələbələrə sat",
+        "openToEveryone": "Hamıya sat"
       },
       "submissionQueue": {
         "signedOutTitle": "Növbə ilə işləmək üçün daxil olun",
@@ -3972,6 +4055,61 @@
           "name": "Ad",
           "countries": "Ölkələr",
           "unchanged": "Təklif olunan zonalar canlı olanlarla eynidir."
+        }
+      },
+      "studentVerifications": {
+        "subject": "tələbə yoxlamaları növbəsini",
+        "filterLabel": "Vəziyyətə görə süz",
+        "state": {
+          "PENDING": "Gözləyir",
+          "APPROVED": "Təsdiqlənib",
+          "REJECTED": "Rədd edilib",
+          "EXPIRED": "Müddəti bitib"
+        },
+        "loadingList": "Tələbə yoxlamaları yüklənir",
+        "emptyTitle": "Burada heç nə yoxdur",
+        "emptyBody": "Hazırda bu vəziyyətdə müraciət yoxdur.",
+        "institutionLabel": "Tədris müəssisəsi",
+        "cardNumberLabel": "Kart nömrəsi",
+        "submittedLabel": "Göndərilib",
+        "decidedLabel": "Qərar verilib",
+        "validUntilLabel": "Qüvvədədir",
+        "reasonLabel": "Səbəb",
+        "sameCardTitle": "Bu kart nömrəsi başqa hesabda da istifadə olunub",
+        "sameCardBody": "Bir tələbə kartı bir hesaba aiddir. Qərar verməzdən əvvəl bu hesablara baxın:",
+        "sameCardAccount": "{name} · {state}",
+        "documentsHeading": "Sənədlər",
+        "showDocuments": "Sənədləri göstər",
+        "loadingDocuments": "Sənədlər açılır",
+        "documentsErased": "Bu müraciət üzrə qərar veriləndə sənədlər silinib.",
+        "studentCard": "Tələbə kartı",
+        "selfie": "Selfi",
+        "openPdf": "Tələbə kartını aç (PDF)",
+        "documentFailed": "Sənədləri açmaq alınmadı",
+        "approve": "Təsdiqlə",
+        "reject": "Rədd et",
+        "revoke": "Təsdiqi ləğv et",
+        "reasonField": "Səbəb",
+        "reasonHint": "Hesab sahibi bunu yazdığınız kimi oxuyur.",
+        "reasonMissing": "Səbəbi yazın.",
+        "confirmApprove": "{account} hesabının tələbə kartı təsdiqlənsin? Bu gündən bir il tələbə planını ala biləcək.",
+        "confirmApproveAction": "Təsdiqlə",
+        "confirmReject": "{account} hesabının tələbə kartı rədd edilsin? Yenisini göndərə biləcək.",
+        "confirmRejectAction": "Rədd et",
+        "confirmRevoke": "{account} hesabının təsdiqi ləğv edilsin? Tələbə planını artıq ala və yeniləyə bilməyəcək.",
+        "confirmRevokeAction": "Ləğv et",
+        "back": "Geri",
+        "doneTitle": "Hazırdır",
+        "failedTitle": "Alınmadı",
+        "approvedNotice": "{account} hesabının tələbə kartı təsdiqləndi.",
+        "rejectedNotice": "{account} hesabının tələbə kartı rədd edildi.",
+        "revokedNotice": "{account} hesabının təsdiqi ləğv edildi.",
+        "openAccount": "Hesabı aç",
+        "openAccountLabel": "Hesabı aç: {name}",
+        "errors": {
+          "STUDENT_VERIFICATION_NOT_DECIDABLE": "Bu müraciət üzrə artıq qərar verilib, bəlkə də həmkarınız tərəfindən. Siyahı yenidən yükləndi.",
+          "STUDENT_VERIFICATION_NOT_FOUND": "Bu müraciət artıq yoxdur. Siyahı yenidən yükləndi.",
+          "STUDENT_CARD_IN_USE": "Bu kart nömrəsi üçün başqa hesabın qüvvədə olan təsdiqi var, ona görə bunu təsdiqləmək olmur."
         }
       }
     },
@@ -5267,7 +5405,27 @@
       "renewalNotOpen": "Bu planı hələ yeniləmək olmur. Yeniləmənin nə vaxt açılacağını görmək üçün səhifəni yenidən yükləyin.",
       "lapsed": "Bu planın müddəti bitib. Yenidən abunə olmaq üçün aşağıda plan seçin.",
       "notDue": "Hazırda ödəməli heç nə yoxdur. Planınızın vəziyyətini görmək üçün səhifəni yenidən yükləyin.",
-      "paymentUnavailable": "Kartla ödəniş hazırda mümkün deyil. Heç nə tutulmadı; bir neçə dəqiqədən sonra yenidən cəhd edin."
+      "paymentUnavailable": "Kartla ödəniş hazırda mümkün deyil. Heç nə tutulmadı; bir neçə dəqiqədən sonra yenidən cəhd edin.",
+      "periodNotOffered": "Bu plan seçdiyiniz müddət üçün satılmır. Başqa müddət seçin və ya səhifəni yenidən yükləyin.",
+      "studentVerificationRequired": "Bu plan yalnız tələbə kartı təsdiqlənmiş hesablar üçündür. Kartınızı hesabınızın tələbə səhifəsində göndərin."
+    },
+    "periods": {
+      "label": "Abunə müddəti",
+      "MONTHLY": "1 ay",
+      "SEMIANNUAL": "6 ay",
+      "YEARLY": "1 il",
+      "notOffered": "{period} üçün satılmır."
+    },
+    "per": {
+      "MONTHLY": "1 ay üçün",
+      "SEMIANNUAL": "6 ay üçün",
+      "YEARLY": "1 il üçün"
+    },
+    "student": {
+      "label": "Tələbə",
+      "needsCheck": "Tələbə kartınız yoxlanıldıqdan sonra alına bilər",
+      "verify": "Tələbə kartını təsdiqlə",
+      "pending": "Tələbə kartınız yoxlanılır"
     }
   },
   "campaign": {

@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 import { pricingCopyFrom, type PricingCopy } from './plans-copy';
+import { studentVerificationCopyFrom, type StudentVerificationCopy } from './student-copy';
 import {
   type AuthFailuresCopy,
   type EmailChangeCopy,
@@ -419,6 +420,11 @@ export async function savedListCopy(): Promise<SignalListCopy> {
     await getTranslations('account.signals'),
     await getTranslations('common'),
   );
+}
+
+/** `/account/student` — the student card check a student plan asks for (#655). */
+export async function studentVerificationCopy(): Promise<StudentVerificationCopy> {
+  return studentVerificationCopyFrom(await getTranslations('account.student'));
 }
 
 export async function followingListCopy(): Promise<SignalListCopy> {

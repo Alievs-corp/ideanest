@@ -2,7 +2,8 @@ import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import { numberFormat } from '../i18n/formats';
 import { localeOrDefault, type Locale } from '../i18n/locale';
-import type { HeldSubscription, MySubscription } from '@ideanest/plans/catalogue';
+import type { BillingPeriod, HeldSubscription, MySubscription } from '@ideanest/plans/catalogue';
+import { withPeriods } from './periods';
 import type { PlanPaymentReturnHint } from '@ideanest/plans/payment';
 
 /**
@@ -37,18 +38,35 @@ export type {
   MySubscription,
   PaymentDue,
   Plan,
+  PlanPrice,
   SubscriptionState,
 } from '@ideanest/plans/catalogue';
 export type { PlanPaymentReturn, PlanPaymentReturnHint } from '@ideanest/plans/payment';
+
+/**
+ * The page's language, stated on every read whose answer carries a plan (#655).
+ *
+ * <p>The service localises a plan's name and description from `Accept-Language`, and the held
+ * subscription's `plan` the same way. `authorizedFetch` fills the header from the locale cookie,
+ * which records the last language somebody *chose* — not necessarily the one this page is drawn
+ * in: a reader on `/en/pricing` with an Azerbaijani cookie would see English cards and an
+ * Azerbaijani "you are on …" panel. So the plan reads say the page's language themselves, and
+ * `authorizedFetch` keeps a header it is handed.
+ */
+function inLanguage(locale: Locale, headers: Record<string, string> = {}): Record<string, string> {
+  return { ...headers, 'Accept-Language': locale };
+}
 
 /**
  * What this account holds, or nothing.
  *
  * <p>A 200 with a null subscription is the ordinary case for a signed-in visitor who has not
  * bought anything, so this returns `{ subscription: null }` rather than throwing.
+ *
+ * @param locale the page's language, which the held plan's name is read in
  */
-export async function readMySubscription(signal?: AbortSignal): Promise<MySubscription> {
-  const response = await authorizedFetch('/v1/me/subscription', { signal });
+export async function readMySubscription(locale: Locale, signal?: AbortSignal): Promise<MySubscription> {
+  const response = await authorizedFetch('/v1/me/subscription', { headers: inLanguage(locale), signal });
   if (!response.ok) throw await errorFrom(response);
 
   return normaliseMine((await response.json()) as { subscription?: HeldSubscription | null });
@@ -63,22 +81,32 @@ export async function readMySubscription(signal?: AbortSignal): Promise<MySubscr
  * rather than requiring `!= null` everywhere the value is read.
  */
 function normaliseMine(body: { subscription?: HeldSubscription | null }): MySubscription {
-  return { subscription: body.subscription ?? null };
+  const held = body.subscription ?? null;
+  return { subscription: held === null ? null : { ...held, plan: withPeriods(held.plan) } };
 }
 
 /**
- * Buys a plan.
+ * Buys a plan, for one of the periods it is sold for (#655).
  *
  * <p>What comes back is not necessarily an entitlement. A priced plan arrives
  * `PENDING_PAYMENT` with `entitled: false`, and opens when it is paid — by card through
  * {@link payForPlan}, or by a bank transfer staff record (#449). The caller renders what it is given
  * rather than assuming a purchase succeeded.
+ *
+ * @param billingPeriod the period the card offered. Omitted, the service picks the plan's
+ *     shortest; `400 PERIOD_NOT_OFFERED` when the plan is not sold for it, and
+ *     `403 STUDENT_VERIFICATION_REQUIRED` for a student plan without an approved student card
  */
-export async function subscribeToPlan(planId: string, signal?: AbortSignal): Promise<MySubscription> {
+export async function subscribeToPlan(
+  planId: string,
+  billingPeriod: BillingPeriod | undefined,
+  locale: Locale,
+  signal?: AbortSignal,
+): Promise<MySubscription> {
   const response = await authorizedFetch('/v1/me/subscription', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ planId }),
+    headers: inLanguage(locale, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify(billingPeriod === undefined ? { planId } : { planId, billingPeriod }),
     signal,
   });
   if (!response.ok) throw await errorFrom(response);
@@ -92,8 +120,12 @@ export async function subscribeToPlan(planId: string, signal?: AbortSignal): Pro
  * <p>The response carries the date the entitlement actually stops, which is the one thing the
  * creator wants to know and cannot work out from the request.
  */
-export async function cancelSubscription(signal?: AbortSignal): Promise<MySubscription> {
-  const response = await authorizedFetch('/v1/me/subscription', { method: 'DELETE', signal });
+export async function cancelSubscription(locale: Locale, signal?: AbortSignal): Promise<MySubscription> {
+  const response = await authorizedFetch('/v1/me/subscription', {
+    method: 'DELETE',
+    headers: inLanguage(locale),
+    signal,
+  });
   if (!response.ok) throw await errorFrom(response);
 
   return normaliseMine((await response.json()) as { subscription?: HeldSubscription | null });

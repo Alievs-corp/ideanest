@@ -130,7 +130,14 @@ export const CONSOLE_MODULES: readonly ConsoleModule[] = Object.freeze([
      * It is still `partial`, and the reason has moved rather than gone: both queues are
      * endpoints with no screen in this console, so the only way to work them today is the
      * API. That is the gap, and it is a smaller one than the sentence it replaces.
+     *
+     * The student check (#655) is the module's first screen of its own. It is a review of
+     * the same kind — a document and a face, decided by somebody holding the identity
+     * review's capability — and the service guards it with that capability, so it is filed
+     * here rather than in a seventeenth module. It does not close the gap above: the risk
+     * queue and the identity review still have no screen, and the note still says so.
      */
+    otherScreens: ['/admin/student-verifications'],
     issue: 103,
   },
   {
@@ -361,6 +368,7 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
     heading: 'people',
     links: [
       '/admin/users',
+      '/admin/student-verifications',
       '/admin/support',
       '/admin/staff',
       '/admin/partners',
@@ -445,6 +453,9 @@ export const CONSOLE_LINK_CAPABILITIES: Readonly<Record<string, readonly StaffCa
     // role is how somebody gets every capability in this table, so ADMINISTER_STAFF is an
     // administrator's alone.
     '/admin/users': ['ADMINISTER_ACCOUNTS'],
+    // #655: the student check is decided with the identity review's authority, which is what the
+    // service asks for, so COMPLIANCE works it and a moderator does not.
+    '/admin/student-verifications': ['REVIEW_IDENTITY_VERIFICATION'],
     '/admin/support': ['HANDLE_SUPPORT'],
     '/admin/staff': ['ADMINISTER_STAFF'],
     // A partner is granted and recorded exactly as a role is, so it asks for the same authority.

@@ -70,12 +70,17 @@ export default async function PricingPage({
    * only half of that: the other half comes out of what their backers pledge. Two pages for one
    * question is how a creator ends up surprised by a payout.
    */
-  const [{ locale }, query, t, copy, plans, fees] = await Promise.all([
-    params,
+  /*
+   * The plans are read in the page's language, said outright (#655): a plan's name and
+   * description are localised by the service from `Accept-Language`, and the cached read is one
+   * entry per language because the header is part of what the fetch cache keys on.
+   */
+  const { locale } = await params;
+  const [query, t, copy, plans, fees] = await Promise.all([
     searchParams,
     getTranslations('pricing'),
     pricingCopy(),
-    fetchPlanCatalogue(),
+    fetchPlanCatalogue({ locale: localeOrDefault(locale) }),
     fetchFeeDisclosure(),
   ]);
 

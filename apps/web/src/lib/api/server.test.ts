@@ -6,6 +6,7 @@ import {
   fetchCollections,
   fetchDiscoveryFeed,
   fetchLegalDocument,
+  fetchPlanCatalogue,
   fetchPublicRewards,
 } from './server';
 
@@ -354,5 +355,35 @@ describe('the backer agreement read', () => {
     await expect(fetchLegalDocument('BACKER_AGREEMENT', { env: ENV, fetchImpl })).rejects.toThrow(
       RangeError,
     );
+  });
+});
+
+describe('the plan catalogue read', () => {
+  /*
+   * #655: a plan's name and description are localised by the service from `Accept-Language`,
+   * so the pricing page's language has to reach the request — never the browser's header,
+   * which a server render does not have.
+   */
+  it('asks in the page language and narrows what comes back', async () => {
+    const { calls, fetchImpl } = ok({
+      plans: [
+        { id: 'p1', name: 'Starter', price: '19.00', currency: 'AZN', billingPeriod: 'MONTHLY' },
+        { id: 'broken' },
+      ],
+    });
+
+    const plans = await fetchPlanCatalogue({ env: ENV, fetchImpl, locale: 'ru' });
+
+    expect(calls[0]?.url).toBe('https://api.test/v1/plans');
+    expect(new Headers(calls[0]?.init?.headers).get('accept-language')).toBe('ru');
+    // A plan from before the periods is sold for the one period it names.
+    expect(plans?.map((plan) => plan.prices)).toEqual([
+      [{ billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' }],
+    ]);
+  });
+
+  it('says a body that is not a catalogue is unreadable, not that nothing is on sale', async () => {
+    const { fetchImpl } = ok({ items: [] });
+    expect(await fetchPlanCatalogue({ env: ENV, fetchImpl, locale: 'az' })).toBeNull();
   });
 });
