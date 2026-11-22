@@ -822,7 +822,11 @@
         "storageUnavailable": "Sənədləri hazırda qəbul edə bilmirik. Heç nə saxlanmadı; bir azdan yenidən cəhd edin.",
         "signedOut": "Göndərmək üçün yenidən daxil olun.",
         "generic": "Göndərmək alınmadı. Yenidən cəhd edin."
-      }
+      },
+      "together": "İki fayl birlikdə çox böyükdür: birlikdə ən çox {megabytes} MB ola bilər. Daha kiçik şəkil seçin.",
+      "preparing": "Şəkil göndərmək üçün kiçildilir…",
+      "signedOutTitle": "Tələbə statusunuzu görmək üçün daxil olun",
+      "signIn": "Daxil ol"
     }
   },
   "admin": {
@@ -3408,7 +3412,11 @@
         "studentOnlyHint": "Yalnız tələbə kartı təsdiqlənmiş hesablar ala bilər.",
         "studentTag": "Tələbə",
         "makeStudentOnly": "Yalnız tələbələrə sat",
-        "openToEveryone": "Hamıya sat"
+        "openToEveryone": "Hamıya sat",
+        "confirmStudentOnly": "{plan} bu andan yalnız tələbə kartı təsdiqlənmiş hesablara satılsın? Artıq abunə olanlar planlarını saxlayır; yeni alışları yalnız tələbələr edə bilər.",
+        "confirmStudentOnlyAction": "Yalnız tələbələrə sat",
+        "confirmOpenToEveryone": "{plan} bu andan hamıya satılsın? Tələbə kartı olmayan hər kəs də onu ala biləcək.",
+        "confirmOpenToEveryoneAction": "Hamıya sat"
       },
       "submissionQueue": {
         "signedOutTitle": "Növbə ilə işləmək üçün daxil olun",

@@ -822,7 +822,11 @@
         "storageUnavailable": "We cannot accept documents right now. Nothing was stored; try again in a moment.",
         "signedOut": "Sign in again to send it.",
         "generic": "It could not be sent. Try again."
-      }
+      },
+      "together": "The two files together are too large: at most {megabytes} MB between them. Choose a smaller photo.",
+      "preparing": "Making the photo smaller to send…",
+      "signedOutTitle": "Sign in to see your student status",
+      "signIn": "Sign in"
     }
   },
   "admin": {
@@ -3408,7 +3412,11 @@
         "studentOnlyHint": "Only accounts with an approved student card can buy it.",
         "studentTag": "Student",
         "makeStudentOnly": "Sell to students only",
-        "openToEveryone": "Sell to everyone"
+        "openToEveryone": "Sell to everyone",
+        "confirmStudentOnly": "Sell {plan} only to accounts with an approved student card? Current subscribers keep their plan; from now on, only students can buy it.",
+        "confirmStudentOnlyAction": "Sell to students only",
+        "confirmOpenToEveryone": "Sell {plan} to everyone from now on? Anyone can buy it, with or without a student card.",
+        "confirmOpenToEveryoneAction": "Sell to everyone"
       },
       "submissionQueue": {
         "signedOutTitle": "Sign in to work the queue",
