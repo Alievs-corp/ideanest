@@ -1,4 +1,22 @@
 import Decimal from 'decimal.js';
+import { BILLING_PERIODS, isBillingPeriod, type BillingPeriod, type PlanPrice } from './periods';
+
+// The period rules and the choice refusals live in `./periods`, which imports nothing (#655); they
+// are re-exported here so every caller that already reads them from `./catalogue` keeps working.
+export {
+  BILLING_PERIODS,
+  MONTHS_IN,
+  isBillingPeriod,
+  isZeroAmount,
+  offeredPeriods,
+  canonicalAmount,
+  sameAmount,
+  priceFor,
+  refusalOf,
+  type BillingPeriod,
+  type PlanPrice,
+  type SubscriptionRefusal,
+} from './periods';
 
 /**
  * What the platform charges a creator to publish, and what one account holds — the wire types of
@@ -21,16 +39,6 @@ import Decimal from 'decimal.js';
  * Not `state`. An `ACTIVE` subscription whose period ended an hour ago entitles nobody, and the
  * service computes the pair for exactly that reason.
  */
-
-/** One month, six months or a year. Every plan may be sold for any of them (`Plan.prices`). */
-export type BillingPeriod = 'MONTHLY' | 'SEMIANNUAL' | 'YEARLY';
-
-/** What one period of a plan costs. A decimal amount, as text, in the plan's currency. */
-export interface PlanPrice {
-  readonly billingPeriod: BillingPeriod;
-  readonly price: string;
-  readonly currency: string;
-}
 
 export type SubscriptionState = 'PENDING_PAYMENT' | 'ACTIVE' | 'CANCELED' | 'EXPIRED';
 
@@ -117,15 +125,7 @@ export interface MySubscription {
   readonly subscription: HeldSubscription | null;
 }
 
-/** Shortest first — the order the period switch draws them in. */
-export const BILLING_PERIODS: readonly BillingPeriod[] = ['MONTHLY', 'SEMIANNUAL', 'YEARLY'];
-
-/** How many months a period runs. For "per month" comparisons; never for computing a charge. */
-export const MONTHS_IN: Readonly<Record<BillingPeriod, number>> = { MONTHLY: 1, SEMIANNUAL: 6, YEARLY: 12 };
-
-function isPeriod(value: unknown): value is BillingPeriod {
-  return typeof value === 'string' && (BILLING_PERIODS as readonly string[]).includes(value);
-}
+const isPeriod = isBillingPeriod;
 const STATES: readonly string[] = ['PENDING_PAYMENT', 'ACTIVE', 'CANCELED', 'EXPIRED'];
 const PAYMENTS_DUE: readonly string[] = ['FIRST_PERIOD', 'RENEWAL'];
 
@@ -214,16 +214,6 @@ function readPrices(value: unknown, fallback: PlanPrice): readonly PlanPrice[] {
     return found === undefined ? [] : [found];
   });
   return prices.length === 0 ? [fallback] : prices;
-}
-
-/** What `period` of this plan costs, or `null` when the plan is not sold for it. */
-export function priceFor(plan: Plan, period: BillingPeriod): PlanPrice | null {
-  return plan.prices.find((entry) => entry.billingPeriod === period) ?? null;
-}
-
-/** Whether any plan in the catalogue is sold for `period` — a switch position nobody can buy is not drawn. */
-export function offeredPeriods(plans: readonly Plan[]): readonly BillingPeriod[] {
-  return BILLING_PERIODS.filter((period) => plans.some((plan) => priceFor(plan, period) !== null));
 }
 
 /**
@@ -320,26 +310,4 @@ export { canChoose } from './choice';
 /** Whether the plan on this card is the one held (and not cancelled). */
 export function isHeldPlan(held: HeldSubscription | null, planId: string): boolean {
   return held !== null && held.plan.id === planId && held.state !== 'CANCELED';
-}
-
-/** A refused choice or cancellation, as the catalogue key under `pricing.errors` that says it. */
-export type SubscriptionRefusal =
-  | 'alreadySubscribed'
-  | 'notOnSale'
-  | 'periodNotOffered'
-  | 'studentVerificationRequired'
-  | 'signedOut'
-  | 'generic';
-
-/**
- * The refusal's sentence, from the problem's `code` and the status — never from its prose, which
- * is in one language while the page is drawn in four (§10.4).
- */
-export function refusalOf(status: number | null, code: string | null | undefined): SubscriptionRefusal {
-  if (code === 'ALREADY_SUBSCRIBED') return 'alreadySubscribed';
-  if (code === 'PLAN_NOT_ON_SALE') return 'notOnSale';
-  if (code === 'PERIOD_NOT_OFFERED') return 'periodNotOffered';
-  if (code === 'STUDENT_VERIFICATION_REQUIRED') return 'studentVerificationRequired';
-  if (status === 401) return 'signedOut';
-  return 'generic';
 }
