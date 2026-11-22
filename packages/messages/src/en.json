@@ -306,6 +306,10 @@
       "payout": {
         "label": "Payout details",
         "summary": "Your VÖEN and the bank account payouts go to."
+      },
+      "student": {
+        "label": "Student status",
+        "summary": "The student card check a student plan asks for."
       }
     },
     "pages": {
@@ -369,6 +373,12 @@
         "metaDescription": "What you chose, what it comes to, and how to raise it.",
         "title": "Your pledge",
         "intro": "What you chose, what it comes to, and how to raise it. A pledge is charged when it is made, and refunded, less the payment provider's fee, if its campaign does not succeed. Raising a paid pledge charges only the difference, straight away."
+      },
+      "student": {
+        "metaTitle": "Student status",
+        "metaDescription": "Your student card check, for the student plan.",
+        "title": "Student status",
+        "intro": "The student plan is sold only to accounts with an approved student card. An approval lasts one year."
       }
     },
     "fulfilment": {
@@ -757,6 +767,62 @@
         "heading": "What you are sent",
         "savedNotice": "Saved. {change}"
       }
+    },
+    "student": {
+      "loading": "Loading your student status",
+      "unavailable": "Your student status could not be read. Try again in a moment.",
+      "tryAgain": "Try again",
+      "statusHeading": "Status",
+      "state": {
+        "NONE": "You have not sent a student card yet",
+        "PENDING": "Your student card is being checked",
+        "APPROVED": "Your student status is approved",
+        "REJECTED": "Your student card was not accepted",
+        "EXPIRED": "Your student status has expired"
+      },
+      "stateBody": {
+        "NONE": "Fill in the form below to buy the student plan. A member of our staff checks your card.",
+        "PENDING": "Our staff are looking at your card. The decision will show on this page.",
+        "APPROVED": "You can buy the student plan. When the approval ends, send your card again.",
+        "REJECTED": "The reason is below. You can put it right and send your card again.",
+        "EXPIRED": "The approval’s year has passed. Send your card again to buy the student plan again."
+      },
+      "institutionLabel": "Institution",
+      "cardNumberLabel": "Card number",
+      "submittedLabel": "Sent",
+      "validUntilLabel": "Valid until",
+      "reasonLabel": "Reason",
+      "toPricing": "See the plans",
+      "formHeading": "Send your student card",
+      "why": "The selfie lets us check that the card is yours, and one student card can be used by one account only.",
+      "institutionField": "Institution",
+      "institutionHint": "The full name of your university, college or school.",
+      "cardNumberField": "Student card number",
+      "cardNumberHint": "As it is written on the card.",
+      "studentCardField": "Photo of your student card",
+      "studentCardHint": "A clear photo or scan of the card: JPEG, PNG or PDF, up to {megabytes} MB.",
+      "selfieField": "Selfie",
+      "selfieHint": "A photo in which your face is clearly visible: JPEG or PNG, up to {megabytes} MB.",
+      "pdfChosen": "{name} chosen.",
+      "studentCardPreview": "The student card you chose",
+      "selfiePreview": "The selfie you chose",
+      "institutionMissing": "Enter your institution.",
+      "cardNumberInvalid": "The card number must be 3 to 40 characters.",
+      "fileMissing": "Choose a file.",
+      "submit": "Send for checking",
+      "submitting": "Sending…",
+      "sentTitle": "Your card was sent for checking",
+      "errorTitle": "That did not work",
+      "refusals": {
+        "cardInUse": "This student card is already used by another account. One card can belong to one account only.",
+        "alreadySubmitted": "Your card is already being checked, or is approved. Reload the page.",
+        "emptyFile": "The file is empty. Choose another one.",
+        "unsupportedFile": "This type of file is not accepted.",
+        "tooLarge": "The file is too large. Choose a smaller one.",
+        "storageUnavailable": "We cannot accept documents right now. Nothing was stored; try again in a moment.",
+        "signedOut": "Sign in again to send it.",
+        "generic": "It could not be sent. Try again."
+      }
     }
   },
   "admin": {
@@ -806,7 +872,8 @@
       "/admin/partners": "Partners",
       "/admin/partner-statistics": "Partner statistics",
       "/admin/maintenance": "Maintenance",
-      "/admin/moderation/revisions": "Campaign edits"
+      "/admin/moderation/revisions": "Campaign edits",
+      "/admin/student-verifications": "Student verifications"
     },
     "states": {
       "built": "Built",
@@ -830,7 +897,7 @@
       "AD-02": {
         "title": "Trust and safety",
         "summary": "Complaints about campaigns, and the suspension that answers the worst of them.",
-        "waitingOn": "Fraud signals and the identity review are built and scored (#108, #105), and neither has a screen here yet — both queues are reachable only through the API."
+        "waitingOn": "Fraud signals and the identity review are built and scored (#108, #105), and neither has a screen here yet — both queues are reachable only through the API. The student card check (#655) is the module’s one screen so far."
       },
       "AD-03": {
         "title": "Curation",
@@ -1204,6 +1271,12 @@
         "metaDescription": "The live campaign beside the proposed edit, for the moderator deciding it.",
         "title": "Review a campaign edit",
         "intro": "The live version on the left, the creator’s proposal on the right. Only the fields that changed are shown."
+      },
+      "studentVerifications": {
+        "metaTitle": "Student verifications",
+        "metaDescription": "Student cards and selfies sent for the student plan.",
+        "title": "Student verifications",
+        "intro": "Student cards sent for the student plan, oldest first. Approving lets the account buy the student plan for a year; rejecting and revoking need a reason. Every decision and every document opened is recorded in the audit trail, and the documents are erased once a submission is decided."
       }
     },
     "screens": {
@@ -3232,10 +3305,10 @@
         "loadingCatalogue": "Loading plans",
         "emptyCatalogueTitle": "There are no plans",
         "emptyCatalogueBody": "Publishing is gated on a plan, so with an empty catalogue nobody can send a campaign for review. Add one below.",
-        "planSummary": "{price} / {period} · {campaigns} campaigns at a time · goal limit: {ceiling}",
+        "planSummary": "{prices} · {campaigns} campaigns at a time · goal limit: {ceiling}",
         "onSale": "On sale",
         "retired": "Retired",
-        "repriceLabel": "New price",
+        "repriceLabel": "New prices",
         "reprice": "Reprice",
         "retire": "Take off sale",
         "putOnSale": "Put on sale",
@@ -3246,9 +3319,8 @@
         "nameLabel": "Name",
         "descriptionLabel": "Description",
         "descriptionHint": "One line under the name on the pricing page.",
-        "priceLabel": "Price",
+        "priceLabel": "Prices",
         "priceHint": "In AZN. Zero means a free tier.",
-        "periodLabel": "Billed",
         "maxActiveLabel": "Campaigns at a time",
         "goalCeilingLabel": "Goal ceiling",
         "unlimitedHint": "Leave empty for no limit.",
@@ -3283,8 +3355,9 @@
         "activatedNotice": "{account}'s subscription is active.",
         "endedNotice": "{account}'s subscription was ended.",
         "period": {
-          "MONTHLY": "Monthly",
-          "YEARLY": "Yearly"
+          "MONTHLY": "1 month",
+          "SEMIANNUAL": "6 months",
+          "YEARLY": "1 year"
         },
         "state": {
           "PENDING_PAYMENT": "Waiting for payment",
@@ -3310,7 +3383,7 @@
         "confirmEndAction": "Yes, end it",
         "confirmRetire": "Take {plan} off sale? New creators will not be able to buy it; everybody on it now stays on it.",
         "confirmRetireAction": "Yes, take it off sale",
-        "confirmReprice": "Change {plan}'s price from {old} to {new}? Only new purchases pay the new price.",
+        "confirmReprice": "Change {plan}’s prices from {old} to {new}? Only new purchases pay the new prices, and a period left empty is no longer sold.",
         "confirmRepriceAction": "Yes, change the price",
         "back": "Back",
         "priceInvalid": "Enter a price such as 19.00, with at most two decimals.",
@@ -3325,7 +3398,17 @@
           "SUBSCRIPTION_NOT_OPEN": "This subscription has already ended. The list has been reloaded.",
           "PAYMENT_NOT_YET_RECEIVED": "The payment cannot be dated in the future.",
           "INVALID_REQUEST": "The service did not accept the request. Check the fields and try again."
-        }
+        },
+        "pricePer": "{price} / {period}",
+        "priceFor": "Price for {period}",
+        "newPriceFor": "New price for {period}",
+        "pricesHint": "In AZN. A period left empty is not sold; at least one is needed.",
+        "pricesMissing": "Enter a price for at least one period.",
+        "studentOnlyLabel": "Students only",
+        "studentOnlyHint": "Only accounts with an approved student card can buy it.",
+        "studentTag": "Student",
+        "makeStudentOnly": "Sell to students only",
+        "openToEveryone": "Sell to everyone"
       },
       "submissionQueue": {
         "signedOutTitle": "Sign in to work the queue",
@@ -3972,6 +4055,61 @@
           "name": "Name",
           "countries": "Countries",
           "unchanged": "The proposed zones are the same as the live ones."
+        }
+      },
+      "studentVerifications": {
+        "subject": "the student verification queue",
+        "filterLabel": "Filter by state",
+        "state": {
+          "PENDING": "Waiting",
+          "APPROVED": "Approved",
+          "REJECTED": "Rejected",
+          "EXPIRED": "Expired"
+        },
+        "loadingList": "Loading student verifications",
+        "emptyTitle": "Nothing here",
+        "emptyBody": "No submission is in this state right now.",
+        "institutionLabel": "Institution",
+        "cardNumberLabel": "Card number",
+        "submittedLabel": "Sent",
+        "decidedLabel": "Decided",
+        "validUntilLabel": "Valid until",
+        "reasonLabel": "Reason",
+        "sameCardTitle": "This card number has been used by another account",
+        "sameCardBody": "One student card belongs to one account. Look at these accounts before deciding:",
+        "sameCardAccount": "{name} · {state}",
+        "documentsHeading": "Documents",
+        "showDocuments": "Show documents",
+        "loadingDocuments": "Opening the documents",
+        "documentsErased": "The documents were erased when this submission was decided.",
+        "studentCard": "Student card",
+        "selfie": "Selfie",
+        "openPdf": "Open the student card (PDF)",
+        "documentFailed": "The documents could not be opened",
+        "approve": "Approve",
+        "reject": "Reject",
+        "revoke": "Revoke approval",
+        "reasonField": "Reason",
+        "reasonHint": "The account holder reads this as you write it.",
+        "reasonMissing": "Write a reason.",
+        "confirmApprove": "Approve {account}’s student card? They can buy the student plan for a year from today.",
+        "confirmApproveAction": "Approve",
+        "confirmReject": "Reject {account}’s student card? They can send another one.",
+        "confirmRejectAction": "Reject",
+        "confirmRevoke": "Revoke {account}’s approval? They can no longer buy or renew the student plan.",
+        "confirmRevokeAction": "Revoke",
+        "back": "Back",
+        "doneTitle": "Done",
+        "failedTitle": "That did not work",
+        "approvedNotice": "{account}’s student card was approved.",
+        "rejectedNotice": "{account}’s student card was rejected.",
+        "revokedNotice": "{account}’s approval was revoked.",
+        "openAccount": "Open account",
+        "openAccountLabel": "Open account: {name}",
+        "errors": {
+          "STUDENT_VERIFICATION_NOT_DECIDABLE": "This submission has already been decided, perhaps by a colleague. The list has been reloaded.",
+          "STUDENT_VERIFICATION_NOT_FOUND": "This submission no longer exists. The list has been reloaded.",
+          "STUDENT_CARD_IN_USE": "Another account already holds a current approval for this card number, so this one cannot be approved."
         }
       }
     },
@@ -5267,7 +5405,27 @@
       "renewalNotOpen": "This plan cannot be renewed yet. Reload the page to see when renewal opens.",
       "lapsed": "This plan has ended. Choose a plan below to subscribe again.",
       "notDue": "There is nothing to pay for right now. Reload the page to see where your plan stands.",
-      "paymentUnavailable": "Card payments are not available right now. Nothing was charged; try again in a few minutes."
+      "paymentUnavailable": "Card payments are not available right now. Nothing was charged; try again in a few minutes.",
+      "periodNotOffered": "This plan is not sold for that period. Choose another period, or reload the page.",
+      "studentVerificationRequired": "This plan is for accounts with an approved student card. Send yours from the student page of your account."
+    },
+    "periods": {
+      "label": "Billing period",
+      "MONTHLY": "1 month",
+      "SEMIANNUAL": "6 months",
+      "YEARLY": "1 year",
+      "notOffered": "Not sold for {period}."
+    },
+    "per": {
+      "MONTHLY": "for 1 month",
+      "SEMIANNUAL": "for 6 months",
+      "YEARLY": "for 1 year"
+    },
+    "student": {
+      "label": "Student",
+      "needsCheck": "Available once your student card is checked",
+      "verify": "Verify your student card",
+      "pending": "Your student card is being checked"
     }
   },
   "campaign": {
