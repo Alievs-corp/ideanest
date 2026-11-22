@@ -186,6 +186,59 @@ describe('the student verification queue', () => {
     await waitFor(() => expect(listMock).toHaveBeenCalledTimes(2));
   });
 
+  it('keeps a decided row gone when a second decision answers after it (#655 review)', async () => {
+    const OTHER: StudentVerificationRow = { ...WAITING, id: 'other', accountId: KAMRAN, accountName: 'Kamran Əliyev' };
+    listMock.mockResolvedValue([WAITING, OTHER]);
+    let answerFirst: (row: StudentVerificationRow) => void = () => {};
+    let answerSecond: (row: StudentVerificationRow) => void = () => {};
+    decideMock
+      .mockImplementationOnce(() => new Promise((resolve) => (answerFirst = resolve)))
+      .mockImplementationOnce(() => new Promise((resolve) => (answerSecond = resolve)));
+    render(<StudentVerificationQueue copy={COPY} />);
+
+    // Both decided before either answers: each row's request starts from the same list.
+    await userEvent.click(await screen.findByRole('button', { name: `${COPY.approve}: Ayan Məmmədova` }));
+    await userEvent.click(screen.getByRole('button', { name: COPY.confirmApproveAction }));
+    await userEvent.click(screen.getByRole('button', { name: `${COPY.approve}: Kamran Əliyev` }));
+    await userEvent.click(screen.getByRole('button', { name: COPY.confirmApproveAction }));
+
+    answerFirst(APPROVED);
+    await waitFor(() => expect(screen.queryByText('Ayan Məmmədova')).not.toBeInTheDocument());
+    answerSecond({ ...OTHER, state: 'APPROVED', documents: [] });
+
+    await waitFor(() => expect(screen.queryByText('Kamran Əliyev')).not.toBeInTheDocument());
+    expect(screen.queryByText('Ayan Məmmədova')).not.toBeInTheDocument();
+  });
+
+  it('opens the documents once per press, not again when the list is read again', async () => {
+    const OTHER: StudentVerificationRow = { ...WAITING, id: 'other', accountId: KAMRAN, accountName: 'Kamran Əliyev' };
+    listMock.mockImplementation(async () => [{ ...WAITING }, { ...OTHER }]);
+    let release: () => void = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    openMock.mockImplementation(async () => {
+      await held;
+      return new Blob(['jpg'], { type: 'image/jpeg' });
+    });
+    decideMock.mockRejectedValue(
+      new ApiError(409, { status: 409, code: 'STUDENT_VERIFICATION_NOT_DECIDABLE' }),
+    );
+    render(<StudentVerificationQueue copy={COPY} />);
+
+    const ayan = (await screen.findByText('Ayan Məmmədova')).closest('li');
+    if (ayan === null) throw new Error('no row');
+    await userEvent.click(within(ayan).getByRole('button', { name: COPY.showDocuments }));
+    expect(openMock).toHaveBeenCalledTimes(2);
+
+    // A refused decision on the other row reads the list again while the documents are in flight.
+    await userEvent.click(screen.getByRole('button', { name: `${COPY.approve}: Kamran Əliyev` }));
+    await userEvent.click(screen.getByRole('button', { name: COPY.confirmApproveAction }));
+    await waitFor(() => expect(listMock).toHaveBeenCalledTimes(2));
+
+    release();
+    expect(await screen.findByRole('img', { name: COPY.selfie })).toBeInTheDocument();
+    expect(openMock).toHaveBeenCalledTimes(2);
+  });
+
   it('renders the console refusal for somebody without the capability', async () => {
     listMock.mockRejectedValue(new ApiError(403, { status: 403 }));
     render(<StudentVerificationQueue copy={COPY} />);

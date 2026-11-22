@@ -59,8 +59,13 @@ export interface ConsoleResource<T> {
    * For the screens whose writes answer with the new state — granting a role, resolving a
    * dispute — so that the row updates without a second round trip that could disagree with
    * the response the reader just caused.
+   *
+   * <p>Takes an updater as well as a value, as `setState` does. A screen whose rows are decided
+   * one after another must use it: a value computed from the `data` of the render that started
+   * the request is the list as it was then, and writing it back resurrects every row decided
+   * since. Nothing is held yet, an updater is not called.
    */
-  readonly set: (next: T) => void;
+  readonly set: (next: T | ((previous: T) => T)) => void;
 }
 
 /**
@@ -123,7 +128,19 @@ export function useConsoleResource<T>(
   }, [attempt, subject, ...dependencies]);
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
-  const set = useCallback((next: T) => setData(next), []);
+  const set = useCallback(
+    (next: T | ((previous: T) => T)) =>
+      setData((previous) => {
+        if (!isUpdater(next)) return next;
+        return previous === null ? null : next(previous);
+      }),
+    [],
+  );
 
   return { status, data, error, capability, reload, set };
+}
+
+/** Whether `set` was handed an updater. Data held here is never itself a function. */
+function isUpdater<T>(next: T | ((previous: T) => T)): next is (previous: T) => T {
+  return typeof next === 'function';
 }
