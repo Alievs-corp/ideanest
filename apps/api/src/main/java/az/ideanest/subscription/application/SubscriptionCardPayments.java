@@ -73,7 +73,8 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
     /**
      * Whether a renewal may be for a period other than the subscription's own — #660, step two.
      *
-     * <p>Off in the release that starts recording a page's period (V129), on in the next. During a
+     * <p>Off in the release that started recording a page's period (V129), on from the next one,
+     * which is this. During a
      * rolling deployment an instance of the previous release may settle a page this one opened, and
      * it renews by the subscription's own period whatever the page was for: a year paid for and a
      * month granted. So this release records periods and settles by them, but offers only the held
@@ -81,7 +82,7 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
      * rest. A constant rather than configuration, so no environment change is needed and the flip
      * is a reviewed diff.
      */
-    static final boolean OTHER_PERIODS_OFFERED = false;
+    static final boolean OTHER_PERIODS_OFFERED = true;
 
     private final SubscriptionRepository subscriptions;
     private final SubscriptionPlanRepository plans;
