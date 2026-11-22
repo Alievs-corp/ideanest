@@ -111,6 +111,14 @@ export interface HeldSubscription {
   readonly paymentDue?: PaymentDue | null;
   /** When renewing the running period is first offered, or `null` for a pending or free plan. */
   readonly renewalOpensAt?: string | null;
+  /**
+   * What extending the running subscription by each period costs now, shortest first — the
+   * choices the "Extend" action offers while `paymentDue` is `RENEWAL`. The held period keeps the
+   * price this account bought at; another period is the plan's current price for it. Empty when
+   * nothing can be extended (pending, free, lapsed, or the window is not open); `readMine` always
+   * sets it, and absent reads as empty.
+   */
+  readonly renewalPrices?: readonly PlanPrice[];
 }
 
 /** #449: the first period of a pending plan, or the next period of one inside its renewal window. */
@@ -197,7 +205,13 @@ export function readPlan(body: unknown): Plan | null {
  * absent or empty list falls back to the plan's own price, so a card always has one to show.
  */
 function readPrices(value: unknown, fallback: PlanPrice): readonly PlanPrice[] {
-  if (!Array.isArray(value)) return [fallback];
+  const prices = readPriceList(value, fallback.currency);
+  return prices.length === 0 ? [fallback] : prices;
+}
+
+/** Every readable entry, one per period, shortest first; possibly empty. */
+function readPriceList(value: unknown, currency: string): readonly PlanPrice[] {
+  if (!Array.isArray(value)) return [];
   const byPeriod = new Map<BillingPeriod, PlanPrice>();
   for (const entry of value) {
     if (!isObject(entry) || !isPeriod(entry.billingPeriod)) continue;
@@ -206,14 +220,13 @@ function readPrices(value: unknown, fallback: PlanPrice): readonly PlanPrice[] {
     byPeriod.set(entry.billingPeriod, {
       billingPeriod: entry.billingPeriod,
       price,
-      currency: text(entry.currency) ?? fallback.currency,
+      currency: text(entry.currency) ?? currency,
     });
   }
-  const prices = BILLING_PERIODS.flatMap((period) => {
+  return BILLING_PERIODS.flatMap((period) => {
     const found = byPeriod.get(period);
     return found === undefined ? [] : [found];
   });
-  return prices.length === 0 ? [fallback] : prices;
 }
 
 /**
@@ -273,6 +286,7 @@ export function readMine(body: unknown): MySubscription | null {
           ? (held.paymentDue as PaymentDue)
           : null,
       renewalOpensAt: optionalText(held.renewalOpensAt),
+      renewalPrices: readPriceList(held.renewalPrices, text(held.currency) ?? plan.currency),
     },
   };
 }

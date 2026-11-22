@@ -92,6 +92,14 @@ export interface PlanPaymentCopy {
   readonly renewalCancelled: string;
   /** Carries `{date}`. */
   readonly renewsFrom: string;
+  /** The name of the extension choice: one month, six months or a year (#660). */
+  readonly extendLabel: string;
+  /** Under each extension option. Carries `{date}`: when the plan would end after it. */
+  readonly extendsTo: string;
+  /** The calm extend button, more than seven days before the end. Carries `{period}` and `{price}`. */
+  readonly extendBy: string;
+  /** Under "active until", while extending is an option rather than something due (#660). */
+  readonly extendBody: string;
   readonly returned: PlanPaymentReturnCopy;
 }
 
@@ -242,6 +250,10 @@ export function pricingCopyFrom(t: PricingTranslator): PricingCopy {
       renewalBody: t('payment.renewalBody'),
       renewalCancelled: t('payment.renewalCancelled'),
       renewsFrom: String(t.raw('payment.renewsFrom')),
+      extendLabel: t('payment.extendLabel'),
+      extendsTo: String(t.raw('payment.extendsTo')),
+      extendBy: String(t.raw('payment.extendBy')),
+      extendBody: t('payment.extendBody'),
       returned: {
         waitingTitle: t('payment.returned.waitingTitle'),
         waitingBody: t('payment.returned.waitingBody'),

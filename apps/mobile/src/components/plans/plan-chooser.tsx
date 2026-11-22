@@ -11,6 +11,7 @@ import {
   type HeldSubscription,
   type Plan,
 } from '@ideanest/plans/catalogue';
+import { renewalStandingOf } from '@ideanest/plans/payment';
 import { Glyphs, type IconGlyph } from '../../icons';
 import { formatDay, useT, type MessageKey, type Translate } from '../../lib/i18n';
 import { activeTheme, colors, darkColors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../../theme';
@@ -88,6 +89,15 @@ export function isRenewing(held: HeldSubscription): boolean {
   return held.paymentDue === 'RENEWAL' && held.entitled;
 }
 
+/**
+ * Whether a due renewal is close enough to the end to be said as a warning (#660): the last seven
+ * days. A monthly plan has a renewal due for its whole month, and until its last week the plan is
+ * simply active, with a quiet way to extend it on the website.
+ */
+export function isUrgentRenewal(held: HeldSubscription): boolean {
+  return isRenewing(held) && renewalStandingOf(held) === 'urgent';
+}
+
 /** Whether something is to be paid on the website now: the first period, or a renewal. */
 export function isPaymentDue(held: HeldSubscription): boolean {
   return (held.state === 'PENDING_PAYMENT' && held.paymentDue === 'FIRST_PERIOD') || isRenewing(held);
@@ -100,7 +110,7 @@ export function isPaymentDue(held: HeldSubscription): boolean {
 export function describeHeld(held: HeldSubscription, t: Translate, locale: Locale): string {
   const plan = held.plan.name;
   const date = formatDay(held.currentPeriodEnd, locale) ?? '';
-  if (isRenewing(held)) return t('mobile.pricing.renewalTitle', { plan, date });
+  if (isUrgentRenewal(held)) return t('mobile.pricing.renewalTitle', { plan, date });
   switch (standingOf(held)) {
     case 'pending':
       return t('pricing.held.pendingTitle', { plan });
@@ -131,7 +141,7 @@ function heldDetail(held: HeldSubscription, t: Translate, locale: Locale): strin
     return held.paymentDue === 'FIRST_PERIOD' ? t('mobile.pricing.pendingOnWeb') : t('pricing.held.pendingBody');
   }
   if (isRenewing(held)) {
-    const body = t('pricing.payment.renewalBody');
+    const body = isUrgentRenewal(held) ? t('pricing.payment.renewalBody') : t('mobile.pricing.extendOnWebBody');
     return held.cancelAtPeriodEnd ? `${body} ${t('pricing.payment.renewalCancelled')}` : body;
   }
   const opensAt = held.entitled && (held.paymentDue ?? null) === null ? formatDay(held.renewalOpensAt, locale) : null;
@@ -167,14 +177,21 @@ export function HeldPanel({
       <View style={styles.stack}>
         <Eyebrow accessibilityRole="header">{t('pricing.held.heading')}</Eyebrow>
         <InlineAlert
-          // A renewal that is due is something to do, like a pending plan: never a green tick.
-          variant={isRenewing(held) ? 'warning' : STANDING_VARIANT[standing]}
+          // A renewal in its last seven days is something to do, like a pending plan: never a green
+          // tick. Earlier in the window the plan is simply active (#660).
+          variant={isUrgentRenewal(held) ? 'warning' : STANDING_VARIANT[standing]}
           title={describeHeld(held, t, locale)}
           description={changeable ? [detail, t('pricing.held.pendingChange')].filter(Boolean).join(' ') : detail}
           action={
             onOpenWeb !== undefined && isPaymentDue(held) ? (
               <Pill
-                label={t('mobile.pricing.webOnly.open')}
+                // An extension offered early is an option, not a call to act: quiet, and named for it.
+                label={
+                  isRenewing(held) && !isUrgentRenewal(held)
+                    ? t('mobile.pricing.extendOnWeb')
+                    : t('mobile.pricing.webOnly.open')
+                }
+                variant={isRenewing(held) && !isUrgentRenewal(held) ? 'ghost' : undefined}
                 size="sm"
                 disabled={openDisabled}
                 onPress={onOpenWeb}
