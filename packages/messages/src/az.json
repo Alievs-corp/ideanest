@@ -1370,6 +1370,13 @@
             "verification_approved": "Şəxsiyyət təsdiqləndi",
             "verification_rejected": "Şəxsiyyət təsdiqi rədd edildi"
           },
+          "student": {
+            "verification_submitted": "Tələbə təsdiqi göndərildi",
+            "document_read": "Tələbə sənədi açıldı",
+            "verification_approved": "Tələbə təsdiqləndi",
+            "verification_rejected": "Tələbə təsdiqi rədd edildi",
+            "verification_revoked": "Tələbə təsdiqi geri alındı"
+          },
           "ledger": {
             "read": "Baş kitab oxundu",
             "reconciled": "Baş kitab uzlaşdırıldı"
@@ -7727,6 +7734,77 @@
         "title": "Plan saytda seçilir",
         "body": "Plan seçmək, dəyişmək və ya ləğv etmək üçün bu səhifəni IdeyaNest saytında açın. Orada seçdiyiniz plan aktiv olan kimi tətbiqdə də keçərli olur.",
         "open": "Planlar səhifəsini aç"
+      },
+      "periodLabel": "Ödəniş müddəti",
+      "periods": {
+        "MONTHLY": "1 ay",
+        "SEMIANNUAL": "6 ay",
+        "YEARLY": "1 il"
+      },
+      "perSemiannual": "6 aylıq",
+      "notOffered": "{period} müddətinə satılmır",
+      "student": {
+        "tag": "Tələbə",
+        "needsCheck": "Bu plan üçün tələbə biletiniz yoxlanılmalıdır.",
+        "verify": "Tələbə biletini təsdiqlə",
+        "pending": "Yoxlanılır"
+      },
+      "errors": {
+        "periodNotOffered": "Bu plan həmin müddətə satılmır. Yuxarıda başqa müddət seçin.",
+        "studentVerificationRequired": "Bu plan tələbələr üçündür. Əvvəlcə tələbə statusunuzu təsdiqləyin."
+      }
+    },
+    "studentVerification": {
+      "link": "Tələbə statusu",
+      "title": "Tələbə statusu",
+      "intro": "Tələbə planı yalnız tələbə bileti yoxlanılmış hesablar üçündür. Təsdiq qərar günündən bir il keçərlidir.",
+      "loading": "Tələbə statusunuz yüklənir",
+      "unavailable": "Tələbə statusunuzu yükləyə bilmədik.",
+      "toPricing": "Planlara bax",
+      "status": {
+        "heading": "Statusunuz",
+        "NONE": "Hələ tələbə bileti göndərməmisiniz.",
+        "PENDING": "Tələbə biletiniz yoxlanılır.",
+        "pendingBody": "Təsdiqlənən kimi tələbə planını seçə biləcəksiniz.",
+        "APPROVED": "Tələbə statusunuz {date} tarixinədək təsdiqlənib.",
+        "REJECTED": "Tələbə biletiniz qəbul edilmədi.",
+        "rejectedBody": "Düzəldib aşağıda yenidən göndərə bilərsiniz.",
+        "reason": "Səbəb: {reason}",
+        "EXPIRED": "Tələbə təsdiqinizin müddəti {date} tarixində bitib. Tələbə planını saxlamaq üçün biletinizi yenidən göndərin.",
+        "institution": "Tədris müəssisəsi",
+        "cardNumber": "Tələbə bileti nömrəsi",
+        "submittedAt": "Göndərilib",
+        "validUntil": "Son tarix"
+      },
+      "form": {
+        "heading": "Tələbə biletinizi göndərin",
+        "institutionHint": "Biletdə yazıldığı kimi",
+        "oneAccount": "Bir tələbə bileti yalnız bir IdeyaNest hesabı üçün istifadə oluna bilər.",
+        "card": "Tələbə biletinin şəkli",
+        "cardHint": "Adınız, şəkliniz və nömrə olan tərəfi, oxunaqlı və kəsilmədən.",
+        "selfie": "Selfi",
+        "selfieWhy": "Selfini biletdəki şəkillə müqayisə edirik ki, heç kim başqasının biletindən istifadə edə bilməsin.",
+        "takeSelfie": "Selfi çəkin",
+        "added": "Şəkil əlavə edildi",
+        "privacy": "Şəkillər şifrələnmiş saxlanılır və qərar veriləndən sonra silinir.",
+        "submit": "Yoxlamaya göndər",
+        "submitting": "Göndərilir",
+        "sent": "Göndərildi. Tələbə biletiniz yoxlanılmağı gözləyir.",
+        "institutionRequired": "Tədris müəssisəsini daxil edin.",
+        "tooLong": "Ən çox {max} simvol.",
+        "cardNumberInvalid": "Nömrəni biletdəki kimi daxil edin, 3–40 simvol.",
+        "cardPhotoRequired": "Tələbə biletinin şəklini əlavə edin.",
+        "selfieRequired": "Selfi çəkin."
+      },
+      "errors": {
+        "title": "Göndərilmədi",
+        "cardInUse": "Bu tələbə bileti artıq başqa hesabda istifadə olunur. Bir bilet yalnız bir hesaba aid ola bilər.",
+        "alreadySubmitted": "Artıq bilet göndərmisiniz: o yoxlanılır və ya təsdiqlənib.",
+        "emptyFile": "Şəkil boş gəldi. Yenidən seçin.",
+        "unsupportedFile": "Bu şəklin formatı qəbul edilmir. JPEG və ya PNG şəkil istifadə edin.",
+        "storageUnavailable": "Hazırda sənəd qəbul edə bilmirik. Heç nə saxlanılmadı; bir az sonra yenidən cəhd edin.",
+        "signedOut": "Bileti göndərmək üçün yenidən daxil olun.",
+        "generic": "Bilet göndərilmədi. Yenidən cəhd edin."
       }
     },
     "account": {

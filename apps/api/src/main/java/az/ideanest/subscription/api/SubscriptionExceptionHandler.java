@@ -10,11 +10,13 @@ import az.ideanest.subscription.application.InvalidRevenuePeriodException;
 import az.ideanest.subscription.application.NoPaymentDueException;
 import az.ideanest.subscription.application.NoSubscriptionException;
 import az.ideanest.subscription.application.PaymentNotYetReceivedException;
+import az.ideanest.subscription.application.PeriodNotOfferedException;
 import az.ideanest.subscription.application.PlanCodeTakenException;
 import az.ideanest.subscription.application.PlanNotOnSaleException;
 import az.ideanest.subscription.application.SubscriptionNotAwaitingPaymentException;
 import az.ideanest.subscription.application.SubscriptionNotFoundException;
 import az.ideanest.subscription.application.SubscriptionNotOpenException;
+import az.ideanest.subscription.application.StudentVerificationRequiredException;
 import az.ideanest.subscription.application.UnknownPlanException;
 import az.ideanest.user.application.AccountNotFoundException;
 import java.net.URI;
@@ -98,6 +100,38 @@ public class SubscriptionExceptionHandler {
         problem.setTitle("That plan is no longer offered");
         problem.setDetail("The plans changed while this page was open. Reload to see what is available now.");
         problem.setProperty("code", "PLAN_NOT_ON_SALE");
+        return problem;
+    }
+
+    /**
+     * 400: the plan is not sold for that period — #655. {@code billingPeriod} names the one asked
+     * for, so the page can say which.
+     */
+    @ExceptionHandler(PeriodNotOfferedException.class)
+    public ProblemDetail handlePeriodNotOffered(PeriodNotOfferedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/period-not-offered"));
+        problem.setTitle("That plan is not sold for that period");
+        problem.setDetail("The plans changed while this page was open. Reload to see what is available now.");
+        problem.setProperty("code", "PERIOD_NOT_OFFERED");
+        problem.setProperty("billingPeriod", exception.period().name());
+        return problem;
+    }
+
+    /**
+     * 403: a student plan, and the account is not a verified student now — #655.
+     *
+     * <p>A 403 and not a 409, because nothing about the request is stale: the account lacks
+     * something it can go and get, which is the student check at
+     * {@code /v1/me/student-verification}.
+     */
+    @ExceptionHandler(StudentVerificationRequiredException.class)
+    public ProblemDetail handleStudentVerificationRequired(StudentVerificationRequiredException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problem.setType(URI.create("https://ideanest.az/problems/student-verification-required"));
+        problem.setTitle("This plan is for verified students");
+        problem.setDetail("Verify your student card to buy or renew this plan.");
+        problem.setProperty("code", "STUDENT_VERIFICATION_REQUIRED");
         return problem;
     }
 

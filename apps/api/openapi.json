@@ -3869,6 +3869,179 @@
         "tags" : [ "staff-controller" ]
       }
     },
+    "/v1/admin/student-verifications" : {
+      "get" : {
+        "operationId" : "studentVerificationAdminList",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "state",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "PENDING",
+            "enum" : [ "NONE", "PENDING", "APPROVED", "REJECTED", "EXPIRED" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentVerificationList"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "student-verification-admin-controller" ]
+      }
+    },
+    "/v1/admin/student-verifications/{verificationId}/approve" : {
+      "post" : {
+        "operationId" : "studentVerificationAdminApprove",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verificationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentVerificationRow"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "student-verification-admin-controller" ]
+      }
+    },
+    "/v1/admin/student-verifications/{verificationId}/documents/{kind}" : {
+      "get" : {
+        "operationId" : "studentVerificationAdminDocument",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verificationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "kind",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "STUDENT_CARD", "SELFIE" ]
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "byte"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "student-verification-admin-controller" ]
+      }
+    },
+    "/v1/admin/student-verifications/{verificationId}/reject" : {
+      "post" : {
+        "operationId" : "studentVerificationAdminReject",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verificationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StudentVerificationDecision"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentVerificationRow"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "student-verification-admin-controller" ]
+      }
+    },
+    "/v1/admin/student-verifications/{verificationId}/revoke" : {
+      "post" : {
+        "operationId" : "studentVerificationAdminRevoke",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "verificationId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StudentVerificationDecision"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentVerificationRow"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "student-verification-admin-controller" ]
+      }
+    },
     "/v1/admin/subscription/payments" : {
       "get" : {
         "operationId" : "subscriptionRevenuePayments",
@@ -7465,6 +7638,65 @@
           }
         },
         "tags" : [ "backer-signal-controller" ]
+      }
+    },
+    "/v1/me/student-verification" : {
+      "get" : {
+        "operationId" : "studentVerificationMine",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentVerificationStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "student-verification-controller" ]
+      },
+      "post" : {
+        "operationId" : "studentVerificationSubmit",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "cardNumber" : {
+                    "type" : "string"
+                  },
+                  "institution" : {
+                    "type" : "string"
+                  },
+                  "selfie" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  },
+                  "studentCard" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentVerificationStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "student-verification-controller" ]
       }
     },
     "/v1/me/subscription" : {
@@ -11581,7 +11813,7 @@
         "properties" : {
           "billingPeriod" : {
             "type" : "string",
-            "enum" : [ "MONTHLY", "YEARLY" ]
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
           },
           "code" : {
             "type" : "string",
@@ -11616,9 +11848,20 @@
             "type" : "number",
             "minimum" : 0
           },
+          "prices" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PeriodPrice"
+            },
+            "maxItems" : 3,
+            "minItems" : 1
+          },
           "sortOrder" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "studentOnly" : {
+            "type" : "boolean"
           },
           "translations" : {
             "type" : "object",
@@ -11627,7 +11870,7 @@
             }
           }
         },
-        "required" : [ "billingPeriod", "code", "currency", "name", "price" ]
+        "required" : [ "code", "currency", "name" ]
       },
       "AddProject" : {
         "type" : "object",
@@ -13126,9 +13369,20 @@
             "type" : "number",
             "minimum" : 0
           },
+          "prices" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PeriodPrice"
+            },
+            "maxItems" : 3,
+            "minItems" : 1
+          },
           "sortOrder" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "studentOnly" : {
+            "type" : "boolean"
           },
           "translations" : {
             "type" : "object",
@@ -13543,7 +13797,7 @@
           },
           "billingPeriod" : {
             "type" : "string",
-            "enum" : [ "MONTHLY", "YEARLY" ]
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
           },
           "cancelAtPeriodEnd" : {
             "type" : "boolean"
@@ -16456,12 +16710,30 @@
           }
         }
       },
+      "PeriodPrice" : {
+        "type" : "object",
+        "properties" : {
+          "billingPeriod" : {
+            "type" : "string",
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
+          },
+          "currency" : {
+            "type" : "string",
+            "pattern" : "^[A-Z]{3}$"
+          },
+          "price" : {
+            "type" : "number",
+            "minimum" : 0
+          }
+        },
+        "required" : [ "billingPeriod", "price" ]
+      },
       "Plan" : {
         "type" : "object",
         "properties" : {
           "billingPeriod" : {
             "type" : "string",
-            "enum" : [ "MONTHLY", "YEARLY" ]
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
           },
           "code" : {
             "type" : "string"
@@ -16492,9 +16764,18 @@
           "price" : {
             "type" : "string"
           },
+          "prices" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlanPrice"
+            }
+          },
           "sortOrder" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "studentOnly" : {
+            "type" : "boolean"
           },
           "translations" : {
             "type" : "object",
@@ -16523,6 +16804,21 @@
           }
         },
         "required" : [ "bankReference" ]
+      },
+      "PlanPrice" : {
+        "type" : "object",
+        "properties" : {
+          "billingPeriod" : {
+            "type" : "string",
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "price" : {
+            "type" : "string"
+          }
+        }
       },
       "PlanText" : {
         "type" : "object",
@@ -19970,6 +20266,135 @@
           }
         }
       },
+      "StudentCardHolder" : {
+        "type" : "object",
+        "properties" : {
+          "accountId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "accountName" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string",
+            "enum" : [ "NONE", "PENDING", "APPROVED", "REJECTED", "EXPIRED" ]
+          }
+        }
+      },
+      "StudentVerificationDecision" : {
+        "type" : "object",
+        "properties" : {
+          "reason" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "reason" ]
+      },
+      "StudentVerificationList" : {
+        "type" : "object",
+        "properties" : {
+          "verifications" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/StudentVerificationRow"
+            }
+          }
+        }
+      },
+      "StudentVerificationRow" : {
+        "type" : "object",
+        "properties" : {
+          "accountEmail" : {
+            "type" : "string"
+          },
+          "accountId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "accountName" : {
+            "type" : "string"
+          },
+          "cardNumber" : {
+            "type" : "string"
+          },
+          "decidedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "decidedBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "documents" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "STUDENT_CARD", "SELFIE" ]
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "institution" : {
+            "type" : "string"
+          },
+          "rejectionReason" : {
+            "type" : "string"
+          },
+          "sameCardElsewhere" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/StudentCardHolder"
+            }
+          },
+          "state" : {
+            "type" : "string",
+            "enum" : [ "NONE", "PENDING", "APPROVED", "REJECTED", "EXPIRED" ]
+          },
+          "submittedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "validUntil" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "StudentVerificationStatus" : {
+        "type" : "object",
+        "properties" : {
+          "cardNumber" : {
+            "type" : "string"
+          },
+          "decidedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "institution" : {
+            "type" : "string"
+          },
+          "rejectionReason" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string",
+            "enum" : [ "NONE", "PENDING", "APPROVED", "REJECTED", "EXPIRED" ]
+          },
+          "submittedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "validUntil" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
       "Subcategory" : {
         "type" : "object",
         "properties" : {
@@ -20095,6 +20520,10 @@
       "SubscribeRequest" : {
         "type" : "object",
         "properties" : {
+          "billingPeriod" : {
+            "type" : "string",
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
+          },
           "planId" : {
             "type" : "string",
             "format" : "uuid"
@@ -20120,7 +20549,7 @@
           },
           "billingPeriod" : {
             "type" : "string",
-            "enum" : [ "MONTHLY", "YEARLY" ]
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
           },
           "currency" : {
             "type" : "string"
@@ -20253,7 +20682,7 @@
         "properties" : {
           "billingPeriod" : {
             "type" : "string",
-            "enum" : [ "MONTHLY", "YEARLY" ]
+            "enum" : [ "MONTHLY", "SEMIANNUAL", "YEARLY" ]
           },
           "currency" : {
             "type" : "string"

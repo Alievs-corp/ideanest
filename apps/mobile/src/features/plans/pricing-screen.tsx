@@ -5,20 +5,38 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import { ApiError } from '@ideanest/api-client';
 import {
+  offeredPeriods,
   refusalOf,
   standingOf,
+  type BillingPeriod,
   type MySubscription,
+  type Plan,
   type SubscriptionRefusal,
 } from '@ideanest/plans/catalogue';
+import { qualifiesForStudentPlans, type StudentVerification } from '@ideanest/plans/student';
 import { inAppPlanChoice } from '../../api/config';
-import { queryKeys } from '../../api/queries';
 import { StaticPage } from '../../components/content/static-page';
 import { FeeDisclosure } from '../../components/fees/fee-disclosure';
-import { HeldPanel, PlanCards, describeHeld, isPaymentDue } from '../../components/plans/plan-chooser';
-import { InlineAlert, Pill, Skeleton, SkeletonCard, SkeletonGroup, announce } from '../../components/ui';
+import {
+  HeldPanel,
+  PERIOD_NAME,
+  PlanCards,
+  describeHeld,
+  isPaymentDue,
+  type StudentStanding,
+} from '../../components/plans/plan-chooser';
+import {
+  InlineAlert,
+  Pill,
+  SegmentedPill,
+  Skeleton,
+  SkeletonCard,
+  SkeletonGroup,
+  announce,
+} from '../../components/ui';
 import { useOnline } from '../../lib/connectivity';
 import { signInHrefFor } from '../../lib/guard';
-import { useT } from '../../lib/i18n';
+import { useT, type MessageKey } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { useSession } from '../../lib/use-session';
 import { webPageUrl } from '../../lib/web-pages';
@@ -26,11 +44,13 @@ import { spacing } from '../../theme';
 import {
   cancelSubscription,
   chooseSubscription,
+  mySubscriptionKey,
   useMySubscription,
   usePlanCatalogue,
   usePlatformFeeDisclosure,
   type SubscriptionAnswer,
 } from './api';
+import { useStudentVerification } from '../student/api';
 
 /**
  * Pricing — the web's `/pricing`, issue #164.
@@ -59,6 +79,15 @@ import {
  * re-read each time the app comes back to the foreground — the creator returning from a banking app
  * — and when the in-app browser closes.
  *
+ * <h2>Periods and the student plan (#655)</h2>
+ *
+ * Every plan may be sold for one month, six months or a year. The switch draws only the periods
+ * some plan is sold for (`offeredPeriods`), starts on the held plan's period when it is one of them
+ * and on the shortest otherwise, and a choice sends the period it shows. A student plan's card
+ * follows `GET /v1/me/student-verification`, read only for a signed-in reader and only when the
+ * catalogue has a student plan: the student status screen (`settings/student`) is where the card
+ * is sent, and the two share the read.
+ *
  * <h2>Money</h2>
  *
  * Prices and rates stay decimal strings: free is `Decimal.isZero()`, amounts are formatted by
@@ -74,10 +103,14 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
   const { signedIn } = useSession();
   const inApp = inAppPlanChoice();
 
-  const plans = usePlanCatalogue();
-  const mine = useMySubscription(signedIn);
+  const plans = usePlanCatalogue(locale);
+  const mine = useMySubscription(signedIn, locale);
   const fees = usePlatformFeeDisclosure();
 
+  const hasStudentPlan = plans.data?.some((plan) => plan.studentOnly) ?? false;
+  const student = useStudentVerification(signedIn && hasStudentPlan);
+
+  const [chosenPeriod, setChosenPeriod] = useState<BillingPeriod | null>(null);
   const [busyPlan, setBusyPlan] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [refusal, setRefusal] = useState<SubscriptionRefusal | null>(null);
@@ -85,12 +118,16 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
   const [awaitingReturn, setAwaitingReturn] = useState(false);
 
   const held = mine.data?.state === 'read' ? mine.data.subscription : null;
+  const periods = plans.data === undefined ? [] : offeredPeriods(plans.data);
+  const period = periodShown(periods, chosenPeriod, held?.billingPeriod ?? null);
+  const studentStanding = studentStandingOf(signedIn, student.data, student.isError);
+  const verifyStudent = () => router.push('/settings/student');
   const review: Href | null = fromProjectId === undefined ? null : `/campaigns/${fromProjectId}/edit/review`;
   const pricingPath = fromProjectId === undefined ? '/pricing' : `/pricing?from=submit&project=${fromProjectId}`;
 
   const settle = (next: MySubscription) => {
     const answer: SubscriptionAnswer = { state: 'read', subscription: next.subscription };
-    client.setQueryData([...queryKeys.mySubscription(), signedIn], answer);
+    client.setQueryData(mySubscriptionKey(signedIn, locale), answer);
   };
 
   // What changed is said politely, whatever changed it: a choice, a cancel, the web or a re-read.
@@ -102,18 +139,21 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
     spoken.current = sentence;
   }, [sentence]);
 
-  const choose = async (planId: string) => {
+  const choose = async (plan: Plan) => {
     if (!online) return;
-    setBusyPlan(planId);
+    setBusyPlan(plan.id);
     setRefusal(null);
     try {
-      const next = await chooseSubscription(planId);
+      const next = await chooseSubscription(plan.id, period);
       settle(next);
       if (review !== null && next.subscription?.entitled === true) router.replace(review);
     } catch (cause) {
-      setRefusal(refusalFrom(cause));
+      const refused = refusalFrom(cause);
+      setRefusal(refused);
       // `ALREADY_SUBSCRIBED` means the page is behind the service: catch up rather than keep offering.
       void mine.refetch();
+      // So is a student plan refused for want of a check: the card should stop offering it.
+      if (refused === 'studentVerificationRequired' && signedIn) void student.refetch();
     } finally {
       setBusyPlan(null);
     }
@@ -180,7 +220,12 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
 
   const refresh = () => {
     setPulling(true);
-    void Promise.all([plans.refetch(), mine.refetch(), fees.refetch()]).finally(() => setPulling(false));
+    void Promise.all([
+      plans.refetch(),
+      mine.refetch(),
+      fees.refetch(),
+      ...(signedIn && hasStudentPlan ? [student.refetch()] : []),
+    ]).finally(() => setPulling(false));
   };
 
   return (
@@ -217,7 +262,12 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
         <InlineAlert
           variant="danger"
           title={t('pricing.errors.generic')}
-          description={t(`pricing.errors.${refusal}`)}
+          description={t(REFUSAL_KEY[refusal])}
+          action={
+            refusal === 'studentVerificationRequired' ? (
+              <Pill label={t('mobile.pricing.student.verify')} size="sm" onPress={verifyStudent} testID="pricing-refusal-verify" />
+            ) : undefined
+          }
           testID="pricing-refusal"
         />
       )}
@@ -266,11 +316,26 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
         />
       )}
 
+      {plans.data !== undefined && periods.length > 1 ? (
+        <SegmentedPill
+          label={t('mobile.pricing.periodLabel')}
+          options={periods.map((value) => ({ value, label: t(PERIOD_NAME[value]) }))}
+          value={period}
+          onChange={setChosenPeriod}
+          // Grows a line rather than truncate "6 месяцев" at a large font on a 360dp phone.
+          wrap
+          testID="pricing-periods"
+        />
+      ) : null}
+
       {plans.data !== undefined ? (
         <PlanCards
           plans={plans.data}
           held={held}
-          onChoose={inApp ? (plan) => void choose(plan.id) : undefined}
+          period={period}
+          student={studentStanding}
+          onVerifyStudent={verifyStudent}
+          onChoose={inApp ? (plan) => void choose(plan) : undefined}
           busyPlan={busyPlan}
           chooseDisabled={!online}
         />
@@ -357,6 +422,46 @@ function Standing({
     </SkeletonGroup>
   );
 }
+
+/**
+ * The period the cards are priced for: the reader's pick while it is still offered, else the held
+ * plan's period when it is, else the shortest offered.
+ */
+export function periodShown(
+  periods: readonly BillingPeriod[],
+  chosen: BillingPeriod | null,
+  held: BillingPeriod | null,
+): BillingPeriod {
+  if (chosen !== null && periods.includes(chosen)) return chosen;
+  if (held !== null && periods.includes(held)) return held;
+  return periods[0] ?? 'MONTHLY';
+}
+
+/**
+ * Where the reader's student card check stands for the student plan's card. Signed out, or a read
+ * that failed, offers the check: the student status screen signs the reader in, and says itself
+ * when it cannot read the state.
+ */
+export function studentStandingOf(
+  signedIn: boolean,
+  verification: StudentVerification | undefined,
+  failed: boolean,
+): StudentStanding {
+  if (!signedIn) return 'unverified';
+  if (verification === undefined) return failed ? 'unverified' : 'unknown';
+  if (verification.state === 'PENDING') return 'pending';
+  return qualifiesForStudentPlans(verification) ? 'qualified' : 'unverified';
+}
+
+/** The refusal's sentence: the web's `pricing.errors` for the old four, the app's for #655's two. */
+const REFUSAL_KEY: Readonly<Record<SubscriptionRefusal, MessageKey>> = {
+  alreadySubscribed: 'pricing.errors.alreadySubscribed',
+  notOnSale: 'pricing.errors.notOnSale',
+  periodNotOffered: 'mobile.pricing.errors.periodNotOffered',
+  studentVerificationRequired: 'mobile.pricing.errors.studentVerificationRequired',
+  signedOut: 'pricing.errors.signedOut',
+  generic: 'pricing.errors.generic',
+};
 
 function refusalFrom(cause: unknown): SubscriptionRefusal {
   return cause instanceof ApiError ? refusalOf(cause.status, cause.problem?.code) : refusalOf(null, null);

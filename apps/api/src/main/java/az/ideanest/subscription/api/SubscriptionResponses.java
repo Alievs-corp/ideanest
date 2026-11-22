@@ -39,6 +39,12 @@ public final class SubscriptionResponses {
      * @param listed sent to the console, which shows retired plans, and true for
      *     everything the public catalogue returns. Kept on both so that one type serves
      *     both readers — the alternative is two records that drift
+     * @param price what the shortest period on sale costs — {@code billingPeriod}'s price
+     * @param billingPeriod the shortest period the plan is sold for
+     * @param prices every period it is sold for and its price, shortest first (#655). Never
+     *     empty, and its first entry is {@code billingPeriod} at {@code price}
+     * @param studentOnly whether only an account with an approved, unexpired student verification
+     *     may buy it (#655)
      */
     public record Plan(
             UUID id,
@@ -49,6 +55,8 @@ public final class SubscriptionResponses {
             String price,
             String currency,
             BillingPeriod billingPeriod,
+            List<PlanPrice> prices,
+            boolean studentOnly,
             Integer maxActiveCampaigns,
             String goalCeiling,
             boolean listed,
@@ -76,6 +84,13 @@ public final class SubscriptionResponses {
                     plan.getPrice().amount().toPlainString(),
                     plan.getPrice().currency(),
                     plan.getBillingPeriod(),
+                    plan.getPrices().entrySet().stream()
+                            .map(entry -> new PlanPrice(
+                                    entry.getKey(),
+                                    entry.getValue().amount().toPlainString(),
+                                    entry.getValue().currency()))
+                            .toList(),
+                    plan.isStudentOnly(),
                     plan.getMaxActiveCampaigns(),
                     plan.getGoalCeiling() == null ? null : plan.getGoalCeiling().toPlainString(),
                     plan.isListed(),
@@ -83,6 +98,12 @@ public final class SubscriptionResponses {
                     plan.getUpdatedAt());
         }
 
+    }
+
+    /**
+     * What one period of a plan costs — #655. The money as a string, like every price here.
+     */
+    public record PlanPrice(BillingPeriod billingPeriod, String price, String currency) {
     }
 
     /** The catalogue. A wrapper rather than a bare array, as every list response here is. */

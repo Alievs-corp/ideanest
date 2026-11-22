@@ -96,6 +96,8 @@ const YOUR_ACCOUNT: readonly Row[] = [
 const CREATOR: readonly Row[] = [
   { label: 'shell.actions.startCampaign', icon: Glyphs.Add, href: '/campaigns/new' },
   { label: 'shell.nav.pricing', icon: Glyphs.Receipt, href: '/pricing' },
+  // Beside Pricing: the check the student plan needs (#655).
+  { label: 'mobile.studentVerification.link', icon: Glyphs.Book1, href: '/settings/student' },
 ];
 
 /** `ACCOUNT_GROUPS.settings`, in its order: one row per `settings/<key>`. */

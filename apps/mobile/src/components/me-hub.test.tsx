@@ -124,7 +124,7 @@ const THEME = 'Theme, Switch to light theme';
 const THIS_PHONE = ['This phone', 'App lock', THEME];
 
 /** What a session the service has not answered for still offers: the lock, and the way out. */
-const CREATORS = ['Creators', 'Start a campaign', 'Pricing'];
+const CREATORS = ['Creators', 'Start a campaign', 'Pricing', 'Student status'];
 const HELD = [...CREATORS, ...THIS_PHONE, ...ABOUT, 'Sign out'];
 
 /*
@@ -155,6 +155,7 @@ describe('the Me tab', () => {
       'Creators',
       'Start a campaign',
       'Pricing',
+      'Student status',
       'Settings',
       'Profile',
       'Notifications',

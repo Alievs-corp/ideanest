@@ -663,6 +663,37 @@ public enum AuditAction {
     IDENTITY_VERIFICATION_REJECTED("identity.verification_rejected", "account"),
 
     /**
+     * #655: a creator submitted a student verification — an institution, a card number, a
+     * photograph of the card and a selfie.
+     *
+     * <p>The entity is the creator, as for an identity document. The detail names the submission
+     * and the two files' sizes, never the institution, the card number or a byte.
+     */
+    STUDENT_VERIFICATION_SUBMITTED("student.verification_submitted", "account"),
+
+    /**
+     * #655: <strong>somebody looked at a student card or a selfie</strong> — the same kind of
+     * read as {@link #IDENTITY_DOCUMENT_READ}, and recorded for the same reason. The entity is the
+     * creator; the detail names the submission and which photograph.
+     */
+    STUDENT_DOCUMENT_READ("student.document_read", "account"),
+
+    /** #655: a member of staff approved a student verification, for a year. */
+    STUDENT_VERIFICATION_APPROVED("student.verification_approved", "account"),
+
+    /**
+     * #655: a member of staff refused a student verification. The reason is on the row, shown to
+     * the creator, and not copied here.
+     */
+    STUDENT_VERIFICATION_REJECTED("student.verification_rejected", "account"),
+
+    /**
+     * #655: a member of staff withdrew an approval — abuse found after the decision. The account
+     * stops qualifying for a student plan at once.
+     */
+    STUDENT_VERIFICATION_REVOKED("student.verification_revoked", "account"),
+
+    /**
      * A subscription plan was added to the catalogue.
      *
      * <p>Filed under AD-11 with the fee schedule, because it is the same kind of decision:

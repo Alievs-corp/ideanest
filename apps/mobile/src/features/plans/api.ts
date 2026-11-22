@@ -3,10 +3,12 @@ import { ApiError } from '@ideanest/api-client';
 import {
   readMine,
   readPlanCatalogue,
+  type BillingPeriod,
   type MySubscription,
   type Plan,
 } from '@ideanest/plans/catalogue';
 import { readFeeDisclosure, type FeeDisclosure } from '@ideanest/plans/fees';
+import type { Locale } from '@ideanest/messages/locale';
 import { api, sendJson } from '../../api/client';
 import { queryKeys } from '../../api/queries';
 
@@ -41,9 +43,15 @@ export type SubscriptionAnswer =
 /** An hour fresh, as the web caches the catalogue and the fee terms. */
 const PUBLIC_STALE_MS = 60 * 60 * 1000;
 
-export function usePlanCatalogue() {
+/**
+ * The catalogue in `locale` (#655): the service names and describes each plan in the language
+ * `Accept-Language` asks for, which `api()` sets from the app's language on every read. The
+ * language is in the key, so switching it reads the plans again rather than showing the cached
+ * names in the old one.
+ */
+export function usePlanCatalogue(locale: Locale) {
   return useQuery({
-    queryKey: queryKeys.plans(),
+    queryKey: [...queryKeys.plans(), locale] as const,
     staleTime: PUBLIC_STALE_MS,
     retry: false,
     queryFn: async ({ signal }): Promise<readonly Plan[]> => {
@@ -71,9 +79,10 @@ export function usePlatformFeeDisclosure() {
   });
 }
 
-export function useMySubscription(signedIn: boolean) {
+/** What this account holds. The held plan's name is in `locale` too, so the language is in the key. */
+export function useMySubscription(signedIn: boolean, locale: Locale) {
   return useQuery({
-    queryKey: [...queryKeys.mySubscription(), signedIn] as const,
+    queryKey: mySubscriptionKey(signedIn, locale),
     retry: false,
     queryFn: async ({ signal }): Promise<SubscriptionAnswer> => {
       if (!signedIn) return { state: 'signed-out' };
@@ -89,6 +98,11 @@ export function useMySubscription(signedIn: boolean) {
   });
 }
 
+/** The subscription read's key, for a screen that writes an answer into it. */
+export function mySubscriptionKey(signedIn: boolean, locale: Locale) {
+  return [...queryKeys.mySubscription(), signedIn, locale] as const;
+}
+
 function mineOf(body: unknown): MySubscription {
   const mine = readMine(body);
   if (mine === null) throw new UnreadablePricingResponse();
@@ -97,10 +111,11 @@ function mineOf(body: unknown): MySubscription {
 
 /**
  * Buys a plan. What comes back is not necessarily an entitlement: a priced plan arrives
- * `PENDING_PAYMENT` with `entitled: false`, and the page renders what it is given.
+ * `PENDING_PAYMENT` with `entitled: false`, and the page renders what it is given. The period is
+ * the one the switch shows (#655); the service refuses one the plan is not sold for.
  */
-export async function chooseSubscription(planId: string): Promise<MySubscription> {
-  return mineOf(await sendJson('POST', '/v1/me/subscription', { planId }));
+export async function chooseSubscription(planId: string, billingPeriod: BillingPeriod): Promise<MySubscription> {
+  return mineOf(await sendJson('POST', '/v1/me/subscription', { planId, billingPeriod }));
 }
 
 /** Cancels at the end of the period: the response carries the date the entitlement stops. */

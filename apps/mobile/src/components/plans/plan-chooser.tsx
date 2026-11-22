@@ -5,12 +5,14 @@ import {
   canChoose,
   isFreePrice,
   isHeldPlan,
+  priceFor,
   standingOf,
+  type BillingPeriod,
   type HeldSubscription,
   type Plan,
 } from '@ideanest/plans/catalogue';
-import { Glyphs } from '../../icons';
-import { formatDay, useT, type Translate } from '../../lib/i18n';
+import { Glyphs, type IconGlyph } from '../../icons';
+import { formatDay, useT, type MessageKey, type Translate } from '../../lib/i18n';
 import { activeTheme, colors, darkColors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../../theme';
 import {
   Body,
@@ -45,7 +47,41 @@ import {
  * (`paymentDue`, #449) the held panel says so and offers the screen's "open the pricing page" action
  * — the same words and the same page as the web-only notice — never a pay or renew button and never
  * a price beside one.
+ *
+ * <h2>Periods and the student plan (#655)</h2>
+ *
+ * <p>Every plan may be sold for one month, six months or a year, each at its own price. The screen
+ * owns the period switch; each card prints `priceFor(plan, period)` with that period's words, and a
+ * plan not sold for the period says so and offers no button. A `studentOnly` card carries the
+ * "Student" tag and one line saying a student card check is needed, and its button follows the
+ * reader's check ({@link StudentStanding}): confirmed is the ordinary choice, not yet confirmed
+ * opens the student status screen, waiting is a disabled "Being checked".
  */
+
+/** Where the reader's student card check stands, as the student plan's card acts on it. */
+export type StudentStanding =
+  /** Confirmed and unexpired: the student plan is chosen like any other. */
+  | 'qualified'
+  /** Never sent, refused, expired, or signed out: the card offers the check. */
+  | 'unverified'
+  /** Sent and waiting for staff. */
+  | 'pending'
+  /** Not known yet (the read is in flight): no student action, and no choice either. */
+  | 'unknown';
+
+/** "a month", "for 6 months", "a year": what a card prints after the price. */
+export const PER_PERIOD: Readonly<Record<BillingPeriod, MessageKey>> = {
+  MONTHLY: 'pricing.perMonth',
+  SEMIANNUAL: 'mobile.pricing.perSemiannual',
+  YEARLY: 'pricing.perYear',
+};
+
+/** "1 month", "6 months", "1 year": the period switch's words. */
+export const PERIOD_NAME: Readonly<Record<BillingPeriod, MessageKey>> = {
+  MONTHLY: 'mobile.pricing.periods.MONTHLY',
+  SEMIANNUAL: 'mobile.pricing.periods.SEMIANNUAL',
+  YEARLY: 'mobile.pricing.periods.YEARLY',
+};
 
 /** Whether the service would take a renewal for this plan now: inside its window, still running. */
 export function isRenewing(held: HeldSubscription): boolean {
@@ -177,12 +213,21 @@ export function HeldPanel({
 export function PlanCards({
   plans,
   held,
+  period,
+  student = 'unknown',
+  onVerifyStudent,
   onChoose,
   busyPlan = null,
   chooseDisabled = false,
 }: {
   readonly plans: readonly Plan[];
   readonly held: HeldSubscription | null;
+  /** The period the switch shows; every card is priced for it. */
+  readonly period: BillingPeriod;
+  /** The reader's student card check, for a `studentOnly` card. */
+  readonly student?: StudentStanding;
+  /** Opens the student status screen, from a `studentOnly` card the reader may not buy yet. */
+  readonly onVerifyStudent?: () => void;
   /** Absent where plans are chosen on the web: the cards then offer no button. */
   readonly onChoose?: (plan: Plan) => void;
   readonly busyPlan?: string | null;
@@ -198,10 +243,13 @@ export function PlanCards({
           key={plan.id}
           tone={PLAN_TONES[index % PLAN_TONES.length] ?? 'white'}
           plan={plan}
+          period={period}
           current={isHeldPlan(held, plan.id)}
+          student={plan.studentOnly ? student : null}
+          onVerifyStudent={onVerifyStudent}
           onChoose={onChoose === undefined ? undefined : () => onChoose(plan)}
           busy={busyPlan === plan.id}
-          disabled={chooseDisabled || busyPlan !== null || !canChoose(held, plan.id)}
+          disabled={chooseDisabled || busyPlan !== null || !canChoose(held, plan.id, period)}
         />
       ))}
     </View>
@@ -230,24 +278,32 @@ const PLAN_SKIN: Record<PlanTone, { card: string; button: string; label: string;
 
 function PlanCard({
   plan,
+  period,
   current,
+  student,
+  onVerifyStudent,
   onChoose,
   busy,
   disabled,
   tone,
 }: {
   readonly plan: Plan;
+  readonly period: BillingPeriod;
   readonly current: boolean;
+  /** `null` for a plan anybody may buy. */
+  readonly student: StudentStanding | null;
+  readonly onVerifyStudent?: () => void;
   readonly onChoose?: () => void;
   readonly busy: boolean;
   readonly disabled: boolean;
   readonly tone: PlanTone;
 }) {
   const t = useT();
-  const free = isFreePrice(plan.price);
+  const price = priceFor(plan, period);
+  const free = price !== null && isFreePrice(price.price);
   const skin = PLAN_SKIN[tone];
   const ink = TONES[tone];
-  const period = plan.billingPeriod === 'YEARLY' ? t('pricing.perYear') : t('pricing.perMonth');
+  const action = cardAction({ sold: price !== null, student, onChoose, onVerifyStudent });
   const points = [
     ...(plan.description == null ? [] : [plan.description]),
     plan.maxActiveCampaigns == null
@@ -272,8 +328,18 @@ function PlanCard({
       >
         <View style={styles.nameRow}>
           <CardTitle style={[styles.name, font.semibold]}>{plan.name}</CardTitle>
-          {current ? <Tag label={t('pricing.held.currentTag')} testID="pricing-current" /> : null}
+          <View style={styles.tags}>
+            {student === null ? null : (
+              <Tag label={t('mobile.pricing.student.tag')} testID={`pricing-student-${plan.code || plan.id}`} />
+            )}
+            {current ? <Tag label={t('pricing.held.currentTag')} testID="pricing-current" /> : null}
+          </View>
         </View>
+        {student === null ? null : (
+          <Body tone="secondary" testID={`pricing-student-note-${plan.code || plan.id}`}>
+            {t('mobile.pricing.student.needsCheck')}
+          </Body>
+        )}
         <View style={styles.limits}>
           {points.map((point) => (
             <View key={point} style={styles.limit}>
@@ -282,30 +348,120 @@ function PlanCard({
             </View>
           ))}
         </View>
-        <View style={styles.priceRow}>
-          <Text style={[styles.price, { color: ink.primary }]}>
-            {free ? t('pricing.free') : formatMoney({ amount: plan.price, currency: plan.currency })}
-          </Text>
-          {free ? null : <Body tone="tertiary">{period}</Body>}
-        </View>
-        {onChoose === undefined ? null : (
-          <PressableScale
-            accessibilityRole="button"
-            accessibilityLabel={t('mobile.pricing.chooseNamed', { plan: plan.name })}
-            accessibilityState={{ disabled: disabled || busy, busy }}
-            disabled={disabled || busy}
-            onPress={onChoose}
-            contentStyle={[styles.choose, { backgroundColor: skin.button, opacity: disabled || busy ? 0.4 : 1 }]}
-            testID={`pricing-choose-${plan.code || plan.id}`}
-          >
-            <Text style={[styles.chooseLabel, { color: skin.label }]} numberOfLines={1}>
-              {busy ? t('pricing.choosing') : t('pricing.choose')}
+        {price === null ? (
+          <Body tone="tertiary" testID={`pricing-not-offered-${plan.code || plan.id}`}>
+            {t('mobile.pricing.notOffered', { period: t(PERIOD_NAME[period]) })}
+          </Body>
+        ) : (
+          <View style={styles.priceRow}>
+            <Text
+              style={[styles.price, { color: ink.primary }]}
+              // The hero figure stays on one line at a large font: "120.00 AZN" at 1.4x is wider
+              // than a 360dp phone's card.
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+            >
+              {free ? t('pricing.free') : formatMoney({ amount: price.price, currency: price.currency })}
             </Text>
-            <Icon icon={Glyphs.ArrowRight} size={20} color={skin.label} />
-          </PressableScale>
+            {free ? null : <Body tone="tertiary">{t(PER_PERIOD[period])}</Body>}
+          </View>
         )}
+        {action === 'choose' && onChoose !== undefined ? (
+          <CardButton
+            label={busy ? t('pricing.choosing') : t('pricing.choose')}
+            accessibilityLabel={t('mobile.pricing.chooseNamed', { plan: plan.name })}
+            skin={skin}
+            busy={busy}
+            disabled={disabled}
+            onPress={onChoose}
+            testID={`pricing-choose-${plan.code || plan.id}`}
+          />
+        ) : action === 'verify' && onVerifyStudent !== undefined ? (
+          <CardButton
+            label={t('mobile.pricing.student.verify')}
+            skin={skin}
+            busy={false}
+            disabled={false}
+            onPress={onVerifyStudent}
+            testID={`pricing-verify-${plan.code || plan.id}`}
+          />
+        ) : action === 'pending' ? (
+          <CardButton
+            label={t('mobile.pricing.student.pending')}
+            skin={skin}
+            busy={false}
+            disabled
+            icon={Glyphs.Clock}
+            onPress={() => undefined}
+            testID={`pricing-pending-${plan.code || plan.id}`}
+          />
+        ) : null}
       </View>
     </SurfaceProvider>
+  );
+}
+
+type CardAction = 'choose' | 'verify' | 'pending' | null;
+
+/**
+ * What a card's button does. A plan not sold for the period offers nothing; a student plan
+ * follows the reader's check before it is ever a choice; anything else is the ordinary choice,
+ * where the screen offers one.
+ */
+function cardAction({
+  sold,
+  student,
+  onChoose,
+  onVerifyStudent,
+}: {
+  readonly sold: boolean;
+  readonly student: StudentStanding | null;
+  readonly onChoose?: () => void;
+  readonly onVerifyStudent?: () => void;
+}): CardAction {
+  if (!sold) return null;
+  if (student === 'pending') return 'pending';
+  if (student === 'unverified') return onVerifyStudent === undefined ? null : 'verify';
+  if (student === 'unknown') return null;
+  return onChoose === undefined ? null : 'choose';
+}
+
+function CardButton({
+  label,
+  accessibilityLabel,
+  skin,
+  busy,
+  disabled,
+  icon = Glyphs.ArrowRight,
+  onPress,
+  testID,
+}: {
+  readonly label: string;
+  readonly accessibilityLabel?: string;
+  readonly skin: (typeof PLAN_SKIN)[PlanTone];
+  readonly busy: boolean;
+  readonly disabled: boolean;
+  readonly icon?: IconGlyph;
+  readonly onPress: () => void;
+  readonly testID: string;
+}) {
+  return (
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: disabled || busy, busy }}
+      disabled={disabled || busy}
+      onPress={onPress}
+      contentStyle={[styles.choose, { backgroundColor: skin.button, opacity: disabled || busy ? 0.4 : 1 }]}
+      testID={testID}
+    >
+      {/* Two lines rather than an ellipsis for a long label at 1.4x on a 360dp phone. */}
+      <Text style={[styles.chooseLabel, { color: skin.label }]} numberOfLines={2}>
+        {label}
+      </Text>
+      <Icon icon={icon} size={20} color={skin.label} />
+    </PressableScale>
   );
 }
 
@@ -326,6 +482,7 @@ const styles = StyleSheet.create({
   stack: { gap: spacing[3] },
   nameRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing[3] },
   name: { flexShrink: 1 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: spacing[2], maxWidth: '50%' },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: spacing[1] },
   limits: { gap: spacing[2] },
   limit: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },

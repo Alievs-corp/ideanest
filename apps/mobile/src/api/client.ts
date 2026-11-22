@@ -219,6 +219,52 @@ export async function sendJson(
 }
 
 /**
+ * One read through the session, for a path the generated contract (`@ideanest/api-client`'s
+ * `schema.ts`) does not list yet — the student verification (#655) is the first. Refused like
+ * {@link sendJson}: the shared `ApiError` with the trace id kept beside it. Move the caller to
+ * {@link api} once the schema carries the path.
+ */
+export async function readJson(path: string, signal?: AbortSignal): Promise<unknown> {
+  const response = await sessionFetch(`${apiOrigin()}${path}`, {
+    method: 'GET',
+    headers: { accept: 'application/json', 'Accept-Language': currentLocale() },
+    ...(signal === undefined ? {} : { signal }),
+  });
+  return await answerOf(response);
+}
+
+/**
+ * One multipart write through the session — the student card and selfie (#655), the only
+ * multipart body the app sends; media goes to object storage on a presigned address instead
+ * (`lib/media/upload.ts`).
+ *
+ * <p>No `content-type` is set: `fetch` writes it with the boundary the form was encoded with, and
+ * a hand-written one would have none. A form whose parts are files (`{ uri, name, type }`) is read
+ * from disk by the native networking layer, so the one retry after a refreshed token sends the
+ * same files again.
+ */
+export async function sendMultipart(path: string, form: FormData): Promise<unknown> {
+  const response = await sessionFetch(`${apiOrigin()}${path}`, {
+    method: 'POST',
+    headers: { accept: 'application/json', 'Accept-Language': currentLocale() },
+    body: form,
+  });
+  return await answerOf(response);
+}
+
+/** A response's JSON body, `null` when it has none, or the refusal thrown as {@link sendJson} does. */
+async function answerOf(response: Response): Promise<unknown> {
+  if (!response.ok) {
+    const error = await errorFrom(response);
+    const traceId = traceIdOf(response);
+    if (traceId !== null) TRACES.set(error, traceId);
+    throw error;
+  }
+  const text = await response.text();
+  return text === '' ? null : (JSON.parse(text) as unknown);
+}
+
+/**
  * A JSON write whose answer is a file rather than JSON — the backer export (#163). Like
  * {@link sendJson} in every way but the answer: its text, and the headers the file describes
  * itself with (`Content-Disposition`, `X-Export-Rows`, `X-Export-Truncated`).

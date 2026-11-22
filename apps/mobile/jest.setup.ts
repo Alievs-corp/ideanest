@@ -405,6 +405,8 @@ jest.mock('expo-image-picker', () => {
   let next: Record<string, unknown> = { canceled: true, assets: null };
   return {
     MediaTypeOptions: { Images: 'Images' },
+    // SDK 57's string enum: the student selfie (#655) asks for the front camera.
+    CameraType: { back: 'back', front: 'front' },
     PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
     // SDK 57's own values, so a test can tell `Compatible` (HEIC transcoded) from the others.
     UIImagePickerPreferredAssetRepresentationMode: {

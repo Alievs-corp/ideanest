@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { WordFitText } from '../text';
 import { colors, darkColors, font, fontSize, motion, radius, size as measure, spacing, spring } from '../../theme';
 import { useFocusRing } from './focus';
 import { haptics } from './haptics';
@@ -33,17 +34,30 @@ export interface SegmentedPillProps<T extends string> {
   readonly onChange: (value: T) => void;
   /** Names the group: "Show". */
   readonly label?: string;
+  /**
+   * Labels wrap onto more lines and the pill grows taller rather than shrink to an ellipsis: for
+   * labels that must be read whole at a large font, such as Pricing's "1 ay / 6 ay / 1 il" (#655),
+   * where "6 месяцев" outgrows a third of a 360dp phone above a 1.4 font scale. Words are never
+   * broken: a word wider than its segment shrinks until it fits (`WordFitText`).
+   */
+  readonly wrap?: boolean;
   readonly testID?: string;
 }
 
 const HEIGHT = 44;
 const INSET = 4;
+/**
+ * How far a label may shrink before it truncates: three segments at a 1.4 font scale on a 360dp
+ * phone leave about 72dp each, and "6 месяцев" needs about 92 (#655).
+ */
+const FIT = 0.7;
 
 export function SegmentedPill<T extends string>({
   options,
   value,
   onChange,
   label,
+  wrap = false,
   testID,
 }: SegmentedPillProps<T>) {
   const surface = useSurface();
@@ -94,6 +108,7 @@ export function SegmentedPill<T extends string>({
           selected={option.value === value}
           onWhite={onWhite}
           moves={moves}
+          wrap={wrap}
           onPress={() => {
             if (option.value === value) return;
             haptics.selectReward();
@@ -110,12 +125,14 @@ function Segment({
   selected,
   onWhite,
   moves,
+  wrap,
   onPress,
 }: {
   readonly label: string;
   readonly selected: boolean;
   readonly onWhite: boolean;
   readonly moves: boolean;
+  readonly wrap: boolean;
   readonly onPress: () => void;
 }) {
   const ring = useFocusRing();
@@ -137,23 +154,44 @@ function Segment({
       onPress={onPress}
       onFocus={ring.onFocus}
       onBlur={ring.onBlur}
-      style={[styles.segment, ring.ring]}
+      style={[styles.segment, wrap ? styles.segmentWrapped : null, ring.ring]}
     >
       <Animated.View style={restStyle} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <Text style={[styles.label, { color: rest }]} numberOfLines={1}>
-          {label}
-        </Text>
+        <SegmentLabel label={label} color={rest} wrap={wrap} />
       </Animated.View>
       <Animated.View
         style={[styles.overlay, selectedStyle]}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
-        <Text style={[styles.label, { color: chosen }]} numberOfLines={1}>
-          {label}
-        </Text>
+        <SegmentLabel label={label} color={chosen} wrap={wrap} />
       </Animated.View>
     </Pressable>
+  );
+}
+
+/**
+ * One line, shrinking to fit before it truncates; or, with `wrap`, as many lines as the words need,
+ * centred, with a word that cannot fit its segment shrunk rather than broken.
+ */
+function SegmentLabel({ label, color, wrap }: { readonly label: string; readonly color: string; readonly wrap: boolean }) {
+  if (wrap) {
+    return (
+      <WordFitText style={[styles.label, styles.wrapped, { color }]} testID="segment-label">
+        {label}
+      </WordFitText>
+    );
+  }
+  return (
+    <Text
+      style={[styles.label, { color }]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={FIT}
+      testID="segment-label"
+    >
+      {label}
+    </Text>
   );
 }
 
@@ -194,4 +232,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: { ...font.medium, fontSize: fontSize.sm },
+  wrapped: { textAlign: 'center', paddingVertical: spacing[1] },
+  // Two more characters' room in a third of a phone; the label's own lines give it height.
+  segmentWrapped: { paddingHorizontal: spacing[2] },
 });
