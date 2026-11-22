@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MoveRight, Plus } from 'lucide-react';
-import { Chip, ChipRow, InlineAlert, Pill } from '@ideanest/ui';
+import { Chip, ChipRow, Field, InlineAlert, Pill, Radio, RadioGroup } from '@ideanest/ui';
 import { newIdempotencyKey } from '@ideanest/checkout/idempotency';
 import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
 import { canChoose } from '@ideanest/plans/choice';
@@ -21,9 +21,11 @@ import {
   type BillingPeriod,
   type HeldSubscription,
   type Plan,
+  type PlanPrice,
   type PlanPaymentReturn,
   type PlanPaymentReturnHint,
 } from '../../lib/plans/api';
+import { extendedEnd, extensionChoices, extensionShown } from '../../lib/plans/extension';
 import { readMyStudentVerification, type StudentVerification } from '../../lib/plans/student';
 import { leaveForPaymentPage } from '../../lib/pledges/payment';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -93,6 +95,16 @@ import { Link, useRouter } from '../../i18n/navigation';
  * not be read — it goes to the page where the card is sent. The service's
  * `STUDENT_VERIFICATION_REQUIRED` is put into words if it refuses anyway.
  *
+ * <h2>Renewing is extending, by a period the creator picks (#660)</h2>
+ *
+ * The renewal window is the last calendar month of a period, and inside it the service lists what
+ * extending by each period costs (`renewalPrices`): the held period at the price this account
+ * bought at, another at the plan's current price. With more than one, the panel offers them as a
+ * radio group — the held period selected — each with its price and the date the plan would then
+ * end; the renew button names the chosen price and sends the chosen `billingPeriod`. A service that
+ * sends no list leaves the panel renewing the held period as before. Paying moves the end by the
+ * period from the current end, so the window closes again: extensions do not stack.
+ *
  * MOTION: none. `docs/motion-system.md` §5 gives money surfaces no entry animation, and this
  * is the page where somebody decides to spend some.
  */
@@ -128,6 +140,10 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
   const period = periodShown(periods, chosenPeriod, held === null || held.state === 'CANCELED' ? null : held.billingPeriod);
   const [student, setStudent] = useState<StudentRead>({ state: 'loading' });
   const sellsStudentPlans = plans.some((plan) => plan.studentOnly);
+  // The extension the reader picked (#660); until they pick one, the panel shows the held period.
+  const [chosenExtension, setChosenExtension] = useState<BillingPeriod | null>(null);
+  const extension =
+    held === null ? null : extensionShown(extensionChoices(held), chosenExtension, held.billingPeriod);
 
   const announcement = useRef<HTMLDivElement>(null);
 
@@ -303,12 +319,16 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
    * open rather than opening another, so a creator who closed the provider's tab is not stuck
    * behind a spent key.
    */
+  const extensionPeriod = extension?.billingPeriod ?? null;
   const pay = useCallback(async (): Promise<void> => {
     if (paying) return;
     setPaying(true);
     setError(null);
     try {
-      const page = await payForPlan(planPaymentReturnFor(fromProjectId), newIdempotencyKey());
+      // Only an extension names a period: a first payment is for the period already chosen.
+      const where = planPaymentReturnFor(fromProjectId);
+      const body = extensionPeriod === null ? where : { ...where, billingPeriod: extensionPeriod };
+      const page = await payForPlan(body, newIdempotencyKey());
       // Leaving, not done: `paying` stays set so the control cannot be pressed again while the
       // browser is on its way to the provider.
       leaveForPaymentPage(page.redirectUrl);
@@ -316,8 +336,12 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       setError(paymentMessageFor(cause, copy));
       setPaying(false);
       // "Nothing is due" means the panel is out of date (the window closed, the plan lapsed, or a
-      // transfer was recorded meanwhile), so it is read again and stops offering the button.
-      if (cause instanceof ApiError && cause.status === 409) {
+      // transfer was recorded meanwhile), so it is read again and stops offering the button. A
+      // period the plan is no longer sold for (#660) is the same: the options are read again.
+      if (
+        cause instanceof ApiError &&
+        (cause.status === 409 || cause.problem?.code === 'PERIOD_NOT_OFFERED')
+      ) {
         try {
           const mine = await readMySubscription(locale);
           setHeld(mine.subscription);
@@ -326,7 +350,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
         }
       }
     }
-  }, [copy, fromProjectId, locale, paying]);
+  }, [copy, extensionPeriod, fromProjectId, locale, paying]);
 
   const stop = useCallback(async (): Promise<void> => {
     setCancelling(true);
@@ -417,6 +441,8 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
           canPay={outcome !== 'waiting'}
           onPay={() => void pay()}
           canChange={outcome !== 'waiting'}
+          extension={extension}
+          onExtensionChange={setChosenExtension}
         />
       )}
 
@@ -483,18 +509,36 @@ interface HeldPanelProps {
   canPay: boolean;
   onPay: () => void;
   canChange: boolean;
+  /** The extension selected (#660), or `null` when the service offers no choice of period. */
+  extension: PlanPrice | null;
+  onExtensionChange: (period: BillingPeriod) => void;
 }
 
-function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, onPay, canChange }: HeldPanelProps) {
+function HeldPanel({
+  held,
+  copy,
+  locale,
+  cancelling,
+  onCancel,
+  paying,
+  canPay,
+  onPay,
+  canChange,
+  extension,
+  onExtensionChange,
+}: HeldPanelProps) {
   const pending = held.state === 'PENDING_PAYMENT';
   const due = held.paymentDue ?? null;
   const renewing = due === 'RENEWAL' && held.entitled;
   // The subscription's own snapshot price, not today's catalogue price (V62): a renewal is charged
-  // at the price the creator bought at.
+  // at the price the creator bought at — or, extending by another period (#660), the price the
+  // service listed for it.
   // With the period it buys (#655): "60 ₼" is six months of one plan and a month of another.
   // Bracketed rather than "for 6 months", which reads wrongly inside "Renew for {price}" in Turkish.
-  const price = `${formatPrice(held.price, held.currency, locale)} (${copy.periods[held.billingPeriod]})`;
+  const charged = extension ?? held;
+  const price = `${formatPrice(charged.price, charged.currency, locale)} (${copy.periods[charged.billingPeriod]})`;
   const opensAt = due === null && held.entitled ? formatDate(held.renewalOpensAt, locale) : '';
+  const choices = renewing ? extensionChoices(held) : [];
 
   return (
     <section
@@ -523,6 +567,46 @@ function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, o
         {renewing && held.cancelAtPeriodEnd && <p className="mt-2">{copy.payment.renewalCancelled}</p>}
         {opensAt !== '' && <p>{fillPlaceholders(copy.payment.renewsFrom, { date: opensAt })}</p>}
       </InlineAlert>
+
+      {/*
+        #660: how long to extend by. Native radios in a named group (ui-kit 7.13), so arrow keys,
+        one tab stop and the selection are the platform's; each option says its price and the date
+        the plan would end. One option is a fact rather than a choice, so it is a sentence. Held back,
+        like the button, while a payment just made is being confirmed.
+      */}
+      {renewing && canPay && extension !== null && choices.length > 1 && (
+        <div className="mt-4">
+          <Field grouped label={copy.payment.extendLabel}>
+            <RadioGroup
+              value={extension.billingPeriod}
+              onValueChange={(value) => {
+                const picked = choices.find((choice) => choice.billingPeriod === value);
+                if (picked !== undefined) onExtensionChange(picked.billingPeriod);
+              }}
+            >
+              {choices.map((choice) => (
+                <Radio
+                  key={choice.billingPeriod}
+                  value={choice.billingPeriod}
+                  disabled={paying}
+                  label={
+                    <span className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="font-medium">{copy.periods[choice.billingPeriod]}</span>
+                      <span className="tabular-nums text-fg-64">
+                        {formatPrice(choice.price, choice.currency, locale)}
+                      </span>
+                    </span>
+                  }
+                  description={extendsTo(held, choice.billingPeriod, copy, locale)}
+                />
+              ))}
+            </RadioGroup>
+          </Field>
+        </div>
+      )}
+      {renewing && canPay && extension !== null && choices.length === 1 && (
+        <p className="mt-4 text-[13px] text-fg-64">{extendsTo(held, extension.billingPeriod, copy, locale)}</p>
+      )}
 
       {/*
         White, the primary action, not lime: lime says "act now" (ui-kit 2.3) and the plan cards
@@ -587,6 +671,12 @@ function describeHeld(held: HeldSubscription, copy: PricingCopy, locale: Locale)
   if (held.paymentDue === 'RENEWAL') return fillPlaceholders(copy.payment.renewalTitle, { plan, date });
   if (held.cancelAtPeriodEnd) return fillPlaceholders(copy.held.endingOn, { plan, date });
   return fillPlaceholders(copy.held.activeUntil, { plan, date });
+}
+
+/** "New end date: 1 March 2027" — where extending by `period` would leave the plan (#660). */
+function extendsTo(held: HeldSubscription, period: BillingPeriod, copy: PricingCopy, locale: Locale): string {
+  const date = formatDate(extendedEnd(held.currentPeriodEnd, period), locale);
+  return date === '' ? '' : fillPlaceholders(copy.payment.extendsTo, { date });
 }
 
 /**

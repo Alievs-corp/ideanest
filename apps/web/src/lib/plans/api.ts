@@ -136,6 +136,12 @@ export interface PlanPaymentRequest {
   readonly language: Locale;
   readonly successUrl: string;
   readonly errorUrl: string;
+  /**
+   * How long to extend a running subscription by (#660) — one of the held subscription's
+   * `renewalPrices`. Only for a renewal; absent, the service extends by the period held. A period
+   * the plan is not sold for is refused with `400 PERIOD_NOT_OFFERED`.
+   */
+  readonly billingPeriod?: BillingPeriod;
 }
 
 /** Where to send the browser to pay. Nothing has been paid when this arrives. */
@@ -149,7 +155,8 @@ export interface PlanPaymentPage {
  *
  * <p>The first period of a pending plan, or the next period of one inside its renewal window: the
  * service decides which, and answers `409 SUBSCRIPTION_PAYMENT_NOT_DUE` with a `reason` when it is
- * neither. `Idempotency-Key` is required, as on every payment mutation (§10.3), and the caller owns
+ * neither, and `400 PERIOD_NOT_OFFERED` for an extension by a period the plan is not sold for (#660).
+ * `Idempotency-Key` is required, as on every payment mutation (§10.3), and the caller owns
  * it: one key per press of the button, so a retried request answers with the page the first one
  * opened rather than opening a second.
  */
