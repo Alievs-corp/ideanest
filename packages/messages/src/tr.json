@@ -7561,6 +7561,77 @@
         "title": "Planlar web sitesinde seçilir",
         "body": "Bir plan seçmek, değiştirmek veya iptal etmek için bu sayfayı IdeyaNest web sitesinde açın. Orada seçtiğiniz plan etkinleştiği anda uygulamada da geçerli olur.",
         "open": "Planlar sayfasını aç"
+      },
+      "periodLabel": "Ödeme dönemi",
+      "periods": {
+        "MONTHLY": "1 ay",
+        "SEMIANNUAL": "6 ay",
+        "YEARLY": "1 yıl"
+      },
+      "perSemiannual": "6 aylık",
+      "notOffered": "{period} için satılmıyor",
+      "student": {
+        "tag": "Öğrenci",
+        "needsCheck": "Bu plan için öğrenci kartınızın doğrulanması gerekir.",
+        "verify": "Öğrenci kartını doğrula",
+        "pending": "İnceleniyor"
+      },
+      "errors": {
+        "periodNotOffered": "Bu plan o dönem için satılmıyor. Yukarıdan başka bir dönem seçin.",
+        "studentVerificationRequired": "Bu plan öğrenciler içindir. Önce öğrenci durumunuzu doğrulayın."
+      }
+    },
+    "studentVerification": {
+      "link": "Öğrenci durumu",
+      "title": "Öğrenci durumu",
+      "intro": "Öğrenci planı, öğrenci kartını doğruladığımız hesaplar içindir. Onay, verildiği günden itibaren bir yıl geçerlidir.",
+      "loading": "Öğrenci durumunuz yükleniyor",
+      "unavailable": "Öğrenci durumunuz yüklenemedi.",
+      "toPricing": "Planları gör",
+      "status": {
+        "heading": "Durumunuz",
+        "NONE": "Henüz öğrenci kartı göndermediniz.",
+        "PENDING": "Öğrenci kartınız inceleniyor.",
+        "pendingBody": "Onaylandığı anda öğrenci planını seçebilirsiniz.",
+        "APPROVED": "Öğrenci durumunuz {date} tarihine kadar onaylandı.",
+        "REJECTED": "Öğrenci kartınız kabul edilmedi.",
+        "rejectedBody": "Düzeltip aşağıdan yeniden gönderebilirsiniz.",
+        "reason": "Neden: {reason}",
+        "EXPIRED": "Öğrenci onayınızın süresi {date} tarihinde doldu. Öğrenci planını korumak için kartınızı yeniden gönderin.",
+        "institution": "Eğitim kurumu",
+        "cardNumber": "Öğrenci kartı numarası",
+        "submittedAt": "Gönderildi",
+        "validUntil": "Geçerlilik sonu"
+      },
+      "form": {
+        "heading": "Öğrenci kartınızı gönderin",
+        "institutionHint": "Kartınızda yazdığı gibi",
+        "oneAccount": "Bir öğrenci kartı yalnızca bir IdeyaNest hesabında kullanılabilir.",
+        "card": "Öğrenci kartının fotoğrafı",
+        "cardHint": "Adınızın, fotoğrafınızın ve numaranın olduğu yüz; okunaklı ve kesilmeden.",
+        "selfie": "Selfie",
+        "selfieWhy": "Kimsenin başkasının kartını kullanamaması için selfienizi karttaki fotoğrafla karşılaştırırız.",
+        "takeSelfie": "Selfie çek",
+        "added": "Fotoğraf eklendi",
+        "privacy": "Fotoğraflar şifreli saklanır ve karar verildikten sonra silinir.",
+        "submit": "İncelemeye gönder",
+        "submitting": "Gönderiliyor",
+        "sent": "Gönderildi. Öğrenci kartınız incelenmeyi bekliyor.",
+        "institutionRequired": "Eğitim kurumunu girin.",
+        "tooLong": "En fazla {max} karakter.",
+        "cardNumberInvalid": "Numarayı kartınızdaki gibi girin, 3–40 karakter.",
+        "cardPhotoRequired": "Öğrenci kartının fotoğrafını ekleyin.",
+        "selfieRequired": "Bir selfie çekin."
+      },
+      "errors": {
+        "title": "Gönderilmedi",
+        "cardInUse": "Bu öğrenci kartı zaten başka bir hesapta kullanılıyor. Bir kart yalnızca bir hesaba ait olabilir.",
+        "alreadySubmitted": "Zaten bir kart gönderdiniz: inceleniyor ya da onaylandı.",
+        "emptyFile": "Fotoğraf boş geldi. Yeniden seçin.",
+        "unsupportedFile": "Bu fotoğrafın biçimi kabul edilmiyor. JPEG veya PNG fotoğraf kullanın.",
+        "storageUnavailable": "Şu anda belge kabul edemiyoruz. Hiçbir şey kaydedilmedi; daha sonra yeniden deneyin.",
+        "signedOut": "Kartınızı göndermek için yeniden giriş yapın.",
+        "generic": "Kart gönderilemedi. Yeniden deneyin."
       }
     },
     "account": {
