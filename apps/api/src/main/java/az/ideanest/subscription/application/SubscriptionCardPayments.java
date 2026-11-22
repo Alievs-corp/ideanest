@@ -110,7 +110,9 @@ public class SubscriptionCardPayments implements SubscriptionChargeSettlement {
                 .orElseThrow(() -> new NoPaymentDueException(reasonNothingIsDue(held, now)));
         SubscriptionPlan plan = plans.findById(held.getPlanId())
                 .orElseThrow(() -> new UnknownPlanException(held.getPlanId()));
-        if (plan.isStudentOnly() && !students.isVerifiedStudent(accountId, now)) {
+        // What was bought decides, not the plan's flag today: a plan marked student-only after
+        // somebody subscribed must not stop them renewing what they bought.
+        if (held.isStudentRate() && !students.isVerifiedStudent(accountId, now)) {
             throw new StudentVerificationRequiredException();
         }
 

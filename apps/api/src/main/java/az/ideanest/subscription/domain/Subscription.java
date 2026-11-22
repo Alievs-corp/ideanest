@@ -82,6 +82,14 @@ public class Subscription {
     @Column(name = "cancel_at_period_end", nullable = false)
     private boolean cancelAtPeriodEnd;
 
+    /**
+     * Whether this was bought at a student rate â€” the plan's {@code student_only}, copied at
+     * purchase like the price (#655). Paying and renewing need an approved student check on the
+     * strength of this, so marking a plan student-only later reaches only new buyers.
+     */
+    @Column(name = "student_rate", nullable = false, updatable = false)
+    private boolean studentRate;
+
     @Column(name = "canceled_at")
     private Instant canceledAt;
 
@@ -113,6 +121,7 @@ public class Subscription {
         this.price = chosen.amount();
         this.currency = chosen.currency();
         this.billingPeriod = period;
+        this.studentRate = plan.isStudentOnly();
         this.cancelAtPeriodEnd = false;
         this.createdAt = now;
         this.updatedAt = now;
@@ -361,6 +370,11 @@ public class Subscription {
 
     public Instant getCurrentPeriodEnd() {
         return currentPeriodEnd;
+    }
+
+    /** Whether it was bought at a student rate, and so needs a student check to be paid for. */
+    public boolean isStudentRate() {
+        return studentRate;
     }
 
     public boolean isCancelAtPeriodEnd() {

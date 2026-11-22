@@ -150,9 +150,14 @@ class PlanPeriodDomainTests {
         SubscriptionPlan plan = plan("10.00");
         assertThat(plan.isStudentOnly()).isFalse();
 
+        Subscription before = Subscription.awaitingPayment(UUID.randomUUID(), UUID.randomUUID(), plan, NOW);
         plan.restrictToStudents(true);
+        Subscription after = Subscription.awaitingPayment(UUID.randomUUID(), UUID.randomUUID(), plan, NOW);
 
         assertThat(plan.isStudentOnly()).isTrue();
+        // Copied at purchase, like the price: the flag reaches new buyers only.
+        assertThat(before.isStudentRate()).isFalse();
+        assertThat(after.isStudentRate()).isTrue();
     }
 
     private static Map<BillingPeriod, BigDecimal> prices(String monthly, String semiannual, String yearly) {

@@ -437,24 +437,75 @@ class PlanPeriodApiTests extends AbstractIntegrationTest {
         assertThat(pay(current).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
+    @Test
+    @DisplayName("a plan marked student-only after purchase does not stop its existing subscribers renewing")
+    void theGateFollowsWhatWasBought() {
+        Account subscriber = account();
+        heldInRenewalWindow(subscriber, STARTER, false);
+        try {
+            jdbc().update("UPDATE subscription_plans SET student_only = true WHERE id = ?", UUID.fromString(STARTER));
+
+            // Bought before the flag: renews like any other subscription.
+            assertThat(pay(subscriber).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            // A new buyer meets the flag.
+            Account newcomer = account();
+            assertThat(post("/v1/me/subscription", newcomer.accessToken(), Map.of("planId", STARTER)).getBody())
+                    .containsEntry("code", "STUDENT_VERIFICATION_REQUIRED");
+        } finally {
+            jdbc().update("UPDATE subscription_plans SET student_only = false WHERE id = ?", UUID.fromString(STARTER));
+        }
+    }
+
+    @Test
+    @DisplayName("a subscription bought at the student rate stays gated even if the plan is opened to everybody")
+    void aStudentRateStaysGated() {
+        Account creator = account();
+        verification(creator, "APPROVED", Instant.now().plus(Duration.ofDays(1)));
+        post("/v1/me/subscription", creator.accessToken(), Map.of("planId", STUDENT));
+        assertThat(jdbc().queryForObject(
+                        "SELECT student_rate FROM subscriptions WHERE account_id = ?", Boolean.class, creator.id()))
+                .isTrue();
+        jdbc().update(
+                "UPDATE student_verifications SET valid_until = ? WHERE account_id = ?",
+                Timestamp.from(Instant.now().minusSeconds(5)),
+                creator.id());
+        try {
+            jdbc().update("UPDATE subscription_plans SET student_only = false WHERE id = ?", UUID.fromString(STUDENT));
+
+            ResponseEntity<Map<String, Object>> refused = pay(creator);
+
+            assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+            assertThat(refused.getBody()).containsEntry("code", "STUDENT_VERIFICATION_REQUIRED");
+        } finally {
+            jdbc().update("UPDATE subscription_plans SET student_only = true WHERE id = ?", UUID.fromString(STUDENT));
+        }
+    }
+
     // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
 
-    /** A running STUDENT subscription whose period ends in three days, inside the renewal window. */
+    /** A running STUDENT subscription, bought at the student rate, whose period ends inside the renewal window. */
     private void heldInRenewalWindow(Account creator) {
+        heldInRenewalWindow(creator, STUDENT, true);
+    }
+
+    private void heldInRenewalWindow(Account creator, String planId, boolean studentRate) {
         Instant end = Instant.now().plus(Duration.ofDays(3));
         jdbc().update(
                 """
                 INSERT INTO subscriptions
-                    (id, account_id, plan_id, state, price, currency, billing_period, started_at, current_period_end)
-                VALUES (?, ?, ?, 'ACTIVE', 10.00, 'AZN', 'MONTHLY', ?, ?)
+                    (id, account_id, plan_id, state, price, currency, billing_period, started_at, current_period_end,
+                     student_rate)
+                VALUES (?, ?, ?, 'ACTIVE', 10.00, 'AZN', 'MONTHLY', ?, ?, ?)
                 """,
                 UUID.randomUUID(),
                 creator.id(),
-                UUID.fromString(STUDENT),
+                UUID.fromString(planId),
                 Timestamp.from(end.minus(Duration.ofDays(30))),
-                Timestamp.from(end));
+                Timestamp.from(end),
+                studentRate);
     }
 
     /** A student verification row as the service would leave it, written directly. */

@@ -12,6 +12,7 @@
 --   DROP TABLE student_verification_documents;
 --   DROP TABLE student_verifications;
 --   ALTER TABLE subscription_plans DROP COLUMN student_only;
+--   ALTER TABLE subscriptions DROP COLUMN student_rate;
 --
 --   Dropping the column re-lists STUDENT for everybody if it was bought and so
 --   could not be deleted: unlist it first.
@@ -26,6 +27,14 @@
 
 ALTER TABLE subscription_plans
     ADD COLUMN student_only boolean NOT NULL DEFAULT false;
+
+-- Whether a subscription was bought at a student rate: the plan's
+-- `student_only`, copied at purchase like the price. Paying its first period
+-- and renewing it ask for an approved student check on the strength of this,
+-- never of the plan's flag today -- an operator marking a plan student-only
+-- later must not stop everybody already on it from renewing what they bought.
+ALTER TABLE subscriptions
+    ADD COLUMN student_rate boolean NOT NULL DEFAULT false;
 
 -- ---------------------------------------------------------------------------
 -- THE SUBMISSIONS
