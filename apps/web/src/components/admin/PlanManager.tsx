@@ -2,11 +2,11 @@
 
 import { Suspense, lazy, useState } from 'react';
 import {
+  Checkbox,
   EmptyState,
   Field,
   InlineAlert,
   Pill,
-  Select,
   Skeleton,
   SkeletonGroup,
   Tag,
@@ -19,6 +19,7 @@ import {
   readSubscriptions,
   type BillingPeriod,
   type Plan,
+  type PlanPriceRequest,
 } from '../../lib/admin/plans';
 import { codedRefusalFor, refusalCode } from '../../lib/admin/coded-refusal';
 import { shortId } from '../../lib/admin/refusals';
@@ -41,7 +42,43 @@ import {
   type PlanTextDraft,
 } from './PlanTextFields';
 
-const PERIODS: readonly BillingPeriod[] = ['MONTHLY', 'YEARLY'];
+/** Shortest first, as the service lists them and the pricing page's switch draws them (#655). */
+const PERIODS: readonly BillingPeriod[] = ['MONTHLY', 'SEMIANNUAL', 'YEARLY'];
+
+/** What is typed in the three price fields. Empty means "not sold for this period". */
+export type PriceDraft = Readonly<Record<BillingPeriod, string>>;
+
+/** The add form's start: a month at the starter price, the longer periods left for the operator. */
+const NEW_PLAN_PRICES: PriceDraft = { MONTHLY: '19.00', SEMIANNUAL: '', YEARLY: '' };
+
+/** A plan's prices as the fields show them. */
+export function priceDraftOf(plan: Plan): PriceDraft {
+  const draft: Record<BillingPeriod, string> = { MONTHLY: '', SEMIANNUAL: '', YEARLY: '' };
+  for (const entry of plan.prices) draft[entry.billingPeriod] = entry.price;
+  return draft;
+}
+
+/**
+ * The prices typed, shortest first, or `undefined` when one of them is not a price or none was
+ * typed at all: a plan is sold for at least one period, and the service refuses an empty set.
+ */
+export function pricesFrom(draft: PriceDraft): readonly PlanPriceRequest[] | undefined {
+  const prices: PlanPriceRequest[] = [];
+  for (const period of PERIODS) {
+    if (draft[period].trim() === '') continue;
+    const price = priceFrom(draft[period]);
+    if (price === undefined) return undefined;
+    prices.push({ billingPeriod: period, price });
+  }
+  return prices.length === 0 ? undefined : prices;
+}
+
+/** Whether two sets of prices say the same thing, decimal places and all. */
+function samePrices(left: readonly PlanPriceRequest[], right: readonly PlanPriceRequest[]): boolean {
+  const key = (prices: readonly PlanPriceRequest[]) =>
+    prices.map((entry) => `${entry.billingPeriod}:${entry.price}`).join('|');
+  return key(left) === key(right);
+}
 
 /**
  * One subscription and its forms, fetched when the queue draws a row: the payment form and the
@@ -132,8 +169,8 @@ export function PlanManager({ copy }: PlanManagerProps) {
   const [code, setCode] = useState('');
   const [texts, setTexts] = useState<PlanTextDraft>(emptyPlanTexts);
   const [language, setLanguage] = useState<Locale>('az');
-  const [price, setPrice] = useState('19.00');
-  const [period, setPeriod] = useState<BillingPeriod>('MONTHLY');
+  const [prices, setPrices] = useState<PriceDraft>(NEW_PLAN_PRICES);
+  const [studentOnly, setStudentOnly] = useState(false);
   const [maxActive, setMaxActive] = useState('1');
   const [goalCeiling, setGoalCeiling] = useState('');
   const [adding, setAdding] = useState(false);
@@ -149,20 +186,20 @@ export function PlanManager({ copy }: PlanManagerProps) {
 
   const accountName = (id: string) => names.accounts.get(id)?.name ?? shortId(id);
 
-  const newPrice = priceFrom(price);
+  const newPrices = pricesFrom(prices);
   const newLimit = campaignLimitFrom(maxActive);
   const newCeiling = ceilingFrom(goalCeiling);
   const addReady =
     code.trim() !== '' &&
     texts.az.name.trim() !== '' &&
     namelessLanguage(texts) === undefined &&
-    newPrice !== undefined &&
+    newPrices !== undefined &&
     newLimit !== undefined &&
     newCeiling !== undefined;
 
   async function add(event: React.FormEvent): Promise<void> {
     event.preventDefault();
-    if (!addReady || newPrice === undefined || newLimit === undefined || newCeiling === undefined) return;
+    if (!addReady || newPrices === undefined || newLimit === undefined || newCeiling === undefined) return;
 
     setAdding(true);
     setAdded(null);
@@ -172,9 +209,9 @@ export function PlanManager({ copy }: PlanManagerProps) {
         name: texts.az.name.trim(),
         description: texts.az.description.trim() === '' ? null : texts.az.description.trim(),
         translations: translationsFrom(texts),
-        price: newPrice,
         currency: 'AZN',
-        billingPeriod: period,
+        prices: newPrices,
+        studentOnly,
         maxActiveCampaigns: newLimit,
         goalCeiling: newCeiling,
         sortOrder: (catalogue.data?.plans.length ?? 0) * 10 + 10,
@@ -184,6 +221,8 @@ export function PlanManager({ copy }: PlanManagerProps) {
       setCode('');
       setTexts(emptyPlanTexts());
       setLanguage('az');
+      setPrices(NEW_PLAN_PRICES);
+      setStudentOnly(false);
       catalogue.reload();
     } catch (cause) {
       setAdded({ variant: 'danger', title: copy.failedTitle, body: refusalOf(cause) });
@@ -274,26 +313,16 @@ export function PlanManager({ copy }: PlanManagerProps) {
 
           <PlanTextFields draft={texts} onChange={setTexts} language={language} onLanguage={setLanguage} copy={copy} />
 
+          <PriceFields draft={prices} onChange={setPrices} legend={copy.priceLabel} label={copy.priceFor} copy={copy} />
+
+          <Checkbox
+            label={copy.studentOnlyLabel}
+            description={copy.studentOnlyHint}
+            checked={studentOnly}
+            onChange={(event) => setStudentOnly(event.target.checked)}
+          />
+
           <div className="flex flex-wrap items-start gap-3">
-            <Field
-              label={copy.priceLabel}
-              hint={copy.priceHint}
-              error={newPrice === undefined ? copy.priceInvalid : undefined}
-              className="min-w-[160px]"
-            >
-              <TextInput inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} />
-            </Field>
-
-            <Field label={copy.periodLabel} className="min-w-[160px]">
-              <Select value={period} onChange={(event) => setPeriod(event.target.value as BillingPeriod)}>
-                {PERIODS.map((option) => (
-                  <option key={option} value={option}>
-                    {copy.period[option]}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-
             <Field
               label={copy.maxActiveLabel}
               hint={copy.unlimitedHint}
@@ -421,15 +450,19 @@ interface PlanRowProps {
 }
 
 function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
-  const [next, setNext] = useState(plan.price);
+  const [next, setNext] = useState<PriceDraft>(() => priceDraftOf(plan));
   const [asking, setAsking] = useState<'none' | 'reprice' | 'retire' | 'texts'>('none');
   const [texts, setTexts] = useState<PlanTextDraft>(() => planTextsOf(plan));
   const [language, setLanguage] = useState<Locale>('az');
   const textsReady = texts.az.name.trim() !== '' && namelessLanguage(texts) === undefined;
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<Said | null>(null);
-  const nextPrice = priceFrom(next);
+  const nextPrices = pricesFrom(next);
   const money = (amount: string) => formatMoney({ amount, currency: plan.currency });
+  const priceList = (prices: readonly PlanPriceRequest[]) =>
+    prices
+      .map((entry) => fillPlaceholders(copy.pricePer, { price: money(entry.price), period: copy.period[entry.billingPeriod] }))
+      .join(' · ');
 
   async function write(work: () => Promise<unknown>, done: string | null): Promise<void> {
     if (busy) return;
@@ -458,8 +491,7 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
           </p>
           <p className="mt-1 text-[13px] text-fg-64">
             {fillPlaceholders(copy.planSummary, {
-              price: money(plan.price),
-              period: copy.period[plan.billingPeriod],
+              prices: priceList(plan.prices),
               campaigns: plan.maxActiveCampaigns == null ? copy.unlimited : String(plan.maxActiveCampaigns),
               ceiling: plan.goalCeiling == null ? copy.unlimited : money(plan.goalCeiling),
             })}
@@ -467,21 +499,29 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
         </div>
 
         {/* A tag as well as a word: colour alone would carry the meaning (ui-kit §9.2). */}
-        <Tag variant={plan.listed ? 'success' : 'default'}>{plan.listed ? copy.onSale : copy.retired}</Tag>
+        <div className="flex flex-wrap gap-2">
+          {plan.studentOnly && <Tag>{copy.studentTag}</Tag>}
+          <Tag variant={plan.listed ? 'success' : 'default'}>{plan.listed ? copy.onSale : copy.retired}</Tag>
+        </div>
       </div>
 
-      {asking === 'reprice' && nextPrice !== undefined ? (
+      {asking === 'reprice' && nextPrices !== undefined ? (
         <div className="mt-3">
           <Confirm
             label={copy.reprice}
-            text={fillPlaceholders(copy.confirmReprice, { plan: plan.name, old: money(plan.price), new: money(nextPrice) })}
+            text={fillPlaceholders(copy.confirmReprice, {
+              plan: plan.name,
+              old: priceList(plan.prices),
+              new: priceList(nextPrices),
+            })}
             action={copy.confirmRepriceAction}
             working={copy.saving}
             back={copy.back}
             busy={busy}
             onConfirm={() =>
               void write(
-                () => changePlan({ planId: plan.id, price: nextPrice }),
+                // The whole set, which replaces the old one: a period emptied here stops being sold.
+                () => changePlan({ planId: plan.id, prices: nextPrices }),
                 fillPlaceholders(copy.repricedNotice, { plan: plan.name }),
               )
             }
@@ -530,58 +570,62 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
           />
         </div>
       ) : (
-        <div className="mt-3 flex flex-wrap items-start gap-3">
-          <Field
-            label={copy.repriceLabel}
-            error={nextPrice === undefined ? copy.priceInvalid : undefined}
-            className="min-w-[160px]"
-          >
-            <TextInput inputMode="decimal" value={next} onChange={(event) => setNext(event.target.value)} />
-          </Field>
+        <div className="mt-3 flex flex-col gap-3">
+          <PriceFields draft={next} onChange={setNext} legend={copy.repriceLabel} label={copy.newPriceFor} copy={copy} />
 
-          <Pill
-            variant="ghost"
-            size="sm"
-            className="mt-8"
-            disabled={busy || nextPrice === undefined || nextPrice === plan.price}
-            onClick={() => setAsking('reprice')}
-          >
-            {copy.reprice}
-            <span className="sr-only">: {plan.name}</span>
-          </Pill>
-
-          <Pill
-            variant="ghost"
-            size="sm"
-            className="mt-8"
-            disabled={busy}
-            onClick={() => {
-              setTexts(planTextsOf(plan));
-              setLanguage('az');
-              setAsking('texts');
-            }}
-          >
-            {copy.editTexts}
-            <span className="sr-only">: {plan.name}</span>
-          </Pill>
-
-          {plan.listed ? (
-            <Pill variant="ghost" size="sm" className="mt-8" disabled={busy} onClick={() => setAsking('retire')}>
-              {copy.retire}
-              <span className="sr-only">: {plan.name}</span>
-            </Pill>
-          ) : (
+          <div className="flex flex-wrap items-start gap-3">
             <Pill
               variant="ghost"
               size="sm"
-              className="mt-8"
-              disabled={busy}
-              onClick={() => void write(() => changePlan({ planId: plan.id, listed: true }), null)}
+              disabled={busy || nextPrices === undefined || samePrices(nextPrices, plan.prices)}
+              onClick={() => setAsking('reprice')}
             >
-              {copy.putOnSale}
+              {copy.reprice}
               <span className="sr-only">: {plan.name}</span>
             </Pill>
-          )}
+
+            {/* Who may buy it, beside what it costs. Undone by the same button, so it does not ask. */}
+            <Pill
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => void write(() => changePlan({ planId: plan.id, studentOnly: !plan.studentOnly }), null)}
+            >
+              {plan.studentOnly ? copy.openToEveryone : copy.makeStudentOnly}
+              <span className="sr-only">: {plan.name}</span>
+            </Pill>
+
+            <Pill
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => {
+                setTexts(planTextsOf(plan));
+                setLanguage('az');
+                setAsking('texts');
+              }}
+            >
+              {copy.editTexts}
+              <span className="sr-only">: {plan.name}</span>
+            </Pill>
+
+            {plan.listed ? (
+              <Pill variant="ghost" size="sm" disabled={busy} onClick={() => setAsking('retire')}>
+                {copy.retire}
+                <span className="sr-only">: {plan.name}</span>
+              </Pill>
+            ) : (
+              <Pill
+                variant="ghost"
+                size="sm"
+                disabled={busy}
+                onClick={() => void write(() => changePlan({ planId: plan.id, listed: true }), null)}
+              >
+                {copy.putOnSale}
+                <span className="sr-only">: {plan.name}</span>
+              </Pill>
+            )}
+          </div>
         </div>
       )}
 
@@ -591,5 +635,60 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
         </InlineAlert>
       )}
     </li>
+  );
+}
+
+/* -------------------------------------------------------------------------
+ * A price per period — #655
+ * ---------------------------------------------------------------------- */
+
+/**
+ * The three periods' prices. An empty field is a period the plan is not sold for; at least one
+ * must be filled, which the fields say rather than leaving the button greyed for no stated reason.
+ *
+ * @param label a template carrying `{period}`, so each field is named for its period and the add
+ *     form's fields are not confused with a row's
+ */
+function PriceFields({
+  draft,
+  onChange,
+  legend,
+  label,
+  copy,
+}: {
+  readonly draft: PriceDraft;
+  readonly onChange: (next: PriceDraft) => void;
+  readonly legend: string;
+  readonly label: string;
+  readonly copy: PlanManagerCopy;
+}) {
+  const none = PERIODS.every((period) => draft[period].trim() === '');
+
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-sm font-medium text-fg">{legend}</legend>
+      <p className="text-[13px] text-fg-64">{copy.pricesHint}</p>
+      <div className="flex flex-wrap items-start gap-3">
+        {PERIODS.map((period) => {
+          const typed = draft[period];
+          const invalid = typed.trim() !== '' && priceFrom(typed) === undefined;
+          return (
+            <Field
+              key={period}
+              label={fillPlaceholders(label, { period: copy.period[period] })}
+              error={invalid ? copy.priceInvalid : undefined}
+              className="min-w-[150px]"
+            >
+              <TextInput
+                inputMode="decimal"
+                value={typed}
+                onChange={(event) => onChange({ ...draft, [period]: event.target.value })}
+              />
+            </Field>
+          );
+        })}
+      </div>
+      {none && <p className="text-[13px] text-danger">{copy.pricesMissing}</p>}
+    </fieldset>
   );
 }

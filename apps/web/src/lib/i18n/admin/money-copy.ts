@@ -5,6 +5,7 @@ import type { ProviderName, TransactionStatus, TransactionType } from '../../adm
 import type { DestinationStanding, PayoutState, VerificationStanding } from '../../admin/payouts';
 import type { RefundReason, RefundState } from '../../admin/refunds';
 import type { PaymentMethod } from '../../admin/revenue';
+import type { BillingPeriod } from '../../plans/api';
 import type { FindingCode, FindingKind } from '../../admin/reconciliation';
 import type { AdminTranslator } from '../admin-copy';
 import type { PluralForms } from '../plurals';
@@ -1332,7 +1333,7 @@ export interface PlanManagerCopy extends ConsoleChromeCopy {
   readonly loadingCatalogue: string;
   readonly emptyCatalogueTitle: string;
   readonly emptyCatalogueBody: string;
-  /** Carries `{campaigns}`, `{ceiling}`, `{period}`, `{price}`. */
+  /** Carries `{prices}` (every period, already formatted), `{campaigns}`, `{ceiling}`. */
   readonly planSummary: string;
   readonly onSale: string;
   readonly retired: string;
@@ -1348,9 +1349,23 @@ export interface PlanManagerCopy extends ConsoleChromeCopy {
   readonly nameLabel: string;
   readonly descriptionLabel: string;
   readonly descriptionHint: string;
+  /** The add form's legend over the three price fields. */
   readonly priceLabel: string;
   readonly priceHint: string;
-  readonly periodLabel: string;
+  /** Carries `{period}`: one price field in the add form (#655). */
+  readonly priceFor: string;
+  /** Carries `{period}`: one price field on a plan's row. */
+  readonly newPriceFor: string;
+  /** Under both legends: an empty field is a period the plan is not sold for. */
+  readonly pricesHint: string;
+  readonly pricesMissing: string;
+  /** Carries `{price}`, `{period}`: one entry of a plan's price list. */
+  readonly pricePer: string;
+  readonly studentOnlyLabel: string;
+  readonly studentOnlyHint: string;
+  readonly studentTag: string;
+  readonly makeStudentOnly: string;
+  readonly openToEveryone: string;
   readonly maxActiveLabel: string;
   readonly goalCeilingLabel: string;
   readonly unlimitedHint: string;
@@ -1419,7 +1434,7 @@ export interface PlanManagerCopy extends ConsoleChromeCopy {
   /** Carries `{account}`. */
   readonly endedNotice: string;
 
-  readonly period: Readonly<Record<'MONTHLY' | 'YEARLY', string>>;
+  readonly period: Readonly<Record<BillingPeriod, string>>;
   readonly state: Readonly<
     Record<'PENDING_PAYMENT' | 'ACTIVE' | 'CANCELED' | 'EXPIRED', string>
   >;
@@ -1456,7 +1471,16 @@ export function planManagerCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCop
     descriptionHint: t('screens.plans.descriptionHint'),
     priceLabel: t('screens.plans.priceLabel'),
     priceHint: t('screens.plans.priceHint'),
-    periodLabel: t('screens.plans.periodLabel'),
+    priceFor: String(t.raw('screens.plans.priceFor')),
+    newPriceFor: String(t.raw('screens.plans.newPriceFor')),
+    pricesHint: t('screens.plans.pricesHint'),
+    pricesMissing: t('screens.plans.pricesMissing'),
+    pricePer: String(t.raw('screens.plans.pricePer')),
+    studentOnlyLabel: t('screens.plans.studentOnlyLabel'),
+    studentOnlyHint: t('screens.plans.studentOnlyHint'),
+    studentTag: t('screens.plans.studentTag'),
+    makeStudentOnly: t('screens.plans.makeStudentOnly'),
+    openToEveryone: t('screens.plans.openToEveryone'),
     maxActiveLabel: t('screens.plans.maxActiveLabel'),
     goalCeilingLabel: t('screens.plans.goalCeilingLabel'),
     unlimitedHint: t('screens.plans.unlimitedHint'),
@@ -1513,7 +1537,7 @@ export function planManagerCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCop
     activatedNotice: String(t.raw('screens.plans.activatedNotice')),
     endedNotice: String(t.raw('screens.plans.endedNotice')),
 
-    period: t.raw('screens.plans.period') as Readonly<Record<'MONTHLY' | 'YEARLY', string>>,
+    period: t.raw('screens.plans.period') as Readonly<Record<BillingPeriod, string>>,
     state: t.raw('screens.plans.state') as Readonly<
       Record<'PENDING_PAYMENT' | 'ACTIVE' | 'CANCELED' | 'EXPIRED', string>
     >,

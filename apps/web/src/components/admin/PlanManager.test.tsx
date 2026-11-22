@@ -68,6 +68,8 @@ const STARTER: Plan = {
   price: '19.00',
   currency: 'AZN',
   billingPeriod: 'MONTHLY',
+  prices: [{ billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' }],
+  studentOnly: false,
   maxActiveCampaigns: 1,
   goalCeiling: '10000.00',
   listed: true,
@@ -279,8 +281,7 @@ describe('the money pages audit on the plan manager', () => {
     expect(
       await screen.findByText(
         fillPlaceholders(COPY.planSummary, {
-          price: '19.00 AZN',
-          period: COPY.period.MONTHLY,
+          prices: fillPlaceholders(COPY.pricePer, { price: '19.00 AZN', period: COPY.period.MONTHLY }),
           campaigns: '1',
           ceiling: '10,000.00 AZN',
         }),
@@ -311,12 +312,13 @@ describe('the money pages audit on the plan manager', () => {
 
     await userEvent.type(screen.getByLabelText(COPY.codeLabel), 'growth');
     await userEvent.type(screen.getByLabelText(COPY.nameLabel), 'Growth');
-    await userEvent.clear(screen.getByLabelText(new RegExp(`^${COPY.priceLabel}`)));
-    await userEvent.type(screen.getByLabelText(new RegExp(`^${COPY.priceLabel}`)), '24,50');
+    const monthly = screen.getByLabelText(fillPlaceholders(COPY.priceFor, { period: COPY.period.MONTHLY }));
+    await userEvent.clear(monthly);
+    await userEvent.type(monthly, '24,50');
     await userEvent.click(screen.getByRole('button', { name: COPY.addPlan }));
 
     await waitFor(() => expect(addPlanMock).toHaveBeenCalled());
-    expect(addPlanMock.mock.calls[0]?.[0].price).toBe('24.50');
+    expect(addPlanMock.mock.calls[0]?.[0].prices).toEqual([{ billingPeriod: 'MONTHLY', price: '24.50' }]);
   });
 
   it('says a refused plan in the reader language beside the form, never the service English', async () => {
@@ -340,16 +342,25 @@ describe('the money pages audit on the plan manager', () => {
     render(<PlanManager copy={COPY} />);
     await screen.findAllByText(/Starter/);
 
-    await userEvent.clear(screen.getByLabelText(new RegExp(`^${COPY.repriceLabel}`)));
-    await userEvent.type(screen.getByLabelText(new RegExp(`^${COPY.repriceLabel}`)), '24,00');
+    const monthly = screen.getByLabelText(fillPlaceholders(COPY.newPriceFor, { period: COPY.period.MONTHLY }));
+    await userEvent.clear(monthly);
+    await userEvent.type(monthly, '24,00');
     await userEvent.click(screen.getByRole('button', { name: new RegExp(`^${COPY.reprice}`) }));
 
+    const per = (price: string) => fillPlaceholders(COPY.pricePer, { price, period: COPY.period.MONTHLY });
     expect(
-      screen.getByText(fillPlaceholders(COPY.confirmReprice, { plan: STARTER.name, old: '19.00 AZN', new: '24.00 AZN' })),
+      screen.getByText(
+        fillPlaceholders(COPY.confirmReprice, { plan: STARTER.name, old: per('19.00 AZN'), new: per('24.00 AZN') }),
+      ),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: COPY.confirmRepriceAction }));
 
-    await waitFor(() => expect(changePlanMock).toHaveBeenCalledWith({ planId: STARTER.id, price: '24.00' }));
+    await waitFor(() =>
+      expect(changePlanMock).toHaveBeenCalledWith({
+        planId: STARTER.id,
+        prices: [{ billingPeriod: 'MONTHLY', price: '24.00' }],
+      }),
+    );
   });
 
   it('records how and when a payment arrived, and refuses a day after today', async () => {
