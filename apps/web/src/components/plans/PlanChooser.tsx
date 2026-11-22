@@ -6,7 +6,12 @@ import { Chip, ChipRow, Field, InlineAlert, Pill, Radio, RadioGroup } from '@ide
 import { newIdempotencyKey } from '@ideanest/checkout/idempotency';
 import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
 import { canChoose } from '@ideanest/plans/choice';
-import { planPaymentRefusalOf, planPaymentReturnOf } from '@ideanest/plans/payment';
+import {
+  planPaymentRefusalOf,
+  planPaymentReturnOf,
+  renewalStandingOf,
+  type PlanPaymentDeparture,
+} from '@ideanest/plans/payment';
 import { isZeroAmount, offeredPeriods, priceFor, refusalOf } from '@ideanest/plans/periods';
 import { qualifiesForStudentPlans } from '@ideanest/plans/student';
 import { ApiError } from '../../lib/api/problem';
@@ -25,6 +30,7 @@ import {
   type PlanPaymentReturn,
   type PlanPaymentReturnHint,
 } from '../../lib/plans/api';
+import { forgetDeparture, recallDeparture, rememberDeparture } from '../../lib/plans/departure';
 import { extendedEnd, extensionChoices, extensionShown } from '../../lib/plans/extension';
 import { readMyStudentVerification, type StudentVerification } from '../../lib/plans/student';
 import { leaveForPaymentPage } from '../../lib/pledges/payment';
@@ -105,6 +111,13 @@ import { Link, useRouter } from '../../i18n/navigation';
  * sends no list leaves the panel renewing the held period as before. Paying moves the end by the
  * period from the current end, so the window closes again: extensions do not stack.
  *
+ * A monthly plan therefore has a renewal due for its whole month, so "due" is not a warning: until
+ * the last seven days (`renewalStandingOf`) the panel says the plan is active and offers an outlined
+ * "Extend by 1 month — 19 ₼"; only the last week is "ends on {date}" in a warning. And "nothing is
+ * due any more" no longer means a payment landed — the next renewal is due at once — so what was held
+ * on leaving for the provider is kept in `sessionStorage` (`lib/plans/departure.ts`), and the return
+ * notice says paid when the plan left `PENDING_PAYMENT` or its end moved.
+ *
  * MOTION: none. `docs/motion-system.md` §5 gives money surfaces no entry animation, and this
  * is the page where somebody decides to spend some.
  */
@@ -133,6 +146,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [returned, setReturned] = useState<PlanPaymentReturnHint | null>(null);
+  const [departure, setDeparture] = useState<PlanPaymentDeparture | null>(null);
   const [checks, setChecks] = useState(0);
   const periods = offeredPeriods(plans);
   // The reader's pick; until they make one, the switch follows what they hold (`periodShown`).
@@ -153,7 +167,11 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
    * query parameter.
    */
   useEffect(() => {
-    setReturned(planPaymentReturnHint(window.location.search));
+    const hint = planPaymentReturnHint(window.location.search);
+    setReturned(hint);
+    // What was held on leaving (#660), so a monthly plan, due again the moment it is paid, still
+    // reads as paid. Only on a return: anywhere else it is an answer to a question nobody asked.
+    if (hint !== null) setDeparture(recallDeparture());
   }, []);
 
   useEffect(() => {
@@ -294,7 +312,14 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
    */
   const stoppedAsking = checks >= PAYMENT_CHECKS;
   const outcome: PlanPaymentReturn | null =
-    returned !== null && status === 'ready' ? planPaymentReturnOf(returned, held, stoppedAsking) : null;
+    returned !== null && status === 'ready'
+      ? planPaymentReturnOf(returned, held, stoppedAsking, departure)
+      : null;
+
+  // Answered, one way or the other: a later visit to the same address is not this return.
+  useEffect(() => {
+    if (outcome !== null && outcome !== 'waiting') forgetDeparture();
+  }, [outcome]);
 
   useEffect(() => {
     if (outcome !== 'waiting') return;
@@ -329,6 +354,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       const where = planPaymentReturnFor(fromProjectId);
       const body = extensionPeriod === null ? where : { ...where, billingPeriod: extensionPeriod };
       const page = await payForPlan(body, newIdempotencyKey());
+      rememberDeparture(held);
       // Leaving, not done: `paying` stays set so the control cannot be pressed again while the
       // browser is on its way to the provider.
       leaveForPaymentPage(page.redirectUrl);
@@ -350,7 +376,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
         }
       }
     }
-  }, [copy, extensionPeriod, fromProjectId, locale, paying]);
+  }, [copy, extensionPeriod, fromProjectId, held, locale, paying]);
 
   const stop = useCallback(async (): Promise<void> => {
     setCancelling(true);
@@ -530,13 +556,18 @@ function HeldPanel({
   const pending = held.state === 'PENDING_PAYMENT';
   const due = held.paymentDue ?? null;
   const renewing = due === 'RENEWAL' && held.entitled;
+  // #660: a monthly plan has a renewal due for its whole month, so only the last seven days are a
+  // warning. Before that the plan is simply active and extending it is an option, offered calmly.
+  const early = renewing && renewalStandingOf(held) === 'early';
+  const urgent = renewing && !early;
   // The subscription's own snapshot price, not today's catalogue price (V62): a renewal is charged
   // at the price the creator bought at — or, extending by another period (#660), the price the
   // service listed for it.
   // With the period it buys (#655): "60 ₼" is six months of one plan and a month of another.
   // Bracketed rather than "for 6 months", which reads wrongly inside "Renew for {price}" in Turkish.
   const charged = extension ?? held;
-  const price = `${formatPrice(charged.price, charged.currency, locale)} (${copy.periods[charged.billingPeriod]})`;
+  const amount = formatPrice(charged.price, charged.currency, locale);
+  const price = `${amount} (${copy.periods[charged.billingPeriod]})`;
   const opensAt = due === null && held.entitled ? formatDate(held.renewalOpensAt, locale) : '';
   const choices = renewing ? extensionChoices(held) : [];
 
@@ -555,7 +586,7 @@ function HeldPanel({
         that entitles nobody is the one thing this panel must not show.
       */}
       <InlineAlert
-        variant={pending || renewing ? 'warning' : held.entitled ? 'success' : 'info'}
+        variant={pending || urgent ? 'warning' : held.entitled ? 'success' : 'info'}
         title={describeHeld(held, copy, locale)}
         className="mt-3"
       >
@@ -563,7 +594,8 @@ function HeldPanel({
         {/* Bank transfer stays as the alternative (epic #448), so it is said beside the card. */}
         {pending && <p className={due === 'FIRST_PERIOD' ? 'mt-2' : undefined}>{copy.held.pendingBody}</p>}
         {pending && canChange && <p className="mt-2">{copy.held.pendingChange}</p>}
-        {renewing && <p>{copy.payment.renewalBody}</p>}
+        {urgent && <p>{copy.payment.renewalBody}</p>}
+        {early && <p>{copy.payment.extendBody}</p>}
         {renewing && held.cancelAtPeriodEnd && <p className="mt-2">{copy.payment.renewalCancelled}</p>}
         {opensAt !== '' && <p>{fillPlaceholders(copy.payment.renewsFrom, { date: opensAt })}</p>}
       </InlineAlert>
@@ -613,10 +645,12 @@ function HeldPanel({
         below already carry it. No entry motion either: this is the step that takes money
         (motion-system 5). `aria-disabled` rather than `disabled` while the request is in flight,
         as the plan cards do, so focus is not thrown off the control the reader just pressed.
+        An extension offered early (#660) is an option, not the thing to do: outlined, and named
+        "Extend by 1 month — 19 ₼" rather than "Renew".
       */}
       {due !== null && canPay && (pending || renewing) && (
         <Pill
-          variant="primary"
+          variant={early ? 'outline' : 'primary'}
           size="md"
           className={paying ? 'mt-4 opacity-40' : 'mt-4'}
           aria-disabled={paying}
@@ -627,7 +661,9 @@ function HeldPanel({
         >
           {paying
             ? copy.payment.opening
-            : fillPlaceholders(due === 'RENEWAL' ? copy.payment.renew : copy.payment.payByCard, { price })}
+            : early
+              ? fillPlaceholders(copy.payment.extendBy, { period: copy.periods[charged.billingPeriod], price: amount })
+              : fillPlaceholders(due === 'RENEWAL' ? copy.payment.renew : copy.payment.payByCard, { price })}
         </Pill>
       )}
 
@@ -668,7 +704,8 @@ function describeHeld(held: HeldSubscription, copy: PricingCopy, locale: Locale)
 
   if (held.state === 'PENDING_PAYMENT') return fillPlaceholders(copy.held.pendingTitle, { plan });
   if (!held.entitled) return fillPlaceholders(copy.held.lapsed, { plan, date });
-  if (held.paymentDue === 'RENEWAL') return fillPlaceholders(copy.payment.renewalTitle, { plan, date });
+  // Only the last seven days of a due renewal are "ends on"; before that the plan is active (#660).
+  if (renewalStandingOf(held) === 'urgent') return fillPlaceholders(copy.payment.renewalTitle, { plan, date });
   if (held.cancelAtPeriodEnd) return fillPlaceholders(copy.held.endingOn, { plan, date });
   return fillPlaceholders(copy.held.activeUntil, { plan, date });
 }
