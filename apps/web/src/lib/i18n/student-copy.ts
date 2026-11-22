@@ -48,6 +48,12 @@ export interface StudentVerificationCopy {
   readonly submitting: string;
   readonly sentTitle: string;
   readonly errorTitle: string;
+  /** Carries `{megabytes}`: the two files together are more than one request may carry. */
+  readonly together: string;
+  /** While a chosen photograph is made smaller. */
+  readonly preparing: string;
+  readonly signedOutTitle: string;
+  readonly signIn: string;
   /** `studentSubmissionRefusalOf`'s answers, said under the file when the service named one. */
   readonly refusals: Readonly<Record<StudentSubmissionRefusal, string>>;
 }
@@ -114,6 +120,10 @@ export function studentVerificationCopyFrom(t: StudentTranslator): StudentVerifi
     submitting: t('submitting'),
     sentTitle: t('sentTitle'),
     errorTitle: t('errorTitle'),
+    together: String(t.raw('together')),
+    preparing: t('preparing'),
+    signedOutTitle: t('signedOutTitle'),
+    signIn: t('signIn'),
     refusals: byKey(REFUSALS, (refusal) => t(`refusals.${refusal}`)),
   };
 }

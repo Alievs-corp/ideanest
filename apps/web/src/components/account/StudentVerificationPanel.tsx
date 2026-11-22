@@ -8,6 +8,9 @@ import {
   SELFIE_TYPES,
   STUDENT_CARD_TYPES,
   STUDENT_DOCUMENT_MAX_BYTES,
+  STUDENT_REQUEST_MAX_BYTES,
+  downscaleImage,
+  fitsOneRequest,
   localFileProblem,
   readMyStudentVerification,
   refusedFieldOf,
@@ -21,6 +24,7 @@ import type { Locale } from '../../lib/i18n/locale';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { formatDate } from '../../lib/time';
 import { Link } from '../../i18n/navigation';
+import { signInHref } from '../../lib/auth/redirect';
 
 /**
  * `/account/student`: where the account stands with the student check, and the form that asks
@@ -41,6 +45,14 @@ import { Link } from '../../i18n/navigation';
  * under its own field before eleven megabytes travel to be refused. The service still decides, and
  * its refusal names the file (`field`), which is where it is said.
  *
+ * <h2>A photograph is made small before it is checked</h2>
+ *
+ * A phone photograph is eight to twelve megabytes; the service takes five per file and one request
+ * of both. So a chosen JPEG or PNG is redrawn at 2048 pixels on its longer edge as a JPEG
+ * (`downscaleImage`) before the size check, and the PDF card is left as it is. The two files
+ * together are checked against the request limit before sending, so the container's 413 — which
+ * names no file — is not what the reader meets.
+ *
  * <h2>A selfie is taken, not chosen, on a phone</h2>
  *
  * `capture="user"` opens the front camera where there is one and is ignored elsewhere. The card
@@ -52,15 +64,20 @@ export interface StudentVerificationPanelProps {
   readonly copy: StudentVerificationCopy;
 }
 
-type Status = 'loading' | 'ready' | 'failed';
+type Status = 'loading' | 'ready' | 'failed' | 'signed-out';
 
-/** The card number with all but its last four characters hidden. */
+/**
+ * The card number with all but its last four characters hidden — the app's rule. A number of four
+ * characters or fewer is hidden whole: showing "the last four" of it would show all of it.
+ */
 export function maskCardNumber(number: string): string {
-  if (number.length <= 4) return number;
-  return `•••• ${number.slice(-4)}`;
+  const compact = number.replace(/\s+/gu, '');
+  if (compact.length <= 4) return '•'.repeat(Math.max(compact.length, 4));
+  return `•••• ${compact.slice(-4)}`;
 }
 
 const MEGABYTES = String(STUDENT_DOCUMENT_MAX_BYTES / (1024 * 1024));
+const REQUEST_MEGABYTES = String(STUDENT_REQUEST_MAX_BYTES / (1024 * 1024));
 
 export function StudentVerificationPanel({ copy }: StudentVerificationPanelProps) {
   const locale = useRouteLocale();
@@ -79,9 +96,10 @@ export function StudentVerificationPanel({ copy }: StudentVerificationPanelProps
         if (controller.signal.aborted) return;
         setVerification(read);
         setStatus('ready');
-      } catch {
+      } catch (cause) {
         if (controller.signal.aborted) return;
-        setStatus('failed');
+        // No session is not a failure to retry: the reader signs in, and comes back here.
+        setStatus(cause instanceof ApiError && cause.status === 401 ? 'signed-out' : 'failed');
       }
     })();
 
@@ -94,6 +112,16 @@ export function StudentVerificationPanel({ copy }: StudentVerificationPanelProps
         <Skeleton height="1.25rem" width="50%" />
         <Skeleton height="0.875rem" width="70%" className="mt-3" />
       </SkeletonGroup>
+    );
+  }
+
+  if (status === 'signed-out') {
+    return (
+      <InlineAlert variant="info" title={copy.signedOutTitle}>
+        <Link href={signInHref('/account/student')} className="text-fg underline underline-offset-4">
+          {copy.signIn}
+        </Link>
+      </InlineAlert>
     );
   }
 
@@ -223,6 +251,7 @@ function SubmissionForm({
   const [fileErrors, setFileErrors] = useState<FileErrors>({});
   const [tried, setTried] = useState(false);
   const [sending, setSending] = useState(false);
+  const [preparing, setPreparing] = useState<StudentFileField | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
 
   const institutionError = tried && institution.trim() === '' ? copy.institutionMissing : undefined;
@@ -231,23 +260,36 @@ function SubmissionForm({
   const studentCardError = fileErrors.studentCard ?? (tried && studentCard === null ? copy.fileMissing : undefined);
   const selfieError = fileErrors.selfie ?? (tried && selfie === null ? copy.fileMissing : undefined);
 
-  function choose(field: StudentFileField, accepted: readonly string[], file: File | null): void {
-    const problem = file === null ? null : localFileProblem(file, accepted);
+  async function choose(field: StudentFileField, accepted: readonly string[], file: File | null): Promise<void> {
+    setRefusal(null);
+    // The type and emptiness are the file's own; the size is judged on what will actually be sent.
+    const early = file === null ? null : localFileProblem(file, accepted, { ignoreSize: true });
+    let prepared = early === null ? file : null;
+    if (prepared !== null) {
+      setPreparing(field);
+      prepared = await downscaleImage(prepared);
+      setPreparing(null);
+    }
+    const problem = early ?? (prepared === null ? null : localFileProblem(prepared, accepted));
     setFileErrors((previous) => ({ ...previous, [field]: problem === null ? undefined : copy.refusals[problem] }));
-    const kept = problem === null ? file : null;
+    const kept = problem === null ? prepared : null;
     if (field === 'studentCard') setStudentCard(kept);
     else setSelfie(kept);
   }
 
   async function send(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (sending) return;
+    if (sending || preparing !== null) return;
     setTried(true);
     setRefusal(null);
     const trimmed = institution.trim();
     const number = cardNumber.trim();
     if (trimmed === '' || number.length < 3 || number.length > 40) return;
     if (studentCard === null || selfie === null || fileErrors.studentCard || fileErrors.selfie) return;
+    if (!fitsOneRequest(studentCard, selfie)) {
+      setRefusal(fillPlaceholders(copy.together, { megabytes: REQUEST_MEGABYTES }));
+      return;
+    }
 
     setSending(true);
     try {
@@ -302,7 +344,8 @@ function SubmissionForm({
             file={studentCard}
             previewLabel={copy.studentCardPreview}
             pdfChosen={copy.pdfChosen}
-            onFile={(file) => choose('studentCard', STUDENT_CARD_TYPES, file)}
+            preparing={preparing === 'studentCard' ? copy.preparing : null}
+            onFile={(file) => void choose('studentCard', STUDENT_CARD_TYPES, file)}
           />
         </Field>
 
@@ -318,7 +361,8 @@ function SubmissionForm({
             file={selfie}
             previewLabel={copy.selfiePreview}
             pdfChosen={copy.pdfChosen}
-            onFile={(file) => choose('selfie', SELFIE_TYPES, file)}
+            preparing={preparing === 'selfie' ? copy.preparing : null}
+            onFile={(file) => void choose('selfie', SELFIE_TYPES, file)}
           />
         </Field>
 
@@ -329,7 +373,7 @@ function SubmissionForm({
         )}
 
         <div>
-          <Pill type="submit" variant="primary" size="md" aria-disabled={sending}>
+          <Pill type="submit" variant="primary" size="md" aria-disabled={sending || preparing !== null}>
             {sending ? copy.submitting : copy.submit}
           </Pill>
         </div>
@@ -351,6 +395,7 @@ function DocumentInput({
   file,
   previewLabel,
   pdfChosen,
+  preparing,
   onFile,
 }: {
   readonly accept: string;
@@ -358,6 +403,8 @@ function DocumentInput({
   readonly file: File | null;
   readonly previewLabel: string;
   readonly pdfChosen: string;
+  /** Said while a chosen photograph is being made smaller, which takes a moment on a phone. */
+  readonly preparing: string | null;
   readonly onFile: (file: File | null) => void;
 }) {
   const aria = useFieldControl({});
@@ -387,6 +434,11 @@ function DocumentInput({
         onChange={(event: ChangeEvent<HTMLInputElement>) => onFile(event.target.files?.[0] ?? null)}
         className="block w-full rounded-lg text-sm text-fg-64 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-surface-3 file:px-4 file:py-2 file:text-sm file:font-medium file:text-fg hover:file:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
       />
+      {preparing !== null && (
+        <p role="status" className="text-[13px] text-fg-64">
+          {preparing}
+        </p>
+      )}
       {preview !== null && (
         // An object URL of the reader's own file: there is nothing for `next/image` to optimise.
         // eslint-disable-next-line @next/next/no-img-element
