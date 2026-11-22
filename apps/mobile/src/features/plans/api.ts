@@ -3,6 +3,7 @@ import { ApiError } from '@ideanest/api-client';
 import {
   readMine,
   readPlanCatalogue,
+  type BillingPeriod,
   type MySubscription,
   type Plan,
 } from '@ideanest/plans/catalogue';
@@ -97,10 +98,11 @@ function mineOf(body: unknown): MySubscription {
 
 /**
  * Buys a plan. What comes back is not necessarily an entitlement: a priced plan arrives
- * `PENDING_PAYMENT` with `entitled: false`, and the page renders what it is given.
+ * `PENDING_PAYMENT` with `entitled: false`, and the page renders what it is given. The period is
+ * the one the switch shows (#655); the service refuses one the plan is not sold for.
  */
-export async function chooseSubscription(planId: string): Promise<MySubscription> {
-  return mineOf(await sendJson('POST', '/v1/me/subscription', { planId }));
+export async function chooseSubscription(planId: string, billingPeriod: BillingPeriod): Promise<MySubscription> {
+  return mineOf(await sendJson('POST', '/v1/me/subscription', { planId, billingPeriod }));
 }
 
 /** Cancels at the end of the period: the response carries the date the entitlement stops. */

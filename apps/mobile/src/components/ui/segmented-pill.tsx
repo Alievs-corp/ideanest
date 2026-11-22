@@ -38,6 +38,11 @@ export interface SegmentedPillProps<T extends string> {
 
 const HEIGHT = 44;
 const INSET = 4;
+/**
+ * How far a label may shrink before it truncates: three segments at a 1.4 font scale on a 360dp
+ * phone leave about 72dp each, and "6 месяцев" needs about 92 (#655).
+ */
+const FIT = 0.7;
 
 export function SegmentedPill<T extends string>({
   options,
@@ -140,7 +145,7 @@ function Segment({
       style={[styles.segment, ring.ring]}
     >
       <Animated.View style={restStyle} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <Text style={[styles.label, { color: rest }]} numberOfLines={1}>
+        <Text style={[styles.label, { color: rest }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={FIT}>
           {label}
         </Text>
       </Animated.View>
@@ -149,7 +154,7 @@ function Segment({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
-        <Text style={[styles.label, { color: chosen }]} numberOfLines={1}>
+        <Text style={[styles.label, { color: chosen }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={FIT}>
           {label}
         </Text>
       </Animated.View>
