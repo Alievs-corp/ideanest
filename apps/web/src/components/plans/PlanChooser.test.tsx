@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
 import { ApiError } from '../../lib/api/problem';
-import type { HeldSubscription, Plan } from '../../lib/plans/api';
+import type { BillingPeriod, HeldSubscription, Plan } from '../../lib/plans/api';
 import {
   cancelSubscription,
   formatPrice,
@@ -13,6 +13,12 @@ import {
 } from '../../lib/plans/api';
 import { leaveForPaymentPage } from '../../lib/pledges/payment';
 import { PlanChooser } from './PlanChooser';
+import { extendedEnd } from '../../lib/plans/extension';
+
+/** The end a one-month extension of `end` gives, as the page computes it. */
+function extendedEndOf(end: string): string {
+  return extendedEnd(end, 'MONTHLY') ?? end;
+}
 import { pricingCopyFrom } from '../../lib/i18n/plans-copy';
 import { dateTimeFormat } from '../../lib/i18n/formats';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -127,6 +133,8 @@ beforeEach(() => {
   subscribeMock.mockClear();
   cancelMock.mockClear();
   window.history.replaceState({}, '', '/en/pricing');
+  // What a test left for the trip to the provider (#660) is not the next test's departure.
+  window.sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -618,5 +626,304 @@ describe('coming back from the provider (#451)', () => {
 
     expect(screen.queryByText(RETURNED.waitingTitle)).not.toBeInTheDocument();
     expect(screen.queryByText(RETURNED.failedTitle)).not.toBeInTheDocument();
+  });
+
+  /*
+   * #660: with a month-long window a monthly plan has a renewal due from the moment its first
+   * period is paid, and again straight after an extension. What was held on leaving is remembered
+   * for the trip, and "paid" is what changed since.
+   */
+  describe('when a renewal is due again straight after paying (#660)', () => {
+    const FIRST_PAID = held({ paymentDue: 'RENEWAL', currentPeriodEnd: '2026-09-01T09:00:00Z' });
+    const EXTENDED = held({ paymentDue: 'RENEWAL', currentPeriodEnd: '2026-10-01T09:00:00Z' });
+
+    it('remembers what was held when the creator leaves for the provider', async () => {
+      readMock.mockResolvedValue({ subscription: PENDING });
+      payMock.mockResolvedValue({ providerTransactionId: 'order-1', redirectUrl: 'https://pay.test/order-1' });
+
+      draw();
+      await settle();
+      act(() => screen.getByRole('button', { name: PAY_BY_CARD }).click());
+      await settle();
+
+      expect(leaveMock).toHaveBeenCalled();
+      expect(JSON.parse(window.sessionStorage.getItem('ideanest.plan-payment-departure') ?? 'null')).toEqual({
+        subscriptionId: PENDING.id,
+        state: 'PENDING_PAYMENT',
+        currentPeriodEnd: null,
+      });
+    });
+
+    it('says a first monthly payment went through although the next renewal is already due', async () => {
+      window.history.replaceState({}, '', '/en/pricing?payment=returned');
+      window.sessionStorage.setItem(
+        'ideanest.plan-payment-departure',
+        JSON.stringify({ subscriptionId: PENDING.id, state: 'PENDING_PAYMENT', currentPeriodEnd: null }),
+      );
+      readMock.mockResolvedValueOnce({ subscription: PENDING }).mockResolvedValue({ subscription: FIRST_PAID });
+
+      draw();
+      await settle();
+      expect(screen.getByText(RETURNED.waitingTitle)).toBeInTheDocument();
+
+      await settle(PAYMENT_CHECK_INTERVAL_MS);
+      expect(screen.getByText(RETURNED.paidTitle)).toBeInTheDocument();
+      // Answered: the departure is not kept for a later visit to the same address.
+      expect(window.sessionStorage.getItem('ideanest.plan-payment-departure')).toBeNull();
+    });
+
+    it('says an extension went through once the end has moved', async () => {
+      window.history.replaceState({}, '', '/en/pricing?payment=returned');
+      window.sessionStorage.setItem(
+        'ideanest.plan-payment-departure',
+        JSON.stringify({ subscriptionId: FIRST_PAID.id, state: 'ACTIVE', currentPeriodEnd: '2026-09-01T09:00:00Z' }),
+      );
+      readMock.mockResolvedValueOnce({ subscription: FIRST_PAID }).mockResolvedValue({ subscription: EXTENDED });
+
+      draw();
+      await settle();
+      expect(screen.getByText(RETURNED.waitingTitle)).toBeInTheDocument();
+
+      await settle(PAYMENT_CHECK_INTERVAL_MS);
+      expect(screen.getByText(RETURNED.paidTitle)).toBeInTheDocument();
+    });
+
+    it('keeps waiting, then says it has not heard back, while the end has not moved', async () => {
+      window.history.replaceState({}, '', '/en/pricing?payment=returned');
+      window.sessionStorage.setItem(
+        'ideanest.plan-payment-departure',
+        JSON.stringify({ subscriptionId: FIRST_PAID.id, state: 'ACTIVE', currentPeriodEnd: '2026-09-01T09:00:00Z' }),
+      );
+      readMock.mockResolvedValue({ subscription: FIRST_PAID });
+
+      draw();
+      await settle();
+      expect(screen.getByText(RETURNED.waitingTitle)).toBeInTheDocument();
+
+      for (let check = 0; check < PAYMENT_CHECKS; check += 1) await settle(PAYMENT_CHECK_INTERVAL_MS);
+      expect(screen.getByText(RETURNED.unconfirmedTitle)).toBeInTheDocument();
+      expect(screen.queryByText(RETURNED.paidTitle)).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('extending a running plan by a period the creator picks (#660)', () => {
+  /** Six months held at 99 ₼; a month and a year at the plan's current prices. */
+  const EXTENDING = held({
+    billingPeriod: 'SEMIANNUAL',
+    price: '99.00',
+    paymentDue: 'RENEWAL',
+    renewalOpensAt: '2026-08-01T09:00:00Z',
+    renewalPrices: [
+      { billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' },
+      { billingPeriod: 'SEMIANNUAL', price: '99.00', currency: 'AZN' },
+      { billingPeriod: 'YEARLY', price: '190.00', currency: 'AZN' },
+    ],
+  });
+
+  const renewFor = (price: string, period: BillingPeriod) =>
+    fillPlaceholders(COPY.payment.renew, { price: `${formatPrice(price, 'AZN', 'en')} (${COPY.periods[period]})` });
+  const endsOn = (iso: string) => fillPlaceholders(COPY.payment.extendsTo, { date: day(iso) });
+  const option = (period: BillingPeriod) => new RegExp(`^${COPY.periods[period]}`);
+  // Text queries collapse the no-break space `Intl` puts between a currency and its amount.
+  const shown = (text: string) => text.replace(/\s+/gu, ' ');
+
+  it('offers each period with its price and the date the plan would end, the held one selected', async () => {
+    readMock.mockResolvedValue({ subscription: EXTENDING });
+
+    draw();
+
+    const group = await screen.findByRole('radiogroup', { name: COPY.payment.extendLabel });
+    expect(within(group).getAllByRole('radio')).toHaveLength(3);
+    expect(within(group).getByRole('radio', { name: option('SEMIANNUAL') })).toBeChecked();
+    expect(within(group).getByRole('radio', { name: option('MONTHLY') })).not.toBeChecked();
+    expect(within(group).getByRole('radio', { name: option('YEARLY') })).not.toBeChecked();
+
+    expect(within(group).getByText(shown(formatPrice('19.00', 'AZN', 'en')))).toBeInTheDocument();
+    expect(within(group).getByText(shown(formatPrice('99.00', 'AZN', 'en')))).toBeInTheDocument();
+    expect(within(group).getByText(shown(formatPrice('190.00', 'AZN', 'en')))).toBeInTheDocument();
+
+    // From the current end (1 September 2026), in calendar months.
+    expect(within(group).getByText(endsOn('2026-10-01T09:00:00Z'))).toBeInTheDocument();
+    expect(within(group).getByText(endsOn('2027-03-01T09:00:00Z'))).toBeInTheDocument();
+    expect(within(group).getByText(endsOn('2027-09-01T09:00:00Z'))).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: renewFor('99.00', 'SEMIANNUAL') })).toBeInTheDocument();
+  });
+
+  it('renames the button after the period picked and sends that period with the payment', async () => {
+    readMock.mockResolvedValue({ subscription: EXTENDING });
+    payMock.mockResolvedValue({ providerTransactionId: 'order-1', redirectUrl: 'https://pay.test/order-1' });
+
+    draw();
+    await userEvent.click(await screen.findByRole('radio', { name: option('YEARLY') }));
+    await userEvent.click(screen.getByRole('button', { name: renewFor('190.00', 'YEARLY') }));
+
+    await waitFor(() => expect(payMock).toHaveBeenCalledTimes(1));
+    expect(payMock.mock.calls[0]?.[0]).toEqual({
+      language: 'en',
+      successUrl: `${window.location.origin}/en/pricing?payment=returned`,
+      errorUrl: `${window.location.origin}/en/pricing?payment=failed`,
+      billingPeriod: 'YEARLY',
+    });
+    expect(leaveMock).toHaveBeenCalledWith('https://pay.test/order-1');
+  });
+
+  it('sends the held period when the creator leaves the choice alone', async () => {
+    readMock.mockResolvedValue({ subscription: EXTENDING });
+    payMock.mockResolvedValue({ providerTransactionId: 'order-1', redirectUrl: 'https://pay.test/order-1' });
+
+    draw();
+    await userEvent.click(await screen.findByRole('button', { name: renewFor('99.00', 'SEMIANNUAL') }));
+
+    await waitFor(() => expect(payMock).toHaveBeenCalledTimes(1));
+    expect(payMock.mock.calls[0]?.[0].billingPeriod).toBe('SEMIANNUAL');
+  });
+
+  it('offers only the periods the service lists, and one as a sentence rather than a choice', async () => {
+    readMock.mockResolvedValue({
+      subscription: {
+        ...EXTENDING,
+        renewalPrices: [{ billingPeriod: 'SEMIANNUAL', price: '99.00', currency: 'AZN' }],
+      },
+    });
+    payMock.mockResolvedValue({ providerTransactionId: 'order-1', redirectUrl: 'https://pay.test/order-1' });
+
+    draw();
+
+    const button = await screen.findByRole('button', { name: renewFor('99.00', 'SEMIANNUAL') });
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(screen.getByText(endsOn('2027-03-01T09:00:00Z'))).toBeInTheDocument();
+
+    await userEvent.click(button);
+    await waitFor(() => expect(payMock).toHaveBeenCalledTimes(1));
+    expect(payMock.mock.calls[0]?.[0].billingPeriod).toBe('SEMIANNUAL');
+  });
+
+  it('renews the held period at the held price, sending no period, when the service lists none', async () => {
+    readMock.mockResolvedValue({ subscription: RENEWING });
+    payMock.mockResolvedValue({ providerTransactionId: 'order-1', redirectUrl: 'https://pay.test/order-1' });
+
+    draw();
+    await userEvent.click(await screen.findByRole('button', { name: RENEW }));
+
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+    await waitFor(() => expect(payMock).toHaveBeenCalledTimes(1));
+    expect(payMock.mock.calls[0]?.[0]).not.toHaveProperty('billingPeriod');
+  });
+
+  it('offers no choice of period before the window opens, and says when it does', async () => {
+    readMock.mockResolvedValue({ subscription: { ...EXTENDING, paymentDue: null, renewalPrices: [] } });
+
+    draw();
+
+    expect(
+      await screen.findByText(fillPlaceholders(COPY.payment.renewsFrom, { date: day('2026-08-01T09:00:00Z') })),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+  });
+
+  it('says a period the plan is no longer sold for, and reads the options again', async () => {
+    readMock.mockResolvedValue({ subscription: EXTENDING });
+    payMock.mockRejectedValue(new ApiError(400, { code: 'PERIOD_NOT_OFFERED' }, 'not offered'));
+
+    draw();
+    await userEvent.click(await screen.findByRole('radio', { name: option('YEARLY') }));
+    await userEvent.click(screen.getByRole('button', { name: renewFor('190.00', 'YEARLY') }));
+
+    expect(await screen.findByText(COPY.errors.periodNotOffered)).toBeInTheDocument();
+    await waitFor(() => expect(readMock).toHaveBeenCalledTimes(2));
+    expect(leaveMock).not.toHaveBeenCalled();
+  });
+
+  it('can be chosen from the keyboard', async () => {
+    readMock.mockResolvedValue({ subscription: EXTENDING });
+
+    draw();
+    (await screen.findByRole('radio', { name: option('SEMIANNUAL') })).focus();
+    await userEvent.keyboard('{ArrowDown}');
+
+    expect(screen.getByRole('radio', { name: option('YEARLY') })).toBeChecked();
+    expect(screen.getByRole('button', { name: renewFor('190.00', 'YEARLY') })).toBeInTheDocument();
+  });
+
+  it('has no accessibility violations with the choice on offer', async () => {
+    readMock.mockResolvedValue({ subscription: EXTENDING });
+    const { container } = draw();
+    await screen.findByRole('radiogroup', { name: COPY.payment.extendLabel });
+    await expectNoViolations(container);
+  });
+
+  describe('more than seven days before the end', () => {
+    // A monthly plan's renewal is due for its whole month; until the last week it is an option.
+    const END = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString();
+    const EARLY = held({ ...EXTENDING, currentPeriodEnd: END });
+    const extendBy = (price: string, period: BillingPeriod) =>
+      fillPlaceholders(COPY.payment.extendBy, { period: COPY.periods[period], price: formatPrice(price, 'AZN', 'en') });
+
+    it('says the plan is active, with no warning, and offers to extend it calmly', async () => {
+      readMock.mockResolvedValue({ subscription: EARLY });
+
+      draw();
+
+      const button = await screen.findByRole('button', { name: extendBy('99.00', 'SEMIANNUAL') });
+      const active = fillPlaceholders(COPY.held.activeUntil, { plan: 'Starter', date: day(END) });
+      expect(screen.getAllByText(active).length).toBeGreaterThan(0);
+      expect(screen.getByText(COPY.payment.extendBody)).toBeInTheDocument();
+      expect(
+        screen.queryByText(fillPlaceholders(COPY.payment.renewalTitle, { plan: 'Starter', date: day(END) })),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText(COPY.payment.renewalBody)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: renewFor('99.00', 'SEMIANNUAL') })).not.toBeInTheDocument();
+      // The choice of period stays.
+      expect(screen.getByRole('radiogroup', { name: COPY.payment.extendLabel })).toBeInTheDocument();
+      expect(button).toBeInTheDocument();
+    });
+
+    it('names the period picked on the button and sends it', async () => {
+      readMock.mockResolvedValue({ subscription: EARLY });
+      payMock.mockResolvedValue({ providerTransactionId: 'order-1', redirectUrl: 'https://pay.test/order-1' });
+
+      draw();
+      await userEvent.click(await screen.findByRole('radio', { name: option('MONTHLY') }));
+      await userEvent.click(screen.getByRole('button', { name: extendBy('19.00', 'MONTHLY') }));
+
+      await waitFor(() => expect(payMock).toHaveBeenCalledTimes(1));
+      expect(payMock.mock.calls[0]?.[0].billingPeriod).toBe('MONTHLY');
+    });
+
+    it('reads as "Extend by 1 month — 19 ₼" when only the held period is offered', async () => {
+      readMock.mockResolvedValue({
+        subscription: held({
+          paymentDue: 'RENEWAL',
+          currentPeriodEnd: END,
+          renewalPrices: [{ billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' }],
+        }),
+      });
+
+      draw();
+
+      expect(await screen.findByRole('button', { name: extendBy('19.00', 'MONTHLY') })).toBeInTheDocument();
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+      expect(screen.getByText(endsOn(extendedEndOf(END)))).toBeInTheDocument();
+    });
+
+    it('turns into the warning in the last seven days', async () => {
+      const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+      readMock.mockResolvedValue({ subscription: held({ ...EXTENDING, currentPeriodEnd: soon }) });
+
+      draw();
+
+      expect(await screen.findByRole('button', { name: renewFor('99.00', 'SEMIANNUAL') })).toBeInTheDocument();
+      expect(screen.getByText(COPY.payment.renewalBody)).toBeInTheDocument();
+      expect(screen.queryByText(COPY.payment.extendBody)).not.toBeInTheDocument();
+    });
+
+    it('has no accessibility violations', async () => {
+      readMock.mockResolvedValue({ subscription: EARLY });
+      const { container } = draw();
+      await screen.findByRole('button', { name: extendBy('99.00', 'SEMIANNUAL') });
+      await expectNoViolations(container);
+    });
   });
 });
