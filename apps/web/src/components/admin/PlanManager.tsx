@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, lazy, useState } from 'react';
+import { sameAmount } from '@ideanest/plans/periods';
 import {
   Checkbox,
   EmptyState,
@@ -73,11 +74,17 @@ export function pricesFrom(draft: PriceDraft): readonly PlanPriceRequest[] | und
   return prices.length === 0 ? undefined : prices;
 }
 
-/** Whether two sets of prices say the same thing, decimal places and all. */
-function samePrices(left: readonly PlanPriceRequest[], right: readonly PlanPriceRequest[]): boolean {
-  const key = (prices: readonly PlanPriceRequest[]) =>
-    prices.map((entry) => `${entry.billingPeriod}:${entry.price}`).join('|');
-  return key(left) === key(right);
+/**
+ * Whether two sets of prices are the same set: the same periods at the same amounts, compared as
+ * decimals, so "60" typed over "60.00" is no change to confirm. Through `sameAmount` rather than
+ * `decimal.js`, which cost this route 30 KiB of first-load JavaScript for one comparison.
+ */
+export function samePrices(left: readonly PlanPriceRequest[], right: readonly PlanPriceRequest[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((entry) => {
+    const other = right.find((candidate) => candidate.billingPeriod === entry.billingPeriod);
+    return other !== undefined && sameAmount(entry.price, other.price);
+  });
 }
 
 /**
@@ -451,7 +458,7 @@ interface PlanRowProps {
 
 function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
   const [next, setNext] = useState<PriceDraft>(() => priceDraftOf(plan));
-  const [asking, setAsking] = useState<'none' | 'reprice' | 'retire' | 'texts'>('none');
+  const [asking, setAsking] = useState<'none' | 'reprice' | 'retire' | 'texts' | 'student'>('none');
   const [texts, setTexts] = useState<PlanTextDraft>(() => planTextsOf(plan));
   const [language, setLanguage] = useState<Locale>('az');
   const textsReady = texts.az.name.trim() !== '' && namelessLanguage(texts) === undefined;
@@ -556,6 +563,22 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
             </Pill>
           </div>
         </form>
+      ) : asking === 'student' ? (
+        <div className="mt-3">
+          {/* Who may buy it changes for every purchase from now on, so it asks first, like a price. */}
+          <Confirm
+            label={plan.studentOnly ? copy.openToEveryone : copy.makeStudentOnly}
+            text={fillPlaceholders(plan.studentOnly ? copy.confirmOpenToEveryone : copy.confirmStudentOnly, {
+              plan: plan.name,
+            })}
+            action={plan.studentOnly ? copy.confirmOpenToEveryoneAction : copy.confirmStudentOnlyAction}
+            working={copy.saving}
+            back={copy.back}
+            busy={busy}
+            onConfirm={() => void write(() => changePlan({ planId: plan.id, studentOnly: !plan.studentOnly }), null)}
+            onBack={() => setAsking('none')}
+          />
+        </div>
       ) : asking === 'retire' ? (
         <div className="mt-3">
           <Confirm
@@ -584,13 +607,8 @@ function PlanRow({ plan, copy, refusalOf, onChanged }: PlanRowProps) {
               <span className="sr-only">: {plan.name}</span>
             </Pill>
 
-            {/* Who may buy it, beside what it costs. Undone by the same button, so it does not ask. */}
-            <Pill
-              variant="ghost"
-              size="sm"
-              disabled={busy}
-              onClick={() => void write(() => changePlan({ planId: plan.id, studentOnly: !plan.studentOnly }), null)}
-            >
+            {/* Who may buy it, beside what it costs. */}
+            <Pill variant="ghost" size="sm" disabled={busy} onClick={() => setAsking('student')}>
               {plan.studentOnly ? copy.openToEveryone : copy.makeStudentOnly}
               <span className="sr-only">: {plan.name}</span>
             </Pill>

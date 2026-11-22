@@ -28,6 +28,23 @@ export type {
  */
 export const STUDENT_DOCUMENT_MAX_BYTES = 5 * 1024 * 1024;
 
+/**
+ * The largest request the service takes, both files and the two text fields together:
+ * `spring.servlet.multipart.max-request-size`. The backend for #655 is raising it from the six
+ * megabytes the identity check needed (one file) to fit two; 10 MiB is the figure this client
+ * holds to until that lands — confirm it against `apps/api/src/main/resources/application.yml`.
+ */
+export const STUDENT_REQUEST_MAX_BYTES = 10 * 1024 * 1024;
+
+/**
+ * What the two text fields and the multipart framing add to the files. Generous on purpose: being
+ * refused by the container for the last few hundred bytes would be a 413 that names no file.
+ */
+export const MULTIPART_ALLOWANCE_BYTES = 64 * 1024;
+
+/** The longest edge a photograph is sent at. A face and a card number are legible far below it. */
+export const STUDENT_IMAGE_MAX_EDGE = 2048;
+
 /** What the student card may be: a photograph or a scan. */
 export const STUDENT_CARD_TYPES = ['image/jpeg', 'image/png', 'application/pdf'] as const;
 
@@ -104,10 +121,74 @@ export function refusedFieldOf(cause: unknown): StudentFileField | null {
 /** Why a chosen file cannot be sent, before sending it. */
 export type LocalFileProblem = 'tooLarge' | 'unsupportedFile' | 'emptyFile';
 
-/** The same three refusals the service makes, checked in the browser so nothing is uploaded twice. */
-export function localFileProblem(file: File, accepted: readonly string[]): LocalFileProblem | null {
+/**
+ * The same three refusals the service makes, checked in the browser so nothing is uploaded twice.
+ *
+ * @param options.ignoreSize for a file about to be made smaller: its size is judged afterwards
+ */
+export function localFileProblem(
+  file: File,
+  accepted: readonly string[],
+  options: { readonly ignoreSize?: boolean } = {},
+): LocalFileProblem | null {
   if (file.size === 0) return 'emptyFile';
   if (!accepted.includes(file.type)) return 'unsupportedFile';
-  if (file.size > STUDENT_DOCUMENT_MAX_BYTES) return 'tooLarge';
+  if (options.ignoreSize !== true && file.size > STUDENT_DOCUMENT_MAX_BYTES) return 'tooLarge';
   return null;
+}
+
+/** Whether the two files and the form around them fit in one request the service will take. */
+export function fitsOneRequest(studentCard: File, selfie: File): boolean {
+  return studentCard.size + selfie.size + MULTIPART_ALLOWANCE_BYTES <= STUDENT_REQUEST_MAX_BYTES;
+}
+
+/**
+ * A photograph made small enough to send: at most {@link STUDENT_IMAGE_MAX_EDGE} pixels on its
+ * longer edge, re-encoded as JPEG through a canvas. A phone photograph is routinely eight to twelve
+ * megabytes and four thousand pixels wide, which the service refuses, and nothing a reviewer reads
+ * on a card or a face needs that.
+ *
+ * <p>A PDF, or anything that is not a JPEG or PNG, is returned as it is. So is the original when the
+ * browser cannot decode or draw it (no `createImageBitmap`, no 2D context), or when re-encoding a
+ * JPEG that was already small enough would only make it larger: the size check after this is what
+ * decides, and the service still checks again.
+ *
+ * <p>`createImageBitmap` applies the photograph's EXIF orientation, so a portrait selfie stays
+ * upright. A PNG's transparency is drawn over white, because JPEG has none.
+ */
+export async function downscaleImage(file: File, maxEdge: number = STUDENT_IMAGE_MAX_EDGE): Promise<File> {
+  if (file.type !== 'image/jpeg' && file.type !== 'image/png') return file;
+  if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return file;
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    return file;
+  }
+
+  try {
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (context === null) return file;
+
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, width, height);
+    context.drawImage(bitmap, 0, 0, width, height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+    if (blob === null) return file;
+    if (scale === 1 && file.type === 'image/jpeg' && blob.size >= file.size) return file;
+
+    const name = file.name.replace(/\.[^.]*$/u, '') + '.jpg';
+    return new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified });
+  } catch {
+    return file;
+  } finally {
+    bitmap.close();
+  }
 }

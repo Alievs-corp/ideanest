@@ -822,7 +822,11 @@
         "storageUnavailable": "Şu anda belge kabul edemiyoruz. Hiçbir şey kaydedilmedi; birazdan yeniden deneyin.",
         "signedOut": "Göndermek için yeniden giriş yapın.",
         "generic": "Gönderilemedi. Yeniden deneyin."
-      }
+      },
+      "together": "İki dosya birlikte çok büyük: toplamda en fazla {megabytes} MB olabilir. Daha küçük bir fotoğraf seçin.",
+      "preparing": "Fotoğraf gönderilmek için küçültülüyor…",
+      "signedOutTitle": "Öğrenci durumunuzu görmek için giriş yapın",
+      "signIn": "Giriş yap"
     }
   },
   "admin": {
@@ -3415,7 +3419,11 @@
         "studentOnlyHint": "Yalnızca öğrenci kartı onaylanmış hesaplar satın alabilir.",
         "studentTag": "Öğrenci",
         "makeStudentOnly": "Yalnızca öğrencilere sat",
-        "openToEveryone": "Herkese sat"
+        "openToEveryone": "Herkese sat",
+        "confirmStudentOnly": "{plan} bundan sonra yalnızca öğrenci kartı onaylanmış hesaplara satılsın mı? Mevcut aboneler planlarını korur; bundan sonra yalnızca öğrenciler satın alabilir.",
+        "confirmStudentOnlyAction": "Yalnızca öğrencilere sat",
+        "confirmOpenToEveryone": "{plan} bundan sonra herkese satılsın mı? Öğrenci kartı olsun ya da olmasın herkes satın alabilecek.",
+        "confirmOpenToEveryoneAction": "Herkese sat"
       },
       "submissionQueue": {
         "signedOutTitle": "Kuyrukla çalışmak için oturum açın",

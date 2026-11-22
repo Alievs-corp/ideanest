@@ -17,7 +17,9 @@ import type { HeldSubscription } from './catalogue';
  * <p>`SUBSCRIPTION_PAYMENT_NOT_DUE` carries a `reason`, and each one asks the reader for something
  * different: nothing at all for a free plan, patience until the window opens, a new purchase for a
  * plan that has ended. `PAYMENT_UNAVAILABLE` is the provider out of reach — ours to fix, theirs to
- * retry, and nothing was charged.
+ * retry, and nothing was charged. `STUDENT_VERIFICATION_REQUIRED` is a student plan whose renewal or
+ * first period is refused because the student approval has lapsed or was revoked (#655): the
+ * reader sends their card again, and nothing was charged.
  */
 export type PlanPaymentRefusal =
   | 'freePlan'
@@ -25,6 +27,7 @@ export type PlanPaymentRefusal =
   | 'lapsed'
   | 'notDue'
   | 'paymentUnavailable'
+  | 'studentVerificationRequired'
   | 'signedOut'
   | 'generic';
 
@@ -39,6 +42,7 @@ export function planPaymentRefusalOf(
     if (reason === 'LAPSED') return 'lapsed';
     return 'notDue';
   }
+  if (code === 'STUDENT_VERIFICATION_REQUIRED') return 'studentVerificationRequired';
   if (code === 'PAYMENT_UNAVAILABLE' || status === 503) return 'paymentUnavailable';
   if (status === 401) return 'signedOut';
   return 'generic';

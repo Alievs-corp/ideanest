@@ -42,6 +42,12 @@ describe('paying for a plan', () => {
     expect(planPaymentRefusalOf(404, null, undefined)).toBe('generic');
   });
 
+  it('says a student plan refused for want of an approved student card as that (#655)', () => {
+    // A renewal or first payment of a student plan whose approval lapsed or was revoked: the reader
+    // sends their card again, which is a different instruction from "try again later".
+    expect(planPaymentRefusalOf(403, 'STUDENT_VERIFICATION_REQUIRED', undefined)).toBe('studentVerificationRequired');
+  });
+
   it('decides what a return from the payment page means from the subscription, not the address', () => {
     const pending = { ...subscription, state: 'PENDING_PAYMENT' as const, entitled: false, paymentDue: 'FIRST_PERIOD' as const };
     const renewing = { ...subscription, paymentDue: 'RENEWAL' as const };

@@ -3,7 +3,7 @@ import { errorFrom } from '../api/problem';
 import { numberFormat } from '../i18n/formats';
 import { localeOrDefault, type Locale } from '../i18n/locale';
 import type { BillingPeriod, HeldSubscription, MySubscription } from '@ideanest/plans/catalogue';
-import { withPeriods } from './periods';
+import { withPeriods } from './with-periods';
 import type { PlanPaymentReturnHint } from '@ideanest/plans/payment';
 
 /**

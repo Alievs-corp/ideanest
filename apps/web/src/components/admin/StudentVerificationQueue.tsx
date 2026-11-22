@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import {
   Chip,
@@ -99,8 +99,10 @@ export function StudentVerificationQueue({ copy }: StudentVerificationQueueProps
   const ready = queue.status === 'ready' && queue.data !== null;
 
   function decided(next: StudentVerificationRow, decision: StudentDecision, account: string): void {
-    // It has left this state, so it leaves this list; the notice says what happened to it.
-    queue.set(rows.filter((row) => row.id !== next.id || next.state === state));
+    // It has left this state, so it leaves this list; the notice says what happened to it. An
+    // updater, not `rows`: that is the list as it was when this row's request began, and writing it
+    // back would bring back every row decided while this one was in flight.
+    queue.set((previous) => previous.filter((row) => row.id !== next.id || next.state === state));
     const notice =
       decision === 'approve' ? copy.approvedNotice : decision === 'reject' ? copy.rejectedNotice : copy.revokedNotice;
     setSaid({ variant: 'success', title: copy.doneTitle, body: fillPlaceholders(notice, { account }) });
@@ -415,6 +417,7 @@ function StudentDocuments({
   const [status, setStatus] = useState<DocumentsStatus>('closed');
   const [opened, setOpened] = useState<readonly Opened[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const inFlight = useRef<AbortController | null>(null);
 
   /*
    * The bytes are somebody's face and their student card. They live as object URLs only while
@@ -426,33 +429,42 @@ function StudentDocuments({
     };
   }, [opened]);
 
-  useEffect(() => {
-    if (status !== 'loading') return;
+  useEffect(() => () => inFlight.current?.abort(), []);
+
+  /*
+   * FETCHED FROM THE PRESS, NOT FROM AN EFFECT. Every opening is a row in the audit trail, so the
+   * documents are fetched once per press of the button and never because something re-rendered:
+   * an effect keyed on the row would fetch them again when the list is read again (`reload` hands
+   * every row a new array), recording openings nobody made.
+   */
+  async function open(): Promise<void> {
+    if (inFlight.current !== null) return;
     const controller = new AbortController();
+    inFlight.current = controller;
+    setStatus('loading');
+    setError(null);
 
-    void (async () => {
-      try {
-        const blobs = await Promise.all(
-          row.documents.map(async (kind) => ({ kind, blob: await openStudentDocument(row.id, kind, controller.signal) })),
-        );
-        if (controller.signal.aborted) return;
-        setOpened(
-          blobs.map(({ kind, blob }) => ({
-            kind,
-            url: URL.createObjectURL(blob),
-            pdf: blob.type === 'application/pdf',
-          })),
-        );
-        setStatus('open');
-      } catch (cause) {
-        if (controller.signal.aborted) return;
-        setError(actionMessageFor(cause, copy.subject, copy.refusals) || copy.documentFailed);
-        setStatus('failed');
-      }
-    })();
-
-    return () => controller.abort();
-  }, [status, row.documents, row.id, copy]);
+    try {
+      const blobs = await Promise.all(
+        row.documents.map(async (kind) => ({ kind, blob: await openStudentDocument(row.id, kind, controller.signal) })),
+      );
+      if (controller.signal.aborted) return;
+      setOpened(
+        blobs.map(({ kind, blob }) => ({
+          kind,
+          url: URL.createObjectURL(blob),
+          pdf: blob.type === 'application/pdf',
+        })),
+      );
+      setStatus('open');
+    } catch (cause) {
+      if (controller.signal.aborted) return;
+      setError(actionMessageFor(cause, copy.subject, copy.refusals) || copy.documentFailed);
+      setStatus('failed');
+    } finally {
+      if (inFlight.current === controller) inFlight.current = null;
+    }
+  }
 
   return (
     <section aria-label={copy.documentsHeading} className="mt-4">
@@ -465,7 +477,7 @@ function StudentDocuments({
               {error}
             </InlineAlert>
           )}
-          <Pill variant="outline" size="sm" onClick={() => setStatus('loading')}>
+          <Pill variant="outline" size="sm" onClick={() => void open()}>
             {copy.showDocuments}
           </Pill>
         </>

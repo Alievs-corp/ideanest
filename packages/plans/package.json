@@ -10,6 +10,7 @@
     "./choice": "./src/choice.ts",
     "./fees": "./src/fees.ts",
     "./payment": "./src/payment.ts",
+    "./periods": "./src/periods.ts",
     "./student": "./src/student.ts"
   },
   "scripts": {

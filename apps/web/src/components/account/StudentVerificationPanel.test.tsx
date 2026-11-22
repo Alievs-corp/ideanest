@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import {
   STUDENT_DOCUMENT_MAX_BYTES,
+  STUDENT_REQUEST_MAX_BYTES,
+  downscaleImage,
   readMyStudentVerification,
   submitStudentVerification,
   type StudentVerification,
@@ -20,10 +22,12 @@ vi.mock('../../lib/plans/student', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/plans/student')>()),
   readMyStudentVerification: vi.fn(),
   submitStudentVerification: vi.fn(),
+  downscaleImage: vi.fn(),
 }));
 
 const readMock = vi.mocked(readMyStudentVerification);
 const submitMock = vi.mocked(submitStudentVerification);
+const downscaleMock = vi.mocked(downscaleImage);
 
 const NONE: StudentVerification = {
   state: 'NONE',
@@ -54,6 +58,8 @@ const SELFIE_LABEL = new RegExp(`^${COPY.selfieField}`);
 
 beforeEach(() => {
   vi.resetAllMocks();
+  // jsdom cannot decode or draw an image; the panel's own logic is what is under test here.
+  downscaleMock.mockImplementation(async (chosen: File) => chosen);
   window.history.replaceState({}, '', '/en/account/student');
   // jsdom has no object URLs; the preview only needs one to exist.
   URL.createObjectURL = vi.fn(() => 'blob:preview');
@@ -177,6 +183,57 @@ describe('the student verification panel', () => {
     expect(await screen.findByText(COPY.refusals.cardInUse)).toBeInTheDocument();
   });
 
+  it('asks somebody with no session to sign in, rather than retrying for ever (#655 review)', async () => {
+    readMock.mockRejectedValue(new ApiError(401, null, 'signed out'));
+    render(<StudentVerificationPanel copy={COPY} />);
+
+    expect(await screen.findByText(COPY.signedOutTitle)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.signIn })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/sign-in'),
+    );
+    expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
+    expect(readMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses two files that will not fit in one request, before sending', async () => {
+    readMock.mockResolvedValue(NONE);
+    render(<StudentVerificationPanel copy={COPY} />);
+    await screen.findByText(COPY.state.NONE);
+
+    await userEvent.type(screen.getByLabelText(new RegExp(`^${COPY.institutionField}`)), 'ADA University');
+    await userEvent.type(screen.getByLabelText(new RegExp(`^${COPY.cardNumberField}`)), 'ST20261234');
+    // Each within the per-file limit; together, with the form around them, over the request limit.
+    await userEvent.upload(screen.getByLabelText(CARD_LABEL), file('card.pdf', 'application/pdf', STUDENT_DOCUMENT_MAX_BYTES));
+    await userEvent.upload(screen.getByLabelText(SELFIE_LABEL), file('me.jpg', 'image/jpeg', STUDENT_DOCUMENT_MAX_BYTES));
+    await userEvent.click(screen.getByRole('button', { name: COPY.submit }));
+
+    expect(
+      await screen.findByText(fillPlaceholders(COPY.together, { megabytes: String(STUDENT_REQUEST_MAX_BYTES / 1048576) })),
+    ).toBeInTheDocument();
+    expect(submitMock).not.toHaveBeenCalled();
+  });
+
+  it('sends the photograph as it was made smaller, and leaves the PDF card alone', async () => {
+    readMock.mockResolvedValue(NONE);
+    submitMock.mockResolvedValue(PENDING);
+    const smaller = file('me.jpg', 'image/jpeg', 300_000);
+    downscaleMock.mockImplementation(async (chosen: File) => (chosen.type === 'image/png' ? smaller : chosen));
+    render(<StudentVerificationPanel copy={COPY} />);
+    await screen.findByText(COPY.state.NONE);
+
+    await userEvent.type(screen.getByLabelText(new RegExp(`^${COPY.institutionField}`)), 'ADA University');
+    await userEvent.type(screen.getByLabelText(new RegExp(`^${COPY.cardNumberField}`)), 'ST20261234');
+    await userEvent.upload(screen.getByLabelText(CARD_LABEL), file('card.pdf', 'application/pdf'));
+    // Eleven megabytes from a phone: over the per-file limit until it is made smaller.
+    await userEvent.upload(screen.getByLabelText(SELFIE_LABEL), file('me.png', 'image/png', 11 * 1048576));
+    await userEvent.click(screen.getByRole('button', { name: COPY.submit }));
+
+    await waitFor(() => expect(submitMock).toHaveBeenCalled());
+    expect(submitMock.mock.calls[0]?.[0].selfie).toBe(smaller);
+    expect(submitMock.mock.calls[0]?.[0].studentCard.name).toBe('card.pdf');
+  });
+
   it('says it could not read the check rather than offering the form', async () => {
     readMock.mockRejectedValue(new ApiError(503, null, 'down'));
     render(<StudentVerificationPanel copy={COPY} />);
@@ -198,8 +255,10 @@ describe('the student verification panel', () => {
 });
 
 describe('maskCardNumber', () => {
-  it('keeps the last four characters', () => {
+  it('keeps the last four characters, and hides a short number whole', () => {
     expect(maskCardNumber('ST20261234')).toBe('•••• 1234');
-    expect(maskCardNumber('123')).toBe('123');
+    expect(maskCardNumber('ST 2026 1234')).toBe('•••• 1234');
+    expect(maskCardNumber('123')).toBe('••••');
+    expect(maskCardNumber('1234')).toBe('••••');
   });
 });
