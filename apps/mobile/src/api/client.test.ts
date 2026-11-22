@@ -1,4 +1,5 @@
-import { api, publicApi, saveAccountLocale } from './client';
+import { ApiError } from '@ideanest/api-client';
+import { api, publicApi, readJson, saveAccountLocale, sendMultipart } from './client';
 import {
   hasStoredSession,
   rememberAccessToken,
@@ -154,5 +155,41 @@ describe('saveAccountLocale', () => {
   it('reports failure instead of throwing when the network is down', async () => {
     fetchMock.mockRejectedValueOnce(new Error('offline'));
     expect(await saveAccountLocale('ru')).toBe(false);
+  });
+});
+
+describe('readJson and sendMultipart (#655)', () => {
+  it('reads through the session, and throws a refusal as the shared ApiError', async () => {
+    rememberAccessToken('access-1');
+    fetchMock
+      .mockResolvedValueOnce(json({ state: 'NONE' }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: 503, code: 'DOCUMENT_STORAGE_UNAVAILABLE' }), {
+          status: 503,
+          headers: { 'content-type': 'application/problem+json' },
+        }),
+      );
+
+    expect(await readJson('/v1/me/student-verification')).toEqual({ state: 'NONE' });
+    expect(urlOf(0)).toContain('/v1/me/student-verification');
+    expect(headersOf(0).get('Authorization')).toBe('Bearer access-1');
+
+    const failure = await readJson('/v1/me/student-verification').catch((cause: unknown) => cause);
+    expect(failure).toBeInstanceOf(ApiError);
+    expect((failure as ApiError).problem?.code).toBe('DOCUMENT_STORAGE_UNAVAILABLE');
+  });
+
+  it('posts the form as it is, leaving the content type and its boundary to fetch', async () => {
+    rememberAccessToken('access-1');
+    fetchMock.mockResolvedValueOnce(json({ state: 'PENDING' }));
+    const form = new FormData();
+    form.append('institution', 'ADA University');
+
+    expect(await sendMultipart('/v1/me/student-verification', form)).toEqual({ state: 'PENDING' });
+    const init = fetchMock.mock.calls[0]?.[1];
+    expect(init?.method).toBe('POST');
+    expect(init?.body).toBe(form);
+    expect(headersOf(0).has('content-type')).toBe(false);
+    expect(headersOf(0).get('Authorization')).toBe('Bearer access-1');
   });
 });
