@@ -197,6 +197,7 @@ function KitGallery() {
   const [sheet, setSheet] = useState(false);
   const [amount, setAmount] = useState(0);
   const [segment, setSegment] = useState<'home' | 'search'>('home');
+  const [period, setPeriod] = useState<'MONTHLY' | 'SEMIANNUAL' | 'YEARLY'>('SEMIANNUAL');
   const [keyed, setKeyed] = useState('');
   const [pin, setPin] = useState('');
   const [sending, setSending] = useState(false);
@@ -358,6 +359,17 @@ function KitGallery() {
               />
             </SurfaceProvider>
           </View>
+          {/* `wrap`: Pricing's periods (#655), which grow a line at a large font rather than truncate. */}
+          <SegmentedPill
+            options={[
+              { value: 'MONTHLY', label: t('mobile.pricing.periods.MONTHLY') },
+              { value: 'SEMIANNUAL', label: t('mobile.pricing.periods.SEMIANNUAL') },
+              { value: 'YEARLY', label: t('mobile.pricing.periods.YEARLY') },
+            ]}
+            value={period}
+            onChange={setPeriod}
+            wrap
+          />
         </Section>
 
         <Section title={heading([AmountKeypad])}>

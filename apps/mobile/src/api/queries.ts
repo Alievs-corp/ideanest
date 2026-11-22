@@ -189,6 +189,11 @@ export const queryKeys = {
   legalSubject: () => ['settings', 'legalSubject'] as const,
   payoutDestination: () => ['settings', 'payoutDestination'] as const,
   /**
+   * `GET /v1/me/student-verification` (#655): the state of this account's student card check, its
+   * institution and card number. Under `settings`, never persisted.
+   */
+  studentVerification: () => ['settings', 'studentVerification'] as const,
+  /**
    * The accounts this reader blocked (#324): the Settings → Privacy list's pages, and every id the
    * Comments tab hides by. Under `settings`, never persisted: whom somebody blocked is the most
    * private list they keep here. `blockedIds` is not under `blockedList`, so refreshing the list

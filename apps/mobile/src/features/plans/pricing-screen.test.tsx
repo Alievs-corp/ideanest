@@ -42,6 +42,7 @@ const METRICS = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 const P = en.pricing;
+const M = en.mobile.pricing;
 const PROJECT = '3f2b1c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
 
 const starter = {
@@ -112,8 +113,11 @@ interface Request {
 let plans: () => Response;
 let mine: () => Response;
 let fees: () => Response;
+let studentRead: () => Response;
 let write: (request: Request) => Response;
 let requests: Request[];
+/** Each read's `Accept-Language`, by path: the language the service is asked to answer in. */
+let languages: { readonly path: string; readonly language: string | null }[];
 let client: QueryClient;
 
 let appStateListeners: ((state: AppStateStatus) => void)[];
@@ -133,8 +137,10 @@ beforeEach(async () => {
   plans = () => json({ plans: [starter, growth, yearly] });
   mine = () => json({ subscription: null });
   fees = () => json(RATES);
+  studentRead = () => json({ state: 'NONE' });
   write = () => json({ subscription: null });
   requests = [];
+  languages = [];
   global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url);
     const request = {
@@ -143,10 +149,12 @@ beforeEach(async () => {
       body: typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined,
     };
     requests.push(request);
+    languages.push({ path: url.pathname, language: new Headers(init?.headers).get('Accept-Language') });
     if (request.method !== 'GET') return write(request);
     if (url.pathname === '/v1/plans') return plans();
     if (url.pathname === '/v1/me/subscription') return mine();
     if (url.pathname === '/v1/fees/disclosure') return fees();
+    if (url.pathname === '/v1/me/student-verification') return studentRead();
     return json({}, 404);
   }) as unknown as typeof fetch;
 });
@@ -198,8 +206,13 @@ describe('the plan cards', () => {
     expect(screen.getByTestId('pricing-plan-STARTER')).not.toHaveTextContent(new RegExp(P.perMonth));
     expect(screen.getByTestId('pricing-plan-GROWTH')).toHaveTextContent(/19\.00 AZN/);
     expect(screen.getByTestId('pricing-plan-GROWTH')).toHaveTextContent(new RegExp(P.perMonth));
+    // Studio is sold by the year only, and the switch starts on the shortest period offered.
+    expect(screen.getByTestId('pricing-plan-STUDIO')).toHaveTextContent(/Not sold for 1 month/);
+
+    await act(async () => fireEvent.press(screen.getByRole('radio', { name: M.periods.YEARLY })));
     expect(screen.getByTestId('pricing-plan-STUDIO')).toHaveTextContent(/190\.00 AZN/);
     expect(screen.getByTestId('pricing-plan-STUDIO')).toHaveTextContent(new RegExp(P.perYear));
+    expect(screen.getByTestId('pricing-plan-GROWTH')).toHaveTextContent(/Not sold for 1 year/);
   });
 
   it('states both limits, or that there is none', async () => {
@@ -508,7 +521,9 @@ describe('choosing in the app (with the flag on)', () => {
 
     await act(async () => fireEvent.press(pill));
     await settle();
-    expect(writes()).toEqual([{ method: 'POST', path: '/v1/me/subscription', body: { planId: 'plan-growth' } }]);
+    expect(writes()).toEqual([
+      { method: 'POST', path: '/v1/me/subscription', body: { planId: 'plan-growth', billingPeriod: 'MONTHLY' } },
+    ]);
     expect(screen.getByTestId('pricing-held-standing')).toHaveTextContent(/You are on Growth/);
     expect(announce).toHaveBeenCalledWith('You are on Growth until 14 November 2026');
   });
@@ -630,5 +645,200 @@ describe("the creator's fee disclosure", () => {
     await settle();
     expect(reads('/v1/fees/disclosure')).toHaveLength(before + 1);
     expect(screen.getByTestId('fee-disclosure')).toHaveTextContent(/you receive 92\.5%/);
+  });
+});
+
+describe('periods (#655)', () => {
+  const sixMonths = {
+    ...growth,
+    prices: [
+      { billingPeriod: 'MONTHLY', price: '19.00', currency: 'AZN' },
+      { billingPeriod: 'SEMIANNUAL', price: '114.00', currency: 'AZN' },
+      { billingPeriod: 'YEARLY', price: '228.00', currency: 'AZN' },
+    ],
+  };
+
+  it('draws only the periods some plan is sold for', async () => {
+    plans = () => json({ plans: [starter, growth] });
+    await show();
+    // One period on offer: nothing to switch between.
+    expect(screen.queryByTestId('pricing-periods')).toBeNull();
+  });
+
+  it('prices each card for the period shown, with that period in words', async () => {
+    plans = () => json({ plans: [starter, sixMonths] });
+    await show();
+    expect(screen.getAllByRole('radio').map((radio) => radio.props.accessibilityLabel)).toEqual([
+      '1 month',
+      '6 months',
+      '1 year',
+    ]);
+    await act(async () => fireEvent.press(screen.getByRole('radio', { name: '6 months' })));
+    const card = screen.getByTestId('pricing-plan-GROWTH');
+    expect(card).toHaveTextContent(/114\.00 AZN/);
+    expect(card).toHaveTextContent(new RegExp(M.perSemiannual));
+    // Starter is sold by the month only.
+    expect(screen.getByTestId('pricing-plan-STARTER')).toHaveTextContent(/Not sold for 6 months/);
+  });
+
+  it('starts on the held plan period when it is offered', async () => {
+    plans = () => json({ plans: [sixMonths] });
+    mine = () => json({ subscription: held({ plan: sixMonths, billingPeriod: 'YEARLY', price: '228.00' }) });
+    await show();
+    expect(screen.getByRole('radio', { name: '1 year' }).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('pricing-plan-GROWTH')).toHaveTextContent(/228\.00 AZN/);
+  });
+
+  it('sends the period shown, and lets an unpaid choice change only its period', async () => {
+    mockInApp = true;
+    plans = () => json({ plans: [sixMonths] });
+    mine = () =>
+      json({ subscription: held({ plan: sixMonths, state: 'PENDING_PAYMENT', entitled: false, paymentDue: 'FIRST_PERIOD' }) });
+    write = () => json({ subscription: held({ plan: sixMonths, billingPeriod: 'SEMIANNUAL', price: '114.00' }) });
+    await show();
+    // The same plan for the same period is the choice already waiting for payment.
+    expect(screen.getByTestId('pricing-choose-GROWTH').props.accessibilityState.disabled).toBe(true);
+
+    await act(async () => fireEvent.press(screen.getByRole('radio', { name: '6 months' })));
+    expect(screen.getByTestId('pricing-choose-GROWTH').props.accessibilityState.disabled).toBe(false);
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-choose-GROWTH')));
+    await settle();
+    expect(writes()).toEqual([
+      { method: 'POST', path: '/v1/me/subscription', body: { planId: 'plan-growth', billingPeriod: 'SEMIANNUAL' } },
+    ]);
+  });
+
+  it('says a period the plan is not sold for in the app own words', async () => {
+    mockInApp = true;
+    write = () => problem(400, 'PERIOD_NOT_OFFERED');
+    await show();
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-choose-GROWTH')));
+    await settle();
+    expect(screen.getByTestId('pricing-refusal')).toHaveTextContent(new RegExp(M.errors.periodNotOffered));
+  });
+});
+
+describe('the student plan (#655)', () => {
+  const studentPlan = {
+    ...growth,
+    id: 'plan-student',
+    code: 'STUDENT',
+    name: 'Student',
+    description: null,
+    price: '10.00',
+    maxActiveCampaigns: 1,
+    goalCeiling: '10000.00',
+    studentOnly: true,
+    prices: [
+      { billingPeriod: 'MONTHLY', price: '10.00', currency: 'AZN' },
+      { billingPeriod: 'SEMIANNUAL', price: '60.00', currency: 'AZN' },
+      { billingPeriod: 'YEARLY', price: '120.00', currency: 'AZN' },
+    ],
+  };
+  const S = M.student;
+
+  beforeEach(() => {
+    plans = () => json({ plans: [starter, studentPlan] });
+  });
+
+  it('labels the card and says a student card check is needed', async () => {
+    await show();
+    expect(screen.getByTestId('pricing-student-STUDENT')).toHaveTextContent(S.tag);
+    expect(screen.getByTestId('pricing-student-note-STUDENT')).toHaveTextContent(S.needsCheck);
+    expect(screen.queryByTestId('pricing-student-STARTER')).toBeNull();
+  });
+
+  it('does not ask about a student card when no plan needs one', async () => {
+    plans = () => json({ plans: [starter, growth] });
+    await show();
+    expect(reads('/v1/me/student-verification')).toHaveLength(0);
+  });
+
+  it.each(['NONE', 'REJECTED', 'EXPIRED'])('offers the check while the state is %s', async (state) => {
+    studentRead = () => json({ state, validUntil: '2026-01-01T00:00:00Z' });
+    mockInApp = true;
+    await show();
+    expect(screen.queryByTestId('pricing-choose-STUDENT')).toBeNull();
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-verify-STUDENT')));
+    expect(mockPush).toHaveBeenCalledWith('/settings/student');
+  });
+
+  it('offers the check on the web-only build too: sending a card is not buying a plan', async () => {
+    await show();
+    expect(screen.getByTestId('pricing-verify-STUDENT')).toBeTruthy();
+    expect(screen.queryByTestId('pricing-choose-STARTER')).toBeNull();
+  });
+
+  it('says the card is being checked, and offers nothing to press, while it is pending', async () => {
+    studentRead = () => json({ state: 'PENDING', institution: 'ADA University', cardNumber: 'AB123456' });
+    mockInApp = true;
+    await show();
+    const pending = screen.getByTestId('pricing-pending-STUDENT');
+    expect(pending).toHaveTextContent(S.pending);
+    expect(pending.props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByTestId('pricing-verify-STUDENT')).toBeNull();
+  });
+
+  it('is chosen like any other plan once the check is approved', async () => {
+    studentRead = () => json({ state: 'APPROVED', validUntil: '2027-11-22T00:00:00Z' });
+    mockInApp = true;
+    write = () => json({ subscription: held({ plan: studentPlan, price: '10.00' }) });
+    await show();
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-choose-STUDENT')));
+    await settle();
+    expect(writes()).toEqual([
+      { method: 'POST', path: '/v1/me/subscription', body: { planId: 'plan-student', billingPeriod: 'MONTHLY' } },
+    ]);
+  });
+
+  it('offers the check to a signed-out reader without asking the service', async () => {
+    mockSession = { signedIn: false, locked: false, unlocked: false };
+    await show();
+    expect(reads('/v1/me/student-verification')).toHaveLength(0);
+    expect(screen.getByTestId('pricing-verify-STUDENT')).toBeTruthy();
+  });
+
+  it('says a refusal for want of a check, offers the check and re-reads it', async () => {
+    studentRead = () => json({ state: 'APPROVED', validUntil: '2027-11-22T00:00:00Z' });
+    mockInApp = true;
+    write = () => problem(403, 'STUDENT_VERIFICATION_REQUIRED');
+    await show();
+    const before = reads('/v1/me/student-verification').length;
+    studentRead = () => json({ state: 'EXPIRED', validUntil: '2026-11-01T00:00:00Z' });
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-choose-STUDENT')));
+    await settle();
+    expect(screen.getByTestId('pricing-refusal')).toHaveTextContent(new RegExp(M.errors.studentVerificationRequired));
+    expect(reads('/v1/me/student-verification')).toHaveLength(before + 1);
+    expect(screen.getByTestId('pricing-verify-STUDENT')).toBeTruthy();
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-refusal-verify')));
+    expect(mockPush).toHaveBeenCalledWith('/settings/student');
+  });
+
+  it('never keeps the check in the offline store', () => {
+    expect(shouldPersistQuery(queryKeys.studentVerification())).toBe(false);
+  });
+});
+
+describe('the plans in the reader language (#655)', () => {
+  const languageOf = (path: string) =>
+    languages.filter((entry) => entry.path === path).map((entry) => entry.language);
+
+  it('asks for the plans and the subscription in the app language, and again when it changes', async () => {
+    mine = () => json({ subscription: held() });
+    plans = () => json({ plans: [starter, growth] });
+    await show();
+    expect(languageOf('/v1/plans')).toEqual(['en']);
+    expect(languageOf('/v1/me/subscription')).toEqual(['en']);
+    expect(screen.getByTestId('pricing-plan-GROWTH')).toHaveTextContent(/Growth/);
+
+    // The service names the plans in the language asked for; the cached English must not stay.
+    plans = () => json({ plans: [starter, { ...growth, name: 'Böyümə' }] });
+    mine = () => json({ subscription: held({ plan: { ...growth, name: 'Böyümə' } }) });
+    await act(async () => setLocale('az'));
+    await settle();
+    expect(languageOf('/v1/plans')).toEqual(['en', 'az']);
+    expect(languageOf('/v1/me/subscription')).toEqual(['en', 'az']);
+    expect(screen.getByTestId('pricing-plan-GROWTH')).toHaveTextContent(/Böyümə/);
+    expect(screen.getByTestId('pricing-held-standing')).toHaveTextContent(/Böyümə/);
   });
 });

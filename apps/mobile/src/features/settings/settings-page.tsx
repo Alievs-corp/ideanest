@@ -44,9 +44,10 @@ export function SettingsPage({
   children,
   offlineNotice = true,
   requireSession = true,
+  returnTo,
   testID,
 }: {
-  /** `null` for the list at `/settings`. */
+  /** `null` for the list at `/settings`, and for a screen that is not one of the web's panels. */
   readonly section: SettingsSection | null;
   readonly title: string;
   readonly intro?: ReactNode;
@@ -54,6 +55,8 @@ export function SettingsPage({
   readonly offlineNotice?: boolean;
   /** False only for Language, which a signed-out reader can still set on this phone. */
   readonly requireSession?: boolean;
+  /** Where sign-in brings the reader back to, for a screen that is not a section (`settings/student`). */
+  readonly returnTo?: string;
   readonly testID?: string;
 }) {
   const router = useRouter();
@@ -70,8 +73,8 @@ export function SettingsPage({
 
   useEffect(() => {
     if (!requireSession || signedIn || leaving.current || shut) return;
-    router.replace(signInHrefFor(section === null ? '/settings' : sectionPath(section)));
-  }, [requireSession, router, section, signedIn, shut]);
+    router.replace(signInHrefFor(returnTo ?? (section === null ? '/settings' : sectionPath(section))));
+  }, [requireSession, returnTo, router, section, signedIn, shut]);
 
   return (
     <LeavingContext.Provider value={markLeaving}>

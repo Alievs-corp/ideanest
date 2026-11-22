@@ -7726,6 +7726,77 @@
         "title": "Plans are chosen on the website",
         "body": "To choose, change or cancel a plan, open this page on the IdeyaNest website. What you choose there applies in the app as soon as it is active.",
         "open": "Open the pricing page"
+      },
+      "periodLabel": "Billing period",
+      "periods": {
+        "MONTHLY": "1 month",
+        "SEMIANNUAL": "6 months",
+        "YEARLY": "1 year"
+      },
+      "perSemiannual": "for 6 months",
+      "notOffered": "Not sold for {period}",
+      "student": {
+        "tag": "Student",
+        "needsCheck": "This plan needs a check of your student card.",
+        "verify": "Verify student card",
+        "pending": "Being checked"
+      },
+      "errors": {
+        "periodNotOffered": "This plan is not sold for that period. Choose another period above.",
+        "studentVerificationRequired": "This plan is for students. Confirm your student status first."
+      }
+    },
+    "studentVerification": {
+      "link": "Student status",
+      "title": "Student status",
+      "intro": "The student plan is for accounts whose student card we have checked. A confirmation lasts one year from the day it is given.",
+      "loading": "Loading your student status",
+      "unavailable": "We could not load your student status.",
+      "toPricing": "See the plans",
+      "status": {
+        "heading": "Your status",
+        "NONE": "You have not sent a student card yet.",
+        "PENDING": "Your student card is being checked.",
+        "pendingBody": "You can choose the student plan as soon as it is confirmed.",
+        "APPROVED": "Your student status is confirmed until {date}.",
+        "REJECTED": "Your student card was not accepted.",
+        "rejectedBody": "You can correct it and send it again below.",
+        "reason": "Reason: {reason}",
+        "EXPIRED": "Your student confirmation ended on {date}. Send your card again to keep the student plan.",
+        "institution": "Institution",
+        "cardNumber": "Student card number",
+        "submittedAt": "Sent on",
+        "validUntil": "Valid until"
+      },
+      "form": {
+        "heading": "Send your student card",
+        "institutionHint": "As it is written on your card",
+        "oneAccount": "One student card can be used by one IdeyaNest account only.",
+        "card": "Photo of your student card",
+        "cardHint": "The side with your name, photo and number, readable and not cropped.",
+        "selfie": "A selfie",
+        "selfieWhy": "We compare your selfie with the photo on the card, so nobody can use someone else's card.",
+        "takeSelfie": "Take a selfie",
+        "added": "Photo added",
+        "privacy": "The photos are stored encrypted and deleted once we decide.",
+        "submit": "Send for checking",
+        "submitting": "Sending",
+        "sent": "Sent. Your student card is now waiting to be checked.",
+        "institutionRequired": "Enter your institution.",
+        "tooLong": "Use at most {max} characters.",
+        "cardNumberInvalid": "Enter the number as it is on your card, 3 to 40 characters.",
+        "cardPhotoRequired": "Add a photo of your student card.",
+        "selfieRequired": "Take a selfie."
+      },
+      "errors": {
+        "title": "Not sent",
+        "cardInUse": "This student card is already used by another account. One card can belong to one account only.",
+        "alreadySubmitted": "You have already sent a card: it is being checked or is confirmed.",
+        "emptyFile": "The photo arrived empty. Choose it again.",
+        "unsupportedFile": "This photo's format is not accepted. Use a JPEG or PNG photo.",
+        "storageUnavailable": "We cannot accept documents right now. Nothing was saved; try again later.",
+        "signedOut": "Sign in again to send your card.",
+        "generic": "The card could not be sent. Try again."
       }
     },
     "account": {

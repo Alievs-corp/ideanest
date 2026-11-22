@@ -257,7 +257,26 @@ export function forgetPicked(uri: string): void {
   }
 }
 
-async function toJpeg(uri: string, maxEdge: number): Promise<string> {
+/**
+ * A picked picture as a JPEG in this app's cache, scaled so its longest edge is at most `maxEdge`
+ * and compressed at `compress` — what {@link uploadImage} does first, for a caller that sends the
+ * bytes somewhere other than the media store (the student card and selfie, #655, go to the
+ * service as a multipart body). The file is the caller's to remove (`forgetPicked`). Throws
+ * `UploadFailed('UNREADABLE')` when the phone cannot convert it.
+ */
+export async function prepareJpeg(
+  uri: string,
+  options: { readonly maxEdge: number; readonly compress: number },
+): Promise<{ readonly uri: string; readonly byteSize: number }> {
+  const jpegUri = await toJpeg(uri, options.maxEdge, options.compress);
+  try {
+    return { uri: jpegUri, byteSize: new File(jpegUri).size };
+  } catch {
+    throw new UploadFailed('UNREADABLE');
+  }
+}
+
+async function toJpeg(uri: string, maxEdge: number, compress = 0.9): Promise<string> {
   try {
     let image = await ImageManipulator.manipulate(uri).renderAsync();
     if (Math.max(image.width, image.height) > maxEdge) {
@@ -268,7 +287,7 @@ async function toJpeg(uri: string, maxEdge: number): Promise<string> {
           : context.resize({ height: maxEdge })
       ).renderAsync();
     }
-    const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.9 });
+    const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress });
     return saved.uri;
   } catch {
     throw new UploadFailed('UNREADABLE');
