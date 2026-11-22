@@ -7756,7 +7756,7 @@
         "rejectedBody": "Düzəldib aşağıda yenidən göndərə bilərsiniz.",
         "reason": "Səbəb: {reason}",
         "EXPIRED": "Tələbə təsdiqinizin müddəti {date} tarixində bitib. Tələbə planını saxlamaq üçün biletinizi yenidən göndərin.",
-        "institution": "Təhsil müəssisəsi",
+        "institution": "Tədris müəssisəsi",
         "cardNumber": "Tələbə bileti nömrəsi",
         "submittedAt": "Göndərilib",
         "validUntil": "Son tarix"
@@ -7775,7 +7775,7 @@
         "submit": "Yoxlamaya göndər",
         "submitting": "Göndərilir",
         "sent": "Göndərildi. Tələbə biletiniz yoxlanılmağı gözləyir.",
-        "institutionRequired": "Təhsil müəssisəsini daxil edin.",
+        "institutionRequired": "Tədris müəssisəsini daxil edin.",
         "tooLong": "Ən çox {max} simvol.",
         "cardNumberInvalid": "Nömrəni biletdəki kimi daxil edin, 3–40 simvol.",
         "cardPhotoRequired": "Tələbə biletinin şəklini əlavə edin.",
