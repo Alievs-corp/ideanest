@@ -322,6 +322,8 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
           options={periods.map((value) => ({ value, label: t(PERIOD_NAME[value]) }))}
           value={period}
           onChange={setChosenPeriod}
+          // Grows a line rather than truncate "6 месяцев" at a large font on a 360dp phone.
+          wrap
           testID="pricing-periods"
         />
       ) : null}
