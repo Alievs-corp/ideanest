@@ -92,6 +92,7 @@ the browser half of the auth flow work at all.
 | `/account/following` | Site | §4.9 C-10: the creators it follows (#288) |
 | `/account/surveys` | Site | §4.8 PM-05 and PM-06: the surveys a backer owes an answer to (#289) |
 | `/account/deliveries` | Site | §4.8 PM-09 and PM-10: where each reward is (#290) |
+| `/account/student` | Site | The student card check a student plan asks for: where it stands (masked card number, validity, a refusal's reason) and the form — institution, card number, a photo or PDF of the card and a selfie, checked against the service's five-megabyte limit before upload (#655) |
 | `/pledges` | Site | §4.5 PL-09 and PL-10: everything this account has backed, and what can still be changed (#287) |
 | `/pledges/[pledgeId]` | Site | §4.5 PL-09 and PL-10: one pledge — edit the tier, the add-ons and the destination, or cancel it (#287) |
 | `/pledges/[pledgeId]/address` | Site | §4.8 PM-07: where one pledge's reward goes (#290) |
@@ -118,6 +119,7 @@ the browser half of the auth flow work at all.
 | `/admin/moderation/[reportId]` | Console | **Staff only.** One complaint, its decision, and its full audit history (#296) |
 | `/admin/moderation/profiles` | Console | **Staff only.** AD-09's queue of complaints filed against a person (#298) |
 | `/admin/users` | Console | **Staff only.** Search, inspect, suspend and reinstate an account (#104) |
+| `/admin/student-verifications` | Console | **Staff only.** AD-02's student card queue: the documents opened on request through object URLs, a warning when the card number was used by another account, and approve, reject or revoke with a reason (#655) |
 | `/admin/curation` | Console | **Staff only.** Editorial collections: create, publish, withdraw (#301) |
 | `/admin/curation/[slug]` | Console | **Staff only.** One collection and the campaigns in it, in order (#301, #303) |
 | `/admin/curation/badges` | Console | **Staff only.** Which collections grant §3.2's editorial badge (#300) |

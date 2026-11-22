@@ -744,3 +744,125 @@ export function staffRolesCopyFrom(
     capability: t.raw('screens.staff.capability') as Readonly<Record<StaffCapability, string>>,
   };
 }
+
+/**
+ * The student check's review queue — `/admin/student-verifications`, issue #655.
+ *
+ * <p>Filed with the people screens because what is decided is something about a person: whether
+ * the card is theirs and whether they are a student. `sameCardTitle` is the one string here that
+ * is load-bearing: it is how a reviewer learns the same card number has been used by another
+ * account, which is the abuse the one-card, one-account rule exists to stop.
+ */
+export interface StudentVerificationQueueCopy extends ConsoleChromeCopy {
+  readonly subject: string;
+  readonly filterLabel: string;
+  readonly state: Readonly<Record<'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED', string>>;
+  readonly loadingList: string;
+  /** Carries `{state}`. */
+  readonly emptyTitle: string;
+  readonly emptyBody: string;
+  readonly institutionLabel: string;
+  readonly cardNumberLabel: string;
+  readonly submittedLabel: string;
+  readonly decidedLabel: string;
+  readonly validUntilLabel: string;
+  readonly reasonLabel: string;
+  readonly sameCardTitle: string;
+  readonly sameCardBody: string;
+  /** Carries `{name}`, `{state}`. */
+  readonly sameCardAccount: string;
+  readonly documentsHeading: string;
+  readonly showDocuments: string;
+  readonly loadingDocuments: string;
+  readonly documentsErased: string;
+  readonly studentCard: string;
+  readonly selfie: string;
+  /** The link for a card sent as a PDF, which has no thumbnail. */
+  readonly openPdf: string;
+  readonly documentFailed: string;
+  readonly approve: string;
+  readonly reject: string;
+  readonly revoke: string;
+  readonly reasonField: string;
+  readonly reasonHint: string;
+  readonly reasonMissing: string;
+  /** Carries `{account}`. */
+  readonly confirmApprove: string;
+  readonly confirmApproveAction: string;
+  /** Carries `{account}`. */
+  readonly confirmReject: string;
+  readonly confirmRejectAction: string;
+  /** Carries `{account}`. */
+  readonly confirmRevoke: string;
+  readonly confirmRevokeAction: string;
+  readonly back: string;
+  readonly doneTitle: string;
+  readonly failedTitle: string;
+  /** Carries `{account}`. */
+  readonly approvedNotice: string;
+  /** Carries `{account}`. */
+  readonly rejectedNotice: string;
+  /** Carries `{account}`. */
+  readonly revokedNotice: string;
+  readonly openAccount: string;
+  /** Carries `{name}`. */
+  readonly openAccountLabel: string;
+  /** Keyed by the service's `code`. */
+  readonly errors: Readonly<Record<string, string>>;
+}
+
+export function studentVerificationQueueCopyFrom(
+  t: AdminTranslator,
+  chrome: ConsoleChromeCopy,
+): StudentVerificationQueueCopy {
+  // `t.raw` throughout, as `payoutDestinationQueueCopyFrom` does: several of these are templates,
+  // and `t('key')` on a message holding a placeholder renders the key's own path.
+  const at = (key: string) => String(t.raw(`screens.studentVerifications.${key}`));
+  return {
+    ...chrome,
+    subject: at('subject'),
+    filterLabel: at('filterLabel'),
+    state: t.raw('screens.studentVerifications.state') as StudentVerificationQueueCopy['state'],
+    loadingList: at('loadingList'),
+    emptyTitle: at('emptyTitle'),
+    emptyBody: at('emptyBody'),
+    institutionLabel: at('institutionLabel'),
+    cardNumberLabel: at('cardNumberLabel'),
+    submittedLabel: at('submittedLabel'),
+    decidedLabel: at('decidedLabel'),
+    validUntilLabel: at('validUntilLabel'),
+    reasonLabel: at('reasonLabel'),
+    sameCardTitle: at('sameCardTitle'),
+    sameCardBody: at('sameCardBody'),
+    sameCardAccount: at('sameCardAccount'),
+    documentsHeading: at('documentsHeading'),
+    showDocuments: at('showDocuments'),
+    loadingDocuments: at('loadingDocuments'),
+    documentsErased: at('documentsErased'),
+    studentCard: at('studentCard'),
+    selfie: at('selfie'),
+    openPdf: at('openPdf'),
+    documentFailed: at('documentFailed'),
+    approve: at('approve'),
+    reject: at('reject'),
+    revoke: at('revoke'),
+    reasonField: at('reasonField'),
+    reasonHint: at('reasonHint'),
+    reasonMissing: at('reasonMissing'),
+    confirmApprove: at('confirmApprove'),
+    confirmApproveAction: at('confirmApproveAction'),
+    confirmReject: at('confirmReject'),
+    confirmRejectAction: at('confirmRejectAction'),
+    confirmRevoke: at('confirmRevoke'),
+    confirmRevokeAction: at('confirmRevokeAction'),
+    back: at('back'),
+    doneTitle: at('doneTitle'),
+    failedTitle: at('failedTitle'),
+    approvedNotice: at('approvedNotice'),
+    rejectedNotice: at('rejectedNotice'),
+    revokedNotice: at('revokedNotice'),
+    openAccount: at('openAccount'),
+    openAccountLabel: at('openAccountLabel'),
+    errors: t.raw('screens.studentVerifications.errors') as Readonly<Record<string, string>>,
+  };
+}
