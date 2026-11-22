@@ -22,7 +22,15 @@ import Decimal from 'decimal.js';
  * service computes the pair for exactly that reason.
  */
 
-export type BillingPeriod = 'MONTHLY' | 'YEARLY';
+/** One month, six months or a year. Every plan may be sold for any of them (`Plan.prices`). */
+export type BillingPeriod = 'MONTHLY' | 'SEMIANNUAL' | 'YEARLY';
+
+/** What one period of a plan costs. A decimal amount, as text, in the plan's currency. */
+export interface PlanPrice {
+  readonly billingPeriod: BillingPeriod;
+  readonly price: string;
+  readonly currency: string;
+}
 
 export type SubscriptionState = 'PENDING_PAYMENT' | 'ACTIVE' | 'CANCELED' | 'EXPIRED';
 
@@ -48,6 +56,18 @@ export interface Plan {
   readonly price: string;
   readonly currency: string;
   readonly billingPeriod: BillingPeriod;
+  /**
+   * Every period the plan is sold for, shortest first. Never empty: a body without the field is
+   * read as the one period `price` and `billingPeriod` describe, which is what the service sold
+   * before plans had more than one.
+   */
+  readonly prices: readonly PlanPrice[];
+  /**
+   * Only an account with an approved, unexpired student verification may buy it
+   * (`/v1/me/student-verification`). The service refuses anyone else with
+   * `STUDENT_VERIFICATION_REQUIRED`.
+   */
+  readonly studentOnly: boolean;
   /** How many campaigns at once. `null` means no limit. */
   readonly maxActiveCampaigns?: number | null;
   /** The largest goal a campaign may be submitted with, as text. `null` means none. */
@@ -97,7 +117,15 @@ export interface MySubscription {
   readonly subscription: HeldSubscription | null;
 }
 
-const BILLING_PERIODS: readonly string[] = ['MONTHLY', 'YEARLY'];
+/** Shortest first — the order the period switch draws them in. */
+export const BILLING_PERIODS: readonly BillingPeriod[] = ['MONTHLY', 'SEMIANNUAL', 'YEARLY'];
+
+/** How many months a period runs. For "per month" comparisons; never for computing a charge. */
+export const MONTHS_IN: Readonly<Record<BillingPeriod, number>> = { MONTHLY: 1, SEMIANNUAL: 6, YEARLY: 12 };
+
+function isPeriod(value: unknown): value is BillingPeriod {
+  return typeof value === 'string' && (BILLING_PERIODS as readonly string[]).includes(value);
+}
 const STATES: readonly string[] = ['PENDING_PAYMENT', 'ACTIVE', 'CANCELED', 'EXPIRED'];
 const PAYMENTS_DUE: readonly string[] = ['FIRST_PERIOD', 'RENEWAL'];
 
@@ -137,7 +165,7 @@ export function readPlan(body: unknown): Plan | null {
   const period = body.billingPeriod;
   if (id === null || name === null || price === null || currency === null) return null;
   if (!isDecimal(price)) return null;
-  if (typeof period !== 'string' || !BILLING_PERIODS.includes(period)) return null;
+  if (!isPeriod(period)) return null;
 
   // Absent or null is "no limit"; a value that is present and unreadable is not a limit to print.
   const ceiling = body.goalCeiling ?? null;
@@ -153,13 +181,49 @@ export function readPlan(body: unknown): Plan | null {
     description: optionalText(body.description),
     price,
     currency,
-    billingPeriod: period as BillingPeriod,
+    billingPeriod: period,
+    prices: readPrices(body.prices, { billingPeriod: period, price, currency }),
+    studentOnly: body.studentOnly === true,
     maxActiveCampaigns: campaigns,
     goalCeiling: ceiling,
     listed: body.listed !== false,
     sortOrder: typeof body.sortOrder === 'number' ? body.sortOrder : 0,
     updatedAt: text(body.updatedAt) ?? '',
   };
+}
+
+/**
+ * The periods on offer, shortest first, one entry per period. An unreadable entry is dropped; an
+ * absent or empty list falls back to the plan's own price, so a card always has one to show.
+ */
+function readPrices(value: unknown, fallback: PlanPrice): readonly PlanPrice[] {
+  if (!Array.isArray(value)) return [fallback];
+  const byPeriod = new Map<BillingPeriod, PlanPrice>();
+  for (const entry of value) {
+    if (!isObject(entry) || !isPeriod(entry.billingPeriod)) continue;
+    const price = text(entry.price);
+    if (price === null || !isDecimal(price)) continue;
+    byPeriod.set(entry.billingPeriod, {
+      billingPeriod: entry.billingPeriod,
+      price,
+      currency: text(entry.currency) ?? fallback.currency,
+    });
+  }
+  const prices = BILLING_PERIODS.flatMap((period) => {
+    const found = byPeriod.get(period);
+    return found === undefined ? [] : [found];
+  });
+  return prices.length === 0 ? [fallback] : prices;
+}
+
+/** What `period` of this plan costs, or `null` when the plan is not sold for it. */
+export function priceFor(plan: Plan, period: BillingPeriod): PlanPrice | null {
+  return plan.prices.find((entry) => entry.billingPeriod === period) ?? null;
+}
+
+/** Whether any plan in the catalogue is sold for `period` — a switch position nobody can buy is not drawn. */
+export function offeredPeriods(plans: readonly Plan[]): readonly BillingPeriod[] {
+  return BILLING_PERIODS.filter((period) => plans.some((plan) => priceFor(plan, period) !== null));
 }
 
 /**
@@ -207,10 +271,7 @@ export function readMine(body: unknown): MySubscription | null {
       plan,
       price: text(held.price) ?? plan.price,
       currency: text(held.currency) ?? plan.currency,
-      billingPeriod:
-        typeof period === 'string' && BILLING_PERIODS.includes(period)
-          ? (period as BillingPeriod)
-          : plan.billingPeriod,
+      billingPeriod: isPeriod(period) ? period : plan.billingPeriod,
       startedAt: optionalText(held.startedAt),
       currentPeriodEnd: optionalText(held.currentPeriodEnd),
       cancelAtPeriodEnd: held.cancelAtPeriodEnd === true,
@@ -262,7 +323,13 @@ export function isHeldPlan(held: HeldSubscription | null, planId: string): boole
 }
 
 /** A refused choice or cancellation, as the catalogue key under `pricing.errors` that says it. */
-export type SubscriptionRefusal = 'alreadySubscribed' | 'notOnSale' | 'signedOut' | 'generic';
+export type SubscriptionRefusal =
+  | 'alreadySubscribed'
+  | 'notOnSale'
+  | 'periodNotOffered'
+  | 'studentVerificationRequired'
+  | 'signedOut'
+  | 'generic';
 
 /**
  * The refusal's sentence, from the problem's `code` and the status — never from its prose, which
@@ -271,6 +338,8 @@ export type SubscriptionRefusal = 'alreadySubscribed' | 'notOnSale' | 'signedOut
 export function refusalOf(status: number | null, code: string | null | undefined): SubscriptionRefusal {
   if (code === 'ALREADY_SUBSCRIBED') return 'alreadySubscribed';
   if (code === 'PLAN_NOT_ON_SALE') return 'notOnSale';
+  if (code === 'PERIOD_NOT_OFFERED') return 'periodNotOffered';
+  if (code === 'STUDENT_VERIFICATION_REQUIRED') return 'studentVerificationRequired';
   if (status === 401) return 'signedOut';
   return 'generic';
 }

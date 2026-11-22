@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MoveRight, Plus } from 'lucide-react';
-import { InlineAlert, Pill } from '@ideanest/ui';
+import { Chip, ChipRow, InlineAlert, Pill } from '@ideanest/ui';
 import { newIdempotencyKey } from '@ideanest/checkout/idempotency';
 import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
 import { canChoose } from '@ideanest/plans/choice';
 import { planPaymentRefusalOf, planPaymentReturnOf } from '@ideanest/plans/payment';
+import { qualifiesForStudentPlans } from '@ideanest/plans/student';
 import { ApiError } from '../../lib/api/problem';
 import {
   cancelSubscription,
@@ -16,11 +17,15 @@ import {
   planPaymentReturnHint,
   readMySubscription,
   subscribeToPlan,
+  type BillingPeriod,
   type HeldSubscription,
   type Plan,
   type PlanPaymentReturn,
   type PlanPaymentReturnHint,
 } from '../../lib/plans/api';
+// The contract's period rules without `decimal.js`, which `@ideanest/plans/catalogue` brings.
+import { offeredPeriods, priceFor, refusalOf } from '../../lib/plans/periods';
+import { readMyStudentVerification, type StudentVerification } from '../../lib/plans/student';
 import { leaveForPaymentPage } from '../../lib/pledges/payment';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { PricingCopy } from '../../lib/i18n/plans-copy';
@@ -71,6 +76,23 @@ import { Link, useRouter } from '../../i18n/navigation';
  * in one request, and "Withdraw this choice" cancels it. Both are held back while a card payment the
  * creator has just made is being confirmed, because that money is for the plan on screen.
  *
+ * <h2>One month, six months or a year (#655)</h2>
+ *
+ * Every plan may be sold for any of the three, each at its own price. The switch above the cards
+ * offers only the periods some plan is sold for (`offeredPeriods`), and a plan that is not sold
+ * for the chosen period keeps its card — with its name and limits, and a line saying it is not
+ * sold for that period — so the row does not reflow under the reader's pointer as they compare.
+ * Choosing sends the period, and `canChoose` is asked about the plan and that period together:
+ * the same plan for a different period replaces an unpaid choice.
+ *
+ * <h2>A student plan asks for a student card first</h2>
+ *
+ * A `studentOnly` card says so, and what its button does depends on the reader's student
+ * verification, read beside the subscription: approved, it subscribes like any other; pending,
+ * it says the card is being checked and does nothing; anything else, it goes to the page where
+ * the card is sent. A reader whose verification could not be read is offered the ordinary button,
+ * and the service's `STUDENT_VERIFICATION_REQUIRED` is put into words if it refuses.
+ *
  * MOTION: none. `docs/motion-system.md` §5 gives money surfaces no entry animation, and this
  * is the page where somebody decides to spend some.
  */
@@ -100,6 +122,11 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
   const [error, setError] = useState<string | null>(null);
   const [returned, setReturned] = useState<PlanPaymentReturnHint | null>(null);
   const [checks, setChecks] = useState(0);
+  const periods = offeredPeriods(plans);
+  const [period, setPeriod] = useState<BillingPeriod>(() => periods[0] ?? 'MONTHLY');
+  // `null` until read, and left `null` when it could not be: the ordinary button is offered then.
+  const [student, setStudent] = useState<StudentVerification | null>(null);
+  const sellsStudentPlans = plans.some((plan) => plan.studentOnly);
 
   const announcement = useRef<HTMLDivElement>(null);
 
@@ -117,7 +144,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
 
     void (async () => {
       try {
-        const mine = await readMySubscription(controller.signal);
+        const mine = await readMySubscription(locale, controller.signal);
         if (controller.signal.aborted) return;
         setHeld(mine.subscription);
         setStatus('ready');
@@ -135,7 +162,28 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
     })();
 
     return () => controller.abort();
-  }, [copy]);
+  }, [copy, locale]);
+
+  /*
+   * The student check, read only for a signed-in reader and only when a student plan is on sale:
+   * nobody else's card has a button that depends on it. A failed read leaves it unknown, which
+   * offers the ordinary button rather than hiding a plan behind a request that did not answer.
+   */
+  useEffect(() => {
+    if (status !== 'ready' || !sellsStudentPlans) return;
+    const controller = new AbortController();
+
+    void (async () => {
+      try {
+        const verification = await readMyStudentVerification(controller.signal);
+        if (!controller.signal.aborted) setStudent(verification);
+      } catch {
+        // Unknown, and the service still decides: its refusal is put into words if it comes.
+      }
+    })();
+
+    return () => controller.abort();
+  }, [status, sellsStudentPlans]);
 
   /*
    * A CHOICE THAT ENTITLES SOMEBODY IS THE END OF THIS PAGE'S BUSINESS WITH THEM.
@@ -152,22 +200,31 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
    * staying on the page that explains what is still needed.
    */
   const choose = useCallback(
-    async (planId: string): Promise<void> => {
+    async (planId: string, chosen: BillingPeriod): Promise<void> => {
       setBusyPlan(planId);
       setError(null);
       try {
-        const mine = await subscribeToPlan(planId);
+        const mine = await subscribeToPlan(planId, chosen, locale);
         setHeld(mine.subscription);
         if (fromProjectId !== undefined && mine.subscription?.entitled === true) {
           router.push(`/projects/${fromProjectId}/edit/review`);
         }
       } catch (cause) {
         setError(messageFor(cause, copy));
+        // The service knows something this page did not — the approval lapsed, or was revoked —
+        // so the student check is read again and the card's button follows it.
+        if (cause instanceof ApiError && cause.problem?.code === 'STUDENT_VERIFICATION_REQUIRED') {
+          try {
+            setStudent(await readMyStudentVerification());
+          } catch {
+            // The sentence above already says what is needed.
+          }
+        }
       } finally {
         setBusyPlan(null);
       }
     },
-    [copy, fromProjectId, router],
+    [copy, fromProjectId, locale, router],
   );
 
   /*
@@ -193,7 +250,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
     function recheck(): void {
       void (async () => {
         try {
-          const mine = await readMySubscription(controller.signal);
+          const mine = await readMySubscription(locale, controller.signal);
           if (controller.signal.aborted) return;
           setHeld(mine.subscription);
         } catch {
@@ -208,7 +265,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       controller.abort();
       window.removeEventListener('focus', recheck);
     };
-  }, [fromProjectId, held]);
+  }, [fromProjectId, held, locale]);
 
   /*
    * BACK FROM THE PROVIDER, AND THE CALLBACK MAY NOT HAVE LANDED YET.
@@ -228,7 +285,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       setChecks((count) => count + 1);
       void (async () => {
         try {
-          const mine = await readMySubscription();
+          const mine = await readMySubscription(locale);
           setHeld(mine.subscription);
         } catch {
           // Keep what is on screen and ask again on the next tick; one failed read is not news.
@@ -236,7 +293,7 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       })();
     }, PAYMENT_CHECK_INTERVAL_MS);
     return () => clearTimeout(timer);
-  }, [outcome, checks]);
+  }, [outcome, checks, locale]);
 
   /*
    * One key per press, minted here. A key belongs to an intent, and the intent is this press: a
@@ -261,27 +318,27 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       // transfer was recorded meanwhile), so it is read again and stops offering the button.
       if (cause instanceof ApiError && cause.status === 409) {
         try {
-          const mine = await readMySubscription();
+          const mine = await readMySubscription(locale);
           setHeld(mine.subscription);
         } catch {
           // The message above already says what to do; a failed re-read adds nothing to it.
         }
       }
     }
-  }, [copy, fromProjectId, paying]);
+  }, [copy, fromProjectId, locale, paying]);
 
   const stop = useCallback(async (): Promise<void> => {
     setCancelling(true);
     setError(null);
     try {
-      const mine = await cancelSubscription();
+      const mine = await cancelSubscription(locale);
       setHeld(mine.subscription);
     } catch (cause) {
       setError(messageFor(cause, copy));
     } finally {
       setCancelling(false);
     }
-  }, [copy]);
+  }, [copy, locale]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -365,24 +422,47 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       {plans.length === 0 ? (
         <p className="text-sm text-fg-64">{copy.empty}</p>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan, index) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              copy={copy}
-              locale={locale}
-              current={held?.plan.id === plan.id && held.state !== 'CANCELED'}
-              // A visitor with no session is offered the control and sent to sign in by the
-              // alert above; disabling it would leave them looking at a price with no way to
-              // find out what to do about it.
-              busy={busyPlan === plan.id}
-              disabled={busyPlan !== null || outcome === 'waiting' || !canChoose(held, plan.id)}
-              onChoose={() => void choose(plan.id)}
-              tone={planTone(index)}
-            />
-          ))}
-        </ul>
+        <div className="flex flex-col gap-5">
+          {/*
+            Drawn only when there is a choice to make: one position is a label, not a switch.
+            Chips rather than tabs, because nothing below is replaced — the same cards reprice.
+          */}
+          {periods.length > 1 && (
+            <ChipRow aria-label={copy.periods.label}>
+              {periods.map((option) => (
+                <Chip key={option} active={period === option} onClick={() => setPeriod(option)}>
+                  {copy.periods[option]}
+                </Chip>
+              ))}
+            </ChipRow>
+          )}
+
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {plans.map((plan, index) => {
+              const sold = priceFor(plan, period) !== null;
+              return (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  period={period}
+                  copy={copy}
+                  locale={locale}
+                  current={held?.plan.id === plan.id && held.state !== 'CANCELED'}
+                  // A visitor with no session is offered the control and sent to sign in by the
+                  // alert above; disabling it would leave them looking at a price with no way to
+                  // find out what to do about it.
+                  busy={busyPlan === plan.id}
+                  disabled={
+                    !sold || busyPlan !== null || outcome === 'waiting' || !canChoose(held, plan.id, period)
+                  }
+                  student={plan.studentOnly ? studentStep(student) : 'choose'}
+                  onChoose={() => void choose(plan.id, period)}
+                  tone={planTone(index)}
+                />
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );
@@ -561,23 +641,41 @@ function PaymentReturnNotice({
  * One plan
  * ---------------------------------------------------------------------- */
 
+/**
+ * What a student plan's button does for this reader (#655).
+ *
+ * <p>`choose` — approved, or not known: the ordinary button, and the service decides. `verify` —
+ * nothing approved: the button goes to the page where the card is sent. `pending` — sent and not
+ * yet decided: the button says so and does nothing.
+ */
+export type StudentStep = 'choose' | 'verify' | 'pending';
+
+export function studentStep(verification: StudentVerification | null): StudentStep {
+  if (verification === null || qualifiesForStudentPlans(verification)) return 'choose';
+  return verification.state === 'PENDING' ? 'pending' : 'verify';
+}
+
 interface PlanCardProps {
   plan: Plan;
+  /** The switch's position. The card prints this period's price, or says it is not sold for it. */
+  period: BillingPeriod;
   copy: PricingCopy;
   locale: Locale;
   current: boolean;
   busy: boolean;
   disabled: boolean;
+  student: StudentStep;
   onChoose: () => void;
   tone: PlanTone;
 }
 
-function PlanCard({ plan, copy, locale, current, busy, disabled, onChoose, tone }: PlanCardProps) {
-  const price =
-    Number(plan.price) === 0 ? copy.free : formatPrice(plan.price, plan.currency, locale);
-  const period = plan.billingPeriod === 'YEARLY' ? copy.perYear : copy.perMonth;
+function PlanCard({ plan, period, copy, locale, current, busy, disabled, student, onChoose, tone }: PlanCardProps) {
+  const offer = priceFor(plan, period);
+  const free = offer !== null && Number(offer.price) === 0;
+  const price = offer === null ? null : free ? copy.free : formatPrice(offer.price, offer.currency, locale);
   const skin = PLAN_SKIN[tone];
   const points = [
+    ...(plan.studentOnly ? [copy.student.needsCheck] : []),
     ...(plan.description == null ? [] : [plan.description]),
     plan.maxActiveCampaigns == null
       ? copy.limits.campaignsUnlimited
@@ -596,11 +694,16 @@ function PlanCard({ plan, copy, locale, current, busy, disabled, onChoose, tone 
     >
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="text-[22px] font-semibold tracking-[-0.02em]">{plan.name}</h3>
-        {current && (
-          <span className={`rounded-full px-2.5 py-0.5 text-[12px] ${skin.tag}`}>
-            {copy.held.currentTag}
-          </span>
-        )}
+        <div className="flex flex-wrap justify-end gap-1.5">
+          {plan.studentOnly && (
+            <span className={`rounded-full px-2.5 py-0.5 text-[12px] ${skin.tag}`}>{copy.student.label}</span>
+          )}
+          {current && (
+            <span className={`rounded-full px-2.5 py-0.5 text-[12px] ${skin.tag}`}>
+              {copy.held.currentTag}
+            </span>
+          )}
+        </div>
       </div>
 
       <ul className="mt-5 flex flex-col gap-2.5 text-[15px] leading-snug">
@@ -612,28 +715,52 @@ function PlanCard({ plan, copy, locale, current, busy, disabled, onChoose, tone 
         ))}
       </ul>
 
-      <p className="mt-auto pt-8 text-5xl font-semibold tracking-[-0.04em] tabular-nums">
-        {price}
-        {Number(plan.price) !== 0 && (
-          <span className={`ml-2 text-sm font-normal tracking-normal ${skin.muted}`}>{period}</span>
-        )}
-      </p>
+      {/*
+        The same block whether or not the plan is sold for this period, so the cards keep one
+        height and the reader's eye stays on the same line as the switch moves.
+      */}
+      {price === null ? (
+        <p className={`mt-auto pt-8 text-[15px] leading-snug ${skin.muted}`}>
+          {fillPlaceholders(copy.periods.notOffered, { period: copy.periods[period] })}
+        </p>
+      ) : (
+        <p className="mt-auto pt-8 text-5xl font-semibold tracking-[-0.04em] tabular-nums">
+          {price}
+          {!free && (
+            <span className={`ml-2 text-sm font-normal tracking-normal ${skin.muted}`}>{copy.per[period]}</span>
+          )}
+        </p>
+      )}
 
-      <button
-        type="button"
-        aria-disabled={disabled || busy}
-        onClick={() => {
-          if (disabled || busy) return;
-          onChoose();
-        }}
-        className={`mt-5 flex h-12 w-full items-center justify-between gap-4 rounded-full px-5 text-sm font-medium transition-opacity duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 ${skin.button} ${disabled || busy ? 'opacity-40' : 'hover:opacity-90'}`}
-      >
-        <span>
-          {busy ? copy.choosing : copy.choose}
-          <span className="sr-only">: {plan.name}</span>
-        </span>
-        <MoveRight aria-hidden="true" className="h-4 w-16 shrink-0 transition-transform duration-300 ease-in-out motion-safe:group-hover:translate-x-1.5" strokeWidth={1.5} />
-      </button>
+      {student === 'verify' && price !== null ? (
+        /* A link, because it goes somewhere: the page where the student card is sent. */
+        <Link
+          href="/account/student"
+          className={`mt-5 flex h-12 w-full items-center justify-between gap-4 rounded-full px-5 text-sm font-medium transition-opacity duration-150 ease-in-out hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 ${skin.button}`}
+        >
+          <span>
+            {copy.student.verify}
+            <span className="sr-only">: {plan.name}</span>
+          </span>
+          <MoveRight aria-hidden="true" className="h-4 w-16 shrink-0 transition-transform duration-300 ease-in-out motion-safe:group-hover:translate-x-1.5" strokeWidth={1.5} />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          aria-disabled={disabled || busy || student === 'pending'}
+          onClick={() => {
+            if (disabled || busy || student === 'pending') return;
+            onChoose();
+          }}
+          className={`mt-5 flex h-12 w-full items-center justify-between gap-4 rounded-full px-5 text-sm font-medium transition-opacity duration-150 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 ${skin.button} ${disabled || busy || student === 'pending' ? 'opacity-40' : 'hover:opacity-90'}`}
+        >
+          <span>
+            {student === 'pending' && price !== null ? copy.student.pending : busy ? copy.choosing : copy.choose}
+            <span className="sr-only">: {plan.name}</span>
+          </span>
+          <MoveRight aria-hidden="true" className="h-4 w-16 shrink-0 transition-transform duration-300 ease-in-out motion-safe:group-hover:translate-x-1.5" strokeWidth={1.5} />
+        </button>
+      )}
     </li>
   );
 }
@@ -690,20 +817,20 @@ export function planTone(index: number): PlanTone {
  * one language and this page is drawn in four.
  */
 function messageFor(cause: unknown, copy: PricingCopy): string {
-  if (cause instanceof ApiError) {
-    const code = cause.problem?.code;
-    if (code === 'ALREADY_SUBSCRIBED') return copy.errors.alreadySubscribed;
-    if (code === 'PLAN_NOT_ON_SALE') return copy.errors.notOnSale;
-    if (cause.status === 401) return copy.errors.signedOut;
-  }
-  return copy.errors.generic;
+  if (!(cause instanceof ApiError)) return copy.errors.generic;
+  return copy.errors[refusalOf(cause.status, cause.problem?.code)];
 }
 
 /**
  * A refused plan payment as something to read (#451): by `code` and `reason`, never by prose.
+ *
+ * <p>A student plan's renewal or first payment is refused with `STUDENT_VERIFICATION_REQUIRED`
+ * once the approval has lapsed (#655). `planPaymentRefusalOf` does not know that code yet, so it
+ * is read here before it, rather than said as "that did not work".
  */
 function paymentMessageFor(cause: unknown, copy: PricingCopy): string {
   if (!(cause instanceof ApiError)) return copy.errors.generic;
+  if (cause.problem?.code === 'STUDENT_VERIFICATION_REQUIRED') return copy.errors.studentVerificationRequired;
   const problem: Record<string, unknown> = { ...cause.problem };
   return copy.errors[planPaymentRefusalOf(cause.status, cause.problem?.code, problem.reason)];
 }

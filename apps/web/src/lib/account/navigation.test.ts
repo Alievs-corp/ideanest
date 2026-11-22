@@ -46,6 +46,8 @@ const ROUTES_THAT_EXIST = new Set([
   '/account/following',
   '/account/surveys',
   '/account/deliveries',
+  // #655: the student card check a student plan asks for.
+  '/account/student',
   '/settings/profile',
   '/settings/notifications',
   '/settings/sessions',

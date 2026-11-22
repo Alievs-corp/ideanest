@@ -77,6 +77,8 @@ import {
   supportConsoleCopyFrom,
   type StaffRolesCopy,
   accountDetailCopyFrom,
+  studentVerificationQueueCopyFrom,
+  type StudentVerificationQueueCopy,
   type AccountDetailCopy,
   type SupportConsoleCopy,
   type UserDirectoryCopy,
@@ -277,6 +279,11 @@ export async function contentReportQueueCopy(): Promise<ContentReportQueueCopy> 
 
 export async function reportDetailCopy(): Promise<ReportDetailCopy> {
   return reportDetailCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+/** `/admin/student-verifications` — the student check's review queue, #655. */
+export async function studentVerificationQueueCopy(): Promise<StudentVerificationQueueCopy> {
+  return studentVerificationQueueCopyFrom(await getTranslations('admin'), await consoleChrome());
 }
 
 export async function submissionQueueCopy(): Promise<SubmissionQueueCopy> {

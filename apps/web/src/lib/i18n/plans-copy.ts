@@ -95,6 +95,36 @@ export interface PlanPaymentCopy {
   readonly returned: PlanPaymentReturnCopy;
 }
 
+/** The period switch, and what a card says for a period its plan is not sold for — #655. */
+export interface PricingPeriodsCopy {
+  /** The switch's accessible name. */
+  readonly label: string;
+  readonly MONTHLY: string;
+  readonly SEMIANNUAL: string;
+  readonly YEARLY: string;
+  /** Carries `{period}`, one of the three above. */
+  readonly notOffered: string;
+}
+
+/** What follows a price: "for 6 months". */
+export interface PricingPerCopy {
+  readonly MONTHLY: string;
+  readonly SEMIANNUAL: string;
+  readonly YEARLY: string;
+}
+
+/** A student plan's card — #655. */
+export interface PricingStudentCopy {
+  /** The tag beside the plan's name. */
+  readonly label: string;
+  /** The first line under it: a student card is checked before the plan can be bought. */
+  readonly needsCheck: string;
+  /** The button for a reader with nothing approved, which goes to the student page. */
+  readonly verify: string;
+  /** The button while the card waits for staff. */
+  readonly pending: string;
+}
+
 export interface PricingCopy {
   readonly title: string;
   readonly intro: string;
@@ -103,6 +133,9 @@ export interface PricingCopy {
   readonly empty: string;
   readonly perMonth: string;
   readonly perYear: string;
+  readonly periods: PricingPeriodsCopy;
+  readonly per: PricingPerCopy;
+  readonly student: PricingStudentCopy;
   readonly free: string;
   readonly choose: string;
   readonly choosing: string;
@@ -115,6 +148,8 @@ export interface PricingCopy {
   readonly errors: {
     readonly alreadySubscribed: string;
     readonly notOnSale: string;
+    readonly periodNotOffered: string;
+    readonly studentVerificationRequired: string;
     readonly signedOut: string;
     readonly generic: string;
     readonly freePlan: string;
@@ -146,6 +181,24 @@ export function pricingCopyFrom(t: PricingTranslator): PricingCopy {
     empty: t('empty'),
     perMonth: t('perMonth'),
     perYear: t('perYear'),
+    periods: {
+      label: t('periods.label'),
+      MONTHLY: t('periods.MONTHLY'),
+      SEMIANNUAL: t('periods.SEMIANNUAL'),
+      YEARLY: t('periods.YEARLY'),
+      notOffered: String(t.raw('periods.notOffered')),
+    },
+    per: {
+      MONTHLY: t('per.MONTHLY'),
+      SEMIANNUAL: t('per.SEMIANNUAL'),
+      YEARLY: t('per.YEARLY'),
+    },
+    student: {
+      label: t('student.label'),
+      needsCheck: t('student.needsCheck'),
+      verify: t('student.verify'),
+      pending: t('student.pending'),
+    },
     free: t('free'),
     choose: t('choose'),
     choosing: t('choosing'),
@@ -203,6 +256,8 @@ export function pricingCopyFrom(t: PricingTranslator): PricingCopy {
     errors: {
       alreadySubscribed: t('errors.alreadySubscribed'),
       notOnSale: t('errors.notOnSale'),
+      periodNotOffered: t('errors.periodNotOffered'),
+      studentVerificationRequired: t('errors.studentVerificationRequired'),
       signedOut: t('errors.signedOut'),
       generic: t('errors.generic'),
       freePlan: t('errors.freePlan'),

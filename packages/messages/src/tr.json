@@ -306,6 +306,10 @@
       "payout": {
         "label": "Ödeme bilgileri",
         "summary": "VÖEN'iniz ve ödemelerin gönderildiği banka hesabı."
+      },
+      "student": {
+        "label": "Öğrenci durumu",
+        "summary": "Öğrenci planı için öğrenci kartı kontrolü."
       }
     },
     "pages": {
@@ -369,6 +373,12 @@
         "metaDescription": "Ne seçtiniz, tutarı ne kadar ve nasıl artırılır.",
         "title": "Desteğiniz",
         "intro": "Ne seçtiniz, tutarı ne kadar ve nasıl artırılır. Destek verildiği anda tahsil edilir ve kampanya başarılı olmazsa ödeme sağlayıcısının komisyonu düşülerek geri ödenir. Ödenmiş bir desteği artırdığınızda yalnızca aradaki fark hemen tahsil edilir."
+      },
+      "student": {
+        "metaTitle": "Öğrenci durumu",
+        "metaDescription": "Öğrenci planı için öğrenci kartı kontrolünüz.",
+        "title": "Öğrenci durumu",
+        "intro": "Öğrenci planı yalnızca öğrenci kartı onaylanmış hesaplara satılır. Onay bir yıl geçerlidir."
       }
     },
     "fulfilment": {
@@ -757,6 +767,62 @@
         "heading": "Size ne gönderilir",
         "savedNotice": "Kaydedildi. {change}"
       }
+    },
+    "student": {
+      "loading": "Öğrenci durumunuz yükleniyor",
+      "unavailable": "Öğrenci durumunuz okunamadı. Birazdan yeniden deneyin.",
+      "tryAgain": "Yeniden dene",
+      "statusHeading": "Durum",
+      "state": {
+        "NONE": "Henüz öğrenci kartı göndermediniz",
+        "PENDING": "Öğrenci kartınız kontrol ediliyor",
+        "APPROVED": "Öğrenci durumunuz onaylandı",
+        "REJECTED": "Öğrenci kartınız kabul edilmedi",
+        "EXPIRED": "Öğrenci durumunuzun süresi doldu"
+      },
+      "stateBody": {
+        "NONE": "Öğrenci planını satın almak için aşağıdaki formu doldurun. Kartınızı ekibimizden biri kontrol eder.",
+        "PENDING": "Ekibimiz kartınızı inceliyor. Karar bu sayfada görünecek.",
+        "APPROVED": "Öğrenci planını satın alabilirsiniz. Onayın süresi dolduğunda kartınızı yeniden gönderin.",
+        "REJECTED": "Nedeni aşağıda yazıyor. Düzeltip kartınızı yeniden gönderebilirsiniz.",
+        "EXPIRED": "Onayın bir yıllık süresi doldu. Öğrenci planını yeniden almak için kartınızı yeniden gönderin."
+      },
+      "institutionLabel": "Okul",
+      "cardNumberLabel": "Kart numarası",
+      "submittedLabel": "Gönderildi",
+      "validUntilLabel": "Geçerlilik sonu",
+      "reasonLabel": "Neden",
+      "toPricing": "Planlara bak",
+      "formHeading": "Öğrenci kartınızı gönderin",
+      "why": "Özçekim, kartın size ait olduğunu kontrol etmemizi sağlar; bir öğrenci kartı yalnızca bir hesapta kullanılabilir.",
+      "institutionField": "Okul",
+      "institutionHint": "Üniversitenin, kolejin veya okulun tam adı.",
+      "cardNumberField": "Öğrenci kartı numarası",
+      "cardNumberHint": "Kartta yazdığı gibi.",
+      "studentCardField": "Öğrenci kartının fotoğrafı",
+      "studentCardHint": "Kartın net bir fotoğrafı veya taraması: JPEG, PNG veya PDF, en fazla {megabytes} MB.",
+      "selfieField": "Özçekim",
+      "selfieHint": "Yüzünüzün net göründüğü bir fotoğraf: JPEG veya PNG, en fazla {megabytes} MB.",
+      "pdfChosen": "{name} seçildi.",
+      "studentCardPreview": "Seçtiğiniz öğrenci kartı",
+      "selfiePreview": "Seçtiğiniz özçekim",
+      "institutionMissing": "Okulunuzu yazın.",
+      "cardNumberInvalid": "Kart numarası 3 ile 40 karakter arasında olmalıdır.",
+      "fileMissing": "Bir dosya seçin.",
+      "submit": "Kontrole gönder",
+      "submitting": "Gönderiliyor…",
+      "sentTitle": "Kartınız kontrole gönderildi",
+      "errorTitle": "Olmadı",
+      "refusals": {
+        "cardInUse": "Bu öğrenci kartı zaten başka bir hesapta kullanılıyor. Bir kart yalnızca bir hesaba ait olabilir.",
+        "alreadySubmitted": "Kartınız zaten kontrol ediliyor veya onaylandı. Sayfayı yenileyin.",
+        "emptyFile": "Dosya boş. Başka bir dosya seçin.",
+        "unsupportedFile": "Bu dosya türü kabul edilmiyor.",
+        "tooLarge": "Dosya çok büyük. Daha küçük bir dosya seçin.",
+        "storageUnavailable": "Şu anda belge kabul edemiyoruz. Hiçbir şey kaydedilmedi; birazdan yeniden deneyin.",
+        "signedOut": "Göndermek için yeniden giriş yapın.",
+        "generic": "Gönderilemedi. Yeniden deneyin."
+      }
     }
   },
   "admin": {
@@ -806,7 +872,8 @@
       "/admin/partners": "Ortaklar",
       "/admin/partner-statistics": "Ortak istatistikleri",
       "/admin/maintenance": "Bakım",
-      "/admin/moderation/revisions": "Kampanya düzenlemeleri"
+      "/admin/moderation/revisions": "Kampanya düzenlemeleri",
+      "/admin/student-verifications": "Öğrenci doğrulamaları"
     },
     "states": {
       "built": "Hazır",
@@ -830,7 +897,7 @@
       "AD-02": {
         "title": "Güven ve güvenlik",
         "summary": "Kampanyalar hakkındaki şikâyetler ve en ağırlarına yanıt veren askıya alma.",
-        "waitingOn": "Dolandırıcılık sinyalleri ve kimlik incelemesi kuruldu ve puanlanıyor (#108, #105), ancak hiçbirinin burada ekranı yok — iki kuyruğa da yalnızca API üzerinden ulaşılıyor."
+        "waitingOn": "Dolandırıcılık sinyalleri ve kimlik incelemesi kuruldu ve puanlanıyor (#108, #105), ancak hiçbirinin burada ekranı yok — iki kuyruğa da yalnızca API üzerinden ulaşılıyor. Modülün şimdilik tek ekranı öğrenci kartı doğrulamasıdır (#655)."
       },
       "AD-03": {
         "title": "Küratörlük",
@@ -1204,6 +1271,12 @@
         "metaDescription": "Yayındaki kampanya ile önerilen düzenleme yan yana, karar veren moderatör için.",
         "title": "Kampanya düzenlemesini incele",
         "intro": "Solda yayındaki sürüm, sağda kurucunun önerisi. Yalnızca değişen alanlar gösterilir."
+      },
+      "studentVerifications": {
+        "metaTitle": "Öğrenci doğrulamaları",
+        "metaDescription": "Öğrenci planı için gönderilen öğrenci kartları ve özçekimler.",
+        "title": "Öğrenci doğrulamaları",
+        "intro": "Öğrenci planı için gönderilen öğrenci kartları, en eskisi başta. Onay, hesabın bir yıl boyunca öğrenci planını almasına izin verir; ret ve geri alma bir neden ister. Her karar ve açılan her belge denetim kaydına yazılır; belgeler karar verildikten sonra silinir."
       }
     },
     "screens": {
@@ -3232,11 +3305,11 @@
         "loadingCatalogue": "Planlar yükleniyor",
         "emptyCatalogueTitle": "Hiç plan yok",
         "emptyCatalogueBody": "Yayımlamak bir plana bağlı; katalog boşken kimse kampanyasını incelemeye gönderemez. Aşağıdan bir plan ekleyin.",
-        "planSummary": "{price} / {period} · aynı anda {campaigns} kampanya · hedef sınırı: {ceiling}",
+        "planSummary": "{prices} · aynı anda {campaigns} kampanya · hedef sınırı: {ceiling}",
         "onSale": "Satışta",
         "retired": "Satıştan kaldırıldı",
-        "repriceLabel": "Yeni fiyat",
-        "reprice": "Fiyatı değiştir",
+        "repriceLabel": "Yeni fiyatlar",
+        "reprice": "Fiyatları değiştir",
         "retire": "Satıştan kaldır",
         "putOnSale": "Satışa çıkar",
         "unlimited": "sınırsız",
@@ -3246,9 +3319,8 @@
         "nameLabel": "Ad",
         "descriptionLabel": "Açıklama",
         "descriptionHint": "Planlar sayfasında adın altındaki tek satır.",
-        "priceLabel": "Fiyat",
+        "priceLabel": "Fiyatlar",
         "priceHint": "AZN olarak. Sıfır, ücretsiz kademe demektir.",
-        "periodLabel": "Faturalama",
         "maxActiveLabel": "Aynı anda kampanya",
         "goalCeilingLabel": "Hedef üst sınırı",
         "unlimitedHint": "Sınır istemiyorsanız boş bırakın.",
@@ -3279,12 +3351,13 @@
         "doneTitle": "Tamam",
         "failedTitle": "Bu işe yaramadı",
         "addedNotice": "{plan} eklendi ve satışta.",
-        "repricedNotice": "{plan} planının fiyatı değişti. Mevcut aboneler ödedikleri tutarda kalır.",
+        "repricedNotice": "{plan} planının fiyatları değişti. Mevcut aboneler ödedikleri tutarda kalır.",
         "activatedNotice": "{account} hesabının aboneliği etkin.",
         "endedNotice": "{account} hesabının aboneliği sonlandırıldı.",
         "period": {
-          "MONTHLY": "Aylık",
-          "YEARLY": "Yıllık"
+          "MONTHLY": "1 ay",
+          "SEMIANNUAL": "6 ay",
+          "YEARLY": "1 yıl"
         },
         "state": {
           "PENDING_PAYMENT": "Ödeme bekleniyor",
@@ -3310,7 +3383,7 @@
         "confirmEndAction": "Evet, sonlandır",
         "confirmRetire": "{plan} satıştan kaldırılsın mı? Yeni yaratıcılar onu satın alamaz; şu an üzerinde olanlar kalır.",
         "confirmRetireAction": "Evet, satıştan kaldır",
-        "confirmReprice": "{plan} fiyatı {old} yerine {new} olsun mu? Yeni fiyatı yalnızca yeni satın almalar öder.",
+        "confirmReprice": "{plan} fiyatları {old} yerine {new} olsun mu? Yeni fiyatları yalnızca yeni satın almalar öder; boş bırakılan süre için plan artık satılmaz.",
         "confirmRepriceAction": "Evet, fiyatı değiştir",
         "back": "Geri dön",
         "priceInvalid": "Fiyatı 19,00 gibi, en fazla iki ondalıkla girin.",
@@ -3325,7 +3398,17 @@
           "SUBSCRIPTION_NOT_OPEN": "Bu abonelik zaten sona erdi. Liste yenilendi.",
           "PAYMENT_NOT_YET_RECEIVED": "Ödeme tarihi gelecekte olamaz.",
           "INVALID_REQUEST": "Servis isteği kabul etmedi. Alanları kontrol edip yeniden deneyin."
-        }
+        },
+        "pricePer": "{price} / {period}",
+        "priceFor": "{period} için fiyat",
+        "newPriceFor": "{period} için yeni fiyat",
+        "pricesHint": "AZN olarak. Boş bırakılan süre için plan satılmaz; en az biri gerekir.",
+        "pricesMissing": "En az bir süre için fiyat yazın.",
+        "studentOnlyLabel": "Yalnızca öğrenciler için",
+        "studentOnlyHint": "Yalnızca öğrenci kartı onaylanmış hesaplar satın alabilir.",
+        "studentTag": "Öğrenci",
+        "makeStudentOnly": "Yalnızca öğrencilere sat",
+        "openToEveryone": "Herkese sat"
       },
       "submissionQueue": {
         "signedOutTitle": "Kuyrukla çalışmak için oturum açın",
@@ -3972,6 +4055,61 @@
           "name": "Ad",
           "countries": "Ülkeler",
           "unchanged": "Önerilen bölgeler yayındakilerle aynı."
+        }
+      },
+      "studentVerifications": {
+        "subject": "öğrenci doğrulama kuyruğunu",
+        "filterLabel": "Duruma göre süz",
+        "state": {
+          "PENDING": "Bekliyor",
+          "APPROVED": "Onaylandı",
+          "REJECTED": "Reddedildi",
+          "EXPIRED": "Süresi doldu"
+        },
+        "loadingList": "Öğrenci doğrulamaları yükleniyor",
+        "emptyTitle": "Burada bir şey yok",
+        "emptyBody": "Şu anda bu durumda başvuru yok.",
+        "institutionLabel": "Okul",
+        "cardNumberLabel": "Kart numarası",
+        "submittedLabel": "Gönderildi",
+        "decidedLabel": "Karar verildi",
+        "validUntilLabel": "Geçerlilik sonu",
+        "reasonLabel": "Neden",
+        "sameCardTitle": "Bu kart numarası başka bir hesapta da kullanılmış",
+        "sameCardBody": "Bir öğrenci kartı bir hesaba aittir. Karar vermeden önce bu hesaplara bakın:",
+        "sameCardAccount": "{name} · {state}",
+        "documentsHeading": "Belgeler",
+        "showDocuments": "Belgeleri göster",
+        "loadingDocuments": "Belgeler açılıyor",
+        "documentsErased": "Bu başvuruya karar verildiğinde belgeler silindi.",
+        "studentCard": "Öğrenci kartı",
+        "selfie": "Özçekim",
+        "openPdf": "Öğrenci kartını aç (PDF)",
+        "documentFailed": "Belgeler açılamadı",
+        "approve": "Onayla",
+        "reject": "Reddet",
+        "revoke": "Onayı geri al",
+        "reasonField": "Neden",
+        "reasonHint": "Hesap sahibi bunu yazdığınız gibi okur.",
+        "reasonMissing": "Bir neden yazın.",
+        "confirmApprove": "{account} hesabının öğrenci kartı onaylansın mı? Bugünden itibaren bir yıl öğrenci planını alabilecek.",
+        "confirmApproveAction": "Onayla",
+        "confirmReject": "{account} hesabının öğrenci kartı reddedilsin mi? Yenisini gönderebilecek.",
+        "confirmRejectAction": "Reddet",
+        "confirmRevoke": "{account} hesabının onayı geri alınsın mı? Öğrenci planını artık alamayacak ve yenileyemeyecek.",
+        "confirmRevokeAction": "Geri al",
+        "back": "Geri",
+        "doneTitle": "Tamam",
+        "failedTitle": "Olmadı",
+        "approvedNotice": "{account} hesabının öğrenci kartı onaylandı.",
+        "rejectedNotice": "{account} hesabının öğrenci kartı reddedildi.",
+        "revokedNotice": "{account} hesabının onayı geri alındı.",
+        "openAccount": "Hesabı aç",
+        "openAccountLabel": "Hesabı aç: {name}",
+        "errors": {
+          "STUDENT_VERIFICATION_NOT_DECIDABLE": "Bu başvuruya zaten karar verilmiş, belki bir iş arkadaşınız tarafından. Liste yeniden yüklendi.",
+          "STUDENT_VERIFICATION_NOT_FOUND": "Bu başvuru artık yok. Liste yeniden yüklendi.",
+          "STUDENT_CARD_IN_USE": "Bu kart numarası için başka bir hesabın geçerli onayı zaten var, bu yüzden bu onaylanamaz."
         }
       }
     },
@@ -5267,7 +5405,27 @@
       "renewalNotOpen": "Bu plan henüz yenilenemez. Yenilemenin ne zaman açılacağını görmek için sayfayı yenileyin.",
       "lapsed": "Bu planın süresi doldu. Yeniden abone olmak için aşağıdan bir plan seçin.",
       "notDue": "Şu anda ödenecek bir şey yok. Planınızın durumunu görmek için sayfayı yenileyin.",
-      "paymentUnavailable": "Kartla ödeme şu anda kullanılamıyor. Hiçbir tutar tahsil edilmedi; birkaç dakika sonra yeniden deneyin."
+      "paymentUnavailable": "Kartla ödeme şu anda kullanılamıyor. Hiçbir tutar tahsil edilmedi; birkaç dakika sonra yeniden deneyin.",
+      "periodNotOffered": "Bu plan seçtiğiniz süre için satılmıyor. Başka bir süre seçin veya sayfayı yenileyin.",
+      "studentVerificationRequired": "Bu plan yalnızca öğrenci kartı onaylanmış hesaplar içindir. Kartınızı hesabınızın öğrenci sayfasından gönderin."
+    },
+    "periods": {
+      "label": "Abonelik süresi",
+      "MONTHLY": "1 ay",
+      "SEMIANNUAL": "6 ay",
+      "YEARLY": "1 yıl",
+      "notOffered": "{period} için satılmıyor."
+    },
+    "per": {
+      "MONTHLY": "1 ay için",
+      "SEMIANNUAL": "6 ay için",
+      "YEARLY": "1 yıl için"
+    },
+    "student": {
+      "label": "Öğrenci",
+      "needsCheck": "Öğrenci kartınız kontrol edildikten sonra alınabilir",
+      "verify": "Öğrenci kartını doğrula",
+      "pending": "Öğrenci kartınız kontrol ediliyor"
     }
   },
   "campaign": {

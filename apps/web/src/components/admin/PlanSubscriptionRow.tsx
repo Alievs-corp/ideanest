@@ -92,7 +92,8 @@ export function SubscriptionRow({ subscription, names, accountName, copy, locale
           </p>
           <p className="mt-1 text-[13px] text-fg-64">
             {fillPlaceholders(copy.subscriptionSummary, {
-              price,
+              // With the period, since #655: 60 ₼ is a month of one plan and six of another.
+              price: fillPlaceholders(copy.pricePer, { price, period: copy.period[subscription.billingPeriod] }),
               until:
                 subscription.currentPeriodEnd == null ? copy.notStarted : bakuDate(subscription.currentPeriodEnd, locale),
             })}
