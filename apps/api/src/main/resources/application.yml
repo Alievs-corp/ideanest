@@ -17,17 +17,19 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
-  # #587: the one multipart upload this service takes -- an identity document,
+  # #587: the multipart uploads this service takes -- an identity document, and
+  # since #655 a student verification's card photograph and selfie -- each file
   # ideanest.verification.documents.max-bytes, five megabytes -- sized here so the
   # container refuses anything larger while it parses. Spring's own default was a
   # one-megabyte file, which quietly refused most phone photographs of a passport
-  # long before the service's five-megabyte rule could. Media never comes this way:
-  # it goes straight to object storage on a presigned URL. Every other body is
+  # long before the service's five-megabyte rule could. A student submission is two
+  # files and two short fields, hence a request of eleven. Media never comes this
+  # way: it goes straight to object storage on a presigned URL. Every other body is
   # bounded by RequestBodyLimitFilter (ideanest.request-body, two megabytes).
   servlet:
     multipart:
       max-file-size: 5MB
-      max-request-size: 6MB
+      max-request-size: 11MB
 
   http:
     clients:
