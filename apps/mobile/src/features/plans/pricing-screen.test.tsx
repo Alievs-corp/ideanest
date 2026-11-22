@@ -340,6 +340,47 @@ describe('paying on the website (#452)', () => {
     expect(screen.getByTestId('pricing-held-standing')).toHaveTextContent(words(P.payment.renewalCancelled));
   });
 
+  /*
+   * #660: the window is a month, so a monthly plan has a renewal due for its whole month. Until its
+   * last seven days the plan is simply active, with a quiet way to extend it on the website.
+   */
+  it('more than seven days before the end, says the plan is active and offers to extend it quietly', async () => {
+    mine = () =>
+      json({
+        subscription: held({
+          paymentDue: 'RENEWAL',
+          currentPeriodEnd: '2099-12-14T10:00:00Z',
+          renewalOpensAt: '2099-11-14T10:00:00Z',
+        }),
+      });
+    await show();
+
+    const standing = screen.getByTestId('pricing-held-standing');
+    expect(standing).toHaveTextContent(/You are on Growth until 14 December 2099/);
+    expect(standing).toHaveTextContent(words(M.extendOnWebBody));
+    expect(standing).not.toHaveTextContent(words(fill(M.renewalTitle, { plan: 'Growth', date: '14 December 2099' })));
+    expect(standing).not.toHaveTextContent(words(P.payment.renewalBody));
+    expect(screen.getByTestId('pricing-held-open-web')).toHaveTextContent(M.extendOnWeb);
+    expect(screen.getByTestId('pricing-held')).not.toHaveTextContent(/19\.00/);
+    // Still the one button for the website on the screen.
+    expect(screen.queryByTestId('pricing-open-web')).toBeNull();
+
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-held-open-web')));
+    await settle();
+    expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://test.invalid/en/pricing');
+  });
+
+  it('in the last seven days, says the plan ends and sends the renewal to the website as before', async () => {
+    const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    mine = () => json({ subscription: held({ paymentDue: 'RENEWAL', currentPeriodEnd: soon }) });
+    await show();
+
+    const standing = screen.getByTestId('pricing-held-standing');
+    expect(standing).toHaveTextContent(words(P.payment.renewalBody));
+    expect(standing).not.toHaveTextContent(words(M.extendOnWebBody));
+    expect(screen.getByTestId('pricing-held-open-web')).toHaveTextContent(M.webOnly.open);
+  });
+
   it('re-reads the plan when the browser closes, so a renewal made there shows at once', async () => {
     browserDismissedOnReturn();
     mine = () => json({ subscription: held({ paymentDue: 'RENEWAL' }) });
